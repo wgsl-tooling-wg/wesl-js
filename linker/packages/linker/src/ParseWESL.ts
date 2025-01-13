@@ -21,7 +21,7 @@ export interface WeslAST {
   /** imports found in this module */
   imports: ImportTree[];
 
-  /* a flattened version of the import statements constructed on demand from import trees, and cached */
+  /* a flattened version of the import statements constructed on demand from import trees, and cached here */
   _flatImports?: FlatImport[];
 }
 
