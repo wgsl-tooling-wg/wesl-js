@@ -8,6 +8,10 @@ import { identToString } from "./debug/ScopeToString.ts";
 import { stdFn, stdType } from "./StandardTypes.ts";
 import { last, overlapTail } from "./Util.ts";
 
+export interface BindResults {
+  decls: DeclarationElem[];
+  globalNames: Set<string>;
+}
 /**
  * Bind active reference idents to declaration Idents by mutating the refersTo: field
  * Also in this pass, set the mangledName: field for all active global declaration idents.
@@ -20,7 +24,7 @@ export function bindIdents(
   ast: WeslAST,
   parsed: ParsedRegistry,
   conditions: Record<string, any>,
-): DeclarationElem[] {
+): BindResults {
   /* 
     For each module's scope, search through the scope tree to find all ref idents
       - For each ref ident, search up the scope tree to find a matching decl ident
@@ -48,10 +52,11 @@ export function bindIdents(
     foundScopes: new Set<Scope>(),
     globalNames,
   };
-  const decls = bindIdentsRecursive(rootScope, bindContext);
-  return decls.flatMap(d =>
+  const foundDecls = bindIdentsRecursive(rootScope, bindContext);
+  const decls = foundDecls.flatMap(d =>
     d.declElem && isGlobal(d.declElem) ? [d.declElem] : [],
   );
+  return { decls, globalNames };
 }
 
 interface BindContext {

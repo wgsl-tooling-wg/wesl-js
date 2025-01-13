@@ -97,7 +97,8 @@ export function linkRegistry(
 
   /* --- Step #2   Binding Idents --- */
   // link active Ident references to declarations, and uniquify global declarations
-  const newDecls = bindIdents(found, parsed, conditions);
+  const bindResults = bindIdents(found, parsed, conditions);
+  const { decls: newDecls } = bindResults;
 
   /* --- Step #3   Writing WGSL --- */
   // traverse the AST and emit WGSL (doesn't need scopes)
