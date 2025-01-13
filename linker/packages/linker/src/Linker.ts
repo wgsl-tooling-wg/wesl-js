@@ -11,31 +11,17 @@ import {
 } from "./ParsedRegistry.ts";
 import { Conditions } from "./Scope.ts";
 import { WgslBundle } from "./WgslBundle.ts";
+import { WeslAST } from "./ParseWESL.ts";
 
-/* 
-It expects the parser to identify three types of idents: 
-  global declarations, local declarations, references
-  (the legacy version distingished between type and variable idents, and more)
+type LinkerTransform = (ast: WeslAST, rootNames: Set<string>) => WeslAST;
 
-It tracks scopes, and keeps them independently from the AST. It uses the scopes trees for
-binding references to declarations. (The legacy linker used combination
-of naming tricks and AST traversal to bind references to declarations.)
+export interface LinkConfig {
+  /** plugins to transform the linked AST before emitting linked test */
+  transforms?: LinkerTransform[];
 
-Binding idents is more generic, which should simplify the code 
-and extend more easily to for importing elements beyond structs and functions.
-
-It asks less of the grammar, a complete WGSL grammar is easier to maintain 
-if it can match the WGSL spec.
-
-It replaces an AST pass with scope table pass, which should be a little faster. 
-
-It's much more friendly to future parallel execution and incremental rebuilding, 
-which should make things a lot faster when we go there.
-
-The architecture allows conditional compilation from the AST rather than from the src text.
-
-The AST is now immutable, mutation is confined to the Idents and Scopes. 
-*/
+  /** limit potential infinite loops for debugging */
+  maxParseCount?: number
+}
 
 /**
  * Link a set of WESL source modules (typically the text from .wesl files) into a single WGSL string.
@@ -61,15 +47,15 @@ export function link(
   /** record of file names and wgsl text for modules */
   libs: WgslBundle[] = [],
   /** limit potential infinite loops for debugging */
-  maxParseCount?: number,
+  config: LinkConfig = {}
 ): SrcMap {
   /* --- Step #1   Parsing WESL --- */
   // parse all source modules in both app and libraries,
   // producing Scope tree and AST elements for each module
   const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry, "package", maxParseCount);
+  parseIntoRegistry(weslSrc, registry, "package", config?.maxParseCount);
   parseLibsIntoRegistry(libs, registry);
-  return linkRegistry(registry, rootModuleName, conditions);
+  return linkRegistry(registry, rootModuleName, conditions, config);
 }
 
 /** Link wesl from a registry of already parsed modules.
@@ -83,6 +69,7 @@ export function linkRegistry(
   parsed: ParsedRegistry,
   rootModuleName: string = "main",
   conditions: Conditions = {},
+  config: LinkConfig = {}
 ): SrcMap {
   // get a reference to the root module
   const found = selectModule(parsed, rootModuleName);
@@ -98,7 +85,9 @@ export function linkRegistry(
   /* --- Step #2   Binding Idents --- */
   // link active Ident references to declarations, and uniquify global declarations
   const bindResults = bindIdents(found, parsed, conditions);
-  const { decls: newDecls } = bindResults;
+  const { globalNames, decls: newDecls } = bindResults;
+  // for now only transform the root module
+  config?.transforms?.forEach(transform => transform(found, globalNames));
 
   /* --- Step #3   Writing WGSL --- */
   // traverse the AST and emit WGSL (doesn't need scopes)
