@@ -18,6 +18,7 @@ import {
 import { RefIdent } from "./Scope.ts";
 import { elemLog, visitAst } from "./LinkerUtil.ts";
 import { filterMap } from "./Util.ts";
+import { declUniqueName } from "./BindIdents.ts";
 
 /**
  * Transform binding structures into binding variables by mutating the AST.
@@ -44,10 +45,15 @@ import { filterMap } from "./Util.ts";
  * Remove the intermediate fn param declarations from the AST
  * Add the new binding variables to the AST
  */
-export function lowerBindingStructs(ast: WeslAST): ModuleElem {
+export function lowerBindingStructs(
+  ast: WeslAST,
+  rootNames: Set<string>,
+): ModuleElem {
   const { moduleElem } = ast;
   const bindingStructs = markBindingStructs(moduleElem); // CONSIDER should we only mark bining structs referenced from the entry point?
-  const newVars = bindingStructs.flatMap(transformBindingStruct);
+  const newVars = bindingStructs.flatMap(s =>
+    transformBindingStruct(s, rootNames),
+  );
   const bindingRefs = findRefsToBindingStructs(moduleElem);
 
   // convert references 'b.particles' to references to the synthetic var 'particles'
@@ -61,6 +67,15 @@ export function lowerBindingStructs(ast: WeslAST): ModuleElem {
   const contents = removeBindingStructs(moduleElem);
   moduleElem.contents = [...newVars, ...contents];
   return moduleElem;
+}
+
+/** transform plugin to lower binding structs and their references */
+export function bindingStructTransform(
+  ast: WeslAST,
+  rootNames: Set<string>,
+): WeslAST {
+  const moduleElem = lowerBindingStructs(ast, rootNames);
+  return { ...ast, moduleElem };
 }
 
 function removeBindingStructs(moduleElem: ModuleElem): AbstractElem[] {
@@ -97,11 +112,15 @@ function bindingAttribute(attributes?: AttributeElem[]): boolean {
 }
 
 /** convert each member of the binding struct into a synthetic global variable */
-export function transformBindingStruct(s: StructElem): SyntheticElem[] {
+export function transformBindingStruct(
+  s: StructElem,
+  globalNames: Set<string>,
+): SyntheticElem[] {
   return s.members.map(m => {
     const attributes = m.attributes?.map(attributeToString).join(" ");
-    const varName = m.name.name; // TODO uniquify
+    const varName = declUniqueName(m.name.name, globalNames);
     m.mangledVarName = varName;
+    globalNames.add(varName);
 
     const origParams = m.typeRef?.templateParams || [];
     const newParams = [origParams[0]];

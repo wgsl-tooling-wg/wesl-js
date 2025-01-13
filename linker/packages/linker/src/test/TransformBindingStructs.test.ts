@@ -4,15 +4,17 @@ import { bindIdents } from "../BindIdents.ts";
 import { lowerAndEmit } from "../LowerAndEmit.ts";
 import { parsedRegistry } from "../ParsedRegistry.ts";
 import {
+  bindingStructTransform,
   findRefsToBindingStructs,
   lowerBindingStructs,
   markBindingStructs,
   transformBindingReference,
   transformBindingStruct,
 } from "../TransformBindingStructs.ts";
-import { parseTest } from "./TestUtil.ts";
+import { linkTestOpts, parseTest } from "./TestUtil.ts";
 import { astToString, elemToString } from "../debug/ASTtoString.ts";
 import { matchTrimmed } from "./shared/StringUtil.ts";
+import { LinkConfig } from "../Linker.ts";
 
 test("markBindingStructs true", () => {
   const src = `
@@ -49,7 +51,7 @@ test("transformBindingStruct", () => {
   const ast = parseTest(src);
   bindIdents(ast, parsedRegistry(), {});
   const bindingStruct = markBindingStructs(ast.moduleElem)[0];
-  const newVars = transformBindingStruct(bindingStruct);
+  const newVars = transformBindingStruct(bindingStruct, new Set());
 
   const srcBuilder = new SrcMapBuilder();
   lowerAndEmit(srcBuilder, newVars, {});
@@ -100,7 +102,7 @@ test("transformBindingReference", () => {
   const ast = parseTest(src);
   bindIdents(ast, parsedRegistry(), {});
   const bindingStruct = markBindingStructs(ast.moduleElem)[0];
-  transformBindingStruct(bindingStruct);
+  transformBindingStruct(bindingStruct, new Set());
   const found = findRefsToBindingStructs(ast.moduleElem);
   expect(found.length).toBe(1);
   const { memberRef, struct } = found[0];
@@ -127,8 +129,8 @@ var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
     }
   `;
   const ast = parseTest(src);
-  bindIdents(ast, parsedRegistry(), {});
-  const lowered = lowerBindingStructs(ast);
+  const bindResult = bindIdents(ast, parsedRegistry(), {});
+  const lowered = lowerBindingStructs(ast, bindResult.globalNames);
   const loweredAst = astToString(lowered);
   expect(loweredAst).toMatchInlineSnapshot(`
     "module
@@ -157,5 +159,32 @@ var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
   const srcBuilder = new SrcMapBuilder();
   lowerAndEmit(srcBuilder, [lowered], {}, false);
   const linked = srcBuilder.build().dest;
+  matchTrimmed(linked, expected);
+});
+
+test("lower binding structs with conflicting root name", () => {
+  const src = `
+    struct Bindings {
+      @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
+    }
+    const particles = 7;
+    fn main(b: Bindings) {
+      let x = b.particles;
+    }
+  `;
+
+  const expected = `
+var @group(0) @binding(0) particles0<storage, read_write> : array<f32>;
+       
+    const particles = 7;
+    fn main() {
+      let x = particles0;
+    }
+  `;
+  const linkConfig: LinkConfig = {
+    transforms: [bindingStructTransform],
+  };
+
+  const linked = linkTestOpts({ linkConfig }, src);
   matchTrimmed(linked, expected);
 });
