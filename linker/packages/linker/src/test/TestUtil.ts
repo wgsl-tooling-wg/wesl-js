@@ -5,9 +5,11 @@ import {
   testParse,
   TestParseResult,
 } from "mini-parse/test-util";
-import { link } from "../Linker.js";
+import { link, LinkConfig } from "../Linker.js";
 import { mainTokens } from "../WESLTokens.js";
 import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
+import { WgslBundle } from "random_wgsl";
+import { Conditions } from "../Scope.js";
 
 export function testAppParse<T, N extends TagRecord = NoTags>(
   parser: Parser<T, N>,
@@ -22,13 +24,24 @@ export function testAppParse<T, N extends TagRecord = NoTags>(
  * subsequent modules are named "./file1.wesl", "./file2.wesl", etc.
  */
 export function linkTest(...rawWgsl: string[]): string {
+  return linkTestOpts({}, ...rawWgsl);
+}
+
+export interface LinkTestOpts {
+  /** additional modules to link */
+  conditions?: Conditions;
+  linkConfig?: LinkConfig;
+  libs?: WgslBundle[];
+}
+export function linkTestOpts(opts: LinkTestOpts, ...rawWgsl: string[]): string {
   const [root, ...rest] = rawWgsl;
   const restWgsl = Object.fromEntries(
     rest.map((src, i) => [`./file${i + 1}.wesl`, src]),
   );
   const wesl = { "./test.wesl": root, ...restWgsl };
 
-  const srcMap = link(wesl, "test");
+  const { conditions = {}, libs = [], linkConfig: config } = opts;
+  const srcMap = link(wesl, "test", conditions, libs, config);
   return srcMap.dest;
 }
 
