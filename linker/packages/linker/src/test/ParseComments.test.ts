@@ -2,9 +2,9 @@ import { expectNoLog } from "mini-parse/test-util";
 
 import { expect, test } from "vitest";
 import { blockComment, lineComment } from "../CommentsGrammar.js";
+import { astToString } from "../debug/ASTtoString.js";
 import { parseWESL } from "../ParseWESL.js";
 import { testAppParse } from "./TestUtil.js";
-import { astToString } from "../debug/ASTtoString.js";
 
 test("lineComment parse // foo bar", () => {
   const src = "// foo bar";

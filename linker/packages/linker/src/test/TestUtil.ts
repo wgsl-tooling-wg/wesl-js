@@ -1,15 +1,15 @@
-import { _withBaseLogger, NoTags, Parser, TagRecord } from "mini-parse";
+import { NoTags, Parser, TagRecord, _withBaseLogger } from "mini-parse";
 import {
   expectNoLog,
   logCatch,
   testParse,
   TestParseResult,
 } from "mini-parse/test-util";
-import { link, LinkConfig } from "../Linker.js";
-import { mainTokens } from "../WESLTokens.js";
-import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
 import { WgslBundle } from "random_wgsl";
+import { link, LinkConfig } from "../Linker.js";
+import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
 import { Conditions } from "../Scope.js";
+import { mainTokens } from "../WESLTokens.js";
 
 export function testAppParse<T, N extends TagRecord = NoTags>(
   parser: Parser<T, N>,

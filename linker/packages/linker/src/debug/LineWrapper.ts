@@ -1,4 +1,3 @@
-
 /** debug utility for constructing strings that wrap at a fixed column width
  * text beyond the column width is wrapped to start on the next line
  */

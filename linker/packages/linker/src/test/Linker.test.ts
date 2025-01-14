@@ -1,6 +1,6 @@
 import { test } from "vitest";
-import { linkTest } from "./TestUtil.js";
 import { matchTrimmed } from "./shared/StringUtil.js";
+import { linkTest } from "./TestUtil.js";
 
 test("link global var", () => {
   const src = `var x: i32 = 1;`;

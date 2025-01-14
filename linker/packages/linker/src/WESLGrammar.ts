@@ -19,9 +19,8 @@ import {
   withSep,
   withSepPlus,
 } from "mini-parse";
-import { weslImport } from "./ImportGrammar.ts";
-import { bracketTokens, mainTokens } from "./WESLTokens.ts";
 import { comment } from "./CommentsGrammar.ts";
+import { weslImport } from "./ImportGrammar.ts";
 import {
   collectAttribute,
   collectFn,
@@ -39,6 +38,7 @@ import {
   scopeCollect,
   typeRefCollect,
 } from "./WESLCollect.ts";
+import { bracketTokens, mainTokens } from "./WESLTokens.ts";
 
 /** parser that recognizes key parts of WGSL and also directives like #import */
 

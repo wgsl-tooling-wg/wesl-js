@@ -1,4 +1,9 @@
-import { ImportTree, PathSegment, SegmentList, SimpleSegment } from "../ImportTree.ts";
+import {
+  ImportTree,
+  PathSegment,
+  SegmentList,
+  SimpleSegment,
+} from "../ImportTree.ts";
 
 export function importToString(tree: ImportTree): string {
   return tree.segments.map(s => segmentToString(s)).join("/");

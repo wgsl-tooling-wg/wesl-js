@@ -25,9 +25,7 @@ export const unknown = any().map(r => {
   // throw new Error("Fail fast");
 });
 
-const eolf: Parser<any> = disablePreParse(
-  makeEolf(argsTokens, argsTokens.ws),
-);
+const eolf: Parser<any> = disablePreParse(makeEolf(argsTokens, argsTokens.ws));
 
 const skipToEol = tokens(lineCommentTokens, anyThrough(eolf));
 

@@ -3,6 +3,6 @@ export * from "./debug/ScopeToString.js";
 export * from "./Linker.js";
 export * from "./ParseWESL.js";
 export * from "./PathUtil.js";
+export * from "./TransformBindingStructs.js";
 export * from "./Util.js";
 export * from "./WgslBundle.js";
-export * from "./TransformBindingStructs.js";

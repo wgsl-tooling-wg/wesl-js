@@ -1,9 +1,5 @@
 import { srcLog } from "mini-parse";
-import {
-  AbstractElem,
-  ContainerElem,
-  TerminalElem
-} from "./AbstractElems.ts";
+import { AbstractElem, ContainerElem, TerminalElem } from "./AbstractElems.ts";
 
 export function visitAst(
   elem: AbstractElem,

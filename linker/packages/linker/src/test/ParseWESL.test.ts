@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { astToString } from "../debug/ASTtoString.ts";
-import { parseTest } from "./TestUtil.ts";
 import { importToString } from "../debug/ImportToString.ts";
+import { parseTest } from "./TestUtil.ts";
 
 test("parse empty string", () => {
   const ast = parseTest("");

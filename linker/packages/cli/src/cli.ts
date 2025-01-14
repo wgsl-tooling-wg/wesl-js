@@ -87,7 +87,7 @@ function linkNormally(paths: string[]): void {
     });
   }
 
-  // TODO diff 
+  // TODO diff
   // if (argv.diff) printDiff(srcPath, origWgsl, linked);
 }
 

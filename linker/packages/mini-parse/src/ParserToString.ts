@@ -12,7 +12,7 @@ function deepToString(
   indent: number,
   visited: Set<AnyParser>,
 ): string {
-  const lines:string[] = [];
+  const lines: string[] = [];
   const pad = " ".repeat(indent);
   if (visited.has(p)) {
     lines.push(pad + "->" + p.debugName + "\n");

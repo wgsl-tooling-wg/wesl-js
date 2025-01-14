@@ -1,10 +1,6 @@
 import { expect, test } from "vitest";
-import {
-  ImportTree,
-  SegmentList,
-  SimpleSegment,
-} from "../ImportTree.ts";
 import { flattenTreeImport } from "../FlattenTreeImport.ts";
+import { ImportTree, SegmentList, SimpleSegment } from "../ImportTree.ts";
 
 test("complex tree import", () => {
   const zap = new SimpleSegment("zap");

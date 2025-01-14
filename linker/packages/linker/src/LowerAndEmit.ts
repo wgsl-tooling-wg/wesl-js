@@ -2,14 +2,14 @@ import { SrcMapBuilder, tracing } from "mini-parse";
 import {
   AbstractElem,
   DeclIdentElem,
-  RefIdentElem,
   NameElem,
-  TextElem,
+  RefIdentElem,
   SyntheticElem,
+  TextElem,
 } from "./AbstractElems.ts";
 import { isGlobal } from "./BindIdents.ts";
-import { Conditions, DeclIdent, Ident, RefIdent } from "./Scope.ts";
 import { identToString } from "./debug/ScopeToString.ts";
+import { Conditions, DeclIdent, Ident, RefIdent } from "./Scope.ts";
 
 /** passed to the emitters */
 interface EmitContext {
@@ -43,8 +43,8 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
   switch (e.kind) {
     // import statements are dropped from from emitted text
     case "import":
-      return; 
-    
+      return;
+
     // terminal elements copy strings to the output
     case "text":
       return emitText(e, ctx);

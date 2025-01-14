@@ -1,5 +1,5 @@
-import { LineWrapper } from "./LineWrapper.ts";
 import { Ident, Scope } from "../Scope.ts";
+import { LineWrapper } from "./LineWrapper.ts";
 
 /** A debugging print of the scope tree with identifiers in nested brackets */
 export function scopeToString(scope: Scope, indent = 0): string {

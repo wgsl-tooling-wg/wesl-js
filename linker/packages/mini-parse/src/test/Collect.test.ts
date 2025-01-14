@@ -1,8 +1,7 @@
 import { testParse } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import { or, seq, text } from "../ParserCombinator.js";
-import { dlog } from "berry-pretty";
 import { tagScope } from "../ParserCollect.js";
+import { or, seq, text } from "../ParserCombinator.js";
 
 test("collect runs a fn on commit", () => {
   const src = "a b c";

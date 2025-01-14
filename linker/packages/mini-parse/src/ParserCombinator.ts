@@ -23,10 +23,7 @@ import {
   tokenSkipSet,
   trackChildren,
 } from "./Parser.js";
-import {
-  closeArray,
-  pushOpenArray,
-} from "./ParserCollect.js";
+import { closeArray, pushOpenArray } from "./ParserCollect.js";
 import { ctxLog } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
 import { mergeTags } from "./ParserUtil.js";

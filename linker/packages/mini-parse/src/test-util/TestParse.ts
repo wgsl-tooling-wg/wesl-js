@@ -1,4 +1,5 @@
 import {
+  AppState,
   enableTracing,
   matchingLexer,
   matchOneOf,
@@ -10,7 +11,6 @@ import {
   tokenMatcher,
   tracing,
   _withBaseLogger,
-  AppState,
 } from "mini-parse";
 import { expect } from "vitest";
 import { logCatch } from "./LogCatcher.js";
@@ -38,7 +38,7 @@ export function testParse<T, N extends TagRecord = NoTags, C = any, S = any>(
   p: Parser<T, N>,
   src: string,
   tokenMatcher: TokenMatcher = testTokens,
-  appState: AppState<C, S> = { context: {} as C, stable: [] as S},
+  appState: AppState<C, S> = { context: {} as C, stable: [] as S },
 ): TestParseResult<T, N, S> {
   const lexer = matchingLexer(src, tokenMatcher);
   const parsed = p.parse({ lexer, appState: appState, maxParseCount: 1000 });

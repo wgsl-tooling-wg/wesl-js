@@ -30,44 +30,44 @@ by bundling `.wesl` files into strings with a build tool like `vite`.
 Linking is relatively straightforward.
 
 1. Parse WESL strings into the ParsedRegistry
-    - Each WESL module is parsed into a WeslAST.
-    - There are three notable structures in the `WeslAST`:
-        - `AbstractElem`s for the traditional abstract syntax tree,
-          roughly mirroring the structure of source statements in the WESL language.
-            - Most `AbstractElements` can contain other elements via their `contents` field.
-            - Contents typically include `TextElem`s, which record semantically
-            uninteresting parts of the source text.
-            (The `TextElem`s are typically copied verbatim to the output WGSL.
-            As a result, the output of a trivial WESL link of unextended WGSL
-            code is the same as the original WGSL.)
-        - `ImportTree` for the import statements
-        - `Scope` tree for a heirarchical tree of identifiers,
-          with `DeclIdent` declaration identifiers distinguished
-          from `RefIdent` references by the parser.
+   - Each WESL module is parsed into a WeslAST.
+   - There are three notable structures in the `WeslAST`:
+     - `AbstractElem`s for the traditional abstract syntax tree,
+       roughly mirroring the structure of source statements in the WESL language.
+       - Most `AbstractElements` can contain other elements via their `contents` field.
+       - Contents typically include `TextElem`s, which record semantically
+         uninteresting parts of the source text.
+         (The `TextElem`s are typically copied verbatim to the output WGSL.
+         As a result, the output of a trivial WESL link of unextended WGSL
+         code is the same as the original WGSL.)
+     - `ImportTree` for the import statements
+     - `Scope` tree for a heirarchical tree of identifiers,
+       with `DeclIdent` declaration identifiers distinguished
+       from `RefIdent` references by the parser.
 1. Traverse the `Scope` tree from the root module,
-  tracing references to declarations by searching for matching declarations
-  in parent scopes and import statements.
-    - Each `DeclIdent` includes an attached `Scope` containing the references attached to the declaration.
-    For example, the `DeclIdent` for a WESL `fn` declaration will point to a `Scope` containing
-    all of the references in the `fn` body.
-    - The traversal will recursively visit each of
-    the references in the scoped attached to the declaration,
-    and trace those references to their declarations too.
-    - This recursive walk through through the identifier
-    graph eventually visits every declaration that
-    will be linked into the final WGSL.
-    - During the traversal
-        1. Mangle the names of declarations as necessary for uniqueness by
+   tracing references to declarations by searching for matching declarations
+   in parent scopes and import statements.
+   - Each `DeclIdent` includes an attached `Scope` containing the references attached to the declaration.
+     For example, the `DeclIdent` for a WESL `fn` declaration will point to a `Scope` containing
+     all of the references in the `fn` body.
+   - The traversal will recursively visit each of
+     the references in the scoped attached to the declaration,
+     and trace those references to their declarations too.
+   - This recursive walk through through the identifier
+     graph eventually visits every declaration that
+     will be linked into the final WGSL.
+   - During the traversal
+     1. Mangle the names of declarations as necessary for uniqueness by
         mutating the `mangledName` field of the `DeclIdent`.
-        1. Link references to declaration by mutating the `refersTo` field
+     1. Link references to declaration by mutating the `refersTo` field
         in the `RefIdent`.
-        1. Return the complete list of visited declarations.
+     1. Return the complete list of visited declarations.
 1. Emit all of the declarations.
-    - Each declaration AbstractElem is written to the output result WGSL string
-      along with any contained elements.
-        - Each contained declaration is rewritten to use its `mangledName`.
-        - Each contained reference is rewritten to use the `mangledName`
-        from the declaration it `refersTo`.
+   - Each declaration AbstractElem is written to the output result WGSL string
+     along with any contained elements.
+     - Each contained declaration is rewritten to use its `mangledName`.
+     - Each contained reference is rewritten to use the `mangledName`
+       from the declaration it `refersTo`.
 
 ## Error Reporting
 

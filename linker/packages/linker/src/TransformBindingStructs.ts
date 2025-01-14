@@ -8,6 +8,8 @@ import {
   StructElem,
   SyntheticElem,
 } from "./AbstractElems.ts";
+import { declUniqueName } from "./BindIdents.ts";
+import { visitAst } from "./LinkerUtil.ts";
 import { findDecl } from "./LowerAndEmit.ts";
 import { WeslAST } from "./ParseWESL.ts";
 import {
@@ -16,9 +18,7 @@ import {
   typeParamToString,
 } from "./RawEmit.ts";
 import { RefIdent } from "./Scope.ts";
-import { elemLog, visitAst } from "./LinkerUtil.ts";
 import { filterMap } from "./Util.ts";
-import { declUniqueName } from "./BindIdents.ts";
 
 /**
  * Transform binding structures into binding variables by mutating the AST.
