@@ -1,20 +1,19 @@
 import { SrcMapBuilder } from "mini-parse";
 import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
+import { enableBindingStructs } from "../Configuration.ts";
+import { astToString, elemToString } from "../debug/ASTtoString.ts";
 import { lowerAndEmit } from "../LowerAndEmit.ts";
 import { parsedRegistry } from "../ParsedRegistry.ts";
 import {
-  bindingStructTransform,
   findRefsToBindingStructs,
   lowerBindingStructs,
   markBindingStructs,
   transformBindingReference,
   transformBindingStruct,
 } from "../TransformBindingStructs.ts";
-import { linkTestOpts, parseTest } from "./TestUtil.ts";
-import { astToString, elemToString } from "../debug/ASTtoString.ts";
 import { matchTrimmed } from "./shared/StringUtil.ts";
-import { LinkConfig } from "../Linker.ts";
+import { linkTestOpts, parseTest } from "./TestUtil.ts";
 
 test("markBindingStructs true", () => {
   const src = `
@@ -181,10 +180,8 @@ var @group(0) @binding(0) particles0<storage, read_write> : array<f32>;
       let x = particles0;
     }
   `;
-  const linkConfig: LinkConfig = {
-    transforms: [bindingStructTransform],
-  };
 
-  const linked = linkTestOpts({ linkConfig }, src);
+  const opts = { linkConfig: enableBindingStructs() };
+  const linked = linkTestOpts(opts, src);
   matchTrimmed(linked, expected);
 });
