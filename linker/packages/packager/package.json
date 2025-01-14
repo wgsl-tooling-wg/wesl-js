@@ -17,7 +17,7 @@
   "bin": "bin/wgsl-packager",
   "dependencies": {
     "glob": "^11.0.0",
-    "wgsl-linker": "workspace:*"
+    "wesl": "workspace:*"
   },
   "devDependencies": {}
 }

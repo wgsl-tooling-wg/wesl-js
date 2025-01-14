@@ -17,6 +17,6 @@
     }
   },
   "devDependencies": {
-    "wgsl-packager": "workspace:*"
+    "wesl": "workspace:*"
   }
 }

@@ -11,7 +11,7 @@
     "bulk-test": "vitest run"
   },
   "dependencies": {
-    "wgsl-linker": "workspace:*"
+    "wesl": "workspace:*"
   },
   "devDependencies": {
     "@types/diff": "^5.0.9",
