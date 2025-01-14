@@ -6,12 +6,11 @@ import {
   ParsedRegistry,
   parseIntoRegistry,
   parseLibsIntoRegistry,
-  parseWeslSrc,
   selectModule,
 } from "./ParsedRegistry.ts";
+import { WeslAST } from "./ParseWESL.ts";
 import { Conditions } from "./Scope.ts";
 import { WgslBundle } from "./WgslBundle.ts";
-import { WeslAST } from "./ParseWESL.ts";
 
 type LinkerTransform = (ast: WeslAST, rootNames: Set<string>) => WeslAST;
 
@@ -20,7 +19,7 @@ export interface LinkConfig {
   transforms?: LinkerTransform[];
 
   /** limit potential infinite loops for debugging */
-  maxParseCount?: number
+  maxParseCount?: number;
 }
 
 /**
@@ -47,7 +46,7 @@ export function link(
   /** record of file names and wgsl text for modules */
   libs: WgslBundle[] = [],
   /** limit potential infinite loops for debugging */
-  config: LinkConfig = {}
+  config: LinkConfig = {},
 ): SrcMap {
   /* --- Step #1   Parsing WESL --- */
   // parse all source modules in both app and libraries,
@@ -62,14 +61,14 @@ export function link(
  *
  * This entry point is intended for users who want to link multiple times
  * from the same sources. (perhaps linking with different conditions
- * each time, or perhaps to produce multiple wgsl shaders 
+ * each time, or perhaps to produce multiple wgsl shaders
  * that share some sources.)
  */
 export function linkRegistry(
   parsed: ParsedRegistry,
   rootModuleName: string = "main",
   conditions: Conditions = {},
-  config: LinkConfig = {}
+  config: LinkConfig = {},
 ): SrcMap {
   // get a reference to the root module
   const found = selectModule(parsed, rootModuleName);
