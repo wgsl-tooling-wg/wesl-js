@@ -1,4 +1,4 @@
-/// <reference types="vitest" />
+/// <reference types="vitest/config" />
 import { LibraryOptions, defineConfig } from "vite";
 import { baseViteConfig } from "./base.vite.config.js";
 import { resolve } from "path";
