@@ -14,7 +14,7 @@
     "wesl": "workspace:*"
   },
   "devDependencies": {
-    "@types/diff": "^5.0.9",
-    "diff": "^5.2.0"
+    "@types/diff": "^7.0.0",
+    "diff": "^7.0.0"
   }
 }
