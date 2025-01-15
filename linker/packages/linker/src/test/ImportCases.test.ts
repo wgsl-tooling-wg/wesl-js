@@ -1,7 +1,7 @@
 import { afterAll, expect, test } from "vitest";
 import { importCases } from "wesl-testsuite";
 import { link } from "../Linker.js";
-import { matchTrimmed, trimSrc } from "./shared/StringUtil.js";
+import { expectTrimmedMatch, trimSrc } from "./shared/StringUtil.js";
 
 /** so vitest triggers when this file changes */
 import("../../../../../wesl-testsuite/src/test-cases/ImportCases.js");
@@ -430,7 +430,7 @@ function linkTest2(name: string, expectation: LinkExpectation): void {
   /* -- trim and verify results line by line -- */
   const { linked, includes, excludes } = expectation;
   if (linked !== undefined) {
-    matchTrimmed(result, linked);
+    expectTrimmedMatch(result, linked);
   }
   if (includes !== undefined) {
     includes.forEach(inc => {

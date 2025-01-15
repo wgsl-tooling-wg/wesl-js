@@ -12,7 +12,7 @@ import {
   transformBindingReference,
   transformBindingStruct,
 } from "../TransformBindingStructs.ts";
-import { matchTrimmed } from "./shared/StringUtil.ts";
+import { expectTrimmedMatch } from "./shared/StringUtil.ts";
 import { linkTestOpts, parseTest } from "./TestUtil.ts";
 
 test("markBindingStructs true", () => {
@@ -158,7 +158,7 @@ var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
   const srcBuilder = new SrcMapBuilder();
   lowerAndEmit(srcBuilder, [lowered], {}, false);
   const linked = srcBuilder.build().dest;
-  matchTrimmed(linked, expected);
+  expectTrimmedMatch(linked, expected);
 });
 
 test("lower binding structs with conflicting root name", () => {
@@ -183,5 +183,5 @@ var @group(0) @binding(0) particles0<storage, read_write> : array<f32>;
 
   const opts = { linkConfig: enableBindingStructs() };
   const linked = linkTestOpts(opts, src);
-  matchTrimmed(linked, expected);
+  expectTrimmedMatch(linked, expected);
 });

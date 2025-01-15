@@ -1,11 +1,11 @@
 import { test } from "vitest";
-import { matchTrimmed } from "./shared/StringUtil.js";
+import { expectTrimmedMatch } from "./shared/StringUtil.js";
 import { linkTest } from "./TestUtil.js";
 
 test("link global var", () => {
   const src = `var x: i32 = 1;`;
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
 
 test("link an alias", () => {
@@ -15,7 +15,7 @@ test("link an alias", () => {
     fn main() { Num(1.0); }
   `;
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
 
 test("link a const_assert", () => {
@@ -25,7 +25,7 @@ test("link a const_assert", () => {
     const_assert x < y;
   `;
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
 
 test("link a struct", () => {
@@ -36,7 +36,7 @@ test("link a struct", () => {
     }
   `;
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
 
 test("link a fn", () => {
@@ -45,7 +45,7 @@ test("link a fn", () => {
       return 1.0; 
     }`;
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
 
 test("handle a ptr type", () => {
@@ -55,7 +55,7 @@ test("handle a ptr type", () => {
       bits: ptr<function, i32>) -> u32 { }
   `;
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
 
 test("struct after var", () => {
@@ -67,7 +67,7 @@ test("struct after var", () => {
     }
   `;
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
 
 test("type inside fn with same name as fn", () => {
@@ -79,7 +79,7 @@ test("type inside fn with same name as fn", () => {
     fn bar() {}
   `;
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
 
 test("call cross reference", () => {
@@ -94,7 +94,7 @@ test("call cross reference", () => {
   `;
 
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
 
 test("struct self reference", () => {
@@ -109,13 +109,13 @@ test("struct self reference", () => {
   `;
 
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
 
 test("parse texture_storage_2d with texture format in typical type position", () => {
   const src = `var t: texture_storage_2d<rgba8unorm, write>;`;
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
 
 test("struct member ref with extra component_or_swizzle", () => {
@@ -127,5 +127,5 @@ test("struct member ref with extra component_or_swizzle", () => {
     }
  `;
   const result = linkTest(src);
-  matchTrimmed(result, src);
+  expectTrimmedMatch(result, src);
 });
