@@ -6,9 +6,10 @@
     "src"
   ],
   "scripts": {
-    "build": "run-s build:main build:util build:minified build:brotli",
+    "build": "run-s build:main build:test-util build:minified build:brotli",
     "build:main": "vite build",
-    "build:util": "vite -c test-util.vite.config.ts build",
+    "build:test-util": "vite -c test-util.vite.config.ts build",
+    "build:vitest-util": "vite -c vitest-util.vite.config.ts build",
     "build:minified": "vite -c minified.vite.config.ts build",
     "build:brotli": "brotli dist/minified.cjs && ls -l dist/minified.cjs.br",
     "format": "prettier . --write",
@@ -34,6 +35,10 @@
     "./test-util": {
       "import": "./dist/testUtil.js",
       "types": "./dist/test-util/testUtil.d.ts"
+    },
+    "./vitest-util": {
+      "import": "./dist/vitestUtil.js",
+      "types": "./dist/vitest-util/vitestUtil.d.ts"
     }
   },
   "devDependencies": {
