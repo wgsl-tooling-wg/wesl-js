@@ -1,16 +1,20 @@
 import { expect, test, vi } from "vitest";
 import { cli } from "../cli.js";
+import path, { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { expectTrimmedMatch } from "mini-parse/vitest-util";
 
 /** so vitest triggers when these files change */
 import("./src/test/wgsl/main.wgsl?raw");
 import("./src/test/wgsl/util.wgsl?raw");
 
+const testDir = dirname(fileURLToPath(import.meta.url));
+const wgslDir = path.join(testDir, "wgsl");
+const mainPath = path.join(wgslDir, "main.wgsl");
+const utilPath = path.join(wgslDir, "util.wgsl");
+
 test("simple link", async () => {
-  const logged = await cliLine(
-    `./src/test/wgsl/main.wgsl 
-     ./src/test/wgsl/util.wgsl 
-     --baseDir ./src/test/wgsl`,
-  );
+  const logged = await cliLine(`${mainPath} ${utilPath} --baseDir ${wgslDir}`);
   expect(logged).toMatchInlineSnapshot(`
     "
     fn main() {
@@ -28,16 +32,19 @@ test("simple link", async () => {
   `);
 });
 
+const packagePath = /package::.*::(.*)$/gm;
 test("link --details", async () => {
-  const line = `./src/test/wgsl/main.wgsl 
-     ./src/test/wgsl/util.wgsl 
+  const line = `${mainPath} ${utilPath} --baseDir ${wgslDir}
      --baseDir ./src/test/wgsl 
      --details 
      --emit false`;
 
   const logged = await cliLine(line);
-  expect(logged).toMatchInlineSnapshot(`
-    "---
+  const noPackagePaths = logged.replace(packagePath, "package::$1");
+  expectTrimmedMatch(
+    noPackagePaths,
+    `
+    ---
     package::main
 
     ->ast
@@ -83,8 +90,8 @@ test("link --details", async () => {
     { %foo
       {  }
     }
-    "
-  `);
+  `,
+  );
 });
 
 test.skip("link with definition", async () => {

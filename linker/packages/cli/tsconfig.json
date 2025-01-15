@@ -18,7 +18,8 @@
     "noEmit": true,
     "paths": {
       "wgsl-linker": ["../linker/src"],
-      "mini-parse": ["../mini-parse/src"]
+      "mini-parse": ["../mini-parse/src"],
+      "mini-parse/vitest-util": ["../mini-parse/src/vitest-util"]
     }
   },
   "include": ["src/**/*", "src/viteTypes.d.ts"],

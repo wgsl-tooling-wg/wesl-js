@@ -21,5 +21,9 @@
     "@types/diff": "^7.0.0",
     "diff": "^7.0.0",
     "wesl": "workspace:*"
+  },
+  "devDependencies": {
+    "mini-parse/vitest-util": "workspace:*"
   }
+
 }

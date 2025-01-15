@@ -3,9 +3,13 @@ import path from "path";
 import { rimraf } from "rimraf";
 import { expect, test } from "vitest";
 import { packagerCli } from "../packagerCli.js";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const testDir = dirname(fileURLToPath(import.meta.url));
 
 test("package two wgsl files", async () => {
-  const projectDir = path.join(".", "src", "test", "wgsl-package");
+  const projectDir = path.join(testDir, "wgsl-package");
   const distDir = path.join(projectDir, "dist");
   const srcDir = path.join(projectDir, "src");
   await rimraf(distDir);
