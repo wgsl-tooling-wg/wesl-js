@@ -55,12 +55,15 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
 
     // identifiers are copied to the output, but with potentially mangled names
     case "ref":
+      return emitRefIdent(e, ctx);
     case "decl":
-      return emitIdent(e, ctx);
+      return emitDeclIdent(e, ctx);
 
     // container elements just emit their child elements
     case "param":
     case "var":
+    case "typeDecl":
+    case "let":
     case "module":
     case "member":
     case "memberRef":
@@ -110,17 +113,19 @@ export function emitContents(
   elem.contents.forEach(e => lowerAndEmitElem(e, ctx));
 }
 
-export function emitIdent(
-  e: RefIdentElem | DeclIdentElem,
-  ctx: EmitContext,
-): void {
-  if ((e.ident as RefIdent).std) {
+export function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {
+  if (e.ident.std) {
     ctx.srcBuilder.add(e.ident.originalName, e.srcModule.src, e.start, e.end);
   } else {
     const declIdent = findDecl(e.ident);
     const mangledName = displayName(declIdent);
     ctx.srcBuilder.add(mangledName!, e.srcModule.src, e.start, e.end);
   }
+}
+
+export function emitDeclIdent(e: DeclIdentElem, ctx: EmitContext): void {
+  const mangledName = displayName(e.ident);
+  ctx.srcBuilder.add(mangledName!, e.srcModule.src, e.start, e.end);
 }
 
 function displayName(declIdent: DeclIdent): string {

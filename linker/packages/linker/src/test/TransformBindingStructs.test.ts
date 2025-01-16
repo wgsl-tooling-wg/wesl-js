@@ -144,11 +144,14 @@ var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
         text '('
         param
         text ') {
-          let '
-        decl %x
-        text ' = '
-        memberRef b.particles
-          synthetic 'particles'
+          '
+        let %x
+          text 'let '
+          typeDecl %x
+            decl %x
+          text ' = '
+          memberRef b.particles
+            synthetic 'particles'
         text ';
         }'
       text '

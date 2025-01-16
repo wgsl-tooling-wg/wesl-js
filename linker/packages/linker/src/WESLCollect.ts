@@ -10,9 +10,11 @@ import {
   ExpressionElem,
   FnElem,
   FnParamElem,
+  TypedDeclElem,
   GlobalVarElem,
   GrammarElem,
   ImportElem,
+  LetElem,
   ModuleElem,
   NameElem,
   OverrideElem,
@@ -24,6 +26,7 @@ import {
   TypeRefElem,
   VarElem,
 } from "./AbstractElems.ts";
+import { elemToString } from "./debug/ASTtoString.ts";
 import {
   ImportTree,
   PathSegment,
@@ -37,6 +40,7 @@ import {
   WeslParseState,
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "./Scope.ts";
+import { scopeToString } from "./debug/ScopeToString.ts";
 
 /** add an elem to the .contents array of the currently containing element */
 function addToOpenElem(cc: CollectContext, elem: AbstractElem): void {
@@ -57,29 +61,57 @@ export function refIdent(cc: CollectContext): RefIdentElem {
   const originalName = src.slice(start, end);
 
   const kind = "ref";
-  const ident: RefIdent = { kind, originalName, ast: cc.app.stable, scope };
+  const ident: RefIdent = {
+    kind,
+    originalName,
+    ast: cc.app.stable,
+    scope,
+    id: identId++,
+  };
   const identElem: RefIdentElem = { kind, start, end, srcModule, ident };
   ident.refIdentElem = identElem;
 
   saveIdent(cc, identElem);
+  addToOpenElem(cc, identElem);
   return identElem;
 }
 
 /** create declaration Ident and add to context */
-export function declIdentElem(cc: CollectContext): DeclIdentElem {
+export function declCollect(cc: CollectContext): DeclIdentElem {
   const { src, start, end } = cc;
   const app = cc.app as WeslParseState;
+  const { scope } = app.context;
   const { srcModule } = app.stable;
   const originalName = src.slice(start, end);
 
   const kind = "decl";
   const declElem = null as any; // we'll set declElem later
-  const ident: DeclIdent = { kind, originalName, scope: null as any, declElem }; // we'll set declElem later
+  const ident: DeclIdent = {
+    declElem,
+    kind,
+    originalName,
+    scope,
+    id: identId++,
+  };
   const identElem: DeclIdentElem = { kind, start, end, srcModule, ident };
 
   saveIdent(cc, identElem);
+  addToOpenElem(cc, identElem);
   return identElem;
 }
+
+export const typedDecl = collectElem(
+  "typeDecl",
+  (cc: CollectContext, openElem: PartElem<TypedDeclElem>) => {
+    const decl = cc.tags.decl_elem?.[0] as DeclIdentElem;
+    const typeRef = cc.tags.typeRefElem?.[0] as TypeRefElem | undefined;
+    const partial: TypedDeclElem = { ...openElem, decl, typeRef };
+    const elem = withTextCover(partial, cc);
+    //    elemToString(elem); //?
+
+    return elem;
+  },
+);
 
 let identId = 0;
 /** add Ident to current open scope, add IdentElem to current open element */
@@ -91,7 +123,6 @@ function saveIdent(
   ident.id = identId++;
   const weslContext: WeslParseContext = cc.app.context;
   weslContext.scope.idents.push(ident);
-  addToOpenElem(cc, identElem);
 }
 
 /** start a new child Scope */
@@ -127,32 +158,50 @@ export type OpenElem<T extends ContainerElem = ContainerElem> =
 export type PartElem<T extends ContainerElem = ContainerElem > = 
   Pick< T, "kind" | "start" | "end" | "contents"> ;
 
+// prettier-ignore
 type VarLikeElem =
   | GlobalVarElem
   | VarElem
+  | LetElem
   | ConstElem
-  | OverrideElem
-  | AliasElem;
+  | OverrideElem;
 
 export function collectVarLike<E extends VarLikeElem>(
   kind: E["kind"],
 ): CollectPair<E> {
   return collectElem(kind, (cc: CollectContext, openElem: PartElem<E>) => {
-    const name = cc.tags.declIdent?.[0] as DeclIdentElem;
-    const typeRef = cc.tags.typeRefElem?.[0] as TypeRefElem;
+    const name = cc.tags.var_name?.[0] as TypedDeclElem;
+    // elemToString(name); //?
     const decl_scope = cc.tags.decl_scope?.[0] as Scope;
-    const partElem = { ...openElem, name, typeRef } as E;
+    const partElem = { ...openElem, name } as E;
     const varElem = withTextCover(partElem, cc);
-    (name.ident as DeclIdent).declElem = varElem as DeclarationElem;
-    name.ident.scope = decl_scope;
+    (name.decl.ident as DeclIdent).declElem = varElem as DeclarationElem;
+    name.decl.ident.scope = decl_scope;
+    // if (decl_scope) {
+    //   scopeToString(decl_scope); 
+    // }
     return varElem;
   });
 }
 
+export const aliasCollect = collectElem(
+  "alias",
+  (cc: CollectContext, openElem: PartElem<AliasElem>) => {
+    const name = cc.tags.alias_name?.[0] as DeclIdentElem;
+    const alias_scope = cc.tags.alias_scope?.[0] as Scope;
+    const typeRef = cc.tags.typeRefElem?.[0] as TypeRefElem;
+    const partElem: AliasElem = { ...openElem, name, typeRef };
+    const aliasElem = withTextCover(partElem, cc);
+    name.ident.scope = alias_scope;
+    name.ident.declElem = aliasElem;
+    return aliasElem;
+  },
+);
+
 export const collectFn = collectElem(
   "fn",
   (cc: CollectContext, openElem: PartElem<FnElem>) => {
-    const name = cc.tags.fnName?.[0] as DeclIdentElem;
+    const name = cc.tags.fn_name?.[0] as DeclIdentElem;
     const body_scope = cc.tags.body_scope?.[0] as Scope;
     const params: FnParamElem[] = cc.tags.fnParam?.flat(3) ?? [];
     const returnType: TypeRefElem | undefined = cc.tags.returnType?.flat(3)[0];
@@ -168,11 +217,10 @@ export const collectFn = collectElem(
 export const collectFnParam = collectElem(
   "param",
   (cc: CollectContext, openElem: PartElem<FnParamElem>) => {
-    const name = cc.tags.paramName?.[0]! as DeclIdentElem;
-    const typeRef = cc.tags.typeRefElem?.[0]! as TypeRefElem;
-    const elem: FnParamElem = { ...openElem, name, typeRef };
+    const name = cc.tags.param_name?.[0]! as TypedDeclElem;
+    const elem: FnParamElem = { ...openElem, name };
     const paramElem = withTextCover(elem, cc);
-    name.ident.declElem = paramElem;
+    name.decl.ident.declElem = paramElem; // TODO is this right?
 
     return paramElem;
   },
@@ -182,7 +230,7 @@ export const collectStruct = collectElem(
   "struct",
   (cc: CollectContext, openElem: PartElem<StructElem>) => {
     // dlog({ attributes: cc.tags.attributes?.flat(8).map(e => e && elemToString(e)) });
-    const name = cc.tags.typeName?.[0] as DeclIdentElem;
+    const name = cc.tags.type_name?.[0] as DeclIdentElem;
     const members = cc.tags.members as StructMemberElem[];
     name.ident.scope = cc.tags.struct_scope?.[0] as Scope;
     const structElem = { ...openElem, name, members };
@@ -249,7 +297,7 @@ export const memberRefCollect = collectElem(
   },
 );
 
-export function collectNameElem(cc: CollectContext): NameElem {
+export function nameCollect(cc: CollectContext): NameElem {
   const { start, end, src, app } = cc;
   const { srcModule } = app.stable as WeslAST;
   const name = src.slice(start, end);

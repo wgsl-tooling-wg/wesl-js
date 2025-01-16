@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { astToString } from "../debug/ASTtoString.ts";
 import { importToString } from "../debug/ImportToString.ts";
-import { parseTest } from "./TestUtil.ts";
+import { parseTest, parseTestRaw } from "./TestUtil.ts";
 
 test("parse empty string", () => {
   const ast = parseTest("");
@@ -61,12 +61,13 @@ test("parse global var", () => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      gvar x:i32
+      gvar %x : i32
         text 'var '
-        decl %x
-        text ': '
-        type i32
-          ref i32
+        typeDecl %x : i32
+          decl %x
+          text ': '
+          type i32
+            ref i32
         text ' = 1;'"
   `);
 });
@@ -93,9 +94,10 @@ test("parse const", () => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      const y
+      const %y
         text 'const '
-        decl %y
+        typeDecl %y
+          decl %y
         text ' = 11u;'"
   `);
 });
@@ -106,12 +108,13 @@ test("parse override ", () => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      override z:f32
+      override %z : f32
         text 'override '
-        decl %z
-        text ': '
-        type f32
-          ref f32
+        typeDecl %z : f32
+          decl %z
+          text ': '
+          type f32
+            ref f32
         text ';'"
   `);
 });
@@ -245,7 +248,7 @@ test("parse top level var", () => {
     "module
       text '
         '
-      gvar u:Uniforms
+      gvar %u : Uniforms
         attribute @group('0')
           text '@group('
           expression '0'
@@ -258,10 +261,11 @@ test("parse top level var", () => {
             text '0'
           text ')'
         text ' var<uniform> '
-        decl %u
-        text ': '
-        type Uniforms
-          ref Uniforms
+        typeDecl %u : Uniforms
+          decl %u
+          text ': '
+          type Uniforms
+            ref Uniforms
         text ';'
       text '      
 
@@ -288,15 +292,17 @@ test("parse top level override and const", () => {
     "module
       text '
         '
-      override x
+      override %x
         text 'override '
-        decl %x
+        typeDecl %x
+          decl %x
         text ' = 21;'
       text '
         '
-      const y
+      const %y
         text 'const '
-        decl %y
+        typeDecl %y
+          decl %y
         text ' = 1;'
       text '
 
@@ -397,9 +403,10 @@ test("fnDecl parses :type specifier in fn args", () => {
         text '('
         param
           decl %a
-          text ': '
-          type MyType
-            ref MyType
+          typeDecl %a : MyType
+            text ': '
+            type MyType
+              ref MyType
         text ') { }'
       text '
       '"
@@ -423,12 +430,13 @@ test("fnDecl parses :type specifier in fn block", () => {
         decl %foo
         text '() { 
           '
-        var b:MyType
+        var %b : MyType
           text 'var '
-          decl %b
-          text ':'
-          type MyType
-            ref MyType
+          typeDecl %b : MyType
+            decl %b
+            text ':'
+            type MyType
+              ref MyType
         text ';
         }'
       text '
@@ -451,13 +459,14 @@ test("parse type in <template> in fn args", () => {
         text '('
         param
           decl %a
-          text ': '
-          type vec2<MyStruct>
-            ref vec2
-            text '<'
-            type MyStruct
-              ref MyStruct
-            text '>'
+          typeDecl %a : vec2<MyStruct>
+            text ': '
+            type vec2<MyStruct>
+              ref vec2
+              text '<'
+              type MyStruct
+                ref MyStruct
+              text '>'
         text ') { }'
       text ';'"
   `);
@@ -476,16 +485,17 @@ test("parse simple templated type", () => {
         text '('
         param
           decl %a
-          text ': '
-          type array<MyStruct, '4'>
-            ref array
-            text '<'
-            type MyStruct
-              ref MyStruct
-            text ','
-            expression '4'
-              text '4'
-            text '>'
+          typeDecl %a : array<MyStruct, '4'>
+            text ': '
+            type array<MyStruct, '4'>
+              ref array
+              text '<'
+              type MyStruct
+                ref MyStruct
+              text ','
+              expression '4'
+                text '4'
+              text '>'
         text ') { }'"
   `);
 });
@@ -502,20 +512,21 @@ test("parse nested template that ends with >> ", () => {
         text '('
         param
           decl %a
-          text ': '
-          type vec2<array<MyStruct, '4'>>
-            ref vec2
-            text '<'
-            type array<MyStruct, '4'>
-              ref array
-              text ' <'
-              type MyStruct
-                ref MyStruct
-              text ','
-              expression '4'
-                text '4'
+          typeDecl %a : vec2<array<MyStruct, '4'>>
+            text ': '
+            type vec2<array<MyStruct, '4'>>
+              ref vec2
+              text '<'
+              type array<MyStruct, '4'>
+                ref array
+                text ' <'
+                type MyStruct
+                  ref MyStruct
+                text ','
+                expression '4'
+                  text '4'
+                text '>'
               text '>'
-            text '>'
         text ') { }'"
   `);
 });
@@ -527,19 +538,20 @@ test("parse type in <template> in global var", () => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      gvar x:array<MyStruct, '8'>
+      gvar %x : array<MyStruct, '8'>
         text 'var<private> '
-        decl %x
-        text ':'
-        type array<MyStruct, '8'>
-          ref array
-          text '<'
-          type MyStruct
-            ref MyStruct
-          text ', '
-          expression '8'
-            text '8'
-          text '>'
+        typeDecl %x : array<MyStruct, '8'>
+          decl %x
+          text ':'
+          type array<MyStruct, '8'>
+            ref array
+            text '<'
+            type MyStruct
+              ref MyStruct
+            text ', '
+            expression '8'
+              text '8'
+            text '>'
         text ';'"
   `);
 });
@@ -561,9 +573,10 @@ test("parse for(;;) {} not as a fn call", () => {
         decl %main
         text '() {
           for ('
-        var a
+        var %a
           text 'var '
-          decl %a
+          typeDecl %a
+            decl %a
           text ' = 1'
         text '; '
         ref a
@@ -636,13 +649,14 @@ test("parse fn with attributes and suffix comma", () => {
             text '@builtin(global_invocation_id)'
           text ' '
           decl %grid
-          text ': '
-          type vec3<u32>
-            ref vec3
-            text '<'
-            type u32
-              ref u32
-            text '>'
+          typeDecl %grid : vec3<u32>
+            text ': '
+            type vec3<u32>
+              ref vec3
+              text '<'
+              type u32
+                ref u32
+              text '>'
         text ',
           '
         param
@@ -650,9 +664,10 @@ test("parse fn with attributes and suffix comma", () => {
             text '@builtin(local_invocation_index)'
           text ' '
           decl %localIndex
-          text ': '
-          type u32
-            ref u32
+          typeDecl %localIndex : u32
+            text ': '
+            type u32
+              ref u32
         text ',  
       ) { }'
       text '
@@ -672,15 +687,17 @@ test("parse fn", () => {
         text '('
         param
           decl %x
-          text ': '
-          type i32
-            ref i32
+          typeDecl %x : i32
+            text ': '
+            type i32
+              ref i32
         text ', '
         param
           decl %y
-          text ': '
-          type u32
-            ref u32
+          typeDecl %y : u32
+            text ': '
+            type u32
+              ref u32
         text ') -> '
         type f32
           ref f32
@@ -765,9 +782,10 @@ test("parse switch statement", () => {
         text '('
         param
           decl %x
-          text ': '
-          type i32
-            ref i32
+          typeDecl %x : i32
+            text ': '
+            type i32
+              ref i32
         text ') {
           switch ('
         ref x
@@ -804,9 +822,10 @@ test("parse switch statement-2", () => {
         text '('
         param
           decl %x
-          text ': '
-          type u32
-            ref u32
+          typeDecl %x : u32
+            text ': '
+            type u32
+              ref u32
         text ') {
           switch ( '
         ref code
@@ -837,9 +856,10 @@ test("parse struct constructor in assignment", () => {
         decl %main
         text '() {
           '
-        var x
+        var %x
           text 'var '
-          decl %x
+          typeDecl %x
+            decl %x
           text ' = '
           ref AStruct
           text '(1u)'
@@ -866,13 +886,16 @@ test("parse struct.member (component_or_swizzle)", () => {
         text 'fn '
         decl %main
         text '() {
-            let '
-        decl %x
-        text ' = '
-        memberRef u.frame
-          ref u
-          text '.'
-          name frame
+            '
+        let %x
+          text 'let '
+          typeDecl %x
+            decl %x
+          text ' = '
+          memberRef u.frame
+            ref u
+            text '.'
+            name frame
         text ';
         }'
       text '
@@ -885,19 +908,20 @@ test("var<workgroup> work: array<u32, 128>;", ctx => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      gvar work:array<u32, '128'>
+      gvar %work : array<u32, '128'>
         text 'var<workgroup> '
-        decl %work
-        text ': '
-        type array<u32, '128'>
-          ref array
-          text '<'
-          type u32
-            ref u32
-          text ', '
-          expression '128'
-            text '128'
-          text '>'
+        typeDecl %work : array<u32, '128'>
+          decl %work
+          text ': '
+          type array<u32, '128'>
+            ref array
+            text '<'
+            type u32
+              ref u32
+            text ', '
+            expression '128'
+              text '128'
+            text '>'
         text ';'"
   `);
 });
@@ -919,16 +943,17 @@ test("var foo: vec2<f32 >= vec2( 0.5, -0.5);", ctx => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      gvar foo:vec2<f32>
+      gvar %foo : vec2<f32>
         text 'var '
-        decl %foo
-        text ': '
-        type vec2<f32>
-          ref vec2
-          text '<'
-          type f32
-            ref f32
-          text ' >'
+        typeDecl %foo : vec2<f32>
+          decl %foo
+          text ': '
+          type vec2<f32>
+            ref vec2
+            text '<'
+            type f32
+              ref f32
+            text ' >'
         text '= '
         ref vec2
         text '( 0.5, -0.5);'"
@@ -1006,15 +1031,16 @@ test(`parse ptr`, ctx => {
     "module
       text '
         '
-      gvar particles:ptr<storage, f32, read_write>
+      gvar %particles : ptr<storage, f32, read_write>
         text 'var '
-        decl %particles
-        text ': '
-        type ptr<storage, f32, read_write>
-          text 'ptr<storage, '
-          type f32
-            ref f32
-          text ', read_write>'
+        typeDecl %particles : ptr<storage, f32, read_write>
+          decl %particles
+          text ': '
+          type ptr<storage, f32, read_write>
+            text 'ptr<storage, '
+            type f32
+              ref f32
+            text ', read_write>'
         text ';'
       text '
       '"
@@ -1031,19 +1057,20 @@ test(`parse ptr with internal array`, ctx => {
     "module
       text '
         '
-      gvar particles:ptr<storage, array<f32>, read_write>
+      gvar %particles : ptr<storage, array<f32>, read_write>
         text 'var '
-        decl %particles
-        text ': '
-        type ptr<storage, array<f32>, read_write>
-          text 'ptr<storage, '
-          type array<f32>
-            ref array
-            text '<'
-            type f32
-              ref f32
-            text '>'
-          text ', read_write>'
+        typeDecl %particles : ptr<storage, array<f32>, read_write>
+          decl %particles
+          text ': '
+          type ptr<storage, array<f32>, read_write>
+            text 'ptr<storage, '
+            type array<f32>
+              ref array
+              text '<'
+              type f32
+                ref f32
+              text '>'
+            text ', read_write>'
         text ';'
       text '
       '"
@@ -1111,14 +1138,17 @@ test(`parse struct reference`, () => {
       fn f()
         text 'fn '
         decl %f
-        text '() { let '
-        decl %x
-        text ' = '
-        memberRef a.b
-          ref a
-          text '.'
-          name b
-          text '[0]'
+        text '() { '
+        let %x
+          text 'let '
+          typeDecl %x
+            decl %x
+          text ' = '
+          memberRef a.b
+            ref a
+            text '.'
+            name b
+            text '[0]'
         text '; }'
       text ';
       '"
@@ -1158,5 +1188,74 @@ test("member reference with extra components", () => {
       }'
       text '
      '"
+  `);
+});
+
+test("parse let declaration", () => {
+  const src = `
+    fn vertexMain() {
+      let char = array<u32, 2>(0, 0);
+    }
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn vertexMain()
+        text 'fn '
+        decl %vertexMain
+        text '() {
+          '
+        let %char
+          text 'let '
+          typeDecl %char
+            decl %char
+          text ' = '
+          ref array
+          text '<'
+          type u32
+            ref u32
+          text ', '
+          expression '2'
+            text '2'
+          text '>(0, 0)'
+        text ';
+        }'
+      text '
+      '"
+  `);
+});
+
+test("parse let declaration with type", () => {
+  const src = `
+    fn vertexMain() {
+      let char : u32 = 0;
+    }
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn vertexMain()
+        text 'fn '
+        decl %vertexMain
+        text '() {
+          '
+        let %char : u32
+          text 'let '
+          typeDecl %char : u32
+            decl %char
+            text ' : '
+            type u32
+              ref u32
+          text ' = 0'
+        text ';
+        }'
+      text '
+      '"
   `);
 });

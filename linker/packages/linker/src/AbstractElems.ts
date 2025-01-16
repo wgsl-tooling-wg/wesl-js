@@ -22,8 +22,10 @@ export type ContainerElem =
   | ConstElem
   | ExpressionElem
   | FnElem
+  | TypedDeclElem
   | GlobalVarElem
   | ImportElem
+  | LetElem
   | ModuleElem
   | OverrideElem
   | FnParamElem
@@ -35,10 +37,10 @@ export type ContainerElem =
 
 // prettier-ignore
 export type TerminalElem = 
-  | TextElem 
+  | DeclIdentElem
   | NameElem 
-  | RefIdentElem 
-  | DeclIdentElem;
+  | RefIdentElem
+  | TextElem;
 
 export type DeclarationElem =
   | AliasElem
@@ -103,6 +105,13 @@ export interface SyntheticElem {
 
 /* ------   Container Elements  (contain other elements)  ------   */
 
+/** a declaration identifer with a possible type */
+export interface TypedDeclElem extends ElemWithContentsBase {
+  kind: "typeDecl";
+  decl: DeclIdentElem;
+  typeRef?: TypeRefElem; // TODO Consider a variant for fn params and alias where typeRef is required
+}
+
 /** an alias statement */
 export interface AliasElem extends ElemWithContentsBase {
   kind: "alias";
@@ -125,8 +134,7 @@ export interface ConstAssertElem extends ElemWithContentsBase {
 /** a const declaration */
 export interface ConstElem extends ElemWithContentsBase {
   kind: "const";
-  name: DeclIdentElem;
-  typeRef?: TypeRefElem;
+  name: TypedDeclElem;
 }
 
 /** an expression (generally we don't need details of expressions, just their contained idents) */
@@ -145,8 +153,7 @@ export interface FnElem extends ElemWithContentsBase {
 /** a global variable declaration (at the root level) */
 export interface GlobalVarElem extends ElemWithContentsBase {
   kind: "gvar";
-  name: DeclIdentElem;
-  typeRef?: TypeRefElem;
+  name: TypedDeclElem;
 }
 
 /** an import statement */
@@ -163,15 +170,13 @@ export interface ModuleElem extends ElemWithContentsBase {
 /** an override declaration */
 export interface OverrideElem extends ElemWithContentsBase {
   kind: "override";
-  name: DeclIdentElem;
-  typeRef?: TypeRefElem;
+  name: TypedDeclElem;
 }
 
 /** a parameter in a function declaration */
 export interface FnParamElem extends ElemWithContentsBase {
   kind: "param";
-  name: DeclIdentElem;
-  typeRef: TypeRefElem;
+  name: TypedDeclElem;
 }
 
 /** simple references to structures, like myStruct.bar
@@ -211,6 +216,10 @@ export interface TypeRefElem extends ElemWithContentsBase {
 /** a variable declaration */
 export interface VarElem extends ElemWithContentsBase {
   kind: "var";
-  name: DeclIdentElem;
-  typeRef?: TypeRefElem;
+  name: TypedDeclElem;
+}
+
+export interface LetElem extends ElemWithContentsBase {
+  kind: "let";
+  name: TypedDeclElem;
 }

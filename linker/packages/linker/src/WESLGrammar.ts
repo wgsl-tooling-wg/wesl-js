@@ -26,17 +26,19 @@ import {
   collectFn,
   collectFnParam,
   collectModule,
-  collectNameElem,
+  nameCollect,
   collectSimpleElem,
   collectStruct,
   collectStructMember,
   collectVarLike,
-  declIdentElem,
   expressionCollect,
   memberRefCollect,
   refIdent,
   scopeCollect,
   typeRefCollect,
+  declCollect,
+  typedDecl,
+  aliasCollect,
 } from "./WESLCollect.ts";
 import { bracketTokens, mainTokens } from "./WESLTokens.ts";
 
@@ -126,14 +128,14 @@ const opt_attributes = repeat(attribute);
 // prettier-ignore
 export const typeNameDecl = 
   req(
-    word                            .collect(declIdentElem, "typeName")
+    word                            .collect(declCollect, "type_name")
   );
 
 /** parse an identifier into a TypeNameElem */
 // prettier-ignore
 export const fnNameDecl = 
   req(
-    word                            .collect(declIdentElem, "fnName"),
+    word                            .collect(declCollect, "fn_name"),
     "missing fn name",
   );
 
@@ -171,17 +173,19 @@ export const type_specifier: Parser<any> = tagScope(
 )                                   .ctag("typeRefElem");
 
 // prettier-ignore
-const optionally_typed_ident = seq(
-  word                              .collect(declIdentElem, "declIdent"),
-  opt(seq(":", type_specifier)),
-);
+const optionally_typed_ident = tagScope(
+  seq(
+    word                              .collect(declCollect, "decl_elem"),
+    opt(seq(":", type_specifier)),
+  )                                   .collect(typedDecl)
+)                                     .ctag("var_name");
 
 const req_optionally_typed_ident = req(optionally_typed_ident);
 
 // prettier-ignore
 export const struct_member = seq(
   opt_attributes,
-  word                              .collect(collectNameElem, "nameElem"),
+  word                              .collect(nameCollect, "nameElem"),
   ":",
   req(type_specifier),
 )                                   .collect(collectStructMember, "members");
@@ -209,8 +213,8 @@ export const fn_call = seq(
 const fnParam = tagScope(
   seq(
     opt_attributes,
-    word                              .collect(declIdentElem, "paramName"),
-    opt(seq(":", req(type_specifier))),
+    word                              .collect(declCollect, "decl_elem"),
+    opt(seq(":", req(type_specifier))).collect(typedDecl, "param_name"),
   )                                   .collect(collectFnParam),
 )                                     .ctag("fnParam");
 
@@ -221,14 +225,15 @@ const local_variable_decl = seq(
   "var",
   () => opt_template_list,
   req_optionally_typed_ident,
-  opt(seq("=", () => expression)),
-)                                     .collect(collectVarLike("var"), "variable_decl");
+  opt(seq("=", () => expression)),    // no decl_scope, but I think that's ok
+)                                     .collect(collectVarLike("var"));
 
 // prettier-ignore
 const global_variable_decl = seq(
   "var",
   () => opt_template_words,
   req_optionally_typed_ident,
+                                      // TODO shouldn't decl_scope include the ident type?
   opt(seq("=", () => expression       .collect(scopeCollect(), "decl_scope"))),
 );
 
@@ -276,7 +281,7 @@ const primary_expression = or(
 // prettier-ignore
 const component_or_swizzle = repeatPlus(
   or(
-    seq(".", word                          .collect(collectNameElem, "component")),
+    seq(".", word                          .collect(nameCollect, "component")),
     seq("[", () => expression, req("]")),
   ),
 );
@@ -286,7 +291,7 @@ const component_or_swizzle = repeatPlus(
 const simple_component_reference = tagScope(
   seq(
     word                              .collect(refIdent, "structRef"),
-    seq(".", word                     .collect(collectNameElem, "component")),
+    seq(".", word                     .collect(nameCollect, "component")),
     opt(component_or_swizzle),
   )                                   .collect(memberRefCollect),
 );
@@ -465,11 +470,20 @@ const lhs_expression: Parser<any> = or(
   seq("*", () => lhs_expression),
 );
 
-const variable_or_value_statement = or(
-  // Also covers the = expression case
-  local_variable_decl,
-  seq("const", req_optionally_typed_ident, req("="), expression),
-  seq("let", req_optionally_typed_ident, req("="), expression),
+// prettier-ignore
+const variable_or_value_statement = tagScope(
+    or(
+    // Also covers the = expression case
+    local_variable_decl,
+    seq("const", req_optionally_typed_ident, req("="), expression), // TODO collect
+    seq(
+      "let", 
+      req_optionally_typed_ident          .ctag("var_name"), // TODO scope??
+      req("="),
+      expression
+      )                                   .collect(collectVarLike("let"),
+    ),
+  )
 );
 
 const variable_updating_statement = or(
@@ -518,11 +532,11 @@ const global_value_decl = or(
 // prettier-ignore
 export const global_alias = seq(
   "alias",
-  req(word)                           .collect(declIdentElem, "declIdent"),
+  req(word)                           .collect(declCollect, "alias_name"),
   req("="),
-  req(type_specifier)                 .collect(scopeCollect(), "decl_scope"),
+  req(type_specifier)                 .collect(scopeCollect(), "alias_scope"),
   req(";"),
-)                                     .collect(collectVarLike("alias"), "global_alias");
+)                                     .collect(aliasCollect);
 
 // prettier-ignore
 const const_assert = 
@@ -551,7 +565,7 @@ export const global_decl = tagScope(
     seq(
       opt_attributes, 
       global_variable_decl, 
-      ";")                          .collect(collectVarLike("gvar"), "g_variable_decl"),
+      ";")                          .collect(collectVarLike("gvar")),
     global_value_decl,
     ";",
     global_alias,

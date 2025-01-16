@@ -1,6 +1,7 @@
 import { debugNames, srcLog } from "mini-parse";
+import { dlog } from "berry-pretty";
 import { DeclarationElem } from "./AbstractElems.ts";
-import { identToString } from "./debug/ScopeToString.ts";
+import { identToString, scopeToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, WeslAST } from "./ParseWESL.ts";
@@ -97,13 +98,15 @@ function bindIdentsRecursive(
 
         if (foundDecl) {
           ident.refersTo = foundDecl;
+          // dlog(`--- ident now linked ${identToString(ident)}`);
           if (!knownDecls.has(foundDecl)) {
+            // dlog(`  > found new decl: ${identToString(foundDecl)}`);
             knownDecls.add(foundDecl);
             setDisplayName(ident.originalName, foundDecl, globalNames);
             if (foundDecl.declElem && isGlobal(foundDecl.declElem)) {
+              // dlog(`  > pushing new decl: ${identToString(foundDecl)}`);
               newDecls.push(foundDecl);
             }
-            // dlog(`  > found new decl: ${identToString(foundDecl)}`);
           }
         } else if (stdWgsl(ident.originalName)) {
           ident.std = true;

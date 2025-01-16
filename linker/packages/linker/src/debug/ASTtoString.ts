@@ -56,6 +56,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     addSynthetic(elem, str) ||
     addImport(elem, str) ||
     addRefIdent(elem, str) ||
+    addTypedDeclIdent(elem, str) ||
     addDeclIdent(elem, str);
 }
 
@@ -66,15 +67,12 @@ function addVarishFields(
   const { kind } = elem;
   if (
     kind === "var" ||
+    kind === "let" ||
     kind === "gvar" ||
     kind === "const" ||
     kind === "override"
   ) {
-    const { name, typeRef } = elem;
-    str.add(" " + name.ident.originalName);
-    if (typeRef) {
-      str.add(":" + typeRefElemToString(typeRef));
-    }
+    addTypedDeclIdent(elem.name, str);
     return true;
   }
 }
@@ -103,7 +101,22 @@ function addMemberRef(elem: AbstractElem, str: LineWrapper): true | undefined {
 
 function addDeclIdent(elem: AbstractElem, str: LineWrapper): true | undefined {
   if (elem.kind === "decl") {
-    str.add(" %" + elem.ident.originalName);
+    const { ident } = elem;
+    str.add(" %" + ident.originalName);
+    return true;
+  }
+}
+
+function addTypedDeclIdent(
+  elem: AbstractElem,
+  str: LineWrapper,
+): true | undefined {
+  if (elem.kind === "typeDecl") {
+    const { decl, typeRef } = elem;
+    str.add(" %" + decl.ident.originalName);
+    if (typeRef) {
+      str.add(" : " + typeRefElemToString(typeRef));
+    }
     return true;
   }
 }
@@ -191,7 +204,14 @@ function addFnFields(elem: AbstractElem, str: LineWrapper): true | undefined {
     str.add("(");
     const paramStrs = params
       .map(
-        p => p.name.ident.originalName + ": " + typeRefElemToString(p.typeRef),
+        (
+          p, // TODO DRY
+        ) => {
+          const { name } = p;
+          const { originalName } = name.decl.ident;
+          const typeRef = typeRefElemToString(name.typeRef!);
+          return originalName + ": " + typeRef;
+        },
       )
       .join(", ");
     str.add(paramStrs);
