@@ -9,7 +9,7 @@ import {
   SyntheticElem,
 } from "./AbstractElems.ts";
 import { declUniqueName } from "./BindIdents.ts";
-import { visitAst } from "./LinkerUtil.ts";
+import { elemLog, visitAst } from "./LinkerUtil.ts";
 import { findDecl } from "./LowerAndEmit.ts";
 import { WeslAST } from "./ParseWESL.ts";
 import {
@@ -19,6 +19,7 @@ import {
 } from "./RawEmit.ts";
 import { RefIdent } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
+import { identToString } from "./debug/ScopeToString.ts";
 
 /**
  * Transform binding structures into binding variables by mutating the AST.
@@ -172,12 +173,16 @@ function refersToBindingStruct(
 
 /** If this identifier ultimately refers to a struct type, return the struct declaration */
 function traceToStruct(ident: RefIdent): StructTrace | undefined {
-  const decl = findDecl(ident);
-  const declElem = decl.declElem;
+  const decl = findDecl(ident);  
+  const declElem = decl.declElem; 
   // for now only handle the case where the reference points at a fn parameter
   if (declElem.kind === "param") {
-    const name = declElem.typeRef.name;
+    const name = declElem.name.typeRef!.name;
     if (typeof name !== "string") {
+      if (name.std) {
+        return undefined;
+      }
+      
       const paramDecl = findDecl(name);
       const structElem = paramDecl.declElem;
       if (structElem.kind === "struct") {
