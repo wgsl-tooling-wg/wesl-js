@@ -23,7 +23,7 @@
     "wesl": "workspace:*"
   },
   "devDependencies": {
-    "mini-parse/vitest-util": "workspace:*"
+    "mini-parse": "workspace:*"
   }
 
 }
