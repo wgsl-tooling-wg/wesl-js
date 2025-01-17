@@ -183,12 +183,14 @@ const optionally_typed_ident = tagScope(
 const req_optionally_typed_ident = req(optionally_typed_ident);
 
 // prettier-ignore
-export const struct_member = seq(
-  opt_attributes,
-  word                              .collect(nameCollect, "nameElem"),
-  ":",
-  req(type_specifier),
-)                                   .collect(collectStructMember, "members");
+export const struct_member = tagScope(
+  seq(
+    opt_attributes,
+    word                              .collect(nameCollect, "nameElem"),
+    ":",
+    req(type_specifier),
+  )                                   .collect(collectStructMember)
+)                                     .ctag("members");
 
 // prettier-ignore
 export const struct_decl = seq(

@@ -150,7 +150,7 @@ test("parse struct", () => {
           type i32
             ref i32
         text ', '
-        member bar: i32
+        member zip: u32
           name zip
           text ': '
           type u32
@@ -1315,3 +1315,17 @@ test("separator in fn call ", () => {
       '"
   `);
 });
+
+test("binding struct", () => {
+  const src = `
+    struct Bindings {
+      @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
+      @group(0) @binding(1) uniforms: ptr<uniform, Uniforms>, 
+      @group(0) @binding(2) tex: texture_2d<rgba8unorm>,
+      @group(0) @binding(3) samp: sampler,
+    }
+  `
+  const ast = parseTestRaw(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`tbd`);
+})
