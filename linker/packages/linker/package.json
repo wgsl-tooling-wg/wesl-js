@@ -12,6 +12,7 @@
     "build:sizetest": "vite build -c sizetest.vite.config.js",
     "build:brotli-size": "tsx ./scripts/brotli.ts dist/sized.cjs",
     "build:size": "run-s build:sizetest build:brotli-size",
+    "typecheck": "tsc",
     "format": "prettier . --write",
     "lint": "eslint src",
     "organize": "organize-imports-cli tsconfig.json",

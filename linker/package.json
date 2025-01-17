@@ -4,6 +4,7 @@
   "scripts": {
     "bump": "tsx scripts/bump.ts --version",
     "build:all": "pnpm --filter \"./packages/**\" build",
+    "typecheck:all": "pnpm --filter \"./packages/**\" typecheck",
     "format:all": "pnpm --filter \"./packages/**\" format",
     "lint:all": "pnpm --no-bail --filter \"./packages/**\" lint",
     "organize:all": "pnpm --filter \"./packages/**\" organize",
