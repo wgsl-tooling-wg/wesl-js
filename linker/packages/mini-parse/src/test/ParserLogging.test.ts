@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { srcLine, srcLog } from "../ParserLogging.js";
-import { _withBaseLogger } from "../ParserTracing.js";
 import { logCatch } from "../test-util/LogCatcher.js";
+import { withLogger } from "../WrappedLog.js";
 
 test("srcLine", () => {
   const src1 = "1";
@@ -29,7 +29,7 @@ test("srcLog", () => {
   const src = `a\n12345\nb`;
 
   const { log, logged } = logCatch();
-  _withBaseLogger(log, () => {
+  withLogger(log, () => {
     srcLog(src, 5, "uh-oh:");
   });
   expect(logged()).toMatchInlineSnapshot(`
@@ -47,7 +47,7 @@ test("srcLog on longer example", () => {
     fn support(d:D) { bar(d); }
     `;
   const { log, logged } = logCatch();
-  _withBaseLogger(log, () => {
+  withLogger(log, () => {
     srcLog(src, 101, "ugh:");
   });
   expect(logged()).toMatchInlineSnapshot(`
@@ -61,7 +61,7 @@ test("srcLog with two carets", () => {
   const src = `a\n12345\nb`;
 
   const { log, logged } = logCatch();
-  _withBaseLogger(log, () => {
+  withLogger(log, () => {
     srcLog(src, [2, 7], "found:");
   });
   expect(logged()).toMatchInlineSnapshot(`

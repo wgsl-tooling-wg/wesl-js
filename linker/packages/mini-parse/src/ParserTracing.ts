@@ -1,4 +1,5 @@
 import { Parser, ParserContext, setTraceName } from "./Parser.js";
+import { log } from "./WrappedLog.js";
 
 /** true if parser tracing is enabled */
 export let tracing = false;
@@ -8,9 +9,6 @@ export let tracePos = false;
 
 /** true if parser debug names are enabled */
 export let debugNames = false;
-
-/** base logger. (can be overriden to a capturing logger for tests) */
-export let logger = console.log;
 
 /** no-op logger, for when tracing is disabled */
 const noLog: typeof console.log = () => {};
@@ -63,16 +61,6 @@ export interface TraceContext {
   successOnly?: boolean;
 }
 
-/** use temporary logger for tests */
-export function _withBaseLogger<T>(logFn: typeof console.log, fn: () => T): T {
-  const orig = logger;
-  try {
-    logger = logFn;
-    return fn();
-  } finally {
-    logger = orig;
-  }
-}
 
 export interface TraceLogging {
   tstate: ParserContext;
@@ -130,7 +118,7 @@ function withTraceLoggingInternal<T>(
   if (logging) {
     const pad = currentIndent(_trace);
     tlog = (...msgs: any[]) => {
-      logger(`${pad}${msgs[0]}`, ...msgs.slice(1));
+      log(`${pad}${msgs[0]}`, ...msgs.slice(1));
     };
   }
 
@@ -139,7 +127,7 @@ function withTraceLoggingInternal<T>(
     _trace = { ..._trace, indent: _trace.indent + 1 };
   }
 
-  return withLogger(tlog, () => fn({ ...ctx, _trace }));
+  return withParserLogger(tlog, () => fn({ ...ctx, _trace }));
 }
 
 /** padding for current indent level */
@@ -148,7 +136,7 @@ function currentIndent(ctx?: TraceContext): string {
 }
 
 /** use temporary logger, to turn tracing on/off */
-function withLogger<T>(logFn: typeof console.log, fn: () => T): T {
+function withParserLogger<T>(logFn: typeof console.log, fn: () => T): T {
   const orig = parserLog;
   try {
     parserLog = logFn;

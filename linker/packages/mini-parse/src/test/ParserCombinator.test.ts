@@ -29,7 +29,8 @@ import {
   withSep,
   withTags,
 } from "../ParserCombinator.js";
-import { enableTracing, _withBaseLogger } from "../ParserTracing.js";
+import { enableTracing } from "../ParserTracing.js";
+import { withLogger } from "../WrappedLog.js";
 
 const m = testTokens;
 
@@ -157,7 +158,7 @@ test("tracing", () => {
   const p = repeat(seq(kind(m.word)).traceName("wordz")).trace();
 
   enableTracing();
-  _withBaseLogger(log, () => {
+  withLogger(log, () => {
     testParse(p, src);
   });
   expect(logged()).toMatchSnapshot();
@@ -167,7 +168,7 @@ test("infinite loop detection", () => {
   const p = repeat(not("x"));
   const { log, logged } = logCatch();
 
-  _withBaseLogger(log, () => {
+  withLogger(log, () => {
     testParse(p, "y");
   });
 
@@ -270,7 +271,7 @@ test("req logs a message on failure", () => {
   const p = seq("a", req("b"));
   const { log, logged } = logCatch();
 
-  _withBaseLogger(log, () => {
+  withLogger(log, () => {
     testParse(p, src);
   });
   expect(logged()).toMatchInlineSnapshot(`

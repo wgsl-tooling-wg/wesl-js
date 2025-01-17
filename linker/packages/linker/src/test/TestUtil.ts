@@ -1,4 +1,4 @@
-import { NoTags, Parser, TagRecord, _withBaseLogger } from "mini-parse";
+import { NoTags, Parser, TagRecord, withLogger } from "mini-parse";
 import {
   expectNoLog,
   logCatch,
@@ -52,7 +52,7 @@ export function linkWithLog(...rawWgsl: string[]): {
 } {
   const { log, logged } = logCatch();
   let result = "???";
-  _withBaseLogger(log, () => {
+  withLogger(log, () => {
     try {
       result = linkTest(...rawWgsl);
     } catch (e) {}

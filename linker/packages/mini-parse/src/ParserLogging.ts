@@ -1,6 +1,7 @@
 import { ExtendedResult, ParserContext } from "./Parser.js";
-import { logger, parserLog, tracePos, tracing } from "./ParserTracing.js";
+import { parserLog, tracePos, tracing } from "./ParserTracing.js";
 import { SrcMap } from "./SrcMap.js";
+import { log } from "./WrappedLog.js";
 
 /** log an message along with the source line and a caret indicating the error position in the line
  * @param pos is the position the source string, or if src is a SrcMap, then
@@ -11,7 +12,7 @@ export function srcLog(
   pos: number | [number, number],
   ...msgs: any[]
 ): void {
-  logInternal(logger, src, pos, ...msgs);
+  logInternal(log, src, pos, ...msgs);
 }
 
 /** log a message along with src line, but only if tracing is active in the current parser */

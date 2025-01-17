@@ -10,7 +10,7 @@ import {
   TokenMatcher,
   tokenMatcher,
   tracing,
-  _withBaseLogger,
+  withLogger,
 } from "mini-parse";
 import { expect } from "vitest";
 import { logCatch } from "./LogCatcher.js";
@@ -51,7 +51,7 @@ export function expectNoLog<T>(fn: () => T): T {
   let result: T | undefined = undefined;
 
   try {
-    result = _withBaseLogger(log, fn);
+    result = withLogger(log, fn);
   } finally {
     if (logged()) {
       console.log(logged());
