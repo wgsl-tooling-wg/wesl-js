@@ -1259,3 +1259,59 @@ test("parse let declaration with type", () => {
       '"
   `);
 });
+
+
+test("separator in let assignment", () => {
+  const src = `
+    fn vertexMain() {
+      let a = b::c;
+    }
+  `;
+  const ast = parseTestRaw(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn vertexMain()
+        text 'fn '
+        decl %vertexMain
+        text '() {
+          '
+        let %a
+          text 'let '
+          typeDecl %a
+            decl %a
+          text ' = '
+          ref b::c
+        text ';
+        }'
+      text '
+      '"
+  `);
+});
+
+test("separator in fn call ", () => {
+  const src = `
+    fn vertexMain() {
+      b::c();
+    }
+  `;
+  const ast = parseTestRaw(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn vertexMain()
+        text 'fn '
+        decl %vertexMain
+        text '() {
+          '
+        ref b::c
+        text '();
+        }'
+      text '
+      '"
+  `);
+});

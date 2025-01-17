@@ -159,15 +159,11 @@ function setDisplayName(
   globalNames: Set<string>,
 ): void {
   if (!decl.mangledName) {
-    // if (!decl.declElem) {
-    //   console.log(
-    //     `--- decl ident ${identToString(decl)} has no declElem attached`,)
-    // } else
     if (decl.declElem && isGlobal(decl.declElem)) {
-      decl.mangledName = declUniqueName(proposedName, globalNames);
-      // dlog(`  > mangle global decl: ${identToString(decl)}`);
+      const sep = proposedName.lastIndexOf("::");
+      const name = sep === -1 ? proposedName : proposedName.slice(sep + 2);
+      decl.mangledName = declUniqueName(name, globalNames);
     } else {
-      // dlog(`  > no-mangle local decl: ${identToString(decl)}`);
       decl.mangledName = decl.originalName;
     }
   }

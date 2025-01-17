@@ -46,7 +46,7 @@ import { bracketTokens, mainTokens } from "./WESLTokens.ts";
 
 export const word = or(kind(mainTokens.ident), kind(mainTokens.textureStorage));
 
-const qualified_ident = withSepPlus("::", word);
+const qualified_ident = withSepPlus("::", word); // TODO make this a lexer rule?
 
 const diagnostic_rule_name = withSep(".", word, { requireOne: true });
 const diagnostic_control = seq(
@@ -204,7 +204,7 @@ export const struct_decl = seq(
 /** Also covers func_call_statement.post.ident */
 // prettier-ignore
 export const fn_call = seq(
-  word                                .collect(refIdent),
+  qualified_ident                     .collect(refIdent),
   () => opt_template_list,
   argument_expression_list,
 );
@@ -258,7 +258,7 @@ const opt_template_words = opt(
 // prettier-ignore
 const template_elaborated_ident = 
   seq(
-    word                              .collect(refIdent),
+    qualified_ident                              .collect(refIdent),
     opt_template_list,
   );
 
@@ -457,7 +457,7 @@ const statement: Parser<any> = or(
 // prettier-ignore
 const lhs_expression: Parser<any> = or(
   seq(
-    word                              .collect(refIdent), 
+    qualified_ident                        .collect(refIdent), 
     opt(component_or_swizzle)
   ),
   seq(

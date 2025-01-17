@@ -314,7 +314,7 @@ test("const referenced by imported fn", ctx => {
   });
 });
 
-test.skip("fn call with a separator", ctx => {
+test("fn call with a separator", ctx => {
   linkTest2(ctx.task.name, {
     linked: `
         fn main() { bar(); }
