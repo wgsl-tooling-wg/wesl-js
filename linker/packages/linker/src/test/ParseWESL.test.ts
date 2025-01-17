@@ -1327,5 +1327,106 @@ test("binding struct", () => {
   `
   const ast = parseTestRaw(src);
   const astString = astToString(ast.moduleElem);
-  expect(astString).toMatchInlineSnapshot(`tbd`);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      struct Bindings
+        text 'struct '
+        decl %Bindings
+        text ' {
+          '
+        member @group @binding particles: ptr<storage, array<f32>, read_write>
+          attribute @group('0')
+            text '@group('
+            expression '0'
+              text '0'
+            text ')'
+          text ' '
+          attribute @binding('0')
+            text '@binding('
+            expression '0'
+              text '0'
+            text ')'
+          text ' '
+          name particles
+          text ': '
+          type ptr<storage, array<f32>, read_write>
+            text 'ptr<storage, '
+            type array<f32>
+              ref array
+              text '<'
+              type f32
+                ref f32
+              text '>'
+            text ', read_write>'
+        text ', 
+          '
+        member @group @binding uniforms: ptr<uniform, Uniforms>
+          attribute @group('0')
+            text '@group('
+            expression '0'
+              text '0'
+            text ')'
+          text ' '
+          attribute @binding('1')
+            text '@binding('
+            expression '1'
+              text '1'
+            text ')'
+          text ' '
+          name uniforms
+          text ': '
+          type ptr<uniform, Uniforms>
+            text 'ptr<uniform, '
+            type Uniforms
+              ref Uniforms
+            text '>'
+        text ', 
+          '
+        member @group @binding tex: texture_2d<rgba8unorm>
+          attribute @group('0')
+            text '@group('
+            expression '0'
+              text '0'
+            text ')'
+          text ' '
+          attribute @binding('2')
+            text '@binding('
+            expression '2'
+              text '2'
+            text ')'
+          text ' '
+          name tex
+          text ': '
+          type texture_2d<rgba8unorm>
+            ref texture_2d
+            text '<'
+            type rgba8unorm
+              ref rgba8unorm
+            text '>'
+        text ',
+          '
+        member @group @binding samp: sampler
+          attribute @group('0')
+            text '@group('
+            expression '0'
+              text '0'
+            text ')'
+          text ' '
+          attribute @binding('3')
+            text '@binding('
+            expression '3'
+              text '3'
+            text ')'
+          text ' '
+          name samp
+          text ': '
+          type sampler
+            ref sampler
+        text ',
+        }'
+      text '
+      '"
+  `);
 })
