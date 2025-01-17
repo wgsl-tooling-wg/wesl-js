@@ -250,7 +250,7 @@ const opt_template_list = opt(
 const opt_template_words = opt(
   seq(
     tokens(bracketTokens, "<"),
-    withSepPlus(",", () => word),
+    withSepPlus(",", qualified_ident),
     tokens(bracketTokens, ">"),
   ),
 );
@@ -290,7 +290,7 @@ const component_or_swizzle = repeatPlus(
 /** parse simple struct.member style references specially, for binding struct lowering */
 const simple_component_reference = tagScope(
   seq(
-    word                              .collect(refIdent, "structRef"),
+    qualified_ident                   .collect(refIdent, "structRef"),
     seq(".", word                     .collect(nameCollect, "component")),
     opt(component_or_swizzle),
   )                                   .collect(memberRefCollect),
