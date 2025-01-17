@@ -11,8 +11,15 @@ import {
 import { WeslAST } from "./ParseWESL.ts";
 import { Conditions } from "./Scope.ts";
 import { WgslBundle } from "./WgslBundle.ts";
+import { AbstractElem } from "./AbstractElems.ts";
 
-type LinkerTransform = (ast: WeslAST, rootNames: Set<string>) => WeslAST;
+type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
+
+export interface TransformedAST
+  extends Pick<WeslAST, "srcModule" | "moduleElem"> {
+  globalNames: Set<string>;
+  notableElems: Record<string, AbstractElem[]>;
+}
 
 export interface LinkConfig {
   /** plugins to transform the linked AST before emitting linked test */
@@ -68,30 +75,35 @@ export function linkRegistry(
   parsed: ParsedRegistry,
   rootModuleName: string = "main",
   conditions: Conditions = {},
-  config: LinkConfig = {},
+  config?: LinkConfig,
 ): SrcMap {
   // get a reference to the root module
-  const found = selectModule(parsed, rootModuleName);
-  if (!found) {
+  const rootModule = selectModule(parsed, rootModuleName);
+  if (!rootModule) {
     if (tracing) {
       console.log(`parsed modules: ${Object.keys(parsed.modules)}`);
       console.log(`root module not found: ${rootModuleName}`);
     }
     throw new Error(`Root module not found: ${rootModuleName}`);
   }
-  const { moduleElem: rootModule } = found;
+  const { moduleElem, srcModule } = rootModule;
 
   /* --- Step #2   Binding Idents --- */
   // link active Ident references to declarations, and uniquify global declarations
-  const bindResults = bindIdents(found, parsed, conditions);
+  const bindResults = bindIdents(rootModule, parsed, conditions);
   const { globalNames, decls: newDecls } = bindResults;
   // for now only transform the root module
-  config?.transforms?.forEach(transform => transform(found, globalNames));
+  const startAst = { moduleElem, srcModule, globalNames, notableElems: {} };
+  const transforms = config?.transforms ?? [];
+  const transformedAst = transforms.reduce(
+    (ast, transform) => transform(ast),
+    startAst,
+  );
 
   /* --- Step #3   Writing WGSL --- */
   // traverse the AST and emit WGSL (doesn't need scopes)
   const srcBuilder = new SrcMapBuilder();
-  lowerAndEmit(srcBuilder, [rootModule], conditions, false); // emit the entire root module
+  lowerAndEmit(srcBuilder, [transformedAst.moduleElem], conditions, false); // emit the entire root module
   lowerAndEmit(srcBuilder, newDecls, conditions); // emit referenced declarations from other modules
   return srcBuilder.build();
 }

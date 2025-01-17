@@ -20,6 +20,7 @@ import {
 import { RefIdent } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
 import { identToString } from "./debug/ScopeToString.ts";
+import { TransformedAST } from "./Linker.ts";
 
 /**
  * Transform binding structures into binding variables by mutating the AST.
@@ -45,15 +46,14 @@ import { identToString } from "./debug/ScopeToString.ts";
  * Remove the binding structs from the AST
  * Remove the intermediate fn param declarations from the AST
  * Add the new binding variables to the AST
+ *
+ * @return the binding structs and the mutated AST
  */
-export function lowerBindingStructs(
-  ast: WeslAST,
-  rootNames: Set<string>,
-): ModuleElem {
-  const { moduleElem } = ast;
+export function lowerBindingStructs(ast: TransformedAST): TransformedAST{
+  const { moduleElem, globalNames, notableElems } = ast;
   const bindingStructs = markBindingStructs(moduleElem); // CONSIDER should we only mark bining structs referenced from the entry point?
   const newVars = bindingStructs.flatMap(s =>
-    transformBindingStruct(s, rootNames),
+    transformBindingStruct(s, globalNames),
   );
   const bindingRefs = findRefsToBindingStructs(moduleElem);
 
@@ -67,16 +67,8 @@ export function lowerBindingStructs(
   );
   const contents = removeBindingStructs(moduleElem);
   moduleElem.contents = [...newVars, ...contents];
-  return moduleElem;
-}
-
-/** transform plugin to lower binding structs and their references */
-export function bindingStructTransform(
-  ast: WeslAST,
-  rootNames: Set<string>,
-): WeslAST {
-  const moduleElem = lowerBindingStructs(ast, rootNames);
-  return { ...ast, moduleElem };
+  notableElems.bindingStructs = bindingStructs;
+  return {...ast, moduleElem, }
 }
 
 function removeBindingStructs(moduleElem: ModuleElem): AbstractElem[] {
@@ -173,8 +165,8 @@ function refersToBindingStruct(
 
 /** If this identifier ultimately refers to a struct type, return the struct declaration */
 function traceToStruct(ident: RefIdent): StructTrace | undefined {
-  const decl = findDecl(ident);  
-  const declElem = decl.declElem; 
+  const decl = findDecl(ident);
+  const declElem = decl.declElem;
   // for now only handle the case where the reference points at a fn parameter
   if (declElem.kind === "param") {
     const name = declElem.name.typeRef!.name;
@@ -182,7 +174,7 @@ function traceToStruct(ident: RefIdent): StructTrace | undefined {
       if (name.std) {
         return undefined;
       }
-      
+
       const paramDecl = findDecl(name);
       const structElem = paramDecl.declElem;
       if (structElem.kind === "struct") {

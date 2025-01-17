@@ -127,10 +127,12 @@ var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
       let x = particles;
     }
   `;
-  const ast = parseTest(src);
-  const bindResult = bindIdents(ast, parsedRegistry(), {});
-  const lowered = lowerBindingStructs(ast, bindResult.globalNames);
-  const loweredAst = astToString(lowered);
+  const weslAst = parseTest(src);
+  const { globalNames } = bindIdents(weslAst, parsedRegistry(), {});
+  const tAst = { ...weslAst, globalNames, notableElems: {} };
+  const lowered = lowerBindingStructs(tAst);
+
+  const loweredAst = astToString(lowered.moduleElem);
   expect(loweredAst).toMatchInlineSnapshot(`
     "module
       synthetic 'var @group(0) @binding(0) particles<storage, read_write> : array<f32>;'
@@ -159,7 +161,7 @@ var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
   `);
 
   const srcBuilder = new SrcMapBuilder();
-  lowerAndEmit(srcBuilder, [lowered], {}, false);
+  lowerAndEmit(srcBuilder, [lowered.moduleElem], {}, false);
   const linked = srcBuilder.build().dest;
   expectTrimmedMatch(linked, expected);
 });

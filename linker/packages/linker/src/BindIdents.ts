@@ -226,21 +226,21 @@ function findExport(
  *  mutating the Ident to remember mangled name if it hasn't yet been determined */
 export function declUniqueName(
   proposedName: string,
-  rootNames: Set<string>,
+  globalNames: Set<string>,
 ): string {
-  const displayName = uniquifyName(proposedName, rootNames);
-  rootNames.add(displayName);
+  const displayName = uniquifyName(proposedName, globalNames);
+  globalNames.add(displayName);
 
   return displayName;
 }
 
 /** construct global unique name for use in the output */
-function uniquifyName(proposedName: string, rootNames: Set<string>): string {
+function uniquifyName(proposedName: string, globalNames: Set<string>): string {
   let renamed = proposedName;
   let conflicts = 0;
 
   // create a unique name
-  while (rootNames.has(renamed)) {
+  while (globalNames.has(renamed)) {
     renamed = proposedName + conflicts++;
   }
 
