@@ -19,6 +19,7 @@
     "paths": {
       "wgsl-linker": ["../linker/src"],
       "mini-parse": ["../mini-parse/src"],
+      "mini-parse/test-util": ["../mini-parse/src/test-util"],
       "mini-parse/vitest-util": ["../mini-parse/src/vitest-util"]
     }
   },

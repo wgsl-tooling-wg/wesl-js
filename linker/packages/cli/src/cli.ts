@@ -3,6 +3,7 @@ import fs from "fs";
 import { enableTracing } from "mini-parse";
 import { astToString, link, normalize, scopeToString } from "wgsl-linker";
 import yargs from "yargs";
+import { log} from "mini-parse";
 import {
   parsedRegistry,
   parseIntoRegistry,
@@ -68,7 +69,7 @@ function linkNormally(paths: string[]): void {
   // TODO external defines
   if (argv.emit) {
     const linked = link(weslFiles, rootPath);
-    if (argv.emit) console.log(linked.dest);
+    if (argv.emit) log(linked.dest);
   }
   if (argv.details) {
     const registry = parsedRegistry();
@@ -78,12 +79,12 @@ function linkNormally(paths: string[]): void {
       console.error(e);
     }
     Object.entries(registry.modules).forEach(([modulePath, ast]) => {
-      console.log(`---\n${modulePath}`);
-      console.log(`\n->ast`);
-      console.log(astToString(ast.moduleElem));
-      console.log(`\n->scope`);
-      console.log(scopeToString(ast.rootScope));
-      console.log();
+      log(`---\n${modulePath}`);
+      log(`\n->ast`);
+      log(astToString(ast.moduleElem));
+      log(`\n->scope`);
+      log(scopeToString(ast.rootScope));
+      log();
     });
   }
 
@@ -119,9 +120,9 @@ function parseDefineValue(value: string): string | number | boolean {
 function printDiff(modulePath: string, src: string, linked: string): void {
   if (src !== linked) {
     const patch = createTwoFilesPatch(modulePath, "linked", src, linked);
-    console.log(patch);
+    log(patch);
   } else {
-    console.log(`${modulePath}: linked version matches original source`);
+    log(`${modulePath}: linked version matches original source`);
   }
 }
 

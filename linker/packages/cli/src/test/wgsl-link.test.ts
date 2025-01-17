@@ -1,8 +1,10 @@
-import { expect, test, vi } from "vitest";
-import { cli } from "../cli.js";
+import { withLogger } from "mini-parse";
+import { logCatch } from "mini-parse/test-util";
+import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { expectTrimmedMatch } from "mini-parse/vitest-util";
+import { expect, test } from "vitest";
+import { cli } from "../cli.js";
 
 /** so vitest triggers when these files change */
 import("./src/test/wgsl/main.wgsl?raw");
@@ -108,14 +110,7 @@ async function cliLine(argsLine: string): Promise<string> {
 }
 
 async function withConsoleSpy(fn: () => Promise<void>): Promise<string> {
-  vi.spyOn(console, "log").mockImplementation(() => {});
-  const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
-  try {
-    await fn();
-  } finally {
-    const log = consoleSpy.mock.calls.join("\n");
-    vi.restoreAllMocks();
-    return log;
-  }
+  const catcher = logCatch();
+  withLogger(c => catcher.log(c), fn);
+  return catcher.logged();
 }
