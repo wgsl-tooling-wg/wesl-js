@@ -1,7 +1,6 @@
 import { debugNames, srcLog } from "mini-parse";
-import { dlog } from "berry-pretty";
 import { DeclarationElem } from "./AbstractElems.ts";
-import { identToString, scopeToString } from "./debug/ScopeToString.ts";
+import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, WeslAST } from "./ParseWESL.ts";
@@ -90,7 +89,6 @@ function bindIdentsRecursive(
   const newDecls: DeclIdent[] = []; // new decl idents to process (and return)
 
   scope.idents.forEach(ident => {
-    // dlog(`--- considering ident ${identToString(ident)}`);
     if (ident.kind === "ref") {
       if (!ident.refersTo && !ident.std) {
         let foundDecl =
@@ -98,13 +96,10 @@ function bindIdentsRecursive(
 
         if (foundDecl) {
           ident.refersTo = foundDecl;
-          // dlog(`--- ident now linked ${identToString(ident)}`);
           if (!knownDecls.has(foundDecl)) {
-            // dlog(`  > found new decl: ${identToString(foundDecl)}`);
             knownDecls.add(foundDecl);
             setDisplayName(ident.originalName, foundDecl, globalNames);
             if (foundDecl.declElem && isGlobal(foundDecl.declElem)) {
-              // dlog(`  > pushing new decl: ${identToString(foundDecl)}`);
               newDecls.push(foundDecl);
             }
           }
@@ -125,30 +120,17 @@ function bindIdentsRecursive(
 
   // follow references from child scopes
   const newFromChildren = scope.children.flatMap(child => {
-    // dlog("to newFromChildren", { childScope: scopeIdentTree(child) });
     return bindIdentsRecursive(child, bindContext);
   });
-  // console.log(
-  //   "new from children",
-  //   newFromChildren.map(d => identToString(d)),
-  // );
 
   // follow references from referenced declarations
   const newFromRefs = newDecls.flatMap(decl => {
-    // dlog("to newFromRefs", {
-    //   decl: identToString(decl),
-    //   declScope: scopeIdentTree(decl.scope),
-    // });
     if (debugNames && !decl.scope) {
       console.log(`--- decl ${identToString(decl)} has no scope`);
       return [];
     }
     return bindIdentsRecursive(decl.scope, bindContext);
   });
-  // console.log(
-  //   "new from refs",
-  //   newFromRefs.map(d => identToString(d)),
-  // );
 
   return [newDecls, newFromChildren, newFromRefs].flat();
 }
@@ -188,10 +170,6 @@ function findDeclInModule(
 
   // recurse to check all idents in parent scope
   if (parent) {
-    // dlog("checking parent scope", {
-    //   ident: identToString(ident),
-    // });
-    // console.log(scopeIdentTree(parent));
     return findDeclInModule(parent, ident);
   }
 }
@@ -202,7 +180,6 @@ function findDeclImport(
   refIdent: RefIdent,
   parsed: ParsedRegistry,
 ): DeclIdent | undefined {
-  // dlog(identToString(refIdent), { ast: !!refIdent.ast });
   const flatImps = flatImports(refIdent.ast);
 
   // find module path by combining identifer reference with import statement
@@ -267,7 +244,6 @@ function uniquifyName(proposedName: string, rootNames: Set<string>): string {
     renamed = proposedName + conflicts++;
   }
 
-  // dlog({ proposedName, renamed });
   return renamed;
 }
 
