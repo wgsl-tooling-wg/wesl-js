@@ -7,7 +7,15 @@ import { OpenElem } from "./WESLCollect.ts";
 import { weslRoot } from "./WESLGrammar.ts";
 import { mainTokens } from "./WESLTokens.ts";
 
-/** result of a parse for one wesl module (e.g. one .wesl file) */
+/** result of a parse for one wesl module (e.g. one .wesl file)
+ *
+ * The parser constructs the AST constructed into three sections 
+ * for convenient access by the binding stage.
+ *  - import statements 
+ *  - language elements (fn, struct, etc)
+ *  - scopes
+ * 
+ */
 export interface WeslAST {
   /** source text for this module */
   srcModule: SrcModule;
@@ -20,7 +28,10 @@ export interface WeslAST {
 
   /** imports found in this module */
   imports: ImportTree[];
+}
 
+/** an extended version of the AST */
+export interface BindingAST extends WeslAST {
   /* a flattened version of the import statements constructed on demand from import trees, and cached here */
   _flatImports?: FlatImport[];
 }
@@ -97,7 +108,7 @@ export function syntheticWeslParseState(): WeslParseState {
 }
 
 /** @return a flattened form of the import tree for convenience in binding idents. */
-export function flatImports(ast: WeslAST): FlatImport[] {
+export function flatImports(ast: BindingAST): FlatImport[] {
   if (ast._flatImports) return ast._flatImports;
 
   const flat = ast.imports.flatMap(flattenTreeImport);
