@@ -195,6 +195,11 @@ export interface StructElem extends ElemWithContentsBase {
   bindingStruct?: true; // used later during binding struct transformation
 }
 
+/** a struct declaration that's been marked as a bindingStruct */
+export interface BindingStructElem extends StructElem {
+  bindingStruct: true;
+}
+
 /** a member of a struct declaration */
 export interface StructMemberElem extends ElemWithContentsBase {
   kind: "member";
