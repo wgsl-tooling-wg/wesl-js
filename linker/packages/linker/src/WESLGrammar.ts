@@ -145,12 +145,15 @@ const std_type_specifier = seq(
   () => opt_template_list,
 )                                   .collect(typeRefCollect);
 
+// prettier-ignore
 // none of the elements of a texture_storage type generator are bindable idents
 // e.g. texture_storage_2d<rgba8unorm, write>
-const texture_storage_type = seq(
-  kind(mainTokens.textureStorage),
-  () => opt_template_words,
-); // TODO collect as TypeRefElem for completeness
+const texture_storage_type = tagScope(
+  seq(
+    kind(mainTokens.textureStorage)   .ptag("typeRefName"),
+    () => opt_template_words,
+  )                                   .collect(typeRefCollect),
+);
 
 // the first and optional third elements of a ptr template are not bindable idents:
 // e.g. ptr<storage, MyStruct, read>
@@ -249,10 +252,11 @@ const opt_template_list = opt(
 );
 
 /** template list of non-identifier words. e.g. var <storage> */
+// prettier-ignore
 const opt_template_words = opt(
   seq(
     tokens(bracketTokens, "<"),
-    withSepPlus(",", qualified_ident),
+    withSepPlus(",", qualified_ident        .ptag("templateParam")),
     tokens(bracketTokens, ">"),
   ),
 );
@@ -260,7 +264,7 @@ const opt_template_words = opt(
 // prettier-ignore
 const template_elaborated_ident = 
   seq(
-    qualified_ident                              .collect(refIdent),
+    qualified_ident                           .collect(refIdent),
     opt_template_list,
   );
 
