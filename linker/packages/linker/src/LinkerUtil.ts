@@ -1,5 +1,11 @@
 import { srcLog } from "mini-parse";
-import { AbstractElem, ContainerElem, TerminalElem } from "./AbstractElems.ts";
+import {
+  AbstractElem,
+  ContainerElem,
+  DeclIdentElem,
+  RefIdentElem,
+  TerminalElem,
+} from "./AbstractElems.ts";
 
 export function visitAst(
   elem: AbstractElem,
@@ -14,4 +20,15 @@ export function visitAst(
 
 export function elemLog(elem: TerminalElem, ...messages: any[]): void {
   srcLog(elem.srcModule.src, [elem.start, elem.end], ...messages);
+}
+
+export function identElemLog(
+  identElem: DeclIdentElem | RefIdentElem,
+  ...messages: any[]
+): void {
+  srcLog(
+    identElem.srcModule.src,
+    [identElem.start, identElem.end],
+    ...messages,
+  );
 }
