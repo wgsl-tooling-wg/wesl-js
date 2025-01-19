@@ -93,8 +93,19 @@ function shaderVisiblity(struct: BindingStructElem): string {
   const { entryFn } = struct;
   if (!entryFn) {
     identElemLog(struct.name, "missing entry function for binding struct");
+  } else {
+    const { fnAttributes = [] } = entryFn;
+    if (fnAttributes.find(a => a.name === "compute")) {
+      return "GPUShaderStage.COMPUTE";
+    }
+    if (fnAttributes.find(a => a.name === "vertex")) {
+      return "GPUShaderStage.VERTEX";
+    }
+    if (fnAttributes.find(a => a.name === "fragment")) {
+      return "GPUShaderStage.FRAGMENT";
+    }
   }
-
+  identElemLog(struct.name, "unknown entry point type for binding struct");
   return "GPUShaderStage.COMPUTE";
 }
 

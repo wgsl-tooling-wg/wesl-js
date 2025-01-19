@@ -171,7 +171,6 @@ export function collectVarLike<E extends VarLikeElem>(
 ): CollectPair<E> {
   return collectElem(kind, (cc: CollectContext, openElem: PartElem<E>) => {
     const name = cc.tags.var_name?.[0] as TypedDeclElem;
-    // elemToString(name); //?
     const decl_scope = cc.tags.decl_scope?.[0] as Scope;
     const partElem = { ...openElem, name } as E;
     const varElem = withTextCover(partElem, cc);
