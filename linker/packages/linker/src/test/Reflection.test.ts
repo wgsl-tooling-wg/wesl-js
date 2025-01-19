@@ -49,6 +49,7 @@ test("binding struct to ts", () => {
       @group(0) @binding(1) uniforms: ptr<uniform, Uniforms>, 
       @group(0) @binding(2) tex: texture_2d<rgba8unorm>,
       @group(0) @binding(3) samp: sampler,
+      @group(0) @binding(4) stTex: texture_storage_2d<rgba8unorm, read>,
     }
     fn main(b: MyBindings) {
       let x = b.particles;

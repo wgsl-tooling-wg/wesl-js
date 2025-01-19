@@ -30,7 +30,12 @@ export const sampledTextureTypes = `
 
 export const multisampledTextureTypes = `
   texture_multisampled_2d texture_depth_multisampled_2d
-`
+`;
+
+export const textureStorageTypes = `
+  texture_storage_1d texture_storage_2d texture_storage_2d_array 
+  texture_storage_3d
+`;
 
 export const stdTypes = `array atomic bool f16 f32 i32 
   mat2x2 mat2x3 mat2x4 mat3x2 mat3x3 mat3x4 mat4x2 mat4x3 mat4x4
@@ -44,8 +49,7 @@ export const stdTypes = `array atomic bool f16 f32 i32
   ${sampledTextureTypes}
   ${multisampledTextureTypes}
   texture_external
-  texture_storage_1d texture_storage_2d texture_storage_2d_array
-  texture_storage_3d
+  ${textureStorageTypes}
   texture_depth_2d texture_depth_2d_array texture_depth_cube
   texture_depth_cube_array
   sampler sampler_comparison

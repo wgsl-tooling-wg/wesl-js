@@ -13,6 +13,7 @@ import {
   multisampledTextureTypes,
   sampledTextureTypes,
 } from "./StandardTypes.ts";
+import { textureStorage } from "./WESLTokens.ts";
 
 export type BindingStructReportFn = (structs: StructElem[]) => void;
 
@@ -87,13 +88,11 @@ function layoutEntry(member: StructMemberElem): string {
   const { typeRef } = member;
   let entry: string | undefined;
   const { name: typeName } = typeRef;
-  if (typeName === "ptr") {
-    entry = ptrLayoutEntry(typeRef);
-  } else if (typeof typeName !== "string" && typeName.std) {
+  entry = ptrLayoutEntry(typeRef) ?? storageTextureLayoutEntry(typeRef);
+  if (!entry && typeof typeName !== "string" && typeName.std) {
     entry =
       samplerLayoutEntry(typeRef) ??
       textureLayoutEntry(typeRef) ??
-      storageTextureLayoutEntry(typeRef) ??
       externalTextureLayoutEntry(typeRef);
   }
   if (!entry) {
@@ -117,6 +116,7 @@ function samplerLayoutEntry(typeRef: TypeRefElem): string | undefined {
 
 const textureTypes = matchOneOf(sampledTextureTypes);
 const multiNames = matchOneOf(multisampledTextureTypes);
+
 function textureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   const { originalName } = typeRef.name as RefIdent;
   const multisampled =
@@ -126,6 +126,7 @@ function textureLayoutEntry(typeRef: TypeRefElem): string | undefined {
     const sampleType = getSampleType(typeRef);
     return `texture: { sampleType: "${sampleType}"${multisampled} }`;
   }
+  return undefined;
 
   function getSampleType(typeRef: TypeRefElem): string {
     const firstParam = typeRef.templateParams?.[0] as TypeRefElem;
@@ -135,26 +136,41 @@ function textureLayoutEntry(typeRef: TypeRefElem): string | undefined {
 }
 
 function storageTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
-  return undefined; // TODO
+  const name = typeRef.name;
+  if (typeof name === "string" && textureStorage.test(name)) {
+    const firstParam = typeRef.templateParams?.[0] as string; //?
+    const secondParam = typeRef.templateParams?.[1] as string; //?
+    const sampleType = textureSampleType(firstParam as GPUTextureFormat);
+    const access = accessMode(secondParam);
+    return `storageTexture: { format: "${firstParam}", sampleType: "${sampleType}", access: "${access}" }`;
+  }
+  return undefined;
 }
 
 function externalTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
-  return undefined; // TODO
+  const { originalName } = typeRef.name as RefIdent;
+  if (originalName === "texture_external") {
+    // TODO. how would we set the required source: HTMLVideoElement or VideoFrame?
+  }
+  return undefined;
 }
 
 function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
-  const param1 = typeRef.templateParams?.[0];
-  const param3 = typeRef.templateParams?.[2];
-  if (param1 === "uniform") {
-    return `buffer: { type: "uniform" }`;
-  } else if (param1 === "storage") {
-    if (param3 === "read_write") {
-      return `buffer: { type: "read-only-storage" }`;
-    } else {
-      return `buffer: { type: "storage" }`;
+  const { name: typeName } = typeRef;
+  if (typeName === "ptr") {
+    const param1 = typeRef.templateParams?.[0];
+    const param3 = typeRef.templateParams?.[2];
+    if (param1 === "uniform") {
+      return `buffer: { type: "uniform" }`;
+    } else if (param1 === "storage") {
+      if (param3 === "read_write") {
+        return `buffer: { type: "read-only-storage" }`;
+      } else {
+        return `buffer: { type: "storage" }`;
+      }
+      // TODO what do we do with the element type (2nd parameter)
+      // TODO should there be an ability to set hasDynamicOffset?
     }
-    // TODO what do we do with the element type (2nd parameter)
-    // TODO should there be an ability to set hasDynamicOffset?
   }
 }
 
@@ -179,7 +195,18 @@ export function textureSampleType(
   if (format.includes("sint")) {
     return "sint";
   }
-  throw new Error(
-    `native sample type unknwon for for texture format ${format}`,
-  );
+  throw new Error(`native sample type unknwon for texture format ${format}`);
+}
+
+export function accessMode(access: string): GPUStorageTextureAccess {
+  if (access === "read") {
+    return "read-only";
+  }
+  if (access === "write") {
+    return "write-only";
+  }
+  if (access === "read_write") {
+    return "read-write";
+  }
+  throw new Error(`unknown access mode: ${access}`);
 }

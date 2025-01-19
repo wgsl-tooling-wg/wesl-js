@@ -154,7 +154,7 @@ export function escapeRegex(s: string): string {
  * are sorted by length so that longer matches are preferred.
  */
 export function matchOneOf(syms: string): RegExp {
-  const symbolList = syms.split(" ").sort((a, b) => b.length - a.length);
+  const symbolList = syms.split(/\s+/).sort((a, b) => b.length - a.length);
   const escaped = symbolList.filter(s => s).map(escapeRegex);
   return new RegExp(escaped.join("|"));
 }

@@ -1,4 +1,5 @@
 import { matchOneOf, tokenMatcher } from "mini-parse";
+import { textureStorageTypes } from "./StandardTypes.ts";
 
 // https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
 /** New lines */
@@ -37,9 +38,7 @@ export const digits = new RegExp(
     /|(?:0[iu]?)|(?:[1-9][0-9]*[iu]?)/.source,
 );
 
-const textureStorage = matchOneOf(
-  "texture_strorage_1d texture_storage_2d texture_storage_2d_array texture_storage_3d",
-);
+export const textureStorage = matchOneOf(textureStorageTypes);
 
 /** main set of tokens for WGSL */
 export const mainTokens = tokenMatcher(
