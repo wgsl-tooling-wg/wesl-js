@@ -23,6 +23,15 @@ export const stdFns = `bitcast all any select arrayLength
   storageBarrier textureBarrier workgroupBarrier workgroupUniformLoad
   `.split(/\s+/);
 
+export const sampledTextureTypes = `
+  texture_1d texture_2d texture_2d_array texture_3d 
+  texture_cube texture_cube_array
+`;
+
+export const multisampledTextureTypes = `
+  texture_multisampled_2d texture_depth_multisampled_2d
+`
+
 export const stdTypes = `array atomic bool f16 f32 i32 
   mat2x2 mat2x3 mat2x4 mat3x2 mat3x3 mat3x4 mat4x2 mat4x3 mat4x4
   mat2x2f mat2x3f mat2x4f mat3x2f mat3x3f mat3x4f
@@ -32,9 +41,8 @@ export const stdTypes = `array atomic bool f16 f32 i32
   u32 vec2 vec3 vec4 ptr
   vec2i vec3i vec4i vec2u vec3u vec4u
   vec2f vec3f vec4f vec2h vec3h vec4h
-  texture_1d texture_2d texture_2d_array texture_3d 
-  texture_cube texture_cube_array
-  texture_multisampled_2d texture_depth_multisampled_2d
+  ${sampledTextureTypes}
+  ${multisampledTextureTypes}
   texture_external
   texture_storage_1d texture_storage_2d texture_storage_2d_array
   texture_storage_3d

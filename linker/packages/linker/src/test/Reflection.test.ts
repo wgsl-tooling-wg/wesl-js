@@ -44,13 +44,13 @@ test("binding struct to ts", () => {
     struct Uniforms {
       foo: u32
     }
-    struct Bindings {
+    struct MyBindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
       @group(0) @binding(1) uniforms: ptr<uniform, Uniforms>, 
       @group(0) @binding(2) tex: texture_2d<rgba8unorm>,
       @group(0) @binding(3) samp: sampler,
     }
-    fn main(b: Bindings) {
+    fn main(b: MyBindings) {
       let x = b.particles;
     }
   `;
@@ -61,30 +61,31 @@ test("binding struct to ts", () => {
   );
   linkTestOpts({ linkConfig }, src);
   const ts = bindingGroupLayoutTs(found![0] as BindingStructElem);
+  console.log(ts);
   expect(ts).toMatchInlineSnapshot(`
     "
-    export function BindingsLayout(device: GPUDevice): GPUBindGroupLayout {
+    export function MyBindingsLayout(device: GPUDevice): GPUBindGroupLayout {
       return device.createBindGroupLayout({
-        entries: [
+        entries: [ 
           {
             binding: 0,
             visibility: GPUShaderStage.COMPUTE,
             buffer: { type: "read-only-storage" }
           },
-    {
+          {
             binding: 1,
             visibility: GPUShaderStage.COMPUTE,
-            { buffer: { type: "uniform" } }
+            buffer: { type: "uniform" }
           },
-    {
+          {
             binding: 2,
             visibility: GPUShaderStage.COMPUTE,
-            { texture: { } }
+            texture: { sampleType: "float" }
           },
-    {
+          {
             binding: 3,
             visibility: GPUShaderStage.COMPUTE,
-            { sampler: { } }
+            sampler: { type: "filtering" }
           }
         ]
       });
