@@ -87,6 +87,11 @@ test("binding struct to ts", () => {
             binding: 3,
             visibility: GPUShaderStage.COMPUTE,
             sampler: { type: "filtering" }
+          },
+          {
+            binding: 4,
+            visibility: GPUShaderStage.COMPUTE,
+            storageTexture: { format: "rgba8unorm", sampleType: "float", access: "read-only" }
           }
         ]
       });
