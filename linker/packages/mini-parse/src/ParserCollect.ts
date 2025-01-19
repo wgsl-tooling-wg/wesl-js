@@ -67,7 +67,9 @@ export function collect<N extends TagRecord, T, V>(
   if (ctag) {
     afterFn = (cc: CollectContext) => {
       const result = origAfter(cc);
-      addTagValue(cc.tags, ctag, result);
+      if (result !== undefined && result !== null) {
+        addTagValue(cc.tags, ctag, result);
+      }
       return result;
     };
   }
