@@ -62,7 +62,6 @@ test("binding struct to ts", () => {
   );
   linkTestOpts({ linkConfig }, src);
   const ts = bindingGroupLayoutTs(found![0] as BindingStructElem);
-  console.log(ts);
   expect(ts).toMatchInlineSnapshot(`
     "
     export function MyBindingsLayout(device: GPUDevice): GPUBindGroupLayout {
