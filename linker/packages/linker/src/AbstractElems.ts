@@ -147,6 +147,7 @@ export interface FnElem extends ElemWithContentsBase {
   kind: "fn";
   name: DeclIdentElem;
   params: FnParamElem[];
+  fnAttributes?: AttributeElem[];
   returnType?: TypeRefElem;
 }
 

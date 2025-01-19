@@ -198,7 +198,8 @@ function addNameFields(elem: AbstractElem, str: LineWrapper): true | undefined {
 
 function addFnFields(elem: AbstractElem, str: LineWrapper): true | undefined {
   if (elem.kind === "fn") {
-    const { name, params, returnType } = elem;
+    const { name, params, returnType, fnAttributes } = elem;
+
     str.add(" " + name.ident.originalName);
 
     str.add("(");
@@ -216,6 +217,15 @@ function addFnFields(elem: AbstractElem, str: LineWrapper): true | undefined {
       .join(", ");
     str.add(paramStrs);
     str.add(")");
+
+    fnAttributes?.forEach(a => {
+      str.add(" @" + a?.name);
+      if (a?.params) {
+        str.add("(");
+        str.add(a.params.map(expressionToString).join(", "));
+        str.add(")");
+      }
+    });
 
     if (returnType) {
       str.add(" -> " + typeRefElemToString(returnType));

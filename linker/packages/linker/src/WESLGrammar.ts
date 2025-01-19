@@ -504,7 +504,7 @@ const variable_updating_statement = or(
 
 // prettier-ignore
 export const fn_decl = seq(
-  opt_attributes,
+  opt_attributes                      .collect((cc) => cc.tags.attribute, "fn_attributes"), // filter out empties
   text("fn"),
   req(fnNameDecl),
   seq(

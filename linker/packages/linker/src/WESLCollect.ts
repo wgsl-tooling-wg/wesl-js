@@ -177,9 +177,6 @@ export function collectVarLike<E extends VarLikeElem>(
     const varElem = withTextCover(partElem, cc);
     (name.decl.ident as DeclIdent).declElem = varElem as DeclarationElem;
     name.decl.ident.scope = decl_scope;
-    // if (decl_scope) {
-    //   scopeToString(decl_scope); 
-    // }
     return varElem;
   });
 }
@@ -204,8 +201,16 @@ export const collectFn = collectElem(
     const name = cc.tags.fn_name?.[0] as DeclIdentElem;
     const body_scope = cc.tags.body_scope?.[0] as Scope;
     const params: FnParamElem[] = cc.tags.fnParam?.flat(3) ?? [];
+    const fnAttributes: AttributeElem[] | undefined =
+      cc.tags.fn_attributes?.flat();
     const returnType: TypeRefElem | undefined = cc.tags.returnType?.flat(3)[0];
-    const partElem: FnElem = { ...openElem, name, params, returnType };
+    const partElem: FnElem = {
+      ...openElem,
+      name,
+      fnAttributes,
+      params,
+      returnType,
+    };
     const fnElem = withTextCover(partElem, cc);
     (name.ident as DeclIdent).declElem = fnElem;
     name.ident.scope = body_scope;

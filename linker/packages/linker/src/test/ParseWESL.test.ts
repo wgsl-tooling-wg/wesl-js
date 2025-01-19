@@ -189,7 +189,7 @@ test("parse @attribute before fn", () => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      fn main()
+      fn main() @compute
         attribute @compute
           text '@compute'
         text ' fn '
@@ -211,7 +211,7 @@ test("parse @compute @workgroup_size(a, b, 1) before fn", () => {
     "module
       text '
         '
-      fn main()
+      fn main() @compute @workgroup_size(ref a, ref b, '1')
         attribute @compute
           text '@compute'
         text ' 
@@ -623,7 +623,7 @@ test("parse fn with attributes and suffix comma", () => {
     "module
       text '
       '
-      fn main(grid: vec3<u32>, localIndex: u32)
+      fn main(grid: vec3<u32>, localIndex: u32) @compute @workgroup_size(ref workgroupThreads, '1', '1')
         attribute @compute
           text '@compute'
         text '
@@ -711,7 +711,7 @@ test("parse @attribute before fn", () => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      fn main()
+      fn main() @compute
         attribute @compute
           text '@compute'
         text ' fn '
