@@ -2,25 +2,25 @@ import { tracing } from "mini-parse";
 import {
   AbstractElem,
   AttributeElem,
+  BindingStructElem,
   DeclarationElem,
+  FnElem,
   ModuleElem,
   SimpleMemberRef,
   StructElem,
   SyntheticElem,
 } from "./AbstractElems.ts";
 import { declUniqueName } from "./BindIdents.ts";
-import { elemLog, visitAst } from "./LinkerUtil.ts";
+import { TransformedAST } from "./Linker.ts";
+import { visitAst } from "./LinkerUtil.ts";
 import { findDecl } from "./LowerAndEmit.ts";
-import { WeslAST } from "./ParseWESL.ts";
 import {
   attributeToString,
   typeListToString,
   typeParamToString,
 } from "./RawEmit.ts";
-import { RefIdent } from "./Scope.ts";
+import { DeclIdent, RefIdent } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
-import { identToString } from "./debug/ScopeToString.ts";
-import { TransformedAST } from "./Linker.ts";
 
 /**
  * Transform binding structures into binding variables by mutating the AST.
@@ -49,9 +49,10 @@ import { TransformedAST } from "./Linker.ts";
  *
  * @return the binding structs and the mutated AST
  */
-export function lowerBindingStructs(ast: TransformedAST): TransformedAST{
+export function lowerBindingStructs(ast: TransformedAST): TransformedAST {
   const { moduleElem, globalNames, notableElems } = ast;
   const bindingStructs = markBindingStructs(moduleElem); // CONSIDER should we only mark bining structs referenced from the entry point?
+  markEntryTypes(moduleElem, bindingStructs);
   const newVars = bindingStructs.flatMap(s =>
     transformBindingStruct(s, globalNames),
   );
@@ -68,7 +69,37 @@ export function lowerBindingStructs(ast: TransformedAST): TransformedAST{
   const contents = removeBindingStructs(moduleElem);
   moduleElem.contents = [...newVars, ...contents];
   notableElems.bindingStructs = bindingStructs;
-  return {...ast, moduleElem, }
+  return { ...ast, moduleElem };
+}
+
+export function markEntryTypes(
+  moduleElem: ModuleElem,
+  bindingStructs: BindingStructElem[],
+): void {
+  const fns = moduleElem.contents.filter(e => e.kind === "fn");
+  const fnFound = fnReferencesBindingStruct(fns, bindingStructs);
+  if (fnFound) {
+    const { fn, struct } = fnFound;
+    struct.entryFn = fn;
+  }
+}
+
+function fnReferencesBindingStruct(
+  fns: FnElem[],
+  bindingStructs: BindingStructElem[],
+): { fn: FnElem; struct: BindingStructElem } | undefined {
+  for (const fn of fns) {
+    const { params } = fn;
+    for (const p of params) {
+      const ref = p.name?.typeRef?.name as RefIdent | undefined;
+      const referencedElem = (ref?.refersTo as DeclIdent)
+        ?.declElem as StructElem;
+      const struct = bindingStructs.find(s => s === referencedElem);
+      if (struct) {
+        return { fn, struct };
+      }
+    }
+  }
 }
 
 function removeBindingStructs(moduleElem: ModuleElem): AbstractElem[] {
@@ -81,12 +112,14 @@ function removeBindingStructs(moduleElem: ModuleElem): AbstractElem[] {
  *  (if they contain ptrs with @group @binding annotations)
  * @return the binding structs
  */
-export function markBindingStructs(moduleElem: ModuleElem): StructElem[] {
+export function markBindingStructs(
+  moduleElem: ModuleElem,
+): BindingStructElem[] {
   const structs = moduleElem.contents.filter(elem => elem.kind === "struct");
   const bindingStructs = structs.filter(containsBindingPtr);
   bindingStructs.forEach(struct => (struct.bindingStruct = true));
   // LATER also mark structs that reference a binding struct..
-  return bindingStructs;
+  return bindingStructs as BindingStructElem[];
 }
 
 /** @return true if this struct contains a member with a ptr marked with @binding or @group */

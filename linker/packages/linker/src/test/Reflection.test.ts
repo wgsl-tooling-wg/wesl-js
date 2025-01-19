@@ -13,8 +13,8 @@ test("extract binding struct", () => {
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
     }
-    const particles = 7;
-    fn main(b: Bindings) {
+
+    @compute fn main(b: Bindings) {
       let x = b.particles;
     }
   `;
@@ -30,6 +30,8 @@ test("extract binding struct", () => {
   const s = found![0];
   expect(s).toBeDefined();
   expect(elemToString(s)).toMatchInlineSnapshot(`"struct Bindings"`);
+  expect(s.bindingStruct).toBeTruthy();
+  expect((s as BindingStructElem).entryFn).toBeDefined();
 
   // verify struct members
   const members = s.members.filter(e => e.kind === "member");
@@ -51,7 +53,7 @@ test("binding struct to ts", () => {
       @group(0) @binding(3) samp: sampler,
       @group(0) @binding(4) stTex: texture_storage_2d<rgba8unorm, read>,
     }
-    fn main(b: MyBindings) {
+    @compute fn main(b: MyBindings) {
       let x = b.particles;
     }
   `;

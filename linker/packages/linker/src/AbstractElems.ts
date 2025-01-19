@@ -198,6 +198,7 @@ export interface StructElem extends ElemWithContentsBase {
 /** a struct declaration that's been marked as a bindingStruct */
 export interface BindingStructElem extends StructElem {
   bindingStruct: true;
+  entryFn?: FnElem;
 }
 
 /** a member of a struct declaration */

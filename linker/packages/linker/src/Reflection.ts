@@ -8,6 +8,7 @@ import {
   TypeRefElem,
 } from "./AbstractElems.ts";
 import { TransformedAST } from "./Linker.ts";
+import { identElemLog } from "./LinkerUtil.ts";
 import { RefIdent } from "./Scope.ts";
 import {
   multisampledTextureTypes,
@@ -52,7 +53,10 @@ Construct something that looks roughly like this
  */
 export function bindingGroupLayoutTs(struct: BindingStructElem): string {
   const structName = struct.name.ident.mangledName;
-  const entries = struct.members.map(memberToLayoutEntry).join(",");
+  const visibility = shaderVisiblity(struct);
+  const entries = struct.members
+    .map(m => memberToLayoutEntry(m, visibility))
+    .join(",");
 
   const src = `
 export function ${structName}Layout(device: GPUDevice): GPUBindGroupLayout {
@@ -68,12 +72,13 @@ export function ${structName}Layout(device: GPUDevice): GPUBindGroupLayout {
 /*
  *
  */
-function memberToLayoutEntry(member: StructMemberElem): string {
+function memberToLayoutEntry(
+  member: StructMemberElem,
+  visibility: string,
+): string {
   const bindingParam = member.attributes?.find(a => a.name === "binding")
     ?.params?.[0];
   const binding = bindingParam ? paramText(bindingParam) : "?";
-
-  const visibility = "GPUShaderStage.COMPUTE"; // TODO make dynamic
 
   const src = `
       {
@@ -82,6 +87,15 @@ function memberToLayoutEntry(member: StructMemberElem): string {
         ${layoutEntry(member)}
       }`;
   return src;
+}
+
+function shaderVisiblity(struct: BindingStructElem): string {
+  const { entryFn } = struct;
+  if (!entryFn) {
+    identElemLog(struct.name, "missing entry function for binding struct");
+  }
+
+  return "GPUShaderStage.COMPUTE";
 }
 
 function layoutEntry(member: StructMemberElem): string {
@@ -138,8 +152,8 @@ function textureLayoutEntry(typeRef: TypeRefElem): string | undefined {
 function storageTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   const name = typeRef.name;
   if (typeof name === "string" && textureStorage.test(name)) {
-    const firstParam = typeRef.templateParams?.[0] as string; //?
-    const secondParam = typeRef.templateParams?.[1] as string; //?
+    const firstParam = typeRef.templateParams?.[0] as string;
+    const secondParam = typeRef.templateParams?.[1] as string;
     const sampleType = textureSampleType(firstParam as GPUTextureFormat);
     const access = accessMode(secondParam);
     return `storageTexture: { format: "${firstParam}", sampleType: "${sampleType}", access: "${access}" }`;
