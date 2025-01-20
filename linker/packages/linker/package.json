@@ -21,7 +21,7 @@
     "test:once": "vitest run"
   },
   "type": "module",
-  "repository": "github:wgsl-tooling-wg/wgsl-linker",
+  "repository": "github:wgsl-tooling-wg/wesl-js",
   "exports": {
     ".": {
       "types": "./dist/linker/src/index.d.ts",
