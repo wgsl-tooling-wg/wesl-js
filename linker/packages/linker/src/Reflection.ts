@@ -18,18 +18,16 @@ import { textureStorage } from "./WESLTokens.ts";
 
 export type BindingStructReportFn = (structs: StructElem[]) => void;
 
-export function reportBindingStructs(
-  fn: BindingStructReportFn,
-): (ast: TransformedAST) => TransformedAST {
-  return (ast: TransformedAST) => {
-    const structs = ast.notableElems.bindingStructs as StructElem[];
-    fn(structs);
-    return ast;
-  };
-}
-
-/*
-Construct something that looks roughly like this 
+/** linker plugin that generates TypeScript strings for GPUBindingGroupLayouts
+ * based on the binding structs in the WESL source
+ * 
+ * requires the enableBindingStructs() transform to be enabled
+ * 
+ * @param fn a function that will be called with the binding structs
+ * (Normally the caller will pass a function that uses bindingGroupLayoutTs() 
+ * to generate the TypeScript)
+ *
+ * The generated TypeScript looks looks roughly like this 
 
   export function MyBindingLayout(device: GPUDevice): GPUBindGroupLayout {
     return device.createBindGroupLayout({
@@ -44,12 +42,22 @@ Construct something that looks roughly like this
       ],
     });
   }
-
 */
+export function reportBindingStructs(
+  fn: BindingStructReportFn,
+): (ast: TransformedAST) => TransformedAST {
+  return (ast: TransformedAST) => {
+    const structs = ast.notableElems.bindingStructs as StructElem[];
+    fn(structs);
+    return ast;
+  };
+}
+
 
 /**
- * @return a function that calls createBindGroupLayout()
- * to create the binding group layout defined by a given binding struct
+ * @return a string containing a generated TypeScript function that creates
+ * a GPUBindingGroupLayout instance to align with the binding structures
+ * in wesl source.
  */
 export function bindingGroupLayoutTs(struct: BindingStructElem): string {
   const structName = struct.name.ident.mangledName;
@@ -69,26 +77,13 @@ export function ${structName}Layout(device: GPUDevice): GPUBindGroupLayout {
   return src;
 }
 
-/*
+
+/** return the shader stage visibility for a binding struct, based on
+ * the shader entry function that has the binding struct as a parameter. 
  *
+ * The shader entry function is attached to the binding struct 
+ * by the enableBindingStructs() transform.
  */
-function memberToLayoutEntry(
-  member: StructMemberElem,
-  visibility: string,
-): string {
-  const bindingParam = member.attributes?.find(a => a.name === "binding")
-    ?.params?.[0];
-  const binding = bindingParam ? paramText(bindingParam) : "?";
-
-  const src = `
-      {
-        binding: ${binding},
-        visibility: ${visibility},
-        ${layoutEntry(member)}
-      }`;
-  return src;
-}
-
 function shaderVisiblity(struct: BindingStructElem): string {
   const { entryFn } = struct;
   if (!entryFn) {
@@ -109,6 +104,31 @@ function shaderVisiblity(struct: BindingStructElem): string {
   return "GPUShaderStage.COMPUTE";
 }
 
+/**
+ * @return a GPUBindGroupLayoutEntry corresponding to one member 
+ * of a WESL binding struct.
+ */
+function memberToLayoutEntry(
+  member: StructMemberElem,
+  visibility: string,
+): string {
+  const bindingParam = member.attributes?.find(a => a.name === "binding")
+    ?.params?.[0];
+  const binding = bindingParam ? paramText(bindingParam) : "?";
+
+  const src = `
+      {
+        binding: ${binding},
+        visibility: ${visibility},
+        ${layoutEntry(member)}
+      }`;
+  return src;
+}
+
+/** @return the guts of the GPUBindGroupLayoutEntry for this binding struct member.
+ * ptr references to storage arrays become 'buffer' GPUBufferBindingLayout intances,
+ * references to WGSL samplers become 'sampler' GPUSamplerBindingLayout instances, etc.
+ */
 function layoutEntry(member: StructMemberElem): string {
   const { typeRef } = member;
   let entry: string | undefined;
@@ -126,6 +146,26 @@ function layoutEntry(member: StructMemberElem): string {
   }
   return entry;
 }
+
+function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
+  const { name: typeName } = typeRef;
+  if (typeName === "ptr") {
+    const param1 = typeRef.templateParams?.[0];
+    const param3 = typeRef.templateParams?.[2];
+    if (param1 === "uniform") {
+      return `buffer: { type: "uniform" }`;
+    } else if (param1 === "storage") {
+      if (param3 === "read_write") {
+        return `buffer: { type: "read-only-storage" }`;
+      } else {
+        return `buffer: { type: "storage" }`;
+      }
+      // TODO what do we do with the element type (2nd parameter)
+      // TODO should there be an ability to set hasDynamicOffset?
+    }
+  }
+}
+
 
 function samplerLayoutEntry(typeRef: TypeRefElem): string | undefined {
   const { originalName } = typeRef.name as RefIdent;
@@ -178,25 +218,6 @@ function externalTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
     // TODO. how would we set the required source: HTMLVideoElement or VideoFrame?
   }
   return undefined;
-}
-
-function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
-  const { name: typeName } = typeRef;
-  if (typeName === "ptr") {
-    const param1 = typeRef.templateParams?.[0];
-    const param3 = typeRef.templateParams?.[2];
-    if (param1 === "uniform") {
-      return `buffer: { type: "uniform" }`;
-    } else if (param1 === "storage") {
-      if (param3 === "read_write") {
-        return `buffer: { type: "read-only-storage" }`;
-      } else {
-        return `buffer: { type: "storage" }`;
-      }
-      // TODO what do we do with the element type (2nd parameter)
-      // TODO should there be an ability to set hasDynamicOffset?
-    }
-  }
 }
 
 function paramText(expression: ExpressionElem): string {
