@@ -1,11 +1,11 @@
-# wgsl-linker
+# wesl-linker
 
-**wgsl-linker** enriches the WGSL shader language to support
+**wesl-linker** enriches the WGSL shader language to support
 linking code modules via `import`.
 Linking can be done entirely at runtime.
 
 For those in the JavaScript/Typescript world, think 'bundling'.
-The **wgsl-linker** is a module bundler for WGSL.
+The **wesl-linker** is a module bundler for WGSL.
 
 As with other programming languages,
 module linking becomes useful when your WGSL code grows
@@ -19,4 +19,4 @@ The linker will rename one of them, and all the calls to the renamed function.
 * dead code - Importing a function from a big module?
 You get only that function and its references, not the whole file.
 
-**wgsl-linker** is currently being revised to follow the upcoming community [WESL standard](https://github.com/wgsl-tooling-wg/wesl-spec).
+**wesl-linker** is currently being revised to follow the upcoming community [WESL standard](https://github.com/wgsl-tooling-wg/wesl-spec).

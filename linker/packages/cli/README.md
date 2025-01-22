@@ -1,15 +1,15 @@
-## wgsl-link
+## wesl-link
 
-**wgsl-link** is a tool for preprocessing and linking multiple WGSL shader modules into a single WGSL module from the command line.
+**wesl-link** is a tool for preprocessing and linking multiple WGSL shader modules into a single WGSL module from the command line.
 
-See [wgsl-linker](https://github.com/wgsl-tooling-wg/wgsl-linker)
+See [wesl-js](https://github.com/wgsl-tooling-wg/wesl-js)
 for more details of wgsl syntax extensions
 like `#import` and `#export`.
 
 ### Usage
 
 ```sh
-wgsl-link <rootWgsl> [libraryWgsl...]
+wesl-link <rootWgsl> [libraryWgsl...]
 ```
 
 Merges the rootWgsl file with any imports

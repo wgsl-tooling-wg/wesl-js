@@ -3,7 +3,7 @@
   "version": "0.6.0-pre2",
   "type": "module",
   "scripts": {
-    "build": "esbuild --bundle --platform=node --format=esm --outfile=bin/wgsl-link src/main.ts",
+    "build": "esbuild --bundle --platform=node --format=esm --outfile=bin/wesl-link src/main.ts",
     "format": "prettier . --write",
     "lint": "eslint src",
     "typecheck": "tsc",
@@ -12,12 +12,12 @@
     "test": "vitest",
     "test:once": "vitest run"
   },
-  "repository": "https://github.com/wgsl-tooling-wg/wgsl-linker/tree/main/packages/cli",
-  "homepage": "https://github.com/wgsl-tooling-wg/wgsl-linker/tree/main/packages/cli#readme",
+  "repository": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli",
+  "homepage": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli#readme",
   "files": [
     "bin"
   ],
-  "bin": "bin/wgsl-link",
+  "bin": "bin/wesl-link",
   "dependencies": {
     "@types/diff": "^7.0.0",
     "diff": "^7.0.0",
