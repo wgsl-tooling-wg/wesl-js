@@ -1,4 +1,4 @@
-import { WgslBundle } from "wgsl-linker";
+import { WgslBundle } from "wesl";
 import { parseSrcModule, parseWESL, WeslAST } from "./ParseWESL.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
 import { SrcModule } from "./Scope.ts";

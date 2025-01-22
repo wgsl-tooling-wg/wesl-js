@@ -1,7 +1,7 @@
 import { expectNoLog } from "mini-parse/test-util";
 import fs from "node:fs/promises";
 import { expect, test } from "vitest";
-import { enableBindingStructs, link, noSuffix } from "wgsl-linker";
+import { enableBindingStructs, link, noSuffix } from "wesl";
 import { findBulkTestPaths } from "../findBulkTests.ts";
 
 export interface NamedPath {

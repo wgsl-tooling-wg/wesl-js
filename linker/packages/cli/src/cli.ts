@@ -1,7 +1,7 @@
 import { createTwoFilesPatch } from "diff";
 import fs from "fs";
 import { enableTracing } from "mini-parse";
-import { astToString, link, normalize, scopeToString } from "wgsl-linker";
+import { astToString, link, normalize, scopeToString } from "wesl";
 import yargs from "yargs";
 import { log} from "mini-parse";
 import {

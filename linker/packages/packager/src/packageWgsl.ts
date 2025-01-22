@@ -1,7 +1,7 @@
 import { glob } from "glob";
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
-import { WgslBundle } from "wgsl-linker";
+import { WgslBundle } from "wesl";
 import wgslBundleDecl from "../../linker/src/WgslBundle.ts?raw";
 import { CliArgs } from "./packagerCli.js";
 

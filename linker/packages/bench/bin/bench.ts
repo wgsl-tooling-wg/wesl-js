@@ -1,6 +1,6 @@
 import { WGSLLinker } from "@use-gpu/shader";
 import fs from "fs/promises";
-import { link, parseWESL } from "wgsl-linker";
+import { link, parseWESL } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
 

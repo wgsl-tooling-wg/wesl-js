@@ -9,6 +9,6 @@ const lib = config.build.lib as LibraryOptions;
 lib.name = "wgsl-linker-templates";
 lib.entry = [resolve(__dirname, "src/templates/index.ts")];
 lib.fileName = "templates";
-config.build.rollupOptions = { external: ["wgsl-linker", "mini-parse"] };
+config.build.rollupOptions = { external: ["wesl", "mini-parse"] };
 
 export default defineConfig(config);
