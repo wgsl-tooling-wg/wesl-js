@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM"],
+    "types": ["node"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "allowJs": false,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "importsNotUsedAsValues": "remove",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "paths": {
+      "wesl": ["../linker/src"],
+      "wesl-plugin": ["../plugin"],
+    }
+  },
+  "include": ["main.ts", "src/**/*"],
+  "exclude": ["node_modules"]
+}

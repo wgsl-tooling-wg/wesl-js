@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["esnext", "DOM"],
+    "importsNotUsedAsValues": "remove",
+    "skipLibCheck": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "wesl": ["../linker/src"]
+    },
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
+}
