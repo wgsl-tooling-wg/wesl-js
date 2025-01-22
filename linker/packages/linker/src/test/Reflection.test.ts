@@ -97,6 +97,8 @@ test("binding struct to ts", () => {
         ]
       });
     }
+
+    export const layouts = { MyBindingsLayout };
       "
   `);
 });

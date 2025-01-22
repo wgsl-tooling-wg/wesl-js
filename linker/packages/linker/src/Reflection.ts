@@ -16,7 +16,7 @@ import {
 } from "./StandardTypes.ts";
 import { textureStorage } from "./WESLTokens.ts";
 
-export type BindingStructReportFn = (structs: StructElem[]) => void;
+export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
 
 /** linker plugin that generates TypeScript strings for GPUBindingGroupLayouts
  * based on the binding structs in the WESL source
@@ -47,7 +47,7 @@ export function reportBindingStructs(
   fn: BindingStructReportFn,
 ): (ast: TransformedAST) => TransformedAST {
   return (ast: TransformedAST) => {
-    const structs = ast.notableElems.bindingStructs as StructElem[];
+    const structs = ast.notableElems.bindingStructs as BindingStructElem[];
     fn(structs);
     return ast;
   };
@@ -59,20 +59,29 @@ export function reportBindingStructs(
  * a GPUBindingGroupLayout instance to align with the binding structures
  * in wesl source.
  */
-export function bindingGroupLayoutTs(struct: BindingStructElem): string {
+export function bindingGroupLayoutTs(struct: BindingStructElem, typeScript = true): string {
   const structName = struct.name.ident.mangledName;
   const visibility = shaderVisiblity(struct);
   const entries = struct.members
     .map(m => memberToLayoutEntry(m, visibility))
     .join(",");
 
+
+  
+    const fnName = `${structName}Layout`;
+  const fnDecl = typeScript ? 
+  `export function ${fnName}(device: GPUDevice): GPUBindGroupLayout` 
+  : `export function ${fnName}(device) ` ;
+
   const src = `
-export function ${structName}Layout(device: GPUDevice): GPUBindGroupLayout {
+${fnDecl} {
   return device.createBindGroupLayout({
     entries: [ ${entries}
     ]
   });
 }
+
+export const layouts = { ${fnName} };
   `;
   return src;
 }
