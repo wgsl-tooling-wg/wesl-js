@@ -2,9 +2,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nodemon --delay 350ms --watch '../linker/dist/**/*.js' '../plugin/dist/**/*.js' --ext cjs,ts,js --exec vite"
+    "dev": "nodemon --delay 350ms --watch '../linker/dist/**/*.js' --watch '../plugin/dist/**/*.js' --ext cjs,ts,js --exec vite dev"
   },
   "dependencies": {
     "wesl-plugin": "workspace:*"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
   }
 }

@@ -244,6 +244,10 @@ importers:
       wesl-plugin:
         specifier: workspace:*
         version: link:../plugin
+    devDependencies:
+      nodemon:
+        specifier: ^3.1.9
+        version: 3.1.9
 
   packages/random_wgsl:
     devDependencies:
