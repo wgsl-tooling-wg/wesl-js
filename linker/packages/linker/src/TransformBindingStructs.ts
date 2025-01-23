@@ -296,8 +296,10 @@ export function transformBindingReference(
     if (tracing) console.log(`missing mangledVarName for ${refName}`);
     return { kind: "synthetic", text: refName };
   }
+  const { extraComponents } = memberRef;
+  const extraText = extraComponents ? extraComponents.name : "";
 
-  const text = `${structMember.mangledVarName}`;
+  const text = structMember.mangledVarName + extraText;
   const synthElem: SyntheticElem = { kind: "synthetic", text };
   memberRef.contents = [synthElem];
   return synthElem;

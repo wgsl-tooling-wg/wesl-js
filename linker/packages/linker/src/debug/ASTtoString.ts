@@ -94,7 +94,8 @@ function addRefIdent(elem: AbstractElem, str: LineWrapper): true | undefined {
 
 function addMemberRef(elem: AbstractElem, str: LineWrapper): true | undefined {
   if (elem.kind === "memberRef") {
-    str.add(` ${elem.name.ident.originalName}.${elem.member.name}`);
+    const extraText = elem.extraComponents ? elem.extraComponents.name : "";
+    str.add(` ${elem.name.ident.originalName}.${elem.member.name}${extraText}`);
     return true;
   }
 }

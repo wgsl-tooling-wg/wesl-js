@@ -1144,11 +1144,11 @@ test(`parse struct reference`, () => {
           typeDecl %x
             decl %x
           text ' = '
-          memberRef a.b
+          memberRef a.b[0]
             ref a
             text '.'
             name b
-            text '[0]'
+            name [0]
         text '; }'
       text ';
       '"
@@ -1176,14 +1176,11 @@ test("member reference with extra components", () => {
         text '[ '
         ref out
         text ' + 0u ] = '
-        memberRef c.p0
+        memberRef c.p0.t0.x
           ref c
           text '.'
           name p0
-          text '.'
-          name t0
-          text '.'
-          name x
+          name .t0.x
         text ';
       }'
       text '
@@ -1325,7 +1322,7 @@ test("binding struct", () => {
       @group(0) @binding(3) samp: sampler,
     }
   `
-  const ast = parseTestRaw(src);
+  const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module

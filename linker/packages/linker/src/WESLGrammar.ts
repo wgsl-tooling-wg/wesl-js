@@ -287,7 +287,7 @@ const primary_expression = or(
 // prettier-ignore
 const component_or_swizzle = repeatPlus(
   or(
-    seq(".", word                          .collect(nameCollect, "component")),
+    seq(".", word),
     seq("[", () => expression, req("]")),
   ),
 );
@@ -298,7 +298,7 @@ const simple_component_reference = tagScope(
   seq(
     qualified_ident                   .collect(refIdent, "structRef"),
     seq(".", word                     .collect(nameCollect, "component")),
-    opt(component_or_swizzle),
+    opt(component_or_swizzle          .collect(nameCollect, "extra_components")),
   )                                   .collect(memberRefCollect),
 );
 

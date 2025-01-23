@@ -40,7 +40,7 @@ import {
   WeslParseState,
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "./Scope.ts";
-import { scopeToString } from "./debug/ScopeToString.ts";
+import {dlog} from "berry-pretty";
 
 /** add an elem to the .contents array of the currently containing element */
 function addToOpenElem(cc: CollectContext, elem: AbstractElem): void {
@@ -292,11 +292,12 @@ export const expressionCollect = collectElem(
 export const memberRefCollect = collectElem(
   "memberRef",
   (cc: CollectContext, openElem: PartElem<SimpleMemberRef>) => {
-    const { component, structRef } = cc.tags;
+    const { component, structRef, extra_components } = cc.tags;
     const member = component![0] as NameElem;
     const name = structRef?.flat()[0] as RefIdentElem;
+    const extraComponents = extra_components?.flat()[0] as NameElem; 
 
-    const partElem: SimpleMemberRef = { ...openElem, name, member };
+    const partElem: SimpleMemberRef = { ...openElem, name, member, extraComponents };
     return withTextCover(partElem, cc) as any;
   },
 );

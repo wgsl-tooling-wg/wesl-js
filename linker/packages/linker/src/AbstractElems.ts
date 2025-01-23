@@ -186,6 +186,7 @@ export interface SimpleMemberRef extends ElemWithContentsBase {
   kind: "memberRef";
   name: RefIdentElem;
   member: NameElem;
+  extraComponents?: NameElem;
 }
 
 /** a struct declaration */
