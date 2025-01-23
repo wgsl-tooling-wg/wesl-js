@@ -8,7 +8,9 @@ import {
   ModuleElem,
   SimpleMemberRef,
   StructElem,
+  StructMemberElem,
   SyntheticElem,
+  TypeTemplateParameter,
 } from "./AbstractElems.ts";
 import { declUniqueName } from "./BindIdents.ts";
 import { TransformedAST } from "./Linker.ts";
@@ -21,6 +23,7 @@ import {
 } from "./RawEmit.ts";
 import { DeclIdent, RefIdent } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
+import { textureStorage } from "./WESLTokens.ts";
 
 /**
  * Transform binding structures into binding variables by mutating the AST.
@@ -137,27 +140,89 @@ export function transformBindingStruct(
   s: StructElem,
   globalNames: Set<string>,
 ): SyntheticElem[] {
-  return s.members.map(m => {
-    const attributes = m.attributes?.map(attributeToString).join(" ");
-    const varName = declUniqueName(m.name.name, globalNames);
-    m.mangledVarName = varName;
+  return s.members.map(member => {
+    const { typeRef, name: memberName } = member;
+    const { name: typeName } = typeRef!; // members should always have a typeRef.. TODO fix typing to show this
+    const typeParameters = typeRef?.templateParams;
+
+    const varName = declUniqueName(memberName.name, globalNames);
+    member.mangledVarName = varName; // save new name so we can rewrite references to this member later
     globalNames.add(varName);
 
-    const origParams = m.typeRef?.templateParams || [];
+    const attributes = member.attributes?.map(attributeToString).join(" ") ?? "";
+    const varTypes =
+      lowerPtrMember(member, typeName, typeParameters, varName) ??
+      lowerStdTypeMember(typeName, typeParameters) ??
+      lowerStorageTextureMember(typeName, typeParameters);
+    if (!varTypes) {
+      console.log("unhandled case transforming member", typeName);
+      return syntheticVar(attributes, varName, "", "??");
+    }
+
+    const { storage: storageType, varType } = varTypes;
+    return syntheticVar(attributes, varName, storageType, varType);
+  });
+}
+
+interface LoweredVarTypes {
+  storage: string;
+  varType: string;
+}
+
+function lowerPtrMember(
+  member: StructMemberElem,
+  typeName: string | RefIdent,
+  typeParameters: TypeTemplateParameter[] | undefined,
+  varName: string,
+): LoweredVarTypes | undefined {
+  if (typeName === "ptr") {
+    const origParams = typeParameters ?? [];
     const newParams = [origParams[0]];
     if (origParams[2]) newParams.push(origParams[2]);
-    const storageType = typeListToString(newParams);
+    const storage = typeListToString(newParams);
 
     const varType = typeParamToString(origParams?.[1]);
+    return { storage, varType };
+  }
+}
 
-    const varText = `var ${attributes} ${varName}${storageType} : ${varType};\n`;
+function lowerStdTypeMember(
+  typeName: string | RefIdent,
+  typeParameters: TypeTemplateParameter[] | undefined,
+): LoweredVarTypes | undefined {
+  if (typeof typeName !== "string") {
+    const varBaseType = typeName.std ? typeName.originalName : "??";
+    const params = typeParameters ? typeListToString(typeParameters) : "";
+    const varType = varBaseType + params;
 
-    const elem: SyntheticElem = {
-      kind: "synthetic",
-      text: varText,
-    };
-    return elem;
-  });
+    return { varType, storage: "" };
+  }
+}
+
+function lowerStorageTextureMember(
+  typeName: string | RefIdent,
+  typeParameters: TypeTemplateParameter[] | undefined,
+): LoweredVarTypes | undefined {
+  if (typeof typeName === "string" && textureStorage.test(typeName)) {
+    const params = typeParameters ? typeListToString(typeParameters) : "";
+    const varType = typeName + params;
+    return { varType, storage: "" };
+  }
+}
+
+function syntheticVar(
+  attributes: string,
+  varName: string,
+  storageTemplate: string,
+  varType: string,
+): SyntheticElem {
+  const varText = `var${storageTemplate} ${attributes} ${varName} : ${varType};\n`;
+
+  const elem: SyntheticElem = {
+    kind: "synthetic",
+    text: varText,
+  };
+  return elem;
 }
 
 interface MemberRefToStruct extends StructTrace {

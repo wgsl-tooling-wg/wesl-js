@@ -57,7 +57,7 @@ test("transformBindingStruct", () => {
   const linked = srcBuilder.build().dest;
   expect(linked).toMatchInlineSnapshot(
     `
-    "var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
+    "var<storage, read_write> @group(0) @binding(0) particles : array<f32>;
     "
   `,
   );
@@ -124,7 +124,7 @@ test("lower binding structs", () => {
   `;
 
   const expected = `
-var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
+var<storage, read_write> @group(0) @binding(0) particles : array<f32>;
        
     fn main() {
       let x = particles;
@@ -138,7 +138,7 @@ var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
   const loweredAst = astToString(lowered.moduleElem);
   expect(loweredAst).toMatchInlineSnapshot(`
     "module
-      synthetic 'var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
+      synthetic 'var<storage, read_write> @group(0) @binding(0) particles : array<f32>;
     '
       text '
         '
@@ -182,7 +182,7 @@ test("lower binding structs with conflicting root name", () => {
   `;
 
   const expected = `
-var @group(0) @binding(0) particles0<storage, read_write> : array<f32>;
+var<storage, read_write> @group(0) @binding(0) particles0 : array<f32>;
        
     const particles = 7;
     fn main() {
