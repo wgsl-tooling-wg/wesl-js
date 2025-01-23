@@ -149,7 +149,8 @@ export function transformBindingStruct(
     member.mangledVarName = varName; // save new name so we can rewrite references to this member later
     globalNames.add(varName);
 
-    const attributes = member.attributes?.map(attributeToString).join(" ") ?? "";
+    const attributes =
+      member.attributes?.map(attributeToString).join(" ") ?? "";
     const varTypes =
       lowerPtrMember(member, typeName, typeParameters, varName) ??
       lowerStdTypeMember(typeName, typeParameters) ??
