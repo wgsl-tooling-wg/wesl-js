@@ -194,3 +194,42 @@ var<storage, read_write> @group(0) @binding(0) particles0 : array<f32>;
   const linked = linkTestOpts(opts, src);
   expectTrimmedMatch(linked, expected);
 });
+
+test("lower 5 bindings", () => {
+  const src = `
+    struct Uniforms {
+      foo: u32
+    }
+
+    struct MyBindings {
+      @group(0) @binding(0) particles: ptr<storage, array<u32>, read_write>, 
+      @group(0) @binding(1) uniforms: ptr<uniform, Uniforms>, 
+      @group(0) @binding(2) tex: texture_2d<rgba8unorm>,
+      @group(0) @binding(3) samp: sampler,
+      @group(0) @binding(4) stTex: texture_storage_2d<rgba8unorm, read>,
+    }
+
+    @compute fn main(b: MyBindings) {
+      b.particles[0] = b.uniforms.foo;
+    }
+  `;
+
+  const expected = `
+var<storage, read_write> @group(0) @binding(0) particles : array<u32>;
+var<uniform> @group(0) @binding(1) uniforms : Uniforms;
+var @group(0) @binding(2) tex : texture_2d<rgba8unorm>;
+var @group(0) @binding(3) samp : sampler;
+var @group(0) @binding(4) stTex : texture_storage_2d<rgba8unorm, read>;
+
+    struct Uniforms {
+      foo: u32
+    }
+    @compute fn main() {
+      particles[0] = uniforms.foo;
+    }
+`;
+
+  const opts = { linkConfig: enableBindingStructs() };
+  const linked = linkTestOpts(opts, src);
+  expectTrimmedMatch(linked, expected);
+});
