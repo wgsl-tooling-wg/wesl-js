@@ -462,6 +462,7 @@ const statement: Parser<any> = or(
 
 // prettier-ignore
 const lhs_expression: Parser<any> = or(
+  simple_component_reference,
   seq(
     qualified_ident                        .collect(refIdent), 
     opt(component_or_swizzle)
@@ -470,7 +471,7 @@ const lhs_expression: Parser<any> = or(
     "(", 
     () => lhs_expression, 
     ")", 
-    opt(component_or_swizzle)
+    opt(component_or_swizzle)         // LATER this doesn't find member references.
   ),
   seq("&", () => lhs_expression),
   seq("*", () => lhs_expression),

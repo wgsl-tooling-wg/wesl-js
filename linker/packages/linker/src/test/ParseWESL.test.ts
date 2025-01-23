@@ -1427,3 +1427,39 @@ test("binding struct", () => {
       '"
   `);
 })
+
+test("memberRefs with extra components", () => {
+  const src = `
+    fn main() {
+      b.particles[0] = b.uniforms.foo;
+    }
+  `
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn main()
+        text 'fn '
+        decl %main
+        text '() {
+          '
+        memberRef b.particles[0]
+          ref b
+          text '.'
+          name particles
+          name [0]
+        text ' = '
+        memberRef b.uniforms.foo
+          ref b
+          text '.'
+          name uniforms
+          name .foo
+        text ';
+        }'
+      text '
+      '"
+  `);
+
+});
