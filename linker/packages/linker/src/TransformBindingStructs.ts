@@ -116,20 +116,15 @@ export function markBindingStructs(
   moduleElem: ModuleElem,
 ): BindingStructElem[] {
   const structs = moduleElem.contents.filter(elem => elem.kind === "struct");
-  const bindingStructs = structs.filter(containsBindingPtr);
+  const bindingStructs = structs.filter(containsBinding);
   bindingStructs.forEach(struct => (struct.bindingStruct = true));
   // LATER also mark structs that reference a binding struct..
   return bindingStructs as BindingStructElem[];
 }
 
-/** @return true if this struct contains a member with a ptr marked with @binding or @group */
-function containsBindingPtr(struct: StructElem): boolean {
-  return struct.members.some(member => {
-    const { typeRef, attributes } = member;
-    if (typeRef.name === "ptr" && bindingAttribute(attributes)) {
-      return true;
-    }
-  });
+/** @return true if this struct contains a member with marked with @binding or @group */
+function containsBinding(struct: StructElem): boolean {
+  return struct.members.some(({ attributes }) => bindingAttribute(attributes));
 }
 
 function bindingAttribute(attributes?: AttributeElem[]): boolean {
