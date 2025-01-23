@@ -155,7 +155,7 @@ export function transformBindingStruct(
 
     const varType = typeParamToString(origParams?.[1]);
 
-    const varText = `var ${attributes} ${varName}${storageType} : ${varType};`;
+    const varText = `var ${attributes} ${varName}${storageType} : ${varType};\n`;
 
     const elem: SyntheticElem = {
       kind: "synthetic",

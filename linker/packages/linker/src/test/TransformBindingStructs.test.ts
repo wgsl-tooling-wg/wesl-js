@@ -56,7 +56,10 @@ test("transformBindingStruct", () => {
   lowerAndEmit(srcBuilder, newVars, {});
   const linked = srcBuilder.build().dest;
   expect(linked).toMatchInlineSnapshot(
-    `"var @group(0) @binding(0) particles<storage, read_write> : array<f32>;"`,
+    `
+    "var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
+    "
+  `,
   );
 });
 
@@ -135,7 +138,8 @@ var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
   const loweredAst = astToString(lowered.moduleElem);
   expect(loweredAst).toMatchInlineSnapshot(`
     "module
-      synthetic 'var @group(0) @binding(0) particles<storage, read_write> : array<f32>;'
+      synthetic 'var @group(0) @binding(0) particles<storage, read_write> : array<f32>;
+    '
       text '
         '
       text '
