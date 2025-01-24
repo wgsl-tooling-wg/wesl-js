@@ -18,7 +18,8 @@ import { textureStorage } from "./WESLTokens.ts";
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
 
-/** linker plugin that generates TypeScript strings for GPUBindingGroupLayouts
+/** 
+ * Linker plugin that generates TypeScript strings for GPUBindingGroupLayouts
  * based on the binding structs in the WESL source
  * 
  * requires the enableBindingStructs() transform to be enabled
@@ -60,6 +61,10 @@ export function reportBindingStructs(
  * in wesl source.
  */
 export function bindingGroupLayoutTs(struct: BindingStructElem, typeScript = true): string {
+  if (!struct) {
+    console.log("no struct!???");
+    return "";
+  }
   const structName = struct.name.ident.mangledName;
   const visibility = shaderVisiblity(struct);
   const entries = struct.members
