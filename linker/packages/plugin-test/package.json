@@ -8,6 +8,7 @@
     "wesl-plugin": "workspace:*"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "vite-plugin-inspect": "^10.1.0"
   }
 }
