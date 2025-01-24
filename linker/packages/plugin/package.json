@@ -2,6 +2,31 @@
   "name": "wesl-plugin",
   "type": "module",
   "version": "0.1.0",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch src --watch ../linker/dist",
+    "build:fix": "tsx scripts/postbuild.ts",
+    "lint": "eslint .",
+    "play": "npm -C playground run dev",
+    "prepublishOnly": "npm run build",
+    "release": "bumpp && npm publish",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "toml": "^3.0.0",
+    "unplugin": "^2.1.2",
+    "wesl": "workspace:*"
+  },
+  "devDependencies": {
+    "@nuxt/kit": "^3.15.2",
+    "@nuxt/schema": "^3.15.2",
+    "bumpp": "^9.10.1",
+    "chalk": "^5.4.1",
+    "nodemon": "^3.1.9",
+    "rollup": "^4.31.0",
+    "tsup": "^8.3.5",
+    "webpack": "^5.97.1"
+  },
   "packageManager": "pnpm@9.15.0",
   "description": "",
   "repository": "github:wgsl-tooling-wg/wesl-js",
@@ -71,16 +96,6 @@
   "files": [
     "dist"
   ],
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch src --watch ../linker/dist",
-    "build:fix": "tsx scripts/postbuild.ts",
-    "lint": "eslint .",
-    "play": "npm -C playground run dev",
-    "prepublishOnly": "npm run build",
-    "release": "bumpp && npm publish",
-    "test": "vitest"
-  },
   "peerDependencies": {
     "@farmfe/core": ">=1",
     "@nuxt/kit": "^3",
@@ -112,21 +127,5 @@
     "webpack": {
       "optional": true
     }
-  },
-  "dependencies": {
-    "toml": "^3.0.0",
-    "unplugin": "^2.1.2",
-    "wesl": "workspace:*"
-  },
-  "devDependencies": {
-    "@nuxt/kit": "^3.15.2",
-    "@nuxt/schema": "^3.15.2",
-    "bumpp": "^9.10.1",
-    "chalk": "^5.4.1",
-    "nodemon": "^3.1.9",
-    "rollup": "^4.31.0",
-    "tsup": "^8.3.5",
-    "vite": "^6.0.10",
-    "webpack": "^5.97.1"
   }
 }
