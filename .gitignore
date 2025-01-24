@@ -9,3 +9,5 @@
 
 # ignore node_modules when switching to pre-monorepo branches
 node_modules
+
+vite.config.ts.timestamp-*.mjs
