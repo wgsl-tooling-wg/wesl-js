@@ -20,33 +20,38 @@ import { bindingGroupLayoutTs } from "../../linker/src/Reflection.js";
 import type { WeslPluginOptions } from "./weslPluginOptions.js";
 import path from "node:path";
 
+// TODO figure how to handle reloading & mutated AST produced by transforms
+
 export function weslPlugin(
   options: WeslPluginOptions = {},
   meta: UnpluginContextMeta,
 ): UnpluginOptions {
   return {
     name: "wesl-plugin",
-    resolveId(id) {
-      console.log("resolveId(), id:", id);
-      if (id.endsWith(".wesl?reflect")) {
-        return id;
-      }
-      return null;
-    },
+    resolveId: resolver,
     load: loader,
   };
+}
+
+async function resolver(this: UnpluginBuildContext, id: string) {
+  console.log("resolveId(), id:", id);
+  if (id.endsWith(".wesl?reflect")) {
+    return id;
+  }
+  return null;
 }
 
 async function loader(this: UnpluginBuildContext, id: string) {
   console.log("loader(), id:", id);
   if (id.endsWith(".wesl?reflect")) {
     const registry = await getRegistry(this);
-    return await reflectTs(id, registry);
+    const { weslRoot } = await getWeslToml();
+    const mainFile = id.slice(0, -"?reflect".length);
+    const main = localPath(mainFile, weslRoot);
+    return await reflectTs(main, registry);
   }
   return null;
 }
-
-let registry: ParsedRegistry | undefined;
 
 interface WeslToml {
   weslFiles: string[];
@@ -57,18 +62,17 @@ let weslToml: WeslToml | undefined;
 
 async function getWeslToml(): Promise<WeslToml> {
   if (!weslToml) {
-    const tomlString = await fs.readFile("wesl.toml", "utf-8");
+    // TODO consider supporting default if no wesl.toml is provided: e.g. './shaders'
+    const tomlString = await fs.readFile("wesl.toml", "utf-8"); 
     weslToml = toml.parse(tomlString) as WeslToml;
   }
   return weslToml;
 }
 
-// TODO figure how to handle reloading vs. mutated AST produced by transforms
-
+/** load and parse all the wesl files into a ParsedRegistry */
 async function getRegistry(ctx: UnpluginBuildContext): Promise<ParsedRegistry> {
-  // if (!registry) {
   // load wesl files into registry
-  registry = parsedRegistry();
+  const registry = parsedRegistry();
   const { weslFiles, weslRoot } = await getWeslToml();
   const futureFiles = weslFiles.map(g => glob(g));
   const files = (await Promise.all(futureFiles)).flat();
@@ -77,12 +81,12 @@ async function getRegistry(ctx: UnpluginBuildContext): Promise<ParsedRegistry> {
 
   // trigger recompilation on wesl files
   const cwd = process.cwd();
-  const fullPaths = files.map(f => path.join(cwd, f));
+  const fullPaths = files.map(f => path.join(cwd, f)); // docs claim relative paths work, but didn't seem so
   fullPaths.forEach(f => ctx.addWatchFile(f));
-  // }
   return registry;
 }
 
+/** load a set of files, converting to paths relative to the  wesl root directory */
 async function loadFiles(
   files: string[],
   weslRoot: string,
@@ -97,6 +101,7 @@ async function loadFiles(
   return Object.fromEntries(loaded);
 }
 
+/** convert a fs path to a path relative to the wesl root directory */
 function localPath(fullPath: string, weslRoot: string): string {
   const rootStart = fullPath.indexOf(weslRoot);
   if (rootStart === -1) {
@@ -106,19 +111,17 @@ function localPath(fullPath: string, weslRoot: string): string {
   return "." + pathWithSlashPrefix;
 }
 
+/** produce reflection data by partially linking the */
 async function reflectTs(
-  id: string,
+  main: string,
   registry: ParsedRegistry,
 ): Promise<string> {
-  const { weslRoot } = await getWeslToml();
-  const mainFile = id.slice(0, -"?reflect".length);
-  const relativeMain = localPath(mainFile, weslRoot);
   let structsTs = "??";
   const linkConfig = bindingStructReflect(enableBindingStructs(), structs => {
     structsTs = bindingGroupLayoutTs(structs[0], false);
   });
   // TODO we don't need the linked output, make a new linker entry point
-  const linked = linkRegistry(registry, relativeMain, {}, linkConfig);
+  const linked = linkRegistry(registry, main, {}, linkConfig);
   return structsTs;
 }
 
