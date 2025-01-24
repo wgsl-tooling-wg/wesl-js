@@ -1,8 +1,13 @@
 import { glob } from "glob";
 import fs from "node:fs/promises";
 import toml from "toml";
-import type { UnpluginContextMeta, UnpluginOptions } from "unplugin";
+import type {
+  UnpluginBuildContext,
+  UnpluginContextMeta,
+  UnpluginOptions,
+} from "unplugin";
 import { createUnplugin } from "unplugin";
+import { dlog, dlogOpt } from "berry-pretty";
 import {
   bindingStructReflect,
   enableBindingStructs,
@@ -13,6 +18,7 @@ import {
 } from "wesl";
 import { bindingGroupLayoutTs } from "../../linker/src/Reflection.js";
 import type { WeslPluginOptions } from "./weslPluginOptions.js";
+import path from "node:path";
 
 export function weslPlugin(
   options: WeslPluginOptions = {},
@@ -21,21 +27,23 @@ export function weslPlugin(
   return {
     name: "wesl-plugin",
     resolveId(id) {
+      console.log("resolveId(), id:", id);
       if (id.endsWith(".wesl?reflect")) {
         return id;
       }
       return null;
     },
-    load: async id => {
-      if (id.endsWith(".wesl?reflect")) {
-        console.log("loading ?reflect", id);
-        console.log("--options:", stringify(options));
-        console.log("--meta:", stringify(meta));
-        return await reflectTs(id);
-      }
-      return null;
-    },
+    load: loader,
   };
+}
+
+async function loader(this: UnpluginBuildContext, id: string) {
+  console.log("loader(), id:", id);
+  if (id.endsWith(".wesl?reflect")) {
+    const registry = await getRegistry(this);
+    return await reflectTs(id, registry);
+  }
+  return null;
 }
 
 let registry: ParsedRegistry | undefined;
@@ -55,14 +63,23 @@ async function getWeslToml(): Promise<WeslToml> {
   return weslToml;
 }
 
-async function getRegistry(): Promise<ParsedRegistry> {
-  if (!registry) {
-    registry = parsedRegistry();
-    const { weslFiles, weslRoot } = await getWeslToml();
-    const files = (await Promise.all(weslFiles.map(g => glob(g)))).flat();
-    const loaded = await loadFiles(files, weslRoot);
-    parseIntoRegistry(loaded, registry);
-  }
+// TODO figure how to handle reloading vs. mutated AST produced by transforms
+
+async function getRegistry(ctx: UnpluginBuildContext): Promise<ParsedRegistry> {
+  // if (!registry) {
+  // load wesl files into registry
+  registry = parsedRegistry();
+  const { weslFiles, weslRoot } = await getWeslToml();
+  const futureFiles = weslFiles.map(g => glob(g));
+  const files = (await Promise.all(futureFiles)).flat();
+  const loaded = await loadFiles(files, weslRoot);
+  parseIntoRegistry(loaded, registry);
+
+  // trigger recompilation on wesl files
+  const cwd = process.cwd();
+  const fullPaths = files.map(f => path.join(cwd, f));
+  fullPaths.forEach(f => ctx.addWatchFile(f));
+  // }
   return registry;
 }
 
@@ -89,9 +106,11 @@ function localPath(fullPath: string, weslRoot: string): string {
   return "." + pathWithSlashPrefix;
 }
 
-async function reflectTs(id: string): Promise<string> {
+async function reflectTs(
+  id: string,
+  registry: ParsedRegistry,
+): Promise<string> {
   const { weslRoot } = await getWeslToml();
-  const registry = await getRegistry();
   const mainFile = id.slice(0, -"?reflect".length);
   const relativeMain = localPath(mainFile, weslRoot);
   let structsTs = "??";
@@ -100,7 +119,6 @@ async function reflectTs(id: string): Promise<string> {
   });
   // TODO we don't need the linked output, make a new linker entry point
   const linked = linkRegistry(registry, relativeMain, {}, linkConfig);
-
   return structsTs;
 }
 
