@@ -1,9 +1,9 @@
 import { glob } from "glob";
 import path from "node:path";
 import { BulkTest, bulkTests } from "wesl-testsuite";
-import { NamedPath } from "./test/parallelTest.test.ts";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { NamedPath } from "./testWgslFiles.ts";
 
 /* Vitest parallelizes per .test.ts file.
  *
@@ -24,6 +24,8 @@ const communityRoot = path.join(
   "..",
   "community-wgsl",
 );
+
+export const allBulkTests = await findBulkTestPaths();
 
 export async function findBulkTestPaths(): Promise<NamedPath[]> {
   const pathSets: NamedPath[] = [];
