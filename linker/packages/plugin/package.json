@@ -73,7 +73,7 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch src --watch ../linker/src",
+    "dev": "tsup --watch src --watch ../linker/dist",
     "build:fix": "tsx scripts/postbuild.ts",
     "lint": "eslint .",
     "play": "npm -C playground run dev",
