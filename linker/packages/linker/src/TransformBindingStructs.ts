@@ -18,6 +18,7 @@ import { visitAst } from "./LinkerUtil.ts";
 import { findDecl } from "./LowerAndEmit.ts";
 import {
   attributeToString,
+  contentsToString,
   typeListToString,
   typeParamToString,
 } from "./RawEmit.ts";
@@ -298,7 +299,7 @@ export function transformBindingReference(
     return { kind: "synthetic", text: refName };
   }
   const { extraComponents } = memberRef;
-  const extraText = extraComponents ? extraComponents.name : "";
+  const extraText = extraComponents ? contentsToString(extraComponents) : "";
 
   const text = structMember.mangledVarName + extraText;
   const synthElem: SyntheticElem = { kind: "synthetic", text };

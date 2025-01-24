@@ -1,5 +1,6 @@
 import {
   AbstractElem,
+  ContainerElem,
   ExpressionElem,
   ModuleElem,
   TypeRefElem,
@@ -94,7 +95,9 @@ function addRefIdent(elem: AbstractElem, str: LineWrapper): true | undefined {
 
 function addMemberRef(elem: AbstractElem, str: LineWrapper): true | undefined {
   if (elem.kind === "memberRef") {
-    const extraText = elem.extraComponents ? elem.extraComponents.name : "";
+    const { extraComponents } = elem;
+    const extraText =
+      extraComponents ? debugContentsToString(extraComponents) : "";
     str.add(` ${elem.name.ident.originalName}.${elem.member.name}${extraText}`);
     return true;
   }
@@ -310,4 +313,18 @@ function typeRefElemToString(elem: TypeRefElem): string {
     params = "<" + paramStrs + ">";
   }
   return nameStr + params;
+}
+
+export function debugContentsToString(elem: ContainerElem): string {
+  const parts = elem.contents.map(c => {
+    const { kind } = c;
+    if (kind === "text") {
+      return c.srcModule.src.slice(c.start, c.end);
+    } else if (kind === "ref") {
+      return c.ident.originalName; // not using the mapped to decl name, so this can be used for debug..
+    } else {
+      return `?${c.kind}?`;
+    }
+  });
+  return parts.join(" ");
 }

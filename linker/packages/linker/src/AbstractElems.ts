@@ -32,6 +32,7 @@ export type ContainerElem =
   | SimpleMemberRef
   | StructElem
   | StructMemberElem
+  | StuffElem
   | TypeRefElem
   | VarElem;
 
@@ -186,7 +187,7 @@ export interface SimpleMemberRef extends ElemWithContentsBase {
   kind: "memberRef";
   name: RefIdentElem;
   member: NameElem;
-  extraComponents?: NameElem;
+  extraComponents?: StuffElem;
 }
 
 /** a struct declaration */
@@ -195,6 +196,11 @@ export interface StructElem extends ElemWithContentsBase {
   name: DeclIdentElem;
   members: StructMemberElem[];
   bindingStruct?: true; // used later during binding struct transformation
+}
+
+/** generic container of other elements */
+export interface StuffElem extends ElemWithContentsBase {
+  kind: "stuff";
 }
 
 /** a struct declaration that's been marked as a bindingStruct */

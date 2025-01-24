@@ -25,6 +25,7 @@ import {
   TextElem,
   TypeRefElem,
   VarElem,
+  StuffElem,
 } from "./AbstractElems.ts";
 import { elemToString } from "./debug/ASTtoString.ts";
 import {
@@ -289,13 +290,20 @@ export const expressionCollect = collectElem(
   },
 );
 
+export const stuffCollect = collectElem("stuff", 
+  (cc: CollectContext, openElem: PartElem<StuffElem>) => {
+    const partElem = { ...openElem };
+    return withTextCover(partElem, cc);
+  },
+);
+
 export const memberRefCollect = collectElem(
   "memberRef",
   (cc: CollectContext, openElem: PartElem<SimpleMemberRef>) => {
     const { component, structRef, extra_components } = cc.tags;
     const member = component![0] as NameElem;
     const name = structRef?.flat()[0] as RefIdentElem;
-    const extraComponents = extra_components?.flat()[0] as NameElem; 
+    const extraComponents = extra_components?.flat()[0] as StuffElem; 
 
     const partElem: SimpleMemberRef = { ...openElem, name, member, extraComponents };
     return withTextCover(partElem, cc) as any;
@@ -310,6 +318,7 @@ export function nameCollect(cc: CollectContext): NameElem {
   addToOpenElem(cc, elem);
   return elem;
 }
+
 
 export const collectModule = collectElem(
   "module",

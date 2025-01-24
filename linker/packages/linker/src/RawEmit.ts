@@ -1,5 +1,7 @@
 import {
   AttributeElem,
+  ContainerElem,
+  ElemWithContentsBase,
   ExpressionElem,
   TypeRefElem,
   TypeTemplateParameter,
@@ -12,7 +14,7 @@ import { RefIdent } from "./Scope.ts";
 export function attributeToString(attribute: AttributeElem): string {
   const params =
     attribute.params ?
-      `(${attribute.params.map(expressionToString).join(", ")})`
+      `(${attribute.params.map(contentsToString).join(", ")})`
     : "";
   return `@${attribute.name}${params}`;
 }
@@ -23,7 +25,7 @@ export function typeListToString(params: TypeTemplateParameter[]): string {
 
 export function typeParamToString(param?: TypeTemplateParameter): string {
   if (typeof param === "string") return param;
-  if (param?.kind === "expression") return expressionToString(param);
+  if (param?.kind === "expression") return contentsToString(param);
   if (param?.kind === "type") return typeRefToString(param);
   else return `?${param}?`;
 }
@@ -42,10 +44,13 @@ function refToString(ref: RefIdent | string): string {
   return decl.mangledName || decl.originalName;
 }
 
-function expressionToString(elem: ExpressionElem): string {
+export function contentsToString(elem: ContainerElem): string {
   const parts = elem.contents.map(c => {
-    if (c.kind === "text") {
+    const { kind } = c;
+    if (kind === "text") {
       return c.srcModule.src.slice(c.start, c.end);
+    } else if (kind === "ref") {
+      return refToString(c.ident);
     } else {
       return `?${c.kind}?`;
     }

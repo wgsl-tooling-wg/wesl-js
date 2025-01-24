@@ -39,6 +39,7 @@ import {
   declCollect,
   typedDecl,
   aliasCollect,
+  stuffCollect,
 } from "./WESLCollect.ts";
 import { bracketTokens, mainTokens } from "./WESLTokens.ts";
 
@@ -298,7 +299,7 @@ const simple_component_reference = tagScope(
   seq(
     qualified_ident                   .collect(refIdent, "structRef"),
     seq(".", word                     .collect(nameCollect, "component")),
-    opt(component_or_swizzle          .collect(nameCollect, "extra_components")),
+    opt(component_or_swizzle          .collect(stuffCollect, "extra_components")),
   )                                   .collect(memberRefCollect),
 );
 

@@ -1148,7 +1148,8 @@ test(`parse struct reference`, () => {
             ref a
             text '.'
             name b
-            name [0]
+            stuff
+              text '[0]'
         text '; }'
       text ';
       '"
@@ -1180,7 +1181,8 @@ test("member reference with extra components", () => {
           ref c
           text '.'
           name p0
-          name .t0.x
+          stuff
+            text '.t0.x'
         text ';
       }'
       text '
@@ -1257,7 +1259,6 @@ test("parse let declaration with type", () => {
   `);
 });
 
-
 test("separator in let assignment", () => {
   const src = `
     fn vertexMain() {
@@ -1321,7 +1322,7 @@ test("binding struct", () => {
       @group(0) @binding(2) tex: texture_2d<rgba8unorm>,
       @group(0) @binding(3) samp: sampler,
     }
-  `
+  `;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -1426,14 +1427,14 @@ test("binding struct", () => {
       text '
       '"
   `);
-})
+});
 
 test("memberRefs with extra components", () => {
   const src = `
     fn main() {
       b.particles[0] = b.uniforms.foo;
     }
-  `
+  `;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -1449,17 +1450,50 @@ test("memberRefs with extra components", () => {
           ref b
           text '.'
           name particles
-          name [0]
+          stuff
+            text '[0]'
         text ' = '
         memberRef b.uniforms.foo
           ref b
           text '.'
           name uniforms
-          name .foo
+          stuff
+            text '.foo'
         text ';
         }'
       text '
       '"
   `);
+});
 
+test("memberRef with ref in array", () => {
+  const src = `
+    fn main() {
+      vsOut.barycenticCoord[vertNdx] = 1.0;
+    }
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn main()
+        text 'fn '
+        decl %main
+        text '() {
+          '
+        memberRef vsOut.barycenticCoord[ vertNdx ]
+          ref vsOut
+          text '.'
+          name barycenticCoord
+          stuff
+            text '['
+            ref vertNdx
+            text ']'
+        text ' = 1.0;
+        }'
+      text '
+      '"
+  `);
 });
