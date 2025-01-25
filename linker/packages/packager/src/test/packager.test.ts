@@ -9,7 +9,8 @@ import { fileURLToPath } from "node:url";
 const testDir = dirname(fileURLToPath(import.meta.url));
 
 test("package two wgsl files", async () => {
-  const projectDir = path.join(testDir, "wgsl-package");
+  testDir;
+  const projectDir = path.join(testDir, "wesl-package");
   const distDir = path.join(projectDir, "dist");
   const srcDir = path.join(projectDir, "src");
   await rimraf(distDir);
@@ -21,7 +22,7 @@ test("package two wgsl files", async () => {
   expect(result).toMatchInlineSnapshot(`
     "
     export const wgslBundle = {
-      "name": "test-wgsl-package",
+      "name": "test-wesl-package",
       "version": "0.1.1",
       "edition": "wesl_unstable_2024_1",
       "modules": {
