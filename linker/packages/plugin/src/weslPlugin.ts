@@ -63,7 +63,7 @@ let weslToml: WeslToml | undefined;
 async function getWeslToml(): Promise<WeslToml> {
   if (!weslToml) {
     // TODO consider supporting default if no wesl.toml is provided: e.g. './shaders'
-    const tomlString = await fs.readFile("wesl.toml", "utf-8"); 
+    const tomlString = await fs.readFile("wesl.toml", "utf-8");
     weslToml = toml.parse(tomlString) as WeslToml;
   }
   return weslToml;
