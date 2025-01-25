@@ -9,7 +9,7 @@ build({
   bundle: true,
   platform: "node",
   format: "esm",
-  outfile: "bin/wgsl-packager",
+  outfile: "bin/wesl-packager",
   entryPoints: ["src/main.ts"],
 });
 
