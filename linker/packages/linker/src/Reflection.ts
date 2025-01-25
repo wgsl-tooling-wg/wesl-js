@@ -54,13 +54,15 @@ export function reportBindingStructs(
   };
 }
 
-
 /**
  * @return a string containing a generated TypeScript function that creates
  * a GPUBindingGroupLayout instance to align with the binding structures
  * in wesl source.
  */
-export function bindingGroupLayoutTs(struct: BindingStructElem, typeScript = true): string {
+export function bindingGroupLayoutTs(
+  struct: BindingStructElem,
+  typeScript = true,
+): string {
   if (!struct) {
     console.log("no struct!???");
     return "";
@@ -71,12 +73,11 @@ export function bindingGroupLayoutTs(struct: BindingStructElem, typeScript = tru
     .map(m => memberToLayoutEntry(m, visibility))
     .join(",");
 
-
-  
-    const fnName = `${structName}Layout`;
-  const fnDecl = typeScript ? 
-  `export function ${fnName}(device: GPUDevice): GPUBindGroupLayout` 
-  : `export function ${fnName}(device) ` ;
+  const fnName = `${structName}Layout`;
+  const fnDecl =
+    typeScript ?
+      `export function ${fnName}(device: GPUDevice): GPUBindGroupLayout`
+    : `export function ${fnName}(device) `;
 
   const src = `
 ${fnDecl} {
@@ -91,11 +92,10 @@ export const layouts = { ${fnName} };
   return src;
 }
 
-
 /** return the shader stage visibility for a binding struct, based on
- * the shader entry function that has the binding struct as a parameter. 
+ * the shader entry function that has the binding struct as a parameter.
  *
- * The shader entry function is attached to the binding struct 
+ * The shader entry function is attached to the binding struct
  * by the enableBindingStructs() transform.
  */
 function shaderVisiblity(struct: BindingStructElem): string {
@@ -119,7 +119,7 @@ function shaderVisiblity(struct: BindingStructElem): string {
 }
 
 /**
- * @return a GPUBindGroupLayoutEntry corresponding to one member 
+ * @return a GPUBindGroupLayoutEntry corresponding to one member
  * of a WESL binding struct.
  */
 function memberToLayoutEntry(
@@ -179,7 +179,6 @@ function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
     }
   }
 }
-
 
 function samplerLayoutEntry(typeRef: TypeRefElem): string | undefined {
   const { originalName } = typeRef.name as RefIdent;
