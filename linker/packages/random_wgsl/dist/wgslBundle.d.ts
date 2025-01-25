@@ -13,6 +13,9 @@ export interface WgslBundle {
    *    values are wgsl/wesl code strings
    */
   modules: Record<string, string>;
+  
+  /** packages referenced by this package */
+  dependencies?: WgslBundle[];
 }
 
 export declare const wgslBundle: WgslBundle;
