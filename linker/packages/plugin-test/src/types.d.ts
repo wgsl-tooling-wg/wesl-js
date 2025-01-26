@@ -1,4 +1,5 @@
 /** @hidden */
 declare module "*?reflect" {
-  export const layouts: Record<string, any>;
+  export const layoutEntries: Record<string, GPUBindGroupLayoutEntry[]>;
+  export const layoutFunctions: Record<string, any>;
 }

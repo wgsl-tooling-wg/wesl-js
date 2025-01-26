@@ -3,6 +3,7 @@ const config = () => ({
   tests: {
     override: filePatterns => {
       filePatterns.push(`!**/bulk-test/**/parallelTest*`);
+      filePatterns.push(`!**/plugin-test/**/*`);
       return filePatterns;
     },
   },

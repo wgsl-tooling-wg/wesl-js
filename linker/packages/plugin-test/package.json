@@ -5,6 +5,7 @@
     "dev": "nodemon --delay 350ms --watch '../linker/dist/**/*.js' --watch '../plugin/dist/**/*.js' --ext cjs,ts,js --exec vite dev"
   },
   "dependencies": {
+    "webgpu": "^0.2.6",
     "wesl-plugin": "workspace:*"
   },
   "devDependencies": {
