@@ -9,7 +9,6 @@ import { fileURLToPath } from "node:url";
 const testDir = dirname(fileURLToPath(import.meta.url));
 
 test("package two wgsl files", async () => {
-  testDir;
   const projectDir = path.join(testDir, "wesl-package");
   const distDir = path.join(projectDir, "dist");
   const srcDir = path.join(projectDir, "src");
