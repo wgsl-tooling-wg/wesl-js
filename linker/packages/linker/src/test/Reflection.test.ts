@@ -66,9 +66,7 @@ test("binding struct to ts", () => {
   const ts = bindingGroupLayoutTs(found![0] as BindingStructElem);
   expect(ts).toMatchInlineSnapshot(`
     "
-    export function MyBindingsLayout(device: GPUDevice): GPUBindGroupLayout {
-      return device.createBindGroupLayout({
-        entries: [ 
+    const myBindingsEntries = [ 
           {
             binding: 0,
             visibility: GPUShaderStage.COMPUTE,
@@ -93,12 +91,15 @@ test("binding struct to ts", () => {
             binding: 4,
             visibility: GPUShaderStage.COMPUTE,
             storageTexture: { format: "rgba8unorm", sampleType: "float", access: "read-only" }
-          }
-        ]
+          } ];
+    function myBindingsLayout(device: GPUDevice): GPUBindGroupLayout {
+      return device.createBindGroupLayout({
+        entries: myBindingsEntries 
       });
     }
 
-    export const layouts = { MyBindingsLayout };
+    export const layoutFunctions = { myBindingsLayout };
+    export const layoutEntries = { myBindingsEntries };
       "
   `);
 });

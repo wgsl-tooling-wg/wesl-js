@@ -54,6 +54,10 @@ export function reportBindingStructs(
   };
 }
 
+function firstLetterLower(s: string): string {
+  return s[0].toLowerCase() + s.slice(1);
+}
+
 /**
  * @return a string containing a generated TypeScript function that creates
  * a GPUBindingGroupLayout instance to align with the binding structures
@@ -67,27 +71,31 @@ export function bindingGroupLayoutTs(
     console.log("no struct!???");
     return "";
   }
-  const structName = struct.name.ident.mangledName;
+  const structName = firstLetterLower(struct.name.ident.mangledName!);
   const visibility = shaderVisiblity(struct);
   const entries = struct.members
     .map(m => memberToLayoutEntry(m, visibility))
     .join(",");
 
   const fnName = `${structName}Layout`;
-  const fnDecl =
-    typeScript ?
-      `export function ${fnName}(device: GPUDevice): GPUBindGroupLayout`
-    : `export function ${fnName}(device) `;
+  const entriesName = `${structName}Entries`;
 
+  const fnParams=
+    typeScript ?
+      `(device: GPUDevice): GPUBindGroupLayout`
+    : `(device)`;
+
+    
   const src = `
-${fnDecl} {
+const ${entriesName} = [ ${entries} ];
+function ${fnName}${fnParams} {
   return device.createBindGroupLayout({
-    entries: [ ${entries}
-    ]
+    entries: ${entriesName} 
   });
 }
 
-export const layouts = { ${fnName} };
+export const layoutFunctions = { ${fnName} };
+export const layoutEntries = { ${entriesName} };
   `;
   return src;
 }
