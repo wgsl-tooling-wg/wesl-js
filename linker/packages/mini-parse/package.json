@@ -6,12 +6,11 @@
     "src"
   ],
   "scripts": {
-    "build": "run-s build:main build:test-util build:minified build:brotli",
+    "build": "run-s build:main build:test-util build:minified",
     "build:main": "vite build",
     "build:test-util": "vite -c test-util.vite.config.ts build",
     "build:vitest-util": "vite -c vitest-util.vite.config.ts build",
     "build:minified": "vite -c minified.vite.config.ts build",
-    "build:brotli": "brotli dist/minified.cjs && ls -l dist/minified.cjs.br",
     "typecheck": "tsc",
     "format": "prettier . --write",
     "lint": "eslint src",
@@ -47,6 +46,7 @@
     "prettier-eslint-cli": "^8.0.1",
     "rollup-plugin-visualizer": "^5.14.0",
     "terser": "^5.37.0",
+    "vite": "^6.0.11",
     "vite-plugin-dts": "^4.5.0"
   }
 }
