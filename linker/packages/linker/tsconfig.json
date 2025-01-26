@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["DOM", "DOM.Iterable", "ESNext", "ESNext.AsyncIterable"],
-    "types" : ["@webgpu/types"],
+    "types": ["@webgpu/types"],
     "esModuleInterop": false,
     "downlevelIteration": true,
     "importsNotUsedAsValues": "remove",

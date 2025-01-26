@@ -22,24 +22,24 @@ import {
 import { comment } from "./CommentsGrammar.ts";
 import { weslImport } from "./ImportGrammar.ts";
 import {
+  aliasCollect,
   collectAttribute,
   collectFn,
   collectFnParam,
   collectModule,
-  nameCollect,
   collectSimpleElem,
   collectStruct,
   collectStructMember,
   collectVarLike,
+  declCollect,
   expressionCollect,
   memberRefCollect,
+  nameCollect,
   refIdent,
   scopeCollect,
-  typeRefCollect,
-  declCollect,
-  typedDecl,
-  aliasCollect,
   stuffCollect,
+  typedDecl,
+  typeRefCollect,
 } from "./WESLCollect.ts";
 import { bracketTokens, mainTokens } from "./WESLTokens.ts";
 

@@ -1,8 +1,6 @@
 import {
   AttributeElem,
   ContainerElem,
-  ElemWithContentsBase,
-  ExpressionElem,
   TypeRefElem,
   TypeTemplateParameter,
 } from "./AbstractElems.ts";

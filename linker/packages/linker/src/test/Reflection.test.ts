@@ -5,8 +5,8 @@ import {
   enableBindingStructs,
 } from "../Configuration.ts";
 import { elemToString } from "../debug/ASTtoString.ts";
-import { linkTestOpts } from "./TestUtil.ts";
 import { bindingGroupLayoutTs } from "../Reflection.ts";
+import { linkTestOpts } from "./TestUtil.ts";
 
 test("extract binding struct", () => {
   const src = `

@@ -9,12 +9,12 @@ import { mainTokens } from "./WESLTokens.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
- * The parser constructs the AST constructed into three sections 
+ * The parser constructs the AST constructed into three sections
  * for convenient access by the binding stage.
- *  - import statements 
+ *  - import statements
  *  - language elements (fn, struct, etc)
  *  - scopes
- * 
+ *
  */
 export interface WeslAST {
   /** source text for this module */

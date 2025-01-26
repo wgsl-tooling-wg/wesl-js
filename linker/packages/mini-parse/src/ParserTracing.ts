@@ -61,7 +61,6 @@ export interface TraceContext {
   successOnly?: boolean;
 }
 
-
 export interface TraceLogging {
   tstate: ParserContext;
 }

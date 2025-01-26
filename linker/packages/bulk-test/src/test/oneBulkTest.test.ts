@@ -1,7 +1,5 @@
 import { allBulkTests } from "../findBulkTests.ts";
 import { testWgslFiles } from "../testWgslFiles.ts";
 
-const somePaths = allBulkTests.filter(p =>
-  p.name.includes("wireframe.wgsl"),
-);
+const somePaths = allBulkTests.filter(p => p.name.includes("wireframe.wgsl"));
 testWgslFiles(somePaths);

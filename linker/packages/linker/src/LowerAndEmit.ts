@@ -9,7 +9,7 @@ import {
 } from "./AbstractElems.ts";
 import { isGlobal } from "./BindIdents.ts";
 import { identToString } from "./debug/ScopeToString.ts";
-import { Conditions, DeclIdent, Ident, RefIdent } from "./Scope.ts";
+import { Conditions, DeclIdent, Ident } from "./Scope.ts";
 
 /** passed to the emitters */
 interface EmitContext {

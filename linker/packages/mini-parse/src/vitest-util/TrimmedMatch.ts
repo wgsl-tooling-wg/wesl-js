@@ -32,7 +32,7 @@ export function dropRightWhile<T>(a: T[], fn: (el: T) => boolean): T[] {
   return a.slice(0, skip + 1);
 }
 
-/** expect a match between two strings 
+/** expect a match between two strings
  *  with blank lines and any consistent leading indent removed */
 export function expectTrimmedMatch(result: string, expected: string): void {
   const resultTrimmed = trimSrc(result);

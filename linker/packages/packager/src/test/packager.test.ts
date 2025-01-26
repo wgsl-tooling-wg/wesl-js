@@ -1,10 +1,10 @@
 import { mkdir, readFile } from "node:fs/promises";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import path from "path";
 import { rimraf } from "rimraf";
 import { expect, test } from "vitest";
 import { packagerCli } from "../packagerCli.js";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 

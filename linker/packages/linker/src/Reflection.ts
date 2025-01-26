@@ -2,7 +2,6 @@ import { matchOneOf } from "mini-parse";
 import {
   BindingStructElem,
   ExpressionElem,
-  StructElem,
   StructMemberElem,
   TextElem,
   TypeRefElem,
@@ -80,12 +79,9 @@ export function bindingGroupLayoutTs(
   const fnName = `${structName}Layout`;
   const entriesName = `${structName}Entries`;
 
-  const fnParams=
-    typeScript ?
-      `(device: GPUDevice): GPUBindGroupLayout`
-    : `(device)`;
+  const fnParams =
+    typeScript ? `(device: GPUDevice): GPUBindGroupLayout` : `(device)`;
 
-    
   const src = `
 const ${entriesName} = [ ${entries} ];
 function ${fnName}${fnParams} {

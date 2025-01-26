@@ -1,4 +1,3 @@
-
 import { expectNoLog } from "mini-parse/test-util";
 import fs from "node:fs/promises";
 import { expect, test } from "vitest";
@@ -9,11 +8,11 @@ export interface NamedPath {
   filePath: string; // path relative to project root (package.json dir)
 }
 
-/** 
+/**
  * Each test runs the linker on a source wgsl files and verifies
  * that the linker runs w/o error and that the linked output matches the input
  *
- * @param fileNames wgsl file paths to load and parse 
+ * @param fileNames wgsl file paths to load and parse
  */
 export function testWgslFiles(namedPaths: NamedPath[]) {
   const config = enableBindingStructs();
