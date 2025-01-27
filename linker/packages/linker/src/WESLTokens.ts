@@ -88,11 +88,3 @@ export const argsTokens = tokenMatcher(
   },
   "argsTokens",
 );
-
-export const rootWs = tokenMatcher(
-  {
-    blanks: /\s+/,
-    other: /[^\s]+/,
-  },
-  "rootWs",
-);

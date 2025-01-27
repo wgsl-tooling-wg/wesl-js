@@ -5,7 +5,7 @@ import { link } from "../Linker.ts";
 
 test("import rand() from a package", () => {
   const src = `
-    import random_wgsl/pcg_2u_3f; 
+    import random_wgsl::pcg_2u_3f; 
 
     struct Uniforms { frame: u32 }
     @binding(0) @group(0) var<uniform> u: Uniforms;

@@ -11,6 +11,7 @@ import {
   seq,
   setTraceName,
   TagRecord,
+  tagScope,
   terminated,
   tokens,
   tracing,
@@ -72,37 +73,39 @@ const import_package = terminated(wordToken.mapValue(segment), "::").mapValue(
 );
 
 /** parse a WESL style wgsl import statement. */
-export const weslImport: Parser<ImportElem, NoTags> = tokens(
-  mainTokens,
-  delimited(
-    "import",
-    seq(
-      or(import_relative, import_package),
-      or(import_collection, import_path, item_import),
-    ).mapValue(v => {
-      if (v[1] instanceof ImportStatement) {
-        return new ImportStatement(
-          segments(v[0], v[1].segments),
-          v[1].finalSegment,
-        );
-      } else {
-        return new ImportStatement(v[0], v[1]);
-      }
-    }),
-    ";",
-  )
-    .span()
-    .mapValue(
-      (v): ImportElem => ({
-        kind: "import",
-        contents: [],
-        imports: v.value,
-        start: v.span[0],
-        end: v.span[1],
+export const weslImport: Parser<ImportElem, NoTags> = tagScope(
+  tokens(
+    mainTokens,
+    delimited(
+      "import",
+      seq(
+        or(import_relative, import_package),
+        or(import_collection, import_path, item_import),
+      ).mapValue(v => {
+        if (v[1] instanceof ImportStatement) {
+          return new ImportStatement(
+            segments(v[0], v[1].segments),
+            v[1].finalSegment,
+          );
+        } else {
+          return new ImportStatement(v[0], v[1]);
+        }
       }),
+      ";",
     )
-    .ptag("owo")
-    .collect(importElem),
+      .span()
+      .mapValue(
+        (v): ImportElem => ({
+          kind: "import",
+          contents: [],
+          imports: v.value,
+          start: v.span[0],
+          end: v.span[1],
+        }),
+      )
+      .ptag("owo")
+      .collect(importElem),
+  ),
 );
 
 if (tracing) {
