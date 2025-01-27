@@ -2,6 +2,7 @@
   "name": "root",
   "type": "module",
   "scripts": {
+    "echo:all": "pnpm --filter \"**\" echo",
     "bump": "tsx scripts/bump.ts --version",
     "build:all": "pnpm --filter \"./packages/**\" build",
     "typecheck:all": "pnpm --filter \"./packages/**\" typecheck",

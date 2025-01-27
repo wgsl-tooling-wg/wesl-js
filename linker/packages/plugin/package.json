@@ -3,6 +3,7 @@
   "type": "module",
   "version": "0.1.0",
   "scripts": {
+    "echo": "echo",
     "build": "tsup",
     "dev": "tsup --watch src --watch ../linker/dist",
     "build:fix": "tsx scripts/postbuild.ts",

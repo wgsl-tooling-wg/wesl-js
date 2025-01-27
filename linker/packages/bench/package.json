@@ -3,6 +3,7 @@
   "version": "0.6.0-pre2",
   "type": "module",
   "scripts": {
+    "echo": "echo",
     "format": "prettier . --write",
     "lint": "eslint src",
     "organize": "organize-imports-cli tsconfig.json",
