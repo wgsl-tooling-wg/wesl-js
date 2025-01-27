@@ -1,5 +1,5 @@
 {
-  "name": "wgsl-packager",
+  "name": "wesl-packager",
   "version": "0.6.0-pre2",
   "type": "module",
   "scripts": {

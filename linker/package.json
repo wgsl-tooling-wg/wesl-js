@@ -4,7 +4,10 @@
   "scripts": {
     "echo:all": "pnpm --filter \"**\" echo",
     "bump": "tsx scripts/bump.ts --version",
-    "build:all": "pnpm --filter \"./packages/**\" build",
+    "build:libs": "pnpm --filter \"mini-parse\" --filter \"wesl\" build",
+    "build:tools": "pnpm --filter \"wesl-link\" --filter \"wesl-packager\" --filter \"wesl-plugin\" build",
+    "build:tests": "pnpm --filter \"bench\" --filter \"bulk-test\" --filter \"plugin-test\" --filter \"random_wgsl\" build",
+    "build:all": "run-s build:libs build:tools build:tests",
     "typecheck:all": "pnpm --filter \"./packages/**\" typecheck",
     "format:all": "pnpm --filter \"./packages/**\" format",
     "lint:all": "pnpm --no-bail --filter \"./packages/**\" lint",
