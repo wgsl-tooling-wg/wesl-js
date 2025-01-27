@@ -1,5 +1,7 @@
-import { matchOneOf, tokenMatcher } from "mini-parse";
+import { matchOneOf, Token, tokenMatcher } from "mini-parse";
 import { textureStorageTypes } from "./StandardTypes.ts";
+import { FullTokenMatcher } from "mini-parse";
+import { TokenMatcher } from "mini-parse";
 
 // https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
 /** New lines */

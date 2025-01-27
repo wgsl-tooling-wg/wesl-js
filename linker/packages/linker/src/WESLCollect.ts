@@ -28,18 +28,21 @@ import {
   VarElem,
 } from "./AbstractElems.ts";
 import {
-  ImportTree,
-  PathSegment,
-  SegmentList,
-  SimpleSegment,
-} from "./ImportTree.ts";
-import {
   StableState,
   WeslAST,
   WeslParseContext,
   WeslParseState,
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "./Scope.ts";
+
+export const importElem = collectElem(
+  "import",
+  (cc: CollectContext, openElem: PartElem<ImportElem>) => {
+    const importElem = cc.tags.owo?.[0] as ImportElem; // LATER ts typing
+    (cc.app.stable as StableState).imports.push(importElem.imports);
+    return importElem;
+  },
+);
 
 /** add an elem to the .contents array of the currently containing element */
 function addToOpenElem(cc: CollectContext, elem: AbstractElem): void {
@@ -331,34 +334,6 @@ export const collectModule = collectElem(
     const weslState: StableState = cc.app.stable;
     weslState.moduleElem = moduleElem;
     return moduleElem;
-  },
-);
-
-export function importList(cc: CollectContext): SegmentList {
-  const list = cc.tags.list as PathSegment[];
-  return new SegmentList(list);
-}
-
-export function importSegment(cc: CollectContext): SimpleSegment {
-  const segOrig = cc.tags.segment?.[0] as string;
-  const seg = segOrig === "." ? "package" : segOrig; // TODO convert legacy syntax for now
-  return new SimpleSegment(seg, cc.tags.as?.[0]);
-}
-
-export function importTree(cc: CollectContext): ImportTree {
-  const path = cc.tags.p?.flat() as PathSegment[]; // LATER fix typing
-  return new ImportTree(path);
-}
-
-export const importElem = collectElem(
-  "import",
-  (cc: CollectContext, openElem: PartElem<ImportElem>) => {
-    const path = cc.tags.p as PathSegment[]; // LATER ts typing
-    const imports = new ImportTree(path);
-    const partialElem: ImportElem = { ...openElem, imports };
-    const importElem = withTextCover(partialElem, cc);
-    (cc.app.stable as StableState).imports.push(imports);
-    return importElem;
   },
 );
 

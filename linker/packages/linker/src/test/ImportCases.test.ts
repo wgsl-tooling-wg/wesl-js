@@ -15,7 +15,7 @@ interface LinkExpectation {
 // wgsl example src, indexed by name
 const examplesByName = new Map(importCases.map(t => [t.name, t.src]));
 
-test("import ./bar/foo", ctx => {
+test("import package::bar::foo;", ctx => {
   linkTest2(ctx.task.name, {
     linked: `
       fn main() {

@@ -1,156 +1,117 @@
 import {
-  disablePreParse,
+  delimited,
   kind,
-  makeEolf,
-  matchOneOf,
   NoTags,
   opt,
   or,
   Parser,
+  preceded,
   repeat,
   repeatPlus,
   seq,
   setTraceName,
   TagRecord,
-  tagScope,
-  tokenMatcher,
+  terminated,
   tokens,
-  tokenSkipSet,
   tracing,
   withSepPlus,
 } from "mini-parse";
+import { mainTokens } from "./WESLTokens.js";
 import {
-  importElem,
-  importList,
-  importSegment,
-  importTree,
-} from "./WESLCollect.js";
-import { digits, eol, ident } from "./WESLTokens.js";
+  ImportCollection,
+  ImportItem,
+  ImportSegment,
+  ImportStatement,
+} from "./ImportTree.js";
+import { ImportElem } from "./AbstractElems.js";
+import { importElem } from "./WESLCollect.js";
 
-// TODO now that ';' is required, special ws and eol handling is probably not needed.
-const skipWsSet = new Set(["ws"]);
-function skipWs<V, T extends TagRecord>(p: Parser<V, T>): Parser<V, T> {
-  return tokenSkipSet(skipWsSet, p);
+const wordToken = kind(mainTokens.ident);
+
+function segment(text: string) {
+  return new ImportSegment(text);
 }
-function noSkipWs<V, T extends TagRecord>(p: Parser<V, T>): Parser<V, T> {
-  return tokenSkipSet(null, p);
+function segments(
+  ...values: (ImportSegment | ImportSegment[])[]
+): ImportSegment[] {
+  return values.flat();
 }
 
-const importSymbolSet = "/ { } , ( ) .. . * ; @ #"; // Had to add @ and # here to get the parsing tests to work. Weird.
-const importSymbol = matchOneOf(importSymbolSet);
-
-// TODO reconsider whether we need a separate token set for import statements vs wgsl/wesl
-export const importTokens = tokenMatcher({
-  ws: /\s+/,
-  importSymbol,
-  ident, // TODO allow '-' in pkg names?
-  digits,
-});
-
-export const eolTokens = tokenMatcher({
-  ws: /[ \t]+/, // don't include \n, for eolf
-  eol,
-});
-
-const eolf = disablePreParse(makeEolf(eolTokens, importTokens.ws));
-const wordToken = kind(importTokens.ident);
+/** last simple segment is allowed to have an 'as' rename */
+const item_import = seq(wordToken, opt(preceded("as", wordToken))).mapValue(
+  v => new ImportItem(v[0], v[1]),
+);
 
 // forward references for mutual recursion
-let packagePath: Parser<any, NoTags> = null as any;
+let import_collection: Parser<ImportCollection, NoTags> = null as any;
 
-// prettier-ignore
-const simpleSegment = tagScope(
-  wordToken                             .ptag("segment").collect(importSegment),
-);
+const import_path = seq(
+  repeatPlus(terminated(wordToken.mapValue(segment), "::")),
+  or(() => import_collection, item_import),
+).mapValue(v => new ImportStatement(v[0], v[1]));
 
-// prettier-ignore
-/** last simple segment is allowed to have an 'as' rename */
-const lastSimpleSegment = tagScope(
-  seq(
-    wordToken                           .ptag("segment"),
-    skipWs(opt(seq("as", wordToken      .ptag("as")))),
-  )                                     .collect(importSegment),
-);
-
-/** an item an a collection list {a, b} */
-// prettier-ignore
-const collectionItem = or(
-  tagScope(or(() => packagePath)        .collect(importTree)),
-  lastSimpleSegment,
-);
-
-// prettier-ignore
-const importCollection = tagScope(
-  seq(
-    "{",
-    skipWs(
-      seq(
-        withSepPlus(",", () => collectionItem     .ctag("list")),
-        "}",
-      ),
+import_collection = delimited(
+  "{",
+  withSepPlus(",", () =>
+    or(
+      import_path,
+      item_import.mapValue(v => new ImportStatement([], v)),
     ),
-  ).collect(importList),
+  ).mapValue(v => new ImportCollection(v)),
+  "}",
 );
 
-/** a relative path element like "./" or "../" */
-// prettier-ignore
-const relativeSegment = tagScope(
-  seq(
-    or(".", "..")                   .ptag("segment"), 
-    "/"
-  )                                 .collect(importSegment),
-)                                   .ctag("p");
+const import_relative = seq(
+  or("package", "super").mapValue(segment),
+  "::",
+  repeat(terminated(or("super").mapValue(segment), "::")),
+).mapValue(v => segments(v[0], v[2]));
 
-const lastSegment = or(lastSimpleSegment, importCollection);
-
-// prettier-ignore
-const packageTail = seq(
-  repeat(
-    seq(
-      simpleSegment                 .ctag("p"), 
-      "/"
-    )
-  ),
-  lastSegment                       .ctag("p"),
-);
-
-/** a module path starting with ../ or ./ */
-const relativePath = seq(repeatPlus(relativeSegment), packageTail);
-
-// prettier-ignore
-const packagePrefix = tagScope(
-  seq(
-    wordToken                     .ptag("segment"), 
-    "/"
-  )                               .collect(importSegment),
-)                                 .ctag("p");
-
-/** a module path, starting with a simple element */
-packagePath = seq(packagePrefix, packageTail);
-
-const fullPath = noSkipWs(
-  seq(kind(importTokens.ws), or(relativePath, packagePath)),
+const import_package = terminated(wordToken.mapValue(segment), "::").mapValue(
+  segments,
 );
 
 /** parse a WESL style wgsl import statement. */
-// prettier-ignore
-export const weslImport = tagScope(
-  tokens(
-    importTokens,
-    seq("import", fullPath, opt(";"), eolf)     .collect(importElem),
-  ),
+export const weslImport: Parser<ImportElem, NoTags> = tokens(
+  mainTokens,
+  delimited(
+    "import",
+    seq(
+      or(import_relative, import_package),
+      or(import_collection, import_path, item_import),
+    ).mapValue(v => {
+      if (v[1] instanceof ImportStatement) {
+        return new ImportStatement(
+          segments(v[0], v[1].segments),
+          v[1].finalSegment,
+        );
+      } else {
+        return new ImportStatement(v[0], v[1]);
+      }
+    }),
+    ";",
+  )
+    .span()
+    .mapValue(
+      (v): ImportElem => ({
+        kind: "import",
+        contents: [],
+        imports: v.value,
+        start: v.span[0],
+        end: v.span[1],
+      }),
+    )
+    .ptag("owo")
+    .collect(importElem),
 );
 
 if (tracing) {
   const names: Record<string, Parser<unknown, TagRecord>> = {
-    simpleSegment,
-    lastSimpleSegment,
-    importCollection,
-    relativeSegment,
-    relativePath,
-    packagePrefix,
-    packagePath,
-    fullPath,
+    item_import,
+    import_path,
+    import_collection,
+    import_relative,
+    import_package,
     weslImport,
   };
 

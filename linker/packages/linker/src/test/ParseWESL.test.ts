@@ -721,9 +721,10 @@ test("parse @attribute before fn", () => {
   `);
 });
 
-test("import ./foo/bar;", ctx => {
+test("import package::foo::bar;", ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
+  console.log(ast.moduleElem);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
@@ -960,7 +961,7 @@ test("var foo: vec2<f32 >= vec2( 0.5, -0.5);", ctx => {
   `);
 });
 
-test("import ./a/b/c", ctx => {
+test("import a::b::c;", ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -970,7 +971,7 @@ test("import ./a/b/c", ctx => {
   `);
 });
 
-test("import ./file1/{foo, bar}", ctx => {
+test("import package::file1::{foo, bar};", ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
@@ -981,7 +982,7 @@ test("import ./file1/{foo, bar}", ctx => {
   `);
 });
 
-test("import ./file1/{foo, bar}", ctx => {
+test("import package::file1::{foo, bar};", ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
   const imps = ast.imports.map(t => importToString(t)).join("\n");
@@ -989,7 +990,7 @@ test("import ./file1/{foo, bar}", ctx => {
   expect(imps).toMatchInlineSnapshot(`"package/file1/{foo, bar}"`);
 });
 
-test("import foo_bar/boo;", ctx => {
+test("import foo_bar::boo;", ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -999,7 +1000,7 @@ test("import foo_bar/boo;", ctx => {
   `);
 });
 
-test(`import a/{ b }`, ctx => {
+test(`import a::{ b };`, ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -1009,7 +1010,7 @@ test(`import a/{ b }`, ctx => {
   `);
 });
 
-test(`import a/{ b, c/{d, e}, f }`, ctx => {
+test(`import a::{ b, c::{d, e}, f };`, ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);

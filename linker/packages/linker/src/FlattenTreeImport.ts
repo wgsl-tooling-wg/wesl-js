@@ -1,9 +1,8 @@
-import { tracing } from "mini-parse";
 import {
-  ImportTree,
-  PathSegment,
-  SegmentList,
-  SimpleSegment,
+  ImportCollection,
+  ImportItem,
+  ImportSegment,
+  ImportStatement,
 } from "./ImportTree.js";
 
 export interface FlatImport {
@@ -16,44 +15,41 @@ export interface FlatImport {
  *
  * @return map from import path (with 'as' renaming) to module Path
  */
-export function flattenTreeImport(imp: ImportTree): FlatImport[] {
-  return recursiveResolve([], [], imp.segments);
+export function flattenTreeImport(imp: ImportStatement): FlatImport[] {
+  return recursiveResolve([], [], imp.segments, imp.finalSegment);
 
   /** recurse through segments of path, producing  */
   function recursiveResolve(
     resolvedImportPath: string[],
     resolvedExportPath: string[],
-    remainingPath: PathSegment[],
+    remainingPath: ImportSegment[],
+    finalSegment: ImportCollection | ImportItem,
   ): FlatImport[] {
-    const [segment, ...rest] = remainingPath;
-    if (segment === undefined) {
-      throw new Error(`undefined segment ${imp.segments}`);
-    }
-    if (segment instanceof SimpleSegment) {
-      const importPath = [...resolvedImportPath, segment.as || segment.name];
+    if (remainingPath.length > 0) {
+      const [segment, ...rest] = remainingPath;
+      const importPath = [...resolvedImportPath, segment.name];
       const modulePath = [...resolvedExportPath, segment.name];
-      if (rest.length) {
-        // we're in the middle of the path so keep recursing
-        return recursiveResolve(importPath, modulePath, rest);
-      } else {
-        return [{ importPath, modulePath }];
-      }
-    }
-    if (segment instanceof SegmentList) {
+      return recursiveResolve(importPath, modulePath, rest, finalSegment);
+    } else if (finalSegment instanceof ImportCollection) {
       // resolve path with each element in the list
-      return segment.list.flatMap(elem => {
-        const rPath = [elem, ...rest];
-        return recursiveResolve(resolvedImportPath, resolvedExportPath, rPath);
+      return finalSegment.subTrees.flatMap(elem => {
+        return recursiveResolve(
+          resolvedImportPath,
+          resolvedExportPath,
+          elem.segments,
+          elem.finalSegment,
+        );
       });
-    } else if (segment instanceof ImportTree) {
-      return recursiveResolve(
-        resolvedImportPath,
-        resolvedExportPath,
-        segment.segments,
-      );
+    } else if (finalSegment instanceof ImportItem) {
+      const importPath = [
+        ...resolvedImportPath,
+        finalSegment.as || finalSegment.name,
+      ];
+      const modulePath = [...resolvedExportPath, finalSegment.name];
+      return [{ importPath, modulePath }];
+    } else {
+      console.error(finalSegment);
+      throw new Error("unknown segment type", { cause: finalSegment });
     }
-
-    if (tracing) console.log("unknown segment type", segment); // should be impossible
-    return [];
   }
 }

@@ -1,19 +1,42 @@
-export class ImportTree {
-  /** segments in path order */
-  constructor(public segments: PathSegment[]) {}
-}
-
-export type PathSegment = SimpleSegment | ImportTree | SegmentList;
-
-export class SimpleSegment {
+/**
+ * An import statement, which is tree shaped.
+ * `import foo::bar::{baz, cat as neko};
+ */
+export class ImportStatement {
   constructor(
-    public name: string,
-    public as?: string,
-    public args?: string[], // generic args (only allowed on final segment). TODO drop
+    public segments: ImportSegment[],
+    public finalSegment: ImportCollection | ImportItem,
   ) {}
 }
 
-/** or choices for this path segment */
-export class SegmentList {
-  constructor(public list: PathSegment[]) {}
+/**
+ * A collection of import trees.
+ * `{baz, cat as neko}`
+ */
+export class ImportCollection {
+  constructor(public subTrees: ImportStatement[]) {}
+}
+
+/**
+ * A primitive segment in an import statement.
+ * `foo`
+ */
+export class ImportSegment {
+  constructor(public name: string) {}
+}
+
+/** Stop Typescript from accepting ImportItems wherever ImportSegments are required */
+const itemSymbol: unique symbol = Symbol("item");
+
+/**
+ * A renamed item at the end of an import statement.
+ * `cat as neko`
+ */
+export class ImportItem {
+  constructor(
+    public name: string,
+    public as?: string,
+  ) {}
+
+  [itemSymbol]: undefined;
 }

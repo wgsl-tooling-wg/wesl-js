@@ -27,6 +27,7 @@ import { closeArray, pushOpenArray } from "./ParserCollect.js";
 import { ctxLog } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
 import { mergeTags } from "./ParserUtil.js";
+import { Span } from "./Span.js";
 import { Token, TokenMatcher } from "./TokenMatcher.js";
 
 /** Parsing Combinators
@@ -107,6 +108,70 @@ export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
   return seqParser as SeqParser<P>;
 }
 
+/** Parse two values, and discard the first value
+ * @return the second value, or null if any parser fails */
+export function preceded<P extends CombinatorArg>(
+  ignoredArg: CombinatorArg,
+  arg: P,
+): ParserFromArg<P> {
+  const ignored = parserArg(ignoredArg);
+  const p = parserArg(arg);
+  const seqParser: ParserFromArg<P> = parser("seq", (ctx: ParserContext) => {
+    const ignoredResult = ignored._run(ctx);
+    if (ignoredResult === null) return null;
+    const result = p._run(ctx);
+    return result;
+  }).collect({ before: pushOpenArray, after: closeArray });
+
+  trackChildren(seqParser, ignored, p);
+
+  return seqParser;
+}
+
+/** Parse two values, and discard the first value
+ * @return the second value, or null if any parser fails */
+export function terminated<P extends CombinatorArg>(
+  arg: P,
+  ignoredArg: CombinatorArg,
+): ParserFromArg<P> {
+  const p = parserArg(arg);
+  const ignored = parserArg(ignoredArg);
+  const seqParser: ParserFromArg<P> = parser("seq", (ctx: ParserContext) => {
+    const result = p._run(ctx);
+    const ignoredResult = ignored._run(ctx);
+    if (ignoredResult === null) return null;
+    return result;
+  }).collect({ before: pushOpenArray, after: closeArray });
+
+  trackChildren(seqParser, ignored, p);
+
+  return seqParser;
+}
+
+/** Parse two values, and discard the first value
+ * @return the second value, or null if any parser fails */
+export function delimited<P extends CombinatorArg>(
+  ignoredArg1: CombinatorArg,
+  arg: P,
+  ignoredArg2: CombinatorArg,
+): ParserFromArg<P> {
+  const ignored1 = parserArg(ignoredArg1);
+  const p = parserArg(arg);
+  const ignored2 = parserArg(ignoredArg2);
+  const seqParser: ParserFromArg<P> = parser("seq", (ctx: ParserContext) => {
+    const ignoredResult1 = ignored1._run(ctx);
+    if (ignoredResult1 === null) return null;
+    const result = p._run(ctx);
+    const ignoredResult2 = ignored2._run(ctx);
+    if (ignoredResult2 === null) return null;
+    return result;
+  }).collect({ before: pushOpenArray, after: closeArray });
+
+  trackChildren(seqParser, ignored1, p, ignored2);
+
+  return seqParser;
+}
+
 /** Try parsing with one or more parsers,
  *  @return the first successful parse */
 export function or<P extends CombinatorArg[]>(...args: P): OrParser<P> {
@@ -175,6 +240,33 @@ export function not(arg: CombinatorArg): Parser<true> {
   trackChildren(notParser, p);
 
   return notParser;
+}
+
+/** return true if the provided parser _doesn't_ match
+ * does not consume any tokens */
+export function span<P extends CombinatorArg>(
+  arg: P,
+): Parser<{ value: ResultFromArg<P>; span: Span }, TagsFromArg<P>> {
+  const p = parserArg(arg);
+  const spanParser: Parser<
+    { value: ResultFromArg<P>; span: Span },
+    TagsFromArg<P>
+  > = parser("span", (state: ParserContext) => {
+    const startPos = state.lexer.position();
+    const result = p._run(state);
+    if (!result) return result;
+    const endPos = state.lexer.position();
+    return {
+      value: {
+        value: result.value,
+        span: [startPos, endPos] as Span,
+      },
+      tags: result.tags,
+    };
+  });
+  trackChildren(spanParser, p);
+
+  return spanParser;
 }
 
 /** yield next token, any token */
