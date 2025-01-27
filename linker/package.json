@@ -15,7 +15,7 @@
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
     "publish:all": "pnpm --filter \"./packages/**\" publish",
     "test": "vitest",
-    "test:once": "vitest --run",
+    "test:all": "vitest --run",
     "preinstall": "git submodule update --init --recursive"
   },
   "devDependencies": {
