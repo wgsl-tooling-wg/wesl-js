@@ -14,6 +14,7 @@
     "organize:all": "pnpm --filter \"./packages/**\" organize",
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
     "publish:all": "pnpm --filter \"./packages/**\" publish",
+    "validate:all": "run-s build:all test:all organize:all format:all typecheck:all",
     "test": "vitest",
     "test:all": "vitest --run",
     "preinstall": "git submodule update --init --recursive"
