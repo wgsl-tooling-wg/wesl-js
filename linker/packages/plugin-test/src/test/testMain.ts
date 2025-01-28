@@ -1,6 +1,6 @@
 /*
- * a test program that imports from our plugin's reflection endpoint
- * and logs the layout entries to the console for verification
+ * a test program that imports from the wesl plugin's ?reflect endpoint
+ * and logs the layout entries to the console for verification by a test runner
  */
 
 const { create, globals } = require("webgpu"); // include webgpu just for the GPUShaderStage enumb
