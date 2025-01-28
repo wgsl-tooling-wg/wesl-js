@@ -9,6 +9,7 @@ import type {
 import { createUnplugin } from "unplugin";
 import { dlog, dlogOpt } from "berry-pretty";
 import {
+  bindAndTransform,
   bindingStructReflect,
   enableBindingStructs,
   linkRegistry,
@@ -111,7 +112,7 @@ function localPath(fullPath: string, weslRoot: string): string {
   return "." + pathWithSlashPrefix;
 }
 
-/** produce reflection data by partially linking the */
+/** produce reflection data by partially linking the wesl */
 async function reflectTs(
   main: string,
   registry: ParsedRegistry,
@@ -120,13 +121,9 @@ async function reflectTs(
   const linkConfig = bindingStructReflect(enableBindingStructs(), structs => {
     structsTs = bindingGroupLayoutTs(structs[0], false);
   });
-  // TODO we don't need the linked output, make a new linker entry point
-  const linked = linkRegistry(registry, main, {}, linkConfig);
-  return structsTs;
-}
 
-function stringify(obj: any) {
-  return JSON.stringify(obj, null, 2);
+  bindAndTransform(registry, main, {}, linkConfig);
+  return structsTs;
 }
 
 export const unplugin = /* #__PURE__ */ createUnplugin(weslPlugin);
