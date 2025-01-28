@@ -6,7 +6,7 @@ import {
   TextElem,
   TypeRefElem,
 } from "./AbstractElems.ts";
-import { TransformedAST } from "./Linker.ts";
+import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { identElemLog } from "./LinkerUtil.ts";
 import { RefIdent } from "./Scope.ts";
 import {
@@ -17,6 +17,11 @@ import { textureStorage } from "./WESLTokens.ts";
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
 
+export function reportBindingStructsPlugin(fn = console.log): WeslJsPlugin {
+  return {
+    transform: reportBindingStructs(fn),
+  };
+}
 /** 
  * Linker plugin that generates TypeScript strings for GPUBindingGroupLayouts
  * based on the binding structs in the WESL source

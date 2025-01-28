@@ -1,11 +1,11 @@
 import { SrcMapBuilder } from "mini-parse";
 import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
-import { enableBindingStructs } from "../Configuration.ts";
 import { astToString, elemToString } from "../debug/ASTtoString.ts";
 import { lowerAndEmit } from "../LowerAndEmit.ts";
 import { parsedRegistry } from "../ParsedRegistry.ts";
 import {
+  bindingStructsPlugin,
   findRefsToBindingStructs,
   lowerBindingStructs,
   markBindingStructs,
@@ -190,7 +190,7 @@ var<storage, read_write> @group(0) @binding(0) particles0 : array<f32>;
     }
   `;
 
-  const opts = { linkConfig: enableBindingStructs() };
+  const opts = { linkConfig: { plugins: [bindingStructsPlugin()] } };
   const linked = linkTestOpts(opts, src);
   expectTrimmedMatch(linked, expected);
 });
@@ -229,7 +229,7 @@ var @group(0) @binding(4) stTex : texture_storage_2d<rgba8unorm, read>;
     }
 `;
 
-  const opts = { linkConfig: enableBindingStructs() };
+  const opts = { linkConfig: { plugins: [bindingStructsPlugin()] } };
   const linked = linkTestOpts(opts, src);
   expectTrimmedMatch(linked, expected);
 });

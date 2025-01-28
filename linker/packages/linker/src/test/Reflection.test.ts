@@ -1,12 +1,13 @@
 import { expect, test } from "vitest";
 import { BindingStructElem, StructElem } from "../AbstractElems.ts";
-import {
-  bindingStructReflect,
-  enableBindingStructs,
-} from "../Configuration.ts";
 import { elemToString } from "../debug/ASTtoString.ts";
-import { bindingGroupLayoutTs } from "../Reflection.ts";
+import {
+  bindingGroupLayoutTs,
+  reportBindingStructs,
+  reportBindingStructsPlugin,
+} from "../Reflection.ts";
 import { linkTestOpts } from "./TestUtil.ts";
+import { bindingStructsPlugin } from "../TransformBindingStructs.ts";
 
 test("extract binding struct", () => {
   const src = `
@@ -19,10 +20,12 @@ test("extract binding struct", () => {
     }
   `;
   let found: StructElem[] | undefined;
-  const linkConfig = bindingStructReflect(
-    enableBindingStructs(),
-    report => (found = report),
-  );
+  const linkConfig = {
+    plugins: [
+      bindingStructsPlugin(),
+      reportBindingStructsPlugin(report => (found = report)),
+    ],
+  };
   linkTestOpts({ linkConfig }, src);
 
   // verify struct found
@@ -58,10 +61,12 @@ test("binding struct to ts", () => {
     }
   `;
   let found: StructElem[] | undefined;
-  const linkConfig = bindingStructReflect(
-    enableBindingStructs(),
-    report => (found = report),
-  );
+  const linkConfig = {
+    plugins: [
+      bindingStructsPlugin(),
+      reportBindingStructsPlugin(report => (found = report)),
+    ],
+  };
   linkTestOpts({ linkConfig }, src);
   const ts = bindingGroupLayoutTs(found![0] as BindingStructElem);
   expect(ts).toMatchInlineSnapshot(`

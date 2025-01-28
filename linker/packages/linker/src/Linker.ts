@@ -12,8 +12,13 @@ import {
 import { WeslAST } from "./ParseWESL.ts";
 import { Conditions } from "./Scope.ts";
 import { WgslBundle } from "./WgslBundle.ts";
+import { filterMap } from "./Util.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
+
+export interface WeslJsPlugin {
+  transform?: LinkerTransform;
+}
 
 export interface TransformedAST
   extends Pick<WeslAST, "srcModule" | "moduleElem"> {
@@ -22,8 +27,7 @@ export interface TransformedAST
 }
 
 export interface LinkConfig {
-  /** plugins to transform the linked AST before emitting linked test */
-  transforms?: LinkerTransform[];
+  plugins?: WeslJsPlugin[];
 
   /** limit potential infinite loops for debugging */
   maxParseCount?: number;
@@ -132,7 +136,8 @@ function applyTransformPlugins(
 
   // for now only transform the root module
   const startAst = { moduleElem, srcModule, globalNames, notableElems: {} };
-  const transforms = config?.transforms ?? [];
+  const plugins = config?.plugins ?? [];
+  const transforms = filterMap(plugins, (plugin) => plugin.transform);
   const transformedAst = transforms.reduce(
     (ast, transform) => transform(ast),
     startAst,
