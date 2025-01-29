@@ -10,14 +10,15 @@ import { createUnplugin } from "unplugin";
 import { dlog, dlogOpt } from "berry-pretty";
 import {
   bindAndTransform,
-  bindingStructReflect,
-  enableBindingStructs,
-  linkRegistry,
+  bindingStructsPlugin,
   parsedRegistry,
   ParsedRegistry,
   parseIntoRegistry,
 } from "wesl";
-import { bindingGroupLayoutTs } from "../../linker/src/Reflection.js";
+import {
+  bindingGroupLayoutTs,
+  reportBindingStructsPlugin,
+} from "../../linker/src/Reflection.js";
 import type { WeslPluginOptions } from "./weslPluginOptions.js";
 import path from "node:path";
 
@@ -118,9 +119,14 @@ async function reflectTs(
   registry: ParsedRegistry,
 ): Promise<string> {
   let structsTs = "??";
-  const linkConfig = bindingStructReflect(enableBindingStructs(), structs => {
-    structsTs = bindingGroupLayoutTs(structs[0], false);
-  });
+  const linkConfig = {
+    plugins: [
+      bindingStructsPlugin(),
+      reportBindingStructsPlugin(structs => {
+        structsTs = bindingGroupLayoutTs(structs[0], false);
+      }),
+    ],
+  };
 
   bindAndTransform(registry, main, {}, linkConfig);
   return structsTs;
