@@ -4,7 +4,7 @@
     "lib": ["ESNext", "DOM"],
     "types": ["node"],
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
