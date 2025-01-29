@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["ESNext", "DOM"],
-    "types": ["node"],
+    "types": ["node", "@webgpu/types"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "esModuleInterop": false,
