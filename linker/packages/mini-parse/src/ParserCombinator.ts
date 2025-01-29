@@ -59,6 +59,32 @@ export class ParseError extends Error {
 
 /** Parse for a particular kind of token,
  * @return the matching text */
+export function token(kindStr: string, value: string): Parser<string> {
+  return simpleParser(
+    `token '${kindStr}' ${quotedText(value)}`,
+    (state: ParserContext): string | null => {
+      const next = state.lexer.next();
+      return next?.kind === kindStr && next.text === value ? next.text : null;
+    },
+  );
+}
+
+/** Parse for a particular kind of token,
+ * @return the matching text */
+export function tokenOf(kindStr: string, values: string[]): Parser<string> {
+  return simpleParser(
+    `tokenOf '${kindStr}'`,
+    (state: ParserContext): string | null => {
+      const next = state.lexer.next();
+      return next?.kind === kindStr && values.includes(next.text) ?
+          next.text
+        : null;
+    },
+  );
+}
+
+/** Parse for a particular kind of token,
+ * @return the matching text */
 export function kind(kindStr: string): Parser<string> {
   return simpleParser(
     `kind '${kindStr}'`,

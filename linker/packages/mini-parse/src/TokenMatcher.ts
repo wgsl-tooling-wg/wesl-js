@@ -1,4 +1,5 @@
 import { srcLog } from "./ParserLogging.js";
+import { Span } from "./Span.js";
 
 export interface Token {
   kind: string;
@@ -13,7 +14,8 @@ export type FullTokenMatcher<T> = TokenMatcher & {
 export interface TokenMatcher {
   start(src: string, position?: number): void;
   next(): Token | undefined;
-  position(position?: number): number;
+  get position(): number;
+  set position(position: number);
   _debugName?: string;
 }
 
@@ -39,7 +41,7 @@ export function tokenMatcher<T extends Record<string, string | RegExp>>(
   const groups: string[] = Object.keys(matchers);
   let src: string;
   // cache of tokens by position, so we don't have to reparse after backtracking
-  const cache = new Cache<number, Token>(5);
+  const cache = new Cache<number, { token: Token; span: Span }>(5);
   const expParts = Object.entries(matchers).map(toRegexSource).join("|");
   const exp = new RegExp(expParts, "midgu");
 
@@ -58,37 +60,30 @@ export function tokenMatcher<T extends Record<string, string | RegExp>>(
     const startPos = exp.lastIndex;
     const found = cache.get(startPos);
     if (found) {
-      exp.lastIndex += found.text.length;
-      return found;
+      exp.lastIndex = found.span[1];
+      return found.token;
     }
 
     const matches = exp.exec(src);
     const matchedIndex = findGroupDex(matches?.indices);
     if (matchedIndex) {
-      const { startEnd, groupDex } = matchedIndex;
+      const { span, groupDex } = matchedIndex;
       const kind = groups[groupDex];
-      const text = src.slice(startEnd[0], startEnd[1]);
+      const text = src.slice(span[0], span[1]);
       const token = { kind, text };
-      if (startPos != startEnd[0]) {
+      if (startPos !== span[0]) {
         // TODO report filename as well
         // regex didn't recognize some characters and skipped ahead to match
         srcLog(
           src,
           startPos,
-          `tokens ${debugName} skipped: '${src.slice(startPos, startEnd[0])}' to get to: '${text}'`,
+          `tokens ${debugName} skipped: '${src.slice(startPos, span[0])}' to get to: '${text}'`,
         );
         throw new Error("token matcher should match all input");
       }
-      cache.set(startPos, token);
+      cache.set(startPos, { token, span });
       return token;
     }
-  }
-
-  function position(pos?: number): number {
-    if (pos !== undefined) {
-      exp.lastIndex = pos;
-    }
-    return exp.lastIndex;
   }
 
   const keyEntries = groups.map(k => [k, k]);
@@ -97,24 +92,29 @@ export function tokenMatcher<T extends Record<string, string | RegExp>>(
     ...keys,
     start,
     next,
-    position,
+    get position(): number {
+      return exp.lastIndex;
+    },
+    set position(pos: number) {
+      exp.lastIndex = pos;
+    },
     _debugName: debugName,
   } as FullTokenMatcher<T>;
 }
 
 interface MatchedIndex {
-  startEnd: [number, number];
+  span: Span;
   groupDex: number;
 }
 
 function findGroupDex(
   indices: RegExpIndicesArray | undefined,
 ): MatchedIndex | undefined {
-  if (indices) {
+  if (indices !== undefined) {
     for (let i = 1; i < indices.length; i++) {
-      const startEnd = indices[i];
-      if (startEnd) {
-        return { startEnd, groupDex: i - 1 };
+      const span = indices[i];
+      if (span !== undefined) {
+        return { span, groupDex: i - 1 };
       }
     }
   }
