@@ -17,7 +17,9 @@ import { textureStorage } from "./WESLTokens.ts";
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
 
-export function reportBindingStructsPlugin(fn = console.log): WeslJsPlugin {
+export function reportBindingStructsPlugin(
+  fn: BindingStructReportFn,
+): WeslJsPlugin {
   return {
     transform: reportBindingStructs(fn),
   };
