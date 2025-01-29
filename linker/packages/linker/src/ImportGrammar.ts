@@ -8,7 +8,9 @@ import {
   preceded,
   repeat,
   repeatPlus,
+  req,
   seq,
+  seqObj,
   setTraceName,
   TagRecord,
   tagScope,
@@ -46,10 +48,10 @@ const item_import = seq(wordToken, opt(preceded("as", wordToken))).mapValue(
 // forward references for mutual recursion
 let import_collection: Parser<ImportCollection, NoTags> = null as any;
 
-const import_path = seq(
-  repeatPlus(terminated(wordToken.mapValue(segment), "::")),
-  or(() => import_collection, item_import),
-).mapValue(v => new ImportStatement(v[0], v[1]));
+const import_path = seqObj({
+  segments: repeatPlus(terminated(wordToken.mapValue(segment), "::")),
+  final: or(() => import_collection, item_import),
+}).mapValue(v => new ImportStatement(v.segments, v.final));
 
 import_collection = delimited(
   "{",
@@ -78,9 +80,11 @@ export const weslImport: Parser<ImportElem, NoTags> = tagScope(
     mainTokens,
     delimited(
       "import",
-      seq(
-        or(import_relative, import_package),
-        or(import_collection, import_path, item_import),
+      req(
+        seq(
+          or(import_relative, import_package),
+          or(import_collection, import_path, item_import),
+        ),
       ).mapValue(v => {
         if (v[1] instanceof ImportStatement) {
           return new ImportStatement(
@@ -91,7 +95,7 @@ export const weslImport: Parser<ImportElem, NoTags> = tagScope(
           return new ImportStatement(v[0], v[1]);
         }
       }),
-      ";",
+      req(";"),
     )
       .span()
       .mapValue(

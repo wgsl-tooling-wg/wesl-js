@@ -4,6 +4,7 @@ import {
   ParserFromArg,
   ParserFromRepeatArg,
   ResultFromArg,
+  SeqObjParser,
   SeqParser,
   SeqValues,
   TagsFromArg,
@@ -108,6 +109,37 @@ export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
   return seqParser as SeqParser<P>;
 }
 
+/** Parse a sequence of parsers
+ * @return an array of all parsed results, or null if any parser fails */
+export function seqObj<P extends { [key: string]: CombinatorArg }>(
+  args: P,
+): SeqObjParser<P> {
+  const parsers = Object.entries(args).map(
+    ([name, arg]) => [name as keyof P, parserArg(arg)] as const,
+  );
+  const seqObjParser = parser("seqObj", (ctx: ParserContext) => {
+    const values: Partial<Record<keyof P, any>> = {};
+    let tagged = {};
+    let failed = false;
+    for (const [name, p] of parsers) {
+      const result = p._run(ctx);
+      if (result === null) {
+        failed = true;
+        break;
+      }
+
+      tagged = mergeTags(tagged, result.tags);
+      values[name] = result.value;
+    }
+    if (failed) return null;
+    return { value: values, tags: tagged };
+  }).collect({ before: pushOpenArray, after: closeArray });
+
+  trackChildren(seqObjParser, ...parsers.map(v => v[1]));
+
+  return seqObjParser as SeqObjParser<P>;
+}
+
 /** Parse two values, and discard the first value
  * @return the second value, or null if any parser fails */
 export function preceded<P extends CombinatorArg>(
@@ -116,19 +148,22 @@ export function preceded<P extends CombinatorArg>(
 ): ParserFromArg<P> {
   const ignored = parserArg(ignoredArg);
   const p = parserArg(arg);
-  const seqParser: ParserFromArg<P> = parser("seq", (ctx: ParserContext) => {
-    const ignoredResult = ignored._run(ctx);
-    if (ignoredResult === null) return null;
-    const result = p._run(ctx);
-    return result;
-  }).collect({ before: pushOpenArray, after: closeArray });
+  const precededParser: ParserFromArg<P> = parser(
+    "preceded",
+    (ctx: ParserContext) => {
+      const ignoredResult = ignored._run(ctx);
+      if (ignoredResult === null) return null;
+      const result = p._run(ctx);
+      return result;
+    },
+  ).collect({ before: pushOpenArray, after: closeArray });
 
-  trackChildren(seqParser, ignored, p);
+  trackChildren(precededParser, ignored, p);
 
-  return seqParser;
+  return precededParser;
 }
 
-/** Parse two values, and discard the first value
+/** Parse two values, and discard the second value
  * @return the second value, or null if any parser fails */
 export function terminated<P extends CombinatorArg>(
   arg: P,
@@ -136,19 +171,22 @@ export function terminated<P extends CombinatorArg>(
 ): ParserFromArg<P> {
   const p = parserArg(arg);
   const ignored = parserArg(ignoredArg);
-  const seqParser: ParserFromArg<P> = parser("seq", (ctx: ParserContext) => {
-    const result = p._run(ctx);
-    const ignoredResult = ignored._run(ctx);
-    if (ignoredResult === null) return null;
-    return result;
-  }).collect({ before: pushOpenArray, after: closeArray });
+  const terminatedParser: ParserFromArg<P> = parser(
+    "terminated",
+    (ctx: ParserContext) => {
+      const result = p._run(ctx);
+      const ignoredResult = ignored._run(ctx);
+      if (ignoredResult === null) return null;
+      return result;
+    },
+  ).collect({ before: pushOpenArray, after: closeArray });
 
-  trackChildren(seqParser, ignored, p);
+  trackChildren(terminatedParser, ignored, p);
 
-  return seqParser;
+  return terminatedParser;
 }
 
-/** Parse two values, and discard the first value
+/** Parse three values, and only keep the middle value
  * @return the second value, or null if any parser fails */
 export function delimited<P extends CombinatorArg>(
   ignoredArg1: CombinatorArg,
@@ -158,18 +196,21 @@ export function delimited<P extends CombinatorArg>(
   const ignored1 = parserArg(ignoredArg1);
   const p = parserArg(arg);
   const ignored2 = parserArg(ignoredArg2);
-  const seqParser: ParserFromArg<P> = parser("seq", (ctx: ParserContext) => {
-    const ignoredResult1 = ignored1._run(ctx);
-    if (ignoredResult1 === null) return null;
-    const result = p._run(ctx);
-    const ignoredResult2 = ignored2._run(ctx);
-    if (ignoredResult2 === null) return null;
-    return result;
-  }).collect({ before: pushOpenArray, after: closeArray });
+  const delimitedParser: ParserFromArg<P> = parser(
+    "delimited",
+    (ctx: ParserContext) => {
+      const ignoredResult1 = ignored1._run(ctx);
+      if (ignoredResult1 === null) return null;
+      const result = p._run(ctx);
+      const ignoredResult2 = ignored2._run(ctx);
+      if (ignoredResult2 === null) return null;
+      return result;
+    },
+  ).collect({ before: pushOpenArray, after: closeArray });
 
-  trackChildren(seqParser, ignored1, p, ignored2);
+  trackChildren(delimitedParser, ignored1, p, ignored2);
 
-  return seqParser;
+  return delimitedParser;
 }
 
 /** Try parsing with one or more parsers,

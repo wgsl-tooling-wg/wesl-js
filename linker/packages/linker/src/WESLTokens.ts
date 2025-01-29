@@ -56,6 +56,7 @@ export const mainTokens = tokenMatcher(
   "main",
 );
 
+/** For parsing generics */
 export const bracketTokens = tokenMatcher(
   {
     bracket: /<|>/,
