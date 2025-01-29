@@ -1,5 +1,5 @@
 import { CombinatorArg, ParserFromArg } from "./CombinatorTypes.js";
-import { Lexer } from "./MatchingLexer.js";
+import { IgnoreFn, Lexer } from "./MatchingLexer.js";
 import {
   collect,
   CollectFn,
@@ -96,8 +96,6 @@ export interface ExtendedResult<
 > extends ParserResult<T, N> {
   src: string;
   srcMap?: SrcMap;
-  start: number;
-  end: number;
   app: AppState<C, S>;
   ctx: ParserContext<C, S>;
 }
@@ -192,7 +190,6 @@ export class Parser<T, N extends TagRecord = NoTags> {
     return runParser(this, context);
   }
 
-  // TODO: Remove
   /**
    * tag results with a name,
    *
@@ -229,9 +226,9 @@ export class Parser<T, N extends TagRecord = NoTags> {
     return this._cloneWith({ trace: opts });
   }
 
-  // TODO: Mark as unsafe
   /** map results to a new value, or add to app state as a side effect.
    * Return null to cause the parser to fail.
+   * SAFETY: Side-effects should not be done if backtracking could occur!
    */
   map<U>(fn: ParserMapFn<T, N, U>): Parser<U, N> {
     return map(this, fn);
@@ -531,15 +528,14 @@ const emptySet = new Set<string>();
 /** set which token kinds to ignore while executing this parser and its descendants.
  * If no parameters are provided, no tokens are ignored. */
 export function tokenSkipSet<T, N extends TagRecord>(
-  ignore: Set<string> | undefined | null,
+  ignoreFn: IgnoreFn | undefined | null,
   p: Parser<T, N>,
 ): Parser<T, N> {
-  const ignoreSet = ignore ?? emptySet;
-  const ignoreValues = [...ignoreSet.values()].toString() || "(null)";
+  const ignoreValues = ignoreFn?.toString() ?? "(null)";
   const ignoreParser = parser(
     `tokenSkipSet ${ignoreValues}`,
     (ctx: ParserContext): OptParserResult<T, N> =>
-      ctx.lexer.withIgnore(ignoreSet, () => p._run(ctx)),
+      ctx.lexer.withIgnore(ignoreFn ?? null, () => p._run(ctx)),
   );
 
   trackChildren(ignoreParser, p);
@@ -584,17 +580,10 @@ export function runExtended<T, N extends TagRecord>(
     ctx.lexer.position(origStart);
     return null;
   }
-  const end = ctx.lexer.position();
   const src = ctx.lexer.src;
-
-  // we've succeeded, so refine the start position to skip past ws
-  // (we don't consume ws earlier, in case an inner parser wants to use different ws skipping)
-  ctx.lexer.position(origStart);
-  const start = ctx.lexer.skipIgnored();
-  ctx.lexer.position(end);
   const { app, srcMap } = ctx;
 
-  return { ...origResults, start, end, app, src, srcMap, ctx };
+  return { ...origResults, app, src, srcMap, ctx };
 }
 
 /** for pretty printing, track subsidiary parsers */
