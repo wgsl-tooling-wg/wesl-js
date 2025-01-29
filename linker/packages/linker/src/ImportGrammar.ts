@@ -97,14 +97,13 @@ export const weslImport: Parser<ImportElem, NoTags> = tagScope(
       }),
       req(";"),
     )
-      .span()
-      .mapValue(
+      .map(
         (v): ImportElem => ({
           kind: "import",
           contents: [],
           imports: v.value,
-          start: v.span[0],
-          end: v.span[1],
+          start: v.start,
+          end: v.end,
         }),
       )
       .ptag("owo")

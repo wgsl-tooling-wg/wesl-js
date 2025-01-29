@@ -9,7 +9,7 @@ import {
   ptag,
   runCollection,
 } from "./ParserCollect.js";
-import { ParseError, parserArg, span } from "./ParserCombinator.js";
+import { ParseError, parserArg } from "./ParserCombinator.js";
 import { srcLog } from "./ParserLogging.js";
 import {
   debugNames,
@@ -20,7 +20,6 @@ import {
   withTraceLogging,
 } from "./ParserTracing.js";
 import { mergeTags } from "./ParserUtil.js";
-import { Span } from "./Span.js";
 import { SrcMap } from "./SrcMap.js";
 
 export interface AppState<C, S> {
@@ -242,13 +241,6 @@ export class Parser<T, N extends TagRecord = NoTags> {
    */
   mapValue<U>(fn: (value: T) => U | null): Parser<U, N> {
     return map(this, v => fn(v.value));
-  }
-
-  /**
-   * Returns the range of text that was parsed
-   */
-  span(): Parser<{ value: T; span: Span }, N> {
-    return span(this);
   }
 
   /** Queue a function that runs later, typically to collect AST elements from the parse.

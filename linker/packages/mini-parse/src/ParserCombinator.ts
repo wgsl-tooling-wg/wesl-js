@@ -28,7 +28,6 @@ import { closeArray, pushOpenArray } from "./ParserCollect.js";
 import { ctxLog } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
 import { mergeTags } from "./ParserUtil.js";
-import { Span } from "./Span.js";
 import { Token, TokenMatcher } from "./TokenMatcher.js";
 
 /** Parsing Combinators
@@ -281,33 +280,6 @@ export function not(arg: CombinatorArg): Parser<true> {
   trackChildren(notParser, p);
 
   return notParser;
-}
-
-/** return true if the provided parser _doesn't_ match
- * does not consume any tokens */
-export function span<P extends CombinatorArg>(
-  arg: P,
-): Parser<{ value: ResultFromArg<P>; span: Span }, TagsFromArg<P>> {
-  const p = parserArg(arg);
-  const spanParser: Parser<
-    { value: ResultFromArg<P>; span: Span },
-    TagsFromArg<P>
-  > = parser("span", (state: ParserContext) => {
-    const startPos = state.lexer.position();
-    const result = p._run(state);
-    if (!result) return result;
-    const endPos = state.lexer.position();
-    return {
-      value: {
-        value: result.value,
-        span: [startPos, endPos] as Span,
-      },
-      tags: result.tags,
-    };
-  });
-  trackChildren(spanParser, p);
-
-  return spanParser;
 }
 
 /** yield next token, any token */
