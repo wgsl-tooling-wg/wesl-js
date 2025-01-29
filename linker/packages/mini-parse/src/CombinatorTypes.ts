@@ -1,4 +1,4 @@
-import { NoTags, Parser, TagRecord } from "./Parser.js";
+import { NoBacktrack, NoTags, Parser, TagRecord } from "./Parser.js";
 
 /** Typescript types for parser combinators */
 
@@ -34,10 +34,10 @@ export type KeyedRecord<T> = { [A in keyof T]: T[A] };
  * returning a parser (for lazy initialization),
  * or simple string arguments. Strings are later converted to text() parsers.
  */
-export type CombinatorArg =
-  | Parser<any, TagRecord>
+export type CombinatorArg<B extends boolean = boolean> =
+  | Parser<any, TagRecord, B>
   | string
-  | (() => Parser<any, TagRecord>);
+  | (() => Parser<any, TagRecord, B>);
 
 /**
  * @return Parser corresponding to a single CombinatorArg.
@@ -52,7 +52,8 @@ export type CombinatorArg =
  */
 export type ParserFromArg<A extends CombinatorArg> = Parser<
   ResultFromArg<A>,
-  TagsFromArg<A>
+  TagsFromArg<A>,
+  BacktrackFromArg<A>
 >;
 
 /**
@@ -60,21 +61,28 @@ export type ParserFromArg<A extends CombinatorArg> = Parser<
  */
 export type ParserFromRepeatArg<A extends CombinatorArg> = Parser<
   ResultFromArg<A>[],
-  TagsFromArg<A>
+  TagsFromArg<A>,
+  BacktrackFromArg<A>
 >;
 
 /** Result value type returned by a parser specified by a CombinatorArg */
 export type ResultFromArg<A extends CombinatorArg> =
-  A extends Parser<infer R, any> ? R
+  A extends Parser<infer R, any, boolean> ? R
   : A extends string ? string
-  : A extends () => Parser<infer R, any> ? R
+  : A extends () => Parser<infer R, any, boolean> ? R
   : never;
 
 /** parser tags type returned by parser specified by a CombinatorArg */
 export type TagsFromArg<A extends CombinatorArg> =
-  A extends Parser<any, infer T> ? T
+  A extends Parser<any, infer T, boolean> ? T
   : A extends string ? NoTags
-  : A extends () => Parser<any, infer T> ? T
+  : A extends () => Parser<any, infer T, boolean> ? T
+  : never;
+
+export type BacktrackFromArg<A extends CombinatorArg> =
+  A extends Parser<any, any, infer B> ? B
+  : A extends string ? NoBacktrack
+  : A extends () => Parser<any, any, infer B> ? B
   : never;
 
 /** Parser type returned by seq(),
@@ -84,7 +92,13 @@ export type TagsFromArg<A extends CombinatorArg> =
  */
 export type SeqParser<P extends CombinatorArg[]> = Parser<
   SeqValues<P>,
-  SeqTags<P>
+  SeqTags<P>,
+  BacktrackFromArg<P[0]>
+>;
+
+export type SeqObjParser<P extends { [key: string]: CombinatorArg }> = Parser<
+  { [key in keyof P]: ResultFromArg<P[key]> },
+  Intersection<TagsFromArg<P[string]>>
 >;
 
 /**
@@ -102,7 +116,8 @@ type SeqTags<P extends CombinatorArg[]> = Intersection<TagsFromArg<P[number]>>;
 
 export type OrParser<P extends CombinatorArg[]> = Parser<
   OrValues<P>,
-  OrNames<P>
+  OrNames<P>,
+  false
 >;
 
 type OrValues<P extends CombinatorArg[]> = ResultFromArg<P[number]>;

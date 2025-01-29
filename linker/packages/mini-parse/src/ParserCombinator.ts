@@ -1,15 +1,18 @@
 import {
+  BacktrackFromArg,
   CombinatorArg,
   OrParser,
   ParserFromArg,
   ParserFromRepeatArg,
   ResultFromArg,
+  SeqObjParser,
   SeqParser,
   SeqValues,
   TagsFromArg,
 } from "./CombinatorTypes.js";
 import { quotedText } from "./MatchingLexer.js";
 import {
+  Backtrack,
   ExtendedResult,
   NoTags,
   OptParserResult,
@@ -59,6 +62,32 @@ export class ParseError extends Error {
 
 /** Parse for a particular kind of token,
  * @return the matching text */
+export function token(kindStr: string, value: string): Parser<string> {
+  return simpleParser(
+    `token '${kindStr}' ${quotedText(value)}`,
+    (state: ParserContext): string | null => {
+      const next = state.lexer.next();
+      return next?.kind === kindStr && next.text === value ? next.text : null;
+    },
+  );
+}
+
+/** Parse for a particular kind of token,
+ * @return the matching text */
+export function tokenOf(kindStr: string, values: string[]): Parser<string> {
+  return simpleParser(
+    `tokenOf '${kindStr}'`,
+    (state: ParserContext): string | null => {
+      const next = state.lexer.next();
+      return next?.kind === kindStr && values.includes(next.text) ?
+          next.text
+        : null;
+    },
+  );
+}
+
+/** Parse for a particular kind of token,
+ * @return the matching text */
 export function kind(kindStr: string): Parser<string> {
   return simpleParser(
     `kind '${kindStr}'`,
@@ -83,7 +112,9 @@ export function text(value: string): Parser<string, NoTags> {
 
 /** Parse a sequence of parsers
  * @return an array of all parsed results, or null if any parser fails */
-export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
+export function seq<P extends [CombinatorArg, ...CombinatorArg<false>[]]>(
+  ...args: P
+): SeqParser<P> {
   const parsers = args.map(parserArg);
   const seqParser = parser("seq", (ctx: ParserContext) => {
     const values = [];
@@ -108,12 +139,47 @@ export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
   return seqParser as SeqParser<P>;
 }
 
+/** Parse a sequence of parsers
+ * @return an array of all parsed results, or null if any parser fails */
+// TODO: Add "first parser"
+export function seqObj<P extends { [key: string]: CombinatorArg }>(
+  args: P,
+): SeqObjParser<P> {
+  const parsers = Object.entries(args).map(
+    ([name, arg]) => [name as keyof P, parserArg(arg)] as const,
+  );
+  const seqObjParser = parser("seqObj", (ctx: ParserContext) => {
+    const values: Partial<Record<keyof P, any>> = {};
+    let tagged = {};
+    let failed = false;
+    for (const [name, p] of parsers) {
+      const result = p._run(ctx);
+      if (result === null) {
+        failed = true;
+        break;
+      }
+
+      tagged = mergeTags(tagged, result.tags);
+      values[name] = result.value;
+    }
+    if (failed) return null;
+    return { value: values, tags: tagged };
+  }).collect({ before: pushOpenArray, after: closeArray });
+
+  trackChildren(seqObjParser, ...parsers.map(v => v[1]));
+
+  return seqObjParser as SeqObjParser<P>;
+}
+
 /** Parse two values, and discard the first value
  * @return the second value, or null if any parser fails */
-export function preceded<P extends CombinatorArg>(
+export function preceded<
+  Ignored extends CombinatorArg,
+  P extends CombinatorArg<false>,
+>(
   ignoredArg: CombinatorArg,
   arg: P,
-): ParserFromArg<P> {
+): Parser<ResultFromArg<P>, TagsFromArg<P>, BacktrackFromArg<Ignored>> {
   const ignored = parserArg(ignoredArg);
   const p = parserArg(arg);
   const seqParser: ParserFromArg<P> = parser("seq", (ctx: ParserContext) => {
@@ -132,7 +198,7 @@ export function preceded<P extends CombinatorArg>(
  * @return the second value, or null if any parser fails */
 export function terminated<P extends CombinatorArg>(
   arg: P,
-  ignoredArg: CombinatorArg,
+  ignoredArg: CombinatorArg<false>,
 ): ParserFromArg<P> {
   const p = parserArg(arg);
   const ignored = parserArg(ignoredArg);
@@ -150,11 +216,14 @@ export function terminated<P extends CombinatorArg>(
 
 /** Parse two values, and discard the first value
  * @return the second value, or null if any parser fails */
-export function delimited<P extends CombinatorArg>(
-  ignoredArg1: CombinatorArg,
+export function delimited<
+  Ignored1 extends CombinatorArg,
+  P extends CombinatorArg<false>,
+>(
+  ignoredArg1: Ignored1,
   arg: P,
-  ignoredArg2: CombinatorArg,
-): ParserFromArg<P> {
+  ignoredArg2: CombinatorArg<false>,
+): Parser<ResultFromArg<P>, TagsFromArg<P>, BacktrackFromArg<Ignored1>> {
   const ignored1 = parserArg(ignoredArg1);
   const p = parserArg(arg);
   const ignored2 = parserArg(ignoredArg2);
@@ -174,7 +243,7 @@ export function delimited<P extends CombinatorArg>(
 
 /** Try parsing with one or more parsers,
  *  @return the first successful parse */
-export function or<P extends CombinatorArg[]>(...args: P): OrParser<P> {
+export function or<P extends CombinatorArg<true>[]>(...args: P): OrParser<P> {
   const parsers = args.map(parserArg);
   const orParser = parser("or", (state: ParserContext) => {
     for (const p of parsers) {
@@ -205,6 +274,7 @@ export type UndefinedParser = Parser<undefined, NoTags>;
  */
 export function opt<P extends CombinatorArg>(
   arg: P,
+  // TODO: Add "default branch"
 ): ParserFromArg<P> | UndefinedParser {
   const p = parserArg(arg);
 
@@ -246,11 +316,16 @@ export function not(arg: CombinatorArg): Parser<true> {
  * does not consume any tokens */
 export function span<P extends CombinatorArg>(
   arg: P,
-): Parser<{ value: ResultFromArg<P>; span: Span }, TagsFromArg<P>> {
+): Parser<
+  { value: ResultFromArg<P>; span: Span },
+  TagsFromArg<P>,
+  BacktrackFromArg<P>
+> {
   const p = parserArg(arg);
   const spanParser: Parser<
     { value: ResultFromArg<P>; span: Span },
-    TagsFromArg<P>
+    TagsFromArg<P>,
+    BacktrackFromArg<P>
   > = parser("span", (state: ParserContext) => {
     const startPos = state.lexer.position();
     const result = p._run(state);
@@ -302,7 +377,7 @@ export function anyThrough<A extends CombinatorArg>(
 }
 
 /** match zero or more instances of a parser */
-export function repeat<A extends CombinatorArg>(
+export function repeat<A extends CombinatorArg<false>>(
   arg: A,
 ): ParserFromRepeatArg<A> {
   const p = parserArg(arg);
@@ -312,7 +387,7 @@ export function repeat<A extends CombinatorArg>(
 }
 
 /** match one or more instances of a parser */
-export function repeatPlus<A extends CombinatorArg>(
+export function repeatPlus<A extends CombinatorArg<false>>(
   arg: A,
 ): ParserFromRepeatArg<A> {
   const p = parserArg(arg);
