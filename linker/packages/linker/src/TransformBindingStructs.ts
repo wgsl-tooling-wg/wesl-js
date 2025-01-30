@@ -24,7 +24,7 @@ import {
 } from "./RawEmit.ts";
 import { DeclIdent, RefIdent } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
-import { textureStorage } from "./WESLTokens.ts";
+import { textureStorage } from "./Reflection.ts";
 
 /**
  * Transform binding structures into binding variables by mutating the AST.

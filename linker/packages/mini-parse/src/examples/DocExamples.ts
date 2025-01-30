@@ -1,4 +1,4 @@
-import { kind, or, repeat, seq, tokens } from "../ParserCombinator.js";
+import { kind, or, repeat, seq } from "../ParserCombinator.js";
 import { matchOneOf } from "../stream/RegexHelpers.js";
 import { tokenMatcher } from "../TokenMatcher.js";
 
@@ -40,7 +40,6 @@ const quoteTokens = tokenMatcher({
 });
 
 const nonQuote = kind(quoteTokens.nonQuote);
-export const quote = seq('"', tokens(quoteTokens, repeat(nonQuote)), '"');
 
 export type ASTElem = BinOpElem;
 

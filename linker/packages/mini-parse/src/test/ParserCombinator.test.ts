@@ -11,7 +11,6 @@ import {
   Parser,
   preParse,
   setTraceName,
-  tokenSkipSet,
 } from "../Parser.js";
 import {
   any,
@@ -187,76 +186,6 @@ test("preparse simple comment", () => {
 
   const { parsed } = testParse(p, src);
   expect(parsed?.value).toEqual(["boo", "baz"]);
-});
-
-test("disable preParse inside quote", () => {
-  // prettier-ignore
-  const comment = seq(
-    "/*", 
-    repeat(anyNot("*/")), 
-    "*/"
-  ).traceName("comment");
-
-  // prettier-ignore
-  const quote = disablePreParse(
-      tokenSkipSet(null, // disable ws skipping
-        seq(
-          opt(kind(m.ws)),
-          "^", 
-          repeat(anyNot("^").tag("contents")), 
-          "^"
-        )
-      )
-    )
-    .map((r) => r.tags.contents.map((tok) => tok.text).join(""))
-    .traceName("quote");
-
-  const p = preParse(comment, repeat(or(kind(m.word), quote)));
-  const src = "zug ^zip /* boo */^ zax";
-
-  const { parsed } = testParse(p, src);
-  expect(parsed?.value).toEqual(["zug", "zip /* boo */", "zax"]);
-});
-
-test("disablePreParse restores preParse context", () => {
-  withTracingDisabled(() => {
-    // prettier-ignore
-    const comment = seq(
-    "/*", 
-    repeat(anyNot("*/")), 
-    "*/"
-  ).traceName("comment");
-
-    const quote = withTags(
-      disablePreParse(
-        tokenSkipSet(
-          null, // disable ws skipping
-          seq(opt(kind(m.ws)), "'", repeat(anyNot("'").tag("contents")), "'"),
-        ),
-      ).map(r => r.tags.contents.map(tok => tok.text).join("")),
-    ).traceName("quote");
-    let misParsed = false;
-
-    const ugh = any().map(() => (misParsed = true));
-    const p = preParse(comment, repeat(or(kind(m.word), quote, ugh)));
-
-    // needs to restore preparsing state to catch second comment
-    const src = "/*boo*/ 'za x' /*foo*/";
-
-    const { parsed } = testParse(p, src);
-    expect(parsed?.value).toEqual(["za x"]);
-    expect(misParsed).toBe(false);
-  });
-});
-
-test("tokenIgnore", () => {
-  const p = repeat(any()).map(r => r.value.map(tok => tok.text));
-  const src = "a b";
-  const { parsed: parsedNoSpace } = testParse(p, src);
-  expect(parsedNoSpace?.value).toEqual(["a", "b"]);
-
-  const { parsed } = testParse(tokenSkipSet(null, p), src);
-  expect(parsed?.value).toEqual(["a", " ", "b"]);
 });
 
 test("token start is after ignored ws", () => {

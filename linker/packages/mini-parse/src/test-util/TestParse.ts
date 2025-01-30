@@ -1,6 +1,7 @@
 import {
   AppState,
   enableTracing,
+  Lexer,
   matchingLexer,
   matchOneOf,
   NoTags,
@@ -41,6 +42,20 @@ export function testParse<T, N extends TagRecord = NoTags, C = any, S = any>(
   appState: AppState<C, S> = { context: {} as C, stable: [] as S },
 ): TestParseResult<T, N, S> {
   const lexer = matchingLexer(src, tokenMatcher);
+  const parsed = p.parse({ lexer, appState: appState, maxParseCount: 1000 });
+  return { parsed, position: lexer.position(), stable: appState.stable };
+}
+
+export function testParseWithLexer<
+  T,
+  N extends TagRecord = NoTags,
+  C = any,
+  S = any,
+>(
+  p: Parser<T, N>,
+  lexer: Lexer,
+  appState: AppState<C, S> = { context: {} as C, stable: [] as S },
+): TestParseResult<T, N, S> {
   const parsed = p.parse({ lexer, appState: appState, maxParseCount: 1000 });
   return { parsed, position: lexer.position(), stable: appState.stable };
 }

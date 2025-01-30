@@ -2,10 +2,10 @@ import {
   eof,
   fn,
   kind,
+  lexerAction,
   opt,
   or,
   Parser,
-  preParse,
   repeat,
   repeatPlus,
   req,
@@ -13,13 +13,10 @@ import {
   setTraceName,
   tagScope,
   text,
-  tokens,
-  tokenSkipSet,
   tracing,
   withSep,
   withSepPlus,
 } from "mini-parse";
-import { comment } from "./CommentsGrammar.ts";
 import { weslImport } from "./ImportGrammar.ts";
 import {
   aliasCollect,
@@ -41,11 +38,12 @@ import {
   typedDecl,
   typeRefCollect,
 } from "./WESLCollect.ts";
-import { bracketTokens, mainTokens } from "./WESLTokens.ts";
+import { mainTokens } from "./WESLTokens.ts";
+import { WeslToken } from "./parse/WeslStream.ts";
 
 /** parser that recognizes key parts of WGSL and also directives like #import */
 
-export const word = or(kind(mainTokens.ident), kind(mainTokens.textureStorage));
+export const word = kind(mainTokens.ident);
 
 const qualified_ident = withSepPlus("::", word); // TODO make this a lexer rule?
 
@@ -146,16 +144,6 @@ const std_type_specifier = seq(
   () => opt_template_list,
 )                                   .collect(typeRefCollect);
 
-// prettier-ignore
-// none of the elements of a texture_storage type generator are bindable idents
-// e.g. texture_storage_2d<rgba8unorm, write>
-const texture_storage_type = tagScope(
-  seq(
-    kind(mainTokens.textureStorage)   .ptag("typeRefName"),
-    () => opt_template_words,
-  )                                   .collect(typeRefCollect),
-);
-
 // the first and optional third elements of a ptr template are not bindable idents:
 // e.g. ptr<storage, MyStruct, read>
 // prettier-ignore
@@ -173,7 +161,7 @@ const ptr_type = tagScope(
 
 // prettier-ignore
 export const type_specifier: Parser<any> = tagScope(
-  or(texture_storage_type, ptr_type, std_type_specifier),
+   std_type_specifier,
 )                                   .ctag("typeRefElem");
 
 // prettier-ignore
@@ -243,12 +231,28 @@ const global_variable_decl = seq(
   opt(seq("=", () => expression       .collect(scopeCollect(), "decl_scope"))),
 );
 
+const templateOpen = lexerAction(lexer => {
+  let result = (lexer.stream as any).nextTemplateToken() as WeslToken | null;
+  if (result?.value === "<") {
+    return "<";
+  } else {
+    return null;
+  }
+});
+const templateClose = lexerAction(lexer => {
+  let result = (lexer.stream as any).nextTemplateToken() as WeslToken | null;
+  if (result?.value === ">") {
+    return ">";
+  } else {
+    return null;
+  }
+});
 /** Aka template_elaborated_ident.post.ident */
 const opt_template_list = opt(
   seq(
-    tokens(bracketTokens, "<"),
+    templateOpen,
     withSepPlus(",", () => template_parameter),
-    tokens(bracketTokens, ">"),
+    templateClose,
   ),
 );
 
@@ -256,9 +260,9 @@ const opt_template_list = opt(
 // prettier-ignore
 const opt_template_words = opt(
   seq(
-    tokens(bracketTokens, "<"),
+    templateOpen,
     withSepPlus(",", qualified_ident        .ptag("templateParam")),
-    tokens(bracketTokens, ">"),
+    templateClose
   ),
 );
 
@@ -293,16 +297,6 @@ const component_or_swizzle = repeatPlus(
   ),
 );
 
-// prettier-ignore
-/** parse simple struct.member style references specially, for binding struct lowering */
-const simple_component_reference = tagScope(
-  seq(
-    qualified_ident                   .collect(refIdent, "structRef"),
-    seq(".", word                     .collect(nameCollect, "component")),
-    opt(component_or_swizzle          .collect(stuffCollect, "extra_components")),
-  )                                   .collect(memberRefCollect),
-);
-
 /**
  * bitwise_expression.post.unary_expression
  * & ^ |
@@ -320,16 +314,9 @@ const makeExpressionOperator = (isTemplate: boolean) => {
   return or(...allowedOps);
 };
 
-// prettier-ignore
 const unary_expression: Parser<any> = or(
   seq(or(..."! & * - ~".split(" ")), () => unary_expression),
-  or(
-    simple_component_reference,
-    seq(
-      primary_expression,  
-      opt(component_or_swizzle)
-    ),
-  )
+  seq(primary_expression, opt(component_or_swizzle)),
 );
 
 const makeExpression = (isTemplate: boolean) => {
@@ -463,7 +450,6 @@ const statement: Parser<any> = or(
 
 // prettier-ignore
 const lhs_expression: Parser<any> = or(
-  simple_component_reference,
   seq(
     qualified_ident                        .collect(refIdent), 
     opt(component_or_swizzle)
@@ -582,18 +568,13 @@ export const global_decl = tagScope(
   ),
 );
 
-const end = tokenSkipSet(null, seq(repeat(kind(mainTokens.ws)), eof()));
-
 // prettier-ignore
-export const weslRoot = preParse(
-  comment,
-  seq(
+export const weslRoot = seq(
     repeat(weslImport),
     repeat(global_directive),
     repeat(global_decl),
-    req(end),
-  )                                 .collect(collectModule, "collectModule"),
-);
+    req(eof()),
+  )                                 .collect(collectModule, "collectModule");
 
 if (tracing) {
   const names: Record<string, Parser<unknown>> = {
@@ -646,7 +627,6 @@ if (tracing) {
     import_statement,
     global_directive,
     global_decl,
-    end,
     weslRoot,
   };
 

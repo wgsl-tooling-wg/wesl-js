@@ -12,11 +12,11 @@ import { RefIdent } from "./Scope.ts";
 import {
   multisampledTextureTypes,
   sampledTextureTypes,
+  textureStorageTypes,
 } from "./StandardTypes.ts";
-import { textureStorage } from "./WESLTokens.ts";
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
-
+export const textureStorage = matchOneOf(textureStorageTypes);
 /** 
  * Linker plugin that generates TypeScript strings for GPUBindingGroupLayouts
  * based on the binding structs in the WESL source

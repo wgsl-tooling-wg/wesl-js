@@ -15,7 +15,6 @@ import {
   TagRecord,
   tagScope,
   terminated,
-  tokens,
   tracing,
   withSepPlus,
 } from "mini-parse";
@@ -76,39 +75,36 @@ const import_package = terminated(wordToken.mapValue(segment), "::").mapValue(
 
 /** parse a WESL style wgsl import statement. */
 export const weslImport: Parser<ImportElem, NoTags> = tagScope(
-  tokens(
-    mainTokens,
-    delimited(
-      "import",
-      req(
-        seq(
-          or(import_relative, import_package),
-          or(import_collection, import_path, item_import),
-        ),
-      ).mapValue(v => {
-        if (v[1] instanceof ImportStatement) {
-          return new ImportStatement(
-            segments(v[0], v[1].segments),
-            v[1].finalSegment,
-          );
-        } else {
-          return new ImportStatement(v[0], v[1]);
-        }
+  delimited(
+    "import",
+    req(
+      seq(
+        or(import_relative, import_package),
+        or(import_collection, import_path, item_import),
+      ),
+    ).mapValue(v => {
+      if (v[1] instanceof ImportStatement) {
+        return new ImportStatement(
+          segments(v[0], v[1].segments),
+          v[1].finalSegment,
+        );
+      } else {
+        return new ImportStatement(v[0], v[1]);
+      }
+    }),
+    req(";"),
+  )
+    .map(
+      (v): ImportElem => ({
+        kind: "import",
+        contents: [],
+        imports: v.value,
+        start: v.start,
+        end: v.end,
       }),
-      req(";"),
     )
-      .map(
-        (v): ImportElem => ({
-          kind: "import",
-          contents: [],
-          imports: v.value,
-          start: v.start,
-          end: v.end,
-        }),
-      )
-      .ptag("owo")
-      .collect(importElem),
-  ),
+    .ptag("owo")
+    .collect(importElem),
 );
 
 if (tracing) {

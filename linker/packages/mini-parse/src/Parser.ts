@@ -517,24 +517,6 @@ function toParser<T, N extends TagRecord, O, Y extends TagRecord>(
   return newParser;
 }
 
-/** set which token kinds to ignore while executing this parser and its descendants.
- * If no parameters are provided, no tokens are ignored. */
-export function tokenSkipSet<T, N extends TagRecord>(
-  ignoreFn: boolean | undefined | null,
-  p: Parser<T, N>,
-): Parser<T, N> {
-  const ignoreValues = ignoreFn?.toString() ?? "(null)";
-
-  const ignoreParser = parser(
-    `tokenSkipSet ${ignoreValues}`,
-    (ctx: ParserContext): OptParserResult<T, N> =>
-      ctx.lexer.withIgnore(ignoreFn ?? false, () => p._run(ctx)),
-  );
-
-  trackChildren(ignoreParser, p);
-  return ignoreParser;
-}
-
 /** attach a pre-parser to try parsing before this parser runs.
  * (e.g. to recognize comments that can appear almost anywhere in the main grammar) */
 export function preParse<T, N extends TagRecord>(

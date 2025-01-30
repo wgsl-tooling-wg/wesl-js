@@ -1,3 +1,3 @@
-import ./wgsl_1/util/bar;
+import package::wgsl_1::util::bar;
 
 fn main() { bar(); }

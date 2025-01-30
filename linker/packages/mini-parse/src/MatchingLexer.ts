@@ -9,12 +9,6 @@ export interface Lexer {
   /** return the next token, advancing the the current position */
   next(): OldToken | undefined;
 
-  /** run a function with a substitute tokenMatcher */
-  withMatcher<T>(newMatcher: TokenMatcher, fn: () => T): T;
-
-  /** run a function with a substitute set of token kinds to ignore */
-  withIgnore<T>(newIgnore: boolean, fn: () => T): T;
-
   /** get or set the current position in the src */
   position(pos?: number): number;
 
@@ -26,16 +20,13 @@ export interface Lexer {
 
   /** src text */
   src: string;
-}
 
-interface MatcherStackElem {
-  matcher: TokenMatcher;
-  ignoreFn: boolean;
+  stream?: Stream<Token>;
 }
 
 export class LexerFromStream<T extends Token> implements Lexer {
   constructor(
-    private stream: Stream<T>,
+    public stream: Stream<T>,
     public src: string,
   ) {}
   next(): OldToken | undefined {
@@ -45,12 +36,6 @@ export class LexerFromStream<T extends Token> implements Lexer {
       kind: result.kind,
       text: result.value,
     };
-  }
-  withMatcher<T>(newMatcher: TokenMatcher, fn: () => T): T {
-    throw new Error("Method not implemented.");
-  }
-  withIgnore<T>(newIgnore: boolean, fn: () => T): T {
-    throw new Error("Method not implemented.");
   }
   position(pos?: number): number {
     if (pos !== undefined) {
@@ -81,8 +66,6 @@ export function matchingLexer(
   srcMap?: SrcMap,
 ): Lexer {
   let matcher = rootMatcher;
-  const matcherStack: MatcherStackElem[] = [];
-
   matcher.start(src);
 
   function next(): OldToken | undefined {
@@ -121,51 +104,11 @@ export function matchingLexer(
     }
   }
 
-  function pushMatcher(newMatcher: TokenMatcher, newIgnore: boolean): void {
-    const position = matcher.position;
-    matcherStack.push({ matcher, ignoreFn });
-    newMatcher.start(src, position);
-    matcher = newMatcher;
-    ignoreFn = newIgnore;
-  }
-
-  function popMatcher(): void {
-    const position = matcher.position;
-    const elem = matcherStack.pop();
-    if (!elem) {
-      console.error("too many pops");
-      return;
-    }
-    matcher = elem.matcher;
-    ignoreFn = elem.ignoreFn;
-
-    matcher.position = position;
-  }
-
   function position(pos?: number): number {
     if (pos !== undefined) {
       matcher.start(src, pos);
     }
     return matcher.position;
-  }
-
-  function withMatcher<T>(newMatcher: TokenMatcher, fn: () => T): T {
-    return withMatcherIgnore(newMatcher, ignoreFn, fn);
-  }
-
-  function withIgnore<T>(newIgnore: boolean, fn: () => T): T {
-    return withMatcherIgnore(matcher, newIgnore, fn);
-  }
-
-  function withMatcherIgnore<T>(
-    tokenMatcher: TokenMatcher,
-    ignoreFn: boolean,
-    fn: () => T,
-  ): T {
-    pushMatcher(tokenMatcher, ignoreFn);
-    const result = fn();
-    popMatcher();
-    return result;
   }
 
   function eof(): boolean {
@@ -175,8 +118,6 @@ export function matchingLexer(
   return {
     next,
     position,
-    withMatcher,
-    withIgnore,
     eof,
     skipIgnored,
     src,

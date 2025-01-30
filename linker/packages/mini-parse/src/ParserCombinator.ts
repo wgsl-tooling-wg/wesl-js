@@ -9,7 +9,7 @@ import {
   SeqValues,
   TagsFromArg,
 } from "./CombinatorTypes.js";
-import { quotedText } from "./MatchingLexer.js";
+import { Lexer, quotedText } from "./MatchingLexer.js";
 import {
   ExtendedResult,
   NoTags,
@@ -21,7 +21,6 @@ import {
   runExtended,
   simpleParser,
   TagRecord,
-  tokenSkipSet,
   trackChildren,
 } from "./Parser.js";
 import { closeArray, pushOpenArray } from "./ParserCollect.js";
@@ -406,10 +405,14 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
 
 /** yields true if parsing has reached the end of input */
 export function eof(): Parser<true> {
-  return simpleParser(
-    "eof",
-    (state: ParserContext) => state.lexer.eof() || null,
-  );
+  return simpleParser("eof", (state: ParserContext) => {
+    const result = state.lexer.next();
+    if (result === undefined) {
+      return true;
+    } else {
+      return null;
+    }
+  });
 }
 
 /** if parsing fails, log an error and abort parsing */
@@ -483,39 +486,16 @@ export function withSepPlus<P extends CombinatorArg>(
 }
 
 /** run a parser with a provided token matcher (i.e. use a temporary lexing mode) */
-export function tokens<A extends CombinatorArg>(
-  matcher: TokenMatcher,
-  arg: A,
-): ParserFromArg<A> {
-  const p = parserArg(arg);
-  const tokensParser = parser(
-    `tokens ${matcher._debugName}`,
+export function lexerAction<U>(
+  action: (lexer: Lexer) => U | null,
+): Parser<U, NoTags> {
+  const tokensParser = simpleParser(
+    `tokens lexerAction`,
     (state: ParserContext) => {
-      return state.lexer.withMatcher(matcher, () => {
-        return p._run(state);
-      });
+      return action(state.lexer);
     },
   );
-
-  trackChildren(tokensParser, p);
   return tokensParser;
-}
-
-/** return a parser that matches end of line, or end of file,
- * optionally preceded by white space
- * @param ws should not match \n */
-// TODO make arguments optional
-export function makeEolf(matcher: TokenMatcher, ws: string): Parser<any> {
-  // prettier-ignore
-  return tokens(matcher, 
-      tokenSkipSet(null, // disable automatic ws skipping so we can match newline
-        seq(
-          opt(kind(ws)), 
-          or("\n", eof())
-        )
-      )
-    )
-   .traceName("eolf");
 }
 
 /** convert naked string arguments into text() parsers and functions into fn() parsers */
