@@ -500,6 +500,33 @@ test("parse simple templated type", () => {
   `);
 });
 
+test("parse with space before template", () => {
+  const src = `fn main(a: array <MyStruct,4>) { }`;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      fn main(a: array<MyStruct, '4'>)
+        text 'fn '
+        decl %main
+        text '('
+        param
+          decl %a
+          typeDecl %a : array<MyStruct, '4'>
+            text ': '
+            type array<MyStruct, '4'>
+              ref array
+              text ' <'
+              type MyStruct
+                ref MyStruct
+              text ','
+              expression '4'
+                text '4'
+              text '>'
+        text ') { }'"
+  `);
+});
+
 test("parse nested template that ends with >> ", () => {
   const src = `fn main(a: vec2<array <MyStruct,4>>) { }`;
   const ast = parseTest(src);
