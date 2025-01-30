@@ -5,7 +5,7 @@ import { FlatImport } from "./FlattenTreeImport.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, WeslAST } from "./ParseWESL.ts";
 import { DeclIdent, exportDecl, RefIdent, Scope } from "./Scope.ts";
-import { stdFn, stdType } from "./StandardTypes.ts";
+import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last, overlapTail } from "./Util.ts";
 
 export interface BindResults {
@@ -152,7 +152,7 @@ function setDisplayName(
 }
 
 function stdWgsl(name: string): boolean {
-  return stdType(name) || stdFn(name);
+  return stdType(name) || stdFn(name) || stdEnumerant(name);
 }
 
 /** search earlier in the scope and in parent scopes to find a matching decl ident */
