@@ -1,5 +1,6 @@
 import { srcTrace } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
+import { Span } from "./Span.js";
 import { SrcMap } from "./SrcMap.js";
 import { Token, TokenMatcher } from "./TokenMatcher.js";
 
@@ -11,7 +12,7 @@ export interface Lexer {
   withMatcher<T>(newMatcher: TokenMatcher, fn: () => T): T;
 
   /** run a function with a substitute set of token kinds to ignore */
-  withIgnore<T>(newIgnore: Set<string>, fn: () => T): T;
+  withIgnore<T>(newIgnore: IgnoreFn | null, fn: () => T): T;
 
   /** get or set the current position in the src */
   position(pos?: number): number;
@@ -28,13 +29,30 @@ export interface Lexer {
 
 interface MatcherStackElem {
   matcher: TokenMatcher;
-  ignore: Set<string>;
+  ignoreFn: IgnoreFn;
+}
+
+/**
+ * To ignore a token, return the start index of where we should look for the next token.
+ *
+ * Note: This could be extended to handle nested languages, by extending the return types
+ * to `enum { Keep, Skip(newPosition), NestedParse(newPosition, result) }` and parsing
+ * inside of this function.
+ */
+export type IgnoreFn = (token: Token, span: Span, src: string) => null | number;
+
+function defaultIgnorer(token: Token, span: Span, src: string): null | number {
+  if (token.kind === "ws") {
+    return span[1];
+  } else {
+    return null;
+  }
 }
 
 export function matchingLexer(
   src: string,
   rootMatcher: TokenMatcher,
-  ignore = new Set(["ws"]),
+  ignoreFn: IgnoreFn = defaultIgnorer,
   srcMap?: SrcMap,
 ): Lexer {
   let matcher = rootMatcher;
@@ -43,9 +61,9 @@ export function matchingLexer(
   matcher.start(src);
 
   function next(): Token | undefined {
-    const start = matcher.position();
+    const start = matcher.position;
     const { token } = toNextToken();
-    if (token && tracing) {
+    if (tracing && token) {
       const text = quotedText(token?.text);
       srcTrace(srcMap ?? src, start, `: ${text} (${token?.kind})`);
     }
@@ -56,75 +74,79 @@ export function matchingLexer(
     const { p } = toNextToken();
 
     // back up to the position before the first non-ignored token
-    matcher.position(p);
+    matcher.position = p;
     return p;
   }
 
   /** Advance to the next token
    * @return the token, and the position at the start of the token (after ignored ws) */
   function toNextToken(): { p: number; token?: Token } {
-    let p = matcher.position();
-    if (eof()) return { p };
-
-    // advance til we find a token we're not ignoring
-    let token = matcher.next();
-    while (token && ignore.has(token.kind)) {
-      p = matcher.position(); // save position before the token
+    while (true) {
+      let p = matcher.position;
       if (eof()) return { p };
-      token = matcher.next();
+      // advance til we find a token we're not ignoring
+      let token = matcher.next();
+      if (token === undefined) {
+        return { p, token: undefined };
+      }
+      let skip = ignoreFn(token, [p, matcher.position], src);
+      if (skip === null) {
+        return { p, token };
+      } else {
+        matcher.position = skip;
+      }
     }
-    return { p, token };
   }
 
-  function pushMatcher(newMatcher: TokenMatcher, newIgnore: Set<string>): void {
-    const position = matcher.position();
-    matcherStack.push({ matcher, ignore });
+  function pushMatcher(newMatcher: TokenMatcher, newIgnore: IgnoreFn): void {
+    const position = matcher.position;
+    matcherStack.push({ matcher, ignoreFn });
     newMatcher.start(src, position);
     matcher = newMatcher;
-    ignore = newIgnore;
+    ignoreFn = newIgnore;
   }
 
   function popMatcher(): void {
-    const position = matcher.position();
+    const position = matcher.position;
     const elem = matcherStack.pop();
     if (!elem) {
       console.error("too many pops");
       return;
     }
     matcher = elem.matcher;
-    ignore = elem.ignore;
+    ignoreFn = elem.ignoreFn;
 
-    matcher.position(position);
+    matcher.position = position;
   }
 
   function position(pos?: number): number {
     if (pos !== undefined) {
       matcher.start(src, pos);
     }
-    return matcher.position();
+    return matcher.position;
   }
 
   function withMatcher<T>(newMatcher: TokenMatcher, fn: () => T): T {
-    return withMatcherIgnore(newMatcher, ignore, fn);
+    return withMatcherIgnore(newMatcher, ignoreFn, fn);
   }
 
-  function withIgnore<T>(newIgnore: Set<string>, fn: () => T): T {
-    return withMatcherIgnore(matcher, newIgnore, fn);
+  function withIgnore<T>(newIgnore: IgnoreFn | null, fn: () => T): T {
+    return withMatcherIgnore(matcher, newIgnore ?? defaultIgnorer, fn);
   }
 
   function withMatcherIgnore<T>(
     tokenMatcher: TokenMatcher,
-    ignore: Set<string>,
+    ignoreFn: IgnoreFn,
     fn: () => T,
   ): T {
-    pushMatcher(tokenMatcher, ignore);
+    pushMatcher(tokenMatcher, ignoreFn);
     const result = fn();
     popMatcher();
     return result;
   }
 
   function eof(): boolean {
-    return matcher.position() === src.length;
+    return matcher.position === src.length;
   }
 
   return {
