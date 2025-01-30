@@ -1,5 +1,5 @@
 import { CombinatorArg, ParserFromArg } from "./CombinatorTypes.js";
-import { IgnoreFn, Lexer } from "./MatchingLexer.js";
+import { Lexer } from "./MatchingLexer.js";
 import {
   collect,
   CollectFn,
@@ -517,12 +517,10 @@ function toParser<T, N extends TagRecord, O, Y extends TagRecord>(
   return newParser;
 }
 
-const neverIgnore: IgnoreFn = () => null;
-
 /** set which token kinds to ignore while executing this parser and its descendants.
  * If no parameters are provided, no tokens are ignored. */
 export function tokenSkipSet<T, N extends TagRecord>(
-  ignoreFn: IgnoreFn | undefined | null,
+  ignoreFn: boolean | undefined | null,
   p: Parser<T, N>,
 ): Parser<T, N> {
   const ignoreValues = ignoreFn?.toString() ?? "(null)";
@@ -530,7 +528,7 @@ export function tokenSkipSet<T, N extends TagRecord>(
   const ignoreParser = parser(
     `tokenSkipSet ${ignoreValues}`,
     (ctx: ParserContext): OptParserResult<T, N> =>
-      ctx.lexer.withIgnore(ignoreFn ?? neverIgnore, () => p._run(ctx)),
+      ctx.lexer.withIgnore(ignoreFn ?? false, () => p._run(ctx)),
   );
 
   trackChildren(ignoreParser, p);

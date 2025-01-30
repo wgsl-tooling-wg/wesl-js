@@ -10,3 +10,4 @@ export * from "./SrcMapBuilder.js";
 export * from "./TokenMatcher.js";
 export * from "./WrappedLog.js";
 export * from "./Span.js";
+export * from "./Stream.js";

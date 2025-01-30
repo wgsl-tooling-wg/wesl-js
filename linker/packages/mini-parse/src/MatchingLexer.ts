@@ -2,17 +2,18 @@ import { srcTrace } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
 import { Span } from "./Span.js";
 import { SrcMap } from "./SrcMap.js";
-import { Token, TokenMatcher } from "./TokenMatcher.js";
+import { Stream, Token } from "./Stream.js";
+import { OldToken, TokenMatcher } from "./TokenMatcher.js";
 
 export interface Lexer {
   /** return the next token, advancing the the current position */
-  next(): Token | undefined;
+  next(): OldToken | undefined;
 
   /** run a function with a substitute tokenMatcher */
   withMatcher<T>(newMatcher: TokenMatcher, fn: () => T): T;
 
   /** run a function with a substitute set of token kinds to ignore */
-  withIgnore<T>(newIgnore: IgnoreFn | null, fn: () => T): T;
+  withIgnore<T>(newIgnore: boolean, fn: () => T): T;
 
   /** get or set the current position in the src */
   position(pos?: number): number;
@@ -29,30 +30,54 @@ export interface Lexer {
 
 interface MatcherStackElem {
   matcher: TokenMatcher;
-  ignoreFn: IgnoreFn;
+  ignoreFn: boolean;
 }
 
-/**
- * To ignore a token, return the start index of where we should look for the next token.
- *
- * Note: This could be extended to handle nested languages, by extending the return types
- * to `enum { Keep, Skip(newPosition), NestedParse(newPosition, result) }` and parsing
- * inside of this function.
- */
-export type IgnoreFn = (token: Token, span: Span, src: string) => null | number;
-
-function defaultIgnorer(token: Token, span: Span, src: string): null | number {
-  if (token.kind === "ws") {
-    return span[1];
-  } else {
-    return null;
+export class LexerFromStream<T extends Token> implements Lexer {
+  constructor(
+    private stream: Stream<T>,
+    public src: string,
+  ) {}
+  next(): OldToken | undefined {
+    const result = this.stream.nextToken();
+    if (result === null) return undefined;
+    return {
+      kind: result.kind,
+      text: result.value,
+    };
+  }
+  withMatcher<T>(newMatcher: TokenMatcher, fn: () => T): T {
+    throw new Error("Method not implemented.");
+  }
+  withIgnore<T>(newIgnore: boolean, fn: () => T): T {
+    throw new Error("Method not implemented.");
+  }
+  position(pos?: number): number {
+    if (pos !== undefined) {
+      this.stream.reset(pos);
+    }
+    return this.stream.checkpoint();
+  }
+  eof(): boolean {
+    return this.stream.eofOffset() <= 0;
+  }
+  skipIgnored(): number {
+    const result = this.stream.nextToken();
+    if (result === null) {
+      // Position of EOF
+      return this.stream.checkpoint();
+    } else {
+      this.stream.reset(result.span[0]);
+      return this.stream.checkpoint();
+    }
   }
 }
 
 export function matchingLexer(
   src: string,
   rootMatcher: TokenMatcher,
-  ignoreFn: IgnoreFn = defaultIgnorer,
+  /** TODO: This is just a temp hack to make refactoring easy */
+  ignoreFn = true,
   srcMap?: SrcMap,
 ): Lexer {
   let matcher = rootMatcher;
@@ -60,7 +85,7 @@ export function matchingLexer(
 
   matcher.start(src);
 
-  function next(): Token | undefined {
+  function next(): OldToken | undefined {
     const start = matcher.position;
     const { token } = toNextToken();
     if (tracing && token) {
@@ -80,7 +105,7 @@ export function matchingLexer(
 
   /** Advance to the next token
    * @return the token, and the position at the start of the token (after ignored ws) */
-  function toNextToken(): { p: number; token?: Token } {
+  function toNextToken(): { p: number; token?: OldToken } {
     while (true) {
       let p = matcher.position;
       if (eof()) return { p };
@@ -89,16 +114,14 @@ export function matchingLexer(
       if (token === undefined) {
         return { p, token: undefined };
       }
-      let skip = ignoreFn(token, [p, matcher.position], src);
-      if (skip === null) {
+      let skip = ignoreFn && token.kind === "ws";
+      if (!skip) {
         return { p, token };
-      } else {
-        matcher.position = skip;
       }
     }
   }
 
-  function pushMatcher(newMatcher: TokenMatcher, newIgnore: IgnoreFn): void {
+  function pushMatcher(newMatcher: TokenMatcher, newIgnore: boolean): void {
     const position = matcher.position;
     matcherStack.push({ matcher, ignoreFn });
     newMatcher.start(src, position);
@@ -130,13 +153,13 @@ export function matchingLexer(
     return withMatcherIgnore(newMatcher, ignoreFn, fn);
   }
 
-  function withIgnore<T>(newIgnore: IgnoreFn | null, fn: () => T): T {
-    return withMatcherIgnore(matcher, newIgnore ?? defaultIgnorer, fn);
+  function withIgnore<T>(newIgnore: boolean, fn: () => T): T {
+    return withMatcherIgnore(matcher, newIgnore, fn);
   }
 
   function withMatcherIgnore<T>(
     tokenMatcher: TokenMatcher,
-    ignoreFn: IgnoreFn,
+    ignoreFn: boolean,
     fn: () => T,
   ): T {
     pushMatcher(tokenMatcher, ignoreFn);

@@ -1,7 +1,8 @@
 import { Parser, setTraceName } from "../Parser.js";
 import { kind, opt, or, repeat, seq } from "../ParserCombinator.js";
 import { tracing } from "../ParserTracing.js";
-import { matchOneOf, tokenMatcher } from "../TokenMatcher.js";
+import { matchOneOf } from "../stream/RegexHelpers.js";
+import { tokenMatcher } from "../TokenMatcher.js";
 
 export const calcTokens = tokenMatcher({
   number: /\d+/,

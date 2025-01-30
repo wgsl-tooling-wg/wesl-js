@@ -9,7 +9,7 @@ import {
 } from "../examples/DocExamples.js";
 import { matchingLexer } from "../MatchingLexer.js";
 
-test("parse 3 + 4", () => {
+test.only("parse 3 + 4", () => {
   const src = "3 + 4";
   const parsed = testParse(statement, src, calcTokens);
   expect(parsed.position).toBe(src.length);

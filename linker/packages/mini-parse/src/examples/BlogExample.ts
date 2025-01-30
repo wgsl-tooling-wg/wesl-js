@@ -1,6 +1,7 @@
 import { matchingLexer } from "../MatchingLexer.js";
 import { kind, seq } from "../ParserCombinator.js";
-import { matchOneOf, tokenMatcher } from "../TokenMatcher.js";
+import { matchOneOf } from "../stream/RegexHelpers.js";
+import { tokenMatcher } from "../TokenMatcher.js";
 
 const src = "fn foo()";
 

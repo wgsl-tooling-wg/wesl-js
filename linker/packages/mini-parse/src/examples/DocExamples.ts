@@ -1,5 +1,6 @@
 import { kind, or, repeat, seq, tokens } from "../ParserCombinator.js";
-import { matchOneOf, tokenMatcher } from "../TokenMatcher.js";
+import { matchOneOf } from "../stream/RegexHelpers.js";
+import { tokenMatcher } from "../TokenMatcher.js";
 
 export const simpleTokens = tokenMatcher({
   number: /\d+/,
