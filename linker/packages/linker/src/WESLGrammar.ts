@@ -144,21 +144,6 @@ const std_type_specifier = seq(
   () => opt_template_list,
 )                                   .collect(typeRefCollect);
 
-// the first and optional third elements of a ptr template are not bindable idents:
-// e.g. ptr<storage, MyStruct, read>
-// prettier-ignore
-const ptr_type = tagScope(
-  seq(
-    text("ptr")                     .ptag("typeRefName"),
-    req("<"),
-    word                            .ptag("templateParam"),
-    req(","),
-    () => template_parameter,
-    opt(seq(",", word               .ptag("templateParam"))),
-    req(">"),
-  )                                 .collect(typeRefCollect),
-)
-
 // prettier-ignore
 export const type_specifier: Parser<any> = tagScope(
    std_type_specifier,
