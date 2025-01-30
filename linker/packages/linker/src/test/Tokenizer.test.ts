@@ -66,6 +66,36 @@ test("parse var<storage> lights : vec3<f32>", () => {
   expect(tokenizer.nextToken()?.value).toEqual(">");
 });
 
+test("parse >>", () => {
+  const src = ">>";
+  const tokenizer = new WeslStream(src);
+  expect(tokenizer.nextToken()).toEqual(<WeslToken>{
+    kind: "symbol",
+    value: ">>",
+    span: [0, 2],
+  });
+});
+
+test("parse >> as template", () => {
+  const src = "foo >>";
+  const tokenizer = new WeslStream(src);
+  expect(tokenizer.nextToken()).toEqual(<WeslToken>{
+    kind: "word",
+    value: "foo",
+    span: [0, 3],
+  });
+  expect(tokenizer.nextTemplateToken()).toEqual(<WeslToken>{
+    kind: "symbol",
+    value: ">",
+    span: [4, 5],
+  });
+  expect(tokenizer.nextToken()).toEqual(<WeslToken>{
+    kind: "symbol",
+    value: ">",
+    span: [5, 6],
+  });
+});
+
 test("parse skip block comment", () => {
   const src = "/* /* // */ */vec3<f32>";
   const tokenizer = new WeslStream(src);
