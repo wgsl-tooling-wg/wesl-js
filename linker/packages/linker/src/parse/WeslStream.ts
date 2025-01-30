@@ -136,15 +136,24 @@ export class WeslStream implements Stream<WeslToken> {
 
   /** Only matches the `<` and `>` tokens */
   nextTemplateToken(): (WeslToken & { kind: "symbol" }) | null {
-    const position = this.stream.checkpoint();
-    const token = this.src[position];
-    if (token === "<" || token === ">") {
+    const startPosition = this.stream.checkpoint();
+    const token: WeslToken | null = this.nextToken();
+    this.stream.reset(startPosition);
+    if (token === null) return null;
+
+    if (token.kind !== "symbol") {
+      return null;
+    }
+
+    const tokenStart = token.value[0];
+    if (tokenStart === "<" || tokenStart === ">") {
       // SAFETY: The underlying streams implementations can be reset to any position.
-      this.stream.reset(position + 1);
+      const tokenPosition = token.span[0];
+      this.stream.reset(tokenPosition + 1);
       return {
         kind: "symbol",
-        span: [position, position + 1],
-        value: token,
+        span: [tokenPosition, tokenPosition + 1],
+        value: tokenStart,
       };
     } else {
       return null;
