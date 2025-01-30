@@ -755,8 +755,7 @@ test("import package::foo::bar;", ctx => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import package/foo/bar
-        text 'import ./foo/bar;'"
+      import package::foo::bar;"
   `);
 });
 
@@ -921,7 +920,7 @@ test("parse struct.member (component_or_swizzle)", () => {
             decl %x
           text ' = '
           memberRef u.frame
-            ref u
+          ref u
             text '.'
             name frame
         text ';
@@ -993,8 +992,7 @@ test("import a::b::c;", ctx => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import package/a/b/c
-        text 'import ./a/b/c'"
+      import a::b::c;"
   `);
 });
 
@@ -1004,8 +1002,7 @@ test("import package::file1::{foo, bar};", ctx => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import package/file1/{foo, bar}
-        text 'import ./file1/{foo, bar}'"
+      import package::file1::{foo, bar};"
   `);
 });
 
@@ -1014,7 +1011,7 @@ test("import package::file1::{foo, bar};", ctx => {
   const ast = parseTest(src);
   const imps = ast.imports.map(t => importToString(t)).join("\n");
 
-  expect(imps).toMatchInlineSnapshot(`"package/file1/{foo, bar}"`);
+  expect(imps).toMatchInlineSnapshot(`"package::file1::{foo, bar};"`);
 });
 
 test("import foo_bar::boo;", ctx => {
@@ -1022,8 +1019,7 @@ test("import foo_bar::boo;", ctx => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import foo_bar/boo
-        text 'import foo_bar/boo;'"
+      import foo_bar::boo;"
   `);
 });
 
@@ -1032,8 +1028,7 @@ test(`import a::{ b };`, ctx => {
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import a/{b}
-        text 'import a/{ b }'"
+      import a::{b};"
   `);
 });
 
@@ -1044,8 +1039,7 @@ test(`import a::{ b, c::{d, e}, f };`, ctx => {
 
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import a/{b, (c/{d, e}), f}
-        text 'import a/{ b, c/{d, e}, f }'"
+      import a::{b, c::{d, e}, f};"
   `);
 });
 
@@ -1173,7 +1167,7 @@ test(`parse struct reference`, () => {
             decl %x
           text ' = '
           memberRef a.b[0]
-            ref a
+          ref a
             text '.'
             name b
             stuff
@@ -1206,7 +1200,7 @@ test("member reference with extra components", () => {
         ref out
         text ' + 0u ] = '
         memberRef c.p0.t0.x
-          ref c
+        ref c
           text '.'
           name p0
           stuff
@@ -1475,14 +1469,14 @@ test("memberRefs with extra components", () => {
         text '() {
           '
         memberRef b.particles[0]
-          ref b
+        ref b
           text '.'
           name particles
           stuff
             text '[0]'
         text ' = '
         memberRef b.uniforms.foo
-          ref b
+        ref b
           text '.'
           name uniforms
           stuff
@@ -1512,12 +1506,12 @@ test("memberRef with ref in array", () => {
         text '() {
           '
         memberRef vsOut.barycenticCoord[ vertNdx ]
-          ref vsOut
+        ref vsOut
           text '.'
           name barycenticCoord
           stuff
             text '['
-            ref vertNdx
+        ref vertNdx
             text ']'
         text ' = 1.0;
         }'
