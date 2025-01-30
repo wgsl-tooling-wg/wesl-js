@@ -249,27 +249,13 @@ and information outside the source text may be required to decide.
 If you want to check a runtime dictionary to decide which parser to
 use for the next tokens, than `.toParser` is of use.
 
-### preParse() combinator
+### `Stream` tokenizer
 
 If the language you're parsing has some elements that can appear almost anywhere,
 it'd be awkward to mention those elements at every possible position in the grammar.
 Examples include nested block comments, comments containing semantic info, etc.
 
-To handle pervasive elements, **MiniParse** offers an unusual feature called preparsing
-that allows you to stack parsers. First the pre-parser will run,
-and if it fails to match at the current position, then the main parser will run.
-
-```ts
-const p = preParse(blockComments, mainParser);
-```
-
-Multiple preparsers can be attached. Preparsing can also be temporarily disabled
-in the grammar, e.g. to disable comment skipping inside quotes.
-
-Save preparsing for special situations.
-If the pervasive elements are easy to find and can be skipped,
-then adding a few token types to skip in the lexer is simpler and faster.
-That's typically the approach for white space.
+To handle pervasive elements, **MiniParse** lets you implement your own layered tokenizers.
 
 ### app.context
 

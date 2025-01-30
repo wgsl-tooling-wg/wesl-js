@@ -5,13 +5,7 @@ import {
   withTracingDisabled,
 } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import {
-  disablePreParse,
-  NoTags,
-  Parser,
-  preParse,
-  setTraceName,
-} from "../Parser.js";
+import { NoTags, Parser, setTraceName } from "../Parser.js";
 import {
   any,
   anyNot,
@@ -172,20 +166,6 @@ test("infinite loop detection", () => {
   });
 
   expect(logged()).toContain("infinite");
-});
-
-test("preparse simple comment", () => {
-  // prettier-ignore
-  const pre = seq(
-    "/*", 
-    repeat(anyNot("*/")), 
-    "*/"
-  ).traceName("pre");
-  const p = preParse(pre, repeat(kind(m.word)));
-  const src = "boo /* bar */ baz";
-
-  const { parsed } = testParse(p, src);
-  expect(parsed?.value).toEqual(["boo", "baz"]);
 });
 
 test("token start is after ignored ws", () => {

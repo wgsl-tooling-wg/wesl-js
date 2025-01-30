@@ -62,11 +62,6 @@ export interface ParserContext<C = any, S = any> {
   /** during execution, count parse attempts to avoid infinite looping */
   _parseCount: number;
 
-  _preParse: Parser<unknown>[];
-
-  /** positions where the preparse has failed to match, so no need to retry */
-  _preCacheFails: Map<Parser<unknown>, Set<number>>;
-
   srcMap?: SrcMap; // TODO can we remove this and just use the one in the lexer?
 
   /** current parser stack or parent parsers that called this one */
@@ -130,9 +125,6 @@ export interface ParserArgs {
    * (to avoid intro log statement while tracing) */
   terminal?: boolean;
 
-  /** true if preparsing should be disabled in this parser (and its descendants) */
-  preDisabled?: true; // LATER just detect preParse combinator?, rather than a flag here..
-
   /** true if this is a collect parser (which .tag handles specially, to tag collect time results) */
   _collection?: true;
 
@@ -153,7 +145,6 @@ export class Parser<T, N extends TagRecord = NoTags> {
   tagName: string | symbol | undefined;
   traceOptions: TraceOptions | undefined;
   terminal: boolean | undefined;
-  preDisabled: true | undefined;
   _collection: true | undefined;
   _children: Parser<any, any>[] | undefined;
   fn: ParseFn<T, N>;
@@ -164,7 +155,6 @@ export class Parser<T, N extends TagRecord = NoTags> {
     this.traceOptions = args.trace;
     this.terminal = args.terminal;
     this.traceSrc = args.traceSrc;
-    this.preDisabled = args.preDisabled;
     this._collection = args._collection;
     this._children = args._children;
     this.fn = args.fn;
@@ -178,7 +168,6 @@ export class Parser<T, N extends TagRecord = NoTags> {
       tag: this.tagName,
       trace: this.traceOptions,
       terminal: this.terminal,
-      preDisabled: this.preDisabled,
       _collection: this._collection,
       _children: this._children,
       fn: this.fn,
@@ -271,9 +260,7 @@ export class Parser<T, N extends TagRecord = NoTags> {
         lexer,
         app,
         srcMap,
-        _preParse: [],
         _parseCount: 0,
-        _preCacheFails: new Map(),
         maxParseCount,
         _collect,
         _debugNames: [],
@@ -379,13 +366,6 @@ function runParser<T, N extends TagRecord>(
     if (!p.terminal && tracing && !traceSuccessOnly)
       parserLog(`..${p.debugName}`);
 
-    const savePreParse = ctx._preParse;
-    if (!p.preDisabled) {
-      execPreParsers(ctx);
-    } else {
-      ctx._preParse = [];
-    }
-
     // run the parser function for this stage
     let result = p.fn(ctx);
 
@@ -419,45 +399,8 @@ function runParser<T, N extends TagRecord>(
       result = { value, tags };
     }
 
-    ctx._preParse = savePreParse;
-
     return result;
   }
-}
-
-function execPreParsers(ctx: ParserContext): void {
-  const { _preParse, lexer } = ctx;
-
-  const ctxNoPre = { ...ctx, _preParse: [] };
-  _preParse.forEach(pre => {
-    const checkedCache = getPreParserCheckedCache(ctx, pre);
-
-    // exec each pre-parser until it fails
-    let position: number;
-    let preResult: OptParserResult<unknown, NoTags>;
-    do {
-      position = lexer.position();
-      if (checkedCache.has(position)) break;
-
-      preResult = pre._run(ctxNoPre);
-    } while (preResult !== null && preResult !== undefined);
-
-    checkedCache.add(position);
-    lexer.position(position); // reset position to end of last successful parse
-  });
-}
-
-/** get the cache of already checked positions for this pre-parser */
-function getPreParserCheckedCache(
-  ctx: ParserContext,
-  pre: Parser<unknown>,
-): Set<number> {
-  let cache = ctx._preCacheFails.get(pre);
-  if (!cache) {
-    cache = new Set();
-    ctx._preCacheFails.set(pre, cache);
-  }
-  return cache;
 }
 
 type ParserMapFn<T, N extends TagRecord, U> = (
@@ -515,32 +458,6 @@ function toParser<T, N extends TagRecord, O, Y extends TagRecord>(
   );
   trackChildren(newParser, p);
   return newParser;
-}
-
-/** attach a pre-parser to try parsing before this parser runs.
- * (e.g. to recognize comments that can appear almost anywhere in the main grammar) */
-export function preParse<T, N extends TagRecord>(
-  pre: Parser<unknown>,
-  p: Parser<T, N>,
-): Parser<T, N> {
-  const newParser = parser(
-    "preParse",
-    (ctx: ParserContext): OptParserResult<T, N> => {
-      const newCtx = { ...ctx, _preParse: [pre, ...ctx._preParse] };
-      return p._run(newCtx);
-    },
-  );
-  trackChildren(newParser, pre, p);
-  return newParser;
-}
-
-/** disable a previously attached pre-parser,
- * e.g. to disable a comment preparser in a quoted string parser */
-export function disablePreParse<A extends CombinatorArg>(
-  arg: A,
-): ParserFromArg<A> {
-  const parser = parserArg(arg);
-  return parser._cloneWith({ preDisabled: true });
 }
 
 /** run parser, return enriched results (to support map(), toParser()) */
