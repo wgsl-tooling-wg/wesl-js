@@ -9,9 +9,9 @@ test("token matcher", () => {
   });
   m.start("27 foo");
   const [a, b, c] = [1, 2, 3].map(m.next);
-  expect(a).toEqual({ kind: "number", text: "27" });
-  expect(b).toEqual({ kind: "spaces", text: " " });
-  expect(c).toEqual({ kind: "name", text: "foo" });
+  expect(a).toEqual({ kind: "number", text: "27", span: [0, 2] });
+  expect(b).toEqual({ kind: "spaces", text: " ", span: [2, 3] });
+  expect(c).toEqual({ kind: "name", text: "foo", span: [3, 6] });
 });
 
 test("token matcher fields", () => {

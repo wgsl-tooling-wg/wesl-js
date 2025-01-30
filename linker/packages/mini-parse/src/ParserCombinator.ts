@@ -27,7 +27,7 @@ import { closeArray, pushOpenArray } from "./ParserCollect.js";
 import { ctxLog } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
 import { mergeTags } from "./ParserUtil.js";
-import { OldToken, TokenMatcher } from "./TokenMatcher.js";
+import { OldToken } from "./TokenMatcher.js";
 
 /** Parsing Combinators
  *

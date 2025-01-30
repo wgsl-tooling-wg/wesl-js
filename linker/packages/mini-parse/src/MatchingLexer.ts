@@ -35,6 +35,7 @@ export class LexerFromStream<T extends Token> implements Lexer {
     return {
       kind: result.kind,
       text: result.value,
+      span: result.span,
     };
   }
   position(pos?: number): number {

@@ -24,14 +24,6 @@ export function srcTrace(
   logInternal(parserLog, src, pos, ...msgs);
 }
 
-export function resultLog(
-  result: ExtendedResult<any, any>,
-  ...msgs: any[]
-): void {
-  const { src, srcMap, start, end } = result;
-  srcLog(srcMap ?? src, [start, end - 1], ...msgs);
-}
-
 export function ctxLog(ctx: ParserContext, ...msgs: any[]): void {
   const src = ctx.srcMap ?? ctx.lexer.src;
   srcLog(src, ctx.lexer.position(), ...msgs);

@@ -6,6 +6,10 @@ exports[`not() success 1`] = `
     true,
     {
       "kind": "word",
+      "span": [
+        0,
+        3,
+      ],
       "text": "foo",
     },
   ],
@@ -13,6 +17,10 @@ exports[`not() success 1`] = `
     true,
     {
       "kind": "word",
+      "span": [
+        4,
+        7,
+      ],
       "text": "bar",
     },
   ],

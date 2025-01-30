@@ -12,6 +12,7 @@ import {
 export interface OldToken {
   kind: string;
   text: string;
+  span: Span;
 }
 
 /** a TokenMatcher with each token kind exposed as a string property */
@@ -56,6 +57,7 @@ export function tokenMatcher<T extends Record<string, string | RegExp>>(
     return {
       kind: token.kind,
       text: token.value,
+      span: token.span,
     };
   }
 
