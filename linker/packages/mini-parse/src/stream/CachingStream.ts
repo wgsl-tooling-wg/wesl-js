@@ -1,11 +1,8 @@
-import { Stream, Token } from "../Stream.ts";
+import { Stream, StreamWithLocation, Token } from "../Stream.ts";
 
 export class CachingStream<T extends Token> implements Stream<T> {
   private cache = new Cache<number, { token: T | null; checkpoint: number }>(5);
   constructor(private inner: Stream<T>) {}
-  eofOffset(): number {
-    return this.inner.eofOffset();
-  }
   checkpoint(): number {
     return this.inner.checkpoint();
   }

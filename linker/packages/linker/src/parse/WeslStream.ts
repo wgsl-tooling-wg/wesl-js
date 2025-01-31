@@ -66,9 +66,6 @@ export class WeslStream implements Stream<WeslToken> {
   constructor(public src: string) {
     this.stream = new CachingStream(new MatchersStream(src, weslMatcher));
   }
-  eofOffset(): number {
-    return this.stream.eofOffset();
-  }
   checkpoint(): number {
     return this.stream.checkpoint();
   }

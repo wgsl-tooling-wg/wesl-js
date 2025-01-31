@@ -8,10 +8,12 @@ export {
 export { IgnoringStream } from "./stream/IgnoringStream.ts";
 export { CachingStream } from "./stream/CachingStream.ts";
 
-/** Based on https://docs.rs/winnow/latest/winnow/stream/trait.Stream.html */
+/**
+ * Based on https://docs.rs/winnow/latest/winnow/stream/trait.Stream.html
+ * When implementing this, we recommend implementing the related interfaces as well
+ * - `StreamLocation`
+ */
 export interface Stream<T extends Token> {
-  /** Distance to the end of the input */
-  eofOffset(): number;
   /** Returns the current position */
   checkpoint(): number;
   /** Restores a position */
@@ -24,4 +26,13 @@ export interface Token {
   kind: string;
   value: any;
   span: Span;
+}
+
+/**
+ * Based on https://docs.rs/winnow/latest/winnow/stream/trait.Location.html
+ * Used for the `span` combinator
+ */
+export interface StreamWithLocation {
+  previousTokenEnd(): number;
+  currentTokenStart(): number;
 }

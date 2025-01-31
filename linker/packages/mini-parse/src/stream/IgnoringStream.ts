@@ -5,9 +5,6 @@ export class IgnoringStream<T extends Token> implements Stream<T> {
     private inner: Stream<T>,
     private ignoreFn: (token: Token) => boolean,
   ) {}
-  eofOffset(): number {
-    return this.inner.eofOffset();
-  }
   checkpoint(): number {
     return this.inner.checkpoint();
   }

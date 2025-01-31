@@ -12,9 +12,6 @@ export interface Lexer {
   /** get or set the current position in the src */
   position(pos?: number): number;
 
-  /** true if the parser is at the end of the src string */
-  eof(): boolean;
-
   /** skip past any ignored tokens and return the current position in the src */
   skipIgnored(): number;
 
@@ -43,9 +40,6 @@ export class LexerFromStream<T extends Token> implements Lexer {
       this.stream.reset(pos);
     }
     return this.stream.checkpoint();
-  }
-  eof(): boolean {
-    return this.stream.eofOffset() <= 0;
   }
   skipIgnored(): number {
     const result = this.stream.nextToken();
@@ -119,7 +113,6 @@ export function matchingLexer(
   return {
     next,
     position,
-    eof,
     skipIgnored,
     src,
   };

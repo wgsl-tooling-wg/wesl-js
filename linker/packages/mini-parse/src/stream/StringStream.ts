@@ -1,5 +1,5 @@
 import { Span } from "../Span.ts";
-import { Stream, Token } from "../Stream.ts";
+import { Stream, StreamWithLocation, Token } from "../Stream.ts";
 import { toRegexSource } from "./RegexHelpers.ts";
 
 export interface StringToken<Kind extends string> extends Token {
@@ -65,16 +65,13 @@ function findGroupDex(
 }
 
 export class MatchersStream<Kind extends string>
-  implements Stream<StringToken<Kind>>
+  implements Stream<StringToken<Kind>>, StreamWithLocation
 {
   private position: number = 0;
   constructor(
     public text: string,
     private matchers: RegexMatchers<Kind>,
   ) {}
-  eofOffset(): number {
-    return Math.max(0, this.text.length - this.position);
-  }
   checkpoint(): number {
     return this.position;
   }
@@ -86,5 +83,12 @@ export class MatchersStream<Kind extends string>
     if (result === null) return null;
     this.position = result.span[1];
     return result;
+  }
+  previousTokenEnd(): number {
+    // We are guaranteed contiguous spans here, so this is correct
+    return this.position;
+  }
+  currentTokenStart(): number {
+    return this.position;
   }
 }
