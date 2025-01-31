@@ -28,7 +28,7 @@ export function enableTracePos(enable = true): void {
 }
 
 /** mutate the provided to set their trace names (if tracing is enabled) */
-export function setTraceNames(parsers: Record<string, Parser<any, any>>): void {
+export function setTraceNames(parsers: Record<string, Parser<any>>): void {
   if (tracing) {
     Object.entries(parsers).forEach(([name, parser]) => {
       setTraceName(parser, name);

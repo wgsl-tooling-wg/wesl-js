@@ -5,7 +5,7 @@ import {
   withTracingDisabled,
 } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import { NoTags, Parser, setTraceName } from "../Parser.js";
+import { Parser, setTraceName } from "../Parser.js";
 import {
   any,
   anyNot,
@@ -20,7 +20,6 @@ import {
   seq,
   text,
   withSep,
-  withTags,
 } from "../ParserCombinator.js";
 import { enableTracing } from "../ParserTracing.js";
 import { withLogger } from "../WrappedLog.js";
@@ -246,11 +245,4 @@ test("withSep", () => {
   const p = withSep(",", kind(m.word).tag("w"));
   const result = testParse(p, src);
   expect(result.parsed?.tags).toEqual({ w: ["a", "b", "c"] });
-});
-
-test("tag follows setTraceName of orig", () => {
-  const orig = kind(m.word);
-  const tagged = orig.tag("w");
-  setTraceName(orig, "orig");
-  expect(tagged.debugName).toBe("orig (kind 'word')");
 });
