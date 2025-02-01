@@ -26,6 +26,7 @@ export function parseWeslSrc(src: Record<string, string>): ParsedRegistry {
 /** Look up a module with a flexible selector.
  *    :: separated module path,   package::util
  *    / separated file path       ./util.wesl (or ./util)
+ *          - note: a file path should not include a weslRoot prefix, e.g. not ./shaders/util.wesl
  *    simpleName                  util
  */
 export function selectModule(
