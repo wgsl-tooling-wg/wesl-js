@@ -224,7 +224,7 @@ function syntheticVar(
   storageTemplate: string,
   varType: string,
 ): SyntheticElem {
-  const varText = `var${storageTemplate} ${attributes} ${varName} : ${varType};\n`;
+  const varText = `${attributes} var${storageTemplate} ${varName} : ${varType};\n`;
 
   const elem: SyntheticElem = {
     kind: "synthetic",
