@@ -180,7 +180,7 @@ function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
     if (param1 === "uniform") {
       return `buffer: { type: "uniform" }`;
     } else if (param1 === "storage") {
-      if (param3 === "read_write") {
+      if (param3 === "read") {
         return `buffer: { type: "read-only-storage" }`;
       } else {
         return `buffer: { type: "storage" }`;
