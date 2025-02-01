@@ -12,7 +12,7 @@ run();
 async function run() {
   // import from our reflection endpoint dynamically, so that globalThis is set first
   // (a static import statement might be hoisted above Object.assign)
-  const reflected = await import("./shaders/app.wesl?reflect");
+  const reflected = await import("./shaders/layoutTest.wesl?reflect");
 
   console.log(JSON.stringify(reflected.layoutEntries, null, 2));
 }
