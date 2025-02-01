@@ -452,7 +452,7 @@ export function withSep<P extends CombinatorArg>(
   const first = requireOne ? pTagged : opt(pTagged);
   const last = trailing ? opt(sepParser) : yes();
 
-  const withSepParser = seq(first, repeat(terminated(sepParser, pTagged)), last)
+  const withSepParser = seq(first, repeat(preceded(sepParser, pTagged)), last)
     .map(r => {
       let firstResult = r.value[0];
       let repeatResults = r.value[1];
