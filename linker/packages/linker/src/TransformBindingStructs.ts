@@ -6,7 +6,6 @@ import {
   DeclarationElem,
   FnElem,
   ModuleElem,
-  SimpleMemberRef,
   StructElem,
   StructMemberElem,
   SyntheticElem,

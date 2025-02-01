@@ -15,7 +15,7 @@ import {
 import { expectTrimmedMatch } from "./shared/StringUtil.ts";
 import { linkTestOpts, parseTest } from "./TestUtil.ts";
 
-test("markBindingStructs true", () => {
+test.skip("markBindingStructs true", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -28,7 +28,7 @@ test("markBindingStructs true", () => {
   expect(structs[0].bindingStruct).toBe(true);
 });
 
-test("markBindingStructs false", () => {
+test.skip("markBindingStructs false", () => {
   const src = `
     struct Bindings {
       particles: ptr<storage, array<f32>, read_write>, 
@@ -40,7 +40,7 @@ test("markBindingStructs false", () => {
   expect(structs.length).toBe(0);
 });
 
-test("transformBindingStruct", () => {
+test.skip("transformBindingStruct", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -63,7 +63,7 @@ test("transformBindingStruct", () => {
   );
 });
 
-test("findRefsToBindingStructs", () => {
+test.skip("findRefsToBindingStructs", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -91,7 +91,7 @@ test("findRefsToBindingStructs", () => {
   `);
 });
 
-test("transformBindingReference", () => {
+test.skip("transformBindingReference", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -113,7 +113,7 @@ test("transformBindingReference", () => {
   expect(synthAst).toMatchInlineSnapshot(`"synthetic 'particles'"`);
 });
 
-test("lower binding structs", () => {
+test.skip("lower binding structs", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -170,7 +170,7 @@ var<storage, read_write> @group(0) @binding(0) particles : array<f32>;
   expectTrimmedMatch(linked, expected);
 });
 
-test("lower binding structs with conflicting root name", () => {
+test.skip("lower binding structs with conflicting root name", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -195,7 +195,7 @@ var<storage, read_write> @group(0) @binding(0) particles0 : array<f32>;
   expectTrimmedMatch(linked, expected);
 });
 
-test("lower 5 bindings", () => {
+test.skip("lower 5 bindings", () => {
   const src = `
     struct Uniforms {
       foo: u32

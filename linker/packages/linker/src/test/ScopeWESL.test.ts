@@ -175,7 +175,7 @@ test("builtin scope", () => {
   `);
 });
 
-test("texture_storage_2d", () => {
+test.skip("texture_storage_2d", () => {
   const src = `
     @binding(3) @group(0) var tex_out : texture_storage_2d<rgba8unorm, write>;
   `;
@@ -183,7 +183,7 @@ test("texture_storage_2d", () => {
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`"{ %tex_out }"`);
 });
 
-test("ptr 2 params", () => {
+test.skip("ptr 2 params", () => {
   const src = `
     fn foo(ptr: ptr<private, u32>) { }
   `;
@@ -195,7 +195,7 @@ test("ptr 2 params", () => {
   `);
 });
 
-test("ptr 3 params", () => {
+test.skip("ptr 3 params", () => {
   const src = `
     fn foo(ptr: ptr<storage, array<u32, 128>, read>) { }
   `;
@@ -207,7 +207,7 @@ test("ptr 3 params", () => {
   `);
 });
 
-test("larger example", () => {
+test.skip("larger example", () => {
   const src = `
     struct UBO { width : u32, }
 

@@ -76,8 +76,21 @@ export function refIdent(cc: CollectContext): RefIdentElem {
 }
 
 export function maybeComponentCollect(cc: CollectContext): ExpressionElem {
-  // TODO: I don't know how to implement this with the collect API
-  return null as any;
+  const expression = cc.tags.expression?.[0] as ExpressionElem;
+  const component = cc.tags.component?.[0] as
+    | NameElem
+    | UnknownExpression
+    | undefined;
+  if (component === undefined) {
+    return expression;
+  } else {
+    return <ComponentExpression>{
+      kind: "component-expression",
+      contents: [expression, component],
+      start: cc.start,
+      end: cc.end,
+    };
+  }
 }
 
 /** create declaration Ident and add to context */
@@ -285,8 +298,9 @@ export const typeRefCollect = collectElem(
   },
 );
 
+// TODO: This creates useless unknown-expression elements
 export const expressionCollect = collectElem(
-  "unknown-expression",
+  "expression",
   (cc: CollectContext, openElem: PartElem<UnknownExpression>) => {
     const partElem = { ...openElem };
     return withTextCover(partElem, cc);

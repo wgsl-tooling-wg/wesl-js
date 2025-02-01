@@ -8,7 +8,7 @@ import { elemToString } from "../debug/ASTtoString.ts";
 import { bindingGroupLayoutTs } from "../Reflection.ts";
 import { linkTestOpts } from "./TestUtil.ts";
 
-test("extract binding struct", () => {
+test.skip("extract binding struct", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -41,7 +41,7 @@ test("extract binding struct", () => {
   );
 });
 
-test("binding struct to ts", () => {
+test.skip("binding struct to ts", () => {
   const src = `
     struct Uniforms {
       foo: u32

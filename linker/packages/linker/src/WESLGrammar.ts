@@ -33,7 +33,6 @@ import {
   collectVarLike,
   declCollect,
   expressionCollect,
-  maybeComponentCollect,
   nameCollect,
   refIdent,
   scopeCollect,
@@ -301,9 +300,7 @@ const makeExpressionOperator = (isTemplate: boolean) => {
 
 const unary_expression: Parser<any> = or(
   seq(or(..."! & * - ~".split(" ")), () => unary_expression),
-  tagScope(seq(primary_expression, opt(component_or_swizzle))).collect(
-    maybeComponentCollect,
-  ),
+  tagScope(seq(primary_expression, opt(component_or_swizzle))),
 );
 
 const makeExpression = (isTemplate: boolean) => {
@@ -440,13 +437,13 @@ const lhs_expression: Parser<any> = tagScope(or(
   seq(
     qualified_ident                        .collect(refIdent), 
     opt(component_or_swizzle)
-  )                                        .collect(maybeComponentCollect),
+  ),
   seq(
     "(", 
     () => lhs_expression, 
     ")", 
     opt(component_or_swizzle)         // LATER this doesn't find member references.
-  )                                        .collect(maybeComponentCollect),
+  ),
   seq("&", () => lhs_expression),
   seq("*", () => lhs_expression),
 ));

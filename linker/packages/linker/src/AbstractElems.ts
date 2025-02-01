@@ -155,7 +155,7 @@ export interface ConstElem extends ElemWithContentsBase {
 }
 
 export interface UnknownExpression extends ElemWithContentsBase {
-  kind: "unknown-expression";
+  kind: "expression";
 }
 export interface ParenthesizedExpression extends AbstractElemBase {
   kind: "parenthesized-expression";

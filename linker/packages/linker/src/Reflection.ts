@@ -170,10 +170,16 @@ function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
   if (typeName === "ptr") {
     const param1 = typeRef.templateParams?.[0];
     const param3 = typeRef.templateParams?.[2];
-    if (param1 === "uniform") {
+    if (param1?.kind === "ref" && param1.ident.originalName === "uniform") {
       return `buffer: { type: "uniform" }`;
-    } else if (param1 === "storage") {
-      if (param3 === "read_write") {
+    } else if (
+      param1?.kind === "ref" &&
+      param1.ident.originalName === "storage"
+    ) {
+      if (
+        param3?.kind === "ref" &&
+        param3.ident.originalName === "read_write"
+      ) {
         return `buffer: { type: "read-only-storage" }`;
       } else {
         return `buffer: { type: "storage" }`;

@@ -10,6 +10,7 @@ import {
 import { isGlobal } from "./BindIdents.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, Ident } from "./Scope.ts";
+import { assertUnreachable } from "./assert.ts";
 
 /** passed to the emitters */
 interface EmitContext {
@@ -66,7 +67,6 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "let":
     case "module":
     case "member":
-    case "memberRef":
     case "attribute":
     case "expression":
     case "type":
@@ -88,9 +88,7 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
       return emitContents(e, ctx);
 
     default:
-      const kind = (e as any).kind;
-      console.log("NYI for emit, elem kind:", kind);
-      throw new Error(`NYI emit elem kind: ${kind}`);
+      assertUnreachable(e.kind);
   }
 }
 

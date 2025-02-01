@@ -5,7 +5,9 @@ import {
   ModuleElem,
   TypeRefElem,
   TypeTemplateParameter,
+  UnknownExpression,
 } from "../AbstractElems.ts";
+import { assertUnreachable } from "../assert.ts";
 import { importToString } from "./ImportToString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 
@@ -48,7 +50,6 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     addStructFields(elem, str) ||
     addStructMemberFields(elem, str) ||
     addNameFields(elem, str) ||
-    addMemberRef(elem, str) ||
     addFnFields(elem, str) ||
     addAliasFields(elem, str) ||
     addAttributeFields(elem, str) ||
@@ -93,7 +94,7 @@ function addRefIdent(elem: AbstractElem, str: LineWrapper): true | undefined {
   }
 }
 
-function addMemberRef(elem: AbstractElem, str: LineWrapper): true | undefined {
+/*function addMemberRef(elem: AbstractElem, str: LineWrapper): true | undefined {
   if (elem.kind === "memberRef") {
     const { extraComponents } = elem;
     const extraText =
@@ -101,7 +102,7 @@ function addMemberRef(elem: AbstractElem, str: LineWrapper): true | undefined {
     str.add(` ${elem.name.ident.originalName}.${elem.member.name}${extraText}`);
     return true;
   }
-}
+}*/
 
 function addDeclIdent(elem: AbstractElem, str: LineWrapper): true | undefined {
   if (elem.kind === "decl") {
@@ -276,7 +277,7 @@ function addExpressionFields(
   }
 }
 
-function expressionToString(elem: ExpressionElem): string {
+function expressionToString(elem: UnknownExpression): string {
   const contents = elem.contents
     .map(e => {
       if (e.kind === "text") {
