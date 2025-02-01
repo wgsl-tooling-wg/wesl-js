@@ -3,7 +3,7 @@
  * and logs the layout entries to the console for verification by a test runner
  */
 
-const { create, globals } = require("webgpu"); // include webgpu just for the GPUShaderStage enumb
+const { create, globals } = require("webgpu"); // include webgpu for the GPUShaderStage enum in the enum
 
 Object.assign(globalThis, globals);
 
