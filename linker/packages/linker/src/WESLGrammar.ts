@@ -58,7 +58,7 @@ const word_list = delimited("(", withSep(",", word, { requireOne: true }), ")");
 
 // prettier-ignore
 const attribute = tagScope(
-  seq(
+  preceded(
     "@",
     req(
       or(

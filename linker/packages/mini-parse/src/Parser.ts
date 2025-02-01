@@ -191,8 +191,8 @@ export class Parser<T> {
   /** map results to a new value.
    * Return null to cause the parser to fail.
    */
-  mapValue<U>(fn: (value: T) => U | null): Parser<U> {
-    return map(this, v => fn(v.value));
+  mapValue<U>(fn: (value: T) => U): Parser<U> {
+    return mapValue(this, fn);
   }
 
   /** Queue a function that runs later, typically to collect AST elements from the parse.
@@ -361,6 +361,22 @@ function map<T, U>(p: Parser<T>, fn: ParserMapFn<T, U>): Parser<U> {
 
     return { value: mappedValue };
   });
+
+  trackChildren(mapParser, p);
+  return mapParser;
+}
+
+/** return a parser that maps the current results */
+function mapValue<T, U>(p: Parser<T>, fn: (value: T) => U): Parser<U> {
+  const mapParser = parser(
+    `mapValue`,
+    (ctx: ParserContext): OptParserResult<U> => {
+      const result = p._run(ctx);
+      if (result === null) return null;
+      const value = fn(result.value);
+      return { value };
+    },
+  );
 
   trackChildren(mapParser, p);
   return mapParser;
