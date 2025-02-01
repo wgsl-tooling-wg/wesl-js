@@ -217,10 +217,12 @@ function textureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   }
   return undefined;
 
-  function getSampleType(typeRef: TypeRefElem): string {
+  function getSampleType(typeRef: TypeRefElem): GPUTextureSampleType {
     const firstParam = typeRef.templateParams?.[0] as TypeRefElem;
-    const firstParamName = (firstParam.name as RefIdent).originalName;
-    return textureSampleType(firstParamName as GPUTextureFormat);
+    const texelType = (firstParam.name as RefIdent)
+      .originalName as WgslTexelType;
+    const sampleType = texelTypeToSampleType(texelType);
+    return sampleType;
   }
 }
 
@@ -251,7 +253,7 @@ function paramText(expression: ExpressionElem): string {
   return text.srcModule.src.slice(expression.start, expression.end);
 }
 
-export function textureSampleType(
+export function formatToTextureSampleType(
   format: GPUTextureFormat,
   float32Filterable = false,
 ): GPUTextureSampleType {
@@ -269,6 +271,18 @@ export function textureSampleType(
   }
   throw new Error(`native sample type unknwon for texture format ${format}`);
 }
+
+export type WgslTexelType = "f32" | "u32" | "i32";
+
+/** return the wgsl element type for a given texture format */
+export function formatToTexelType(format: GPUTextureFormat): WgslTexelType {
+  if (format.includes("float")) return "f32";
+  if (format.includes("unorm")) return "f32";
+  if (format.includes("uint")) return "u32";
+  if (format.includes("sint")) return "i32";
+  throw new Error(`unknown format ${format}`);
+}
+
 /** @return the webgpu GPUTextureSampleType from the wgsl texel type */
 export function texelTypeToSampleType(
   type: WgslTexelType,
