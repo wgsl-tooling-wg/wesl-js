@@ -2,6 +2,7 @@ import { WgslBundle } from "wesl";
 import { parseSrcModule, parseWESL, WeslAST } from "./ParseWESL.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
 import { SrcModule } from "./Scope.ts";
+import { dlog } from "berry-pretty";
 
 export interface ParsedRegistry {
   modules: Record<string, WeslAST>; // key is module path, e.g. "rand_pkg::foo::bar"
@@ -34,11 +35,12 @@ export function selectModule(
   selectPath: string,
   packageName = "package",
 ): WeslAST | undefined {
+  // dlog({reg: [...Object.keys(parsed.modules)]});
   let modulePath: string;
   if (selectPath.includes("::")) {
     modulePath = selectPath;
   } else if (selectPath.includes("/")) {
-    modulePath = fileToModulePath(selectPath, packageName);
+    modulePath = fileToModulePath(selectPath, packageName, "");
   } else {
     modulePath = packageName + "::" + selectPath;
   }
@@ -57,11 +59,12 @@ export function parseIntoRegistry(
   srcFiles: Record<string, string>,
   registry: ParsedRegistry,
   packageName: string = "package",
+  weslRoot: string = "",
   maxParseCount?: number,
 ): void {
   const srcModules: SrcModule[] = Object.entries(srcFiles).map(
     ([filePath, src]) => {
-      const modulePath = fileToModulePath(filePath, packageName);
+      const modulePath = fileToModulePath(filePath, packageName, weslRoot);
       return { modulePath, filePath, src };
     },
   );
@@ -83,15 +86,29 @@ export function parseLibsIntoRegistry(
   );
 }
 
-const libExp = /^lib\.w[eg]sl$/i;
+const libRegex = /^lib\.w[eg]sl$/i;
 
 /** convert a relative file path (./foo/bar.wesl) to a module path (package::foo::bar) */
-function fileToModulePath(filePath: string, packageName: string): string {
-  if (packageName !== "package" && libExp.test(filePath)) {
+function fileToModulePath(
+  filePath: string,
+  packageName: string,
+  weslRoot: string,
+): string {
+  if (filePath.includes("::")) {
+    // already a module path
+    return filePath;
+  }
+  if (packageName !== "package" && libRegex.test(filePath)) {
     // special case for lib.wesl files in external packages
     return packageName;
   }
-  const strippedPath = noSuffix(normalize(filePath));
+
+  const rootStart = filePath.indexOf(weslRoot);
+  if (rootStart === -1) {
+    throw new Error(`file ${filePath} not in root ${weslRoot}`);
+  }
+  const postRoot = filePath.slice(rootStart + weslRoot.length);
+  const strippedPath = noSuffix(normalize(postRoot));
   const moduleSuffix = strippedPath.replaceAll("/", "::");
   const modulePath = packageName + "::" + moduleSuffix;
   return modulePath;

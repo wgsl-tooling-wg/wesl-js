@@ -11,8 +11,8 @@ import {
 } from "./ParsedRegistry.ts";
 import { WeslAST } from "./ParseWESL.ts";
 import { Conditions } from "./Scope.ts";
-import { WgslBundle } from "./WgslBundle.ts";
 import { filterMap } from "./Util.ts";
+import { WgslBundle } from "./WgslBundle.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 
@@ -63,7 +63,42 @@ export function link(
   // parse all source modules in both app and libraries,
   // producing Scope tree and AST elements for each module
   const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry, "package", config?.maxParseCount);
+  const weslRoot = "";
+  parseIntoRegistry(
+    weslSrc,
+    registry,
+    "package",
+    weslRoot,
+    config?.maxParseCount,
+  );
+  parseLibsIntoRegistry(libs, registry);
+  return linkRegistry(registry, rootModuleName, conditions, config);
+}
+
+export interface LinkParams {
+  /** record of file names and wgsl text for modules */
+  weslSrc: Record<string, string>;
+
+  /** root directory prefix for sources, e.g. /shaders */
+  weslRoot?: string;
+
+  /** name of root wesl module
+   *  for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
+   *  for a library, the root module defines the public api fo the library
+   */
+  rootModuleName?: string;
+  conditions?: Conditions;
+  libs?: WgslBundle[];
+  config?: LinkConfig;
+}
+
+/** experimental new API for link() */
+export function link2(params: LinkParams): SrcMap {
+  const { weslSrc, weslRoot = "", rootModuleName, libs = [] } = params;
+  const { conditions, config } = params;
+  const maxParseCount = config?.maxParseCount;
+  const registry = parsedRegistry();
+  parseIntoRegistry(weslSrc, registry, "package", weslRoot, maxParseCount);
   parseLibsIntoRegistry(libs, registry);
   return linkRegistry(registry, rootModuleName, conditions, config);
 }
@@ -137,7 +172,7 @@ function applyTransformPlugins(
   // for now only transform the root module
   const startAst = { moduleElem, srcModule, globalNames, notableElems: {} };
   const plugins = config?.plugins ?? [];
-  const transforms = filterMap(plugins, (plugin) => plugin.transform);
+  const transforms = filterMap(plugins, plugin => plugin.transform);
   const transformedAst = transforms.reduce(
     (ast, transform) => transform(ast),
     startAst,
