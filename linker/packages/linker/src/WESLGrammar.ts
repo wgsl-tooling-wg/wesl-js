@@ -1,4 +1,5 @@
 import {
+  delimited,
   eof,
   fn,
   kind,
@@ -6,12 +7,14 @@ import {
   opt,
   or,
   Parser,
+  preceded,
   repeat,
   repeatPlus,
   req,
   seq,
   setTraceName,
   tagScope,
+  terminated,
   text,
   tracing,
   withSep,
@@ -30,22 +33,19 @@ import {
   collectVarLike,
   declCollect,
   expressionCollect,
-  memberRefCollect,
+  maybeComponentCollect,
   nameCollect,
   refIdent,
   scopeCollect,
-  stuffCollect,
   typedDecl,
   typeRefCollect,
 } from "./WESLCollect.ts";
 import { mainTokens } from "./WESLTokens.ts";
 import { WeslToken } from "./parse/WeslStream.ts";
 
-/** parser that recognizes key parts of WGSL and also directives like #import */
-
 export const word = kind(mainTokens.ident);
 
-const qualified_ident = withSepPlus("::", word); // TODO make this a lexer rule?
+const qualified_ident = withSepPlus("::", word);
 
 const diagnostic_rule_name = withSep(".", word, { requireOne: true });
 const diagnostic_control = seq(
@@ -277,8 +277,8 @@ const primary_expression = or(
 // prettier-ignore
 const component_or_swizzle = repeatPlus(
   or(
-    seq(".", word),
-    seq("[", () => expression, req("]")),
+    preceded(".", word.collect(nameCollect, "component")),
+    delimited("[", () => expression.collect(expressionCollect, "component"), req("]")),
   ),
 );
 
@@ -301,7 +301,9 @@ const makeExpressionOperator = (isTemplate: boolean) => {
 
 const unary_expression: Parser<any> = or(
   seq(or(..."! & * - ~".split(" ")), () => unary_expression),
-  seq(primary_expression, opt(component_or_swizzle)),
+  tagScope(seq(primary_expression, opt(component_or_swizzle))).collect(
+    maybeComponentCollect,
+  ),
 );
 
 const makeExpression = (isTemplate: boolean) => {
@@ -434,20 +436,20 @@ const statement: Parser<any> = or(
 );
 
 // prettier-ignore
-const lhs_expression: Parser<any> = or(
+const lhs_expression: Parser<any> = tagScope(or(
   seq(
     qualified_ident                        .collect(refIdent), 
     opt(component_or_swizzle)
-  ),
+  )                                        .collect(maybeComponentCollect),
   seq(
     "(", 
     () => lhs_expression, 
     ")", 
     opt(component_or_swizzle)         // LATER this doesn't find member references.
-  ),
+  )                                        .collect(maybeComponentCollect),
   seq("&", () => lhs_expression),
   seq("*", () => lhs_expression),
-);
+));
 
 // prettier-ignore
 const variable_or_value_statement = tagScope(
@@ -468,7 +470,7 @@ const variable_or_value_statement = tagScope(
 const variable_updating_statement = or(
   seq(
     lhs_expression,
-    or("=", "<<=", ">>=", "%=", "&=", "*=", "+=", "-=", "/=", "^=", "|="), // TODO: try making this a lexer rule instead of a parser rule
+    or("=", "<<=", ">>=", "%=", "&=", "*=", "+=", "-=", "/=", "^=", "|="),
     expression,
   ),
   seq(lhs_expression, or("++", "--")),

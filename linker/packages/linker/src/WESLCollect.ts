@@ -3,6 +3,7 @@ import {
   AbstractElem,
   AliasElem,
   AttributeElem,
+  ComponentExpression,
   ConstElem,
   ContainerElem,
   DeclarationElem,
@@ -18,13 +19,12 @@ import {
   NameElem,
   OverrideElem,
   RefIdentElem,
-  SimpleMemberRef,
   StructElem,
   StructMemberElem,
-  StuffElem,
   TextElem,
   TypedDeclElem,
   TypeRefElem,
+  UnknownExpression,
   VarElem,
 } from "./AbstractElems.ts";
 import {
@@ -35,14 +35,11 @@ import {
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "./Scope.ts";
 
-export const importElem = collectElem(
-  "import",
-  (cc: CollectContext, openElem: PartElem<ImportElem>) => {
-    const importElem = cc.tags.owo?.[0] as ImportElem; // LATER ts typing
-    (cc.app.stable as StableState).imports.push(importElem.imports);
-    return importElem;
-  },
-);
+export const importElem = collectElem("import", (cc: CollectContext) => {
+  const importElem = cc.tags.owo?.[0] as ImportElem; // LATER ts typing
+  (cc.app.stable as StableState).imports.push(importElem.imports);
+  return importElem;
+});
 
 /** add an elem to the .contents array of the currently containing element */
 function addToOpenElem(cc: CollectContext, elem: AbstractElem): void {
@@ -76,6 +73,11 @@ export function refIdent(cc: CollectContext): RefIdentElem {
   saveIdent(cc, identElem);
   addToOpenElem(cc, identElem);
   return identElem;
+}
+
+export function maybeComponentCollect(cc: CollectContext): ExpressionElem {
+  // TODO: I don't know how to implement this with the collect API
+  return null as any;
 }
 
 /** create declaration Ident and add to context */
@@ -284,36 +286,10 @@ export const typeRefCollect = collectElem(
 );
 
 export const expressionCollect = collectElem(
-  "expression",
-  (cc: CollectContext, openElem: PartElem<ExpressionElem>) => {
+  "unknown-expression",
+  (cc: CollectContext, openElem: PartElem<UnknownExpression>) => {
     const partElem = { ...openElem };
     return withTextCover(partElem, cc);
-  },
-);
-
-export const stuffCollect = collectElem(
-  "stuff",
-  (cc: CollectContext, openElem: PartElem<StuffElem>) => {
-    const partElem = { ...openElem };
-    return withTextCover(partElem, cc);
-  },
-);
-
-export const memberRefCollect = collectElem(
-  "memberRef",
-  (cc: CollectContext, openElem: PartElem<SimpleMemberRef>) => {
-    const { component, structRef, extra_components } = cc.tags;
-    const member = component![0] as NameElem;
-    const name = structRef?.flat()[0] as RefIdentElem;
-    const extraComponents = extra_components?.flat()[0] as StuffElem;
-
-    const partElem: SimpleMemberRef = {
-      ...openElem,
-      name,
-      member,
-      extraComponents,
-    };
-    return withTextCover(partElem, cc) as any;
   },
 );
 

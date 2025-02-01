@@ -188,7 +188,7 @@ export function preceded<P extends CombinatorArg>(
 }
 
 /** Parse two values, and discard the second value
- * @return the second value, or null if any parser fails */
+ * @return the first value, or null if any parser fails */
 export function terminated<P extends CombinatorArg>(
   arg: P,
   ignoredArg: CombinatorArg,

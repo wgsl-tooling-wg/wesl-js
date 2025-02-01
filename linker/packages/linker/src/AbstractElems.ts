@@ -1,4 +1,4 @@
-import { ImportStatement } from "./ImportTree.ts";
+import { ImportStatement } from "./parse/ImportTree.ts";
 import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
 
 /**
@@ -13,14 +13,14 @@ import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
  */
 export type AbstractElem = GrammarElem | SyntheticElem;
 
-export type GrammarElem = ContainerElem | TerminalElem;
+export type GrammarElem = ContainerElem | ExpressionElem | TerminalElem;
 
 export type ContainerElem =
   | AliasElem
   | AttributeElem
   | ConstAssertElem
   | ConstElem
-  | ExpressionElem
+  | UnknownExpression
   | FnElem
   | TypedDeclElem
   | GlobalVarElem
@@ -29,12 +29,22 @@ export type ContainerElem =
   | ModuleElem
   | OverrideElem
   | FnParamElem
-  | SimpleMemberRef
   | StructElem
   | StructMemberElem
   | StuffElem
   | TypeRefElem
   | VarElem;
+
+/** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
+export type ExpressionElem =
+  | LiteralElem
+  | RefIdentElem
+  | UnknownExpression
+  | ParenthesizedExpression
+  | ComponentExpression
+  | UnaryExpression
+  | BinaryExpression
+  | FunctionCallExpression;
 
 // prettier-ignore
 export type TerminalElem = 
@@ -72,6 +82,12 @@ export interface ElemWithContentsBase extends AbstractElemBase {
  */
 export interface TextElem extends AbstractElemBase {
   kind: "text";
+  srcModule: SrcModule;
+}
+
+/** A literal value in WESL source. A boolean or a number. */
+export interface LiteralElem extends AbstractElemBase {
+  kind: "literal";
   srcModule: SrcModule;
 }
 
@@ -138,10 +154,53 @@ export interface ConstElem extends ElemWithContentsBase {
   name: TypedDeclElem;
 }
 
-/** an expression (generally we don't need details of expressions, just their contained idents) */
-export interface ExpressionElem extends ElemWithContentsBase {
-  kind: "expression";
+export interface UnknownExpression extends ElemWithContentsBase {
+  kind: "unknown-expression";
 }
+export interface ParenthesizedExpression extends AbstractElemBase {
+  kind: "parenthesized-expression";
+  contents: [ExpressionElem];
+}
+export interface ComponentExpression extends AbstractElemBase {
+  kind: "component-expression";
+  // TODO: How do I safely type this? As in, I want "first comes the name, then the component"
+  contents: [ExpressionElem, ExpressionElem];
+}
+// TODO: We do not and cannot emit these at the moment, since our grammar implementation is too simplistic
+export interface UnaryExpression extends AbstractElemBase {
+  kind: "unary-expression";
+  operator: UnaryOperator;
+  contents: [ExpressionElem];
+}
+export interface BinaryExpression extends AbstractElemBase {
+  kind: "binary-expression";
+  operator: BinaryOperator;
+  contents: [ExpressionElem, ExpressionElem];
+}
+export interface FunctionCallExpression extends AbstractElemBase {
+  kind: "call-expression";
+  contents: [ExpressionElem, ExpressionElem];
+}
+export type UnaryOperator = "!" | "&" | "*" | "-" | "~";
+export type BinaryOperator =
+  | "||"
+  | "&&"
+  | "+"
+  | "-"
+  | "*"
+  | "/"
+  | "%"
+  | "=="
+  | "!="
+  | "<"
+  | "<="
+  | ">"
+  | ">="
+  | "|"
+  | "&"
+  | "^"
+  | "<<"
+  | ">>";
 
 /** a function declaration */
 export interface FnElem extends ElemWithContentsBase {
@@ -183,12 +242,12 @@ export interface FnParamElem extends ElemWithContentsBase {
 
 /** simple references to structures, like myStruct.bar
  * (used for transforming refs to binding structs) */
-export interface SimpleMemberRef extends ElemWithContentsBase {
+/*export interface SimpleMemberRef extends ElemWithContentsBase {
   kind: "memberRef";
   name: RefIdentElem;
   member: NameElem;
   extraComponents?: StuffElem;
-}
+}*/
 
 /** a struct declaration */
 export interface StructElem extends ElemWithContentsBase {
@@ -218,7 +277,7 @@ export interface StructMemberElem extends ElemWithContentsBase {
   mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
 }
 
-export type TypeTemplateParameter = TypeRefElem | ExpressionElem | string;
+export type TypeTemplateParameter = TypeRefElem | ExpressionElem;
 
 /** a reference to a type, like 'f32', or 'MyStruct', or 'ptr<storage, array<f32>, read_only>'   */
 export interface TypeRefElem extends ElemWithContentsBase {
