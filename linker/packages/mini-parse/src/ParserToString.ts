@@ -1,6 +1,6 @@
 import { Parser } from "mini-parse";
 
-type AnyParser = Parser<any, any>;
+type AnyParser = Parser<any>;
 
 export function parserToString(p: AnyParser): string {
   fnChildrenDeep(p, new Set());

@@ -1,7 +1,6 @@
 import {
   delimited,
   kind,
-  NoTags,
   opt,
   or,
   Parser,
@@ -12,7 +11,6 @@ import {
   seq,
   seqObj,
   setTraceName,
-  TagRecord,
   tagScope,
   terminated,
   tracing,
@@ -45,7 +43,7 @@ const item_import = seq(wordToken, opt(preceded("as", wordToken))).mapValue(
 );
 
 // forward references for mutual recursion
-let import_collection: Parser<ImportCollection, NoTags> = null as any;
+let import_collection: Parser<ImportCollection> = null as any;
 
 const import_path = seqObj({
   segments: repeatPlus(terminated(wordToken.mapValue(segment), "::")),
@@ -74,7 +72,7 @@ const import_package = terminated(wordToken.mapValue(segment), "::").mapValue(
 );
 
 /** parse a WESL style wgsl import statement. */
-export const weslImport: Parser<ImportElem, NoTags> = tagScope(
+export const weslImport: Parser<ImportElem> = tagScope(
   delimited(
     "import",
     req(
@@ -108,7 +106,7 @@ export const weslImport: Parser<ImportElem, NoTags> = tagScope(
 );
 
 if (tracing) {
-  const names: Record<string, Parser<unknown, TagRecord>> = {
+  const names: Record<string, Parser<unknown>> = {
     item_import,
     import_path,
     import_collection,

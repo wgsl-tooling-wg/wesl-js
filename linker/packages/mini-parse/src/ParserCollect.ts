@@ -2,12 +2,10 @@ import { CombinatorArg, ResultFromArg } from "./CombinatorTypes.js";
 import { Lexer } from "./MatchingLexer.js";
 import {
   AppState,
-  NoTags,
   OptParserResult,
   parser,
   Parser,
   ParserContext,
-  TagRecord,
   trackChildren,
 } from "./Parser.js";
 import { parserArg } from "./ParserCombinator.js";
@@ -24,6 +22,7 @@ export interface CollectPosition {
   start: number;
   end: number;
 }
+export type TagRecord = Record<string | symbol, any[] | undefined>;
 
 /** info passed to the collect fn */
 export interface CollectContext extends CollectPosition {
@@ -54,11 +53,11 @@ export interface CollectPair<V> {
  *
  * optionally tag the collection results
  * */
-export function collect<N extends TagRecord, T, V>(
-  p: Parser<T, N>,
+export function collect<T, V>(
+  p: Parser<T>,
   collectFn: CollectFn<V> | CollectPair<V>,
   ctag?: string,
-): Parser<T, N> {
+): Parser<T> {
   const origAfter: CollectFn<V> =
     (collectFn as CollectPair<V>).after ?? collectFn;
   const beforeFn = (collectFn as Partial<CollectPair<V>>).before;
@@ -78,7 +77,7 @@ export function collect<N extends TagRecord, T, V>(
 
   const collectParser = parser(
     `collect`,
-    (ctx: ParserContext): OptParserResult<T, N> => {
+    (ctx: ParserContext): OptParserResult<T> => {
       // if (tracing && ctx._trace) {
       // const deepName = ctx._debugNames.join(" > ");
       // ctxLog(ctx, `collect ${deepName}`);
@@ -98,11 +97,11 @@ export function collect<N extends TagRecord, T, V>(
 
 export function tagScope<A extends CombinatorArg>(
   arg: A,
-): Parser<ResultFromArg<A>, NoTags> {
+): Parser<ResultFromArg<A>> {
   const p = parserArg(arg);
   const sp = parser(
     `tagScope`,
-    (ctx: ParserContext): OptParserResult<ResultFromArg<A>, any> => {
+    (ctx: ParserContext): OptParserResult<ResultFromArg<A>> => {
       const origStart = ctx.lexer.position();
       let origTags: TagRecord;
       queueCollectFn(
@@ -138,11 +137,8 @@ function cloneTags(tags: TagRecord): TagRecord {
 
 /** tag most recent collect result with a name that can be
  * referenced in later collection. */
-export function ctag<N extends TagRecord, T>(
-  p: Parser<T, N>,
-  name: string,
-): Parser<T, N> {
-  const cp = parser(`ctag`, (ctx: ParserContext): OptParserResult<T, N> => {
+export function ctag<T>(p: Parser<T>, name: string): Parser<T> {
+  const cp = parser(`ctag`, (ctx: ParserContext): OptParserResult<T> => {
     return runAndCollectAfter(
       p,
       ctx,
@@ -159,12 +155,12 @@ export function ctag<N extends TagRecord, T>(
 
 /** run the parser and if it succeeds, queue a provided function to run
  * during commit() */
-function runAndCollectAfter<T, N extends TagRecord>(
-  p: Parser<T, N>,
+function runAndCollectAfter<T>(
+  p: Parser<T>,
   ctx: ParserContext,
   collectFn: CollectFn<any>,
   debugName: string = "",
-): OptParserResult<T, N> {
+): OptParserResult<T> {
   const origStart = ctx.lexer.position();
   const result = p._run(ctx);
   if (result) {
@@ -173,7 +169,7 @@ function runAndCollectAfter<T, N extends TagRecord>(
   return result;
 }
 
-function queueCollectFn<T, N extends TagRecord>(
+function queueCollectFn(
   ctx: ParserContext,
   origStart: number,
   collectFn: CollectFn<any>,
@@ -201,11 +197,8 @@ export function closeArray(cc: CollectContext): void {
 
 /** tag parse results results with a name that can be
  * referenced in later collection. */
-export function ptag<N extends TagRecord, T>(
-  p: Parser<T, N>,
-  name: string,
-): Parser<T, N> {
-  const cp = parser(`ptag`, (ctx: ParserContext): OptParserResult<T, N> => {
+export function ptag<T>(p: Parser<T>, name: string): Parser<T> {
+  const cp = parser(`ptag`, (ctx: ParserContext): OptParserResult<T> => {
     const origStart = ctx.lexer.position();
     const result = p._run(ctx);
 
