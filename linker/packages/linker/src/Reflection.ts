@@ -229,7 +229,9 @@ function storageTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   if (typeof name === "string" && textureStorage.test(name)) {
     const firstParam = typeRef.templateParams?.[0] as string;
     const secondParam = typeRef.templateParams?.[1] as string;
-    const sampleType = textureSampleType(firstParam as GPUTextureFormat);
+    const sampleType = formatToTextureSampleType(
+      firstParam as GPUTextureFormat,
+    );
     const access = accessMode(secondParam);
     return `storageTexture: { format: "${firstParam}", sampleType: "${sampleType}", access: "${access}" }`;
   }
@@ -266,6 +268,15 @@ export function textureSampleType(
     return "sint";
   }
   throw new Error(`native sample type unknwon for texture format ${format}`);
+}
+/** @return the webgpu GPUTextureSampleType from the wgsl texel type */
+export function texelTypeToSampleType(
+  type: WgslTexelType,
+): GPUTextureSampleType {
+  if (type === "f32") return "float";
+  if (type === "u32") return "uint";
+  if (type === "i32") return "sint";
+  throw new Error(`unknown texel type ${type}`);
 }
 
 export function accessMode(access: string): GPUStorageTextureAccess {
