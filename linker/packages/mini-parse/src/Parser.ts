@@ -1,3 +1,4 @@
+import { assert } from "./assert.js";
 import { CombinatorArg, ParserFromArg } from "./CombinatorTypes.js";
 import { Lexer } from "./MatchingLexer.js";
 import {
@@ -85,10 +86,7 @@ export interface ExtendedResult<T, C = any, S = any> extends ParserResult<T> {
 }
 
 /** parsers return null if they don't match */
-// prettier-ignore
-export type OptParserResult<T> = 
-    ParserResult<T> 
-  | null;
+export type OptParserResult<T> = ParserResult<T> | null;
 
 /** Internal parsing functions return a value  */
 type ParseFn<T> = (context: ParserContext) => OptParserResult<T>;
@@ -120,6 +118,56 @@ interface ConstructArgs<T> extends ParserArgs {
 }
 
 export type AnyParser = Parser<any>;
+
+export type AnyParser2 = Parser2<any, any, any>;
+
+export type NullIfBacktrack<B> = B extends true ? null : never;
+/**
+ * A composable parser with no backtracking by default
+ * I = input
+ * O = output
+ * B = backtracking (boolean)
+ */
+export abstract class Parser2<I, O, B> {
+  abstract canBacktrack: B;
+  /** Invariant: This exists if tracing is enabled */
+  _traceInfo?: ParserTraceInfo;
+
+  /** record a name for debug tracing */
+  setTraceName(name: string): Parser2<I, O, B> {
+    if (tracing) {
+      assert(this._traceInfo !== undefined);
+      this._traceInfo.traceName = name;
+    }
+    return this;
+  }
+
+  /** trigger tracing for this parser (and by default also this parsers descendants) */
+  setTrace(opts: TraceOptions): Parser2<I, O, B> {
+    if (tracing) {
+      assert(this._traceInfo !== undefined);
+      this._traceInfo.options = opts;
+    }
+    return this;
+  }
+
+  /**
+   * Either returns a result, or needs to backtrack, or throws an exception
+   */
+  abstract parseNext(input: I): ParserResult<O> | null;
+}
+
+export class ParserTraceInfo {
+  constructor(
+    /** name to use for trace logging */
+    public traceName: string,
+    public traceChildren: AnyParser2[] = [],
+    public options: TraceOptions = {},
+  ) {}
+  /** true for elements without children like kind(), and text(),
+   * (to avoid intro log statement while tracing) */
+  traceIsTerminal: boolean = false;
+}
 
 /** a composable parsing element */
 export class Parser<T> {
