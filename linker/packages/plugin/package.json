@@ -43,9 +43,9 @@
   ],
   "exports": {
     ".": {
+      "types": "./src/types.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./src/types.d.ts"
+      "require": "./dist/index.cjs"
     },
     "./astro": {
       "import": "./dist/astro.js",
