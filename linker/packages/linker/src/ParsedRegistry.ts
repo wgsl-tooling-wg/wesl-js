@@ -2,7 +2,6 @@ import { WgslBundle } from "wesl";
 import { parseSrcModule, parseWESL, WeslAST } from "./ParseWESL.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
 import { SrcModule } from "./Scope.ts";
-import { dlog } from "berry-pretty";
 
 export interface ParsedRegistry {
   modules: Record<string, WeslAST>; // key is module path, e.g. "rand_pkg::foo::bar"

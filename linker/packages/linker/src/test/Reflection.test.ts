@@ -3,11 +3,10 @@ import { BindingStructElem, StructElem } from "../AbstractElems.ts";
 import { elemToString } from "../debug/ASTtoString.ts";
 import {
   bindingGroupLayoutTs,
-  reportBindingStructs,
   reportBindingStructsPlugin,
 } from "../Reflection.ts";
-import { linkTestOpts } from "./TestUtil.ts";
 import { bindingStructsPlugin } from "../TransformBindingStructs.ts";
+import { linkTestOpts } from "./TestUtil.ts";
 
 test("extract binding struct", () => {
   const src = `
