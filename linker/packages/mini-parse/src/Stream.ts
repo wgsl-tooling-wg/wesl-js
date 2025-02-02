@@ -28,6 +28,12 @@ export interface Token {
   span: Span;
 }
 
+export interface TypedToken<Kind extends string, Value> {
+  kind: Kind;
+  value: Value;
+  span: Span;
+}
+
 /**
  * Based on https://docs.rs/winnow/latest/winnow/stream/trait.Location.html
  * Used for the `span` combinator

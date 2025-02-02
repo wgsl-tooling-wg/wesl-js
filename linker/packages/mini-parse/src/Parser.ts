@@ -11,6 +11,7 @@ import {
   runCollection,
 } from "./ParserCollect.js";
 import { ParseError, parserArg } from "./ParserCombinator.js";
+import { map as map2 } from "./Parser2Combinator.js";
 import { srcLog } from "./ParserLogging.js";
 import {
   debugNames,
@@ -21,6 +22,7 @@ import {
   withTraceLogging,
 } from "./ParserTracing.js";
 import { SrcMap } from "./SrcMap.js";
+import { Stream } from "./Stream.js";
 
 export interface AppState<C, S> {
   /**
@@ -128,7 +130,7 @@ export type NullIfBacktrack<B> = B extends true ? null : never;
  * O = output
  * B = backtracking (boolean)
  */
-export abstract class Parser2<I, O, B> {
+export abstract class Parser2<I, O, const B> {
   abstract canBacktrack: B;
   /** Invariant: This exists if tracing is enabled */
   _traceInfo?: ParserTraceInfo;
@@ -152,9 +154,20 @@ export abstract class Parser2<I, O, B> {
   }
 
   /**
-   * Either returns a result, or needs to backtrack, or throws an exception
+   * Either returns a result, or needs to backtrack, or throws an exception.
+   *
+   * Rules:
+   * - Non-backtracking parsers will throw an exception
+   * - Only combinators that absolutely need to reset the position, such as `or` and `opt`, will reset the position.
    */
   abstract parseNext(input: I): ParserResult<O> | null;
+
+  map<OAfter>(
+    this: Parser2<I & Stream<any>, O, B>,
+    fn: (value: O) => OAfter,
+  ): Parser2<I, OAfter, B> {
+    return map2(this, fn);
+  }
 }
 
 export class ParserTraceInfo {
