@@ -2,9 +2,10 @@
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["esnext", "DOM"],
+    "types": ["node", "@webgpu/types"],
     "importsNotUsedAsValues": "remove",
     "skipLibCheck": true,
-    "module": "esnext",
+    "module": "ESNext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "strict": true,
@@ -12,7 +13,8 @@
     "esModuleInterop": true,
     "allowImportingTsExtensions": true,
     "paths": {
-      "wesl": ["../linker/src"]
+      "wesl": ["../linker/src"],
+      "mini-parse": ["../mini-parse/src"]
     },
     "noEmit": true
   },
