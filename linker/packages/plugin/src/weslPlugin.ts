@@ -2,7 +2,10 @@ import { glob } from "glob";
 import fs from "node:fs/promises";
 import toml from "toml";
 import type {
+  Thenable,
+  TransformResult,
   UnpluginBuildContext,
+  UnpluginContext,
   UnpluginContextMeta,
   UnpluginOptions,
 } from "unplugin";
@@ -31,28 +34,37 @@ export function weslPlugin(
   return {
     name: "wesl-plugin",
     resolveId: resolver,
-    load: loader,
+    load: buildLoader(options),
   };
 }
 
 async function resolver(this: UnpluginBuildContext, id: string) {
-  console.log("resolveId(), id:", id);
+  // console.log("resolveId(), id:", id);
   if (id.endsWith(".wesl?reflect")) {
     return id;
   }
   return null;
 }
 
-async function loader(this: UnpluginBuildContext, id: string) {
-  console.log("loader(), id:", id);
-  if (id.endsWith(".wesl?reflect")) {
-    const registry = await getRegistry(this);
-    const { weslRoot } = await getWeslToml();
-    const mainFile = id.slice(0, -"?reflect".length);
-    const main = localPath(mainFile, weslRoot);
-    return await reflectTs(main, registry);
+type Loader = (
+  this: UnpluginBuildContext & UnpluginContext,
+  id: string,
+) => Thenable<TransformResult>;
+
+function buildLoader(options: WeslPluginOptions): Loader {
+  return loader;
+
+  async function loader(this: UnpluginBuildContext, id: string) {
+    // console.log("loader(), id:", id);
+    if (id.endsWith(".wesl?reflect")) {
+      const registry = await getRegistry(this, options);
+      const { weslRoot } = await getWeslToml(options.weslToml);
+      const mainFile = id.slice(0, -"?reflect".length);
+      const main = localPath(mainFile, weslRoot);
+      return await reflectTs(main, registry);
+    }
+    return null;
   }
-  return null;
 }
 
 interface WeslToml {
@@ -62,29 +74,33 @@ interface WeslToml {
 
 let weslToml: WeslToml | undefined;
 
-async function getWeslToml(): Promise<WeslToml> {
+async function getWeslToml(tomlFile = "wesl.toml"): Promise<WeslToml> {
   if (!weslToml) {
     // TODO consider supporting default if no wesl.toml is provided: e.g. './shaders'
-    const tomlString = await fs.readFile("wesl.toml", "utf-8");
+    const tomlString = await fs.readFile(tomlFile, "utf-8");
     weslToml = toml.parse(tomlString) as WeslToml;
   }
   return weslToml;
 }
 
 /** load and parse all the wesl files into a ParsedRegistry */
-async function getRegistry(ctx: UnpluginBuildContext): Promise<ParsedRegistry> {
+async function getRegistry(
+  ctx: UnpluginBuildContext,
+  options: WeslPluginOptions,
+): Promise<ParsedRegistry> {
   // load wesl files into registry
   const registry = parsedRegistry();
-  const { weslFiles, weslRoot } = await getWeslToml();
-  const futureFiles = weslFiles.map(g => glob(g));
+  const { weslFiles, weslRoot } = await getWeslToml(options.weslToml);
+  const {weslToml } = options;
+  const tomlDir = weslToml ? path.dirname(weslToml) : ".";
+  
+  const futureFiles = weslFiles.map(g => glob(path.join(tomlDir, g)));
   const files = (await Promise.all(futureFiles)).flat();
   const loaded = await loadFiles(files, weslRoot);
   parseIntoRegistry(loaded, registry);
 
   // trigger recompilation on wesl files
-  const cwd = process.cwd();
-  const fullPaths = files.map(f => path.join(cwd, f)); // docs claim relative paths work, but didn't seem so
-  fullPaths.forEach(f => ctx.addWatchFile(f));
+  files.forEach(f => ctx.addWatchFile(f));
   return registry;
 }
 
@@ -132,6 +148,9 @@ async function reflectTs(
   return structsTs;
 }
 
-export const unplugin = /* #__PURE__ */ createUnplugin(weslPlugin);
-
+export const unplugin = createUnplugin(
+  (options: WeslPluginOptions, meta: UnpluginContextMeta) => {
+    return weslPlugin(options, meta);
+  },
+);
 export default unplugin;
