@@ -1,4 +1,4 @@
-import { ImportStatement } from "./ImportTree.ts";
+import { ImportStatement } from "./ImportStatement.ts";
 import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
 
 /**
