@@ -51,8 +51,7 @@ test("link --details", async () => {
 
     ->ast
     module
-      import package/util/foo
-        text 'import ./util/foo;
+      import package::util::foo
     '
       text '
     '
