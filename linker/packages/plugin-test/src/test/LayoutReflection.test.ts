@@ -23,7 +23,7 @@ test("vite generates binding layout", async () => {
           "binding": 0,
           "visibility": 4,
           "buffer": {
-            "type": "read-only-storage"
+            "type": "storage"
           }
         },
         {

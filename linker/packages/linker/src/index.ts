@@ -1,4 +1,3 @@
-export * from "./Configuration.js";
 export * from "./debug/ASTtoString.js";
 export * from "./debug/ScopeToString.js";
 export * from "./Linker.js";

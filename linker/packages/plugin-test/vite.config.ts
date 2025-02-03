@@ -2,11 +2,16 @@
 import { UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import viteWesl from "wesl-plugin/vite";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const thisPath = fileURLToPath(import.meta.url);
+const weslToml = path.join(path.dirname(thisPath), "wesl.toml");
 
 const config: UserConfig = {
-  plugins: [tsconfigPaths(), viteWesl()],
+  plugins: [tsconfigPaths(), viteWesl({ weslToml })],
   build: {
-    // setup build for testing
+    // setup build for test that calls 'vite build'
     lib: {
       entry: ["src/test/testMain.ts"],
       name: "testMain",

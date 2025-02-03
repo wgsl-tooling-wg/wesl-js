@@ -1,5 +1,5 @@
 import { SrcMap, SrcMapBuilder, tracing } from "mini-parse";
-import { AbstractElem } from "./AbstractElems.ts";
+import { AbstractElem, ModuleElem } from "./AbstractElems.ts";
 import { bindIdents } from "./BindIdents.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
 import {
@@ -11,9 +11,14 @@ import {
 } from "./ParsedRegistry.ts";
 import { WeslAST } from "./ParseWESL.ts";
 import { Conditions } from "./Scope.ts";
+import { filterMap } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
+
+export interface WeslJsPlugin {
+  transform?: LinkerTransform;
+}
 
 export interface TransformedAST
   extends Pick<WeslAST, "srcModule" | "moduleElem"> {
@@ -22,8 +27,7 @@ export interface TransformedAST
 }
 
 export interface LinkConfig {
-  /** plugins to transform the linked AST before emitting linked test */
-  transforms?: LinkerTransform[];
+  plugins?: WeslJsPlugin[];
 
   /** limit potential infinite loops for debugging */
   maxParseCount?: number;
@@ -59,7 +63,42 @@ export function link(
   // parse all source modules in both app and libraries,
   // producing Scope tree and AST elements for each module
   const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry, "package", config?.maxParseCount);
+  const weslRoot = "";
+  parseIntoRegistry(
+    weslSrc,
+    registry,
+    "package",
+    weslRoot,
+    config?.maxParseCount,
+  );
+  parseLibsIntoRegistry(libs, registry);
+  return linkRegistry(registry, rootModuleName, conditions, config);
+}
+
+export interface LinkParams {
+  /** record of file names and wgsl text for modules */
+  weslSrc: Record<string, string>;
+
+  /** root directory prefix for sources, e.g. /shaders */
+  weslRoot?: string;
+
+  /** name of root wesl module
+   *  for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
+   *  for a library, the root module defines the public api fo the library
+   */
+  rootModuleName?: string;
+  conditions?: Conditions;
+  libs?: WgslBundle[];
+  config?: LinkConfig;
+}
+
+/** experimental new API for link() */
+export function link2(params: LinkParams): SrcMap {
+  const { weslSrc, weslRoot = "", rootModuleName, libs = [] } = params;
+  const { conditions, config } = params;
+  const maxParseCount = config?.maxParseCount;
+  const registry = parsedRegistry();
+  parseIntoRegistry(weslSrc, registry, "package", weslRoot, maxParseCount);
   parseLibsIntoRegistry(libs, registry);
   return linkRegistry(registry, rootModuleName, conditions, config);
 }
@@ -67,7 +106,7 @@ export function link(
 /** Link wesl from a registry of already parsed modules.
  *
  * This entry point is intended for users who want to link multiple times
- * from the same sources. (perhaps linking with different conditions
+ * from the same sources. (e.g. linking with different conditions
  * each time, or perhaps to produce multiple wgsl shaders
  * that share some sources.)
  */
@@ -77,7 +116,40 @@ export function linkRegistry(
   conditions: Conditions = {},
   config?: LinkConfig,
 ): SrcMap {
-  // get a reference to the root module
+  const bound = bindAndTransform(parsed, rootModuleName, conditions, config);
+  const { transformedAst, newDecls } = bound;
+
+  return emitWgsl(transformedAst.moduleElem, newDecls, conditions);
+}
+
+interface BoundAndTransformed {
+  transformedAst: TransformedAST;
+  newDecls: AbstractElem[];
+}
+
+/** bind identifers and apply any transform plugins */
+export function bindAndTransform(
+  parsed: ParsedRegistry,
+  rootModuleName: string = "main",
+  conditions: Conditions = {},
+  config?: LinkConfig,
+): BoundAndTransformed {
+  const rootModule = getRootModule(parsed, rootModuleName);
+
+  /* --- Step #2   Binding Idents --- */
+  // link active Ident references to declarations, and uniquify global declarations
+  const bindResults = bindIdents(rootModule, parsed, conditions);
+  const { globalNames, decls: newDecls } = bindResults;
+
+  const transformedAst = applyTransformPlugins(rootModule, globalNames, config);
+  return { transformedAst, newDecls };
+}
+
+/** get a reference to the root module, selecting by module name */
+function getRootModule(
+  parsed: ParsedRegistry,
+  rootModuleName: string,
+): WeslAST {
   const rootModule = selectModule(parsed, rootModuleName);
   if (!rootModule) {
     if (tracing) {
@@ -86,24 +158,38 @@ export function linkRegistry(
     }
     throw new Error(`Root module not found: ${rootModuleName}`);
   }
+  return rootModule;
+}
+
+/** run any plugins that transform the AST */
+function applyTransformPlugins(
+  rootModule: WeslAST,
+  globalNames: Set<string>,
+  config?: LinkConfig,
+): TransformedAST {
   const { moduleElem, srcModule } = rootModule;
 
-  /* --- Step #2   Binding Idents --- */
-  // link active Ident references to declarations, and uniquify global declarations
-  const bindResults = bindIdents(rootModule, parsed, conditions);
-  const { globalNames, decls: newDecls } = bindResults;
   // for now only transform the root module
   const startAst = { moduleElem, srcModule, globalNames, notableElems: {} };
-  const transforms = config?.transforms ?? [];
+  const plugins = config?.plugins ?? [];
+  const transforms = filterMap(plugins, plugin => plugin.transform);
   const transformedAst = transforms.reduce(
     (ast, transform) => transform(ast),
     startAst,
   );
 
-  /* --- Step #3   Writing WGSL --- */
-  // traverse the AST and emit WGSL (doesn't need scopes)
+  return transformedAst;
+}
+
+/** traverse the AST and emit WGSL */
+function emitWgsl(
+  rootModuleElem: ModuleElem,
+  newDecls: AbstractElem[],
+  conditions: Conditions,
+): SrcMap {
+  /* --- Step #3   Writing WGSL --- */ // note doesn't require the scope tree anymore
   const srcBuilder = new SrcMapBuilder();
-  lowerAndEmit(srcBuilder, [transformedAst.moduleElem], conditions, false); // emit the entire root module
+  lowerAndEmit(srcBuilder, [rootModuleElem], conditions, false); // emit the entire root module
   lowerAndEmit(srcBuilder, newDecls, conditions); // emit referenced declarations from other modules
   return srcBuilder.build();
 }

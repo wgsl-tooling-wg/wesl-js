@@ -13,7 +13,7 @@ import {
   TypeTemplateParameter,
 } from "./AbstractElems.ts";
 import { declUniqueName } from "./BindIdents.ts";
-import { TransformedAST } from "./Linker.ts";
+import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { visitAst } from "./LinkerUtil.ts";
 import { findDecl } from "./LowerAndEmit.ts";
 import {
@@ -25,6 +25,12 @@ import {
 import { DeclIdent, RefIdent } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
 import { textureStorage } from "./WESLTokens.ts";
+
+export function bindingStructsPlugin(): WeslJsPlugin {
+  return {
+    transform: lowerBindingStructs,
+  };
+}
 
 /**
  * Transform binding structures into binding variables by mutating the AST.
@@ -218,7 +224,7 @@ function syntheticVar(
   storageTemplate: string,
   varType: string,
 ): SyntheticElem {
-  const varText = `var${storageTemplate} ${attributes} ${varName} : ${varType};\n`;
+  const varText = `${attributes} var${storageTemplate} ${varName} : ${varType};\n`;
 
   const elem: SyntheticElem = {
     kind: "synthetic",

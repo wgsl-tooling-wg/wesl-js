@@ -244,6 +244,9 @@ importers:
 
   packages/plugin-test:
     dependencies:
+      thimbleberry:
+        specifier: ^0.2.9
+        version: 0.2.9
       webgpu:
         specifier: ^0.2.6
         version: 0.2.6
@@ -1108,12 +1111,21 @@ packages:
     resolution: {integrity: sha512-Mr6XL8vEhVLuFUAO1ey/R947SMq5cxeQuJeIQFdxTi9Ju6HH8LlbFWZexOU4il+XGBjwhxTOf9jfrF8WvMZBzg==}
     engines: {node: ^14.18.0 || >=16.10.0}
 
+  '@petamoriken/float16@3.9.1':
+    resolution: {integrity: sha512-j+ejhYwY6PeB+v1kn7lZFACUIG97u90WxMuGosILFsl9d4Ovi0sjk0GlPfoEcx+FzvXZDAfioD+NGnnPamXgMA==}
+
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
 
   '@polka/url@1.0.0-next.28':
     resolution: {integrity: sha512-8LduaNlMZGwdZ6qWrKlfa+2M4gahzFkprZiAt2TF8uS0qQgBizKXpXURqvTJ4WtmupWxaLqjRb2UCTe72mu+Aw==}
+
+  '@reactively/core@0.0.8':
+    resolution: {integrity: sha512-5uAnNf2gQSm3gM7z6Lx079H1/MuDQQI+5aYfwyDFGR9nHZj8yblLY/6aOJVWp+NcBwXVBKuWQ28qWHD9F1qN1w==}
+
+  '@reactively/decorate@0.0.4':
+    resolution: {integrity: sha512-hiGsUjns2n1xCBcq6yTEal5TrL1ATcWfHMmbE0M3OxFvEt+WyVGmWwamXlwXUgODpYDya4SCoormGCTjLNr7HA==}
 
   '@rollup/pluginutils@5.1.4':
     resolution: {integrity: sha512-USm05zrsFxYLPdWWq+K3STlWiT/3ELn3RcV5hJMghpeAIhxfsUIg6mt12CBJBInWMV4VneoV7SfGv8xIwo2qNQ==}
@@ -1879,6 +1891,9 @@ packages:
 
   bcrypt-pbkdf@1.0.2:
     resolution: {integrity: sha512-qeFIXtP4MSoi6NLqO12WfqARWWuCKi2Rn/9hJLEmtB5yTNr9DqFWkJRCf2qShWzPeAMRnOgCrq0sg/KLv5ES9w==}
+
+  berry-pretty@0.0.4:
+    resolution: {integrity: sha512-vgzAZsecAZ6MTAUsw2O6QdVDlrqRdnOoouY9V876Tgp1EC3jKE+Xqu9P7uGW0vF7JFGlyLnrVVWKmnPHMczHOQ==}
 
   berry-pretty@0.0.5:
     resolution: {integrity: sha512-qxHrpEhESFm+2sd/M7beQiPkR3KSBLu5vvcgYuIedhkCtJSnVQhAPKQ1y0nHMf1Pm6fYdWGWQCyp4E0Oe8CEIQ==}
@@ -5481,6 +5496,9 @@ packages:
   thenify@3.3.1:
     resolution: {integrity: sha512-RVZSIV5IG10Hk3enotrhvz0T9em6cyHBLkH/YAZuKqd8hRkKhSfCGIcP2KUY0EPxndzANBmNllzWPwak+bheSw==}
 
+  thimbleberry@0.2.9:
+    resolution: {integrity: sha512-m1vB5d3VunjmaoDFk5e7YDm+EI1GIHdWyJgh9ELbfGuArb49mr3mXqARoEbUKwKEMnIs+Kc+aikIfgQ2VQKeYg==}
+
   through2@2.0.5:
     resolution: {integrity: sha512-/mrRod8xqpA+IHSLyGCQ2s8SPHiCDEeQJSep1jqLYeEUClOFG2Qsh+4FU6G9VeqpZnGW/Su8LQGc4YKni5rYSQ==}
 
@@ -7149,10 +7167,18 @@ snapshots:
       pathe: 2.0.2
       std-env: 3.8.0
 
+  '@petamoriken/float16@3.9.1': {}
+
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
   '@polka/url@1.0.0-next.28': {}
+
+  '@reactively/core@0.0.8': {}
+
+  '@reactively/decorate@0.0.4':
+    dependencies:
+      '@reactively/core': 0.0.8
 
   '@rollup/pluginutils@5.1.4(rollup@4.32.0)':
     dependencies:
@@ -7954,6 +7980,8 @@ snapshots:
   bcrypt-pbkdf@1.0.2:
     dependencies:
       tweetnacl: 0.14.5
+
+  berry-pretty@0.0.4: {}
 
   berry-pretty@0.0.5: {}
 
@@ -12099,6 +12127,14 @@ snapshots:
   thenify@3.3.1:
     dependencies:
       any-promise: 1.3.0
+
+  thimbleberry@0.2.9:
+    dependencies:
+      '@petamoriken/float16': 3.9.1
+      '@reactively/core': 0.0.8
+      '@reactively/decorate': 0.0.4
+      berry-pretty: 0.0.4
+      fast-deep-equal: 3.1.3
 
   through2@2.0.5:
     dependencies:

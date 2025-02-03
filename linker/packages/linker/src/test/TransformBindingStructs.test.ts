@@ -1,11 +1,11 @@
 import { SrcMapBuilder } from "mini-parse";
 import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
-import { enableBindingStructs } from "../Configuration.ts";
 import { astToString, elemToString } from "../debug/ASTtoString.ts";
 import { lowerAndEmit } from "../LowerAndEmit.ts";
 import { parsedRegistry } from "../ParsedRegistry.ts";
 import {
+  bindingStructsPlugin,
   findRefsToBindingStructs,
   lowerBindingStructs,
   markBindingStructs,
@@ -57,7 +57,7 @@ test("transformBindingStruct", () => {
   const linked = srcBuilder.build().dest;
   expect(linked).toMatchInlineSnapshot(
     `
-    "var<storage, read_write> @group(0) @binding(0) particles : array<f32>;
+    "@group(0) @binding(0) var<storage, read_write> particles : array<f32>;
     "
   `,
   );
@@ -124,7 +124,7 @@ test("lower binding structs", () => {
   `;
 
   const expected = `
-var<storage, read_write> @group(0) @binding(0) particles : array<f32>;
+@group(0) @binding(0) var<storage, read_write> particles : array<f32>;
        
     fn main() {
       let x = particles;
@@ -138,7 +138,7 @@ var<storage, read_write> @group(0) @binding(0) particles : array<f32>;
   const loweredAst = astToString(lowered.moduleElem);
   expect(loweredAst).toMatchInlineSnapshot(`
     "module
-      synthetic 'var<storage, read_write> @group(0) @binding(0) particles : array<f32>;
+      synthetic '@group(0) @binding(0) var<storage, read_write> particles : array<f32>;
     '
       text '
         '
@@ -182,7 +182,7 @@ test("lower binding structs with conflicting root name", () => {
   `;
 
   const expected = `
-var<storage, read_write> @group(0) @binding(0) particles0 : array<f32>;
+@group(0) @binding(0) var<storage, read_write> particles0 : array<f32>;
        
     const particles = 7;
     fn main() {
@@ -190,7 +190,7 @@ var<storage, read_write> @group(0) @binding(0) particles0 : array<f32>;
     }
   `;
 
-  const opts = { linkConfig: enableBindingStructs() };
+  const opts = { linkConfig: { plugins: [bindingStructsPlugin()] } };
   const linked = linkTestOpts(opts, src);
   expectTrimmedMatch(linked, expected);
 });
@@ -215,11 +215,11 @@ test("lower 5 bindings", () => {
   `;
 
   const expected = `
-var<storage, read_write> @group(0) @binding(0) particles : array<u32>;
-var<uniform> @group(0) @binding(1) uniforms : Uniforms;
-var @group(0) @binding(2) tex : texture_2d<rgba8unorm>;
-var @group(0) @binding(3) samp : sampler;
-var @group(0) @binding(4) stTex : texture_storage_2d<rgba8unorm, read>;
+@group(0) @binding(0) var<storage, read_write> particles : array<u32>;
+@group(0) @binding(1) var<uniform> uniforms : Uniforms;
+@group(0) @binding(2) var tex : texture_2d<rgba8unorm>;
+@group(0) @binding(3) var samp : sampler;
+@group(0) @binding(4) var stTex : texture_storage_2d<rgba8unorm, read>;
 
     struct Uniforms {
       foo: u32
@@ -229,7 +229,7 @@ var @group(0) @binding(4) stTex : texture_storage_2d<rgba8unorm, read>;
     }
 `;
 
-  const opts = { linkConfig: enableBindingStructs() };
+  const opts = { linkConfig: { plugins: [bindingStructsPlugin()] } };
   const linked = linkTestOpts(opts, src);
   expectTrimmedMatch(linked, expected);
 });
