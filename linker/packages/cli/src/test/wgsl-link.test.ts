@@ -19,6 +19,7 @@ test("simple link", async () => {
   const logged = await cliLine(`${mainPath} ${utilPath} --baseDir ${wgslDir}`);
   expect(logged).toMatchInlineSnapshot(`
     "
+
     fn main() {
       foo();
     }
