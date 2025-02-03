@@ -1,11 +1,8 @@
 import { Span } from "../Span.ts";
-import { Stream, StreamWithLocation, Token } from "../Stream.ts";
+import { Stream, StreamWithLocation, Token, TypedToken } from "../Stream.ts";
 import { toRegexSource } from "./RegexHelpers.ts";
 
-export interface StringToken<Kind extends string> extends Token {
-  kind: Kind;
-  value: string;
-}
+export type StringToken<Kind extends string> = TypedToken<Kind, string>;
 
 /**
  * The matchers passed to this object must follow certain rules

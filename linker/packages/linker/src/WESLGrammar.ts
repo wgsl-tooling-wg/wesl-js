@@ -47,21 +47,18 @@ export const word = kind(mainTokens.ident);
 const qualified_ident = withSepPlus("::", word);
 
 const diagnostic_rule_name = withSep(".", word, { requireOne: true });
-const diagnostic_control = seq(
+const diagnostic_control = delimited(
   "(",
-  word,
-  ",",
-  diagnostic_rule_name,
-  opt(","),
+  seq(word, ",", diagnostic_rule_name, opt(",")),
   ")",
 );
 
 /** list of words that we don't need to collect (e.g. for @interpolate) */
-const word_list = seq("(", withSep(",", word, { requireOne: true }), ")");
+const word_list = delimited("(", withSep(",", word, { requireOne: true }), ")");
 
 // prettier-ignore
 const attribute = tagScope(
-  seq(
+  preceded(
     "@",
     req(
       or(
@@ -105,7 +102,7 @@ const attribute = tagScope(
 )                                         .ctag("attribute");
 
 // prettier-ignore
-const attribute_argument_list = seq(
+const attribute_argument_list = delimited(
   "(",
   withSep(
     ",",

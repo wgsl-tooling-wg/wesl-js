@@ -1,3 +1,4 @@
+import { assert } from "./assert.js";
 import { CombinatorArg, ParserFromArg } from "./CombinatorTypes.js";
 import { Lexer } from "./MatchingLexer.js";
 import {
@@ -19,8 +20,8 @@ import {
   tracing,
   withTraceLogging,
 } from "./ParserTracing.js";
-import { mergeTags } from "./ParserUtil.js";
 import { SrcMap } from "./SrcMap.js";
+import { Stream } from "./Stream.js";
 
 export interface AppState<C, S> {
   /**
@@ -70,24 +71,13 @@ export interface ParserContext<C = any, S = any> {
   _collect: CollectFnEntry<any>[];
 }
 
-export type TagRecord = Record<string | symbol, any[] | undefined>;
-export type NoTags = Record<string | symbol, never>;
-
 /** Result from a parser */
-export interface ParserResult<T, N extends TagRecord> {
+export interface ParserResult<T> {
   /** result from this stage */
   value: T;
-
-  /** tagged results from this stage and all child stages*/
-  tags: N;
 }
 
-export interface ExtendedResult<
-  T,
-  N extends TagRecord = NoTags,
-  C = any,
-  S = any,
-> extends ParserResult<T, N> {
+export interface ExtendedResult<T, C = any, S = any> extends ParserResult<T> {
   src: string;
   srcMap?: SrcMap;
   start: number;
@@ -97,26 +87,18 @@ export interface ExtendedResult<
 }
 
 /** parsers return null if they don't match */
-// prettier-ignore
-export type OptParserResult<T, N extends TagRecord> = 
-    ParserResult<T, N> 
-  | null;
+export type OptParserResult<T> = ParserResult<T> | null;
 
-/** Internal parsing functions return a value and also a set of tagged results from contained parser  */
-type ParseFn<T, N extends TagRecord> = (
-  context: ParserContext,
-) => OptParserResult<T, N>;
+/** Internal parsing functions return a value  */
+type ParseFn<T> = (context: ParserContext) => OptParserResult<T>;
 
 /** options for creating a core parser */
 export interface ParserArgs {
-  /** name to use for result in tagged results */
-  tag?: string | symbol;
-
   /** name to use for trace logging */
   traceName?: string;
 
   /** use the debugName from this source parser for trace logging */
-  traceSrc?: Parser<any, any>;
+  traceSrc?: AnyParser;
 
   /** enable trace logging */
   trace?: TraceOptions;
@@ -129,29 +111,127 @@ export interface ParserArgs {
   _collection?: true;
 
   /** set if the collection results are tagged */
-  _children?: Parser<any, any>[];
+  _children?: AnyParser[];
 }
 
-interface ConstructArgs<T, N extends TagRecord> extends ParserArgs {
-  fn: ParseFn<T, N>;
+interface ConstructArgs<T> extends ParserArgs {
+  fn: ParseFn<T>;
 }
 
-export type AnyParser = Parser<any, any>;
+export type AnyParser = Parser<any>;
+
+export type AnyParser2 = Parser2<any, any, any>;
+
+export type NullIfBacktrack<B> = B extends true ? null : never;
+/**
+ * A composable parser with no backtracking by default
+ * I = input
+ * O = output
+ * B = backtracking (boolean)
+ */
+export abstract class Parser2<I, O, const B> {
+  abstract canBacktrack: B;
+  /** Invariant: This exists if tracing is enabled */
+  _traceInfo?: ParserTraceInfo;
+
+  /** record a name for debug tracing */
+  setTraceName(name: string): Parser2<I, O, B> {
+    if (tracing) {
+      assert(this._traceInfo !== undefined);
+      this._traceInfo.traceName = name;
+    }
+    return this;
+  }
+
+  /** trigger tracing for this parser (and by default also this parsers descendants) */
+  setTrace(opts: TraceOptions): Parser2<I, O, B> {
+    if (tracing) {
+      assert(this._traceInfo !== undefined);
+      this._traceInfo.options = opts;
+    }
+    return this;
+  }
+
+  /**
+   * Either returns a result, or needs to backtrack, or throws an exception.
+   *
+   * Rules:
+   * - Non-backtracking parsers will throw an exception
+   * - Only combinators that absolutely need to reset the position, such as `or` and `opt`, will reset the position.
+   */
+  abstract parseNext(input: I): ParserResult<O> | null;
+
+  map<OAfter>(
+    this: Parser2<I & Stream<any>, O, B>,
+    fn: (value: O) => OAfter,
+  ): Parser2<I, OAfter, B> {
+    return map2(this, fn);
+  }
+}
+
+/** Map results to a new value. Should not have side effects! */
+export function map2<I extends Stream<any>, OBefore, OAfter, B>(
+  parser: Parser2<I, OBefore, B>,
+  fn: (value: OBefore) => OAfter,
+): Parser2<I, OAfter, B> {
+  return new MapParser(parser, fn);
+}
+/** Map results to a new value. Mutating global state is allowed. */
+export function mapMut2<I extends Stream<any>, OBefore, OAfter>(
+  parser: Parser2<I, OBefore, false>,
+  fn: (value: OBefore) => OAfter,
+): Parser2<I, OAfter, false> {
+  return new MapParser(parser, fn);
+}
+class MapParser<I extends Stream<any>, OBefore, OAfter, B> extends Parser2<
+  I,
+  OAfter,
+  B
+> {
+  public canBacktrack: B;
+  constructor(
+    public parser: Parser2<I, OBefore, B>,
+    public fn: (value: OBefore) => OAfter,
+  ) {
+    super();
+    this.canBacktrack = parser.canBacktrack;
+    if (tracing) {
+      this._traceInfo = new ParserTraceInfo("map", [parser]);
+    }
+  }
+  parseNext(input: I): ParserResult<OAfter> | null {
+    const result = this.parser.parseNext(input);
+    if (result === null) {
+      return null;
+    }
+    return { value: this.fn(result.value) };
+  }
+}
+
+export class ParserTraceInfo {
+  constructor(
+    /** name to use for trace logging */
+    public traceName: string,
+    public traceChildren: AnyParser2[] = [],
+    public options: TraceOptions = {},
+  ) {}
+  /** true for elements without children like kind(), and text(),
+   * (to avoid intro log statement while tracing) */
+  traceIsTerminal: boolean = false;
+}
 
 /** a composable parsing element */
-export class Parser<T, N extends TagRecord = NoTags> {
+export class Parser<T> {
   _traceName: string | undefined;
-  traceSrc: Parser<any, any> | undefined;
-  tagName: string | symbol | undefined;
+  traceSrc: AnyParser | undefined;
   traceOptions: TraceOptions | undefined;
   terminal: boolean | undefined;
   _collection: true | undefined;
-  _children: Parser<any, any>[] | undefined;
-  fn: ParseFn<T, N>;
+  _children: AnyParser[] | undefined;
+  fn: ParseFn<T>;
 
-  constructor(args: ConstructArgs<T, N>) {
+  constructor(args: ConstructArgs<T>) {
     this._traceName = args.traceName;
-    this.tagName = args.tag;
     this.traceOptions = args.trace;
     this.terminal = args.terminal;
     this.traceSrc = args.traceSrc;
@@ -161,11 +241,10 @@ export class Parser<T, N extends TagRecord = NoTags> {
   }
 
   /** copy this parser with slightly different settings */
-  _cloneWith(p: Partial<ConstructArgs<T, N>>): Parser<T, N> {
+  _cloneWith(p: Partial<ConstructArgs<T>>): Parser<T> {
     return new Parser({
       traceName: this._traceName,
       traceSrc: this.traceSrc,
-      tag: this.tagName,
       trace: this.traceOptions,
       terminal: this.terminal,
       _collection: this._collection,
@@ -176,43 +255,27 @@ export class Parser<T, N extends TagRecord = NoTags> {
   }
 
   /** run the parser given an already created parsing context */
-  _run(context: ParserContext): OptParserResult<T, N> {
+  _run(context: ParserContext): OptParserResult<T> {
     return runParser(this, context);
   }
 
-  /**
-   * tag results with a name,
-   *
-   * tagged results can be retrived with map(r => r.tags.myName)
-   * note that tagged results are collected into an array,
-   * multiple matches with the same name (even from different nested parsers) accumulate
-   */
-  tag<K extends string | symbol>(name: K): Parser<T, N & { [key in K]: T[] }> {
-    const p = this._cloneWith({
-      tag: name,
-      traceSrc: this,
-      traceName: undefined,
-    });
-    return p as Parser<T, N & { [key in K]: T[] }>;
-  }
-
   /** tag parse results */
-  ptag<K extends string>(name: K): Parser<T, N & { [key in K]: T[] }> {
-    return ptag(this, name) as Parser<T, N & { [key in K]: T[] }>;
+  ptag<K extends string>(name: K): Parser<T> {
+    return ptag(this, name) as Parser<T>;
   }
 
   /** tag collect results */
-  ctag<K extends string>(name: K): Parser<T, N & { [key in K]: T[] }> {
-    return ctag(this, name) as Parser<T, N & { [key in K]: T[] }>;
+  ctag<K extends string>(name: K): Parser<T> {
+    return ctag(this, name) as Parser<T>;
   }
 
   /** record a name for debug tracing */
-  traceName(name: string): Parser<T, N> {
+  traceName(name: string): Parser<T> {
     return this._cloneWith({ traceName: name });
   }
 
   /** trigger tracing for this parser (and by default also this parsers descendants) */
-  trace(opts: TraceOptions = {}): Parser<T, N> {
+  trace(opts: TraceOptions = {}): Parser<T> {
     return this._cloneWith({ trace: opts });
   }
 
@@ -220,34 +283,32 @@ export class Parser<T, N extends TagRecord = NoTags> {
    * Return null to cause the parser to fail.
    * SAFETY: Side-effects should not be done if backtracking could occur!
    */
-  map<U>(fn: ParserMapFn<T, N, U>): Parser<U, N> {
+  map<U>(fn: ParserMapFn<T, U>): Parser<U> {
     return map(this, fn);
   }
 
   /** map results to a new value.
    * Return null to cause the parser to fail.
    */
-  mapValue<U>(fn: (value: T) => U | null): Parser<U, N> {
-    return map(this, v => fn(v.value));
+  mapValue<U>(fn: (value: T) => U): Parser<U> {
+    return mapValue(this, fn);
   }
 
   /** Queue a function that runs later, typically to collect AST elements from the parse.
    * when a commit() is parsed.
    * Collection functions are dropped with parser backtracking, so
    * only succsessful parses are collected. */
-  collect<U>(fn: CollectFn<U> | CollectPair<U>, ctag?: string): Parser<T, N> {
+  collect<U>(fn: CollectFn<U> | CollectPair<U>, ctag?: string): Parser<T> {
     return collect(this, fn, ctag);
   }
 
   /** switch next parser based on results */
-  toParser<U, V extends TagRecord>(
-    fn: ToParserFn<T, N, U, V>,
-  ): Parser<T | U, N & V> {
+  toParser<U>(fn: ToParserFn<T, U>): Parser<T | U> {
     return toParser(this, fn);
   }
 
   /** start parsing */
-  parse(init: ParserInit): OptParserResult<T, N> {
+  parse(init: ParserInit): OptParserResult<T> {
     try {
       const {
         lexer,
@@ -277,12 +338,7 @@ export class Parser<T, N extends TagRecord = NoTags> {
 
   /** name of this parser for debugging/tracing */
   get debugName(): string {
-    return (
-      this._traceName ??
-      this.traceSrc?._traceName ??
-      this.tagName?.toString() ??
-      "parser"
-    );
+    return this._traceName ?? this.traceSrc?._traceName ?? "parser";
   }
 }
 
@@ -290,21 +346,21 @@ export class Parser<T, N extends TagRecord = NoTags> {
  * @param fn the parser function
  * @param args static arguments provided by the user as the parser is constructed
  */
-export function parser<T, N extends TagRecord>(
+export function parser<T>(
   traceName: string,
-  fn: ParseFn<T, N>,
+  fn: ParseFn<T>,
   terminal?: boolean,
-): Parser<T, N> {
+): Parser<T> {
   const terminalArg = terminal ? { terminal } : {};
-  return new Parser<T, N>({ fn, traceName, ...terminalArg });
+  return new Parser<T>({ fn, traceName, ...terminalArg });
 }
 
 /** Create a Parser from a function that parses and returns a value (w/no child parsers) */
 export function simpleParser<T>(
   traceName: string,
   fn: (ctx: ParserContext) => T | null | undefined,
-): Parser<T, NoTags> {
-  const parserFn: ParseFn<T, NoTags> = (ctx: ParserContext) => {
+): Parser<T> {
+  const parserFn: ParseFn<T> = (ctx: ParserContext) => {
     const r = fn(ctx);
     if (r == null || r === undefined) return null;
 
@@ -315,10 +371,7 @@ export function simpleParser<T>(
 }
 
 /** modify the trace name of this parser */
-export function setTraceName(
-  parser: Parser<any, TagRecord>,
-  traceName: string,
-): void {
+export function setTraceName(parser: Parser<any>, traceName: string): void {
   const origName = parser._traceName;
   parser._traceName = `${traceName} (${origName})`;
 }
@@ -332,10 +385,10 @@ export function setTraceName(
  * . backtrack on failure
  * . rollback context on failure
  */
-function runParser<T, N extends TagRecord>(
-  p: Parser<T, N>,
+function runParser<T>(
+  p: Parser<T>,
   context: ParserContext,
-): OptParserResult<T, N> {
+): OptParserResult<T> {
   const { lexer, _parseCount = 0, maxParseCount } = context;
 
   // check for infinite looping
@@ -349,7 +402,7 @@ function runParser<T, N extends TagRecord>(
   const origAppContext = context.app.context;
 
   // setup trace logging if enabled and active for this parser
-  const result = withTraceLogging<OptParserResult<T, N>>()(
+  const result = withTraceLogging<OptParserResult<T>>()(
     context,
     p.traceOptions,
     runInContext,
@@ -357,7 +410,7 @@ function runParser<T, N extends TagRecord>(
 
   return result;
 
-  function runInContext(ctx: ParserContext): OptParserResult<T, N> {
+  function runInContext(ctx: ParserContext): OptParserResult<T> {
     const origPosition = lexer.position();
     const origCollectLength = ctx._collect.length;
 
@@ -387,41 +440,40 @@ function runParser<T, N extends TagRecord>(
       // parser succeeded
       if (tracing) parserLog(`✓ ${p.debugName}`);
       const value = result.value;
-      let tags;
-      if (p.tagName && result.value !== undefined) {
-        // merge tagged result (if user set a name for this stage's result)
-        tags = mergeTags(result.tags, {
-          [p.tagName]: [result.value],
-        }) as N;
-      } else {
-        tags = result.tags;
-      }
-      result = { value, tags };
+      result = { value };
     }
 
     return result;
   }
 }
 
-type ParserMapFn<T, N extends TagRecord, U> = (
-  results: ExtendedResult<T, N>,
-) => U | null;
+type ParserMapFn<T, U> = (results: ExtendedResult<T>) => U | null;
 
 /** return a parser that maps the current results */
-function map<T, N extends TagRecord, U>(
-  p: Parser<T, N>,
-  fn: ParserMapFn<T, N, U>,
-): Parser<U, N> {
+function map<T, U>(p: Parser<T>, fn: ParserMapFn<T, U>): Parser<U> {
+  const mapParser = parser(`map`, (ctx: ParserContext): OptParserResult<U> => {
+    const extended = runExtended(ctx, p);
+    if (!extended) return null;
+
+    const mappedValue = fn(extended);
+    if (mappedValue === null) return null;
+
+    return { value: mappedValue };
+  });
+
+  trackChildren(mapParser, p);
+  return mapParser;
+}
+
+/** return a parser that maps the current results */
+function mapValue<T, U>(p: Parser<T>, fn: (value: T) => U): Parser<U> {
   const mapParser = parser(
-    `map`,
-    (ctx: ParserContext): OptParserResult<U, N> => {
-      const extended = runExtended(ctx, p);
-      if (!extended) return null;
-
-      const mappedValue = fn(extended);
-      if (mappedValue === null) return null;
-
-      return { value: mappedValue, tags: extended.tags };
+    `mapValue`,
+    (ctx: ParserContext): OptParserResult<U> => {
+      const result = p._run(ctx);
+      if (result === null) return null;
+      const value = fn(result.value);
+      return { value };
     },
   );
 
@@ -429,42 +481,37 @@ function map<T, N extends TagRecord, U>(
   return mapParser;
 }
 
-type ToParserFn<T, N extends TagRecord, X, Y extends TagRecord> = (
-  results: ExtendedResult<T, N>,
-) => Parser<X, Y> | undefined;
+type ToParserFn<T, X> = (results: ExtendedResult<T>) => Parser<X> | undefined;
 
-function toParser<T, N extends TagRecord, O, Y extends TagRecord>(
-  p: Parser<T, N>,
-  toParserFn: ToParserFn<T, N, O, Y>,
-): Parser<T | O, N & Y> {
-  const newParser: Parser<T | O, N & Y> = parser(
-    "toParser",
-    (ctx: ParserContext) => {
-      const extended = runExtended(ctx, p);
-      if (!extended) return null;
+function toParser<T, O>(
+  p: Parser<T>,
+  toParserFn: ToParserFn<T, O>,
+): Parser<T | O> {
+  const newParser: Parser<T | O> = parser("toParser", (ctx: ParserContext) => {
+    const extended = runExtended(ctx, p);
+    if (!extended) return null;
 
-      // run the supplied function to get a parser
-      const newParser = toParserFn(extended);
+    // run the supplied function to get a parser
+    const newParser = toParserFn(extended);
 
-      if (newParser === undefined) {
-        return extended;
-      }
+    if (newParser === undefined) {
+      return extended;
+    }
 
-      // run the parser returned by the supplied function
-      const nextResult = newParser._run(ctx);
-      // TODO merge names record from p to newParser
-      return nextResult as any; // TODO fix typing
-    },
-  );
+    // run the parser returned by the supplied function
+    const nextResult = newParser._run(ctx);
+    // TODO merge names record from p to newParser
+    return nextResult as any; // TODO fix typing
+  });
   trackChildren(newParser, p);
   return newParser;
 }
 
 /** run parser, return enriched results (to support map(), toParser()) */
-export function runExtended<T, N extends TagRecord>(
+export function runExtended<T>(
   ctx: ParserContext,
-  p: Parser<T, N>,
-): ExtendedResult<T, N> | null {
+  p: Parser<T>,
+): ExtendedResult<T> | null {
   const origStart = ctx.lexer.position();
 
   const origResults = p._run(ctx);

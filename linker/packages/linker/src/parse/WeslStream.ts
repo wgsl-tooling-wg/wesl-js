@@ -64,7 +64,7 @@ export class WeslStream implements Stream<WeslToken> {
   /** Block comments */
   private blockCommentPattern = /\/\*|\*\//g;
   constructor(public src: string) {
-    this.stream = new CachingStream(new MatchersStream(src, weslMatcher));
+    this.stream = new MatchersStream(src, weslMatcher);
   }
   checkpoint(): number {
     return this.stream.checkpoint();
