@@ -11,7 +11,6 @@ import {
   runCollection,
 } from "./ParserCollect.js";
 import { ParseError, parserArg } from "./ParserCombinator.js";
-import { map as map2 } from "./Parser2Combinator.js";
 import { srcLog } from "./ParserLogging.js";
 import {
   debugNames,
@@ -167,6 +166,45 @@ export abstract class Parser2<I, O, const B> {
     fn: (value: O) => OAfter,
   ): Parser2<I, OAfter, B> {
     return map2(this, fn);
+  }
+}
+
+/** Map results to a new value. Should not have side effects! */
+export function map2<I extends Stream<any>, OBefore, OAfter, B>(
+  parser: Parser2<I, OBefore, B>,
+  fn: (value: OBefore) => OAfter,
+): Parser2<I, OAfter, B> {
+  return new MapParser(parser, fn);
+}
+/** Map results to a new value. Mutating global state is allowed. */
+export function mapMut2<I extends Stream<any>, OBefore, OAfter>(
+  parser: Parser2<I, OBefore, false>,
+  fn: (value: OBefore) => OAfter,
+): Parser2<I, OAfter, false> {
+  return new MapParser(parser, fn);
+}
+class MapParser<I extends Stream<any>, OBefore, OAfter, B> extends Parser2<
+  I,
+  OAfter,
+  B
+> {
+  public canBacktrack: B;
+  constructor(
+    public parser: Parser2<I, OBefore, B>,
+    public fn: (value: OBefore) => OAfter,
+  ) {
+    super();
+    this.canBacktrack = parser.canBacktrack;
+    if (tracing) {
+      this._traceInfo = new ParserTraceInfo("map", [parser]);
+    }
+  }
+  parseNext(input: I): ParserResult<OAfter> | null {
+    const result = this.parser.parseNext(input);
+    if (result === null) {
+      return null;
+    }
+    return { value: this.fn(result.value) };
   }
 }
 

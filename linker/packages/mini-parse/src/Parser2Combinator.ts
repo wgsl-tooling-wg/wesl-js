@@ -186,6 +186,7 @@ class EofParser<I extends Stream<Token>, const B> extends Parser2<I, null, B> {
 }
 
 type ResultFromArg<A> = A extends Parser2<any, infer O, any> ? O : never;
+type BacktrackingFromArg<A> = A extends Parser2<any, any, infer B> ? B : never;
 
 type SeqValues<P extends AnyParser2[]> = {
   [key in keyof P]: ResultFromArg<P[key]>;
@@ -245,10 +246,10 @@ export function preceded<I, B, P extends Parser2<I, any, false>>(
 }
 /** Parse two values, and discard the second value
  * @return the first value, or null if any parser fails */
-export function terminated<I, B, P extends Parser2<I, any, B>>(
+export function terminated<I, P extends Parser2<I, any, any>>(
   parser: P,
   ignored: Parser2<I, any, false>,
-): Parser2<I, ResultFromArg<P>, B> {
+): Parser2<I, ResultFromArg<P>, BacktrackingFromArg<P>> {
   return seq(parser, ignored).map(v => v[0]);
 }
 
@@ -263,6 +264,12 @@ export function tryOr<I extends Stream<any>, P extends Parser2<I, any, true>[]>(
   ...parsers: P
 ): Parser2<I, OrValues<P>, true> {
   return new OrParser(parsers, true);
+}
+/** Trick to have a default branch in an or combinator that is allowed to fail */
+export function orFail<I, O>(
+  parser: Parser2<I, O, false>,
+): Parser2<I, O, true> {
+  return parser as any;
 }
 
 class OrParser<I extends Stream<any>, O, const B> extends Parser2<I, O, B> {
@@ -296,7 +303,7 @@ class OrParser<I extends Stream<any>, O, const B> extends Parser2<I, O, B> {
 export function opt<I extends Stream<any>, P extends Parser2<I, any, true>>(
   parser: P,
 ): Parser2<I, ResultFromArg<P> | null, false> {
-  return or(parser, yes() as any as Parser2<I, null, true>);
+  return or(parser, orFail(yes()));
 }
 
 /** always succeeds, does not consume any tokens */
@@ -369,45 +376,6 @@ class SpanParser<I extends StreamWithLocation, O, B> extends Parser2<
   }
 }
 
-/** Map results to a new value. Should not have side effects! */
-export function map<I extends Stream<any>, OBefore, OAfter, B>(
-  parser: Parser2<I, OBefore, B>,
-  fn: (value: OBefore) => OAfter,
-): Parser2<I, OAfter, B> {
-  return new MapParser(parser, fn);
-}
-/** Map results to a new value. Mutating global state is allowed. */
-export function mapMut<I extends Stream<any>, OBefore, OAfter>(
-  parser: Parser2<I, OBefore, false>,
-  fn: (value: OBefore) => OAfter,
-): Parser2<I, OAfter, false> {
-  return new MapParser(parser, fn);
-}
-class MapParser<I extends Stream<any>, OBefore, OAfter, B> extends Parser2<
-  I,
-  OAfter,
-  B
-> {
-  public canBacktrack: B;
-  constructor(
-    public parser: Parser2<I, OBefore, B>,
-    public fn: (value: OBefore) => OAfter,
-  ) {
-    super();
-    this.canBacktrack = parser.canBacktrack;
-    if (tracing) {
-      this._traceInfo = new ParserTraceInfo("map", [parser]);
-    }
-  }
-  parseNext(input: I): ParserResult<OAfter> | null {
-    const result = this.parser.parseNext(input);
-    if (result === null) {
-      return null;
-    }
-    return { value: this.fn(result.value) };
-  }
-}
-
 export function repeat<I extends Stream<any>, O>(
   parser: Parser2<I, O, true>,
 ): Parser2<I, O[], false> {
@@ -459,16 +427,16 @@ class RepeatParser<I extends Stream<any>, O> extends Parser2<I, O[], false> {
 export function separated<I extends Stream<any>, O, O2>(
   parser: Parser2<I, O, true>,
   separator: Parser2<I, O2, true>,
-  allowTrailing: boolean = false,
+  opt: { allowTrailing: boolean } = { allowTrailing: false },
 ): Parser2<I, O[], false> {
-  return new SeparatedParser(parser, separator, allowTrailing, 0);
+  return new SeparatedParser(parser, separator, opt.allowTrailing, 0);
 }
 export function separatedPlus<I extends Stream<any>, O, O2>(
   parser: Parser2<I, O, true>,
   separator: Parser2<I, O2, true>,
-  allowTrailing: boolean = false,
+  opt: { allowTrailing: boolean } = { allowTrailing: false },
 ): Parser2<I, O[], false> {
-  return new SeparatedParser(parser, separator, allowTrailing, 1);
+  return new SeparatedParser(parser, separator, opt.allowTrailing, 1);
 }
 class SeparatedParser<I extends Stream<any>, O, O2> extends Parser2<
   I,
@@ -530,6 +498,34 @@ class SeparatedParser<I extends Stream<any>, O, O2> extends Parser2<
     return {
       value: results,
     };
+  }
+}
+
+/** A delayed parser definition, for making recursive parser definitions.  */
+export function fn<I, O, B>(
+  fn: () => Parser2<I, O, B>,
+  canBacktrack: B,
+): Parser2<I, O, B> {
+  return new FnParser<I, O, B>(fn, canBacktrack);
+}
+class FnParser<I, O, B> extends Parser2<I, O, B> {
+  private parser: Parser2<I, O, B> | null = null;
+  constructor(
+    public fn: () => Parser2<I, O, B>,
+    public canBacktrack: B,
+  ) {
+    super();
+    if (tracing) {
+      this._traceInfo = new ParserTraceInfo("fn", []);
+    }
+  }
+  parseNext(input: I): ParserResult<O> | null {
+    if (this.parser === null) {
+      this.parser = this.fn();
+    }
+
+    // this.parseNext = this.parser.parseNext;
+    return this.parser.parseNext(input);
   }
 }
 
