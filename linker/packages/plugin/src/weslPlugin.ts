@@ -138,7 +138,7 @@ async function loadWesl(
   const { weslToml } = options;
   const tomlDir = weslToml ? path.dirname(weslToml) : ".";
 
-  const futureFiles = weslFiles.map(g => glob(path.join(tomlDir, g)));
+  const futureFiles = weslFiles.map(g => glob(tomlDir + "/" + g));
   const files = (await Promise.all(futureFiles)).flat();
   return loadFiles(files, weslRoot);
 }
