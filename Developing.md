@@ -29,6 +29,8 @@ This is the most common one:
 pnpm test
 ```
 
+If it fails with a `Error [ERR_MODULE_NOT_FOUND]:`, try doing `pnpm run build:all` first.
+
 Wallaby is also available for most tests, use the configuration in `wesl-js/linker/wallaby.js`
 
 ### wesl tool packages
