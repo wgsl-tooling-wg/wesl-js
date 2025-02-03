@@ -1,1 +1,1 @@
-import ./util.wgsl
+import package::util;

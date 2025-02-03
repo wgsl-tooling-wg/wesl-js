@@ -26,7 +26,7 @@ test("package two wgsl files", async () => {
       "edition": "wesl_unstable_2024_1",
       "modules": {
         "util.wgsl": "fn foo() {}",
-        "lib.wesl": "import ./util.wgsl\\n"
+        "lib.wesl": "import package::util;\\n"
       }
     }
 

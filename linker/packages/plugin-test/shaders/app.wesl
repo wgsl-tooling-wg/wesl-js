@@ -1,4 +1,4 @@
-import ./uniforms/Uniforms;
+import package::uniforms::Uniforms;
 
 struct MyBindings {
   @group(0) @binding(0) particles: ptr<storage, array<u32>, read_write>, 
