@@ -27,6 +27,18 @@ import path from "node:path";
 
 // TODO figure how to handle reloading & mutated AST produced by transforms
 
+/** for now ?reflect is hardcoded */
+
+/**
+ * A bundler plugin for processing WESL files.
+ *
+ * The plugin works by reading the wesl.toml file and possibly package.json
+ *
+ * The plugin is triggered by imports to special virtual module urls
+ * two urls suffixes are supported:
+ *  1. `import "./shaders/bar.wesl?reflect"` - produces a javascript file for binding struct reflection
+ *  2. `import "./shaders/bar.wesl?link"` - produces a javascript file for preconstructed link functions
+ */
 export function weslPlugin(
   options: WeslPluginOptions = {},
   meta: UnpluginContextMeta,
@@ -38,9 +50,14 @@ export function weslPlugin(
   };
 }
 
+/** build plugin entry for 'resolverId'
+ * to validate our virtual import modules (with ?reflect or ?link suffixes) */
 async function resolver(this: UnpluginBuildContext, id: string) {
   // console.log("resolveId(), id:", id);
   if (id.endsWith(".wesl?reflect")) {
+    return id;
+  }
+  if (id.endsWith(".wesl?link")) {
     return id;
   }
   return null;
@@ -51,6 +68,8 @@ type Loader = (
   id: string,
 ) => Thenable<TransformResult>;
 
+/** build plugin function for serving a javascript module in response to
+ * an import of of our virtual import modules. */
 function buildLoader(options: WeslPluginOptions): Loader {
   return loader;
 
@@ -61,7 +80,11 @@ function buildLoader(options: WeslPluginOptions): Loader {
       const { weslRoot } = await getWeslToml(options.weslToml);
       const mainFile = id.slice(0, -"?reflect".length);
       const main = localPath(mainFile, weslRoot);
-      return await reflectTs(main, registry);
+      return await bindingStructJs(main, registry);
+    }
+    if (id.endsWith(".wesl?link")) {
+      const weslToml = await getWeslToml(options.weslToml);
+      return await linkJs(weslToml);
     }
     return null;
   }
@@ -74,11 +97,13 @@ interface WeslToml {
 
 let weslToml: WeslToml | undefined;
 
+/** load or the wesl.toml  */
 async function getWeslToml(tomlFile = "wesl.toml"): Promise<WeslToml> {
   if (!weslToml) {
     // TODO consider supporting default if no wesl.toml is provided: e.g. './shaders'
     const tomlString = await fs.readFile(tomlFile, "utf-8");
     weslToml = toml.parse(tomlString) as WeslToml;
+    // TODO watch wesl.toml file, and reload if it changes
   }
   return weslToml;
 }
@@ -89,19 +114,33 @@ async function getRegistry(
   options: WeslPluginOptions,
 ): Promise<ParsedRegistry> {
   // load wesl files into registry
+
+  const loaded = await loadWesl(options);
   const registry = parsedRegistry();
-  const { weslFiles, weslRoot } = await getWeslToml(options.weslToml);
-  const {weslToml } = options;
-  const tomlDir = weslToml ? path.dirname(weslToml) : ".";
-  
-  const futureFiles = weslFiles.map(g => glob(path.join(tomlDir, g)));
-  const files = (await Promise.all(futureFiles)).flat();
-  const loaded = await loadFiles(files, weslRoot);
   parseIntoRegistry(loaded, registry);
 
   // trigger recompilation on wesl files
-  files.forEach(f => ctx.addWatchFile(f));
+  Object.keys(loaded).forEach(f => ctx.addWatchFile(f));
   return registry;
+}
+
+/**
+ * Load the wesl files referenced in the wesl.toml file
+ *
+ * @return a record of wesl files with
+ *    keys as wesl file paths, and
+ *    values as wesl file contents.
+ */
+async function loadWesl(
+  options: WeslPluginOptions,
+): Promise<Record<string, string>> {
+  const { weslFiles, weslRoot } = await getWeslToml(options.weslToml);
+  const { weslToml } = options;
+  const tomlDir = weslToml ? path.dirname(weslToml) : ".";
+
+  const futureFiles = weslFiles.map(g => glob(path.join(tomlDir, g)));
+  const files = (await Promise.all(futureFiles)).flat();
+  return loadFiles(files, weslRoot);
 }
 
 /** load a set of files, converting to paths relative to the  wesl root directory */
@@ -129,23 +168,28 @@ function localPath(fullPath: string, weslRoot: string): string {
   return "." + pathWithSlashPrefix;
 }
 
-/** produce reflection data by partially linking the wesl */
-async function reflectTs(
+/** Produce javascript objects reflecting the wesl sources by partially linking the wesl
+ * with the binding struct plugins */
+async function bindingStructJs(
   main: string,
   registry: ParsedRegistry,
 ): Promise<string> {
-  let structsTs = "??";
+  let structsJs = "??";
   const linkConfig = {
     plugins: [
       bindingStructsPlugin(),
       reportBindingStructsPlugin(structs => {
-        structsTs = bindingGroupLayoutTs(structs[0], false);
+        structsJs = bindingGroupLayoutTs(structs[0], false);
       }),
     ],
   };
 
   bindAndTransform(registry, main, {}, linkConfig);
-  return structsTs;
+  return structsJs;
+}
+
+async function linkJs(weslToml: WeslToml): Promise<string> {
+  return "";
 }
 
 export const unplugin = createUnplugin(
