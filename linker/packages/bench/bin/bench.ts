@@ -53,7 +53,9 @@ async function bench(argv: CliArgs): Promise<void> {
       const ms = runBench(variant, file);
       const codeLines = file.text.split("\n").length;
       const locSec = codeLines / ms;
-      const locSecStr = new Intl.NumberFormat().format(Math.round(locSec));
+      const locSecStr = new Intl.NumberFormat("en-US").format(
+        Math.round(locSec),
+      );
       console.log(`${variant} ${file.name} LOC/sec: ${locSecStr}`);
     }
   }
