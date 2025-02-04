@@ -3,7 +3,7 @@ import {
   eof,
   fn,
   kind,
-  lexerAction,
+  withLexerAction,
   opt,
   or,
   Parser,
@@ -33,14 +33,16 @@ import {
   collectVarLike,
   declCollect,
   expressionCollect,
+  memberRefCollect,
   nameCollect,
   refIdent,
   scopeCollect,
+  stuffCollect,
   typedDecl,
   typeRefCollect,
 } from "./WESLCollect.ts";
 import { mainTokens } from "./WESLTokens.ts";
-import { WeslToken } from "./parse/WeslStream.ts";
+import { templateClose, templateOpen, WeslToken } from "./parse/WeslStream.ts";
 
 export const word = kind(mainTokens.ident);
 
@@ -215,22 +217,6 @@ const global_variable_decl = seq(
   opt(seq("=", () => expression       .collect(scopeCollect(), "decl_scope"))),
 );
 
-const templateOpen = lexerAction(lexer => {
-  let result = (lexer.stream as any).nextTemplateToken() as WeslToken | null;
-  if (result?.value === "<") {
-    return "<";
-  } else {
-    return null;
-  }
-});
-const templateClose = lexerAction(lexer => {
-  let result = (lexer.stream as any).nextTemplateToken() as WeslToken | null;
-  if (result?.value === ">") {
-    return ">";
-  } else {
-    return null;
-  }
-});
 /** Aka template_elaborated_ident.post.ident */
 const opt_template_list = opt(
   seq(
@@ -276,9 +262,22 @@ const primary_expression = or(
 // prettier-ignore
 const component_or_swizzle = repeatPlus(
   or(
-    preceded(".", word.collect(nameCollect, "component")),
-    delimited("[", () => expression.collect(expressionCollect, "component"), req("]")),
+    preceded(".", word                        .collect(nameCollect, "component")),
+    delimited("[", () => expression           .collect(expressionCollect, "component"),
+     req("]")
+    ),
   ),
+);
+
+// TODO: Remove
+// prettier-ignore
+/** parse simple struct.member style references specially, for binding struct lowering */
+const simple_component_reference = tagScope(
+  seq(
+    qualified_ident                   .collect(refIdent, "structRef"),
+    seq(".", word                     .collect(nameCollect, "component")),
+    opt(component_or_swizzle          .collect(stuffCollect, "extra_components")),
+  )                                   .collect(memberRefCollect),
 );
 
 /**
@@ -300,7 +299,10 @@ const makeExpressionOperator = (isTemplate: boolean) => {
 
 const unary_expression: Parser<any> = or(
   seq(or(..."! & * - ~".split(" ")), () => unary_expression),
-  tagScope(seq(primary_expression, opt(component_or_swizzle))),
+  or(
+    simple_component_reference,
+    seq(primary_expression, opt(component_or_swizzle)),
+  ),
 );
 
 const makeExpression = (isTemplate: boolean) => {
@@ -433,7 +435,8 @@ const statement: Parser<any> = or(
 );
 
 // prettier-ignore
-const lhs_expression: Parser<any> = tagScope(or(
+const lhs_expression: Parser<any> = or(
+  simple_component_reference,
   seq(
     qualified_ident                        .collect(refIdent), 
     opt(component_or_swizzle)
@@ -446,7 +449,7 @@ const lhs_expression: Parser<any> = tagScope(or(
   ),
   seq("&", () => lhs_expression),
   seq("*", () => lhs_expression),
-));
+);
 
 // prettier-ignore
 const variable_or_value_statement = tagScope(

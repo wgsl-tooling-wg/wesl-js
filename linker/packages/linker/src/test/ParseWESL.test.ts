@@ -897,7 +897,7 @@ test("parse struct constructor in assignment", () => {
   `);
 });
 
-test.skip("parse struct.member (component_or_swizzle)", () => {
+test("parse struct.member (component_or_swizzle)", () => {
   const src = `
     fn main() {
         let x = u.frame;
@@ -1043,7 +1043,7 @@ test(`import a::{ b, c::{d, e}, f };`, ctx => {
   `);
 });
 
-test.skip(`parse ptr`, ctx => {
+test(`parse ptr`, ctx => {
   const src = `
     var particles: ptr<storage, f32, read_write>;
   `;
@@ -1069,7 +1069,7 @@ test.skip(`parse ptr`, ctx => {
   `);
 });
 
-test.skip(`parse ptr with internal array`, ctx => {
+test(`parse ptr with internal array`, ctx => {
   const src = `
     var particles: ptr<storage, array<f32>, read_write>;
   `;
@@ -1099,7 +1099,7 @@ test.skip(`parse ptr with internal array`, ctx => {
   `);
 });
 
-test.skip(`parse binding struct`, ctx => {
+test(`parse binding struct`, ctx => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -1147,7 +1147,7 @@ test.skip(`parse binding struct`, ctx => {
   `);
 });
 
-test.skip(`parse struct reference`, () => {
+test(`parse struct reference`, () => {
   const src = `
     fn f() { let x = a.b[0]; };
   `;
@@ -1178,7 +1178,7 @@ test.skip(`parse struct reference`, () => {
   `);
 });
 
-test.skip("member reference with extra components", () => {
+test("member reference with extra components", () => {
   const src = `
   fn foo() {
     output[ out + 0u ] = c.p0.t0.x;
@@ -1336,7 +1336,7 @@ test("separator in fn call ", () => {
   `);
 });
 
-test.skip("binding struct", () => {
+test("binding struct", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -1451,7 +1451,7 @@ test.skip("binding struct", () => {
   `);
 });
 
-test.skip("memberRefs with extra components", () => {
+test("memberRefs with extra components", () => {
   const src = `
     fn main() {
       b.particles[0] = b.uniforms.foo;
@@ -1488,7 +1488,7 @@ test.skip("memberRefs with extra components", () => {
   `);
 });
 
-test.skip("memberRef with ref in array", () => {
+test("memberRef with ref in array", () => {
   const src = `
     fn main() {
       vsOut.barycenticCoord[vertNdx] = 1.0;

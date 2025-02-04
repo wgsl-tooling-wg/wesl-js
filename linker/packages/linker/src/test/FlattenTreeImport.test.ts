@@ -5,7 +5,7 @@ import {
   ImportItem,
   ImportSegment,
   ImportStatement,
-} from "../parse/ImportTree.ts";
+} from "../parse/ImportStatement.ts";
 
 test("complex tree import", () => {
   const zap = new ImportSegment("zap");

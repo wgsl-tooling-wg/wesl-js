@@ -486,16 +486,12 @@ export function withSepPlus<P extends CombinatorArg>(
 }
 
 /** run a parser with a provided token matcher (i.e. use a temporary lexing mode) */
-export function lexerAction<U>(
+export function withLexerAction<U>(
   action: (lexer: Lexer) => U | null,
 ): Parser<U, NoTags> {
-  const tokensParser = simpleParser(
-    `tokens lexerAction`,
-    (state: ParserContext) => {
-      return action(state.lexer);
-    },
-  );
-  return tokensParser;
+  return simpleParser(`withLexerAction`, (state: ParserContext) => {
+    return action(state.lexer);
+  });
 }
 
 /** convert naked string arguments into text() parsers and functions into fn() parsers */

@@ -1,4 +1,4 @@
-import { ImportStatement } from "./parse/ImportTree.ts";
+import { ImportStatement } from "./parse/ImportStatement.ts";
 import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
 
 /**
@@ -21,6 +21,7 @@ export type ContainerElem =
   | ConstAssertElem
   | ConstElem
   | UnknownExpression
+  | SimpleMemberRef
   | FnElem
   | TypedDeclElem
   | GlobalVarElem
@@ -36,20 +37,16 @@ export type ContainerElem =
   | VarElem;
 
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
-export type ExpressionElem =
-  | LiteralElem
-  | RefIdentElem
-  | UnknownExpression
-  | ParenthesizedExpression
+export type ExpressionElem = LiteralElem | RefIdentElem;
+/*| ParenthesizedExpression
   | ComponentExpression
   | UnaryExpression
   | BinaryExpression
-  | FunctionCallExpression;
+  | FunctionCallExpression*/
 
-// prettier-ignore
-export type TerminalElem = 
-  | DeclIdentElem
-  | NameElem 
+export type TerminalElem =
+  | DeclIdentElem //
+  | NameElem
   | RefIdentElem
   | TextElem;
 
@@ -157,6 +154,7 @@ export interface ConstElem extends ElemWithContentsBase {
 export interface UnknownExpression extends ElemWithContentsBase {
   kind: "expression";
 }
+/*
 export interface ParenthesizedExpression extends AbstractElemBase {
   kind: "parenthesized-expression";
   contents: [ExpressionElem];
@@ -166,7 +164,7 @@ export interface ComponentExpression extends AbstractElemBase {
   // TODO: How do I safely type this? As in, I want "first comes the name, then the component"
   contents: [ExpressionElem, ExpressionElem];
 }
-// TODO: We do not and cannot emit these at the moment, since our grammar implementation is too simplistic
+// TODO: We will emit these very soon (for the @if(expr))
 export interface UnaryExpression extends AbstractElemBase {
   kind: "unary-expression";
   operator: UnaryOperator;
@@ -200,7 +198,7 @@ export type BinaryOperator =
   | "&"
   | "^"
   | "<<"
-  | ">>";
+  | ">>";*/
 
 /** a function declaration */
 export interface FnElem extends ElemWithContentsBase {
@@ -242,12 +240,12 @@ export interface FnParamElem extends ElemWithContentsBase {
 
 /** simple references to structures, like myStruct.bar
  * (used for transforming refs to binding structs) */
-/*export interface SimpleMemberRef extends ElemWithContentsBase {
+export interface SimpleMemberRef extends ElemWithContentsBase {
   kind: "memberRef";
   name: RefIdentElem;
   member: NameElem;
   extraComponents?: StuffElem;
-}*/
+}
 
 /** a struct declaration */
 export interface StructElem extends ElemWithContentsBase {

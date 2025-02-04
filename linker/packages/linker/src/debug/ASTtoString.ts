@@ -7,7 +7,7 @@ import {
   TypeTemplateParameter,
   UnknownExpression,
 } from "../AbstractElems.ts";
-import { assertUnreachable } from "../assert.ts";
+import { assertUnreachable } from "../Assertions.ts";
 import { importToString } from "./ImportToString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 
@@ -50,6 +50,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     addStructFields(elem, str) ||
     addStructMemberFields(elem, str) ||
     addNameFields(elem, str) ||
+    addMemberRef(elem, str) ||
     addFnFields(elem, str) ||
     addAliasFields(elem, str) ||
     addAttributeFields(elem, str) ||
@@ -94,7 +95,7 @@ function addRefIdent(elem: AbstractElem, str: LineWrapper): true | undefined {
   }
 }
 
-/*function addMemberRef(elem: AbstractElem, str: LineWrapper): true | undefined {
+function addMemberRef(elem: AbstractElem, str: LineWrapper): true | undefined {
   if (elem.kind === "memberRef") {
     const { extraComponents } = elem;
     const extraText =
@@ -102,7 +103,7 @@ function addRefIdent(elem: AbstractElem, str: LineWrapper): true | undefined {
     str.add(` ${elem.name.ident.originalName}.${elem.member.name}${extraText}`);
     return true;
   }
-}*/
+}
 
 function addDeclIdent(elem: AbstractElem, str: LineWrapper): true | undefined {
   if (elem.kind === "decl") {
@@ -277,17 +278,8 @@ function addExpressionFields(
   }
 }
 
-function expressionToString(elem: UnknownExpression): string {
-  const contents = elem.contents
-    .map(e => {
-      if (e.kind === "text") {
-        return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
-      } else {
-        return elemToString(e);
-      }
-    })
-    .join(" ");
-  return contents;
+function expressionToString(elem: ExpressionElem): string {
+  return elemToString(elem);
 }
 
 function templateParamToString(p: TypeTemplateParameter): string {
@@ -295,7 +287,7 @@ function templateParamToString(p: TypeTemplateParameter): string {
     return p;
   } else if (p.kind === "type") {
     return typeRefElemToString(p);
-  } else if (p.kind === "expression") {
+  } else if (p.kind === "literal" || p.kind === "ref") {
     return expressionToString(p);
   } else {
     console.log("unknown template parameter type", p);

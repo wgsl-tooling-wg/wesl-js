@@ -5,6 +5,7 @@ import {
   MatchersStream,
   RegexMatchers,
   matchOneOf,
+  withLexerAction,
 } from "mini-parse";
 import { keywords, reservedWords } from "./Keywords";
 export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
@@ -157,3 +158,20 @@ export class WeslStream implements Stream<WeslToken> {
     }
   }
 }
+
+export const templateOpen = withLexerAction(lexer => {
+  let result = (lexer.stream as any).nextTemplateToken() as WeslToken | null;
+  if (result?.text === "<") {
+    return "<";
+  } else {
+    return null;
+  }
+});
+export const templateClose = withLexerAction(lexer => {
+  let result = (lexer.stream as any).nextTemplateToken() as WeslToken | null;
+  if (result?.text === ">") {
+    return ">";
+  } else {
+    return null;
+  }
+});

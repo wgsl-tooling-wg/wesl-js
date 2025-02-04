@@ -11,22 +11,22 @@ test("parse fn foo() { }", () => {
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "keyword",
-    value: "fn",
+    text: "fn",
     span: [0, 2],
   });
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "word",
-    value: "foo",
+    text: "foo",
     span: [3, 6],
   });
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "symbol",
-    value: "(",
+    text: "(",
     span: [6, 7],
   });
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "symbol",
-    value: ")",
+    text: ")",
     span: [7, 8],
   });
 });
@@ -36,34 +36,34 @@ test("parse var<storage> lights : vec3<f32>", () => {
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "keyword",
-    value: "var",
+    text: "var",
     span: [0, 3],
   });
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "symbol",
-    value: "<",
+    text: "<",
     span: [3, 4],
   });
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "word",
-    value: "storage",
+    text: "storage",
     span: [4, 11],
   });
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "symbol",
-    value: ">",
+    text: ">",
     span: [11, 12],
   });
-  expect(tokenizer.nextToken()?.value).toEqual("lights");
-  expect(tokenizer.nextToken()?.value).toEqual(":");
-  expect(tokenizer.nextToken()?.value).toEqual("vec3");
+  expect(tokenizer.nextToken()?.text).toEqual("lights");
+  expect(tokenizer.nextToken()?.text).toEqual(":");
+  expect(tokenizer.nextToken()?.text).toEqual("vec3");
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "symbol",
-    value: "<",
+    text: "<",
     span: [26, 27],
   });
-  expect(tokenizer.nextToken()?.value).toEqual("f32");
-  expect(tokenizer.nextToken()?.value).toEqual(">");
+  expect(tokenizer.nextToken()?.text).toEqual("f32");
+  expect(tokenizer.nextToken()?.text).toEqual(">");
 });
 
 test("parse >>", () => {
@@ -71,7 +71,7 @@ test("parse >>", () => {
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "symbol",
-    value: ">>",
+    text: ">>",
     span: [0, 2],
   });
 });
@@ -81,17 +81,17 @@ test("parse >> as template", () => {
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "word",
-    value: "foo",
+    text: "foo",
     span: [0, 3],
   });
   expect(tokenizer.nextTemplateToken()).toEqual(<WeslToken>{
     kind: "symbol",
-    value: ">",
+    text: ">",
     span: [4, 5],
   });
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "symbol",
-    value: ">",
+    text: ">",
     span: [5, 6],
   });
 });
@@ -101,7 +101,7 @@ test("parse skip block comment", () => {
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "word",
-    value: "vec3",
+    text: "vec3",
     span: [14, 18],
   });
 });
@@ -111,7 +111,14 @@ test("parse skip line comment", () => {
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "word",
-    value: "vec3",
+    text: "vec3",
     span: [18, 22],
   });
+});
+
+test("parse skip line without newline", () => {
+  const src = "// foo bar";
+  const tokenizer = new WeslStream(src);
+  expect(tokenizer.nextToken()).toBe(null);
+  expect(tokenizer.checkpoint()).toBe(src.length);
 });

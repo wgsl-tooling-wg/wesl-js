@@ -1,4 +1,5 @@
-export function assert(condition: any, msg?: string): asserts condition {
+/** checks whether a condition is true, otherwise throws */
+export function assertThat(condition: any, msg?: string): asserts condition {
   if (!condition) {
     throw new Error(msg);
   }

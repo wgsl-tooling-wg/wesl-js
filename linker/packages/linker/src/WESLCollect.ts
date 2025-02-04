@@ -3,7 +3,6 @@ import {
   AbstractElem,
   AliasElem,
   AttributeElem,
-  ComponentExpression,
   ConstElem,
   ContainerElem,
   DeclarationElem,
@@ -19,8 +18,10 @@ import {
   NameElem,
   OverrideElem,
   RefIdentElem,
+  SimpleMemberRef,
   StructElem,
   StructMemberElem,
+  StuffElem,
   TextElem,
   TypedDeclElem,
   TypeRefElem,
@@ -73,24 +74,6 @@ export function refIdent(cc: CollectContext): RefIdentElem {
   saveIdent(cc, identElem);
   addToOpenElem(cc, identElem);
   return identElem;
-}
-
-export function maybeComponentCollect(cc: CollectContext): ExpressionElem {
-  const expression = cc.tags.expression?.[0] as ExpressionElem;
-  const component = cc.tags.component?.[0] as
-    | NameElem
-    | UnknownExpression
-    | undefined;
-  if (component === undefined) {
-    return expression;
-  } else {
-    return <ComponentExpression>{
-      kind: "component-expression",
-      contents: [expression, component],
-      start: cc.start,
-      end: cc.end,
-    };
-  }
 }
 
 /** create declaration Ident and add to context */
@@ -304,6 +287,32 @@ export const expressionCollect = collectElem(
   (cc: CollectContext, openElem: PartElem<UnknownExpression>) => {
     const partElem = { ...openElem };
     return withTextCover(partElem, cc);
+  },
+);
+
+export const stuffCollect = collectElem(
+  "stuff",
+  (cc: CollectContext, openElem: PartElem<StuffElem>) => {
+    const partElem = { ...openElem };
+    return withTextCover(partElem, cc);
+  },
+);
+
+export const memberRefCollect = collectElem(
+  "memberRef",
+  (cc: CollectContext, openElem: PartElem<SimpleMemberRef>) => {
+    const { component, structRef, extra_components } = cc.tags;
+    const member = component![0] as NameElem;
+    const name = structRef?.flat()[0] as RefIdentElem;
+    const extraComponents = extra_components?.flat()[0] as StuffElem;
+
+    const partElem: SimpleMemberRef = {
+      ...openElem,
+      name,
+      member,
+      extraComponents,
+    };
+    return withTextCover(partElem, cc) as any;
   },
 );
 

@@ -1,9 +1,12 @@
 import {
   AttributeElem,
   ContainerElem,
+  ExpressionElem,
+  StuffElem,
   TypeRefElem,
   TypeTemplateParameter,
 } from "./AbstractElems.ts";
+import { assertUnreachable } from "./Assertions.ts";
 import { findDecl } from "./LowerAndEmit.ts";
 import { RefIdent } from "./Scope.ts";
 
@@ -23,7 +26,10 @@ export function typeListToString(params: TypeTemplateParameter[]): string {
 
 export function typeParamToString(param?: TypeTemplateParameter): string {
   if (typeof param === "string") return param;
-  if (param?.kind === "expression") return contentsToString(param);
+  if (param?.kind === "literal" || param?.kind === "ref") {
+    return contentsToString(param);
+  }
+
   if (param?.kind === "type") return typeRefToString(param);
   else return `?${param}?`;
 }
@@ -42,16 +48,24 @@ function refToString(ref: RefIdent | string): string {
   return decl.mangledName || decl.originalName;
 }
 
-export function contentsToString(elem: ContainerElem): string {
-  const parts = elem.contents.map(c => {
-    const { kind } = c;
-    if (kind === "text") {
-      return c.srcModule.src.slice(c.start, c.end);
-    } else if (kind === "ref") {
-      return refToString(c.ident);
-    } else {
-      return `?${c.kind}?`;
-    }
-  });
-  return parts.join(" ");
+export function contentsToString(elem: ExpressionElem | StuffElem): string {
+  if (elem.kind === "ref") {
+    return refToString(elem.ident);
+  } else if (elem.kind === "literal") {
+    return elem.srcModule.src.slice(elem.start, elem.end);
+  } else if (elem.kind === "stuff") {
+    const parts = elem.contents.map(c => {
+      const { kind } = c;
+      if (kind === "text") {
+        return c.srcModule.src.slice(c.start, c.end);
+      } else if (kind === "ref") {
+        return refToString(c.ident);
+      } else {
+        return `?${c.kind}?`;
+      }
+    });
+    return parts.join(" ");
+  } else {
+    assertUnreachable(elem);
+  }
 }

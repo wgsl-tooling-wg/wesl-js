@@ -8,7 +8,7 @@ import {
 import { bindingStructsPlugin } from "../TransformBindingStructs.ts";
 import { linkTestOpts } from "./TestUtil.ts";
 
-test.skip("extract binding struct", () => {
+test("extract binding struct", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -43,7 +43,7 @@ test.skip("extract binding struct", () => {
   );
 });
 
-test.skip("binding struct to ts", () => {
+test("binding struct to ts", () => {
   const src = `
     struct Uniforms {
       foo: u32

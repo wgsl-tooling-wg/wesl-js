@@ -24,7 +24,7 @@ import {
   ImportItem,
   ImportSegment,
   ImportStatement,
-} from "./parse/ImportTree.js";
+} from "./parse/ImportStatement.js";
 import { ImportElem } from "./AbstractElems.js";
 import { importElem } from "./WESLCollect.js";
 
