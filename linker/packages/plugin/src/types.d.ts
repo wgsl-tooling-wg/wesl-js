@@ -9,5 +9,6 @@ declare module "*?reflect" {
 
 /** @hidden */
 declare module "*?link" {
-  export default LinkConfig;
+  const linkConfig: LinkConfig;
+  export default linkConfig;
 }
