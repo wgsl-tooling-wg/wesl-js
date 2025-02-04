@@ -1,6 +1,6 @@
 import { afterAll, expect, test } from "vitest";
 import { importCases } from "wesl-testsuite";
-import { link } from "../Linker.js";
+import { link2 } from "../Linker.js";
 import { expectTrimmedMatch, trimSrc } from "./shared/StringUtil.js";
 
 /** so vitest triggers when this file changes */
@@ -421,10 +421,10 @@ function linkTest2(name: string, expectation: LinkExpectation): void {
     return [name, trimmedSrc] as [string, string];
   });
 
-  const wesl = Object.fromEntries(srcs);
+  const weslSrc = Object.fromEntries(srcs);
 
   /* -- link -- */
-  const resultMap = link(wesl, srcs[0][0]);
+  const resultMap = link2({ weslSrc, rootModuleName: srcs[0][0] });
   const result = resultMap.dest;
 
   /* -- trim and verify results line by line -- */
