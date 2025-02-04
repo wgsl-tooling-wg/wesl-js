@@ -1,26 +1,28 @@
 import {
-  ImportTree,
-  PathSegment,
-  SegmentList,
-  SimpleSegment,
-} from "../ImportTree.ts";
+  ImportCollection,
+  ImportItem,
+  ImportStatement,
+} from "../ImportStatement.ts";
 
-export function importToString(tree: ImportTree): string {
-  return tree.segments.map(s => segmentToString(s)).join("/");
+export function importToString(tree: ImportStatement): string {
+  return importToStringImpl(tree) + ";";
 }
 
-function segmentToString(segment: PathSegment): string {
-  if (segment instanceof SimpleSegment) {
-    const { name, as, args } = segment;
+function importToStringImpl(tree: ImportStatement): string {
+  return [
+    ...tree.segments.map(s => s.name),
+    segmentToString(tree.finalSegment),
+  ].join("::");
+}
+
+function segmentToString(segment: ImportCollection | ImportItem): string {
+  if (segment instanceof ImportItem) {
+    const { name, as } = segment;
     const asMsg = as ? ` as ${as}` : "";
-    const argsMsg = args ? `(${args.join(", ")})` : "";
-    return `${name}${argsMsg}${asMsg}`;
+    return `${name}${asMsg}`;
+  } else if (segment instanceof ImportCollection) {
+    return `{${segment.subTrees.map(s => importToStringImpl(s)).join(", ")}}`;
+  } else {
+    return `|unknown segment type ${(segment as any).constructor.name}|`;
   }
-  if (segment instanceof SegmentList) {
-    return `{${segment.list.map(s => segmentToString(s)).join(", ")}}`;
-  }
-  if (segment instanceof ImportTree) {
-    return `(${importToString(segment)})`;
-  }
-  return `|unknown segment type ${(segment as any).constructor.name}|`;
 }

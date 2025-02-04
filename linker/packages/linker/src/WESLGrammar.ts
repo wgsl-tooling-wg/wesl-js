@@ -589,8 +589,8 @@ export const weslRoot = preParse(
   comment,
   seq(
     repeat(weslImport),
-    repeat(or(global_directive, weslImport)),
-    repeat(or(global_decl, weslImport)),
+    repeat(global_directive),
+    repeat(global_decl),
     req(end),
   )                                 .collect(collectModule, "collectModule"),
 );

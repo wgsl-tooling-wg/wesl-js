@@ -197,9 +197,8 @@ function matchingImport(
 ): string[] | undefined {
   const identParts = ident.originalName.split("::");
   for (const flat of flatImports) {
-    const impTail = overlapTail(flat.importPath, identParts);
-    if (impTail) {
-      return [...flat.modulePath, ...impTail];
+    if (flat.importPath.at(-1) === identParts.at(0)) {
+      return [...flat.modulePath, ...identParts.slice(1)];
     }
   }
 }

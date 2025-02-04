@@ -1,7 +1,7 @@
 import { AppState, matchingLexer, ParserInit, SrcMap } from "mini-parse";
 import { ModuleElem } from "./AbstractElems.ts";
 import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
-import { ImportTree } from "./ImportTree.ts";
+import { ImportStatement } from "./ImportStatement.ts";
 import { emptyScope, resetScopeIds, Scope, SrcModule } from "./Scope.ts";
 import { OpenElem } from "./WESLCollect.ts";
 import { weslRoot } from "./WESLGrammar.ts";
@@ -27,7 +27,7 @@ export interface WeslAST {
   rootScope: Scope;
 
   /** imports found in this module */
-  imports: ImportTree[];
+  imports: ImportStatement[];
 }
 
 /** an extended version of the AST */

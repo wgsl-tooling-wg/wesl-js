@@ -721,14 +721,14 @@ test("parse @attribute before fn", () => {
   `);
 });
 
-test("import ./foo/bar;", ctx => {
+test("import package::foo::bar;", ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
+  console.log(ast.moduleElem);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import package/foo/bar
-        text 'import ./foo/bar;'"
+      import package::foo::bar;"
   `);
 });
 
@@ -960,64 +960,59 @@ test("var foo: vec2<f32 >= vec2( 0.5, -0.5);", ctx => {
   `);
 });
 
-test("import ./a/b/c", ctx => {
+test("import a::b::c;", ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import package/a/b/c
-        text 'import ./a/b/c'"
+      import a::b::c;"
   `);
 });
 
-test("import ./file1/{foo, bar}", ctx => {
+test("import package::file1::{foo, bar};", ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import package/file1/{foo, bar}
-        text 'import ./file1/{foo, bar}'"
+      import package::file1::{foo, bar};"
   `);
 });
 
-test("import ./file1/{foo, bar}", ctx => {
+test("import package::file1::{foo, bar};", ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
   const imps = ast.imports.map(t => importToString(t)).join("\n");
 
-  expect(imps).toMatchInlineSnapshot(`"package/file1/{foo, bar}"`);
+  expect(imps).toMatchInlineSnapshot(`"package::file1::{foo, bar};"`);
 });
 
-test("import foo_bar/boo;", ctx => {
+test("import foo_bar::boo;", ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import foo_bar/boo
-        text 'import foo_bar/boo;'"
+      import foo_bar::boo;"
   `);
 });
 
-test(`import a/{ b }`, ctx => {
+test(`import a::{ b };`, ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import a/{b}
-        text 'import a/{ b }'"
+      import a::{b};"
   `);
 });
 
-test(`import a/{ b, c/{d, e}, f }`, ctx => {
+test(`import a::{ b, c::{d, e}, f };`, ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
 
   expect(astString).toMatchInlineSnapshot(`
     "module
-      import a/{b, (c/{d, e}), f}
-        text 'import a/{ b, c/{d, e}, f }'"
+      import a::{b, c::{d, e}, f};"
   `);
 });
 

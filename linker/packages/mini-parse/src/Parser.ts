@@ -1,5 +1,5 @@
 import { CombinatorArg, ParserFromArg } from "./CombinatorTypes.js";
-import { Lexer } from "./MatchingLexer.js";
+import { IgnoreFn, Lexer } from "./MatchingLexer.js";
 import {
   collect,
   CollectFn,
@@ -229,9 +229,17 @@ export class Parser<T, N extends TagRecord = NoTags> {
 
   /** map results to a new value, or add to app state as a side effect.
    * Return null to cause the parser to fail.
+   * SAFETY: Side-effects should not be done if backtracking could occur!
    */
   map<U>(fn: ParserMapFn<T, N, U>): Parser<U, N> {
     return map(this, fn);
+  }
+
+  /** map results to a new value.
+   * Return null to cause the parser to fail.
+   */
+  mapValue<U>(fn: (value: T) => U | null): Parser<U, N> {
+    return map(this, v => fn(v.value));
   }
 
   /** Queue a function that runs later, typically to collect AST elements from the parse.
@@ -509,20 +517,20 @@ function toParser<T, N extends TagRecord, O, Y extends TagRecord>(
   return newParser;
 }
 
-const emptySet = new Set<string>();
+const neverIgnore: IgnoreFn = () => null;
 
 /** set which token kinds to ignore while executing this parser and its descendants.
  * If no parameters are provided, no tokens are ignored. */
 export function tokenSkipSet<T, N extends TagRecord>(
-  ignore: Set<string> | undefined | null,
+  ignoreFn: IgnoreFn | undefined | null,
   p: Parser<T, N>,
 ): Parser<T, N> {
-  const ignoreSet = ignore ?? emptySet;
-  const ignoreValues = [...ignoreSet.values()].toString() || "(null)";
+  const ignoreValues = ignoreFn?.toString() ?? "(null)";
+
   const ignoreParser = parser(
     `tokenSkipSet ${ignoreValues}`,
     (ctx: ParserContext): OptParserResult<T, N> =>
-      ctx.lexer.withIgnore(ignoreSet, () => p._run(ctx)),
+      ctx.lexer.withIgnore(ignoreFn ?? neverIgnore, () => p._run(ctx)),
   );
 
   trackChildren(ignoreParser, p);

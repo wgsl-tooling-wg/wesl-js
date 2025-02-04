@@ -1,17 +1,26 @@
 import { expect, test } from "vitest";
 import { flattenTreeImport } from "../FlattenTreeImport.ts";
-import { ImportTree, SegmentList, SimpleSegment } from "../ImportTree.ts";
+import {
+  ImportCollection,
+  ImportItem,
+  ImportSegment,
+  ImportStatement,
+} from "../ImportStatement.ts";
 
 test("complex tree import", () => {
-  const zap = new SimpleSegment("zap");
-  const foo = new SimpleSegment("foo", "bar"); // foo as bar
-  const doh = new SimpleSegment("doh");
-  const bib = new SimpleSegment("bib");
-  const bog = new SimpleSegment("bog");
-  const subtree = new ImportTree([bib, bog]);
-  const list = new SegmentList([foo, doh, subtree]);
+  const zap = new ImportSegment("zap");
+  const foo = new ImportItem("foo", "bar"); // foo as bar
+  const doh = new ImportItem("doh");
+  const bib = new ImportSegment("bib");
+  const bog = new ImportItem("bog");
+  const subtree = new ImportStatement([bib], bog);
+  const list = new ImportCollection([
+    new ImportStatement([], foo),
+    new ImportStatement([], doh),
+    subtree,
+  ]);
 
-  const tree = new ImportTree([zap, list]);
+  const tree = new ImportStatement([zap], list);
   const flattened = flattenTreeImport(tree);
   expect(flattened).toMatchInlineSnapshot(`
     [

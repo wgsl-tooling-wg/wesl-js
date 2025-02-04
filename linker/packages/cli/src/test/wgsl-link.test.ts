@@ -11,14 +11,15 @@ import("./src/test/wgsl/main.wgsl?raw");
 import("./src/test/wgsl/util.wgsl?raw");
 
 const testDir = dirname(fileURLToPath(import.meta.url));
-const wgslDir = path.join(testDir, "wgsl");
-const mainPath = path.join(wgslDir, "main.wgsl");
-const utilPath = path.join(wgslDir, "util.wgsl");
+const wgslDir = testDir + "/wgsl";
+const mainPath = wgslDir + "/main.wgsl";
+const utilPath = wgslDir + "/util.wgsl";
 
 test("simple link", async () => {
   const logged = await cliLine(`${mainPath} ${utilPath} --baseDir ${wgslDir}`);
   expect(logged).toMatchInlineSnapshot(`
     "
+
     fn main() {
       foo();
     }
@@ -34,7 +35,7 @@ test("simple link", async () => {
   `);
 });
 
-const packagePath = /package::.*::(.*)$/gm;
+const packagePath = /^package::.*::(.*)$/gm;
 test("link --details", async () => {
   const line = `${mainPath} ${utilPath} --baseDir ${wgslDir}
      --baseDir ./src/test/wgsl 
@@ -42,6 +43,7 @@ test("link --details", async () => {
      --emit false`;
 
   const logged = await cliLine(line);
+  // Remove the directory specific path before the logs
   const noPackagePaths = logged.replace(packagePath, "package::$1");
   expectTrimmedMatch(
     noPackagePaths,
@@ -51,9 +53,8 @@ test("link --details", async () => {
 
     ->ast
     module
-      import package/util/foo
-        text 'import ./util/foo;
-    '
+      import package::util::foo;
+    
       text '
     '
       fn main()

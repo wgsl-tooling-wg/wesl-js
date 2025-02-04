@@ -140,6 +140,7 @@ async function loadWesl(
   const { weslToml } = options;
   const tomlDir = weslToml ? path.dirname(weslToml) : process.cwd();
 
+
   const globs = weslFiles.map(g => tomlDir + "/" + g);
   const futureFiles = globs.map(g => glob(g));
   const files = (await Promise.all(futureFiles)).flat();

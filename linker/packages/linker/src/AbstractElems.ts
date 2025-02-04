@@ -1,4 +1,4 @@
-import { ImportTree } from "./ImportTree.ts";
+import { ImportStatement } from "./ImportStatement.ts";
 import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
 
 /**
@@ -161,7 +161,7 @@ export interface GlobalVarElem extends ElemWithContentsBase {
 /** an import statement */
 export interface ImportElem extends ElemWithContentsBase {
   kind: "import";
-  imports: ImportTree;
+  imports: ImportStatement;
 }
 
 /** an entire file */

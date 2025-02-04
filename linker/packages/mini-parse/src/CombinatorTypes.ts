@@ -100,6 +100,11 @@ export type SeqValues<P extends CombinatorArg[]> = {
 
 type SeqTags<P extends CombinatorArg[]> = Intersection<TagsFromArg<P[number]>>;
 
+export type SeqObjParser<P extends { [key: string]: CombinatorArg }> = Parser<
+  { [key in keyof P]: ResultFromArg<P[key]> },
+  Intersection<TagsFromArg<P[string]>>
+>;
+
 export type OrParser<P extends CombinatorArg[]> = Parser<
   OrValues<P>,
   OrNames<P>

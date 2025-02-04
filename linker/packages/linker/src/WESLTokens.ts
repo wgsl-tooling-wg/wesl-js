@@ -1,4 +1,4 @@
-import { matchOneOf, tokenMatcher } from "mini-parse";
+import { matchOneOf, Token, tokenMatcher } from "mini-parse";
 import { textureStorageTypes } from "./StandardTypes.ts";
 
 // https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
@@ -54,6 +54,7 @@ export const mainTokens = tokenMatcher(
   "main",
 );
 
+/** For parsing generics */
 export const bracketTokens = tokenMatcher(
   {
     bracket: /<|>/,
@@ -85,12 +86,4 @@ export const argsTokens = tokenMatcher(
     eol,
   },
   "argsTokens",
-);
-
-export const rootWs = tokenMatcher(
-  {
-    blanks: /\s+/,
-    other: /[^\s]+/,
-  },
-  "rootWs",
 );
