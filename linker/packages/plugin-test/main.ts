@@ -1,16 +1,9 @@
 /// <reference types="wesl-plugin" />
 /// <reference types="vite/client" />
-import { bindingStructsPlugin, link, link2, LinkConfig, noSuffix } from "wesl";
-import { layoutEntries, layoutFunctions } from "./shaders/app.wesl?reflect";
-import { dlog } from "berry-pretty";
 import { copyBuffer } from "thimbleberry";
-
-const weslRoot = "./shaders";
-const weslSrc = import.meta.glob("./shaders/*.wesl", {
-  query: "?raw",
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
+import { bindingStructsPlugin, link2, LinkConfig, LinkParams } from "wesl";
+import linkParams from "./shaders/app.wesl?link";
+import { layoutFunctions } from "./shaders/app.wesl?reflect";
 
 main();
 
@@ -26,7 +19,8 @@ async function main() {
   const config: LinkConfig = {
     plugins: [bindingStructsPlugin()],
   };
-  const code = link2({ weslSrc, weslRoot, rootModuleName: "app", config }).dest;
+  const params: LinkParams = { ...linkParams, config };
+  const code = link2(params).dest;
 
   const module = device.createShaderModule({ code });
 
@@ -56,7 +50,7 @@ async function main() {
     layout: bgLayout,
     entries: [
       { binding: 0, resource: { buffer: storageBuffer } },
-      { binding: 1, resource: { buffer: uniformsBuffer} },
+      { binding: 1, resource: { buffer: uniformsBuffer } },
     ],
   });
 
@@ -69,7 +63,7 @@ async function main() {
   pass.dispatchWorkgroups(1, 1, 1);
   pass.end();
   device.queue.submit([commands.finish()]);
-  
+
   const data = await copyBuffer(device, storageBuffer);
   console.log(data);
 }

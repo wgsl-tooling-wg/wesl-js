@@ -14,6 +14,7 @@ import { dlog, dlogOpt } from "berry-pretty";
 import {
   bindAndTransform,
   bindingStructsPlugin,
+  noSuffix,
   parsedRegistry,
   ParsedRegistry,
   parseIntoRegistry,
@@ -79,12 +80,12 @@ function buildLoader(options: WeslPluginOptions): Loader {
       const registry = await getRegistry(this, options);
       const { weslRoot } = await getWeslToml(options.weslToml);
       const mainFile = id.slice(0, -"?reflect".length);
-      const main = localPath(mainFile, weslRoot);
+      const main = rmPathPrefix(mainFile, weslRoot);
       return await bindingStructJs(main, registry);
     }
     if (id.endsWith(".wesl?link")) {
-      const weslToml = await getWeslToml(options.weslToml);
-      return await linkJs(weslToml);
+      const mainFile = id.slice(0, -"?link".length);
+      return await linkJs(mainFile, options);
     }
     return null;
   }
@@ -133,33 +134,35 @@ async function getRegistry(
  */
 async function loadWesl(
   options: WeslPluginOptions,
+  weslRootRelative = true ,
 ): Promise<Record<string, string>> {
   const { weslFiles, weslRoot } = await getWeslToml(options.weslToml);
   const { weslToml } = options;
-  const tomlDir = weslToml ? path.dirname(weslToml) : ".";
+  const tomlDir = weslToml ? path.dirname(weslToml) : process.cwd();
 
-  const futureFiles = weslFiles.map(g => glob(path.join(tomlDir, g)));
+  const globs = weslFiles.map(g => tomlDir + "/" + g);
+  const futureFiles = globs.map(g => glob(g));
   const files = (await Promise.all(futureFiles)).flat();
-  return loadFiles(files, weslRoot);
+  return loadFiles(files, weslRootRelative ? weslRoot : tomlDir);
 }
 
 /** load a set of files, converting to paths relative to the  wesl root directory */
 async function loadFiles(
   files: string[],
-  weslRoot: string,
+  weslRoot?: string,
 ): Promise<Record<string, string>> {
   const loaded: [string, string][] = [];
 
   for (const fullPath of files) {
     const data = await fs.readFile(fullPath, "utf-8");
-    const relativePath = localPath(fullPath, weslRoot);
+    const relativePath = weslRoot ? rmPathPrefix(fullPath, weslRoot) : fullPath;
     loaded.push([relativePath, data]);
   }
   return Object.fromEntries(loaded);
 }
 
 /** convert a fs path to a path relative to the wesl root directory */
-function localPath(fullPath: string, weslRoot: string): string {
+function rmPathPrefix(fullPath: string, weslRoot: string): string {
   const rootStart = fullPath.indexOf(weslRoot);
   if (rootStart === -1) {
     throw new Error(`file ${fullPath} not in root ${weslRoot}`);
@@ -188,8 +191,29 @@ async function bindingStructJs(
   return structsJs;
 }
 
-async function linkJs(weslToml: WeslToml): Promise<string> {
-  return "";
+/** Emit a JavaScript structure with LinkParams based on the wesl.toml file
+ * and local shaders, ready for linking at runtime */
+async function linkJs(
+  baseId: string,
+  options: WeslPluginOptions,
+): Promise<string> {
+  const { weslRoot } = await getWeslToml(options.weslToml);
+  const weslSrc = await loadWesl(options, false);
+  const rootModule = rmPathPrefix(noSuffix(baseId), weslRoot);
+  const rootName = path.basename(rootModule);
+
+  const paramsName = `link${rootName}Config`;
+  const src = `
+    export const ${paramsName}= {
+      rootModuleName: "${rootModule}",
+      weslRoot: "${weslRoot}",  
+      weslSrc: ${JSON.stringify(weslSrc, null, 2)},
+    };
+
+    export default ${paramsName};
+    `;
+
+  return src;
 }
 
 export const unplugin = createUnplugin(
