@@ -259,13 +259,10 @@ const primary_expression = or(
   template_elaborated_ident,
 );
 
-// prettier-ignore
 const component_or_swizzle = repeatPlus(
   or(
-    preceded(".", word                        .collect(nameCollect, "component")),
-    delimited("[", () => expression           .collect(expressionCollect, "component"),
-     req("]")
-    ),
+    preceded(".", word),
+    delimited("[", () => expression, req("]")),
   ),
 );
 
@@ -319,6 +316,7 @@ const template_arg_expression = makeExpression(true);
  * that are types like array<f32> vs. expressions like 1+2 */
 // prettier-ignore
 const template_parameter = or(
+  // TODO: Remove this, it's wrong
   type_specifier                    .ctag("templateParam"),
   template_arg_expression           .collect(expressionCollect, "templateParam"),
 );

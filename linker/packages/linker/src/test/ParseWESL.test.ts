@@ -920,7 +920,7 @@ test("parse struct.member (component_or_swizzle)", () => {
             decl %x
           text ' = '
           memberRef u.frame
-          ref u
+            ref u
             text '.'
             name frame
         text ';
@@ -1059,10 +1059,17 @@ test(`parse ptr`, ctx => {
           decl %particles
           text ': '
           type ptr<storage, f32, read_write>
-            text 'ptr<storage, '
+            ref ptr
+            text '<'
+            type storage
+              ref storage
+            text ', '
             type f32
               ref f32
-            text ', read_write>'
+            text ', '
+            type read_write
+              ref read_write
+            text '>'
         text ';'
       text '
       '"
@@ -1085,14 +1092,21 @@ test(`parse ptr with internal array`, ctx => {
           decl %particles
           text ': '
           type ptr<storage, array<f32>, read_write>
-            text 'ptr<storage, '
+            ref ptr
+            text '<'
+            type storage
+              ref storage
+            text ', '
             type array<f32>
               ref array
               text '<'
               type f32
                 ref f32
               text '>'
-            text ', read_write>'
+            text ', '
+            type read_write
+              ref read_write
+            text '>'
         text ';'
       text '
       '"
@@ -1132,14 +1146,21 @@ test(`parse binding struct`, ctx => {
           name particles
           text ': '
           type ptr<storage, array<f32>, read_write>
-            text 'ptr<storage, '
+            ref ptr
+            text '<'
+            type storage
+              ref storage
+            text ', '
             type array<f32>
               ref array
               text '<'
               type f32
                 ref f32
               text '>'
-            text ', read_write>'
+            text ', '
+            type read_write
+              ref read_write
+            text '>'
         text ', 
         }'
       text '
@@ -1167,7 +1188,7 @@ test(`parse struct reference`, () => {
             decl %x
           text ' = '
           memberRef a.b[0]
-          ref a
+            ref a
             text '.'
             name b
             stuff
@@ -1200,7 +1221,7 @@ test("member reference with extra components", () => {
         ref out
         text ' + 0u ] = '
         memberRef c.p0.t0.x
-        ref c
+          ref c
           text '.'
           name p0
           stuff
@@ -1372,14 +1393,21 @@ test("binding struct", () => {
           name particles
           text ': '
           type ptr<storage, array<f32>, read_write>
-            text 'ptr<storage, '
+            ref ptr
+            text '<'
+            type storage
+              ref storage
+            text ', '
             type array<f32>
               ref array
               text '<'
               type f32
                 ref f32
               text '>'
-            text ', read_write>'
+            text ', '
+            type read_write
+              ref read_write
+            text '>'
         text ', 
           '
         member @group @binding uniforms: ptr<uniform, Uniforms>
@@ -1398,7 +1426,11 @@ test("binding struct", () => {
           name uniforms
           text ': '
           type ptr<uniform, Uniforms>
-            text 'ptr<uniform, '
+            ref ptr
+            text '<'
+            type uniform
+              ref uniform
+            text ', '
             type Uniforms
               ref Uniforms
             text '>'
@@ -1469,14 +1501,14 @@ test("memberRefs with extra components", () => {
         text '() {
           '
         memberRef b.particles[0]
-        ref b
+          ref b
           text '.'
           name particles
           stuff
             text '[0]'
         text ' = '
         memberRef b.uniforms.foo
-        ref b
+          ref b
           text '.'
           name uniforms
           stuff
@@ -1506,12 +1538,12 @@ test("memberRef with ref in array", () => {
         text '() {
           '
         memberRef vsOut.barycenticCoord[ vertNdx ]
-        ref vsOut
+          ref vsOut
           text '.'
           name barycenticCoord
           stuff
             text '['
-        ref vertNdx
+            ref vertNdx
             text ']'
         text ' = 1.0;
         }'

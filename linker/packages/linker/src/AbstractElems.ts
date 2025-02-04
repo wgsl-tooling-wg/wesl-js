@@ -275,12 +275,12 @@ export interface StructMemberElem extends ElemWithContentsBase {
   mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
 }
 
-export type TypeTemplateParameter = TypeRefElem | ExpressionElem | string; // TODO: Remove the "or string" case
+export type TypeTemplateParameter = TypeRefElem | ExpressionElem;
 
 /** a reference to a type, like 'f32', or 'MyStruct', or 'ptr<storage, array<f32>, read_only>'   */
 export interface TypeRefElem extends ElemWithContentsBase {
   kind: "type";
-  name: RefIdent | string;
+  name: RefIdent;
   templateParams?: TypeTemplateParameter[];
 }
 

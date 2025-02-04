@@ -271,9 +271,7 @@ export const collectAttribute = collectElem(
 export const typeRefCollect = collectElem(
   "type",
   (cc: CollectContext, openElem: PartElem<TypeRefElem>) => {
-    let templateParamsTemp: UnknownExpression[] | undefined =
-      cc.tags.templateParam?.flat(3);
-    // Currently they are UnknownElement
+    let templateParamsTemp: any[] | undefined = cc.tags.templateParam?.flat(3);
 
     const typeRef = cc.tags.typeRefName?.[0] as string | RefIdentElem;
     const name = typeof typeRef === "string" ? typeRef : typeRef.ident;

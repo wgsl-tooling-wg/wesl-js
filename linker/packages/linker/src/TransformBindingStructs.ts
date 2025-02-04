@@ -179,11 +179,11 @@ interface LoweredVarTypes {
 
 function lowerPtrMember(
   member: StructMemberElem,
-  typeName: string | RefIdent,
+  typeName: RefIdent,
   typeParameters: TypeTemplateParameter[] | undefined,
   varName: string,
 ): LoweredVarTypes | undefined {
-  if (typeName === "ptr") {
+  if (typeName.originalName === "ptr") {
     const origParams = typeParameters ?? [];
     const newParams = [origParams[0]];
     if (origParams[2]) newParams.push(origParams[2]);

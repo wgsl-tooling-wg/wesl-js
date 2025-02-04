@@ -279,6 +279,19 @@ function addExpressionFields(
 }
 
 function expressionToString(elem: ExpressionElem): string {
+  // TODO: Temp hack while I clean up the expression parsing
+  if ("contents" in elem) {
+    const contents = elem.contents
+      .map(e => {
+        if (e.kind === "text") {
+          return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
+        } else {
+          return elemToString(e);
+        }
+      })
+      .join(" ");
+    return contents;
+  }
   return elemToString(elem);
 }
 
@@ -288,6 +301,9 @@ function templateParamToString(p: TypeTemplateParameter): string {
   } else if (p.kind === "type") {
     return typeRefElemToString(p);
   } else if (p.kind === "literal" || p.kind === "ref") {
+    return expressionToString(p);
+    // TODO: Temp hack while I clean up the expression parsing
+  } else if (p.kind === "expression") {
     return expressionToString(p);
   } else {
     console.log("unknown template parameter type", p);
