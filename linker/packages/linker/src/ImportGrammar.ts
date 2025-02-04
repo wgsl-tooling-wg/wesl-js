@@ -19,15 +19,15 @@ import {
   tracing,
   withSepPlus,
 } from "mini-parse";
-import { mainTokens } from "./WESLTokens.js";
+import { ImportElem } from "./AbstractElems.js";
 import {
   ImportCollection,
   ImportItem,
   ImportSegment,
   ImportStatement,
 } from "./ImportStatement.js";
-import { ImportElem } from "./AbstractElems.js";
 import { importElem } from "./WESLCollect.js";
+import { mainTokens } from "./WESLTokens.js";
 
 const wordToken = kind(mainTokens.ident)
   // TODO: Remove this temporary hack to make the tests pass once we have a better tokenizer

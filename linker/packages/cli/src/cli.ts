@@ -1,13 +1,13 @@
 import { createTwoFilesPatch } from "diff";
 import fs from "fs";
 import { enableTracing, log } from "mini-parse";
+import path from "path";
 import { astToString, link, normalize, noSuffix, scopeToString } from "wesl";
 import yargs from "yargs";
 import {
   parsedRegistry,
   parseIntoRegistry,
 } from "../../linker/src/ParsedRegistry.js";
-import path from "path";
 
 type CliArgs = ReturnType<typeof parseArgs>;
 let argv: CliArgs;
@@ -63,7 +63,7 @@ function linkNormally(paths: string[]): void {
     const basedPath = "./" + normalize(relativePath);
     return [basedPath, text];
   });
-  const rootModuleRelative = path.relative(getBaseDir(), paths[0]); 
+  const rootModuleRelative = path.relative(getBaseDir(), paths[0]);
   const rootModuleName = noSuffix(rootModuleRelative);
   const weslSrc = Object.fromEntries(pathAndTexts);
 

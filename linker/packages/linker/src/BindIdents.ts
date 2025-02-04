@@ -6,7 +6,7 @@ import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, WeslAST } from "./ParseWESL.ts";
 import { DeclIdent, exportDecl, RefIdent, Scope } from "./Scope.ts";
 import { stdFn, stdType } from "./StandardTypes.ts";
-import { last, overlapTail } from "./Util.ts";
+import { last } from "./Util.ts";
 
 export interface BindResults {
   decls: DeclarationElem[];
