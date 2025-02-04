@@ -61,8 +61,6 @@ export interface ParserContext<C = any, S = any> {
   /** during execution, count parse attempts to avoid infinite looping */
   _parseCount: number;
 
-  srcMap?: SrcMap; // TODO can we remove this and just use the one in the lexer?
-
   /** current parser stack or parent parsers that called this one */
   _debugNames: string[];
 
@@ -221,14 +219,12 @@ export class Parser<T> {
       const {
         lexer,
         maxParseCount,
-        srcMap,
         appState: app = { context: {}, stable: [] },
       } = init;
       const _collect: CollectFnEntry<any>[] = [];
       const result = this._run({
         lexer,
         app,
-        srcMap,
         _parseCount: 0,
         maxParseCount,
         _collect,
@@ -424,9 +420,9 @@ export function runExtended<T>(
   ctx.lexer.position(origStart);
   const start = ctx.lexer.skipIgnored();
   ctx.lexer.position(end);
-  const { app, srcMap } = ctx;
+  const { app } = ctx;
 
-  return { ...origResults, start, end, app, src, srcMap, ctx };
+  return { ...origResults, start, end, app, src, ctx };
 }
 
 /** for pretty printing, track subsidiary parsers */

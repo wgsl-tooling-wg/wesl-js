@@ -25,7 +25,7 @@ export function srcTrace(
 }
 
 export function ctxLog(ctx: ParserContext, ...msgs: any[]): void {
-  const src = ctx.srcMap ?? ctx.lexer.src;
+  const src = ctx.lexer.src;
   srcLog(src, ctx.lexer.position(), ...msgs);
 }
 
