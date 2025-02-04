@@ -1,7 +1,7 @@
 /// <reference types="wesl-plugin" />
 import { copyBuffer } from "thimbleberry";
 import { beforeAll, expect, test } from "vitest";
-import { bindingStructsPlugin, link2, LinkConfig } from "wesl";
+import { bindingStructsPlugin, link2, LinkConfig, LinkParams } from "wesl";
 
 let gpu: GPU;
 
@@ -12,20 +12,13 @@ beforeAll(async () => {
   gpu = webgpu.create([]);
 });
 
-// load shader sources
-const weslRoot = "../../shaders";
-const weslSrc = import.meta.glob("../../shaders/*.wesl", {
-  query: "?raw",
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
-
 test("gpu execution w/binding structs lowered and reflected", async () => {
   // --- load reflected binding structs ---
 
   // import dynamically, so that import comes after globalThis has GPUShaderStage
   const reflected = await import("../../shaders/app.wesl?reflect");
-  const { layoutEntries, layoutFunctions } = reflected;
+  const linkParams = (await import("../../shaders/app.wesl?link")).default;
+  const { layoutFunctions } = reflected;
 
   const adapter = await gpu.requestAdapter();
   const device = await adapter?.requestDevice();
@@ -39,7 +32,8 @@ test("gpu execution w/binding structs lowered and reflected", async () => {
   const config: LinkConfig = {
     plugins: [bindingStructsPlugin()],
   };
-  const code = link2({ weslSrc, weslRoot, rootModuleName: "app", config }).dest;
+  const params: LinkParams = { ...linkParams, config };
+  const code = link2(params).dest;
 
   // --- execute linked shader ---
   const module = device.createShaderModule({ code });
