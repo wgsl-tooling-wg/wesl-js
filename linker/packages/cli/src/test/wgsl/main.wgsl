@@ -1,4 +1,4 @@
-import ./util/foo;
+import package::util::foo;
 
 fn main() {
   foo();

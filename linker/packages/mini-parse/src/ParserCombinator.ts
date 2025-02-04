@@ -133,8 +133,8 @@ export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
   return seqParser as SeqParser<P>;
 }
 
-/** Parse a sequence of parsers
- * @return an array of all parsed results, or null if any parser fails */
+/** Parse a sequence of parsers. Each named parser will be executed, and place its result in an equally named output.
+ * @return an object of all parsed results, or null if any parser fails */
 export function seqObj<P extends { [key: string]: CombinatorArg }>(
   args: P,
 ): SeqObjParser<P> {

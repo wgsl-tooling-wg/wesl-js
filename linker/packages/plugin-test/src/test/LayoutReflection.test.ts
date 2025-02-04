@@ -11,10 +11,14 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 test("vite generates binding layout", async () => {
   // vite is configured to use the wesl plugin
   // build a test program that imports using the '?reflect' import pattern
-  await exec(`cd ${testDir}; pnpm vite build`);
+  await exec(`pnpm vite build`, {
+    cwd: testDir,
+  });
   const outFile = path.join("dist", "testMain.cjs");
   // the test program testMain.ts logs the layout entries to the console for verification
-  const result = await exec(`cd ${testDir}; pnpm node ${outFile}`);
+  const result = await exec(`pnpm node ${outFile}`, {
+    cwd: testDir,
+  });
 
   expect(result.stdout).toMatchInlineSnapshot(`
     "{
