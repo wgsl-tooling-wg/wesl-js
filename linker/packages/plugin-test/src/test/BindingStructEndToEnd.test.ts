@@ -1,7 +1,7 @@
 /// <reference types="wesl-plugin" />
 import { copyBuffer } from "thimbleberry";
 import { beforeAll, expect, test } from "vitest";
-import { bindingStructsPlugin, link2, LinkConfig, LinkParams } from "wesl";
+import { bindingStructsPlugin, link, LinkConfig, LinkParams } from "wesl";
 
 let gpu: GPU;
 
@@ -33,7 +33,7 @@ test("gpu execution w/binding structs lowered and reflected", async () => {
     plugins: [bindingStructsPlugin()],
   };
   const params: LinkParams = { ...linkParams, config };
-  const code = link2(params).dest;
+  const code = link(params).dest;
 
   // --- execute linked shader ---
   const module = device.createShaderModule({ code });

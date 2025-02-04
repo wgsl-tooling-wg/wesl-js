@@ -1,7 +1,7 @@
 /// <reference types="wesl-plugin" />
 /// <reference types="vite/client" />
 import { copyBuffer } from "thimbleberry";
-import { bindingStructsPlugin, link2, LinkConfig, LinkParams } from "wesl";
+import { bindingStructsPlugin, link, LinkConfig, LinkParams } from "wesl";
 import linkParams from "./shaders/app.wesl?link";
 import { layoutFunctions } from "./shaders/app.wesl?reflect";
 
@@ -20,7 +20,7 @@ async function main() {
     plugins: [bindingStructsPlugin()],
   };
   const params: LinkParams = { ...linkParams, config };
-  const code = link2(params).dest;
+  const code = link(params).dest;
 
   const module = device.createShaderModule({ code });
 

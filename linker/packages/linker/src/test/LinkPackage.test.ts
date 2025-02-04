@@ -1,7 +1,7 @@
 import { expectNoLog } from "mini-parse/test-util";
 import lib from "random_wgsl";
 import { expect, test } from "vitest";
-import { link2 } from "../Linker.ts";
+import { link } from "../Linker.ts";
 
 test("import rand() from a package", () => {
   const src = `
@@ -19,7 +19,7 @@ test("import rand() from a package", () => {
 
   const weslSrc = { "./main.wesl": src };
   const result = expectNoLog(() =>
-    link2({ weslSrc, rootModuleName: "./main.wesl", libs: [lib] }),
+    link({ weslSrc, rootModuleName: "./main.wesl", libs: [lib] }),
   );
   expect(result.dest).toContain("fn pcg_2u_3f");
   expect(result.dest).not.toContain("sinRand");

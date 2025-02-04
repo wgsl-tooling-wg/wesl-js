@@ -1,6 +1,6 @@
 import { WGSLLinker } from "@use-gpu/shader";
 import fs from "fs/promises";
-import { link2, parseWESL } from "wesl";
+import { link, parseWESL } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
 
@@ -142,7 +142,7 @@ function parseOnce(
   if (parserVariant === "wgsl-linker") {
     parseWESL(text);
   } else if (parserVariant === "wesl-link") {
-    link2({ weslSrc: { [filePath]: text }, rootModuleName: filePath });
+    link({ weslSrc: { [filePath]: text }, rootModuleName: filePath });
   } else if (parserVariant === "wgsl_reflect") {
     wgslReflectParse(filePath, text);
   } else if (parserVariant === "use-gpu") {

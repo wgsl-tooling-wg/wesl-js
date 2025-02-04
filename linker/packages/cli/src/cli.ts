@@ -1,7 +1,7 @@
 import { createTwoFilesPatch } from "diff";
 import fs from "fs";
 import { enableTracing, log } from "mini-parse";
-import { astToString, link2, normalize, noSuffix, scopeToString } from "wesl";
+import { astToString, link, normalize, noSuffix, scopeToString } from "wesl";
 import yargs from "yargs";
 import {
   parsedRegistry,
@@ -72,7 +72,7 @@ function linkNormally(paths: string[]): void {
   // TODO conditions
   // TODO external defines
   if (argv.emit) {
-    const linked = link2({ weslSrc, rootModuleName, weslRoot });
+    const linked = link({ weslSrc, rootModuleName, weslRoot });
     if (argv.emit) log(linked.dest);
   }
   if (argv.details) {

@@ -1,7 +1,7 @@
 import { expectNoLog } from "mini-parse/test-util";
 import fs from "node:fs/promises";
 import { expect, test } from "vitest";
-import { bindingStructsPlugin, link2, noSuffix } from "wesl";
+import { bindingStructsPlugin, link, noSuffix } from "wesl";
 
 export interface NamedPath {
   name: string; // test name
@@ -24,7 +24,7 @@ export function testWgslFiles(namedPaths: NamedPath[]) {
       const result = expectNoLog(() => {
         const weslSrc = { [shortPath]: text };
         const rootModuleName = noSuffix(name);
-        return link2({ weslSrc, rootModuleName, config });
+        return link({ weslSrc, rootModuleName, config });
       });
       expect(result.dest).eq(text);
     });
