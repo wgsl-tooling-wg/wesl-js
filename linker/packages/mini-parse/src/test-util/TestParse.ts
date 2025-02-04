@@ -28,34 +28,29 @@ export const testTokens = tokenMatcher({
   ws: /\s+/,
 });
 
-export interface TestParseResult<T, N extends TagRecord = NoTags, S = any> {
-  parsed: OptParserResult<T, N>;
+export interface TestParseResult<T, S = any> {
+  parsed: OptParserResult<T>;
   position: number;
   stable: S;
 }
 
 /** utility for testing parsers */
-export function testParse<T, N extends TagRecord = NoTags, C = any, S = any>(
-  p: Parser<T, N>,
+export function testParse<T, C = any, S = any>(
+  p: Parser<T>,
   src: string,
   tokenMatcher: TokenMatcher = testTokens,
   appState: AppState<C, S> = { context: {} as C, stable: [] as S },
-): TestParseResult<T, N, S> {
+): TestParseResult<T, S> {
   const lexer = matchingLexer(src, tokenMatcher);
   const parsed = p.parse({ lexer, appState: appState, maxParseCount: 1000 });
   return { parsed, position: lexer.position(), stable: appState.stable };
 }
 
-export function testParseWithLexer<
-  T,
-  N extends TagRecord = NoTags,
-  C = any,
-  S = any,
->(
-  p: Parser<T, N>,
+export function testParseWithLexer<T, C = any, S = any>(
+  p: Parser<T>,
   lexer: Lexer,
   appState: AppState<C, S> = { context: {} as C, stable: [] as S },
-): TestParseResult<T, N, S> {
+): TestParseResult<T, S> {
   const parsed = p.parse({ lexer, appState: appState, maxParseCount: 1000 });
   return { parsed, position: lexer.position(), stable: appState.stable };
 }

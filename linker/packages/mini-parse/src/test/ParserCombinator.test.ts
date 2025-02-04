@@ -5,7 +5,7 @@ import {
   withTracingDisabled,
 } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import { NoTags, Parser, setTraceName } from "../Parser.js";
+import { Parser, setTraceName } from "../Parser.js";
 import {
   any,
   anyNot,
@@ -20,7 +20,6 @@ import {
   seq,
   text,
   withSep,
-  withTags,
 } from "../ParserCombinator.js";
 import { enableTracing } from "../ParserTracing.js";
 import { withLogger } from "../WrappedLog.js";
@@ -64,20 +63,6 @@ test("seq() handles two element match", () => {
   const p = seq("#import", kind(m.word));
   const { parsed } = testParse(p, src);
   expect(parsed).toMatchSnapshot();
-});
-
-test("tagged kind match", () => {
-  const src = "foo";
-  const p = kind(m.word).tag("nn");
-  const { parsed } = testParse(p, src);
-  expect(parsed?.tags.nn).toEqual(["foo"]);
-});
-
-test("seq() with tagged result", () => {
-  const src = "#import foo";
-  const p = seq("#import", kind(m.word).tag("yo"));
-  const { parsed } = testParse(p, src);
-  expect(parsed?.tags.yo).toEqual(["foo"]);
 });
 
 test("opt() makes failing match ok", () => {
@@ -212,45 +197,9 @@ test("repeat1 fails", () => {
   expect(parsed?.value).toBeUndefined();
 });
 
-test("withTags blocks tags accumulation", () => {
-  const p = withTags(
-    kind(m.word)
-      .tag("w")
-      .map(r => r.tags.w),
-  );
-  const s = seq(p.tag("w")).map(r => r.tags.w);
-
-  const { parsed } = testParse(s, "a b");
-  expect(parsed?.value).toEqual([["a"]]); // a prev bug returned ["a", [["a"]]]
-});
-
-test("withTags blocks tags from map()", () => {
-  const p = kind(m.word).tag("w");
-  // w/o clearing tags
-  let taggedTags;
-  const tagged = p.map(r => (taggedTags = r.tags));
-  testParse(tagged, "foo");
-
-  // w/ clearing tags
-  let clearedTags;
-  const c: Parser<string, NoTags> = withTags(p); // verifies return type is correct
-  const cleared = c.map(r => (clearedTags = r.tags));
-  testParse(cleared, "foo");
-
-  expect(taggedTags).toEqual({ w: ["foo"] });
-  expect(clearedTags).toEqual({});
-});
-
 test("withSep", () => {
   const src = "a, b, c";
   const p = withSep(",", kind(m.word).tag("w"));
   const result = testParse(p, src);
   expect(result.parsed?.tags).toEqual({ w: ["a", "b", "c"] });
-});
-
-test("tag follows setTraceName of orig", () => {
-  const orig = kind(m.word);
-  const tagged = orig.tag("w");
-  setTraceName(orig, "orig");
-  expect(tagged.debugName).toBe("orig (kind 'word')");
 });

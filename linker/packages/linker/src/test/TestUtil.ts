@@ -17,10 +17,10 @@ import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
 import { Conditions } from "../Scope.js";
 import { WeslStream } from "../parse/WeslStream.js";
 
-export function testAppParse<T, N extends TagRecord = NoTags>(
-  parser: Parser<T, N>,
+export function testAppParse<T>(
+  parser: Parser<T>,
   src: string,
-): TestParseResult<T, N, WeslAST> {
+): TestParseResult<T, WeslAST> {
   const appState = syntheticWeslParseState();
   const lexer = new LexerFromStream(new WeslStream(src), src);
   return testParseWithLexer(parser, lexer, appState);

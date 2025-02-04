@@ -7,12 +7,10 @@ import {
   SeqObjParser,
   SeqParser,
   SeqValues,
-  TagsFromArg,
 } from "./CombinatorTypes.js";
 import { Lexer, quotedText } from "./MatchingLexer.js";
 import {
   ExtendedResult,
-  NoTags,
   OptParserResult,
   Parser,
   parser,
@@ -20,13 +18,11 @@ import {
   ParserResult,
   runExtended,
   simpleParser,
-  TagRecord,
   trackChildren,
 } from "./Parser.js";
 import { closeArray, pushOpenArray } from "./ParserCollect.js";
 import { ctxLog } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
-import { mergeTags } from "./ParserUtil.js";
 import { Token } from "./Stream.js";
 
 /** Parsing Combinators
@@ -96,7 +92,7 @@ export function kind(kindStr: string): Parser<string> {
 
 /** Parse for a token containing a text value
  * @return the kind of token that matched */
-export function text(value: string): Parser<string, NoTags> {
+export function text(value: string): Parser<string> {
   return simpleParser(
     `${quotedText(value)}`,
     (state: ParserContext): string | null => {
@@ -112,7 +108,6 @@ export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
   const parsers = args.map(parserArg);
   const seqParser = parser("seq", (ctx: ParserContext) => {
     const values = [];
-    let tagged = {};
     let failed = false;
     for (const p of parsers) {
       const result = p._run(ctx);
@@ -121,11 +116,10 @@ export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
         break;
       }
 
-      tagged = mergeTags(tagged, result.tags);
       values.push(result.value);
     }
     if (failed) return null;
-    return { value: values, tags: tagged };
+    return { value: values };
   }).collect({ before: pushOpenArray, after: closeArray });
 
   trackChildren(seqParser, ...parsers);
@@ -143,7 +137,6 @@ export function seqObj<P extends { [key: string]: CombinatorArg }>(
   );
   const seqObjParser = parser("seqObj", (ctx: ParserContext) => {
     const values: Partial<Record<keyof P, any>> = {};
-    let tagged = {};
     let failed = false;
     for (const [name, p] of parsers) {
       const result = p._run(ctx);
@@ -152,11 +145,10 @@ export function seqObj<P extends { [key: string]: CombinatorArg }>(
         break;
       }
 
-      tagged = mergeTags(tagged, result.tags);
       values[name] = result.value;
     }
     if (failed) return null;
-    return { value: values, tags: tagged };
+    return { value: values };
   }).collect({ before: pushOpenArray, after: closeArray });
 
   trackChildren(seqObjParser, ...parsers.map(v => v[1]));
@@ -256,12 +248,11 @@ export function or<P extends CombinatorArg[]>(...args: P): OrParser<P> {
   return orParser as OrParser<P>;
 }
 
-const undefinedResult: ParserResult<undefined, NoTags> = {
+const undefinedResult: ParserResult<undefined> = {
   value: undefined,
-  tags: {},
 };
 
-export type UndefinedParser = Parser<undefined, NoTags>;
+export type UndefinedParser = Parser<undefined>;
 /** Try a parser.
  *
  * If the parse succeeds, return the result.
@@ -281,7 +272,7 @@ export function opt<P extends CombinatorArg>(
       // with 'undefined' as a value
 
       // cast the undefined result here and recover type with the ascription above
-      type PR = ParserResult<ResultFromArg<P>, TagsFromArg<P>>;
+      type PR = ParserResult<ResultFromArg<P>>;
       return result || (undefinedResult as PR);
     },
   );
@@ -325,14 +316,14 @@ export function anyNot(arg: CombinatorArg): Parser<Token> {
 /** match everything until a terminator (and the terminator too) */
 export function anyThrough<A extends CombinatorArg>(
   arg: A,
-): Parser<[...any, ResultFromArg<A>], TagsFromArg<A>> {
+): Parser<[...any, ResultFromArg<A>]> {
   const p = parserArg<A>(arg);
   const anyParser = seq(repeat(anyNot(p)), p).traceName(
     `anyThrough ${p.debugName}`,
   );
   trackChildren(anyParser, p);
-  type V = typeof anyParser extends Parser<infer V, any> ? V : never;
-  return anyParser as Parser<V, any>;
+  type V = typeof anyParser extends Parser<infer V> ? V : never;
+  return anyParser as Parser<V>;
 
   // LATER TS not sure why this doesn't work
   // type T = TagsFromArg<A>;
@@ -362,7 +353,7 @@ export function repeatPlus<A extends CombinatorArg>(
 }
 
 type ResultFilterFn<T> = (
-  result: ExtendedResult<T | string, any>,
+  result: ExtendedResult<T | string>,
 ) => boolean | undefined;
 
 export function repeatWhile<A extends CombinatorArg>(
@@ -376,8 +367,7 @@ export function repeatWhile<A extends CombinatorArg>(
 }
 
 type RepeatWhileResult<A extends CombinatorArg> = OptParserResult<
-  SeqValues<A[]>,
-  TagsFromArg<A>
+  SeqValues<A[]>
 >;
 
 function repeatWhileFilter<T, A extends CombinatorArg>(
@@ -386,17 +376,15 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
 ): (ctx: ParserContext) => RepeatWhileResult<A> {
   return (ctx: ParserContext): RepeatWhileResult<A> => {
     const values: ResultFromArg<A>[] = [];
-    let tags = {};
     for (;;) {
-      const result = runExtended<ResultFromArg<A>, TagsFromArg<A>>(ctx, p);
+      const result = runExtended<ResultFromArg<A>>(ctx, p);
 
       // continue acccumulating until we get a null or the filter tells us to stop
       if (result !== null && filterFn(result)) {
         values.push(result.value);
-        tags = mergeTags(tags, result.tags);
       } else {
         // always return succcess
-        const r = { value: values, tags: tags as TagsFromArg<A> };
+        const r = { value: values };
         return r;
       }
     }
@@ -456,19 +444,19 @@ export function withSep<P extends CombinatorArg>(
   sep: CombinatorArg,
   p: P,
   opts: WithSepOptions = {},
-): Parser<ResultFromArg<P>[], TagsFromArg<P>> {
+): Parser<ResultFromArg<P>[]> {
   const { trailing = true, requireOne = false } = opts;
   const parser = parserArg(p);
   const sepParser = parserArg(sep);
-  const pTagged = or(parser).tag("_sepTag");
+  const pTagged = or(parser);
   const first = requireOne ? pTagged : opt(pTagged);
   const last = trailing ? opt(sepParser) : yes();
 
-  const withSepParser = seq(first, repeat(seq(sepParser, pTagged)), last)
+  const withSepParser = seq(first, repeat(preceded(sepParser, pTagged)), last)
     .map(r => {
-      const result = r.tags._sepTag;
-      delete r.tags._sepTag;
-      return result;
+      let firstResult = r.value[0];
+      let repeatResults = r.value[1];
+      return [firstResult].concat(repeatResults);
     })
     .traceName("withSep") as any;
 
@@ -481,14 +469,14 @@ export function withSep<P extends CombinatorArg>(
 export function withSepPlus<P extends CombinatorArg>(
   sep: CombinatorArg,
   p: P,
-): Parser<ResultFromArg<P>[], TagsFromArg<P>> {
+): Parser<ResultFromArg<P>[]> {
   return withSep(sep, p, { requireOne: true }).traceName("withSepPlus");
 }
 
 /** run a parser with a provided token matcher (i.e. use a temporary lexing mode) */
 export function withLexerAction<U>(
   action: (lexer: Lexer) => U | null,
-): Parser<U, NoTags> {
+): Parser<U> {
   return simpleParser(`withLexerAction`, (state: ParserContext) => {
     return action(state.lexer);
   });
@@ -499,16 +487,14 @@ export function parserArg<A extends CombinatorArg>(arg: A): ParserFromArg<A> {
   if (typeof arg === "string") {
     return text(arg) as ParserFromArg<A>; // LATER fix cast
   } else if (arg instanceof Parser) {
-    return arg as Parser<ResultFromArg<A>, TagsFromArg<A>>;
+    return arg as Parser<ResultFromArg<A>>;
   }
   return fn(arg as () => ParserFromArg<A>);
 }
 
 /** A delayed parser definition, for making recursive parser definitions.  */
-export function fn<T, N extends TagRecord>(
-  fn: () => Parser<T, N>,
-): Parser<T, N> {
-  const fp = parser("fn()", (state: ParserContext): OptParserResult<T, N> => {
+export function fn<T>(fn: () => Parser<T>): Parser<T> {
+  const fp = parser("fn()", (state: ParserContext): OptParserResult<T> => {
     if (!fn) {
       const deepName = state._debugNames.join(".");
       throw new Error(`fn parser called before definition: ${deepName}`);
@@ -518,17 +504,4 @@ export function fn<T, N extends TagRecord>(
   });
   if (tracing) (fp as any)._fn = fn; // tricksy hack for pretty printing contained fns
   return fp;
-}
-
-/** @return a replacement parser that doesn't propagate any tags */
-export function withTags<A extends CombinatorArg>(
-  arg: A,
-): Parser<ResultFromArg<A>, NoTags> {
-  const p = parserArg(arg);
-  const tagsParser = parser("withTags", (ctx: ParserContext) => {
-    const result = p._run(ctx);
-    return result ? { value: result.value, tags: {} } : null;
-  });
-  trackChildren(tagsParser, p);
-  return tagsParser;
 }

@@ -1,4 +1,4 @@
-import { ExtendedResult, ParserContext } from "./Parser.js";
+import { ParserContext } from "./Parser.js";
 import { parserLog, tracePos, tracing } from "./ParserTracing.js";
 import { SrcMap } from "./SrcMap.js";
 import { log } from "./WrappedLog.js";
