@@ -69,7 +69,7 @@ export function parseSrcModule(
 
   const appState = blankWeslParseState(srcModule);
 
-  const init: ParserInit = { lexer, appState, srcMap, maxParseCount };
+  const init: ParserInit = { lexer, appState, maxParseCount };
   const parseResult = weslRoot.parse(init);
   if (parseResult === null) {
     throw new Error("parseWESL failed");

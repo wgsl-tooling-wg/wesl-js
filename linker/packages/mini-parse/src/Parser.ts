@@ -42,9 +42,6 @@ export interface ParserInit<C = any, S = any> {
 
   /** set this to avoid infinite looping by failing after more than this many parsing steps */
   maxParseCount?: number;
-
-  /** if this text was preprocessed */
-  srcMap?: SrcMap;
 }
 
 /* Information passed to the parsers during parsing */
@@ -76,7 +73,6 @@ export interface ParserResult<T> {
 // TODO: What's the C and S?
 export interface ExtendedResult<T, C = any, S = any> extends ParserResult<T> {
   src: string;
-  srcMap?: SrcMap;
   start: number;
   end: number;
   app: AppState<C, S>;
