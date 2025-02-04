@@ -5,6 +5,7 @@ import {
   StuffElem,
   TypeRefElem,
   TypeTemplateParameter,
+  UnknownExpression,
 } from "./AbstractElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
 import { findDecl } from "./LowerAndEmit.ts";
@@ -48,12 +49,14 @@ function refToString(ref: RefIdent | string): string {
   return decl.mangledName || decl.originalName;
 }
 
-export function contentsToString(elem: ExpressionElem | StuffElem): string {
+export function contentsToString(
+  elem: ExpressionElem | StuffElem | UnknownExpression,
+): string {
   if (elem.kind === "ref") {
     return refToString(elem.ident);
   } else if (elem.kind === "literal") {
     return elem.srcModule.src.slice(elem.start, elem.end);
-  } else if (elem.kind === "stuff") {
+  } else if (elem.kind === "stuff" || elem.kind === "expression") {
     const parts = elem.contents.map(c => {
       const { kind } = c;
       if (kind === "text") {

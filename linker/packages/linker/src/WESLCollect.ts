@@ -25,6 +25,7 @@ import {
   TextElem,
   TypedDeclElem,
   TypeRefElem,
+  TypeTemplateParameter,
   UnknownExpression,
   VarElem,
 } from "./AbstractElems.ts";
@@ -270,10 +271,17 @@ export const collectAttribute = collectElem(
 export const typeRefCollect = collectElem(
   "type",
   (cc: CollectContext, openElem: PartElem<TypeRefElem>) => {
-    const templateParams = cc.tags.templateParam?.flat(3);
+    let templateParamsTemp: UnknownExpression[] | undefined =
+      cc.tags.templateParam?.flat(3);
+    // Currently they are UnknownElement
+
     const typeRef = cc.tags.typeRefName?.[0] as string | RefIdentElem;
     const name = typeof typeRef === "string" ? typeRef : typeRef.ident;
-    const partElem = { ...openElem, name, templateParams };
+    const partElem = {
+      ...openElem,
+      name,
+      templateParams: templateParamsTemp as any[],
+    };
     // dlog("typeRefCollect", { tags: [...Object.keys(cc.tags)] });
     // collectLog(cc, "typeRefCollect", elemToString(partElem));
     // dlog({ typeRefCollect: elemToString(partElem) });
