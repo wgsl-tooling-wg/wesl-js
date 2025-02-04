@@ -1,4 +1,4 @@
-import { withLogSpy } from "mini-parse/test-util";
+import { withLogSpy, withLogSpyAsync } from "mini-parse/test-util";
 import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -105,5 +105,5 @@ test.skip("link with definition", async () => {
 });
 
 async function cliLine(argsLine: string): Promise<string> {
-  return await withLogSpy(() => cli(argsLine.split(/\s+/)));
+  return await withLogSpyAsync(() => cli(argsLine.split(/\s+/)));
 }
