@@ -724,7 +724,6 @@ test("parse @attribute before fn", () => {
 test("import package::foo::bar;", ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
-  console.log(ast.moduleElem);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
