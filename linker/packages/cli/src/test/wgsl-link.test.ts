@@ -38,7 +38,6 @@ test("simple link", async () => {
 const packagePath = /^package::.*::(.*)$/gm;
 test("link --details", async () => {
   const line = `${mainPath} ${utilPath} --baseDir ${wgslDir}
-     --baseDir ./src/test/wgsl 
      --details 
      --emit false`;
 
