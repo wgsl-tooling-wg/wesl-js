@@ -270,6 +270,7 @@ export const collectAttribute = collectElem(
 
 export const typeRefCollect = collectElem(
   "type",
+  // @ts-ignore
   (cc: CollectContext, openElem: PartElem<TypeRefElem>) => {
     let templateParamsTemp: any[] | undefined = cc.tags.templateParam?.flat(3);
 
@@ -283,6 +284,7 @@ export const typeRefCollect = collectElem(
     // dlog("typeRefCollect", { tags: [...Object.keys(cc.tags)] });
     // collectLog(cc, "typeRefCollect", elemToString(partElem));
     // dlog({ typeRefCollect: elemToString(partElem) });
+    // @ts-ignore
     return withTextCover(partElem, cc);
   },
 );

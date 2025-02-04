@@ -281,7 +281,9 @@ function addExpressionFields(
 function expressionToString(elem: ExpressionElem): string {
   // TODO: Temp hack while I clean up the expression parsing
   if ("contents" in elem) {
+    // @ts-ignore
     const contents = elem.contents
+      // @ts-ignore
       .map(e => {
         if (e.kind === "text") {
           return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
@@ -303,6 +305,7 @@ function templateParamToString(p: TypeTemplateParameter): string {
   } else if (p.kind === "literal" || p.kind === "ref") {
     return expressionToString(p);
     // TODO: Temp hack while I clean up the expression parsing
+    // @ts-ignore
   } else if (p.kind === "expression") {
     return expressionToString(p);
   } else {

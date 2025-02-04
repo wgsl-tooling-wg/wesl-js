@@ -271,6 +271,7 @@ function externalTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
 }
 
 function paramText(expression: ExpressionElem): string {
+  // @ts-ignore
   const text = expression.contents[0] as TextElem;
   return text.srcModule.src.slice(expression.start, expression.end);
 }
