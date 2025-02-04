@@ -1,17 +1,8 @@
 import { Span } from "./Span.ts";
-export { matchOneOf } from "./stream/RegexHelpers.ts";
-export {
-  RegexMatchers,
-  MatchersStream,
-  type StringToken,
-} from "./stream/StringStream";
-export { IgnoringStream } from "./stream/IgnoringStream.ts";
-export { CachingStream } from "./stream/CachingStream.ts";
 
 /**
+ * An interface for a tokenizer. Returns a "next token", and can be reset to previously saved positions (checkpoints).
  * Based on https://docs.rs/winnow/latest/winnow/stream/trait.Stream.html
- * When implementing this, we recommend implementing the related interfaces as well
- * - `StreamLocation`
  */
 export interface Stream<T extends Token> {
   /** Returns the current position */
@@ -22,15 +13,19 @@ export interface Stream<T extends Token> {
   nextToken(): T | null;
 }
 
+/** A text token */
 export interface Token {
   kind: string;
-  value: any;
+  text: string; // Could be extended to handle other data types as well.
   span: Span;
 }
 
+export interface TypedToken<Kind extends string> extends Token {
+  kind: Kind;
+}
+
 /**
- * Based on https://docs.rs/winnow/latest/winnow/stream/trait.Location.html
- * Used for the `span` combinator
+ * Legacy interface, will be replaced with a better mechanism
  */
 export interface StreamWithLocation {
   previousTokenEnd(): number;

@@ -27,7 +27,7 @@ import { closeArray, pushOpenArray } from "./ParserCollect.js";
 import { ctxLog } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
 import { mergeTags } from "./ParserUtil.js";
-import { OldToken } from "./TokenMatcher.js";
+import { Token } from "./Stream.js";
 
 /** Parsing Combinators
  *
@@ -308,15 +308,15 @@ export function not(arg: CombinatorArg): Parser<true> {
 }
 
 /** yield next token, any token */
-export function any(): Parser<OldToken> {
-  return simpleParser("any", (state: ParserContext): OldToken | null => {
+export function any(): Parser<Token> {
+  return simpleParser("any", (state: ParserContext): Token | null => {
     const next = state.lexer.next();
     return next || null;
   });
 }
 
 /** yield next token if the provided parser doesn't match */
-export function anyNot(arg: CombinatorArg): Parser<OldToken> {
+export function anyNot(arg: CombinatorArg): Parser<Token> {
   return seq(not(arg), any())
     .map(r => r.value[1])
     .traceName("anyNot");

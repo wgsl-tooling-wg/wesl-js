@@ -1,5 +1,5 @@
 import {
-  StringToken,
+  TypedToken,
   Stream,
   CachingStream,
   MatchersStream,
@@ -9,7 +9,7 @@ import {
 import { keywords, reservedWords } from "./Keywords";
 export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
 
-export interface WeslToken extends StringToken<WeslTokenKind> {}
+export interface WeslToken extends TypedToken<WeslTokenKind> {}
 
 // https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
 /** Whitespaces including new lines */
@@ -58,7 +58,7 @@ const weslMatcher = new RegexMatchers<InternalTokenKind>({
 });
 
 export class WeslStream implements Stream<WeslToken> {
-  private stream: Stream<StringToken<InternalTokenKind>>;
+  private stream: Stream<TypedToken<InternalTokenKind>>;
   /** New line */
   private eolPattern = /[\n\v\f\u{0085}\u{2028}\u{2029}]|\r\n?/gu;
   /** Block comments */
@@ -81,21 +81,21 @@ export class WeslStream implements Stream<WeslToken> {
         continue;
       } else if (token.kind === "commentStart") {
         // SAFETY: The underlying streams can be seeked to any position
-        if (token.value === "//") {
+        if (token.text === "//") {
           this.stream.reset(this.skipToEol(token.span[1]));
         } else {
           this.stream.reset(this.skipBlockComment(token.span[1]));
         }
       } else if (token.kind === "word") {
         const kind = token.kind;
-        let returnToken = token as StringToken<typeof kind | "keyword">;
-        if (keywordOrReserved.has(token.value)) {
+        let returnToken = token as TypedToken<typeof kind | "keyword">;
+        if (keywordOrReserved.has(token.text)) {
           returnToken.kind = "keyword";
         }
         return returnToken;
       } else {
         const kind = token.kind;
-        return token as StringToken<typeof kind>;
+        return token as TypedToken<typeof kind>;
       }
     }
   }
@@ -142,7 +142,7 @@ export class WeslStream implements Stream<WeslToken> {
       return null;
     }
 
-    const tokenStart = token.value[0];
+    const tokenStart = token.text[0];
     if (tokenStart === "<" || tokenStart === ">") {
       // SAFETY: The underlying streams implementations can be reset to any position.
       const tokenPosition = token.span[0];
@@ -150,7 +150,7 @@ export class WeslStream implements Stream<WeslToken> {
       return {
         kind: "symbol",
         span: [tokenPosition, tokenPosition + 1],
-        value: tokenStart,
+        text: tokenStart,
       };
     } else {
       return null;

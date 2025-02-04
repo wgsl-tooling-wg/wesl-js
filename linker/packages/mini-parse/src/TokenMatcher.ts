@@ -1,42 +1,33 @@
 import { srcLog } from "./ParserLogging.js";
 import { Span } from "./Span.js";
-import { Stream } from "./Stream.js";
+import { Stream, Token, TypedToken } from "./Stream.js";
 import { CachingStream } from "./stream/CachingStream.js";
 import { escapeRegex } from "./stream/RegexHelpers.js";
-import {
-  MatchersStream,
-  RegexMatchers,
-  StringToken,
-} from "./stream/StringStream.js";
-
-export interface OldToken {
-  kind: string;
-  text: string;
-  span: Span;
-}
+import { MatchersStream, RegexMatchers } from "./stream/MatchersStream.js";
 
 /** a TokenMatcher with each token kind exposed as a string property */
 export type FullTokenMatcher<T> = TokenMatcher & {
   [Property in keyof T]: string;
 };
 
+/** Legacy interface, to be superseded by the Stream */
 export interface TokenMatcher {
-  start(src: string, position?: number): Stream<StringToken<string>>;
-  next(): OldToken | undefined;
+  start(src: string, position?: number): Stream<Token>;
+  next(): Token | undefined;
   get position(): number;
   set position(position: number);
   _debugName?: string;
 }
-
+/** Legacy function, to be superseded by the Stream */
 export function tokenMatcher<T extends Record<string, string | RegExp>>(
   matchers: T,
   debugName = "matcher",
 ): FullTokenMatcher<T> {
   const regexMatchers = new RegexMatchers(matchers);
-  let stream: Stream<StringToken<string>> | null = null;
+  let stream: Stream<Token> | null = null;
   let src: string;
 
-  function start(text: string, position = 0): Stream<StringToken<string>> {
+  function start(text: string, position = 0): Stream<Token> {
     if (src !== text || stream === null) {
       stream = new CachingStream(new MatchersStream(text, regexMatchers));
     }
@@ -46,7 +37,7 @@ export function tokenMatcher<T extends Record<string, string | RegExp>>(
     return stream;
   }
 
-  function next(): OldToken | undefined {
+  function next(): Token | undefined {
     if (stream === null) {
       throw new Error("start() first");
     }
@@ -56,7 +47,7 @@ export function tokenMatcher<T extends Record<string, string | RegExp>>(
     }
     return {
       kind: token.kind,
-      text: token.value,
+      text: token.text,
       span: token.span,
     };
   }

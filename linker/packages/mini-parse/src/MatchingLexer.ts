@@ -3,11 +3,12 @@ import { tracing } from "./ParserTracing.js";
 import { Span } from "./Span.js";
 import { SrcMap } from "./SrcMap.js";
 import { Stream, Token } from "./Stream.js";
-import { OldToken, TokenMatcher } from "./TokenMatcher.js";
+import { TokenMatcher } from "./TokenMatcher.js";
 
+/** Legacy interface, to be superseded by the Stream */
 export interface Lexer {
   /** return the next token, advancing the the current position */
-  next(): OldToken | undefined;
+  next(): Token | undefined;
 
   /** get or set the current position in the src */
   position(pos?: number): number;
@@ -21,19 +22,16 @@ export interface Lexer {
   stream?: Stream<Token>;
 }
 
+/** Legacy function, to be superseded by the Stream */
 export class LexerFromStream<T extends Token> implements Lexer {
   constructor(
     public stream: Stream<T>,
     public src: string,
   ) {}
-  next(): OldToken | undefined {
+  next(): Token | undefined {
     const result = this.stream.nextToken();
     if (result === null) return undefined;
-    return {
-      kind: result.kind,
-      text: result.value,
-      span: result.span,
-    };
+    return result;
   }
   position(pos?: number): number {
     if (pos !== undefined) {
@@ -63,7 +61,7 @@ export function matchingLexer(
   let matcher = rootMatcher;
   matcher.start(src);
 
-  function next(): OldToken | undefined {
+  function next(): Token | undefined {
     const start = matcher.position;
     const { token } = toNextToken();
     if (tracing && token) {
@@ -83,7 +81,7 @@ export function matchingLexer(
 
   /** Advance to the next token
    * @return the token, and the position at the start of the token (after ignored ws) */
-  function toNextToken(): { p: number; token?: OldToken } {
+  function toNextToken(): { p: number; token?: Token } {
     while (true) {
       let p = matcher.position;
       if (eof()) return { p };

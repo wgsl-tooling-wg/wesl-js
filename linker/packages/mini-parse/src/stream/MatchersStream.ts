@@ -1,10 +1,37 @@
 import { Span } from "../Span.ts";
-import { Stream, StreamWithLocation, Token } from "../Stream.ts";
+import { Stream, StreamWithLocation, Token, TypedToken } from "../Stream.ts";
 import { toRegexSource } from "./RegexHelpers.ts";
 
-export interface StringToken<Kind extends string> extends Token {
-  kind: Kind;
-  value: string;
+/**
+ * Runs a `RegexMatchers` on an input string
+ */
+export class MatchersStream<Kind extends string>
+  implements Stream<TypedToken<Kind>>, StreamWithLocation
+{
+  private position: number = 0;
+  constructor(
+    public text: string,
+    private matchers: RegexMatchers<Kind>,
+  ) {}
+  checkpoint(): number {
+    return this.position;
+  }
+  reset(position: number): void {
+    this.position = position;
+  }
+  nextToken(): TypedToken<Kind> | null {
+    const result = this.matchers.execAt(this.text, this.position);
+    if (result === null) return null;
+    this.position = result.span[1];
+    return result;
+  }
+  previousTokenEnd(): number {
+    // We are guaranteed contiguous spans here, so this is correct
+    return this.position;
+  }
+  currentTokenStart(): number {
+    return this.position;
+  }
 }
 
 /**
@@ -26,7 +53,7 @@ export class RegexMatchers<Kind extends string> {
     this.exp = new RegExp(expParts, "dyu");
   }
 
-  execAt(text: string, position: number): StringToken<Kind> | null {
+  execAt(text: string, position: number): TypedToken<Kind> | null {
     this.exp.lastIndex = position;
     const matches = this.exp.exec(text);
     const matchedIndex = findGroupDex(matches?.indices);
@@ -34,11 +61,10 @@ export class RegexMatchers<Kind extends string> {
     if (matchedIndex) {
       const { span, groupDex } = matchedIndex;
       const kind = this.groups[groupDex];
-      const value = text.slice(span[0], span[1]);
       return {
         kind,
         span,
-        value,
+        text: text.slice(span[0], span[1]),
       };
     } else {
       return null;
@@ -61,34 +87,5 @@ function findGroupDex(
         return { span, groupDex: i - 1 };
       }
     }
-  }
-}
-
-export class MatchersStream<Kind extends string>
-  implements Stream<StringToken<Kind>>, StreamWithLocation
-{
-  private position: number = 0;
-  constructor(
-    public text: string,
-    private matchers: RegexMatchers<Kind>,
-  ) {}
-  checkpoint(): number {
-    return this.position;
-  }
-  reset(position: number): void {
-    this.position = position;
-  }
-  nextToken(): StringToken<Kind> | null {
-    const result = this.matchers.execAt(this.text, this.position);
-    if (result === null) return null;
-    this.position = result.span[1];
-    return result;
-  }
-  previousTokenEnd(): number {
-    // We are guaranteed contiguous spans here, so this is correct
-    return this.position;
-  }
-  currentTokenStart(): number {
-    return this.position;
   }
 }
