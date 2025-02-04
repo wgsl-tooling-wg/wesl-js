@@ -6,7 +6,7 @@ import {
   TestParseResult,
 } from "mini-parse/test-util";
 import { WgslBundle } from "random_wgsl";
-import { link, LinkConfig } from "../Linker.js";
+import { link2, LinkConfig } from "../Linker.js";
 import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
 import { Conditions } from "../Scope.js";
 import { mainTokens } from "../WESLTokens.js";
@@ -38,10 +38,11 @@ export function linkTestOpts(opts: LinkTestOpts, ...rawWgsl: string[]): string {
   const restWgsl = Object.fromEntries(
     rest.map((src, i) => [`./file${i + 1}.wesl`, src]),
   );
-  const wesl = { "./test.wesl": root, ...restWgsl };
+  const weslSrc = { "./test.wesl": root, ...restWgsl };
 
   const { conditions = {}, libs = [], linkConfig: config } = opts;
-  const srcMap = link(wesl, "test", conditions, libs, config);
+  const rootModuleName = "test";
+  const srcMap = link2({ weslSrc, rootModuleName, conditions, libs, config });
   return srcMap.dest;
 }
 
