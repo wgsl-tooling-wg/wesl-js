@@ -1,12 +1,13 @@
 import { createTwoFilesPatch } from "diff";
 import fs from "fs";
 import { enableTracing, log } from "mini-parse";
-import { astToString, link, normalize, scopeToString } from "wesl";
+import { astToString, link2, normalize, noSuffix, scopeToString } from "wesl";
 import yargs from "yargs";
 import {
   parsedRegistry,
   parseIntoRegistry,
 } from "../../linker/src/ParsedRegistry.js";
+import path from "path";
 
 type CliArgs = ReturnType<typeof parseArgs>;
 let argv: CliArgs;
@@ -58,22 +59,26 @@ function parseArgs(args: string[]) {
 function linkNormally(paths: string[]): void {
   const pathAndTexts = paths.map(f => {
     const text = fs.readFileSync(f, { encoding: "utf8" });
-    const basedPath = "./" + normalize(rmBaseDirPrefix(f));
+    const relativePath = path.relative(process.cwd(), f);
+    const basedPath = "./" + normalize(relativePath);
     return [basedPath, text];
   });
-  const [rootPath] = pathAndTexts[0];
-  const weslFiles = Object.fromEntries(pathAndTexts);
+  const rootModuleRelative = path.relative(getBaseDir(), paths[0]); 
+  const rootModuleName = noSuffix(rootModuleRelative);
+  const weslSrc = Object.fromEntries(pathAndTexts);
+
+  const weslRoot = path.relative(process.cwd(), getBaseDir());
 
   // TODO conditions
   // TODO external defines
   if (argv.emit) {
-    const linked = link(weslFiles, rootPath);
+    const linked = link2({ weslSrc, rootModuleName, weslRoot });
     if (argv.emit) log(linked.dest);
   }
   if (argv.details) {
     const registry = parsedRegistry();
     try {
-      parseIntoRegistry(weslFiles, registry, "package");
+      parseIntoRegistry(weslSrc, registry, "package", weslRoot);
     } catch (e) {
       console.error(e);
     }
@@ -125,13 +130,6 @@ function printDiff(modulePath: string, src: string, linked: string): void {
   }
 }
 
-function rmBaseDirPrefix(path: string): string {
-  const baseDir = argv.baseDir;
-  if (baseDir) {
-    const found = path.indexOf(baseDir);
-    if (found !== -1) {
-      return path.slice(found + baseDir.length);
-    }
-  }
-  return path;
+function getBaseDir(): string {
+  return argv.baseDir || process.cwd();
 }
