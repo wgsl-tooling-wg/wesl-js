@@ -1,18 +1,14 @@
-import {
-  logCatch,
-  testParse,
-  testTokens,
-  withTracingDisabled,
-} from "mini-parse/test-util";
+import { logCatch, testParse, TestMatcherKind } from "mini-parse/test-util";
 import { expect, test } from "vitest";
 import { Parser } from "../Parser.js";
 import {
   any,
-  anyNot,
+  delimited,
   kind,
   not,
   opt,
   or,
+  preceded,
   repeat,
   repeatPlus,
   repeatWhile,
@@ -23,8 +19,16 @@ import {
 } from "../ParserCombinator.js";
 import { enableTracing } from "../ParserTracing.js";
 import { withLogger } from "../WrappedLog.js";
+import { Stream, Token } from "../Stream.js";
 
-const m = testTokens;
+const m: Record<TestMatcherKind, TestMatcherKind> = {
+  attr: "attr",
+  digits: "digits",
+  directive: "directive",
+  symbol: "symbol",
+  word: "word",
+  ws: "ws",
+};
 
 test("or() finds first match", () => {
   const src = "#import";
@@ -73,33 +77,29 @@ test("opt() makes failing match ok", () => {
   expect(parsed).toMatchSnapshot();
 });
 
-test("repeat() to (1,2,3,4) via tag", () => {
+test("repeat() to (1,2,3,4)", () => {
   const src = "(1,2,3,4)";
-  const wordNum = or(kind("word"), kind("digits")).tag("wn");
-  const params = seq(opt(wordNum), opt(repeat(seq(",", wordNum))));
-  const p = seq("(", params, ")");
+  const wordNum = or(kind("word"), kind("digits"));
+  const params = seq(opt(wordNum), opt(repeat(preceded(",", wordNum))));
+  const p = delimited("(", params, ")");
   const { parsed } = testParse(p, src);
   expect(parsed).not.toBeNull();
-  expect(parsed?.tags.wn).toEqual(["1", "2", "3", "4"]);
+  expect(parsed?.value).toEqual(["1", ["2", "3", "4"]]);
 });
 
 test("map()", () => {
   const src = "foo";
-  const p = kind(m.word)
-    .tag("word")
-    .map(r => (r.tags.word?.[0] === "foo" ? "found" : "missed"));
+  const p = kind(m.word).map(r => (r.value === "foo" ? "found" : "missed"));
   const { parsed } = testParse(p, src);
   expect(parsed?.value).toBe("found");
 });
 
 test("toParser()", () => {
   const src = "foo !";
-  const bang = text("!").tag("bang");
-  const p = kind("word")
-    .tag("word")
-    .toParser(() => bang);
+  const bang = text("!");
+  const p = kind("word").toParser(() => bang);
   const { parsed } = testParse(p, src);
-  expect(parsed?.tags.bang).toEqual(["!"]);
+  expect(parsed?.value).toEqual("!");
 });
 
 test("not() success", () => {
@@ -120,12 +120,12 @@ test("not() failure", () => {
 
 test("recurse with fn()", () => {
   const src = "{ a { b } }";
-  const p: Parser<any> = seq(
+  const p: Parser<Stream<Token>, string[]> = delimited(
     "{",
-    repeat(or(kind(m.word).tag("word"), () => p)),
+    repeat(or(kind(m.word), () => p)).map(v => v.value.flat()),
     "}",
   );
-  const wrap = or(p).map(r => r.app.stable.push(r.tags.word));
+  const wrap = or(p).map(r => r.app.stable.push(r.value));
   const { stable } = testParse(wrap, src);
   expect(stable[0]).toEqual(["a", "b"]);
 });
@@ -133,9 +133,9 @@ test("recurse with fn()", () => {
 test("tracing", () => {
   const src = "a";
   const { log, logged } = logCatch();
+  enableTracing();
   const p = repeat(seq(kind(m.word)).setTraceName("wordz")).setTrace();
 
-  enableTracing();
   withLogger(log, () => {
     testParse(p, src);
   });
@@ -199,7 +199,7 @@ test("repeat1 fails", () => {
 
 test("withSep", () => {
   const src = "a, b, c";
-  const p = withSep(",", kind(m.word).tag("w"));
+  const p = withSep(",", kind(m.word));
   const result = testParse(p, src);
-  expect(result.parsed?.tags).toEqual({ w: ["a", "b", "c"] });
+  expect(result.parsed?.value).toEqual(["a", "b", "c"]);
 });

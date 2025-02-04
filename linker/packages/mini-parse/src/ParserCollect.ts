@@ -6,6 +6,7 @@ import {
   parser,
   Parser,
   ParserContext,
+  ParserStream,
   trackChildren,
 } from "./Parser.js";
 import { parserArg } from "./ParserCombinator.js";
@@ -55,11 +56,11 @@ export interface CollectPair<V> {
  *
  * optionally tag the collection results
  * */
-export function collect<T, V>(
-  p: Parser<T>,
+export function collect<I, T, V>(
+  p: Parser<I, T>,
   collectFn: CollectFn<V> | CollectPair<V>,
   ctag?: string,
-): Parser<T> {
+): Parser<I, T> {
   const origAfter: CollectFn<V> =
     (collectFn as CollectPair<V>).after ?? collectFn;
   const beforeFn = (collectFn as Partial<CollectPair<V>>).before;
@@ -99,7 +100,7 @@ export function collect<T, V>(
 
 export function tagScope<A extends CombinatorArg>(
   arg: A,
-): Parser<ResultFromArg<A>> {
+): Parser<ParserStream, ResultFromArg<A>> {
   const p = parserArg(arg);
   const sp = parser(
     `tagScope`,
@@ -139,7 +140,7 @@ function cloneTags(tags: TagRecord): TagRecord {
 
 /** tag most recent collect result with a name that can be
  * referenced in later collection. */
-export function ctag<T>(p: Parser<T>, name: string): Parser<T> {
+export function ctag<I, T>(p: Parser<I, T>, name: string): Parser<I, T> {
   const cp = parser(`ctag`, (ctx: ParserContext): OptParserResult<T> => {
     return runAndCollectAfter(
       p,
@@ -157,8 +158,8 @@ export function ctag<T>(p: Parser<T>, name: string): Parser<T> {
 
 /** run the parser and if it succeeds, queue a provided function to run
  * during commit() */
-function runAndCollectAfter<T>(
-  p: Parser<T>,
+function runAndCollectAfter<I, T>(
+  p: Parser<I, T>,
   ctx: ParserContext,
   collectFn: CollectFn<any>,
   debugName: string = "",
@@ -199,7 +200,7 @@ export function closeArray(cc: CollectContext): void {
 
 /** tag parse results results with a name that can be
  * referenced in later collection. */
-export function ptag<T>(p: Parser<T>, name: string): Parser<T> {
+export function ptag<I, T>(p: Parser<I, T>, name: string): Parser<I, T> {
   const cp = parser(`ptag`, (ctx: ParserContext): OptParserResult<T> => {
     const origStart = ctx.lexer.position();
     const result = p._run(ctx);

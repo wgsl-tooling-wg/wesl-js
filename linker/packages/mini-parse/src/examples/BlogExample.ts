@@ -1,12 +1,12 @@
 import { matchingLexer } from "../MatchingLexer.js";
 import { kind, seq } from "../ParserCombinator.js";
+import { RegexMatchers } from "../stream/MatchersStream.js";
 import { matchOneOf } from "../stream/RegexHelpers.js";
-import { tokenMatcher } from "../TokenMatcher.js";
 
 const src = "fn foo()";
 
 // lexer
-const tokens = tokenMatcher({
+const tokens = new RegexMatchers({
   ident: /[a-z]+/,
   ws: /\s+/,
   symbol: matchOneOf("( ) [ ] { } ; ,"),
@@ -14,7 +14,7 @@ const tokens = tokenMatcher({
 const lexer = matchingLexer(src, tokens);
 
 // parsers
-const ident = kind(tokens.ident);
+const ident = kind("ident");
 const fnDecl = seq("fn", ident, "(", ")");
 
 // parsing and extracing result

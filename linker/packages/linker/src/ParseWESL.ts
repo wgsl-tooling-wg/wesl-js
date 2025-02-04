@@ -61,7 +61,6 @@ export function parseSrcModule(
   // TODO allow returning undefined for failure, or throw?
 
   resetScopeIds();
-  // const lexer =  matchingLexer(srcModule.src, mainTokens);
   const lexer = new LexerFromStream(
     new WeslStream(srcModule.src),
     srcModule.src,

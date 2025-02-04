@@ -17,7 +17,10 @@ const noLog: typeof console.log = () => {};
 /** logger while tracing is active, otherwise noop */
 export let parserLog: typeof console.log = noLog;
 
-/** enable tracing of parser activity via .trace() */
+/**
+ * enable tracing of parser activity via .trace()
+ * Make sure to enable tracing *before* the creation of parsers
+ */
 export function enableTracing(enable = true): void {
   tracing = enable;
   debugNames = enable;
@@ -92,11 +95,8 @@ function withTraceLoggingInternal<T>(
   fn: (ctxWithTracing: ParserContext) => T,
 ): T {
   let { _trace } = ctx;
-  assertThat(
-    traceInfo !== undefined,
-    "This function may only be called if tracing is enabled",
-  );
-  const trace = traceInfo.options;
+  assertThat(tracing, "This function may only be called if tracing is enabled");
+  const trace = traceInfo?.traceEnabled;
 
   // log if we're starting or inheriting a trace and we're inside requested position range
   let logging: boolean = (!!_trace || !!trace) && !trace?.hide;

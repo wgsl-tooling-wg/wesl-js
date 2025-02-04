@@ -21,6 +21,7 @@ import {
   withTraceLogging,
 } from "./ParserTracing.js";
 import { SrcMap } from "./SrcMap.js";
+import { Stream, TypedToken } from "./Stream.js";
 
 export interface AppState<C, S> {
   /**
@@ -112,23 +113,36 @@ interface ConstructArgs<T> extends ParserArgs {
   fn: ParseFn<T>;
 }
 
-export type AnyParser = Parser<any>;
+export type AnyParser = Parser<any, any>;
 
 export class ParserTraceInfo {
   constructor(
     /** name to use for trace logging */
-    public traceName: string,
+    public traceName: string | undefined = undefined,
     public traceChildren: AnyParser[] = [],
-    public options: TraceOptions = {},
+    public traceEnabled: TraceOptions | undefined = undefined,
   ) {}
   /** true for elements without children like kind(), and text(),
    * (to avoid intro log statement while tracing) */
   traceIsTerminal: boolean = false;
 }
 
-/** a composable parsing element */
-export class Parser<T> {
-  /** If tracing is enabled, this definitely exists. Otherwise it does not exist. */
+/** A parser with no requirements, a bottom type. */
+export type ParserStream = Stream<TypedToken<never>>;
+
+/**
+ * a composable parsing element
+ *
+ * I = input stream *requirements*. For example `seq(token("keyword"), token("word"), yes())` would
+ * - Require "keyword" to be a part of the token kinds
+ * - Require "word" to be a part of the token kinds
+ * - Not require anything for the yes() parser
+ * - Inherit the "keyword" requirement and the "word" requirement for the seq parser
+ *
+ * These requirements are then validated when `.parseNext()` is called
+ */
+export class Parser<I, T> {
+  /** If tracing is enabled, this exists. Otherwise it does not exist. */
   _traceInfo?: ParserTraceInfo;
   _collection: true | undefined;
   fn: ParseFn<T>;
@@ -138,7 +152,7 @@ export class Parser<T> {
     this.fn = args.fn;
     if (tracing) {
       this._traceInfo = new ParserTraceInfo(
-        args.traceName ?? "unknown",
+        args.traceName,
         args._children,
         args.trace,
       );
@@ -154,27 +168,29 @@ export class Parser<T> {
   }
 
   /** tag parse results */
-  ptag<K extends string>(name: K): Parser<T> {
-    return ptag(this, name) as Parser<T>;
+  ptag<K extends string>(name: K): Parser<I, T> {
+    return ptag(this, name) as Parser<I, T>;
   }
 
   /** tag collect results */
-  ctag<K extends string>(name: K): Parser<T> {
-    return ctag(this, name) as Parser<T>;
+  ctag<K extends string>(name: K): Parser<I, T> {
+    return ctag(this, name) as Parser<I, T>;
   }
 
   /** record a name for debug tracing */
-  setTraceName(name: string): Parser<T> {
+  setTraceName(name: string): Parser<I, T> {
     if (tracing) {
-      this._traceInfo!.traceName = name;
+      assertThat(this._traceInfo);
+      this._traceInfo.traceName = name;
     }
     return this;
   }
 
   /** trigger tracing for this parser (and by default also this parsers descendants) */
-  setTrace(opts: TraceOptions = {}): Parser<T> {
+  setTrace(opts: TraceOptions = {}): Parser<I, T> {
     if (tracing) {
-      this._traceInfo!.options = opts;
+      assertThat(this._traceInfo);
+      this._traceInfo.traceEnabled = opts;
     }
     return this;
   }
@@ -183,14 +199,14 @@ export class Parser<T> {
    * Return null to cause the parser to fail.
    * SAFETY: Side-effects should not be done if backtracking could occur!
    */
-  map<U>(fn: ParserMapFn<T, U>): Parser<U> {
+  map<U>(fn: ParserMapFn<T, U>): Parser<I, U> {
     return map(this, fn);
   }
 
   /** map results to a new value.
    * Return null to cause the parser to fail.
    */
-  mapValue<U>(fn: (value: T) => U | null): Parser<U> {
+  mapValue<U>(fn: (value: T) => U | null): Parser<I, U> {
     return map(this, v => fn(v.value));
   }
 
@@ -198,12 +214,12 @@ export class Parser<T> {
    * when a commit() is parsed.
    * Collection functions are dropped with parser backtracking, so
    * only succsessful parses are collected. */
-  collect<U>(fn: CollectFn<U> | CollectPair<U>, ctag?: string): Parser<T> {
+  collect<U>(fn: CollectFn<U> | CollectPair<U>, ctag?: string): Parser<I, T> {
     return collect(this, fn, ctag);
   }
 
   /** switch next parser based on results */
-  toParser<U>(fn: ToParserFn<T, U>): Parser<T | U> {
+  toParser<U>(fn: ToParserFn<I, T, U>): Parser<I, T | U> {
     return toParser(this, fn);
   }
 
@@ -237,7 +253,7 @@ export class Parser<T> {
   /** name of this parser for debugging/tracing */
   get debugName(): string {
     if (tracing) {
-      return this._traceInfo!.traceName;
+      return this._traceInfo?.traceName ?? "parser";
     }
     return "parser";
   }
@@ -247,25 +263,25 @@ export class Parser<T> {
  * @param fn the parser function
  * @param args static arguments provided by the user as the parser is constructed
  */
-export function parser<T>(
+export function parser<I, T>(
   traceName: string,
   fn: ParseFn<T>,
   terminal?: boolean,
-): Parser<T> {
+): Parser<I, T> {
   const terminalArg = terminal ? { terminal } : {};
-  return new Parser<T>({ fn, traceName, ...terminalArg });
+  return new Parser<I, T>({ fn, traceName, ...terminalArg });
 }
 
 /** Create a Parser from a function that parses and returns a value (w/no child parsers) */
 export function simpleParser<T>(
   traceName: string,
   fn: (ctx: ParserContext) => T | null | undefined,
-): Parser<T> {
+): Parser<ParserStream, T> {
   const parserFn: ParseFn<T> = (ctx: ParserContext) => {
     const r = fn(ctx);
     if (r == null || r === undefined) return null;
 
-    return { value: r, tags: {} };
+    return { value: r };
   };
 
   return parser(traceName, parserFn, true);
@@ -280,8 +296,8 @@ export function simpleParser<T>(
  * . backtrack on failure
  * . rollback context on failure
  */
-function runParser<T>(
-  p: Parser<T>,
+function runParser<I, T>(
+  p: Parser<I, T>,
   context: ParserContext,
 ): OptParserResult<T> {
   const { lexer, _parseCount = 0, maxParseCount } = context;
@@ -312,8 +328,9 @@ function runParser<T>(
     if (debugNames) ctx._debugNames.push(p.debugName);
     const traceSuccessOnly = ctx._trace?.successOnly;
     if (tracing) {
-      if (!p._traceInfo?.traceIsTerminal && tracing && !traceSuccessOnly)
+      if (!p._traceInfo?.traceIsTerminal && !traceSuccessOnly) {
         parserLog(`..${p.debugName}`);
+      }
     }
 
     // run the parser function for this stage
@@ -347,7 +364,7 @@ function runParser<T>(
 type ParserMapFn<T, U> = (results: ExtendedResult<T>) => U | null;
 
 /** return a parser that maps the current results */
-function map<T, U>(p: Parser<T>, fn: ParserMapFn<T, U>): Parser<U> {
+function map<I, T, U>(p: Parser<I, T>, fn: ParserMapFn<T, U>): Parser<I, U> {
   const mapParser = parser(`map`, (ctx: ParserContext): OptParserResult<U> => {
     const extended = runExtended(ctx, p);
     if (!extended) return null;
@@ -362,36 +379,41 @@ function map<T, U>(p: Parser<T>, fn: ParserMapFn<T, U>): Parser<U> {
   return mapParser;
 }
 
-type ToParserFn<T, X> = (results: ExtendedResult<T>) => Parser<X> | undefined;
+type ToParserFn<I, T, X> = (
+  results: ExtendedResult<T>,
+) => Parser<I, X> | undefined;
 
-function toParser<T, O>(
-  p: Parser<T>,
-  toParserFn: ToParserFn<T, O>,
-): Parser<T | O> {
-  const newParser: Parser<T | O> = parser("toParser", (ctx: ParserContext) => {
-    const extended = runExtended(ctx, p);
-    if (!extended) return null;
+function toParser<I, T, O>(
+  p: Parser<I, T>,
+  toParserFn: ToParserFn<I, T, O>,
+): Parser<I, T | O> {
+  const newParser: Parser<I, T | O> = parser(
+    "toParser",
+    (ctx: ParserContext) => {
+      const extended = runExtended(ctx, p);
+      if (!extended) return null;
 
-    // run the supplied function to get a parser
-    const newParser = toParserFn(extended);
+      // run the supplied function to get a parser
+      const newParser = toParserFn(extended);
 
-    if (newParser === undefined) {
-      return extended;
-    }
+      if (newParser === undefined) {
+        return extended;
+      }
 
-    // run the parser returned by the supplied function
-    const nextResult = newParser._run(ctx);
-    // TODO merge names record from p to newParser
-    return nextResult as any; // TODO fix typing
-  });
+      // run the parser returned by the supplied function
+      const nextResult = newParser._run(ctx);
+      // TODO merge names record from p to newParser
+      return nextResult as any; // TODO fix typing
+    },
+  );
   trackChildren(newParser, p);
   return newParser;
 }
 
 /** run parser, return enriched results (to support map(), toParser()) */
-export function runExtended<T>(
+export function runExtended<I, T>(
   ctx: ParserContext,
-  p: Parser<T>,
+  p: Parser<I, T>,
 ): ExtendedResult<T> | null {
   const origStart = ctx.lexer.position();
 
@@ -416,7 +438,7 @@ export function runExtended<T>(
 /** for pretty printing, track subsidiary parsers */
 export function trackChildren(p: AnyParser, ...args: CombinatorArg[]) {
   if (tracing) {
-    assertThat(p._traceInfo !== undefined);
+    assertThat(p._traceInfo);
     const kids = args.map(parserArg);
     p._traceInfo.traceChildren = kids;
   }

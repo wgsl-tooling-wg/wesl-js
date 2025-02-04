@@ -1,8 +1,5 @@
-import { srcLog } from "./ParserLogging.js";
-import { Span } from "./Span.js";
 import { Stream, Token, TypedToken } from "./Stream.js";
 import { CachingStream } from "./stream/CachingStream.js";
-import { escapeRegex } from "./stream/RegexHelpers.js";
 import { MatchersStream, RegexMatchers } from "./stream/MatchersStream.js";
 
 /** a TokenMatcher with each token kind exposed as a string property */

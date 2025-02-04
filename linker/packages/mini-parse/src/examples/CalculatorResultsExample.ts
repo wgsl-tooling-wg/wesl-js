@@ -1,9 +1,19 @@
-import { Parser, setTraceName } from "../Parser.js";
-import { fn, opt, or, repeat, seq } from "../ParserCombinator.js";
+import { Parser } from "../Parser.js";
+import {
+  delimited,
+  fn,
+  opt,
+  or,
+  preceded,
+  repeat,
+  seq,
+  seqObj,
+} from "../ParserCombinator.js";
 import { tracing } from "../ParserTracing.js";
-import { mulDiv, num, plusMinus } from "./CalculatorExample.js";
+import { Stream, Token } from "../Stream.js";
+import { CalcStream, mulDiv, num, plusMinus } from "./CalculatorExample.js";
 
-let expr: Parser<any> = null as any; // help TS with forward reference
+let expr: Parser<CalcStream, number> = null as any; // help TS with forward reference
 
 /* from: https://en.wikipedia.org/wiki/Parsing_expression_grammar#Example 
     Expr    ← Sum
@@ -14,50 +24,55 @@ let expr: Parser<any> = null as any; // help TS with forward reference
 */
 
 const value = or(
-  num.map(r => parseInt(r.value)).tag("value"),
-  seq("(", () => expr.tag("value"), ")"),
-).map(r => r.tags.value[0]);
+  num.map(r => parseInt(r.value, 10)),
+  delimited("(", () => expr, ")"),
+);
 
-export const power: Parser<number> = seq(
-  value.tag("base"),
-  opt(seq("^", fn(() => power).tag("exp"))),
-).map(r => {
-  const { base, exp } = r.tags;
-  const exponent = exp ? exp.slice(-1)[0] : 1;
-  const result = base[0] ** exponent;
+export const power: Parser<CalcStream, number> = seqObj({
+  base: value,
+  exp: opt(
+    preceded(
+      "^",
+      fn(() => power),
+    ),
+  ),
+}).map(r => {
+  const { base, exp } = r.value;
+  const exponent = exp ?? 1;
+  const result = base ** exponent;
   return result;
 });
 
-export const product = seq(
-  power.tag("pow"),
-  repeat(seq(mulDiv, power).tag("mulDiv")),
-).map(r => {
-  const { pow, mulDiv } = r.tags;
-  if (!mulDiv) return pow[0];
+export const product = seqObj({
+  pow: power,
+  mulDiv: repeat(seq(mulDiv, power)),
+}).map(r => {
+  const { pow, mulDiv } = r.value;
+  if (!mulDiv) return pow;
   const result = mulDiv.reduce((acc, opVal) => {
     const [op, val] = opVal;
     return op === "*" ? (acc *= val) : (acc /= val);
-  }, pow[0]);
+  }, pow);
   return result;
 });
 
-export const sum = seq(
-  product.tag("left"),
-  repeat(seq(plusMinus, product).tag("sumOp")),
-).map(r => {
-  const { left, sumOp } = r.tags;
-  if (!sumOp) return left[0];
+export const sum = seqObj({
+  left: product,
+  sumOp: repeat(seq(plusMinus, product)),
+}).map(r => {
+  const { left, sumOp } = r.value;
+  if (!sumOp) return left;
   return sumOp.reduce((acc, opVal) => {
     const [op, val] = opVal;
     return op === "+" ? (acc += val) : (acc -= val);
-  }, left[0]);
+  }, left);
 });
 /* */ expr     = sum; // prettier-ignore
 
-export const resultsStatement = expr as Parser<number>;
+export const resultsStatement = expr as Parser<Stream<Token>, number>;
 
 if (tracing) {
-  const names: Record<string, Parser<unknown>> = {
+  const names: Record<string, Parser<any, unknown>> = {
     value,
     power,
     product,

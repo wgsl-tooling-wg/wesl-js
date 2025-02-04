@@ -5,15 +5,3 @@ export const mainTokens = {
   digits: "number",
   symbol: "symbol",
 };
-
-/** For parsing generics */
-/*
-export const bracketTokens = tokenMatcher(
-  {
-    bracket: /<|>/,
-    ws: blankspaces,
-    other: /[^<>]+/,
-  },
-  "bracket",
-);
-*/

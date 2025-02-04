@@ -1,5 +1,6 @@
 import {
   CombinatorArg,
+  InputFromArg,
   OrParser,
   ParserFromArg,
   ParserFromRepeatArg,
@@ -16,14 +17,15 @@ import {
   parser,
   ParserContext,
   ParserResult,
+  ParserStream,
   runExtended,
   simpleParser,
   trackChildren,
 } from "./Parser.js";
 import { closeArray, pushOpenArray } from "./ParserCollect.js";
-import { ctxLog } from "./ParserLogging.js";
+import { ctxLog, srcTrace } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
-import { Token } from "./Stream.js";
+import { Stream, Token, TypedToken } from "./Stream.js";
 
 /** Parsing Combinators
  *
@@ -33,8 +35,6 @@ import { Token } from "./Stream.js";
  * Each parser is a function that recognizes tokens produced by a lexer
  * and returns a result.
  *  Returning null indicate failure. Tokens are not consumed on failure.
- *  Users can also use the .tag() method to tag results from a stage. Tagged results
- *    propagate up to containing parsers for convenience in selecting results.
  *
  * Built in parsers and combinators are available:
  *  kind() recognizes tokens of a particular type.
@@ -54,19 +54,35 @@ export class ParseError extends Error {
 
 /** Parse for a particular kind of token,
  * @return the matching text */
-export function token(kindStr: string, value: string): Parser<string> {
+export function token<const Kind extends string>(
+  kindStr: Kind,
+  value: string,
+): Parser<Stream<TypedToken<Kind>>, string> {
   return simpleParser(
     `token '${kindStr}' ${quotedText(value)}`,
     (state: ParserContext): string | null => {
-      const next = state.lexer.next();
-      return next?.kind === kindStr && next.text === value ? next.text : null;
+      if (tracing) {
+        const start = state.lexer.position();
+        const next = state.lexer.next();
+        if (next) {
+          const text = quotedText(next.text);
+          srcTrace(state.lexer.src, start, `: ${text} (${next.kind})`);
+        }
+        return next?.kind === kindStr && next.text === value ? next.text : null;
+      } else {
+        const next = state.lexer.next();
+        return next?.kind === kindStr && next.text === value ? next.text : null;
+      }
     },
   );
 }
 
 /** Parse for a particular kind of token,
  * @return the matching text */
-export function tokenOf(kindStr: string, values: string[]): Parser<string> {
+export function tokenOf<const Kind extends string>(
+  kindStr: Kind,
+  values: string[],
+): Parser<Stream<TypedToken<Kind>>, string> {
   return simpleParser(
     `tokenOf '${kindStr}'`,
     (state: ParserContext): string | null => {
@@ -80,24 +96,46 @@ export function tokenOf(kindStr: string, values: string[]): Parser<string> {
 
 /** Parse for a particular kind of token,
  * @return the matching text */
-export function kind(kindStr: string): Parser<string> {
+export function kind<const Kind extends string>(
+  kindStr: Kind,
+): Parser<Stream<TypedToken<Kind>>, string> {
   return simpleParser(
     `kind '${kindStr}'`,
     (state: ParserContext): string | null => {
-      const next = state.lexer.next();
-      return next?.kind === kindStr ? next.text : null;
+      if (tracing) {
+        const start = state.lexer.position();
+        const next = state.lexer.next();
+        if (next) {
+          const text = quotedText(next.text);
+          srcTrace(state.lexer.src, start, `: ${text} (${next.kind})`);
+        }
+        return next?.kind === kindStr ? next.text : null;
+      } else {
+        const next = state.lexer.next();
+        return next?.kind === kindStr ? next.text : null;
+      }
     },
   );
 }
 
 /** Parse for a token containing a text value
  * @return the kind of token that matched */
-export function text(value: string): Parser<string> {
+export function text(value: string): Parser<ParserStream, string> {
   return simpleParser(
     `${quotedText(value)}`,
     (state: ParserContext): string | null => {
-      const next = state.lexer.next();
-      return next?.text === value ? next.text : null;
+      if (tracing) {
+        const start = state.lexer.position();
+        const next = state.lexer.next();
+        if (next) {
+          const text = quotedText(next.text);
+          srcTrace(state.lexer.src, start, `: ${text} (${next.kind})`);
+        }
+        return next?.text === value ? next.text : null;
+      } else {
+        const next = state.lexer.next();
+        return next?.text === value ? next.text : null;
+      }
     },
   );
 }
@@ -158,10 +196,13 @@ export function seqObj<P extends { [key: string]: CombinatorArg }>(
 
 /** Parse two values, and discard the first value
  * @return the second value, or null if any parser fails */
-export function preceded<P extends CombinatorArg>(
-  ignoredArg: CombinatorArg,
+export function preceded<
+  Ignored extends CombinatorArg,
+  P extends CombinatorArg,
+>(
+  ignoredArg: Ignored,
   arg: P,
-): ParserFromArg<P> {
+): Parser<InputFromArg<Ignored> | InputFromArg<P>, ResultFromArg<P>> {
   const ignored = parserArg(ignoredArg);
   const p = parserArg(arg);
   const precededParser: ParserFromArg<P> = parser(
@@ -181,10 +222,13 @@ export function preceded<P extends CombinatorArg>(
 
 /** Parse two values, and discard the second value
  * @return the first value, or null if any parser fails */
-export function terminated<P extends CombinatorArg>(
+export function terminated<
+  P extends CombinatorArg,
+  Ignored extends CombinatorArg,
+>(
   arg: P,
-  ignoredArg: CombinatorArg,
-): ParserFromArg<P> {
+  ignoredArg: Ignored,
+): Parser<InputFromArg<P> | InputFromArg<Ignored>, ResultFromArg<P>> {
   const p = parserArg(arg);
   const ignored = parserArg(ignoredArg);
   const terminatedParser: ParserFromArg<P> = parser(
@@ -204,11 +248,18 @@ export function terminated<P extends CombinatorArg>(
 
 /** Parse three values, and only keep the middle value
  * @return the second value, or null if any parser fails */
-export function delimited<P extends CombinatorArg>(
-  ignoredArg1: CombinatorArg,
+export function delimited<
+  Ignored1 extends CombinatorArg,
+  P extends CombinatorArg,
+  Ignored2 extends CombinatorArg,
+>(
+  ignoredArg1: Ignored1,
   arg: P,
-  ignoredArg2: CombinatorArg,
-): ParserFromArg<P> {
+  ignoredArg2: Ignored2,
+): Parser<
+  InputFromArg<Ignored1> | InputFromArg<P> | InputFromArg<Ignored2>,
+  ResultFromArg<P>
+> {
   const ignored1 = parserArg(ignoredArg1);
   const p = parserArg(arg);
   const ignored2 = parserArg(ignoredArg2);
@@ -252,7 +303,7 @@ const undefinedResult: ParserResult<undefined> = {
   value: undefined,
 };
 
-export type UndefinedParser = Parser<undefined>;
+export type UndefinedParser = Parser<ParserStream, undefined>;
 /** Try a parser.
  *
  * If the parse succeeds, return the result.
@@ -282,24 +333,29 @@ export function opt<P extends CombinatorArg>(
 
 /** return true if the provided parser _doesn't_ match
  * does not consume any tokens */
-export function not(arg: CombinatorArg): Parser<true> {
+export function not<P extends CombinatorArg>(
+  arg: P,
+): Parser<InputFromArg<P>, true> {
   const p = parserArg(arg);
-  const notParser: Parser<true> = parser("not", (state: ParserContext) => {
-    const pos = state.lexer.position();
-    const result = p._run(state);
-    if (!result) {
-      return { value: true, tags: {} };
-    }
-    state.lexer.position(pos);
-    return null;
-  });
+  const notParser: Parser<InputFromArg<P>, true> = parser(
+    "not",
+    (state: ParserContext) => {
+      const pos = state.lexer.position();
+      const result = p._run(state);
+      if (!result) {
+        return { value: true };
+      }
+      state.lexer.position(pos);
+      return null;
+    },
+  );
   trackChildren(notParser, p);
 
   return notParser;
 }
 
 /** yield next token, any token */
-export function any(): Parser<Token> {
+export function any(): Parser<ParserStream, Token> {
   return simpleParser("any", (state: ParserContext): Token | null => {
     const next = state.lexer.next();
     return next || null;
@@ -307,7 +363,9 @@ export function any(): Parser<Token> {
 }
 
 /** yield next token if the provided parser doesn't match */
-export function anyNot(arg: CombinatorArg): Parser<Token> {
+export function anyNot<P extends CombinatorArg>(
+  arg: P,
+): Parser<InputFromArg<P>, Token> {
   return seq(not(arg), any())
     .map(r => r.value[1])
     .setTraceName("anyNot");
@@ -316,18 +374,13 @@ export function anyNot(arg: CombinatorArg): Parser<Token> {
 /** match everything until a terminator (and the terminator too) */
 export function anyThrough<A extends CombinatorArg>(
   arg: A,
-): Parser<[...any, ResultFromArg<A>]> {
+): Parser<InputFromArg<A>, [Token[], ResultFromArg<A>]> {
   const p = parserArg<A>(arg);
   const anyParser = seq(repeat(anyNot(p)), p).setTraceName(
     `anyThrough ${p.debugName}`,
   );
   trackChildren(anyParser, p);
-  type V = typeof anyParser extends Parser<infer V> ? V : never;
-  return anyParser as Parser<V>;
-
-  // LATER TS not sure why this doesn't work
-  // type T = TagsFromArg<A>;
-  // return result as Parser<V, T>;
+  return anyParser;
 }
 
 /** match zero or more instances of a parser */
@@ -377,7 +430,7 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
   return (ctx: ParserContext): RepeatWhileResult<A> => {
     const values: ResultFromArg<A>[] = [];
     for (;;) {
-      const result = runExtended<ResultFromArg<A>>(ctx, p);
+      const result = runExtended<InputFromArg<A>, ResultFromArg<A>>(ctx, p);
 
       // continue acccumulating until we get a null or the filter tells us to stop
       if (result !== null && filterFn(result)) {
@@ -392,7 +445,7 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
 }
 
 /** yields true if parsing has reached the end of input */
-export function eof(): Parser<true> {
+export function eof(): Parser<ParserStream, true> {
   return simpleParser("eof", (state: ParserContext) => {
     const result = state.lexer.next();
     if (result === undefined) {
@@ -423,12 +476,12 @@ export function req<A extends CombinatorArg>(
 }
 
 /** always succeeds, does not consume any tokens */
-export function yes(): Parser<true> {
+export function yes(): Parser<ParserStream, true> {
   return simpleParser("yes", () => true);
 }
 
 /** always fails, does not consume any tokens */
-export function no(): Parser<null> {
+export function no(): Parser<ParserStream, null> {
   return simpleParser("no", () => null);
 }
 
@@ -440,11 +493,11 @@ export interface WithSepOptions {
 }
 
 /** match an optional series of elements separated by a delimiter (e.g. a comma) */
-export function withSep<P extends CombinatorArg>(
-  sep: CombinatorArg,
+export function withSep<Sep extends CombinatorArg, P extends CombinatorArg>(
+  sep: Sep,
   p: P,
   opts: WithSepOptions = {},
-): Parser<ResultFromArg<P>[]> {
+): Parser<InputFromArg<Sep> | InputFromArg<P>, ResultFromArg<P>[]> {
   const { trailing = true, requireOne = false } = opts;
   const parser = parserArg(p);
   const sepParser = parserArg(sep);
@@ -466,17 +519,17 @@ export function withSep<P extends CombinatorArg>(
 }
 
 /** match an series of one or more elements separated by a delimiter (e.g. a comma) */
-export function withSepPlus<P extends CombinatorArg>(
-  sep: CombinatorArg,
+export function withSepPlus<Sep extends CombinatorArg, P extends CombinatorArg>(
+  sep: Sep,
   p: P,
-): Parser<ResultFromArg<P>[]> {
+): Parser<InputFromArg<Sep> | InputFromArg<P>, ResultFromArg<P>[]> {
   return withSep(sep, p, { requireOne: true }).setTraceName("withSepPlus");
 }
 
 /** run a parser with a provided token matcher (i.e. use a temporary lexing mode) */
 export function withLexerAction<U>(
   action: (lexer: Lexer) => U | null,
-): Parser<U> {
+): Parser<ParserStream, U> {
   return simpleParser(`withLexerAction`, (state: ParserContext) => {
     return action(state.lexer);
   });
@@ -487,13 +540,13 @@ export function parserArg<A extends CombinatorArg>(arg: A): ParserFromArg<A> {
   if (typeof arg === "string") {
     return text(arg) as ParserFromArg<A>; // LATER fix cast
   } else if (arg instanceof Parser) {
-    return arg as Parser<ResultFromArg<A>>;
+    return arg as Parser<InputFromArg<A>, ResultFromArg<A>>;
   }
   return fn(arg as () => ParserFromArg<A>);
 }
 
 /** A delayed parser definition, for making recursive parser definitions.  */
-export function fn<T>(fn: () => Parser<T>): Parser<T> {
+export function fn<I, T>(fn: () => Parser<I, T>): Parser<I, T> {
   const fp = parser("fn()", (state: ParserContext): OptParserResult<T> => {
     if (!fn) {
       const deepName = state._debugNames.join(".");

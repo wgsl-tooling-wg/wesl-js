@@ -1,14 +1,21 @@
 import { expect, test } from "vitest";
 import { matchingLexer } from "../MatchingLexer.js";
-import { kind, opt, repeat, seq } from "../ParserCombinator.js";
-import { tokenMatcher } from "../TokenMatcher.js";
+import {
+  kind,
+  opt,
+  preceded,
+  repeat,
+  seq,
+  seqObj,
+} from "../ParserCombinator.js";
 import { matchOneOf } from "../stream/RegexHelpers.js";
+import { RegexMatchers } from "../stream/MatchersStream.js";
 
 test("parse fn foo()", () => {
   const src = "fn foo()";
 
   // lexer
-  const tokens = tokenMatcher({
+  const tokens = new RegexMatchers({
     ident: /[a-z]+/,
     ws: /\s+/,
     symbol: matchOneOf("( ) [ ] { } @ ; ,"),
@@ -16,7 +23,7 @@ test("parse fn foo()", () => {
   const lexer = matchingLexer(src, tokens);
 
   // parsers
-  const ident = kind(tokens.ident);
+  const ident = kind("ident");
   const fnDecl = seq("fn", ident, "(", ")");
 
   // parsing and extracint result
@@ -33,7 +40,7 @@ test("parse fn foo() with annotation in grammar", () => {
   const src = "fn foo()";
 
   // lexer
-  const tokens = tokenMatcher({
+  const tokens = new RegexMatchers({
     ident: /[a-z]+/,
     ws: /\s+/,
     symbol: matchOneOf("( ) [ ] { } @ ; ,"),
@@ -41,7 +48,7 @@ test("parse fn foo() with annotation in grammar", () => {
   const lexer = matchingLexer(src, tokens);
 
   // parsers
-  const ident = kind(tokens.ident);
+  const ident = kind("ident");
   const annotation = opt(seq("@", ident));
   const fnDecl = seq(annotation, "fn", ident, "(", ")");
 
@@ -55,11 +62,11 @@ test("parse fn foo() with annotation in grammar", () => {
   expect(result).toBeDefined();
 });
 
-test("parse fn foo() with tagged results", () => {
+test("parse fn foo() with seqObj", () => {
   const src = "@export fn foo()";
 
   // lexer
-  const tokens = tokenMatcher({
+  const tokens = new RegexMatchers({
     ident: /[a-z]+/,
     ws: /\s+/,
     symbol: matchOneOf("( ) [ ] { } @ ; ,"),
@@ -67,18 +74,24 @@ test("parse fn foo() with tagged results", () => {
   const lexer = matchingLexer(src, tokens);
 
   // parsers
-  const ident = kind(tokens.ident);
-  const annotation = repeat(seq("@", ident.tag("annotation")));
-  const fnDecl = seq(annotation, "fn", ident.tag("fnName"), "(", ")");
+  const ident = kind("ident");
+  const annotation = repeat(preceded("@", ident));
+  const fnDecl = seqObj({
+    annotation,
+    _1: "fn",
+    fnName: ident,
+    _2: "(",
+    _3: ")",
+  });
 
   // parsing and extracting result
   const result = fnDecl.parse({ lexer });
 
   expect(result).toBeDefined();
   if (result) {
-    const [fnName] = result.tags.fnName;
+    const fnName = result.value.fnName;
     expect(fnName).toBe("foo");
-    const annotations: string[] = result.tags.annotation;
+    const annotations: string[] = result.value.annotation;
     expect(annotations).to.toEqual(["export"]);
   }
 });

@@ -2,6 +2,7 @@ import {
   LexerFromStream,
   NoTags,
   Parser,
+  Stream,
   TagRecord,
   withLogger,
 } from "mini-parse";
@@ -15,10 +16,10 @@ import { WgslBundle } from "random_wgsl";
 import { link, LinkConfig } from "../Linker.js";
 import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
 import { Conditions } from "../Scope.js";
-import { WeslStream } from "../parse/WeslStream.js";
+import { WeslStream, WeslToken } from "../parse/WeslStream.js";
 
 export function testAppParse<T>(
-  parser: Parser<T>,
+  parser: Parser<Stream<WeslToken>, T>,
   src: string,
 ): TestParseResult<T, WeslAST> {
   const appState = syntheticWeslParseState();

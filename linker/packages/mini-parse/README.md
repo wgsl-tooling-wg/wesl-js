@@ -40,7 +40,7 @@ export const simpleSum = seq(num, or("+", "-"), num);
 Here's a parser for nested block comments:
 
 ```ts
-export const blockComment: Parser<void> = seq(
+export const blockComment: Parser<any, void> = seq(
   "/*",
   repeat(or(() => blockComment, anyNot("*/"))),
   req("*/"),
@@ -67,7 +67,7 @@ Here's an example token matcher to identify three kinds of tokens for parsing
 simple arithmetic expressions.
 
 ```ts
-export const simpleTokens = tokenMatcher({
+export const simpleTokens = new RegexMatchers({
   number: /\d+/,
   symbol: matchOneOf("( ) ^ + - * /"),
   ws: /\s+/,
@@ -105,7 +105,7 @@ successful parse and do a bit of format conversion.
 This parser will return a number rather than a string:
 
 ```ts
-const int = num.map(r => parseInt(r.value));
+const int = num.map(r => parseInt(r.value, 10));
 ```
 
 Here's an example that even does some computation, and returns a numeric sum or
@@ -167,12 +167,11 @@ Multiple results with the same name are accumulated into an array.
 ```ts
 const op = or("+", "-");
 
-export const namedSum = seq(
+export const taggedSum = seq(
   int,
-  repeat(seq(op, int).named("opRights")), // accumulate an array of [op, int] pairs
+  repeat(seq(op, int)), // accumulate an array of [op, int] pairs
 ).map(r => {
-  const { opRights } = r.named;
-  const left = r.value[0];
+  const [left, opRights] = r.value;
   if (!opRights) return left;
   return opRights.reduce((acc, opRight) => {
     const [op, right] = opRight;
@@ -191,6 +190,7 @@ To print out the progress of parsing:
 
 1. Call `enableTracing()` to turn on the tracing facility (normally off and
    removed from prod builds)
+1. Create your parsers.
 1. Call `.trace(opts?)` on any Parser. See `TraceOptions` for options
    controlling trace levels.
 1. Add application relevant trace names to any parser using `.traceName()` or

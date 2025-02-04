@@ -1,6 +1,6 @@
 import { testParse } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import { calcTokens, statement } from "../examples/CalculatorExample.js";
+import { calcMatcher, statement } from "../examples/CalculatorExample.js";
 import {
   simpleSum,
   simpleTokens,
@@ -11,13 +11,13 @@ import { matchingLexer } from "../MatchingLexer.js";
 
 test("parse 3 + 4", () => {
   const src = "3 + 4";
-  const parsed = testParse(statement, src, calcTokens);
+  const parsed = testParse(statement, src, calcMatcher);
   expect(parsed.position).toBe(src.length);
 });
 
 test("parse 3 + 4 + 7", () => {
   const src = "3 + 4 + 7";
-  const parsed = testParse(statement, src, calcTokens);
+  const parsed = testParse(statement, src, calcMatcher);
   expect(parsed.position).toBe(src.length);
 });
 

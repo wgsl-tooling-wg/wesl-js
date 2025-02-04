@@ -1,10 +1,20 @@
-import { Parser, setTraceName } from "../Parser.js";
-import { kind, opt, or, repeat, seq } from "../ParserCombinator.js";
+import { Parser } from "../Parser.js";
+import {
+  delimited,
+  kind,
+  opt,
+  or,
+  preceded,
+  repeat,
+  seq,
+} from "../ParserCombinator.js";
 import { tracing } from "../ParserTracing.js";
+import { Stream, TypedToken } from "../Stream.js";
+import { RegexMatchers } from "../stream/MatchersStream.js";
 import { matchOneOf } from "../stream/RegexHelpers.js";
-import { tokenMatcher } from "../TokenMatcher.js";
 
-export const calcTokens = tokenMatcher({
+export type CalcKind = "number" | "ws" | "mulDiv" | "plusMinus" | "symbol";
+export const calcMatcher = new RegexMatchers<CalcKind>({
   number: /\d+/,
   ws: /\s+/,
   mulDiv: matchOneOf("* /"),
@@ -12,11 +22,11 @@ export const calcTokens = tokenMatcher({
   symbol: matchOneOf("( ) ^"),
 });
 
-export const num       = kind(calcTokens.number); // prettier-ignore
-export const plusMinus = kind(calcTokens.plusMinus); // prettier-ignore
-export const mulDiv    = kind(calcTokens.mulDiv); // prettier-ignore
-
-let expr: Parser<any> = null as any; // help TS with forward reference
+export const num       = kind("number"); // prettier-ignore
+export const plusMinus = kind("plusMinus"); // prettier-ignore
+export const mulDiv    = kind("mulDiv"); // prettier-ignore
+export type CalcStream = Stream<TypedToken<CalcKind>>;
+let expr: Parser<CalcStream, any> = null as any; // help TS with forward reference
 
 /* from: https://en.wikipedia.org/wiki/Parsing_expression_grammar#Example 
     Expr    ← Sum
@@ -35,7 +45,7 @@ const sum       = seq(product, repeat(seq(plusMinus, product))); // prettier-ign
 export const statement = repeat(expr);
 
 if (tracing) {
-  const names: Record<string, Parser<unknown>> = {
+  const names: Record<string, Parser<any, unknown>> = {
     value,
     power,
     product,

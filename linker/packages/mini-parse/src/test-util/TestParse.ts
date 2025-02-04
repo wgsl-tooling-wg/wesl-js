@@ -2,24 +2,32 @@ import {
   AppState,
   enableTracing,
   Lexer,
-  matchingLexer,
+  LexerFromStream,
+  MatchersStream,
   matchOneOf,
-  NoTags,
   OptParserResult,
   Parser,
-  TagRecord,
-  TokenMatcher,
-  tokenMatcher,
+  RegexMatchers,
+  Stream,
+  Token,
   tracing,
   withLogger,
 } from "mini-parse";
 import { expect } from "vitest";
 import { logCatch } from "./LogCatcher.js";
+import { FilterStream } from "../stream/FilterStream.js";
 
 const symbolSet =
   "& && -> @ / ! [ ] { } : , = == != > >= < << <= % - -- ' \"" +
   ". + ++ | || ( ) ; * ~ ^ // /* */ += -= *= /= %= &= |= ^= >>= <<= <<";
-export const testTokens = tokenMatcher({
+export type TestMatcherKind =
+  | "directive"
+  | "word"
+  | "attr"
+  | "symbol"
+  | "digits"
+  | "ws";
+export const testMatcher = new RegexMatchers<TestMatcherKind>({
   directive: /#[a-zA-Z_]\w*/,
   word: /[a-zA-Z_]\w*/,
   attr: /@[a-zA-Z_]\w*/,
@@ -36,18 +44,24 @@ export interface TestParseResult<T, S = any> {
 
 /** utility for testing parsers */
 export function testParse<T, C = any, S = any>(
-  p: Parser<T>,
+  p: Parser<Stream<Token>, T>,
   src: string,
-  tokenMatcher: TokenMatcher = testTokens,
+  tokenMatcher: RegexMatchers<string> = testMatcher,
   appState: AppState<C, S> = { context: {} as C, stable: [] as S },
 ): TestParseResult<T, S> {
-  const lexer = matchingLexer(src, tokenMatcher);
+  const lexer = new LexerFromStream(
+    new FilterStream(
+      new MatchersStream(src, tokenMatcher),
+      t => t.kind !== "ws",
+    ),
+    src,
+  );
   const parsed = p.parse({ lexer, appState: appState, maxParseCount: 1000 });
   return { parsed, position: lexer.position(), stable: appState.stable };
 }
 
 export function testParseWithLexer<T, C = any, S = any>(
-  p: Parser<T>,
+  p: Parser<Stream<Token>, T>,
   lexer: Lexer,
   appState: AppState<C, S> = { context: {} as C, stable: [] as S },
 ): TestParseResult<T, S> {

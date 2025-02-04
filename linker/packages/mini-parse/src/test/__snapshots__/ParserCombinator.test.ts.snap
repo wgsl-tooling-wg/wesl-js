@@ -29,7 +29,6 @@ exports[`not() success 1`] = `
 
 exports[`opt() makes failing match ok 1`] = `
 {
-  "tags": {},
   "value": [
     undefined,
     "foo",
@@ -39,7 +38,6 @@ exports[`opt() makes failing match ok 1`] = `
 
 exports[`seq() handles two element match 1`] = `
 {
-  "tags": {},
   "value": [
     "#import",
     "foo",
