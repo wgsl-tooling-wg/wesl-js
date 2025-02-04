@@ -2,10 +2,13 @@ import { expect, test } from "vitest";
 import { importSyntaxCases } from "wesl-testsuite";
 import { weslImport } from "../ImportGrammar.js";
 import { testAppParse } from "./TestUtil.js";
+import { withLogSpy } from "mini-parse/test-util";
 
 function expectParseFail(src: string): void {
-  const result = testAppParse(weslImport, src);
-  expect(result.stable.imports).toEqual([]); // TODO tighten test, shouldn't parse
+  withLogSpy(() => {
+    const result = testAppParse(weslImport, src);
+    expect(result.stable.imports).toEqual([]); // TODO tighten test, shouldn't parse
+  });
 }
 
 function expectParses(src: string): void {
