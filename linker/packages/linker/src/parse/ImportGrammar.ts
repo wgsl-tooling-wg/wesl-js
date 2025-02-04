@@ -11,7 +11,6 @@ import {
   req,
   seq,
   seqObj,
-  setTraceName,
   TagRecord,
   tagScope,
   terminated,
@@ -118,6 +117,6 @@ if (tracing) {
   };
 
   Object.entries(names).forEach(([name, parser]) => {
-    setTraceName(parser, name);
+    parser.setTraceName(name);
   });
 }

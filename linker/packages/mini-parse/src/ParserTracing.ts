@@ -1,4 +1,5 @@
-import { AnyParser, Parser, ParserContext, setTraceName } from "./Parser.js";
+import { assertThat } from "./Assertions.js";
+import { AnyParser, Parser, ParserContext, ParserTraceInfo } from "./Parser.js";
 import { log } from "./WrappedLog.js";
 
 /** true if parser tracing is enabled */
@@ -31,7 +32,7 @@ export function enableTracePos(enable = true): void {
 export function setTraceNames(parsers: Record<string, AnyParser>): void {
   if (tracing) {
     Object.entries(parsers).forEach(([name, parser]) => {
-      setTraceName(parser, name);
+      parser.setTraceName(name);
     });
   }
 }
@@ -67,7 +68,7 @@ export interface TraceLogging {
 
 type TraceLoggingFn<T> = (
   ctx: any,
-  trace: TraceOptions | undefined,
+  trace: ParserTraceInfo | undefined,
   fn: (ctx: ParserContext) => T,
 ) => T;
 
@@ -76,7 +77,7 @@ export const withTraceLogging = <T>(): TraceLoggingFn<T> =>
 
 function stubTraceLogging<T>(
   ctx: any,
-  trace: TraceOptions | undefined,
+  _trace: ParserTraceInfo | undefined,
   fn: (ctx: ParserContext) => T,
 ): T {
   return fn(ctx);
@@ -87,10 +88,15 @@ function withTraceLoggingInternal<T>(
   // _trace has trace settings from parent
   ctx: ParserContext,
   // trace has trace options set on this stage
-  trace: TraceOptions | undefined,
+  traceInfo: ParserTraceInfo | undefined,
   fn: (ctxWithTracing: ParserContext) => T,
 ): T {
   let { _trace } = ctx;
+  assertThat(
+    traceInfo !== undefined,
+    "This function may only be called if tracing is enabled",
+  );
+  const trace = traceInfo.options;
 
   // log if we're starting or inheriting a trace and we're inside requested position range
   let logging: boolean = (!!_trace || !!trace) && !trace?.hide;

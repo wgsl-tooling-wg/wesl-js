@@ -18,7 +18,7 @@ function deepToString(
   } else {
     visited.add(p);
     lines.push(pad + p.debugName);
-    const childBlock = p._children
+    const childBlock = p._traceInfo?.traceChildren
       ?.map(c => deepToString(c, indent + 2, visited))
       .join("");
     lines.push(childBlock || "");
@@ -34,8 +34,10 @@ function fnChildrenDeep(p: AnyParser, visited: Set<AnyParser>): void {
     visited.add(p);
     if (p.debugName === "fn()") {
       const newChild = (p as any)._fn() as AnyParser;
-      p._children = [newChild];
+      if (p._traceInfo) {
+        p._traceInfo.traceChildren = [newChild];
+      }
     }
-    p._children?.forEach(c => fnChildrenDeep(c, visited));
+    p._traceInfo?.traceChildren?.forEach(c => fnChildrenDeep(c, visited));
   }
 }

@@ -1,3 +1,4 @@
+import { assertThat } from "./Assertions.js";
 import { CombinatorArg, ParserFromArg } from "./CombinatorTypes.js";
 import { Lexer } from "./MatchingLexer.js";
 import {
@@ -90,14 +91,8 @@ type ParseFn<T> = (context: ParserContext) => OptParserResult<T>;
 
 /** options for creating a core parser */
 export interface ParserArgs {
-  /** name to use for result in tagged results */
-  tag?: string | symbol;
-
   /** name to use for trace logging */
   traceName?: string;
-
-  /** use the debugName from this source parser for trace logging */
-  traceSrc?: AnyParser;
 
   /** enable trace logging */
   trace?: TraceOptions;
@@ -119,41 +114,38 @@ interface ConstructArgs<T> extends ParserArgs {
 
 export type AnyParser = Parser<any>;
 
+export class ParserTraceInfo {
+  constructor(
+    /** name to use for trace logging */
+    public traceName: string,
+    public traceChildren: AnyParser[] = [],
+    public options: TraceOptions = {},
+  ) {}
+  /** true for elements without children like kind(), and text(),
+   * (to avoid intro log statement while tracing) */
+  traceIsTerminal: boolean = false;
+}
+
 /** a composable parsing element */
 export class Parser<T> {
-  _traceName: string | undefined;
-  traceSrc: AnyParser | undefined;
-  tagName: string | symbol | undefined;
-  traceOptions: TraceOptions | undefined;
-  terminal: boolean | undefined;
+  /** If tracing is enabled, this definitely exists. Otherwise it does not exist. */
+  _traceInfo?: ParserTraceInfo;
   _collection: true | undefined;
-  _children: AnyParser[] | undefined;
   fn: ParseFn<T>;
 
   constructor(args: ConstructArgs<T>) {
-    this._traceName = args.traceName;
-    this.tagName = args.tag;
-    this.traceOptions = args.trace;
-    this.terminal = args.terminal;
-    this.traceSrc = args.traceSrc;
     this._collection = args._collection;
-    this._children = args._children;
     this.fn = args.fn;
-  }
-
-  /** copy this parser with slightly different settings */
-  _cloneWith(p: Partial<ConstructArgs<T>>): Parser<T> {
-    return new Parser({
-      traceName: this._traceName,
-      traceSrc: this.traceSrc,
-      tag: this.tagName,
-      trace: this.traceOptions,
-      terminal: this.terminal,
-      _collection: this._collection,
-      _children: this._children,
-      fn: this.fn,
-      ...p,
-    });
+    if (tracing) {
+      this._traceInfo = new ParserTraceInfo(
+        args.traceName ?? "unknown",
+        args._children,
+        args.trace,
+      );
+      if (args.terminal) {
+        this._traceInfo.traceIsTerminal = true;
+      }
+    }
   }
 
   /** run the parser given an already created parsing context */
@@ -172,13 +164,19 @@ export class Parser<T> {
   }
 
   /** record a name for debug tracing */
-  traceName(name: string): Parser<T> {
-    return this._cloneWith({ traceName: name });
+  setTraceName(name: string): Parser<T> {
+    if (tracing) {
+      this._traceInfo!.traceName = name;
+    }
+    return this;
   }
 
   /** trigger tracing for this parser (and by default also this parsers descendants) */
-  trace(opts: TraceOptions = {}): Parser<T> {
-    return this._cloneWith({ trace: opts });
+  setTrace(opts: TraceOptions = {}): Parser<T> {
+    if (tracing) {
+      this._traceInfo!.options = opts;
+    }
+    return this;
   }
 
   /** map results to a new value, or add to app state as a side effect.
@@ -238,12 +236,10 @@ export class Parser<T> {
 
   /** name of this parser for debugging/tracing */
   get debugName(): string {
-    return (
-      this._traceName ??
-      this.traceSrc?._traceName ??
-      this.tagName?.toString() ??
-      "parser"
-    );
+    if (tracing) {
+      return this._traceInfo!.traceName;
+    }
+    return "parser";
   }
 }
 
@@ -275,12 +271,6 @@ export function simpleParser<T>(
   return parser(traceName, parserFn, true);
 }
 
-/** modify the trace name of this parser */
-export function setTraceName(parser: Parser<any>, traceName: string): void {
-  const origName = parser._traceName;
-  parser._traceName = `${traceName} (${origName})`;
-}
-
 /**
  * Execute a parser by running the core parsing fn given the parsing context
  * also:
@@ -309,7 +299,7 @@ function runParser<T>(
   // setup trace logging if enabled and active for this parser
   const result = withTraceLogging<OptParserResult<T>>()(
     context,
-    p.traceOptions,
+    p._traceInfo,
     runInContext,
   );
 
@@ -321,8 +311,10 @@ function runParser<T>(
 
     if (debugNames) ctx._debugNames.push(p.debugName);
     const traceSuccessOnly = ctx._trace?.successOnly;
-    if (!p.terminal && tracing && !traceSuccessOnly)
-      parserLog(`..${p.debugName}`);
+    if (tracing) {
+      if (!p._traceInfo?.traceIsTerminal && tracing && !traceSuccessOnly)
+        parserLog(`..${p.debugName}`);
+    }
 
     // run the parser function for this stage
     let result = p.fn(ctx);
@@ -424,7 +416,8 @@ export function runExtended<T>(
 /** for pretty printing, track subsidiary parsers */
 export function trackChildren(p: AnyParser, ...args: CombinatorArg[]) {
   if (tracing) {
+    assertThat(p._traceInfo !== undefined);
     const kids = args.map(parserArg);
-    p._children = kids;
+    p._traceInfo.traceChildren = kids;
   }
 }

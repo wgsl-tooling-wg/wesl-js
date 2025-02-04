@@ -310,7 +310,7 @@ export function any(): Parser<Token> {
 export function anyNot(arg: CombinatorArg): Parser<Token> {
   return seq(not(arg), any())
     .map(r => r.value[1])
-    .traceName("anyNot");
+    .setTraceName("anyNot");
 }
 
 /** match everything until a terminator (and the terminator too) */
@@ -318,7 +318,7 @@ export function anyThrough<A extends CombinatorArg>(
   arg: A,
 ): Parser<[...any, ResultFromArg<A>]> {
   const p = parserArg<A>(arg);
-  const anyParser = seq(repeat(anyNot(p)), p).traceName(
+  const anyParser = seq(repeat(anyNot(p)), p).setTraceName(
     `anyThrough ${p.debugName}`,
   );
   trackChildren(anyParser, p);
@@ -347,7 +347,7 @@ export function repeatPlus<A extends CombinatorArg>(
   const p = parserArg(arg);
   const repeatParser = seq(p, repeat(p))
     .map(r => [r.value[0], ...r.value[1]])
-    .traceName("repeatPlus");
+    .setTraceName("repeatPlus");
   trackChildren(repeatParser, p);
   return repeatParser;
 }
@@ -458,7 +458,7 @@ export function withSep<P extends CombinatorArg>(
       let repeatResults = r.value[1];
       return [firstResult].concat(repeatResults);
     })
-    .traceName("withSep") as any;
+    .setTraceName("withSep") as any;
 
   trackChildren(withSepParser, parser, sepParser);
 
@@ -470,7 +470,7 @@ export function withSepPlus<P extends CombinatorArg>(
   sep: CombinatorArg,
   p: P,
 ): Parser<ResultFromArg<P>[]> {
-  return withSep(sep, p, { requireOne: true }).traceName("withSepPlus");
+  return withSep(sep, p, { requireOne: true }).setTraceName("withSepPlus");
 }
 
 /** run a parser with a provided token matcher (i.e. use a temporary lexing mode) */

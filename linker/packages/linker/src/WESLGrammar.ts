@@ -12,7 +12,6 @@ import {
   repeatPlus,
   req,
   seq,
-  setTraceName,
   tagScope,
   terminated,
   text,
@@ -616,6 +615,6 @@ if (tracing) {
   };
 
   Object.entries(names).forEach(([name, parser]) => {
-    setTraceName(parser, name);
+    parser.setTraceName(name);
   });
 }

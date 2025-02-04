@@ -5,7 +5,7 @@ import {
   withTracingDisabled,
 } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import { Parser, setTraceName } from "../Parser.js";
+import { Parser } from "../Parser.js";
 import {
   any,
   anyNot,
@@ -133,7 +133,7 @@ test("recurse with fn()", () => {
 test("tracing", () => {
   const src = "a";
   const { log, logged } = logCatch();
-  const p = repeat(seq(kind(m.word)).traceName("wordz")).trace();
+  const p = repeat(seq(kind(m.word)).setTraceName("wordz")).setTrace();
 
   enableTracing();
   withLogger(log, () => {
