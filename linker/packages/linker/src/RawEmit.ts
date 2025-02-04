@@ -30,6 +30,8 @@ export function typeParamToString(param?: TypeTemplateParameter): string {
   if (param?.kind === "literal" || param?.kind === "ref") {
     return contentsToString(param);
   }
+  // @ts-ignore TODO: Remove this dummy case
+  if (param?.kind === "expression") return contentsToString(param);
 
   if (param?.kind === "type") return typeRefToString(param);
   else return `?${param}?`;
