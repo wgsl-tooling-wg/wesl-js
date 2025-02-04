@@ -20,7 +20,7 @@ import {
   withSep,
   withSepPlus,
 } from "mini-parse";
-import { weslImport } from "./ImportGrammar.ts";
+import { weslImport } from "./parse/ImportGrammar.ts";
 import {
   aliasCollect,
   collectAttribute,

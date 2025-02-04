@@ -18,15 +18,15 @@ import {
   tracing,
   withSepPlus,
 } from "mini-parse";
-import { mainTokens } from "./WESLTokens.js";
+import { mainTokens } from "../WESLTokens.js";
 import {
   ImportCollection,
   ImportItem,
   ImportSegment,
   ImportStatement,
-} from "./parse/ImportStatement.js";
-import { ImportElem } from "./AbstractElems.js";
-import { importElem } from "./WESLCollect.js";
+} from "./ImportStatement.js";
+import { ImportElem } from "../AbstractElems.js";
+import { importElem } from "../WESLCollect.js";
 
 const wordToken = kind(mainTokens.ident);
 

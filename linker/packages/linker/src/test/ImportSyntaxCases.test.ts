@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { importSyntaxCases } from "wesl-testsuite";
-import { weslImport } from "../ImportGrammar.js";
+import { weslImport } from "../parse/ImportGrammar.js";
 import { testAppParse } from "./TestUtil.js";
 
 function expectParseFail(src: string): void {
