@@ -87,7 +87,8 @@ export function parseLibsIntoRegistry(
 
 const libRegex = /^lib\.w[eg]sl$/i;
 
-/** convert a relative file path (./foo/bar.wesl) to a module path (package::foo::bar) */
+/** convert a file path (./shaders/foo/bar.wesl) and a wesl root (./shaders)
+ *  to a module path (package::foo::bar) */
 function fileToModulePath(
   filePath: string,
   packageName: string,
