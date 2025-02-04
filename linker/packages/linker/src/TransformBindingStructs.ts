@@ -195,7 +195,7 @@ function lowerPtrMember(
 }
 
 function lowerStdTypeMember(
-  typeName: string | RefIdent,
+  typeName: RefIdent,
   typeParameters: TypeTemplateParameter[] | undefined,
 ): LoweredVarTypes | undefined {
   if (typeof typeName !== "string") {
@@ -208,10 +208,10 @@ function lowerStdTypeMember(
 }
 
 function lowerStorageTextureMember(
-  typeName: string | RefIdent,
+  typeName: RefIdent,
   typeParameters: TypeTemplateParameter[] | undefined,
 ): LoweredVarTypes | undefined {
-  if (typeof typeName === "string" && textureStorage.test(typeName)) {
+  if (textureStorage.test(typeName.originalName)) {
     const params = typeParameters ? typeListToString(typeParameters) : "";
     const varType = typeName + params;
     return { varType, storage: "" };
