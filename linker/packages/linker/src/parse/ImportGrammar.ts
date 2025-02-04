@@ -11,6 +11,7 @@ import {
   req,
   seq,
   seqObj,
+  Stream,
   TagRecord,
   tagScope,
   terminated,
@@ -26,6 +27,7 @@ import {
 } from "./ImportStatement.js";
 import { ImportElem } from "../AbstractElems.js";
 import { importElem } from "../WESLCollect.js";
+import { WeslToken } from "./WeslStream.js";
 
 const wordToken = kind(mainTokens.ident);
 
@@ -44,7 +46,10 @@ const item_import = seq(wordToken, opt(preceded("as", wordToken))).mapValue(
 );
 
 // forward references for mutual recursion
-let import_collection: Parser<ImportCollection> = null as any;
+let import_collection: Parser<
+  Stream<WeslToken>,
+  ImportCollection
+> = null as any;
 
 const import_path = seqObj({
   segments: repeatPlus(terminated(wordToken.mapValue(segment), "::")),
@@ -73,7 +78,7 @@ const import_package = terminated(wordToken.mapValue(segment), "::").mapValue(
 );
 
 /** parse a WESL style wgsl import statement. */
-export const weslImport: Parser<ImportElem> = tagScope(
+export const weslImport: Parser<Stream<WeslToken>, ImportElem> = tagScope(
   delimited(
     "import",
     req(
@@ -107,7 +112,7 @@ export const weslImport: Parser<ImportElem> = tagScope(
 );
 
 if (tracing) {
-  const names: Record<string, Parser<unknown>> = {
+  const names: Record<string, Parser<Stream<WeslToken>, unknown>> = {
     item_import,
     import_path,
     import_collection,

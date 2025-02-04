@@ -18,6 +18,7 @@ import {
   tracing,
   withSep,
   withSepPlus,
+  Stream,
 } from "mini-parse";
 import { weslImport } from "./parse/ImportGrammar.ts";
 import {
@@ -145,7 +146,7 @@ const std_type_specifier = seq(
 )                                   .collect(typeRefCollect);
 
 // prettier-ignore
-export const type_specifier: Parser<any> = tagScope(
+export const type_specifier: Parser<Stream<WeslToken>,any> = tagScope(
    std_type_specifier,
 )                                   .ctag("typeRefElem");
 
@@ -293,7 +294,7 @@ const makeExpressionOperator = (isTemplate: boolean) => {
   return or(...allowedOps);
 };
 
-const unary_expression: Parser<any> = or(
+const unary_expression: Parser<Stream<WeslToken>, any> = or(
   seq(or(..."! & * - ~".split(" ")), () => unary_expression),
   or(
     simple_component_reference,
@@ -413,7 +414,7 @@ const while_statement = seq(
   compound_statement,
 );
 
-const statement: Parser<any> = or(
+const statement: Parser<Stream<WeslToken>, any> = or(
   for_statement,
   if_statement,
   loop_statement,
@@ -432,7 +433,7 @@ const statement: Parser<any> = or(
 );
 
 // prettier-ignore
-const lhs_expression: Parser<any> = or(
+const lhs_expression: Parser<Stream<WeslToken>,any> = or(
   simple_component_reference,
   seq(
     qualified_ident                        .collect(refIdent), 
@@ -561,7 +562,7 @@ export const weslRoot = seq(
   )                                 .collect(collectModule, "collectModule");
 
 if (tracing) {
-  const names: Record<string, Parser<unknown>> = {
+  const names: Record<string, Parser<Stream<WeslToken>, unknown>> = {
     qualified_ident,
     diagnostic_rule_name,
     diagnostic_control,

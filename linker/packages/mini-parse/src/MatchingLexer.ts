@@ -5,7 +5,6 @@ import { SrcMap } from "./SrcMap.js";
 import { Stream, Token } from "./Stream.js";
 import { FilterStream } from "./stream/FilterStream.js";
 import { MatchersStream, RegexMatchers } from "./stream/MatchersStream.js";
-import { TokenMatcher } from "./TokenMatcher.js";
 
 /** Legacy interface, to be superseded by the Stream */
 export interface Lexer {
