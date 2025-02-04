@@ -1,7 +1,7 @@
 import { expectNoLog } from "mini-parse/test-util";
 import fs from "node:fs/promises";
 import { expect, test } from "vitest";
-import { enableBindingStructs, link, noSuffix } from "wesl";
+import { bindingStructsPlugin, link, noSuffix } from "wesl";
 
 export interface NamedPath {
   name: string; // test name
@@ -15,7 +15,7 @@ export interface NamedPath {
  * @param fileNames wgsl file paths to load and parse
  */
 export function testWgslFiles(namedPaths: NamedPath[]) {
-  const config = enableBindingStructs();
+  const config = { plugins: [bindingStructsPlugin()] };
 
   namedPaths.forEach(({ name, filePath }) => {
     const shortPath = "./" + name;

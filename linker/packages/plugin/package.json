@@ -3,6 +3,7 @@
   "type": "module",
   "version": "0.1.0",
   "scripts": {
+    "echo": "echo",
     "build": "tsup",
     "dev": "tsup --watch src --watch ../linker/dist",
     "build:fix": "tsx scripts/postbuild.ts",
@@ -10,7 +11,8 @@
     "play": "npm -C playground run dev",
     "prepublishOnly": "npm run build",
     "release": "bumpp && npm publish",
-    "test": "vitest"
+    "test": "vitest",
+    "typecheck": "tsc"
   },
   "dependencies": {
     "toml": "^3.0.0",
@@ -41,6 +43,7 @@
   ],
   "exports": {
     ".": {
+      "types": "./src/types.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
@@ -94,6 +97,7 @@
     }
   },
   "files": [
+    "src",
     "dist"
   ],
   "peerDependencies": {

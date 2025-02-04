@@ -1,3 +1,3 @@
 export interface WeslPluginOptions {
-  // TODO
+  weslToml?: string;
 }

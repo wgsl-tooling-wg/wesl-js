@@ -1,14 +1,26 @@
 /// <reference types="wesl-plugin" />
-/// <reference types="vite/client" />
 import { copyBuffer } from "thimbleberry";
+import { beforeAll, expect, test } from "vitest";
 import { bindingStructsPlugin, link2, LinkConfig, LinkParams } from "wesl";
-import linkParams from "./shaders/app.wesl?link";
-import { layoutFunctions } from "./shaders/app.wesl?reflect";
 
-main();
+let gpu: GPU;
 
-async function main() {
-  const adapter = await navigator.gpu.requestAdapter();
+beforeAll(async () => {
+  const webgpu = await import("webgpu");
+  Object.assign(globalThis, (webgpu as any).globals); // TODO fix types upstream in webgpu package
+
+  gpu = webgpu.create([]);
+});
+
+test("gpu execution w/binding structs lowered and reflected", async () => {
+  // --- load reflected binding structs ---
+
+  // import dynamically, so that import comes after globalThis has GPUShaderStage
+  const reflected = await import("../../shaders/app.wesl?reflect");
+  const linkParams = (await import("../../shaders/app.wesl?link")).default;
+  const { layoutFunctions } = reflected;
+
+  const adapter = await gpu.requestAdapter();
   const device = await adapter?.requestDevice();
   if (!device) {
     console.error("no GPU device available");
@@ -16,12 +28,14 @@ async function main() {
   }
   const bgLayout = layoutFunctions.myBindingsLayout(device);
 
+  // --- link with binding struct lowering ---
   const config: LinkConfig = {
     plugins: [bindingStructsPlugin()],
   };
   const params: LinkParams = { ...linkParams, config };
   const code = link2(params).dest;
 
+  // --- execute linked shader ---
   const module = device.createShaderModule({ code });
 
   const pipelineLayout = device.createPipelineLayout({
@@ -54,7 +68,12 @@ async function main() {
     ],
   });
 
-  device.queue.writeBuffer(uniformsBuffer, 0, new Uint32Array([4, 2, 3, 1]));
+  const fooValue = 4; // .foo in struct Uniforms
+  device.queue.writeBuffer(
+    uniformsBuffer,
+    0,
+    new Uint32Array([fooValue, 2, 3, 1]),
+  );
 
   const commands = device.createCommandEncoder();
   const pass = commands.beginComputePass();
@@ -64,6 +83,7 @@ async function main() {
   pass.end();
   device.queue.submit([commands.finish()]);
 
+  // --- verify that shader correctly copied a value from uniforms to storage buffer --
   const data = await copyBuffer(device, storageBuffer);
-  console.log(data);
-}
+  expect(data[0]).toBe(fooValue);
+});

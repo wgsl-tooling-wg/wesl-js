@@ -7,8 +7,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "../packager/bin/wesl-packager --rootDir src",
-    "build:local": "../packager/bin/wesl-packager --rootDir src"
+    "echo": "echo",
+    "build": "node ../packager/bin/wesl-packager --rootDir src"
   },
   "exports": {
     ".": {

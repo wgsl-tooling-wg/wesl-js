@@ -1,11 +1,11 @@
 import { expect, test } from "vitest";
 import { BindingStructElem, StructElem } from "../AbstractElems.ts";
-import {
-  bindingStructReflect,
-  enableBindingStructs,
-} from "../Configuration.ts";
 import { elemToString } from "../debug/ASTtoString.ts";
-import { bindingGroupLayoutTs } from "../Reflection.ts";
+import {
+  bindingGroupLayoutTs,
+  reportBindingStructsPlugin,
+} from "../Reflection.ts";
+import { bindingStructsPlugin } from "../TransformBindingStructs.ts";
 import { linkTestOpts } from "./TestUtil.ts";
 
 test.skip("extract binding struct", () => {
@@ -19,10 +19,12 @@ test.skip("extract binding struct", () => {
     }
   `;
   let found: StructElem[] | undefined;
-  const linkConfig = bindingStructReflect(
-    enableBindingStructs(),
-    report => (found = report),
-  );
+  const linkConfig = {
+    plugins: [
+      bindingStructsPlugin(),
+      reportBindingStructsPlugin(report => (found = report)),
+    ],
+  };
   linkTestOpts({ linkConfig }, src);
 
   // verify struct found
@@ -49,7 +51,7 @@ test.skip("binding struct to ts", () => {
     struct MyBindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
       @group(0) @binding(1) uniforms: ptr<uniform, Uniforms>, 
-      @group(0) @binding(2) tex: texture_2d<rgba8unorm>,
+      @group(0) @binding(2) tex: texture_2d<f32>,
       @group(0) @binding(3) samp: sampler,
       @group(0) @binding(4) stTex: texture_storage_2d<rgba8unorm, read>,
     }
@@ -58,10 +60,12 @@ test.skip("binding struct to ts", () => {
     }
   `;
   let found: StructElem[] | undefined;
-  const linkConfig = bindingStructReflect(
-    enableBindingStructs(),
-    report => (found = report),
-  );
+  const linkConfig = {
+    plugins: [
+      bindingStructsPlugin(),
+      reportBindingStructsPlugin(report => (found = report)),
+    ],
+  };
   linkTestOpts({ linkConfig }, src);
   const ts = bindingGroupLayoutTs(found![0] as BindingStructElem);
   expect(ts).toMatchInlineSnapshot(`
@@ -70,7 +74,7 @@ test.skip("binding struct to ts", () => {
           {
             binding: 0,
             visibility: GPUShaderStage.COMPUTE,
-            buffer: { type: "read-only-storage" }
+            buffer: { type: "storage" }
           },
           {
             binding: 1,

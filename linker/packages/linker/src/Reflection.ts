@@ -6,7 +6,7 @@ import {
   TextElem,
   TypeRefElem,
 } from "./AbstractElems.ts";
-import { TransformedAST } from "./Linker.ts";
+import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { identElemLog } from "./LinkerUtil.ts";
 import { RefIdent } from "./Scope.ts";
 import {
@@ -17,6 +17,14 @@ import {
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
 export const textureStorage = matchOneOf(textureStorageTypes);
+
+export function reportBindingStructsPlugin(
+  fn: BindingStructReportFn,
+): WeslJsPlugin {
+  return {
+    transform: reportBindingStructs(fn),
+  };
+}
 /** 
  * Linker plugin that generates TypeScript strings for GPUBindingGroupLayouts
  * based on the binding structs in the WESL source
@@ -176,10 +184,7 @@ function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
       param1?.kind === "ref" &&
       param1.ident.originalName === "storage"
     ) {
-      if (
-        param3?.kind === "ref" &&
-        param3.ident.originalName === "read_write"
-      ) {
+      if (param3?.kind === "ref" && param3.ident.originalName === "read") {
         return `buffer: { type: "read-only-storage" }`;
       } else {
         return `buffer: { type: "storage" }`;
@@ -216,10 +221,12 @@ function textureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   }
   return undefined;
 
-  function getSampleType(typeRef: TypeRefElem): string {
+  function getSampleType(typeRef: TypeRefElem): GPUTextureSampleType {
     const firstParam = typeRef.templateParams?.[0] as TypeRefElem;
-    const firstParamName = (firstParam.name as RefIdent).originalName;
-    return textureSampleType(firstParamName as GPUTextureFormat);
+    const texelType = (firstParam.name as RefIdent)
+      .originalName as WgslTexelType;
+    const sampleType = texelTypeToSampleType(texelType);
+    return sampleType;
   }
 }
 
@@ -228,7 +235,9 @@ function storageTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   if (typeof name === "string" && textureStorage.test(name)) {
     const firstParam = typeRef.templateParams?.[0] as string;
     const secondParam = typeRef.templateParams?.[1] as string;
-    const sampleType = textureSampleType(firstParam as GPUTextureFormat);
+    const sampleType = formatToTextureSampleType(
+      firstParam as GPUTextureFormat,
+    );
     const access = accessMode(secondParam);
     return `storageTexture: { format: "${firstParam}", sampleType: "${sampleType}", access: "${access}" }`;
   }
@@ -248,7 +257,7 @@ function paramText(expression: ExpressionElem): string {
   return text.srcModule.src.slice(expression.start, expression.end);
 }
 
-export function textureSampleType(
+export function formatToTextureSampleType(
   format: GPUTextureFormat,
   float32Filterable = false,
 ): GPUTextureSampleType {
@@ -265,6 +274,27 @@ export function textureSampleType(
     return "sint";
   }
   throw new Error(`native sample type unknwon for texture format ${format}`);
+}
+
+export type WgslTexelType = "f32" | "u32" | "i32";
+
+/** return the wgsl element type for a given texture format */
+export function formatToTexelType(format: GPUTextureFormat): WgslTexelType {
+  if (format.includes("float")) return "f32";
+  if (format.includes("unorm")) return "f32";
+  if (format.includes("uint")) return "u32";
+  if (format.includes("sint")) return "i32";
+  throw new Error(`unknown format ${format}`);
+}
+
+/** @return the webgpu GPUTextureSampleType from the wgsl texel type */
+export function texelTypeToSampleType(
+  type: WgslTexelType,
+): GPUTextureSampleType {
+  if (type === "f32") return "float";
+  if (type === "u32") return "uint";
+  if (type === "i32") return "sint";
+  throw new Error(`unknown texel type ${type}`);
 }
 
 export function accessMode(access: string): GPUStorageTextureAccess {

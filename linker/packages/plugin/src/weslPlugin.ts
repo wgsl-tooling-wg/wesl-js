@@ -2,26 +2,44 @@ import { glob } from "glob";
 import fs from "node:fs/promises";
 import toml from "toml";
 import type {
+  Thenable,
+  TransformResult,
   UnpluginBuildContext,
+  UnpluginContext,
   UnpluginContextMeta,
   UnpluginOptions,
 } from "unplugin";
 import { createUnplugin } from "unplugin";
 import { dlog, dlogOpt } from "berry-pretty";
 import {
-  bindingStructReflect,
-  enableBindingStructs,
-  linkRegistry,
+  bindAndTransform,
+  bindingStructsPlugin,
+  noSuffix,
   parsedRegistry,
   ParsedRegistry,
   parseIntoRegistry,
 } from "wesl";
-import { bindingGroupLayoutTs } from "../../linker/src/Reflection.js";
+import {
+  bindingGroupLayoutTs,
+  reportBindingStructsPlugin,
+} from "../../linker/src/Reflection.js";
 import type { WeslPluginOptions } from "./weslPluginOptions.js";
 import path from "node:path";
 
 // TODO figure how to handle reloading & mutated AST produced by transforms
 
+/** for now ?reflect is hardcoded */
+
+/**
+ * A bundler plugin for processing WESL files.
+ *
+ * The plugin works by reading the wesl.toml file and possibly package.json
+ *
+ * The plugin is triggered by imports to special virtual module urls
+ * two urls suffixes are supported:
+ *  1. `import "./shaders/bar.wesl?reflect"` - produces a javascript file for binding struct reflection
+ *  2. `import "./shaders/bar.wesl?link"` - produces a javascript file for preconstructed link functions
+ */
 export function weslPlugin(
   options: WeslPluginOptions = {},
   meta: UnpluginContextMeta,
@@ -29,28 +47,48 @@ export function weslPlugin(
   return {
     name: "wesl-plugin",
     resolveId: resolver,
-    load: loader,
+    load: buildLoader(options),
   };
 }
 
+/** build plugin entry for 'resolverId'
+ * to validate our virtual import modules (with ?reflect or ?link suffixes) */
 async function resolver(this: UnpluginBuildContext, id: string) {
-  console.log("resolveId(), id:", id);
+  // console.log("resolveId(), id:", id);
   if (id.endsWith(".wesl?reflect")) {
+    return id;
+  }
+  if (id.endsWith(".wesl?link")) {
     return id;
   }
   return null;
 }
 
-async function loader(this: UnpluginBuildContext, id: string) {
-  console.log("loader(), id:", id);
-  if (id.endsWith(".wesl?reflect")) {
-    const registry = await getRegistry(this);
-    const { weslRoot } = await getWeslToml();
-    const mainFile = id.slice(0, -"?reflect".length);
-    const main = localPath(mainFile, weslRoot);
-    return await reflectTs(main, registry);
+type Loader = (
+  this: UnpluginBuildContext & UnpluginContext,
+  id: string,
+) => Thenable<TransformResult>;
+
+/** build plugin function for serving a javascript module in response to
+ * an import of of our virtual import modules. */
+function buildLoader(options: WeslPluginOptions): Loader {
+  return loader;
+
+  async function loader(this: UnpluginBuildContext, id: string) {
+    // console.log("loader(), id:", id);
+    if (id.endsWith(".wesl?reflect")) {
+      const registry = await getRegistry(this, options);
+      const { weslRoot } = await getWeslToml(options.weslToml);
+      const mainFile = id.slice(0, -"?reflect".length);
+      const main = rmPathPrefix(mainFile, weslRoot);
+      return await bindingStructJs(main, registry);
+    }
+    if (id.endsWith(".wesl?link")) {
+      const mainFile = id.slice(0, -"?link".length);
+      return await linkJs(mainFile, options);
+    }
+    return null;
   }
-  return null;
 }
 
 interface WeslToml {
@@ -60,49 +98,71 @@ interface WeslToml {
 
 let weslToml: WeslToml | undefined;
 
-async function getWeslToml(): Promise<WeslToml> {
+/** load or the wesl.toml  */
+async function getWeslToml(tomlFile = "wesl.toml"): Promise<WeslToml> {
   if (!weslToml) {
     // TODO consider supporting default if no wesl.toml is provided: e.g. './shaders'
-    const tomlString = await fs.readFile("wesl.toml", "utf-8");
+    const tomlString = await fs.readFile(tomlFile, "utf-8");
     weslToml = toml.parse(tomlString) as WeslToml;
+    // TODO watch wesl.toml file, and reload if it changes
   }
   return weslToml;
 }
 
 /** load and parse all the wesl files into a ParsedRegistry */
-async function getRegistry(ctx: UnpluginBuildContext): Promise<ParsedRegistry> {
+async function getRegistry(
+  ctx: UnpluginBuildContext,
+  options: WeslPluginOptions,
+): Promise<ParsedRegistry> {
   // load wesl files into registry
+
+  const loaded = await loadWesl(options);
   const registry = parsedRegistry();
-  const { weslFiles, weslRoot } = await getWeslToml();
-  const futureFiles = weslFiles.map(g => glob(g));
-  const files = (await Promise.all(futureFiles)).flat();
-  const loaded = await loadFiles(files, weslRoot);
   parseIntoRegistry(loaded, registry);
 
   // trigger recompilation on wesl files
-  const cwd = process.cwd();
-  const fullPaths = files.map(f => path.join(cwd, f)); // docs claim relative paths work, but didn't seem so
-  fullPaths.forEach(f => ctx.addWatchFile(f));
+  Object.keys(loaded).forEach(f => ctx.addWatchFile(f));
   return registry;
+}
+
+/**
+ * Load the wesl files referenced in the wesl.toml file
+ *
+ * @return a record of wesl files with
+ *    keys as wesl file paths, and
+ *    values as wesl file contents.
+ */
+async function loadWesl(
+  options: WeslPluginOptions,
+  weslRootRelative = true ,
+): Promise<Record<string, string>> {
+  const { weslFiles, weslRoot } = await getWeslToml(options.weslToml);
+  const { weslToml } = options;
+  const tomlDir = weslToml ? path.dirname(weslToml) : process.cwd();
+
+  const globs = weslFiles.map(g => tomlDir + "/" + g);
+  const futureFiles = globs.map(g => glob(g));
+  const files = (await Promise.all(futureFiles)).flat();
+  return loadFiles(files, weslRootRelative ? weslRoot : tomlDir);
 }
 
 /** load a set of files, converting to paths relative to the  wesl root directory */
 async function loadFiles(
   files: string[],
-  weslRoot: string,
+  weslRoot?: string,
 ): Promise<Record<string, string>> {
   const loaded: [string, string][] = [];
 
   for (const fullPath of files) {
     const data = await fs.readFile(fullPath, "utf-8");
-    const relativePath = localPath(fullPath, weslRoot);
+    const relativePath = weslRoot ? rmPathPrefix(fullPath, weslRoot) : fullPath;
     loaded.push([relativePath, data]);
   }
   return Object.fromEntries(loaded);
 }
 
 /** convert a fs path to a path relative to the wesl root directory */
-function localPath(fullPath: string, weslRoot: string): string {
+function rmPathPrefix(fullPath: string, weslRoot: string): string {
   const rootStart = fullPath.indexOf(weslRoot);
   if (rootStart === -1) {
     throw new Error(`file ${fullPath} not in root ${weslRoot}`);
@@ -111,24 +171,54 @@ function localPath(fullPath: string, weslRoot: string): string {
   return "." + pathWithSlashPrefix;
 }
 
-/** produce reflection data by partially linking the */
-async function reflectTs(
+/** Produce javascript objects reflecting the wesl sources by partially linking the wesl
+ * with the binding struct plugins */
+async function bindingStructJs(
   main: string,
   registry: ParsedRegistry,
 ): Promise<string> {
-  let structsTs = "??";
-  const linkConfig = bindingStructReflect(enableBindingStructs(), structs => {
-    structsTs = bindingGroupLayoutTs(structs[0], false);
-  });
-  // TODO we don't need the linked output, make a new linker entry point
-  const linked = linkRegistry(registry, main, {}, linkConfig);
-  return structsTs;
+  let structsJs = "??";
+  const linkConfig = {
+    plugins: [
+      bindingStructsPlugin(),
+      reportBindingStructsPlugin(structs => {
+        structsJs = bindingGroupLayoutTs(structs[0], false);
+      }),
+    ],
+  };
+
+  bindAndTransform(registry, main, {}, linkConfig);
+  return structsJs;
 }
 
-function stringify(obj: any) {
-  return JSON.stringify(obj, null, 2);
+/** Emit a JavaScript structure with LinkParams based on the wesl.toml file
+ * and local shaders, ready for linking at runtime */
+async function linkJs(
+  baseId: string,
+  options: WeslPluginOptions,
+): Promise<string> {
+  const { weslRoot } = await getWeslToml(options.weslToml);
+  const weslSrc = await loadWesl(options, false);
+  const rootModule = rmPathPrefix(noSuffix(baseId), weslRoot);
+  const rootName = path.basename(rootModule);
+
+  const paramsName = `link${rootName}Config`;
+  const src = `
+    export const ${paramsName}= {
+      rootModuleName: "${rootModule}",
+      weslRoot: "${weslRoot}",  
+      weslSrc: ${JSON.stringify(weslSrc, null, 2)},
+    };
+
+    export default ${paramsName};
+    `;
+
+  return src;
 }
 
-export const unplugin = /* #__PURE__ */ createUnplugin(weslPlugin);
-
+export const unplugin = createUnplugin(
+  (options: WeslPluginOptions, meta: UnpluginContextMeta) => {
+    return weslPlugin(options, meta);
+  },
+);
 export default unplugin;
