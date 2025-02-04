@@ -76,7 +76,7 @@ export function link(
 }
 
 export interface LinkParams {
-  /** record of file names and wgsl text for modules */
+  /** record of file paths and wesl text for modules. */
   weslSrc: Record<string, string>;
 
   /** root directory prefix for sources, e.g. /shaders */
