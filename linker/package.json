@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "echo:all": "pnpm --filter \"**\" echo",
+    "bench": "pnpm --filter \"bench\" bench",
     "bump": "tsx scripts/bump.ts --version",
     "build:libs": "pnpm --filter \"mini-parse\" --filter \"wesl\" build",
     "build:tools": "pnpm --filter \"wesl-link\" --filter \"wesl-packager\" --filter \"wesl-plugin\" build",
@@ -14,7 +15,7 @@
     "organize:all": "pnpm --filter \"./packages/**\" organize",
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
     "publish:all": "pnpm --filter \"./packages/**\" publish",
-    "validate:all": "run-s build:all test:all organize:all format:all typecheck:all",
+    "prepush": "run-s build:all test:all bench organize:all format:all typecheck:all",
     "test": "vitest",
     "test:all": "vitest --run",
     "preinstall": "git submodule update --init --recursive"
