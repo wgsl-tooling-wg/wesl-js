@@ -6,6 +6,7 @@ import {
   or,
   Parser,
   preceded,
+  repeat,
   repeatPlus,
   req,
   seq,
@@ -120,8 +121,8 @@ const import_statement = span(
 );
 
 /** parse a WESL style wgsl import statement. */
-export const weslImport: Parser<Stream<WeslToken>, ImportElem> = tagScope(
-  import_statement.ptag("owo").collect(importElem),
+export const weslImports: Parser<Stream<WeslToken>, ImportElem[]> = tagScope(
+  repeat(import_statement).ptag("owo").collect(importElem),
 );
 
 if (tracing) {
@@ -130,7 +131,7 @@ if (tracing) {
     import_path_or_item,
     import_relative,
     import_statement,
-    weslImport,
+    weslImports,
   };
 
   Object.entries(names).forEach(([name, parser]) => {

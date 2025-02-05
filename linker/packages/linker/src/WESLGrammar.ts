@@ -19,7 +19,7 @@ import {
   Stream,
   collectArray,
 } from "mini-parse";
-import { weslImport } from "./parse/ImportGrammar.ts";
+import { weslImports } from "./parse/ImportGrammar.ts";
 import {
   aliasCollect,
   collectAttribute,
@@ -525,8 +525,6 @@ const const_assert =
   )                                   .collect(collectSimpleElem("assert"),
 );
 
-const import_statement = weslImport;
-
 const global_directive = seq(
   or(
     seq("diagnostic", diagnostic_control),
@@ -554,7 +552,7 @@ export const global_decl = tagScope(
 
 // prettier-ignore
 export const weslRoot = seq(
-    repeat(weslImport),
+    weslImports,
     repeat(global_directive),
     repeat(global_decl),
     req(eof()),
@@ -608,7 +606,6 @@ if (tracing) {
     global_value_decl,
     global_alias,
     const_assert,
-    import_statement,
     global_directive,
     global_decl,
     weslRoot,
