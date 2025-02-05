@@ -430,16 +430,29 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
   return (ctx: ParserContext): RepeatWhileResult<A> => {
     const values: ResultFromArg<A>[] = [];
     for (;;) {
+      const before = ctx.lexer.position();
       const result = runExtended<InputFromArg<A>, ResultFromArg<A>>(ctx, p);
+      if (result === null) {
+        return { value: values };
+      }
+      // TODO: that's not a filter!
+      if (!filterFn(result)) {
+        return { value: values };
+      }
+
+      if (tracing) {
+        const after = ctx.lexer.position();
+        if (before === after) {
+          ctxLog(
+            ctx,
+            `infinite loop, parser passed to repeat must always make progress`,
+          );
+          throw new ParseError();
+        }
+      }
 
       // continue acccumulating until we get a null or the filter tells us to stop
-      if (result !== null && filterFn(result)) {
-        values.push(result.value);
-      } else {
-        // always return succcess
-        const r = { value: values };
-        return r;
-      }
+      values.push(result.value);
     }
   };
 }

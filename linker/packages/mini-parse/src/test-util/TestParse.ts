@@ -56,7 +56,7 @@ export function testParse<T, C = any, S = any>(
     ),
     src,
   );
-  const parsed = p.parse({ lexer, appState: appState, maxParseCount: 1000 });
+  const parsed = p.parse({ lexer, appState: appState });
   return { parsed, position: lexer.position(), stable: appState.stable };
 }
 
@@ -65,7 +65,7 @@ export function testParseWithLexer<T, C = any, S = any>(
   lexer: Lexer,
   appState: AppState<C, S> = { context: {} as C, stable: [] as S },
 ): TestParseResult<T, S> {
-  const parsed = p.parse({ lexer, appState: appState, maxParseCount: 1000 });
+  const parsed = p.parse({ lexer, appState: appState });
   return { parsed, position: lexer.position(), stable: appState.stable };
 }
 

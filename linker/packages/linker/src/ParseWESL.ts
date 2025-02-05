@@ -53,11 +53,7 @@ export interface WeslParseContext {
   openElems: OpenElem[]; // elems that are collecting their contents
 }
 
-export function parseSrcModule(
-  srcModule: SrcModule,
-  srcMap?: SrcMap,
-  maxParseCount: number | undefined = undefined,
-): WeslAST {
+export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   // TODO allow returning undefined for failure, or throw?
 
   resetScopeIds();
@@ -68,7 +64,7 @@ export function parseSrcModule(
 
   const appState = blankWeslParseState(srcModule);
 
-  const init: ParserInit = { lexer, appState, maxParseCount };
+  const init: ParserInit = { lexer, appState };
   const parseResult = weslRoot.parse(init);
   if (parseResult === null) {
     throw new Error("parseWESL failed");
@@ -78,18 +74,14 @@ export function parseSrcModule(
 }
 
 // for tests. TODO rename
-export function parseWESL(
-  src: string,
-  srcMap?: SrcMap,
-  maxParseCount: number | undefined = undefined,
-): WeslAST {
+export function parseWESL(src: string, srcMap?: SrcMap): WeslAST {
   const srcModule: SrcModule = {
     modulePath: "package::test",
     filePath: "./test.wesl",
     src,
   };
 
-  return parseSrcModule(srcModule, srcMap, maxParseCount);
+  return parseSrcModule(srcModule, srcMap);
 }
 
 export function blankWeslParseState(srcModule: SrcModule): WeslParseState {

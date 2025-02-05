@@ -20,7 +20,6 @@ import {
   tracing,
   withTraceLogging,
 } from "./ParserTracing.js";
-import { SrcMap } from "./SrcMap.js";
 import { Stream, TypedToken } from "./Stream.js";
 
 export interface AppState<C, S> {
@@ -41,9 +40,6 @@ export interface ParserInit<C = any, S = any> {
 
   /** application specific context and result storage, shared with every parser */
   appState?: AppState<C, S>;
-
-  /** set this to avoid infinite looping by failing after more than this many parsing steps */
-  maxParseCount?: number;
 }
 
 /* Information passed to the parsers during parsing */
@@ -52,13 +48,8 @@ export interface ParserContext<C = any, S = any> {
 
   app: AppState<C, S>;
 
-  maxParseCount?: number;
-
   /** during execution, debug trace logging */
   _trace?: TraceContext;
-
-  /** during execution, count parse attempts to avoid infinite looping */
-  _parseCount: number;
 
   /** current parser stack or parent parsers that called this one */
   _debugNames: string[];
@@ -226,17 +217,11 @@ export class Parser<I, T> {
   /** start parsing */
   parse(init: ParserInit): OptParserResult<T> {
     try {
-      const {
-        lexer,
-        maxParseCount,
-        appState: app = { context: {}, stable: [] },
-      } = init;
+      const { lexer, appState: app = { context: {}, stable: [] } } = init;
       const _collect: CollectFnEntry<any>[] = [];
       const result = this._run({
         lexer,
         app,
-        _parseCount: 0,
-        maxParseCount,
         _collect,
         _debugNames: [],
       });
@@ -300,15 +285,7 @@ function runParser<I, T>(
   p: Parser<I, T>,
   context: ParserContext,
 ): OptParserResult<T> {
-  const { lexer, _parseCount = 0, maxParseCount } = context;
-
-  // check for infinite looping
-  context._parseCount = _parseCount + 1;
-  // LATER counting tokens isn't so great to check for infinite looping. Possibly a count per parser per src position?
-  if (maxParseCount && _parseCount > maxParseCount) {
-    srcLog(lexer.src, lexer.position(), "infinite loop? ", p.debugName);
-    return null;
-  }
+  const { lexer } = context;
 
   const origAppContext = context.app.context;
 

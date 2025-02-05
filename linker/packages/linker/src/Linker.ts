@@ -28,9 +28,6 @@ export interface TransformedAST
 
 export interface LinkConfig {
   plugins?: WeslJsPlugin[];
-
-  /** limit potential infinite loops for debugging */
-  maxParseCount?: number;
 }
 
 /**
@@ -64,13 +61,7 @@ export function link(
   // producing Scope tree and AST elements for each module
   const registry = parsedRegistry();
   const weslRoot = "";
-  parseIntoRegistry(
-    weslSrc,
-    registry,
-    "package",
-    weslRoot,
-    config?.maxParseCount,
-  );
+  parseIntoRegistry(weslSrc, registry, "package", weslRoot);
   parseLibsIntoRegistry(libs, registry);
   return linkRegistry(registry, rootModuleName, conditions, config);
 }
@@ -96,9 +87,8 @@ export interface LinkParams {
 export function link2(params: LinkParams): SrcMap {
   const { weslSrc, weslRoot = "", rootModuleName, libs = [] } = params;
   const { conditions, config } = params;
-  const maxParseCount = config?.maxParseCount;
   const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry, "package", weslRoot, maxParseCount);
+  parseIntoRegistry(weslSrc, registry, "package", weslRoot);
   parseLibsIntoRegistry(libs, registry);
   return linkRegistry(registry, rootModuleName, conditions, config);
 }

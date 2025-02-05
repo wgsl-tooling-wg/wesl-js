@@ -248,7 +248,6 @@ function textureLayoutEntry(typeRef: TypeRefElem): string | undefined {
 
 function storageTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   if (textureStorage.test(typeRef.name.originalName)) {
-    console.warn(typeRef.templateParams);
     const firstParam = typeRef.templateParams?.[0];
     const secondParam = typeRef.templateParams?.[1];
     assertThat(firstParam?.kind === "type"); // TODO: Temp hack
