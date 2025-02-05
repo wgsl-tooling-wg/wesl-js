@@ -12,12 +12,12 @@ import {
   req,
   seq,
   tagScope,
-  terminated,
   text,
   tracing,
   withSep,
   withSepPlus,
   Stream,
+  collectArray,
 } from "mini-parse";
 import { weslImport } from "./parse/ImportGrammar.ts";
 import {
@@ -261,7 +261,7 @@ const primary_expression = or(
 const component_or_swizzle = repeatPlus(
   or(
     preceded(".", word),
-    delimited("[", () => expression, req("]")),
+    collectArray(delimited("[", () => expression, req("]"))),
   ),
 );
 

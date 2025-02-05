@@ -1,7 +1,7 @@
 import { testParse } from "mini-parse/test-util";
 import { expect, test } from "vitest";
 import { tagScope } from "../ParserCollect.js";
-import { or, seq, text } from "../ParserCombinator.js";
+import { collectArray, or, seq, text } from "../ParserCombinator.js";
 
 test("collect runs a fn on commit", () => {
   const src = "a b c";
@@ -89,9 +89,11 @@ test("ctag earlier collect", () => {
 
 test("ctag collect inside seq", () => {
   let results: any[] = [];
-  const p = seq(
-    "a",
-    text("b").collect(() => "B", "1"),
+  const p = collectArray(
+    seq(
+      "a",
+      text("b").collect(() => "B", "1"),
+    ),
   )
     .ctag("bee")
     .collect(cc => {

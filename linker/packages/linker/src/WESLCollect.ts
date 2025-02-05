@@ -37,11 +37,11 @@ import {
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "./Scope.ts";
 
-export const importElem = collectElem("import", (cc: CollectContext) => {
+export function importElem(cc: CollectContext) {
   const importElem = cc.tags.owo?.[0] as ImportElem; // LATER ts typing
   (cc.app.stable as StableState).imports.push(importElem.imports);
-  return importElem;
-});
+  addToOpenElem(cc, importElem as AbstractElem);
+}
 
 /** add an elem to the .contents array of the currently containing element */
 function addToOpenElem(cc: CollectContext, elem: AbstractElem): void {

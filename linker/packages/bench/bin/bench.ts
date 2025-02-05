@@ -124,7 +124,11 @@ async function loadAllFiles(): Promise<LoadedFile[]> {
     "unity_webgpu_0000026E5689B260",
     "./src/examples/unity_webgpu_000002B8376A5020.fs.wgsl",
   );
-  return [reduceBuffer, particle, rasterize, boat];
+  const imports_only = await loadFile(
+    "imports_only",
+    "./src/examples/imports_only.wgsl",
+  );
+  return [reduceBuffer, particle, rasterize, boat, imports_only];
 }
 
 async function loadFile(name: string, path: string): Promise<LoadedFile> {

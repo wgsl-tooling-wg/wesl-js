@@ -48,17 +48,13 @@ exports[`seq() handles two element match 1`] = `
 exports[`tracing 1`] = `
 "..repeat
   ..wordz
-    ..seq
-      : 'a' (word)
-      a   Ln 1
-      ^
-      ✓ kind 'word'
-    ✓ seq
+    : 'a' (word)
+    a   Ln 1
+    ^
+    ✓ kind 'word'
   ✓ wordz
   ..wordz
-    ..seq
-      x kind 'word'
-    x seq
+    x kind 'word'
   x wordz
 ✓ repeat"
 `;

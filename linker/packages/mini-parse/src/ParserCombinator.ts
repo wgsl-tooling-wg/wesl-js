@@ -185,7 +185,7 @@ export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
       values.push(result.value);
     }
     return { value: values };
-  }).collect({ before: pushOpenArray, after: closeArray });
+  });
 
   trackChildren(seqParser, ...parsers);
 
@@ -211,11 +211,15 @@ export function seqObj<P extends { [key: string]: CombinatorArg }>(
       values[name] = result.value;
     }
     return { value: values };
-  }).collect({ before: pushOpenArray, after: closeArray });
+  });
 
   trackChildren(seqObjParser, ...parsers.map(v => v[1]));
 
   return seqObjParser as SeqObjParser<P>;
+}
+
+export function collectArray<I, O>(p: Parser<I, O>): Parser<I, O> {
+  return p.collect({ before: pushOpenArray, after: closeArray });
 }
 
 /** Parse two values, and discard the first value
@@ -237,7 +241,7 @@ export function preceded<
       const result = p._run(ctx);
       return result;
     },
-  ).collect({ before: pushOpenArray, after: closeArray });
+  );
 
   trackChildren(precededParser, ignored, p);
 
@@ -263,7 +267,7 @@ export function terminated<
       if (ignoredResult === null) return null;
       return result;
     },
-  ).collect({ before: pushOpenArray, after: closeArray });
+  );
 
   trackChildren(terminatedParser, ignored, p);
 
@@ -297,7 +301,7 @@ export function delimited<
       if (ignoredResult2 === null) return null;
       return result;
     },
-  ).collect({ before: pushOpenArray, after: closeArray });
+  );
 
   trackChildren(delimitedParser, ignored1, p, ignored2);
 
