@@ -472,7 +472,6 @@ export function span<A extends CombinatorArg>(
 ): Parser<InputFromArg<A>, { value: ResultFromArg<A>; span: Span }> {
   const p = parserArg(arg);
   const result = parser("span", (ctx: ParserContext) => {
-    assertThat(ctx.stream);
     const start = peekToken(ctx.stream)?.span?.[0] ?? null;
     const result = p._run(ctx);
     if (result === null) return null;
@@ -544,23 +543,46 @@ export function withSep<Sep extends CombinatorArg, P extends CombinatorArg>(
   opts: WithSepOptions = {},
 ): Parser<InputFromArg<Sep> | InputFromArg<P>, ResultFromArg<P>[]> {
   const { trailing = true, requireOne = false } = opts;
-  const parser = parserArg(p);
+  const elementParser = parserArg(p);
   const sepParser = parserArg(sep);
-  const pTagged = or(parser);
-  const first = requireOne ? pTagged : opt(pTagged);
-  const last = trailing ? opt(sepParser) : yes();
-
-  const withSepParser = seq(first, repeat(preceded(sepParser, pTagged)), last)
-    .map(r => {
-      let firstResult = r[0];
-      let repeatResults = r[1];
-      return [firstResult].concat(repeatResults);
-    })
-    .setTraceName("withSep") as any;
-
-  trackChildren(withSepParser, parser, sepParser);
-
-  return withSepParser;
+  return parser("withSep", (ctx: ParserContext) => {
+    const results: ResultFromArg<P>[] = [];
+    const startPosition = ctx.stream.checkpoint();
+    const result = elementParser._run(ctx);
+    if (result === null) {
+      ctx.stream.reset(startPosition);
+      if (requireOne) {
+        return null;
+      } else {
+        return {
+          value: results,
+        };
+      }
+    }
+    results.push(result.value);
+    while (true) {
+      const beforeSeparator = ctx.stream.checkpoint();
+      const resultSeparator = sepParser._run(ctx);
+      if (resultSeparator === null) {
+        ctx.stream.reset(beforeSeparator);
+        break;
+      }
+      const beforeElement = ctx.stream.checkpoint();
+      const resultElement = elementParser._run(ctx);
+      if (resultElement === null) {
+        if (trailing) {
+          ctx.stream.reset(beforeElement);
+        } else {
+          ctx.stream.reset(beforeSeparator);
+        }
+        break;
+      }
+      results.push(resultElement.value);
+    }
+    return {
+      value: results,
+    };
+  });
 }
 
 /** match an series of one or more elements separated by a delimiter (e.g. a comma) */

@@ -172,14 +172,6 @@ export class Parser<I, T> {
     }
   }
 
-  /**
-   * run the parser given an already created parsing context
-   * Will attempt to run its child parsers in tracing mode
-   */
-  _runTracing(context: ParserContext, trace: TraceContext): OptParserResult<T> {
-    return runParserWithTracing(this, context);
-  }
-
   /** tag parse results */
   ptag<K extends string>(name: K): Parser<I, T> {
     return ptag(this, name) as Parser<I, T>;
