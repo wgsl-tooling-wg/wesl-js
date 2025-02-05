@@ -1,4 +1,3 @@
-import { assertThat } from "./Assertions.js";
 import {
   CombinatorArg,
   InputFromArg,
@@ -11,7 +10,6 @@ import {
   SeqValues,
 } from "./CombinatorTypes.js";
 import {
-  ExtendedResult,
   OptParserResult,
   ParseError,
   Parser,
@@ -440,9 +438,7 @@ export function repeatPlus<A extends CombinatorArg>(
   return repeatParser;
 }
 
-type ResultFilterFn<T> = (
-  result: ExtendedResult<T | string>,
-) => boolean | undefined;
+type ResultFilterFn<T> = (result: ParserResult<T>) => boolean;
 
 export function repeatWhile<A extends CombinatorArg>(
   arg: A,

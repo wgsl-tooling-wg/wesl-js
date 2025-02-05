@@ -158,7 +158,12 @@ export class Parser<I, T> {
    */
   _run(context: ParserContext): OptParserResult<T> {
     if (tracing) {
-      return runParserWithTracing(this, context);
+      return runParserWithTracing(
+        this.debugName,
+        this.fn,
+        context,
+        this._traceInfo,
+      );
     } else {
       const origAppContext = context.app.context;
       const origCollectLength = context._collect.length;
@@ -278,8 +283,10 @@ export function simpleParser<T>(
 }
 
 function runParserWithTracing<I, T>(
-  p: Parser<I, T>,
+  debugName: string,
+  fn: ParseFn<T>,
   context: ParserContext,
+  traceInfo: ParserTraceInfo | undefined,
 ): OptParserResult<T> {
   assertThat(tracing);
   const { stream } = context;
@@ -289,26 +296,25 @@ function runParserWithTracing<I, T>(
   // setup trace logging if enabled and active for this parser
   const result = withTraceLogging<OptParserResult<T>>(
     context,
-    p._traceInfo,
+    traceInfo,
     runInContext,
   );
 
   return result;
 
   function runInContext(ctx: ParserContext): OptParserResult<T> {
-    const origPosition = stream.checkpoint();
     const origCollectLength = ctx._collect.length;
 
-    if (debugNames) ctx._debugNames.push(p.debugName);
+    if (debugNames) ctx._debugNames.push(debugName);
     if (tracing) {
       const traceSuccessOnly = ctx._trace?.successOnly;
-      if (!p._traceInfo?.traceIsTerminal && !traceSuccessOnly) {
-        parserLog(`..${p.debugName}`);
+      if (!traceInfo?.traceIsTerminal && !traceSuccessOnly) {
+        parserLog(`..${debugName}`);
       }
     }
 
     // run the parser function for this stage
-    let result = p.fn(ctx);
+    let result = fn(ctx);
 
     if (debugNames) ctx._debugNames.pop();
 
@@ -317,20 +323,14 @@ function runParserWithTracing<I, T>(
       if (tracing) {
         const traceSuccessOnly = ctx._trace?.successOnly;
         if (!traceSuccessOnly) {
-          parserLog(`x ${p.debugName}`);
+          parserLog(`x ${debugName}`);
         }
       }
-      stream.reset(origPosition);
       context.app.context = origAppContext;
-      // if (ctx._collect.length > origCollectLength) {
-      //   const obsolete = ctx._collect.slice(origCollectLength);
-      //   const collectNames = obsolete.map(c => c.debugName);
-      //   dlog("removing", { collectNames, inParser: p.debugName });
-      // }
       ctx._collect.length = origCollectLength;
     } else {
       // parser succeeded
-      if (tracing) parserLog(`✓ ${p.debugName}`);
+      if (tracing) parserLog(`✓ ${debugName}`);
     }
 
     return result;
