@@ -2,6 +2,7 @@ import { expectNoLog } from "mini-parse/test-util";
 import fs from "node:fs/promises";
 import { expect, test } from "vitest";
 import { bindingStructsPlugin, link, noSuffix } from "wesl";
+import { stripWesl } from "./stripWgsl";
 
 export interface NamedPath {
   name: string; // test name
@@ -24,7 +25,7 @@ export function testWgslFiles(namedPaths: NamedPath[]) {
       const result = expectNoLog(() =>
         link({ [shortPath]: text }, noSuffix(name), {}, [], config),
       );
-      expect(result.dest).eq(text);
+      expect(stripWesl(result.dest)).eq(stripWesl(text));
     });
   });
 }
