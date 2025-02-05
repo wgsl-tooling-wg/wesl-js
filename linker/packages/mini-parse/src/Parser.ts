@@ -64,7 +64,6 @@ export interface ParserResult<T> {
 // TODO: What's the C and S?
 export interface ExtendedResult<T, C = any, S = any> extends ParserResult<T> {
   app: AppState<C, S>;
-  ctx: ParserContext<C, S>;
 }
 
 /** parsers return null if they don't match */
@@ -150,6 +149,14 @@ export class Parser<I, T> {
 
   /** run the parser given an already created parsing context */
   _run(context: ParserContext): OptParserResult<T> {
+    return runParser(this, context);
+  }
+
+  /**
+   * run the parser given an already created parsing context
+   * Will attempt to run its child parsers in tracing mode
+   */
+  _runTracing(context: ParserContext, trace: TraceContext): OptParserResult<T> {
     return runParser(this, context);
   }
 
@@ -272,7 +279,6 @@ export function simpleParser<T>(
  * also:
  * . check for infinite loops
  * . log if tracing is enabled
- * . merge tagged results
  * . backtrack on failure
  * . rollback context on failure
  */
@@ -395,7 +401,7 @@ export function runExtended<I, T>(
     return null;
   }
   const { app } = ctx;
-  return { ...origResults, app, ctx };
+  return { ...origResults, app };
 }
 
 /** for pretty printing, track subsidiary parsers */
