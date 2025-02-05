@@ -69,33 +69,16 @@ export interface TraceLogging {
   tstate: ParserContext;
 }
 
-type TraceLoggingFn<T> = (
-  ctx: any,
-  trace: ParserTraceInfo | undefined,
-  fn: (ctx: ParserContext) => T,
-) => T;
-
-export const withTraceLogging = <T>(): TraceLoggingFn<T> =>
-  tracing ? withTraceLoggingInternal : stubTraceLogging;
-
-function stubTraceLogging<T>(
-  ctx: any,
-  _trace: ParserTraceInfo | undefined,
-  fn: (ctx: ParserContext) => T,
-): T {
-  return fn(ctx);
-}
-
 /** setup trace logging inside a parser stage */
-function withTraceLoggingInternal<T>(
+export function withTraceLogging<T>(
   // _trace has trace settings from parent
   ctx: ParserContext,
   // trace has trace options set on this stage
   traceInfo: ParserTraceInfo | undefined,
   fn: (ctxWithTracing: ParserContext) => T,
 ): T {
-  let { _trace } = ctx;
   assertThat(tracing, "This function may only be called if tracing is enabled");
+  let { _trace } = ctx;
   const trace = traceInfo?.traceEnabled;
 
   // log if we're starting or inheriting a trace and we're inside requested position range

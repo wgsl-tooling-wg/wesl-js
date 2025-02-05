@@ -142,9 +142,30 @@ export class Parser<I, T> {
     }
   }
 
-  /** run the parser given an already created parsing context */
+  /** run the parser given an already created parsing context
+   *
+   * Execute a parser by running the core parsing fn given the parsing context
+   * also:
+   * . log if tracing is enabled
+   * . backtrack on failure
+   * . rollback context on failure
+   */
   _run(context: ParserContext): OptParserResult<T> {
-    return runParser(this, context);
+    if (tracing) {
+      return runParserWithTracing(this, context);
+    } else {
+      const origAppContext = context.app.context;
+      const origPosition = context.stream.checkpoint();
+      const origCollectLength = context._collect.length;
+      const result = this.fn(context);
+      if (result === null) {
+        context.stream.reset(origPosition);
+        context.app.context = origAppContext;
+        context._collect.length = origCollectLength;
+      }
+
+      return result;
+    }
   }
 
   /**
@@ -152,7 +173,7 @@ export class Parser<I, T> {
    * Will attempt to run its child parsers in tracing mode
    */
   _runTracing(context: ParserContext, trace: TraceContext): OptParserResult<T> {
-    return runParser(this, context);
+    return runParserWithTracing(this, context);
   }
 
   /** tag parse results */
@@ -268,24 +289,17 @@ export function simpleParser<T>(
   return parser(traceName, parserFn, true);
 }
 
-/**
- * Execute a parser by running the core parsing fn given the parsing context
- * also:
- * . check for infinite loops
- * . log if tracing is enabled
- * . backtrack on failure
- * . rollback context on failure
- */
-function runParser<I, T>(
+function runParserWithTracing<I, T>(
   p: Parser<I, T>,
   context: ParserContext,
 ): OptParserResult<T> {
+  assertThat(tracing);
   const { stream } = context;
 
   const origAppContext = context.app.context;
 
   // setup trace logging if enabled and active for this parser
-  const result = withTraceLogging<OptParserResult<T>>()(
+  const result = withTraceLogging<OptParserResult<T>>(
     context,
     p._traceInfo,
     runInContext,
@@ -298,8 +312,8 @@ function runParser<I, T>(
     const origCollectLength = ctx._collect.length;
 
     if (debugNames) ctx._debugNames.push(p.debugName);
-    const traceSuccessOnly = ctx._trace?.successOnly;
     if (tracing) {
+      const traceSuccessOnly = ctx._trace?.successOnly;
       if (!p._traceInfo?.traceIsTerminal && !traceSuccessOnly) {
         parserLog(`..${p.debugName}`);
       }
@@ -310,12 +324,16 @@ function runParser<I, T>(
 
     if (debugNames) ctx._debugNames.pop();
 
-    if (result === null || result === undefined) {
+    if (result === null) {
       // parser failed
-      if (tracing && !traceSuccessOnly) parserLog(`x ${p.debugName}`);
+      if (tracing) {
+        const traceSuccessOnly = ctx._trace?.successOnly;
+        if (!traceSuccessOnly) {
+          parserLog(`x ${p.debugName}`);
+        }
+      }
       stream.reset(origPosition);
       context.app.context = origAppContext;
-      result = null;
       // if (ctx._collect.length > origCollectLength) {
       //   const obsolete = ctx._collect.slice(origCollectLength);
       //   const collectNames = obsolete.map(c => c.debugName);
@@ -325,8 +343,6 @@ function runParser<I, T>(
     } else {
       // parser succeeded
       if (tracing) parserLog(`✓ ${p.debugName}`);
-      const value = result.value;
-      result = { value };
     }
 
     return result;
