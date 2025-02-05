@@ -337,7 +337,7 @@ const undefinedResult: ParserResult<undefined> = {
  */
 export function opt<P extends CombinatorArg>(
   arg: P,
-): Parser<InputFromArg<P>, ResultFromArg<P> | ParserResult<undefined>> {
+): Parser<InputFromArg<P>, ResultFromArg<P> | undefined> {
   const p = parserArg(arg);
   const optParser = parser("opt", function _opt(state: ParserContext) {
     const start = state.stream.checkpoint();
