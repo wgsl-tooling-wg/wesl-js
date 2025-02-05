@@ -161,11 +161,9 @@ export class Parser<I, T> {
       return runParserWithTracing(this, context);
     } else {
       const origAppContext = context.app.context;
-      const origPosition = context.stream.checkpoint();
       const origCollectLength = context._collect.length;
       const result = this.fn(context);
       if (result === null) {
-        context.stream.reset(origPosition);
         context.app.context = origAppContext;
         context._collect.length = origCollectLength;
       }

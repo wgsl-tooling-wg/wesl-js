@@ -57,20 +57,18 @@ export function token<const Kind extends string>(
   return simpleParser(
     `token '${kindStr}' ${quotedText(value)}`,
     (state: ParserContext): ParserResult<string> | null => {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
       if (tracing) {
-        const start = state.stream.checkpoint();
-        const next = state.stream.nextToken();
-        if (next === null) return null;
         const text = quotedText(next.text);
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
-        if (next.kind !== kindStr || next.text !== value) return null;
-        return { value: next.text };
-      } else {
-        const next = state.stream.nextToken();
-        if (next === null) return null;
-        if (next.kind !== kindStr || next.text !== value) return null;
-        return { value: next.text };
       }
+      if (next.kind !== kindStr || next.text !== value) {
+        state.stream.reset(start);
+        return null;
+      }
+      return { value: next.text };
     },
   );
 }
@@ -84,20 +82,18 @@ export function tokenOf<const Kind extends string>(
   return simpleParser(
     `tokenOf '${kindStr}'`,
     (state: ParserContext): ParserResult<string> | null => {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
       if (tracing) {
-        const start = state.stream.checkpoint();
-        const next = state.stream.nextToken();
-        if (next === null) return null;
         const text = quotedText(next.text);
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
-        if (next.kind !== kindStr || !values.includes(next.text)) return null;
-        return { value: next.text };
-      } else {
-        const next = state.stream.nextToken();
-        if (next === null) return null;
-        if (next.kind !== kindStr || !values.includes(next.text)) return null;
-        return { value: next.text };
       }
+      if (next.kind !== kindStr || !values.includes(next.text)) {
+        state.stream.reset(start);
+        return null;
+      }
+      return { value: next.text };
     },
   );
 }
@@ -110,18 +106,18 @@ export function kind<const Kind extends string>(
   return simpleParser(
     `kind '${kindStr}'`,
     (state: ParserContext): ParserResult<string> | null => {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
       if (tracing) {
-        const start = state.stream.checkpoint();
-        const next = state.stream.nextToken();
-        if (next === null) return null;
         const text = quotedText(next.text);
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
-        return next.kind === kindStr ? { value: next.text } : null;
-      } else {
-        const next = state.stream.nextToken();
-        if (next === null) return null;
-        return next.kind === kindStr ? { value: next.text } : null;
       }
+      if (next.kind !== kindStr) {
+        state.stream.reset(start);
+        return null;
+      }
+      return { value: next.text };
     },
   );
 }
@@ -137,18 +133,18 @@ export function text(value: string): Parser<ParserStream, string> {
   return simpleParser(
     `${quotedText(value)}`,
     (state: ParserContext): ParserResult<string> | null => {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
       if (tracing) {
-        const start = state.stream.checkpoint();
-        const next = state.stream.nextToken();
-        if (next === null) return null;
         const text = quotedText(next.text);
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
-        return next.text === value ? { value: next.text } : null;
-      } else {
-        const next = state.stream.nextToken();
-        if (next === null) return null;
-        return next.text === value ? { value: next.text } : null;
       }
+      if (next.text !== value) {
+        state.stream.reset(start);
+        return null;
+      }
+      return { value: next.text };
     },
   );
 }
@@ -159,17 +155,13 @@ export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
   const parsers = args.map(parserArg);
   const seqParser = parser("seq", (ctx: ParserContext) => {
     const values = [];
-    let failed = false;
     for (const p of parsers) {
       const result = p._run(ctx);
       if (result === null) {
-        failed = true;
-        break;
+        return null;
       }
-
       values.push(result.value);
     }
-    if (failed) return null;
     return { value: values };
   }).collect({ before: pushOpenArray, after: closeArray });
 
@@ -188,17 +180,14 @@ export function seqObj<P extends { [key: string]: CombinatorArg }>(
   );
   const seqObjParser = parser("seqObj", (ctx: ParserContext) => {
     const values: Partial<Record<keyof P, any>> = {};
-    let failed = false;
     for (const [name, p] of parsers) {
       const result = p._run(ctx);
       if (result === null) {
-        failed = true;
-        break;
+        return null;
       }
 
       values[name] = result.value;
     }
-    if (failed) return null;
     return { value: values };
   }).collect({ before: pushOpenArray, after: closeArray });
 
@@ -298,7 +287,9 @@ export function delimited<
 export function or<P extends CombinatorArg[]>(...args: P): OrParser<P> {
   const parsers = args.map(parserArg);
   const orParser = parser("or", (state: ParserContext) => {
+    const start = state.stream.checkpoint();
     for (const p of parsers) {
+      state.stream.reset(start);
       const result = p._run(state);
       if (result !== null) {
         return result;
@@ -316,7 +307,6 @@ const undefinedResult: ParserResult<undefined> = {
   value: undefined,
 };
 
-export type UndefinedParser = Parser<ParserStream, undefined>;
 /** Try a parser.
  *
  * If the parse succeeds, return the result.
@@ -325,21 +315,23 @@ export type UndefinedParser = Parser<ParserStream, undefined>;
  */
 export function opt<P extends CombinatorArg>(
   arg: P,
-): ParserFromArg<P> | UndefinedParser {
+): Parser<InputFromArg<P>, ResultFromArg<P> | ParserResult<undefined>> {
   const p = parserArg(arg);
+  const optParser = parser("opt", (state: ParserContext) => {
+    const start = state.stream.checkpoint();
+    const result = p._run(state);
 
-  const optParser: ParserFromArg<P> | UndefinedParser = parser(
-    "opt",
-    (state: ParserContext) => {
-      const result = p._run(state);
-      // If parsing fails, we return instead a success
-      // with 'undefined' as a value
-
+    // If parsing fails, we return instead a success
+    // with 'undefined' as a value
+    if (result === null) {
+      state.stream.reset(start);
       // cast the undefined result here and recover type with the ascription above
       type PR = ParserResult<ResultFromArg<P>>;
-      return result || (undefinedResult as PR);
-    },
-  );
+      return undefinedResult as PR;
+    }
+
+    return result;
+  });
   trackChildren(optParser, p);
   return optParser;
 }
@@ -355,7 +347,7 @@ export function not<P extends CombinatorArg>(
     (state: ParserContext) => {
       const pos = state.stream.checkpoint();
       const result = p._run(state);
-      if (!result) {
+      if (result === null) {
         return { value: true };
       }
       state.stream.reset(pos);
@@ -450,6 +442,7 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
       const before = ctx.stream.checkpoint();
       const result = runExtended<InputFromArg<A>, ResultFromArg<A>>(ctx, p);
       if (result === null) {
+        ctx.stream.reset(before);
         return { value: values };
       }
       // TODO: that's not a filter!
@@ -498,12 +491,13 @@ export function span<A extends CombinatorArg>(
 /** yields true if parsing has reached the end of input */
 export function eof(): Parser<ParserStream, true> {
   return simpleParser("eof", (state: ParserContext) => {
+    const start = state.stream.checkpoint();
     const result = state.stream.nextToken();
-    if (result === null) {
-      return { value: true };
-    } else {
+    if (result !== null) {
+      state.stream.reset(start);
       return null;
     }
+    return { value: true };
   });
 }
 
