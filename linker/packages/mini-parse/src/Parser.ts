@@ -9,7 +9,7 @@ import {
   ptag,
   runCollection,
 } from "./ParserCollect.js";
-import { ParseError, parserArg } from "./ParserCombinator.js";
+import { parserArg } from "./ParserCombinator.js";
 import {
   debugNames,
   parserLog,
@@ -111,6 +111,12 @@ export class ParserTraceInfo {
 
 /** A parser with no requirements, a bottom type. */
 export type ParserStream = Stream<TypedToken<never>>;
+
+export class ParseError extends Error {
+  constructor(msg?: string) {
+    super(msg);
+  }
+}
 
 /**
  * a composable parsing element
@@ -270,22 +276,14 @@ export function parser<I, T>(
   fn: ParseFn<T>,
   terminal?: boolean,
 ): Parser<I, T> {
-  const terminalArg = terminal ? { terminal } : {};
-  return new Parser<I, T>({ fn, traceName, ...terminalArg });
+  return new Parser<I, T>({ fn, traceName, terminal: terminal });
 }
 
 /** Create a Parser from a function that parses and returns a value (w/no child parsers) */
 export function simpleParser<T>(
   traceName: string,
-  fn: (ctx: ParserContext) => T | null | undefined,
+  parserFn: ParseFn<T>,
 ): Parser<ParserStream, T> {
-  const parserFn: ParseFn<T> = (ctx: ParserContext) => {
-    const r = fn(ctx);
-    if (r == null || r === undefined) return null;
-
-    return { value: r };
-  };
-
   return parser(traceName, parserFn, true);
 }
 

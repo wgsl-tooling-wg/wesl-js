@@ -13,6 +13,7 @@ import {
 import {
   ExtendedResult,
   OptParserResult,
+  ParseError,
   Parser,
   parser,
   ParserContext,
@@ -47,12 +48,6 @@ import { peekToken, Stream, Token, TypedToken } from "./Stream.js";
  * all user constructed parsers.
  */
 
-export class ParseError extends Error {
-  constructor(msg?: string) {
-    super(msg);
-  }
-}
-
 /** Parse for a particular kind of token,
  * @return the matching text */
 export function token<const Kind extends string>(
@@ -61,18 +56,20 @@ export function token<const Kind extends string>(
 ): Parser<Stream<TypedToken<Kind>>, string> {
   return simpleParser(
     `token '${kindStr}' ${quotedText(value)}`,
-    (state: ParserContext): string | null => {
+    (state: ParserContext): ParserResult<string> | null => {
       if (tracing) {
         const start = state.stream.checkpoint();
         const next = state.stream.nextToken();
-        if (next) {
-          const text = quotedText(next.text);
-          srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
-        }
-        return next?.kind === kindStr && next.text === value ? next.text : null;
+        if (next === null) return null;
+        const text = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
+        if (next.kind !== kindStr || next.text !== value) return null;
+        return { value: next.text };
       } else {
         const next = state.stream.nextToken();
-        return next?.kind === kindStr && next.text === value ? next.text : null;
+        if (next === null) return null;
+        if (next.kind !== kindStr || next.text !== value) return null;
+        return { value: next.text };
       }
     },
   );
@@ -86,11 +83,21 @@ export function tokenOf<const Kind extends string>(
 ): Parser<Stream<TypedToken<Kind>>, string> {
   return simpleParser(
     `tokenOf '${kindStr}'`,
-    (state: ParserContext): string | null => {
-      const next = state.stream.nextToken();
-      return next?.kind === kindStr && values.includes(next.text) ?
-          next.text
-        : null;
+    (state: ParserContext): ParserResult<string> | null => {
+      if (tracing) {
+        const start = state.stream.checkpoint();
+        const next = state.stream.nextToken();
+        if (next === null) return null;
+        const text = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
+        if (next.kind !== kindStr || !values.includes(next.text)) return null;
+        return { value: next.text };
+      } else {
+        const next = state.stream.nextToken();
+        if (next === null) return null;
+        if (next.kind !== kindStr || !values.includes(next.text)) return null;
+        return { value: next.text };
+      }
     },
   );
 }
@@ -102,40 +109,45 @@ export function kind<const Kind extends string>(
 ): Parser<Stream<TypedToken<Kind>>, string> {
   return simpleParser(
     `kind '${kindStr}'`,
-    (state: ParserContext): string | null => {
+    (state: ParserContext): ParserResult<string> | null => {
       if (tracing) {
         const start = state.stream.checkpoint();
         const next = state.stream.nextToken();
-        if (next) {
-          const text = quotedText(next.text);
-          srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
-        }
-        return next?.kind === kindStr ? next.text : null;
+        if (next === null) return null;
+        const text = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
+        return next.kind === kindStr ? { value: next.text } : null;
       } else {
         const next = state.stream.nextToken();
-        return next?.kind === kindStr ? next.text : null;
+        if (next === null) return null;
+        return next.kind === kindStr ? { value: next.text } : null;
       }
     },
   );
 }
+
+// export class KindParser<I, const Kind extends string> extends Parser<
+//   Stream<TypedToken<Kind>>,
+//   string
+// > {}
 
 /** Parse for a token containing a text value
  * @return the kind of token that matched */
 export function text(value: string): Parser<ParserStream, string> {
   return simpleParser(
     `${quotedText(value)}`,
-    (state: ParserContext): string | null => {
+    (state: ParserContext): ParserResult<string> | null => {
       if (tracing) {
         const start = state.stream.checkpoint();
         const next = state.stream.nextToken();
-        if (next) {
-          const text = quotedText(next.text);
-          srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
-        }
-        return next?.text === value ? next.text : null;
+        if (next === null) return null;
+        const text = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
+        return next.text === value ? { value: next.text } : null;
       } else {
         const next = state.stream.nextToken();
-        return next?.text === value ? next.text : null;
+        if (next === null) return null;
+        return next.text === value ? { value: next.text } : null;
       }
     },
   );
@@ -357,9 +369,14 @@ export function not<P extends CombinatorArg>(
 
 /** yield next token, any token */
 export function any(): Parser<ParserStream, Token> {
-  return simpleParser("any", (state: ParserContext): Token | null => {
-    return state.stream.nextToken();
-  });
+  return simpleParser(
+    "any",
+    (state: ParserContext): ParserResult<Token> | null => {
+      const value = state.stream.nextToken();
+      if (value === null) return null;
+      return { value };
+    },
+  );
 }
 
 /** yield next token if the provided parser doesn't match */
@@ -483,7 +500,7 @@ export function eof(): Parser<ParserStream, true> {
   return simpleParser("eof", (state: ParserContext) => {
     const result = state.stream.nextToken();
     if (result === null) {
-      return true;
+      return { value: true };
     } else {
       return null;
     }
@@ -511,7 +528,7 @@ export function req<A extends CombinatorArg>(
 
 /** always succeeds, does not consume any tokens */
 export function yes(): Parser<ParserStream, true> {
-  return simpleParser("yes", () => true);
+  return simpleParser("yes", () => ({ value: true }));
 }
 
 /** always fails, does not consume any tokens */
@@ -565,7 +582,9 @@ export function withStreamAction<U>(
   action: (stream: Stream<Token>) => U | null,
 ): Parser<ParserStream, U> {
   return simpleParser(`withStreamAction`, (state: ParserContext) => {
-    return action(state.stream);
+    const result = action(state.stream);
+    if (result === null) return null;
+    return { value: result };
   });
 }
 
