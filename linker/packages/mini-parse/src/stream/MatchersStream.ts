@@ -1,12 +1,12 @@
 import { Span } from "../Span.ts";
-import { Stream, StreamWithLocation, Token, TypedToken } from "../Stream.ts";
+import { Stream, Token, TypedToken } from "../Stream.ts";
 import { toRegexSource } from "./RegexHelpers.ts";
 
 /**
  * Runs a `RegexMatchers` on an input string
  */
 export class MatchersStream<Kind extends string>
-  implements Stream<TypedToken<Kind>>, StreamWithLocation
+  implements Stream<TypedToken<Kind>>
 {
   private position: number = 0;
   constructor(
@@ -24,13 +24,6 @@ export class MatchersStream<Kind extends string>
     if (result === null) return null;
     this.position = result.span[1];
     return result;
-  }
-  previousTokenEnd(): number {
-    // We are guaranteed contiguous spans here, so this is correct
-    return this.position;
-  }
-  currentTokenStart(): number {
-    return this.position;
   }
 }
 

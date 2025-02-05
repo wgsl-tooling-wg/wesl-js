@@ -14,6 +14,7 @@ import {
   repeatWhile,
   req,
   seq,
+  span,
   text,
   withSep,
 } from "../ParserCombinator.js";
@@ -155,9 +156,9 @@ test("infinite loop detection", () => {
 
 test("token start is after ignored ws", () => {
   const src = " a";
-  const p = kind(m.word).map(r => r.start);
+  const p = span(kind(m.word));
   const { parsed } = testParse(p, src);
-  expect(parsed?.value).toBe(1);
+  expect(parsed?.value?.span).toEqual([1, 2]);
 });
 
 test("req logs a message on failure", () => {

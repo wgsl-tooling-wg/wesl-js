@@ -20,7 +20,7 @@ export interface Lexer {
   /** src text */
   src: string;
 
-  stream?: Stream<Token>;
+  stream: Stream<Token>;
 }
 
 /** Legacy function, to be superseded by the Stream */

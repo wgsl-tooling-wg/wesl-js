@@ -11,6 +11,7 @@ import {
   req,
   seq,
   seqObj,
+  span,
   Stream,
   TagRecord,
   tagScope,
@@ -79,32 +80,34 @@ const import_package = terminated(wordToken.mapValue(segment), "::").mapValue(
 
 /** parse a WESL style wgsl import statement. */
 export const weslImport: Parser<Stream<WeslToken>, ImportElem> = tagScope(
-  delimited(
-    "import",
-    req(
-      seq(
-        or(import_relative, import_package),
-        or(import_collection, import_path, item_import),
-      ),
-    ).mapValue(v => {
-      if (v[1] instanceof ImportStatement) {
-        return new ImportStatement(
-          segments(v[0], v[1].segments),
-          v[1].finalSegment,
-        );
-      } else {
-        return new ImportStatement(v[0], v[1]);
-      }
-    }),
-    req(";"),
+  span(
+    delimited(
+      "import",
+      req(
+        seq(
+          or(import_relative, import_package),
+          or(import_collection, import_path, item_import),
+        ),
+      ).mapValue(v => {
+        if (v[1] instanceof ImportStatement) {
+          return new ImportStatement(
+            segments(v[0], v[1].segments),
+            v[1].finalSegment,
+          );
+        } else {
+          return new ImportStatement(v[0], v[1]);
+        }
+      }),
+      req(";"),
+    ),
   )
-    .map(
+    .mapValue(
       (v): ImportElem => ({
         kind: "import",
         contents: [],
         imports: v.value,
-        start: v.start,
-        end: v.end,
+        start: v.span[0],
+        end: v.span[1],
       }),
     )
     .ptag("owo")

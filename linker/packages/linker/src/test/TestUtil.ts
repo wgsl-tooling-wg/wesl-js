@@ -75,5 +75,5 @@ export function parseTest(src: string): WeslAST {
 
 /** test w/o any log collection, to not confuse debugging */
 export function parseTestRaw(src: string) {
-  return parseWESL(src, undefined, 500);
+  return parseWESL(src, undefined);
 }

@@ -24,10 +24,9 @@ export interface TypedToken<Kind extends string> extends Token {
   kind: Kind;
 }
 
-/**
- * Legacy interface, will be replaced with a better mechanism
- */
-export interface StreamWithLocation {
-  previousTokenEnd(): number;
-  currentTokenStart(): number;
+export function peekToken<T extends Token>(stream: Stream<T>): T | null {
+  const start = stream.checkpoint();
+  const token = stream.nextToken();
+  stream.reset(start);
+  return token;
 }

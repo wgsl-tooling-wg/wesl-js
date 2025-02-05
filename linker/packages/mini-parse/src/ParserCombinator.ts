@@ -1,3 +1,4 @@
+import { assertThat } from "./Assertions.js";
 import {
   CombinatorArg,
   InputFromArg,
@@ -25,7 +26,8 @@ import {
 import { closeArray, pushOpenArray } from "./ParserCollect.js";
 import { ctxLog, srcTrace } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
-import { Stream, Token, TypedToken } from "./Stream.js";
+import { Span } from "./Span.js";
+import { peekToken, Stream, Token, TypedToken } from "./Stream.js";
 
 /** Parsing Combinators
  *
@@ -455,6 +457,27 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
       values.push(result.value);
     }
   };
+}
+
+export function span<A extends CombinatorArg>(
+  arg: A,
+): Parser<InputFromArg<A>, { value: ResultFromArg<A>; span: Span }> {
+  const p = parserArg(arg);
+  const result = parser("span", (ctx: ParserContext) => {
+    assertThat(ctx.lexer.stream);
+    const start = peekToken(ctx.lexer.stream)?.span?.[0] ?? null;
+    const result = p._run(ctx);
+    if (result === null) return null;
+    const end = ctx.lexer.position();
+    return {
+      value: {
+        value: result.value,
+        span: [start ?? end, end] as const,
+      },
+    };
+  });
+  trackChildren(result, arg);
+  return result;
 }
 
 /** yields true if parsing has reached the end of input */

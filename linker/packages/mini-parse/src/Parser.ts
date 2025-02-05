@@ -66,8 +66,6 @@ export interface ParserResult<T> {
 // TODO: What's the C and S?
 export interface ExtendedResult<T, C = any, S = any> extends ParserResult<T> {
   src: string;
-  start: number;
-  end: number;
   app: AppState<C, S>;
   ctx: ParserContext<C, S>;
 }
@@ -399,17 +397,10 @@ export function runExtended<I, T>(
     ctx.lexer.position(origStart);
     return null;
   }
-  const end = ctx.lexer.position();
   const src = ctx.lexer.src;
-
-  // we've succeeded, so refine the start position to skip past ws
-  // (we don't consume ws earlier, in case an inner parser wants to use different ws skipping)
-  ctx.lexer.position(origStart);
-  const start = ctx.lexer.skipIgnored();
-  ctx.lexer.position(end);
   const { app } = ctx;
 
-  return { ...origResults, start, end, app, src, ctx };
+  return { ...origResults, app, src, ctx };
 }
 
 /** for pretty printing, track subsidiary parsers */
