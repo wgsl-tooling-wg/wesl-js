@@ -346,7 +346,7 @@ function mapExtended<I, T, U>(
 ): Parser<I, U> {
   const mapParser = parser(
     `mapExtended`,
-    (ctx: ParserContext): OptParserResult<U> => {
+    function _mapExtended(ctx: ParserContext): OptParserResult<U> {
       const extended = runExtended(ctx, p);
       if (!extended) return null;
 
@@ -363,11 +363,14 @@ function mapExtended<I, T, U>(
 
 /** return a parser that maps the current results */
 function map<I, T, U>(p: Parser<I, T>, fn: (value: T) => U): Parser<I, U> {
-  const mapParser = parser(`map`, (ctx: ParserContext): OptParserResult<U> => {
-    const result = p._run(ctx);
-    if (result === null) return null;
-    return { value: fn(result.value) };
-  });
+  const mapParser = parser(
+    `map`,
+    function _map(ctx: ParserContext): OptParserResult<U> {
+      const result = p._run(ctx);
+      if (result === null) return null;
+      return { value: fn(result.value) };
+    },
+  );
 
   trackChildren(mapParser, p);
   return mapParser;
@@ -383,7 +386,7 @@ function toParser<I, T, O>(
 ): Parser<I, T | O> {
   const newParser: Parser<I, T | O> = parser(
     "toParser",
-    (ctx: ParserContext) => {
+    function _toParser(ctx: ParserContext) {
       const extended = runExtended(ctx, p);
       if (!extended) return null;
 

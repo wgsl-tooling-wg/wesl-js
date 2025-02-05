@@ -80,7 +80,7 @@ export function collect<I, T, V>(
 
   const collectParser = parser(
     `collect`,
-    (ctx: ParserContext): OptParserResult<T> => {
+    function _collect(ctx: ParserContext): OptParserResult<T> {
       // if (tracing && ctx._trace) {
       // const deepName = ctx._debugNames.join(" > ");
       // ctxLog(ctx, `collect ${deepName}`);
@@ -103,7 +103,7 @@ export function tagScope<A extends CombinatorArg>(
   const p = parserArg(arg);
   const sp = parser(
     `tagScope`,
-    (ctx: ParserContext): OptParserResult<ResultFromArg<A>> => {
+    function _tagScope(ctx: ParserContext): OptParserResult<ResultFromArg<A>> {
       const origStart = ctx.stream.checkpoint();
       let origTags: TagRecord;
       queueCollectFn(
@@ -140,17 +140,20 @@ function cloneTags(tags: TagRecord): TagRecord {
 /** tag most recent collect result with a name that can be
  * referenced in later collection. */
 export function ctag<I, T>(p: Parser<I, T>, name: string): Parser<I, T> {
-  const cp = parser(`ctag`, (ctx: ParserContext): OptParserResult<T> => {
-    return runAndCollectAfter(
-      p,
-      ctx,
-      (cc: CollectContext) => {
-        const valueEntry = last(cc._values);
-        addTagValue(cc.tags, name, valueEntry.value);
-      },
-      `ctag ${name}`,
-    );
-  });
+  const cp = parser(
+    `ctag`,
+    function _ctag(ctx: ParserContext): OptParserResult<T> {
+      return runAndCollectAfter(
+        p,
+        ctx,
+        (cc: CollectContext) => {
+          const valueEntry = last(cc._values);
+          addTagValue(cc.tags, name, valueEntry.value);
+        },
+        `ctag ${name}`,
+      );
+    },
+  );
   trackChildren(cp, p);
   return cp;
 }
@@ -200,18 +203,21 @@ export function closeArray(cc: CollectContext): void {
 /** tag parse results results with a name that can be
  * referenced in later collection. */
 export function ptag<I, T>(p: Parser<I, T>, name: string): Parser<I, T> {
-  const cp = parser(`ptag`, (ctx: ParserContext): OptParserResult<T> => {
-    const origStart = ctx.stream.checkpoint();
-    const result = p._run(ctx);
+  const cp = parser(
+    `ptag`,
+    function _ptag(ctx: ParserContext): OptParserResult<T> {
+      const origStart = ctx.stream.checkpoint();
+      const result = p._run(ctx);
 
-    // tag the parser resuts
-    if (result) {
-      const tagFn = (ctx: CollectContext) =>
-        addTagValue(ctx.tags, name, result.value);
-      queueCollectFn(ctx, origStart, tagFn, `ptag ${name}`);
-    }
-    return result;
-  });
+      // tag the parser resuts
+      if (result) {
+        const tagFn = (ctx: CollectContext) =>
+          addTagValue(ctx.tags, name, result.value);
+        queueCollectFn(ctx, origStart, tagFn, `ptag ${name}`);
+      }
+      return result;
+    },
+  );
   trackChildren(cp, p);
   return cp;
 }
