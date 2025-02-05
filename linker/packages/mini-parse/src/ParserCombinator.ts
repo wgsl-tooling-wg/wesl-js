@@ -149,6 +149,28 @@ export function text(value: string): Parser<ParserStream, string> {
   );
 }
 
+/** Parse for a token containing a text value
+ * @return the kind of token that matched */
+export function textOf(values: string[]): Parser<ParserStream, string> {
+  return simpleParser(
+    `${quotedText(values.join(","))}`,
+    function _text(state: ParserContext): ParserResult<string> | null {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
+      if (tracing) {
+        const text = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
+      }
+      if (!values.includes(next.text)) {
+        state.stream.reset(start);
+        return null;
+      }
+      return { value: next.text };
+    },
+  );
+}
+
 /** Parse a sequence of parsers
  * @return an array of all parsed results, or null if any parser fails */
 export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
