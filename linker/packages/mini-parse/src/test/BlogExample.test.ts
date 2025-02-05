@@ -1,5 +1,4 @@
 import { expect, test } from "vitest";
-import { matchingLexer } from "../MatchingLexer.js";
 import {
   kind,
   opt,
@@ -9,25 +8,28 @@ import {
   seqObj,
 } from "../ParserCombinator.js";
 import { matchOneOf } from "../stream/RegexHelpers.js";
-import { RegexMatchers } from "../stream/MatchersStream.js";
+import { MatchersStream, RegexMatchers } from "../stream/MatchersStream.js";
+import { FilterStream } from "../stream/FilterStream.js";
 
 test("parse fn foo()", () => {
   const src = "fn foo()";
 
-  // lexer
   const tokens = new RegexMatchers({
     ident: /[a-z]+/,
     ws: /\s+/,
     symbol: matchOneOf("( ) [ ] { } @ ; ,"),
   });
-  const lexer = matchingLexer(src, tokens);
+  const stream = new FilterStream(
+    new MatchersStream(src, tokens),
+    t => t.kind !== "ws",
+  );
 
   // parsers
   const ident = kind("ident");
   const fnDecl = seq("fn", ident, "(", ")");
 
   // parsing and extracint result
-  const result = fnDecl.parse({ lexer });
+  const result = fnDecl.parse({ stream });
 
   if (result) {
     const foundIdent = result.value[1];
@@ -39,13 +41,15 @@ test("parse fn foo()", () => {
 test("parse fn foo() with annotation in grammar", () => {
   const src = "fn foo()";
 
-  // lexer
   const tokens = new RegexMatchers({
     ident: /[a-z]+/,
     ws: /\s+/,
     symbol: matchOneOf("( ) [ ] { } @ ; ,"),
   });
-  const lexer = matchingLexer(src, tokens);
+  const stream = new FilterStream(
+    new MatchersStream(src, tokens),
+    t => t.kind !== "ws",
+  );
 
   // parsers
   const ident = kind("ident");
@@ -53,7 +57,7 @@ test("parse fn foo() with annotation in grammar", () => {
   const fnDecl = seq(annotation, "fn", ident, "(", ")");
 
   // parsing and extracting result
-  const result = fnDecl.parse({ lexer });
+  const result = fnDecl.parse({ stream });
 
   if (result) {
     const fnName = result.value[2];
@@ -65,13 +69,15 @@ test("parse fn foo() with annotation in grammar", () => {
 test("parse fn foo() with seqObj", () => {
   const src = "@export fn foo()";
 
-  // lexer
   const tokens = new RegexMatchers({
     ident: /[a-z]+/,
     ws: /\s+/,
     symbol: matchOneOf("( ) [ ] { } @ ; ,"),
   });
-  const lexer = matchingLexer(src, tokens);
+  const stream = new FilterStream(
+    new MatchersStream(src, tokens),
+    t => t.kind !== "ws",
+  );
 
   // parsers
   const ident = kind("ident");
@@ -85,7 +91,7 @@ test("parse fn foo() with seqObj", () => {
   });
 
   // parsing and extracting result
-  const result = fnDecl.parse({ lexer });
+  const result = fnDecl.parse({ stream });
 
   expect(result).toBeDefined();
   if (result) {

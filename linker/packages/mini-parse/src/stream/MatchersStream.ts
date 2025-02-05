@@ -25,6 +25,9 @@ export class MatchersStream<Kind extends string>
     this.position = result.span[1];
     return result;
   }
+  get src(): string {
+    return this.text;
+  }
 }
 
 /**

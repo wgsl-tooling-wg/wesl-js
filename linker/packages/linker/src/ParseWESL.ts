@@ -1,4 +1,4 @@
-import { AppState, LexerFromStream, ParserInit, SrcMap } from "mini-parse";
+import { AppState, ParserInit, SrcMap } from "mini-parse";
 import { ModuleElem } from "./AbstractElems.ts";
 import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { ImportStatement } from "./parse/ImportStatement.ts";
@@ -57,14 +57,11 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   // TODO allow returning undefined for failure, or throw?
 
   resetScopeIds();
-  const lexer = new LexerFromStream(
-    new WeslStream(srcModule.src),
-    srcModule.src,
-  );
+  const stream = new WeslStream(srcModule.src);
 
   const appState = blankWeslParseState(srcModule);
 
-  const init: ParserInit = { lexer, appState };
+  const init: ParserInit = { stream, appState };
   const parseResult = weslRoot.parse(init);
   if (parseResult === null) {
     throw new Error("parseWESL failed");

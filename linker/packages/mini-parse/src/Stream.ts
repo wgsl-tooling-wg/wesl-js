@@ -9,8 +9,17 @@ export interface Stream<T extends Token> {
   checkpoint(): number;
   /** Restores a position */
   reset(position: number): void;
-  /** Returns the next token, or `null` if the end of the stream has been reached */
+  /**
+   * Returns the next token, or `null` if the end of the stream has been reached.
+   * Always leaves `checkpoint` right after the token.
+   */
   nextToken(): T | null;
+
+  /** src text
+   *
+   * TODO: Remove this (move it into an extended stream type)
+   */
+  src: string;
 }
 
 /** A text token */

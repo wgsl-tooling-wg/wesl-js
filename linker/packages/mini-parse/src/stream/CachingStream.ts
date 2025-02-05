@@ -22,6 +22,9 @@ export class CachingStream<T extends Token> implements Stream<T> {
       return token;
     }
   }
+  get src(): string {
+    return this.inner.src;
+  }
 }
 
 /** size limited key value cache */

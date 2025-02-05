@@ -1,8 +1,6 @@
 import {
   AppState,
   enableTracing,
-  Lexer,
-  LexerFromStream,
   MatchersStream,
   matchOneOf,
   OptParserResult,
@@ -49,24 +47,21 @@ export function testParse<T, C = any, S = any>(
   tokenMatcher: RegexMatchers<string> = testMatcher,
   appState: AppState<C, S> = { context: {} as C, stable: [] as S },
 ): TestParseResult<T, S> {
-  const lexer = new LexerFromStream(
-    new FilterStream(
-      new MatchersStream(src, tokenMatcher),
-      t => t.kind !== "ws",
-    ),
-    src,
+  const stream = new FilterStream(
+    new MatchersStream(src, tokenMatcher),
+    t => t.kind !== "ws",
   );
-  const parsed = p.parse({ lexer, appState: appState });
-  return { parsed, position: lexer.position(), stable: appState.stable };
+  const parsed = p.parse({ stream, appState });
+  return { parsed, position: stream.checkpoint(), stable: appState.stable };
 }
 
-export function testParseWithLexer<T, C = any, S = any>(
+export function testParseWithStream<T, C = any, S = any>(
   p: Parser<Stream<Token>, T>,
-  lexer: Lexer,
+  stream: Stream<Token>,
   appState: AppState<C, S> = { context: {} as C, stable: [] as S },
 ): TestParseResult<T, S> {
-  const parsed = p.parse({ lexer, appState: appState });
-  return { parsed, position: lexer.position(), stable: appState.stable };
+  const parsed = p.parse({ stream, appState: appState });
+  return { parsed, position: stream.checkpoint(), stable: appState.stable };
 }
 
 /** run a test function and expect that no error logs are produced */

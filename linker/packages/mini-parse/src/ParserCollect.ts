@@ -1,5 +1,4 @@
 import { CombinatorArg, ResultFromArg } from "./CombinatorTypes.js";
-import { Lexer } from "./MatchingLexer.js";
 import {
   AppState,
   OptParserResult,
@@ -10,6 +9,7 @@ import {
   trackChildren,
 } from "./Parser.js";
 import { parserArg } from "./ParserCombinator.js";
+import { Stream, Token } from "./Stream.js";
 
 export type TagRecord = Record<string | symbol, any[] | undefined>;
 export type NoTags = Record<string | symbol, never>;
@@ -85,7 +85,7 @@ export function collect<I, T, V>(
       // const deepName = ctx._debugNames.join(" > ");
       // ctxLog(ctx, `collect ${deepName}`);
       // }
-      const origStart = ctx.lexer.position();
+      const origStart = ctx.stream.checkpoint();
       if (beforeFn) {
         queueCollectFn(ctx, origStart, beforeFn, `${debugName}.before`);
       }
@@ -105,7 +105,7 @@ export function tagScope<A extends CombinatorArg>(
   const sp = parser(
     `tagScope`,
     (ctx: ParserContext): OptParserResult<ResultFromArg<A>> => {
-      const origStart = ctx.lexer.position();
+      const origStart = ctx.stream.checkpoint();
       let origTags: TagRecord;
       queueCollectFn(
         ctx,
@@ -164,7 +164,7 @@ function runAndCollectAfter<I, T>(
   collectFn: CollectFn<any>,
   debugName: string = "",
 ): OptParserResult<T> {
-  const origStart = ctx.lexer.position();
+  const origStart = ctx.stream.checkpoint();
   const result = p._run(ctx);
   if (result) {
     queueCollectFn(ctx, origStart, collectFn, debugName);
@@ -178,7 +178,7 @@ function queueCollectFn<T>(
   collectFn: CollectFn<any>,
   debugName: string,
 ) {
-  const srcPosition = refinePosition(ctx.lexer, origStart);
+  const srcPosition = refinePosition(ctx.stream, origStart);
   ctx._collect.push({
     srcPosition,
     collectFn,
@@ -202,7 +202,7 @@ export function closeArray(cc: CollectContext): void {
  * referenced in later collection. */
 export function ptag<I, T>(p: Parser<I, T>, name: string): Parser<I, T> {
   const cp = parser(`ptag`, (ctx: ParserContext): OptParserResult<T> => {
-    const origStart = ctx.lexer.position();
+    const origStart = ctx.stream.checkpoint();
     const result = p._run(ctx);
 
     // tag the parser resuts
@@ -230,10 +230,10 @@ function addTagValue(tags: TagRecord, name: string, value: any) {
 export function runCollection(
   _collect: CollectFnEntry<any>[],
   app: AppState<any, any>,
-  lexer: Lexer,
+  stream: Stream<Token>,
 ) {
   const tags: Record<string, any> = {};
-  const { src } = lexer;
+  const { src } = stream;
   const _values: CollectValue[] = [{ value: null, openArray: undefined }];
   // ctx._collect.forEach(entry => {
   //   dlog("collect-list", entry.debugName)
@@ -277,10 +277,24 @@ function last<T>(elems: T[]): T {
 /** We've succeeded in a parse, so refine the start position to skip past ws
  * (we don't consume ws earlier, in case an inner parser wants to use different ws skipping)
  */
-function refinePosition(lexer: Lexer, origStart: number): CollectPosition {
-  const end = lexer.position();
-  lexer.position(origStart);
-  const start = lexer.skipIgnored();
-  lexer.position(end);
+function refinePosition(
+  stream: Stream<Token>,
+  origStart: number,
+): CollectPosition {
+  const end = stream.checkpoint();
+  stream.reset(origStart);
+  const start = skipIgnored(stream);
+  stream.reset(end);
   return { start: start, end };
+}
+
+function skipIgnored(stream: Stream<Token>): number {
+  const result = stream.nextToken();
+  if (result === null) {
+    // Position of EOF
+    return stream.checkpoint();
+  } else {
+    stream.reset(result.span[0]);
+    return stream.checkpoint();
+  }
 }

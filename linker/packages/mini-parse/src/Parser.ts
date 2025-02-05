@@ -1,6 +1,5 @@
 import { assertThat } from "./Assertions.js";
-import { CombinatorArg, ParserFromArg } from "./CombinatorTypes.js";
-import { Lexer } from "./MatchingLexer.js";
+import { CombinatorArg } from "./CombinatorTypes.js";
 import {
   collect,
   CollectFn,
@@ -11,7 +10,6 @@ import {
   runCollection,
 } from "./ParserCollect.js";
 import { ParseError, parserArg } from "./ParserCombinator.js";
-import { srcLog } from "./ParserLogging.js";
 import {
   debugNames,
   parserLog,
@@ -20,7 +18,7 @@ import {
   tracing,
   withTraceLogging,
 } from "./ParserTracing.js";
-import { Stream, TypedToken } from "./Stream.js";
+import { Stream, Token, TypedToken } from "./Stream.js";
 
 export interface AppState<C, S> {
   /**
@@ -36,7 +34,7 @@ export interface AppState<C, S> {
 
 export interface ParserInit<C = any, S = any> {
   /** supply tokens to the parser*/
-  lexer: Lexer;
+  stream: Stream<Token>;
 
   /** application specific context and result storage, shared with every parser */
   appState?: AppState<C, S>;
@@ -44,7 +42,7 @@ export interface ParserInit<C = any, S = any> {
 
 /* Information passed to the parsers during parsing */
 export interface ParserContext<C = any, S = any> {
-  lexer: Lexer;
+  stream: Stream<Token>;
 
   app: AppState<C, S>;
 
@@ -65,7 +63,6 @@ export interface ParserResult<T> {
 
 // TODO: What's the C and S?
 export interface ExtendedResult<T, C = any, S = any> extends ParserResult<T> {
-  src: string;
   app: AppState<C, S>;
   ctx: ParserContext<C, S>;
 }
@@ -215,15 +212,15 @@ export class Parser<I, T> {
   /** start parsing */
   parse(init: ParserInit): OptParserResult<T> {
     try {
-      const { lexer, appState: app = { context: {}, stable: [] } } = init;
+      const { stream, appState: app = { context: {}, stable: [] } } = init;
       const _collect: CollectFnEntry<any>[] = [];
       const result = this._run({
-        lexer,
+        stream,
         app,
         _collect,
         _debugNames: [],
       });
-      if (result) runCollection(_collect, app, lexer);
+      if (result) runCollection(_collect, app, stream);
       return result;
     } catch (e) {
       if (e instanceof ParseError) {
@@ -283,7 +280,7 @@ function runParser<I, T>(
   p: Parser<I, T>,
   context: ParserContext,
 ): OptParserResult<T> {
-  const { lexer } = context;
+  const { stream } = context;
 
   const origAppContext = context.app.context;
 
@@ -297,7 +294,7 @@ function runParser<I, T>(
   return result;
 
   function runInContext(ctx: ParserContext): OptParserResult<T> {
-    const origPosition = lexer.position();
+    const origPosition = stream.checkpoint();
     const origCollectLength = ctx._collect.length;
 
     if (debugNames) ctx._debugNames.push(p.debugName);
@@ -316,7 +313,7 @@ function runParser<I, T>(
     if (result === null || result === undefined) {
       // parser failed
       if (tracing && !traceSuccessOnly) parserLog(`x ${p.debugName}`);
-      lexer.position(origPosition);
+      stream.reset(origPosition);
       context.app.context = origAppContext;
       result = null;
       // if (ctx._collect.length > origCollectLength) {
@@ -390,17 +387,15 @@ export function runExtended<I, T>(
   ctx: ParserContext,
   p: Parser<I, T>,
 ): ExtendedResult<T> | null {
-  const origStart = ctx.lexer.position();
+  const origStart = ctx.stream.checkpoint();
 
   const origResults = p._run(ctx);
   if (origResults === null) {
-    ctx.lexer.position(origStart);
+    ctx.stream.reset(origStart);
     return null;
   }
-  const src = ctx.lexer.src;
   const { app } = ctx;
-
-  return { ...origResults, app, src, ctx };
+  return { ...origResults, app, ctx };
 }
 
 /** for pretty printing, track subsidiary parsers */

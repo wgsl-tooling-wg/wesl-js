@@ -78,7 +78,7 @@ To create a lexer that walks over a source text producing tokens, use:
 
 ```ts
 const text = "3 + 4";
-const lexer = matchingLexer(text, simpleTokens);
+const stream = matchingLexer(text, simpleTokens);
 ```
 
 By default, the lexer will skip over whitespace tokens that you designate with
@@ -91,7 +91,7 @@ dynamically while parsing by using the `tokensIgnore()` combinator.
 To run a parser, just give it a lexer attached to your source text.
 
 ```ts
-const result = simpleSum.parse({ lexer });
+const result = simpleSum.parse({ stream });
 ```
 
 The result will contain the combined results of the parsers, in this case

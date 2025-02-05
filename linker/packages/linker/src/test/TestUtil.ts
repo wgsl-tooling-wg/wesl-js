@@ -1,16 +1,9 @@
-import {
-  LexerFromStream,
-  NoTags,
-  Parser,
-  Stream,
-  TagRecord,
-  withLogger,
-} from "mini-parse";
+import { NoTags, Parser, Stream, TagRecord, withLogger } from "mini-parse";
 import {
   expectNoLog,
   logCatch,
   TestParseResult,
-  testParseWithLexer,
+  testParseWithStream,
 } from "mini-parse/test-util";
 import { WgslBundle } from "random_wgsl";
 import { link, LinkConfig } from "../Linker.js";
@@ -23,8 +16,8 @@ export function testAppParse<T>(
   src: string,
 ): TestParseResult<T, WeslAST> {
   const appState = syntheticWeslParseState();
-  const lexer = new LexerFromStream(new WeslStream(src), src);
-  return testParseWithLexer(parser, lexer, appState);
+  const stream = new WeslStream(src);
+  return testParseWithStream(parser, stream, appState);
 }
 
 /** Convenience wrapper to link wgsl for tests.

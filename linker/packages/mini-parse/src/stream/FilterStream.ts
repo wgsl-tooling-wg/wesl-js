@@ -21,4 +21,7 @@ export class FilterStream<T extends Token> implements Stream<T> {
       }
     }
   }
+  get src(): string {
+    return this.inner.src;
+  }
 }

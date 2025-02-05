@@ -1,4 +1,3 @@
-export * from "./MatchingLexer.js";
 export * from "./Parser.js";
 export * from "./ParserCollect.js";
 export * from "./ParserCombinator.js";

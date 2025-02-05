@@ -10,7 +10,6 @@ import {
   SeqParser,
   SeqValues,
 } from "./CombinatorTypes.js";
-import { Lexer, quotedText } from "./MatchingLexer.js";
 import {
   ExtendedResult,
   OptParserResult,
@@ -24,7 +23,7 @@ import {
   trackChildren,
 } from "./Parser.js";
 import { closeArray, pushOpenArray } from "./ParserCollect.js";
-import { ctxLog, srcTrace } from "./ParserLogging.js";
+import { ctxLog, quotedText, srcTrace } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
 import { Span } from "./Span.js";
 import { peekToken, Stream, Token, TypedToken } from "./Stream.js";
@@ -64,15 +63,15 @@ export function token<const Kind extends string>(
     `token '${kindStr}' ${quotedText(value)}`,
     (state: ParserContext): string | null => {
       if (tracing) {
-        const start = state.lexer.position();
-        const next = state.lexer.next();
+        const start = state.stream.checkpoint();
+        const next = state.stream.nextToken();
         if (next) {
           const text = quotedText(next.text);
-          srcTrace(state.lexer.src, start, `: ${text} (${next.kind})`);
+          srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
         }
         return next?.kind === kindStr && next.text === value ? next.text : null;
       } else {
-        const next = state.lexer.next();
+        const next = state.stream.nextToken();
         return next?.kind === kindStr && next.text === value ? next.text : null;
       }
     },
@@ -88,7 +87,7 @@ export function tokenOf<const Kind extends string>(
   return simpleParser(
     `tokenOf '${kindStr}'`,
     (state: ParserContext): string | null => {
-      const next = state.lexer.next();
+      const next = state.stream.nextToken();
       return next?.kind === kindStr && values.includes(next.text) ?
           next.text
         : null;
@@ -105,15 +104,15 @@ export function kind<const Kind extends string>(
     `kind '${kindStr}'`,
     (state: ParserContext): string | null => {
       if (tracing) {
-        const start = state.lexer.position();
-        const next = state.lexer.next();
+        const start = state.stream.checkpoint();
+        const next = state.stream.nextToken();
         if (next) {
           const text = quotedText(next.text);
-          srcTrace(state.lexer.src, start, `: ${text} (${next.kind})`);
+          srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
         }
         return next?.kind === kindStr ? next.text : null;
       } else {
-        const next = state.lexer.next();
+        const next = state.stream.nextToken();
         return next?.kind === kindStr ? next.text : null;
       }
     },
@@ -127,15 +126,15 @@ export function text(value: string): Parser<ParserStream, string> {
     `${quotedText(value)}`,
     (state: ParserContext): string | null => {
       if (tracing) {
-        const start = state.lexer.position();
-        const next = state.lexer.next();
+        const start = state.stream.checkpoint();
+        const next = state.stream.nextToken();
         if (next) {
           const text = quotedText(next.text);
-          srcTrace(state.lexer.src, start, `: ${text} (${next.kind})`);
+          srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
         }
         return next?.text === value ? next.text : null;
       } else {
-        const next = state.lexer.next();
+        const next = state.stream.nextToken();
         return next?.text === value ? next.text : null;
       }
     },
@@ -342,12 +341,12 @@ export function not<P extends CombinatorArg>(
   const notParser: Parser<InputFromArg<P>, true> = parser(
     "not",
     (state: ParserContext) => {
-      const pos = state.lexer.position();
+      const pos = state.stream.checkpoint();
       const result = p._run(state);
       if (!result) {
         return { value: true };
       }
-      state.lexer.position(pos);
+      state.stream.reset(pos);
       return null;
     },
   );
@@ -359,8 +358,7 @@ export function not<P extends CombinatorArg>(
 /** yield next token, any token */
 export function any(): Parser<ParserStream, Token> {
   return simpleParser("any", (state: ParserContext): Token | null => {
-    const next = state.lexer.next();
-    return next || null;
+    return state.stream.nextToken();
   });
 }
 
@@ -432,7 +430,7 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
   return (ctx: ParserContext): RepeatWhileResult<A> => {
     const values: ResultFromArg<A>[] = [];
     for (;;) {
-      const before = ctx.lexer.position();
+      const before = ctx.stream.checkpoint();
       const result = runExtended<InputFromArg<A>, ResultFromArg<A>>(ctx, p);
       if (result === null) {
         return { value: values };
@@ -443,7 +441,7 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
       }
 
       if (tracing) {
-        const after = ctx.lexer.position();
+        const after = ctx.stream.checkpoint();
         if (before === after) {
           ctxLog(
             ctx,
@@ -464,11 +462,11 @@ export function span<A extends CombinatorArg>(
 ): Parser<InputFromArg<A>, { value: ResultFromArg<A>; span: Span }> {
   const p = parserArg(arg);
   const result = parser("span", (ctx: ParserContext) => {
-    assertThat(ctx.lexer.stream);
-    const start = peekToken(ctx.lexer.stream)?.span?.[0] ?? null;
+    assertThat(ctx.stream);
+    const start = peekToken(ctx.stream)?.span?.[0] ?? null;
     const result = p._run(ctx);
     if (result === null) return null;
-    const end = ctx.lexer.position();
+    const end = ctx.stream.checkpoint();
     return {
       value: {
         value: result.value,
@@ -483,8 +481,8 @@ export function span<A extends CombinatorArg>(
 /** yields true if parsing has reached the end of input */
 export function eof(): Parser<ParserStream, true> {
   return simpleParser("eof", (state: ParserContext) => {
-    const result = state.lexer.next();
-    if (result === undefined) {
+    const result = state.stream.nextToken();
+    if (result === null) {
       return true;
     } else {
       return null;
@@ -563,11 +561,11 @@ export function withSepPlus<Sep extends CombinatorArg, P extends CombinatorArg>(
 }
 
 /** run a parser with a provided token matcher (i.e. use a temporary lexing mode) */
-export function withLexerAction<U>(
-  action: (lexer: Lexer) => U | null,
+export function withStreamAction<U>(
+  action: (stream: Stream<Token>) => U | null,
 ): Parser<ParserStream, U> {
-  return simpleParser(`withLexerAction`, (state: ParserContext) => {
-    return action(state.lexer);
+  return simpleParser(`withStreamAction`, (state: ParserContext) => {
+    return action(state.stream);
   });
 }
 

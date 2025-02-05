@@ -3,7 +3,6 @@ import {
   eof,
   fn,
   kind,
-  withLexerAction,
   opt,
   or,
   Parser,

@@ -102,7 +102,7 @@ function withTraceLoggingInternal<T>(
   let logging: boolean = (!!_trace || !!trace) && !trace?.hide;
   if (logging) {
     const { start = 0, end = 1e20 } = { ..._trace, ...trace };
-    const pos = ctx.lexer.position();
+    const pos = ctx.stream.checkpoint();
     if (pos < start || pos > end) {
       logging = false;
     }
