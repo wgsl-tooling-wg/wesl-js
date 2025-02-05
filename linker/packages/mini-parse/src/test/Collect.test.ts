@@ -10,7 +10,7 @@ test("collect runs a fn on commit", () => {
     "a",
     text("b").collect(() => results.push("collected")),
     "c",
-  ).map(() => results.push("parsed"));
+  ).mapExtended(() => results.push("parsed"));
 
   testParse(p, src);
   expect(results).toEqual(["parsed", "collected"]);

@@ -42,7 +42,7 @@ function segments(
 }
 
 /** last simple segment is allowed to have an 'as' rename */
-const item_import = seq(wordToken, opt(preceded("as", wordToken))).mapValue(
+const item_import = seq(wordToken, opt(preceded("as", wordToken))).map(
   v => new ImportItem(v[0], v[1]),
 );
 
@@ -53,30 +53,28 @@ let import_collection: Parser<
 > = null as any;
 
 const import_path = seqObj({
-  segments: repeatPlus(terminated(wordToken.mapValue(segment), "::")),
+  segments: repeatPlus(terminated(wordToken.map(segment), "::")),
   final: or(() => import_collection, item_import),
-}).mapValue(v => new ImportStatement(v.segments, v.final));
+}).map(v => new ImportStatement(v.segments, v.final));
 
 import_collection = delimited(
   "{",
   withSepPlus(",", () =>
     or(
       import_path,
-      item_import.mapValue(v => new ImportStatement([], v)),
+      item_import.map(v => new ImportStatement([], v)),
     ),
-  ).mapValue(v => new ImportCollection(v)),
+  ).map(v => new ImportCollection(v)),
   "}",
 );
 
 const import_relative = seq(
-  or("package", "super").mapValue(segment),
+  or("package", "super").map(segment),
   "::",
-  repeat(terminated(or("super").mapValue(segment), "::")),
-).mapValue(v => segments(v[0], v[2]));
+  repeat(terminated(or("super").map(segment), "::")),
+).map(v => segments(v[0], v[2]));
 
-const import_package = terminated(wordToken.mapValue(segment), "::").mapValue(
-  segments,
-);
+const import_package = terminated(wordToken.map(segment), "::").map(segments);
 
 /** parse a WESL style wgsl import statement. */
 export const weslImport: Parser<Stream<WeslToken>, ImportElem> = tagScope(
@@ -88,7 +86,7 @@ export const weslImport: Parser<Stream<WeslToken>, ImportElem> = tagScope(
           or(import_relative, import_package),
           or(import_collection, import_path, item_import),
         ),
-      ).mapValue(v => {
+      ).map(v => {
         if (v[1] instanceof ImportStatement) {
           return new ImportStatement(
             segments(v[0], v[1].segments),
@@ -101,7 +99,7 @@ export const weslImport: Parser<Stream<WeslToken>, ImportElem> = tagScope(
       req(";"),
     ),
   )
-    .mapValue(
+    .map(
       (v): ImportElem => ({
         kind: "import",
         contents: [],

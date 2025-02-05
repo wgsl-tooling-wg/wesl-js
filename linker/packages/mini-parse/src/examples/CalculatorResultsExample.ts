@@ -24,7 +24,7 @@ let expr: Parser<CalcStream, number> = null as any; // help TS with forward refe
 */
 
 const value = or(
-  num.map(r => parseInt(r.value, 10)),
+  num.map(r => parseInt(r, 10)),
   delimited("(", () => expr, ")"),
 );
 
@@ -36,8 +36,7 @@ export const power: Parser<CalcStream, number> = seqObj({
       fn(() => power),
     ),
   ),
-}).map(r => {
-  const { base, exp } = r.value;
+}).map(({ base, exp }) => {
   const exponent = exp ?? 1;
   const result = base ** exponent;
   return result;
@@ -46,8 +45,7 @@ export const power: Parser<CalcStream, number> = seqObj({
 export const product = seqObj({
   pow: power,
   mulDiv: repeat(seq(mulDiv, power)),
-}).map(r => {
-  const { pow, mulDiv } = r.value;
+}).map(({ pow, mulDiv }) => {
   if (!mulDiv) return pow;
   const result = mulDiv.reduce((acc, opVal) => {
     const [op, val] = opVal;
@@ -59,8 +57,7 @@ export const product = seqObj({
 export const sum = seqObj({
   left: product,
   sumOp: repeat(seq(plusMinus, product)),
-}).map(r => {
-  const { left, sumOp } = r.value;
+}).map(({ left, sumOp }) => {
   if (!sumOp) return left;
   return sumOp.reduce((acc, opVal) => {
     const [op, val] = opVal;

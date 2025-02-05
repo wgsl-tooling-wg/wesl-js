@@ -192,15 +192,14 @@ export class Parser<I, T> {
    * Return null to cause the parser to fail.
    * SAFETY: Side-effects should not be done if backtracking could occur!
    */
-  map<U>(fn: ParserMapFn<T, U>): Parser<I, U> {
-    return map(this, fn);
+  mapExtended<U>(fn: ParserMapFn<T, U>): Parser<I, U> {
+    return mapExtended(this, fn);
   }
 
   /** map results to a new value.
-   * Return null to cause the parser to fail.
    */
-  mapValue<U>(fn: (value: T) => U | null): Parser<I, U> {
-    return map(this, v => fn(v.value));
+  map<U>(fn: (value: T) => U): Parser<I, U> {
+    return map(this, fn);
   }
 
   /** Queue a function that runs later, typically to collect AST elements from the parse.
@@ -342,15 +341,33 @@ function runParser<I, T>(
 type ParserMapFn<T, U> = (results: ExtendedResult<T>) => U | null;
 
 /** return a parser that maps the current results */
-function map<I, T, U>(p: Parser<I, T>, fn: ParserMapFn<T, U>): Parser<I, U> {
+function mapExtended<I, T, U>(
+  p: Parser<I, T>,
+  fn: ParserMapFn<T, U>,
+): Parser<I, U> {
+  const mapParser = parser(
+    `mapExtended`,
+    (ctx: ParserContext): OptParserResult<U> => {
+      const extended = runExtended(ctx, p);
+      if (!extended) return null;
+
+      const mappedValue = fn(extended);
+      if (mappedValue === null) return null;
+
+      return { value: mappedValue };
+    },
+  );
+
+  trackChildren(mapParser, p);
+  return mapParser;
+}
+
+/** return a parser that maps the current results */
+function map<I, T, U>(p: Parser<I, T>, fn: (value: T) => U): Parser<I, U> {
   const mapParser = parser(`map`, (ctx: ParserContext): OptParserResult<U> => {
-    const extended = runExtended(ctx, p);
-    if (!extended) return null;
-
-    const mappedValue = fn(extended);
-    if (mappedValue === null) return null;
-
-    return { value: mappedValue };
+    const result = p._run(ctx);
+    if (result === null) return null;
+    return { value: fn(result.value) };
   });
 
   trackChildren(mapParser, p);

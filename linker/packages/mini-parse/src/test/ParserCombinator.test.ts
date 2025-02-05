@@ -90,7 +90,7 @@ test("repeat() to (1,2,3,4)", () => {
 
 test("map()", () => {
   const src = "foo";
-  const p = kind(m.word).map(r => (r.value === "foo" ? "found" : "missed"));
+  const p = kind(m.word).map(r => (r === "foo" ? "found" : "missed"));
   const { parsed } = testParse(p, src);
   expect(parsed?.value).toBe("found");
 });
@@ -123,10 +123,10 @@ test("recurse with fn()", () => {
   const src = "{ a { b } }";
   const p: Parser<Stream<Token>, string[]> = delimited(
     "{",
-    repeat(or(kind(m.word), () => p)).map(v => v.value.flat()),
+    repeat(or(kind(m.word), () => p)).map(v => v.flat()),
     "}",
   );
-  const wrap = or(p).map(r => r.app.stable.push(r.value));
+  const wrap = or(p).mapExtended(r => r.app.stable.push(r.value));
   const { stable } = testParse(wrap, src);
   expect(stable[0]).toEqual(["a", "b"]);
 });

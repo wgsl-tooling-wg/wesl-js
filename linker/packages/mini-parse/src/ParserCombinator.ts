@@ -367,7 +367,7 @@ export function anyNot<P extends CombinatorArg>(
   arg: P,
 ): Parser<InputFromArg<P>, Token> {
   return seq(not(arg), any())
-    .map(r => r.value[1])
+    .map(r => r[1])
     .setTraceName("anyNot");
 }
 
@@ -399,7 +399,7 @@ export function repeatPlus<A extends CombinatorArg>(
 ): ParserFromRepeatArg<A> {
   const p = parserArg(arg);
   const repeatParser = seq(p, repeat(p))
-    .map(r => [r.value[0], ...r.value[1]])
+    .map(r => [r[0], ...r[1]])
     .setTraceName("repeatPlus");
   trackChildren(repeatParser, p);
   return repeatParser;
@@ -541,8 +541,8 @@ export function withSep<Sep extends CombinatorArg, P extends CombinatorArg>(
 
   const withSepParser = seq(first, repeat(preceded(sepParser, pTagged)), last)
     .map(r => {
-      let firstResult = r.value[0];
-      let repeatResults = r.value[1];
+      let firstResult = r[0];
+      let repeatResults = r[1];
       return [firstResult].concat(repeatResults);
     })
     .setTraceName("withSep") as any;
