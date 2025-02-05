@@ -93,7 +93,6 @@ export function collect<I, T, V>(
       return runAndCollectAfter(p, ctx, afterFn, debugName);
     },
   );
-  collectParser._collection = true;
   trackChildren(collectParser, p);
   return collectParser;
 }

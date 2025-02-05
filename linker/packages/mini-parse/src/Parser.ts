@@ -87,9 +87,6 @@ export interface ParserArgs {
    * (to avoid intro log statement while tracing) */
   terminal?: boolean;
 
-  /** true if this is a collect parser (which .tag handles specially, to tag collect time results) */
-  _collection?: true;
-
   /** set if the collection results are tagged */
   _children?: AnyParser[];
 }
@@ -129,11 +126,9 @@ export type ParserStream = Stream<TypedToken<never>>;
 export class Parser<I, T> {
   /** If tracing is enabled, this exists. Otherwise it does not exist. */
   _traceInfo?: ParserTraceInfo;
-  _collection: true | undefined;
   fn: ParseFn<T>;
 
   constructor(args: ConstructArgs<T>) {
-    this._collection = args._collection;
     this.fn = args.fn;
     if (tracing) {
       this._traceInfo = new ParserTraceInfo(
