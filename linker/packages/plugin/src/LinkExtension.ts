@@ -7,9 +7,7 @@ export const linkBuildPlugin: PluginExtension = {
   emitFn: emitLinkJs,
 };
 
-/** Emit a JavaScript LinkParams structure, ready for linking at runtime.
- * . reads the the wesl.toml file and local .wesl shaders
- */
+/** Emit a JavaScript LinkParams structure, ready for linking at runtime. */
 async function emitLinkJs(
   baseId: string,
   api: PluginExtensionApi,
