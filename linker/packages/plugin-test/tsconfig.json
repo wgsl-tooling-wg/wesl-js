@@ -21,6 +21,6 @@
       "wesl-plugin": ["../plugin"],
     }
   },
-  "include": ["main.ts", "src/**/*"],
+  "include": ["main.ts", "vite.config.ts", "src/**/*"],
   "exclude": ["node_modules"]
 }
