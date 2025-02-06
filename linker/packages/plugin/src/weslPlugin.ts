@@ -1,5 +1,6 @@
 import { glob } from "glob";
 import fs from "node:fs/promises";
+import path from "node:path";
 import toml from "toml";
 import type {
   ExternalIdResult,
@@ -11,23 +12,14 @@ import type {
   UnpluginOptions,
 } from "unplugin";
 import { createUnplugin } from "unplugin";
-import { dlog, dlogOpt } from "berry-pretty";
 import {
-  bindAndTransform,
-  bindingStructsPlugin,
   filterMap,
-  noSuffix,
   parsedRegistry,
   ParsedRegistry,
   parseIntoRegistry,
 } from "wesl";
-import {
-  bindingGroupLayoutTs,
-  reportBindingStructsPlugin,
-} from "../../linker/src/Reflection.js";
-import type { WeslPluginOptions } from "./weslPluginOptions.js";
-import path from "node:path";
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
+import type { WeslPluginOptions } from "./weslPluginOptions.js";
 
 // TODO figure how to handle reloading & mutated AST produced by transforms
 
@@ -132,13 +124,6 @@ function buildLoader(options: WeslPluginOptions): Loader {
       return await plugin.emitFn(matched.baseId, buildPluginApi);
     }
 
-    if (id.endsWith(".wesl?reflect")) {
-      const registry = await getRegistry(this, options);
-      const { weslRoot } = await getWeslToml(options.weslToml);
-      const mainFile = id.slice(0, -"?reflect".length);
-      const main = rmPathPrefix(mainFile, weslRoot);
-      return await bindingStructJs(main, registry);
-    }
     return null;
   }
 }
@@ -214,6 +199,7 @@ async function loadFiles(
   return Object.fromEntries(loaded);
 }
 
+// TODO DRY
 /** convert a fs path to a path relative to the wesl root directory */
 function rmPathPrefix(fullPath: string, weslRoot: string): string {
   const rootStart = fullPath.indexOf(weslRoot);
@@ -223,27 +209,6 @@ function rmPathPrefix(fullPath: string, weslRoot: string): string {
   const pathWithSlashPrefix = fullPath.slice(rootStart + weslRoot.length);
   return "." + pathWithSlashPrefix;
 }
-
-/** Produce javascript objects reflecting the wesl sources by partially linking the wesl
- * with the binding struct plugins */
-async function bindingStructJs(
-  main: string,
-  registry: ParsedRegistry,
-): Promise<string> {
-  let structsJs = "??";
-  const linkConfig = {
-    plugins: [
-      bindingStructsPlugin(),
-      reportBindingStructsPlugin(structs => {
-        structsJs = bindingGroupLayoutTs(structs[0], false);
-      }),
-    ],
-  };
-
-  bindAndTransform(registry, main, {}, linkConfig);
-  return structsJs;
-}
-
 
 export const unplugin = createUnplugin(
   (options: WeslPluginOptions, meta: UnpluginContextMeta) => {
