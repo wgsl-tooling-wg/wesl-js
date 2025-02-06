@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "echo": "echo",
-    "dev": "nodemon --delay 350ms --watch '../linker/dist/**/*.js' --watch '../plugin/dist/**/*.js' --ext cjs,ts,js --exec vite dev"
+    "dev": "nodemon --delay 350ms --watch '../linker/dist/**/*.js' --watch '../plugin/dist/**/*.js' --ext cjs,ts,js --exec vite dev",
+    "test": "nodemon --delay 350ms --watch '../linker/dist/**/*.js' --watch '../plugin/dist/**/*.js' --ext cjs,ts,js --exec vitest"
   },
   "dependencies": {
     "thimbleberry": "^0.2.9",

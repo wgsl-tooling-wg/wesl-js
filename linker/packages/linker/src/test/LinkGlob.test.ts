@@ -15,11 +15,11 @@ const wgsl2: Record<string, string> = import.meta.glob("./wgsl_2/*.wgsl", {
 });
 
 test("basic import glob", async () => {
-  const linked = link(wgsl1, "wgsl_1/main");
+  const linked = link({ weslSrc: wgsl1, rootModuleName: "wgsl_1/main" });
   expect(linked.dest).toContain("fn bar()");
 });
 
 test("#import from path ./util", async () => {
-  const linked = link(wgsl2, "wgsl_2/main2");
+  const linked = link({ weslSrc: wgsl2, rootModuleName: "wgsl_2/main2" });
   expect(linked.dest).toContain("fn bar()");
 });

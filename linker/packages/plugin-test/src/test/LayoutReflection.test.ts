@@ -10,7 +10,7 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 
 test("vite generates binding layout", async () => {
   // vite is configured to use the wesl plugin
-  // build a test program that imports using the '?reflect' import pattern
+  // build a test program that imports using the '?bindingLayout' import pattern
   await exec(`pnpm vite build`, {
     cwd: testDir,
   });

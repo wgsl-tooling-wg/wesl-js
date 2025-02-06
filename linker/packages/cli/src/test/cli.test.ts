@@ -1,7 +1,6 @@
-import { withLogger } from "mini-parse";
-import { logCatch } from "mini-parse/test-util";
+import { withLogSpyAsync } from "mini-parse/test-util";
 import { expectTrimmedMatch } from "mini-parse/vitest-util";
-import path, { dirname } from "node:path";
+import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 import { cli } from "../cli.js";
@@ -38,7 +37,6 @@ test("simple link", async () => {
 const packagePath = /^package::.*::(.*)$/gm;
 test("link --details", async () => {
   const line = `${mainPath} ${utilPath} --baseDir ${wgslDir}
-     --baseDir ./src/test/wgsl 
      --details 
      --emit false`;
 
@@ -107,11 +105,5 @@ test.skip("link with definition", async () => {
 });
 
 async function cliLine(argsLine: string): Promise<string> {
-  return await withConsoleSpy(() => cli(argsLine.split(/\s+/)));
-}
-
-async function withConsoleSpy(fn: () => Promise<void>): Promise<string> {
-  const catcher = logCatch();
-  withLogger(c => catcher.log(c), fn);
-  return catcher.logged();
+  return await withLogSpyAsync(() => cli(argsLine.split(/\s+/)));
 }

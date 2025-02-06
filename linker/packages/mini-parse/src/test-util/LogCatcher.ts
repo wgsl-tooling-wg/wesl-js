@@ -1,3 +1,5 @@
+import { withLogger, withLoggerAsync } from "mini-parse";
+
 export interface LogCatcher {
   /** tests can use this to replace console.log with a log capturing function */
   log: (...params: any[]) => void;
@@ -13,4 +15,18 @@ export function logCatch(): LogCatcher {
     return lines.join("\n");
   }
   return { log, logged };
+}
+
+export function withLogSpy(fn: () => void): string {
+  const catcher = logCatch();
+  withLogger(c => catcher.log(c), fn);
+  return catcher.logged();
+}
+
+export async function withLogSpyAsync(
+  fn: () => Promise<void>,
+): Promise<string> {
+  const catcher = logCatch();
+  await withLoggerAsync(c => catcher.log(c), fn);
+  return catcher.logged();
 }

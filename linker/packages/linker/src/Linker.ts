@@ -30,6 +30,34 @@ export interface LinkConfig {
   plugins?: WeslJsPlugin[];
 }
 
+export interface LinkParams {
+  /** record of file paths and wesl text for modules.
+   *   key is module path or file path
+   *     `package::foo::bar`, or './foo/bar.wesl', or './foo/bar'
+   *   value is wesl src
+   */
+  weslSrc: Record<string, string>;
+
+  /** root directory prefix for sources, e.g. /shaders */
+  weslRoot?: string;
+
+  /** name of root wesl module
+   *    for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
+   *    for a library, the root module defines the public api fo the library
+   *  can be specified as file path (./main.wesl), a module path (package::main), or just a module name (main)
+   */
+  rootModuleName?: string;
+
+  /** runtime conditions for conditional compiling with @if and friends */
+  conditions?: Conditions;
+
+  /** libraries available for the link */
+  libs?: WgslBundle[];
+
+  /** plugins and other configuration to use while linking */
+  config?: LinkConfig;
+}
+
 /**
  * Link a set of WESL source modules (typically the text from .wesl files) into a single WGSL string.
  * Linking starts with a specified 'root' source module, and recursively incorporates code
@@ -38,53 +66,8 @@ export interface LinkConfig {
  * Unreferenced (dead) code outside the root module is not included in the output WGSL.
  * Additionally the caller can specify conditions for to control conditional compilation.
  * Only code that is valid with the current conditions is included in the output.
- *
- * @param weslSrc map of wesl source strings (aka modules) by scoped path
- *                key is module path or file path
- *                  `package::foo::bar`, or './foo/bar.wesl', or './foo/bar'
- *                value is wesl src
- *                (inludes both library and local WESL modules)
- * @param rootModuleName name or module path of the root module
- * @param conditions runtime conditions for conditional compilation
  */
-export function link(
-  weslSrc: Record<string, string>,
-  rootModuleName: string = "main",
-  conditions: Conditions = {},
-  /** record of file names and wgsl text for modules */
-  libs: WgslBundle[] = [],
-  /** limit potential infinite loops for debugging */
-  config: LinkConfig = {},
-): SrcMap {
-  /* --- Step #1   Parsing WESL --- */
-  // parse all source modules in both app and libraries,
-  // producing Scope tree and AST elements for each module
-  const registry = parsedRegistry();
-  const weslRoot = "";
-  parseIntoRegistry(weslSrc, registry, "package", weslRoot);
-  parseLibsIntoRegistry(libs, registry);
-  return linkRegistry(registry, rootModuleName, conditions, config);
-}
-
-export interface LinkParams {
-  /** record of file paths and wesl text for modules. */
-  weslSrc: Record<string, string>;
-
-  /** root directory prefix for sources, e.g. /shaders */
-  weslRoot?: string;
-
-  /** name of root wesl module
-   *  for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
-   *  for a library, the root module defines the public api fo the library
-   */
-  rootModuleName?: string;
-  conditions?: Conditions;
-  libs?: WgslBundle[];
-  config?: LinkConfig;
-}
-
-/** experimental new API for link() */
-export function link2(params: LinkParams): SrcMap {
+export function link(params: LinkParams): SrcMap {
   const { weslSrc, weslRoot = "", rootModuleName, libs = [] } = params;
   const { conditions, config } = params;
   const registry = parsedRegistry();

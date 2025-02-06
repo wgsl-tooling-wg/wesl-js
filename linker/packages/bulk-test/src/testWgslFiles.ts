@@ -22,10 +22,12 @@ export function testWgslFiles(namedPaths: NamedPath[]) {
     const shortPath = "./" + name;
     test(name, async () => {
       const text = await fs.readFile(filePath, { encoding: "utf8" });
-      const result = expectNoLog(() =>
-        link({ [shortPath]: text }, noSuffix(name), {}, [], config),
-      );
-      expect(stripWesl(result.dest)).eq(stripWesl(text));
+      const result = expectNoLog(() => {
+        const weslSrc = { [shortPath]: text };
+        const rootModuleName = noSuffix(name);
+        return link({ weslSrc, rootModuleName, config });
+      });
+      expect(result.dest).eq(text);
     });
   });
 }

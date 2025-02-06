@@ -1,7 +1,9 @@
 import { glob } from "glob";
 import fs from "node:fs/promises";
+import path from "node:path";
 import toml from "toml";
 import type {
+  ExternalIdResult,
   Thenable,
   TransformResult,
   UnpluginBuildContext,
@@ -10,25 +12,33 @@ import type {
   UnpluginOptions,
 } from "unplugin";
 import { createUnplugin } from "unplugin";
-import { dlog, dlogOpt } from "berry-pretty";
 import {
-  bindAndTransform,
-  bindingStructsPlugin,
-  noSuffix,
+  filterMap,
   parsedRegistry,
   ParsedRegistry,
   parseIntoRegistry,
 } from "wesl";
-import {
-  bindingGroupLayoutTs,
-  reportBindingStructsPlugin,
-} from "../../linker/src/Reflection.js";
+import { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
 import type { WeslPluginOptions } from "./weslPluginOptions.js";
-import path from "node:path";
 
 // TODO figure how to handle reloading & mutated AST produced by transforms
 
 /** for now ?reflect is hardcoded */
+
+/** some types from unplugin */
+type Resolver = (
+  this: UnpluginBuildContext & UnpluginContext,
+  id: string,
+  importer: string | undefined,
+  options: {
+    isEntry: boolean;
+  },
+) => Thenable<string | ExternalIdResult | null | undefined>;
+
+type Loader = (
+  this: UnpluginBuildContext & UnpluginContext,
+  id: string,
+) => Thenable<TransformResult>;
 
 /**
  * A bundler plugin for processing WESL files.
@@ -46,82 +56,125 @@ export function weslPlugin(
 ): UnpluginOptions {
   return {
     name: "wesl-plugin",
-    resolveId: resolver,
+    resolveId: buildResolver(options),
     load: buildLoader(options),
   };
 }
 
-/** build plugin entry for 'resolverId'
- * to validate our virtual import modules (with ?reflect or ?link suffixes) */
-async function resolver(this: UnpluginBuildContext, id: string) {
-  // console.log("resolveId(), id:", id);
-  if (id.endsWith(".wesl?reflect")) {
-    return id;
-  }
-  if (id.endsWith(".wesl?link")) {
-    return id;
-  }
-  return null;
+function pluginNames(options: WeslPluginOptions): string[] {
+  const buildPlugins = options.buildPlugins || [];
+  const suffixes = filterMap(buildPlugins, p => p.extensionName);
+  return suffixes;
 }
 
-type Loader = (
-  this: UnpluginBuildContext & UnpluginContext,
-  id: string,
-) => Thenable<TransformResult>;
+function pluginsByName(
+  options: WeslPluginOptions,
+): Record<string, PluginExtension> {
+  const buildPlugins = options.buildPlugins || [];
+  const entries = filterMap(buildPlugins, p => [p.extensionName, p]);
+  return Object.fromEntries(entries);
+}
+
+const pluginSuffix = /(?<baseId>.*\.w[eg]sl)\?(?<pluginName>[\w_-]+)/;
+
+/** build plugin entry for 'resolverId'
+ * to validate our virtual import modules (with ?reflect or ?link suffixes) */
+function buildResolver(options: WeslPluginOptions): Resolver {
+  const suffixes = pluginNames(options);
+  return resolver;
+
+  function resolver(this: UnpluginBuildContext, id: string): string | null {
+    if (id === options.weslToml || id === "wesl.toml") {
+      return id;
+    }
+    const matched = pluginSuffixMatch(id, suffixes);
+    return matched ? id : null;
+  }
+}
+interface PluginMatch {
+  baseId: string;
+  pluginName: string;
+}
+
+function pluginSuffixMatch(id: string, suffixes: string[]): PluginMatch | null {
+  const suffixMatch = id.match(pluginSuffix);
+  const pluginName = suffixMatch?.groups?.pluginName;
+  if (!pluginName || !suffixes.includes(pluginName)) return null;
+  return { pluginName, baseId: suffixMatch.groups!.baseId };
+}
+
+function buildApi(
+  ctx: UnpluginBuildContext,
+  options: WeslPluginOptions,
+): PluginExtensionApi {
+  return {
+    weslToml: async () => getWeslToml(ctx),
+    weslSrc: async () => loadWesl(ctx, options, false),
+    weslRegistry: async () => getRegistry(ctx, options),
+  };
+}
 
 /** build plugin function for serving a javascript module in response to
  * an import of of our virtual import modules. */
 function buildLoader(options: WeslPluginOptions): Loader {
+  const suffixes = pluginNames(options);
+  const pluginsMap = pluginsByName(options);
   return loader;
 
   async function loader(this: UnpluginBuildContext, id: string) {
-    // console.log("loader(), id:", id);
-    if (id.endsWith(".wesl?reflect")) {
-      const registry = await getRegistry(this, options);
-      const { weslRoot } = await getWeslToml(options.weslToml);
-      const mainFile = id.slice(0, -"?reflect".length);
-      const main = rmPathPrefix(mainFile, weslRoot);
-      return await bindingStructJs(main, registry);
+    const matched = pluginSuffixMatch(id, suffixes);
+    if (matched) {
+      const buildPluginApi = buildApi(this, options);
+      const plugin = pluginsMap[matched.pluginName];
+      return await plugin.emitFn(matched.baseId, buildPluginApi);
     }
-    if (id.endsWith(".wesl?link")) {
-      const mainFile = id.slice(0, -"?link".length);
-      return await linkJs(mainFile, options);
-    }
+
     return null;
   }
 }
 
-interface WeslToml {
+export interface WeslToml {
   weslFiles: string[];
   weslRoot: string;
 }
 
 let weslToml: WeslToml | undefined;
 
-/** load or the wesl.toml  */
-async function getWeslToml(tomlFile = "wesl.toml"): Promise<WeslToml> {
+// TODO cache
+
+/** load the wesl.toml  */
+async function getWeslToml(
+  ctx: UnpluginBuildContext,
+  tomlFile = "wesl.toml",
+): Promise<WeslToml> {
   if (!weslToml) {
     // TODO consider supporting default if no wesl.toml is provided: e.g. './shaders'
-    const tomlString = await fs.readFile(tomlFile, "utf-8");
-    weslToml = toml.parse(tomlString) as WeslToml;
-    // TODO watch wesl.toml file, and reload if it changes
+    try {
+      const tomlString = await fs.readFile(tomlFile, "utf-8");
+      weslToml = toml.parse(tomlString) as WeslToml;
+    } catch {
+      console.log(`using defaults: no wesl.toml found at ${tomlFile}`);
+      weslToml = { weslFiles: ["shaders/**/*.wesl"], weslRoot: "shaders" };
+    }
+    ctx.addWatchFile(tomlFile);
   }
   return weslToml;
 }
 
+// TODO cache
 /** load and parse all the wesl files into a ParsedRegistry */
 async function getRegistry(
   ctx: UnpluginBuildContext,
   options: WeslPluginOptions,
 ): Promise<ParsedRegistry> {
   // load wesl files into registry
-
-  const loaded = await loadWesl(options);
+  const loaded = await loadWesl(ctx, options);
   const registry = parsedRegistry();
   parseIntoRegistry(loaded, registry);
 
   // trigger recompilation on wesl files
   Object.keys(loaded).forEach(f => ctx.addWatchFile(f));
+
   return registry;
 }
 
@@ -133,13 +186,13 @@ async function getRegistry(
  *    values as wesl file contents.
  */
 async function loadWesl(
+  ctx: UnpluginBuildContext,
   options: WeslPluginOptions,
-  weslRootRelative = true ,
+  weslRootRelative = true,
 ): Promise<Record<string, string>> {
-  const { weslFiles, weslRoot } = await getWeslToml(options.weslToml);
+  const { weslFiles, weslRoot } = await getWeslToml(ctx, options.weslToml);
   const { weslToml } = options;
   const tomlDir = weslToml ? path.dirname(weslToml) : process.cwd();
-
 
   const globs = weslFiles.map(g => tomlDir + "/" + g);
   const futureFiles = globs.map(g => glob(g));
@@ -162,6 +215,7 @@ async function loadFiles(
   return Object.fromEntries(loaded);
 }
 
+// TODO DRY
 /** convert a fs path to a path relative to the wesl root directory */
 function rmPathPrefix(fullPath: string, weslRoot: string): string {
   const rootStart = fullPath.indexOf(weslRoot);
@@ -170,51 +224,6 @@ function rmPathPrefix(fullPath: string, weslRoot: string): string {
   }
   const pathWithSlashPrefix = fullPath.slice(rootStart + weslRoot.length);
   return "." + pathWithSlashPrefix;
-}
-
-/** Produce javascript objects reflecting the wesl sources by partially linking the wesl
- * with the binding struct plugins */
-async function bindingStructJs(
-  main: string,
-  registry: ParsedRegistry,
-): Promise<string> {
-  let structsJs = "??";
-  const linkConfig = {
-    plugins: [
-      bindingStructsPlugin(),
-      reportBindingStructsPlugin(structs => {
-        structsJs = bindingGroupLayoutTs(structs[0], false);
-      }),
-    ],
-  };
-
-  bindAndTransform(registry, main, {}, linkConfig);
-  return structsJs;
-}
-
-/** Emit a JavaScript structure with LinkParams based on the wesl.toml file
- * and local shaders, ready for linking at runtime */
-async function linkJs(
-  baseId: string,
-  options: WeslPluginOptions,
-): Promise<string> {
-  const { weslRoot } = await getWeslToml(options.weslToml);
-  const weslSrc = await loadWesl(options, false);
-  const rootModule = rmPathPrefix(noSuffix(baseId), weslRoot);
-  const rootName = path.basename(rootModule);
-
-  const paramsName = `link${rootName}Config`;
-  const src = `
-    export const ${paramsName}= {
-      rootModuleName: "${rootModule}",
-      weslRoot: "${weslRoot}",  
-      weslSrc: ${JSON.stringify(weslSrc, null, 2)},
-    };
-
-    export default ${paramsName};
-    `;
-
-  return src;
 }
 
 export const unplugin = createUnplugin(

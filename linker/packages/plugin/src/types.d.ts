@@ -1,5 +1,5 @@
-/** @hidden */
-declare module "*?reflect" {
+/** @hidden */ // TODO move to plugin
+declare module "*?bindingLayout" {
   export const layoutEntries: Record<string, GPUBindGroupLayoutEntry[]>;
   export const layoutFunctions: Record<
     string,

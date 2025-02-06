@@ -39,10 +39,11 @@ export function linkTestOpts(opts: LinkTestOpts, ...rawWgsl: string[]): string {
   const restWgsl = Object.fromEntries(
     rest.map((src, i) => [`./file${i + 1}.wesl`, src]),
   );
-  const wesl = { "./test.wesl": root, ...restWgsl };
+  const weslSrc = { "./test.wesl": root, ...restWgsl };
 
   const { conditions = {}, libs = [], linkConfig: config } = opts;
-  const srcMap = link(wesl, "test", conditions, libs, config);
+  const rootModuleName = "test";
+  const srcMap = link({ weslSrc, rootModuleName, conditions, libs, config });
   return srcMap.dest;
 }
 

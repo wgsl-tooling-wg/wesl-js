@@ -145,7 +145,7 @@ function parseOnce(
   if (parserVariant === "wgsl-linker") {
     parseWESL(text);
   } else if (parserVariant === "wesl-link") {
-    link({ [filePath]: text }, filePath);
+    link({ weslSrc: { [filePath]: text }, rootModuleName: filePath });
   } else if (parserVariant === "wgsl_reflect") {
     wgslReflectParse(filePath, text);
   } else if (parserVariant === "use-gpu") {
