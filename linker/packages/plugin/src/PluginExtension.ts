@@ -1,4 +1,4 @@
-import { WeslJsPlugin } from "wesl";
+import { ParsedRegistry, WeslJsPlugin } from "wesl";
 import { WeslToml } from "./weslPlugin.ts";
 
 /** function type required for for emit extensions */
@@ -21,4 +21,5 @@ export interface PluginExtension extends WeslJsPlugin {
 export interface PluginExtensionApi {
   weslToml: () => Promise<WeslToml>;
   weslSrc: () => Promise<Record<string, string>>;
+  weslRegistry: () => Promise<ParsedRegistry>;
 }

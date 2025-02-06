@@ -112,6 +112,7 @@ function buildApi(options: WeslPluginOptions): PluginExtensionApi {
   return {
     weslToml: async () => getWeslToml(),
     weslSrc: async () => loadWesl(options, false),
+    weslRegistry: async () => getRegistry(options),
   };
 }
 
@@ -160,19 +161,20 @@ async function getWeslToml(tomlFile = "wesl.toml"): Promise<WeslToml> {
   return weslToml;
 }
 
+// TODO
+// trigger recompilation on wesl files
+// Object.keys(loaded).forEach(f => ctx.addWatchFile(f));
+
+// TODO cache
 /** load and parse all the wesl files into a ParsedRegistry */
 async function getRegistry(
-  ctx: UnpluginBuildContext,
   options: WeslPluginOptions,
 ): Promise<ParsedRegistry> {
   // load wesl files into registry
-
   const loaded = await loadWesl(options);
   const registry = parsedRegistry();
   parseIntoRegistry(loaded, registry);
 
-  // trigger recompilation on wesl files
-  Object.keys(loaded).forEach(f => ctx.addWatchFile(f));
   return registry;
 }
 
