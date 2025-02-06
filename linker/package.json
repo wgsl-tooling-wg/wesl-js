@@ -27,12 +27,12 @@
     "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
-    "@vitest/ui": "2.1.8",
-    "@webgpu/types": "^0.1.53",
+    "@vitest/ui": "3.0.5",
+    "@webgpu/types": "^0.1.54",
     "berry-pretty": "^0.0.5",
     "brotli": "^1.3.3",
     "esbuild": "^0.24.2",
-    "eslint": "^9.18.0",
+    "eslint": "^9.19.0",
     "fast-glob": "^3.3.3",
     "glob": "^11.0.1",
     "globals": "^15.14.0",
@@ -43,11 +43,20 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.21.0",
-    "vite": "^6.0.11",
+    "vite": "^6.1.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "2.1.8",
+    "vitest": "3.0.5",
     "wesl-testsuite": "file:../wesl-testsuite",
     "yargs": "^17.7.2"
   },
-  "packageManager": "pnpm@9.12.3"
+  "packageManager": "pnpm@10.2.0",
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "es5-ext"
+    ],
+    "onlyBuiltDependencies": [
+      "core-js",
+      "esbuild"
+    ]
+  }
 }

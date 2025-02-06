@@ -42,7 +42,7 @@
     "ncp": "^2.0.0",
     "random_wgsl": "workspace:*",
     "rollup-plugin-visualizer": "^5.14.0",
-    "terser": "^5.37.0",
+    "terser": "^5.38.1",
     "vite-plugin-dts": "^4.5.0"
   }
 }
