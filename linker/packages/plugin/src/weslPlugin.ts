@@ -2,6 +2,7 @@ import { glob } from "glob";
 import fs from "node:fs/promises";
 import toml from "toml";
 import type {
+  ExternalIdResult,
   Thenable,
   TransformResult,
   UnpluginBuildContext,
@@ -14,6 +15,7 @@ import { dlog, dlogOpt } from "berry-pretty";
 import {
   bindAndTransform,
   bindingStructsPlugin,
+  filterMap,
   noSuffix,
   parsedRegistry,
   ParsedRegistry,
@@ -25,10 +27,26 @@ import {
 } from "../../linker/src/Reflection.js";
 import type { WeslPluginOptions } from "./weslPluginOptions.js";
 import path from "node:path";
+import { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
 
 // TODO figure how to handle reloading & mutated AST produced by transforms
 
 /** for now ?reflect is hardcoded */
+
+/** some types from unplugin */
+type Resolver = (
+  this: UnpluginBuildContext & UnpluginContext,
+  id: string,
+  importer: string | undefined,
+  options: {
+    isEntry: boolean;
+  },
+) => Thenable<string | ExternalIdResult | null | undefined>;
+
+type Loader = (
+  this: UnpluginBuildContext & UnpluginContext,
+  id: string,
+) => Thenable<TransformResult>;
 
 /**
  * A bundler plugin for processing WESL files.
@@ -46,36 +64,73 @@ export function weslPlugin(
 ): UnpluginOptions {
   return {
     name: "wesl-plugin",
-    resolveId: resolver,
+    resolveId: buildResolver(options),
     load: buildLoader(options),
   };
 }
 
-/** build plugin entry for 'resolverId'
- * to validate our virtual import modules (with ?reflect or ?link suffixes) */
-async function resolver(this: UnpluginBuildContext, id: string) {
-  // console.log("resolveId(), id:", id);
-  if (id.endsWith(".wesl?reflect")) {
-    return id;
-  }
-  if (id.endsWith(".wesl?link")) {
-    return id;
-  }
-  return null;
+function pluginNames(options: WeslPluginOptions): string[] {
+  const buildPlugins = options.buildPlugins || [];
+  const suffixes = filterMap(buildPlugins, p => p.extensionName);
+  return suffixes;
 }
 
-type Loader = (
-  this: UnpluginBuildContext & UnpluginContext,
-  id: string,
-) => Thenable<TransformResult>;
+function pluginsByName(
+  options: WeslPluginOptions,
+): Record<string, PluginExtension> {
+  const buildPlugins = options.buildPlugins || [];
+  const entries = filterMap(buildPlugins, p => [p.extensionName, p]);
+  return Object.fromEntries(entries);
+}
+
+const pluginSuffix = /(?<baseId>.*\.w[eg]sl)\?(?<pluginName>[\w_-]+)/;
+
+/** build plugin entry for 'resolverId'
+ * to validate our virtual import modules (with ?reflect or ?link suffixes) */
+function buildResolver(options: WeslPluginOptions): Resolver {
+  const suffixes = pluginNames(options);
+  return resolver;
+
+  function resolver(this: UnpluginBuildContext, id: string): string | null {
+    const matched = pluginSuffixMatch(id, suffixes);
+    return matched ? id : null;
+  }
+}
+interface PluginMatch {
+  baseId: string;
+  pluginName: string;
+}
+
+function pluginSuffixMatch(id: string, suffixes: string[]): PluginMatch | null {
+  const suffixMatch = id.match(pluginSuffix);
+  const pluginName = suffixMatch?.groups?.pluginName;
+  if (!pluginName || !suffixes.includes(pluginName)) return null;
+  return { pluginName, baseId: suffixMatch.groups!.baseId };
+}
+
+function buildApi(options: WeslPluginOptions): PluginExtensionApi {
+  return {
+    weslToml: async () => getWeslToml(),
+    weslSrc: async () => loadWesl(options, false),
+  };
+}
 
 /** build plugin function for serving a javascript module in response to
  * an import of of our virtual import modules. */
 function buildLoader(options: WeslPluginOptions): Loader {
+  const suffixes = pluginNames(options);
+  const pluginsMap = pluginsByName(options);
+  const buildPluginApi = buildApi(options);
   return loader;
 
   async function loader(this: UnpluginBuildContext, id: string) {
-    // console.log("loader(), id:", id);
+    const matched = pluginSuffixMatch(id, suffixes);
+    if (matched) {
+      console.log("loader matched(), id:", id);
+      const plugin = pluginsMap[matched.pluginName];
+      return await plugin.emitFn(matched.baseId, buildPluginApi);
+    }
+
     if (id.endsWith(".wesl?reflect")) {
       const registry = await getRegistry(this, options);
       const { weslRoot } = await getWeslToml(options.weslToml);
@@ -83,15 +138,11 @@ function buildLoader(options: WeslPluginOptions): Loader {
       const main = rmPathPrefix(mainFile, weslRoot);
       return await bindingStructJs(main, registry);
     }
-    if (id.endsWith(".wesl?link")) {
-      const mainFile = id.slice(0, -"?link".length);
-      return await linkJs(mainFile, options);
-    }
     return null;
   }
 }
 
-interface WeslToml {
+export interface WeslToml {
   weslFiles: string[];
   weslRoot: string;
 }
@@ -134,12 +185,11 @@ async function getRegistry(
  */
 async function loadWesl(
   options: WeslPluginOptions,
-  weslRootRelative = true ,
+  weslRootRelative = true,
 ): Promise<Record<string, string>> {
   const { weslFiles, weslRoot } = await getWeslToml(options.weslToml);
   const { weslToml } = options;
   const tomlDir = weslToml ? path.dirname(weslToml) : process.cwd();
-
 
   const globs = weslFiles.map(g => tomlDir + "/" + g);
   const futureFiles = globs.map(g => glob(g));
@@ -192,30 +242,6 @@ async function bindingStructJs(
   return structsJs;
 }
 
-/** Emit a JavaScript structure with LinkParams based on the wesl.toml file
- * and local shaders, ready for linking at runtime */
-async function linkJs(
-  baseId: string,
-  options: WeslPluginOptions,
-): Promise<string> {
-  const { weslRoot } = await getWeslToml(options.weslToml);
-  const weslSrc = await loadWesl(options, false);
-  const rootModule = rmPathPrefix(noSuffix(baseId), weslRoot);
-  const rootName = path.basename(rootModule);
-
-  const paramsName = `link${rootName}Config`;
-  const src = `
-    export const ${paramsName}= {
-      rootModuleName: "${rootModule}",
-      weslRoot: "${weslRoot}",  
-      weslSrc: ${JSON.stringify(weslSrc, null, 2)},
-    };
-
-    export default ${paramsName};
-    `;
-
-  return src;
-}
 
 export const unplugin = createUnplugin(
   (options: WeslPluginOptions, meta: UnpluginContextMeta) => {
