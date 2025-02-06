@@ -3,7 +3,7 @@
 import { copyBuffer } from "thimbleberry";
 import { bindingStructsPlugin, link, LinkConfig, LinkParams } from "wesl";
 import linkParams from "./shaders/app.wesl?link";
-import { layoutFunctions } from "./shaders/app.wesl?reflect";
+import { layoutFunctions } from "./shaders/app.wesl?bindingLayout";
 
 main();
 

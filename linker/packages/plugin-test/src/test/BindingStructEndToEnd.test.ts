@@ -16,9 +16,9 @@ test("gpu execution w/binding structs lowered and reflected", async () => {
   // --- load reflected binding structs ---
 
   // import dynamically, so that import comes after globalThis has GPUShaderStage
-  const reflected = await import("../../shaders/app.wesl?reflect");
+  const bindingLayout = await import("../../shaders/app.wesl?bindingLayout");
   const linkParams = (await import("../../shaders/app.wesl?link")).default;
-  const { layoutFunctions } = reflected;
+  const { layoutFunctions } = bindingLayout;
 
   const adapter = await gpu.requestAdapter();
   const device = await adapter?.requestDevice();
