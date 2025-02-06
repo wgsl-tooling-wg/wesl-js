@@ -6,7 +6,7 @@ import { testAppParse } from "./TestUtil.js";
 
 function expectParseFail(src: string): void {
   withLogSpy(() => {
-    const result = testAppParse(weslImport, src);
+    const result = testAppParse(weslImports, src);
     expect(result.stable.imports).toEqual([]); // TODO tighten test, shouldn't parse
   });
 }
