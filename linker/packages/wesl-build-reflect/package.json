@@ -1,0 +1,24 @@
+{
+  "name": "wesl-build-reflect",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "echo": "echo",
+    "typecheck": "tsc",
+    "format": "prettier . --write",
+    "lint": "eslint src",
+    "organize": "organize-imports-cli tsconfig.json",
+    "prepublishOnly": "run-s build",
+    "build": "echo NYI",
+    "dev": "nodemon --delay 350ms --watch '../linker/dist/**/*.js' --watch '../plugin/dist/**/*.js' --ext cjs,ts,js --exec vite dev",
+    "test": "nodemon --delay 350ms --watch '../linker/dist/**/*.js' --watch '../plugin/dist/**/*.js' --ext cjs,ts,js --exec vitest"
+  },
+  "dependencies": {
+    "thimbleberry": "^0.2.9",
+    "webgpu": "^0.2.6",
+    "wesl-plugin": "workspace:*"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
