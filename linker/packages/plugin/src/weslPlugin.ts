@@ -140,15 +140,22 @@ export interface WeslToml {
 
 let weslToml: WeslToml | undefined;
 
-/** load or the wesl.toml  */
+// TODO cache
+
+/** load the wesl.toml  */
 async function getWeslToml(
   ctx: UnpluginBuildContext,
   tomlFile = "wesl.toml",
 ): Promise<WeslToml> {
   if (!weslToml) {
     // TODO consider supporting default if no wesl.toml is provided: e.g. './shaders'
-    const tomlString = await fs.readFile(tomlFile, "utf-8");
-    weslToml = toml.parse(tomlString) as WeslToml;
+    try {
+      const tomlString = await fs.readFile(tomlFile, "utf-8");
+      weslToml = toml.parse(tomlString) as WeslToml;
+    } catch {
+      console.log(`using defaults: no wesl.toml found at ${tomlFile}`);
+      weslToml = { weslFiles: ["shaders/**/*.wesl"], weslRoot: "shaders" };
+    }
     ctx.addWatchFile(tomlFile);
   }
   return weslToml;
