@@ -84,6 +84,9 @@ function buildResolver(options: WeslPluginOptions): Resolver {
   return resolver;
 
   function resolver(this: UnpluginBuildContext, id: string): string | null {
+    if (id === options.weslToml || id === "wesl.toml") {
+      return id;
+    }
     const matched = pluginSuffixMatch(id, suffixes);
     return matched ? id : null;
   }
