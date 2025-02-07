@@ -60,7 +60,8 @@ export function bindingStructsPlugin(): WeslJsPlugin {
  * @return the binding structs and the mutated AST
  */
 export function lowerBindingStructs(ast: TransformedAST): TransformedAST {
-  const { moduleElem, globalNames, notableElems } = ast;
+  const clonedAst = structuredClone(ast);
+  const { moduleElem, globalNames, notableElems } = clonedAst;
   const bindingStructs = markBindingStructs(moduleElem); // CONSIDER should we only mark bining structs referenced from the entry point?
   markEntryTypes(moduleElem, bindingStructs);
   const newVars = bindingStructs.flatMap(s =>
@@ -79,7 +80,7 @@ export function lowerBindingStructs(ast: TransformedAST): TransformedAST {
   const contents = removeBindingStructs(moduleElem);
   moduleElem.contents = [...newVars, ...contents];
   notableElems.bindingStructs = bindingStructs;
-  return { ...ast, moduleElem };
+  return { ...clonedAst, moduleElem };
 }
 
 export function markEntryTypes(
