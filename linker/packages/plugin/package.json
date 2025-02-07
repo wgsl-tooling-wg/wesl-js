@@ -15,6 +15,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "chokidar": "^4.0.3",
     "toml": "^3.0.0",
     "unplugin": "^2.1.2",
     "wesl": "workspace:*"
