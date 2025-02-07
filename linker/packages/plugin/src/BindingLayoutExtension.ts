@@ -17,8 +17,7 @@ async function bindingLayoutJs(
   api: PluginExtensionApi,
 ): Promise<string> {
   const registry = await api.weslRegistry();
-  const { weslRoot } = await api.weslToml();
-  const main = rmPathPrefix(baseId, weslRoot);
+  const main = await api.weslMain(baseId);
 
   let structsJs = "??";
   const linkConfig = {
@@ -32,14 +31,4 @@ async function bindingLayoutJs(
 
   bindAndTransform(registry, main, {}, linkConfig);
   return structsJs;
-}
-
-/** convert a fs path to a path relative to the wesl root directory */
-function rmPathPrefix(fullPath: string, weslRoot: string): string {
-  const rootStart = fullPath.indexOf(weslRoot);
-  if (rootStart === -1) {
-    throw new Error(`file ${fullPath} not in root ${weslRoot}`);
-  }
-  const pathWithSlashPrefix = fullPath.slice(rootStart + weslRoot.length);
-  return "." + pathWithSlashPrefix;
 }
