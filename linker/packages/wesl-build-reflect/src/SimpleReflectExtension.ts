@@ -3,7 +3,7 @@ import { typeRefToString } from "../../linker/src/RawEmit.js";
 import {
   PluginExtension,
   PluginExtensionApi,
-} from "../../plugin/src/PluginExtension.js"; // TODO fix type exports from wesl-plugin
+} from "wesl-plugin/src/PluginExtension.js"; // TODO fix type exports from wesl-plugin
 
 export interface WeslStruct {
   members: Record<string, WeslMember>;
