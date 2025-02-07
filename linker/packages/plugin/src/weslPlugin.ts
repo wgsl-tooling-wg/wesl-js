@@ -75,9 +75,6 @@ export function weslPlugin(
     name: "wesl-plugin",
     resolveId: buildResolver(options),
     load: buildLoader(cache, options),
-    watchChange: (id: string, change: any) => {
-      console.log("watchChange doesn't fire", id, change); // unreliable, so using chokidar for now
-    },
   };
 }
 
