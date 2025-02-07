@@ -28,7 +28,7 @@ export function typeParamToString(param?: TypeTemplateParameter): string {
   else return `?${param}?`;
 }
 
-function typeRefToString(t?: TypeRefElem): string {
+export function typeRefToString(t?: TypeRefElem): string {
   if (!t) return "?";
   const { name, templateParams } = t;
   const params = templateParams ? typeListToString(templateParams) : "";
