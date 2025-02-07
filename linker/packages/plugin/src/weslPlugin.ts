@@ -22,8 +22,6 @@ import {
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
 import type { WeslPluginOptions } from "./weslPluginOptions.js";
 
-// TODO figure how to handle reloading & mutated AST produced by transforms
-
 /** loaded (or synthesized) info from .toml */
 export interface WeslToml {
   /** glob search strings to find .wesl/.wgsl files */
@@ -166,7 +164,6 @@ async function getWeslToml(
   let { weslToml } = cache;
   if (weslToml) return weslToml;
 
-  // TODO consider supporting default if no wesl.toml is provided: e.g. './shaders'
   try {
     const tomlString = await fs.readFile(tomlFile, "utf-8");
     ctx.addWatchFile(tomlFile);
