@@ -22,4 +22,5 @@ export interface PluginExtensionApi {
   weslToml: () => Promise<WeslToml>;
   weslSrc: () => Promise<Record<string, string>>;
   weslRegistry: () => Promise<ParsedRegistry>;
+  weslMain: (baseId: string) => Promise<string>;
 }

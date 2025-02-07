@@ -23,8 +23,6 @@ import type { WeslPluginOptions } from "./weslPluginOptions.js";
 
 // TODO figure how to handle reloading & mutated AST produced by transforms
 
-/** for now ?reflect is hardcoded */
-
 /** some types from unplugin */
 type Resolver = (
   this: UnpluginBuildContext & UnpluginContext,
@@ -111,6 +109,7 @@ function buildApi(
     weslToml: async () => getWeslToml(ctx),
     weslSrc: async () => loadWesl(ctx, options, false),
     weslRegistry: async () => getRegistry(ctx, options),
+    weslMain: makeGetWeslMain(ctx, options),
   };
 }
 
@@ -154,7 +153,7 @@ async function getWeslToml(
       weslToml = toml.parse(tomlString) as WeslToml;
     } catch {
       console.log(`using defaults: no wesl.toml found at ${tomlFile}`);
-      weslToml = { weslFiles: ["shaders/**/*.wesl"], weslRoot: "shaders" };
+      weslToml = { weslFiles: ["shaders/**/*.w[eg]sl"], weslRoot: "shaders" };
     }
     ctx.addWatchFile(tomlFile);
   }
@@ -178,6 +177,19 @@ async function getRegistry(
   return registry;
 }
 
+function makeGetWeslMain(
+  ctx: UnpluginBuildContext,
+  options: WeslPluginOptions,
+): (baseId: string) => Promise<string> {
+  return getWeslMain;
+
+  async function getWeslMain(baseId: string): Promise<string> {
+    const { weslRoot } = await getWeslToml(ctx, options.weslToml);
+    const main = rmPathPrefix(baseId, weslRoot);
+    return main;
+  }
+}
+
 /**
  * Load the wesl files referenced in the wesl.toml file
  *
@@ -197,6 +209,7 @@ async function loadWesl(
   const globs = weslFiles.map(g => tomlDir + "/" + g);
   const futureFiles = globs.map(g => glob(g));
   const files = (await Promise.all(futureFiles)).flat();
+  // dlog({ files, weslRoot, tomlDir, globs });
   return loadFiles(files, weslRootRelative ? weslRoot : tomlDir);
 }
 
