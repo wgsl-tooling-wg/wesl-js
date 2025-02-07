@@ -413,12 +413,14 @@ function coverWithText(cc: CollectContext, elem: ContainerElem): GrammarElem[] {
   const { contents, end } = elem;
   const sorted = (contents as GrammarElem[]).sort((a, b) => a.start - b.start);
 
-  const elems = sorted.flatMap(elem => {
-    const result = pos < elem.start ? [makeTextElem(elem.start), elem] : [elem];
-    pos = elem.end;
-    return result;
-  });
-
+  const elems: GrammarElem[] = [];
+  for (const existingElement of sorted) {
+    if (pos < elem.start) {
+      elems.push(makeTextElem(elem.start));
+    }
+    elems.push(elem);
+    pos = existingElement.end;
+  }
   if (pos < end) {
     elems.push(makeTextElem(end));
   }
