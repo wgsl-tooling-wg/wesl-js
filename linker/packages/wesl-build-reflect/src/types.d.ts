@@ -1,5 +1,4 @@
-/// <reference types="wgsl_reflect">
 /** @hidden */
-declare module "*?wgsl_reflect" {
-  export const structs: StructInfo[];
+declare module "*?simple_reflect" {
+  export const structs: WeslStruct[];
 }

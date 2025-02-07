@@ -2,9 +2,9 @@
 /// <reference types="wesl-plugin" />
 import { expect, test } from "vitest";
 
-import { structs } from "../../shaders/app.wgsl?wgsl_reflect";
+import { structs } from "../../shaders/app.wgsl?simple_reflect";
 
-test("wgsl_reflect a struct", async () => {
+test("simple_reflect a struct", async () => {
   // --- load reflected binding structs ---
 
   expect(structs).toMatchInlineSnapshot(`

@@ -14,7 +14,7 @@ export interface WeslMember {
 }
 
 export const wgslReflectExtension: PluginExtension = {
-  extensionName: "wgsl_reflect",
+  extensionName: "simple_reflect",
   emitFn: emitReflectJs,
 };
 
