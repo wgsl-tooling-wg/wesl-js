@@ -14,13 +14,14 @@ async function emitLinkJs(
 ): Promise<string> {
   const { weslRoot } = await api.weslToml();
   const weslSrc = await api.weslSrc();
-  const rootModule = rmPathPrefix(noSuffix(baseId), weslRoot);
-  const rootName = path.basename(rootModule);
+  const rootModule = await api.weslMain(baseId);
+  const rootModuleName = noSuffix(rootModule);
+  const rootName = path.basename(rootModuleName);
 
   const paramsName = `link${rootName}Config`;
   const src = `
     export const ${paramsName}= {
-      rootModuleName: "${rootModule}",
+      rootModuleName: "${rootModuleName}",
       weslRoot: "${weslRoot}",  
       weslSrc: ${JSON.stringify(weslSrc, null, 2)},
     };
@@ -29,14 +30,4 @@ async function emitLinkJs(
     `;
 
   return src;
-}
-
-/** convert a fs path to a path relative to the wesl root directory */
-function rmPathPrefix(fullPath: string, weslRoot: string): string {
-  const rootStart = fullPath.indexOf(weslRoot);
-  if (rootStart === -1) {
-    throw new Error(`file ${fullPath} not in root ${weslRoot}`);
-  }
-  const pathWithSlashPrefix = fullPath.slice(rootStart + weslRoot.length);
-  return "." + pathWithSlashPrefix;
 }
