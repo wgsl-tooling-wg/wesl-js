@@ -266,12 +266,6 @@ importers:
 
   packages/wesl-build-reflect:
     dependencies:
-      thimbleberry:
-        specifier: ^0.2.9
-        version: 0.2.9
-      webgpu:
-        specifier: ^0.2.6
-        version: 0.2.6
       wesl-plugin:
         specifier: workspace:*
         version: link:../plugin
@@ -279,6 +273,12 @@ importers:
       nodemon:
         specifier: ^3.1.9
         version: 3.1.9
+      webgpu:
+        specifier: ^0.2.6
+        version: 0.2.6
+      wesl:
+        specifier: workspace:*
+        version: link:../linker
 
 packages:
 
