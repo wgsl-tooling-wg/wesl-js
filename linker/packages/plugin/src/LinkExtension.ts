@@ -1,6 +1,6 @@
 import path from "node:path";
-import { PluginExtension, PluginExtensionApi } from "./PluginExtension.ts";
 import { noSuffix } from "wesl";
+import { PluginExtension, PluginExtensionApi } from "./PluginExtension.ts";
 
 export const linkBuildPlugin: PluginExtension = {
   extensionName: "link",

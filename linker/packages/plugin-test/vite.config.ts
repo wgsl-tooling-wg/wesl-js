@@ -1,11 +1,11 @@
 /// <reference types="vitest/config" />
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import viteWesl from "wesl-plugin/vite";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-import { linkBuildPlugin } from "../plugin/src/LinkExtension.js";
 import { bindingLayoutExtension } from "../plugin/src/BindingLayoutExtension.js";
+import { linkBuildPlugin } from "../plugin/src/LinkExtension.js";
 
 const thisPath = fileURLToPath(import.meta.url);
 const weslToml = path.join(path.dirname(thisPath), "wesl.toml");
