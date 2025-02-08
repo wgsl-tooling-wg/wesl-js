@@ -535,6 +535,7 @@ const global_directive = seq(
 );
 
 // prettier-ignore
+// TODO: Hoist out the "opt_attributes"
 export const global_decl = tagScope(
   or(
     fn_decl,

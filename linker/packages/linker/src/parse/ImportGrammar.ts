@@ -10,6 +10,7 @@ import {
   repeatPlus,
   req,
   seq,
+  seqObj,
   span,
   Stream,
   tagScope,
@@ -58,15 +59,10 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
       ),
     ),
     preceded("as", wordToken).map(v => new ImportItem("", v)),
-    yes(), // Optional
+    yes(new ImportItem("")), // Optional
   ),
-).map((v): ImportStatement => {
-  const name = v[0];
-  const next = v[1];
-  if (next === true) {
-    // Nothing came after the word token
-    return new ImportStatement([], new ImportItem(name));
-  } else if (next instanceof ImportCollection) {
+).map(([name, next]): ImportStatement => {
+  if (next instanceof ImportCollection) {
     return new ImportStatement([new ImportSegment(name)], next);
   } else if (next instanceof ImportStatement) {
     // more import path
@@ -95,17 +91,17 @@ const import_relative = or(
 const import_statement = span(
   delimited(
     "import",
-    seq(
-      opt(import_relative),
-      req(or(import_collection, import_path_or_item)),
-    ).map(v => {
-      if (v[1] instanceof ImportStatement) {
+    seqObj({
+      relative: opt(import_relative),
+      collection_or_statement: req(or(import_collection, import_path_or_item)),
+    }).map(v => {
+      if (v.collection_or_statement instanceof ImportStatement) {
         return new ImportStatement(
-          segments(v[0] ?? [], v[1].segments),
-          v[1].finalSegment,
+          segments(v.relative ?? [], v.collection_or_statement.segments),
+          v.collection_or_statement.finalSegment,
         );
       } else {
-        return new ImportStatement(v[0] ?? [], v[1]);
+        return new ImportStatement(v.relative ?? [], v.collection_or_statement);
       }
     }),
     req(";"),

@@ -63,7 +63,7 @@ test("parse fn foo() with annotation in grammar", () => {
     const fnName = result.value[2];
     expect(fnName).toBe("foo");
   }
-  expect(result).toBeDefined();
+  expect(result).not.toBe(null);
 });
 
 test("parse fn foo() with seqObj", () => {

@@ -51,10 +51,12 @@ import { peekToken, Stream, Token, TypedToken } from "./Stream.js";
 export function token<const Kind extends string>(
   kindStr: Kind,
   value: string,
-): Parser<Stream<TypedToken<Kind>>, string> {
+): Parser<Stream<TypedToken<Kind>>, TypedToken<Kind>> {
   return simpleParser(
     `token '${kindStr}' ${quotedText(value)}`,
-    function _token(state: ParserContext): ParserResult<string> | null {
+    function _token(
+      state: ParserContext,
+    ): ParserResult<TypedToken<Kind>> | null {
       const start = state.stream.checkpoint();
       const next = state.stream.nextToken();
       if (next === null) return null;
@@ -66,7 +68,7 @@ export function token<const Kind extends string>(
         state.stream.reset(start);
         return null;
       }
-      return { value: next.text };
+      return { value: next as TypedToken<Kind> };
     },
   );
 }
@@ -76,10 +78,12 @@ export function token<const Kind extends string>(
 export function tokenOf<const Kind extends string>(
   kindStr: Kind,
   values: string[],
-): Parser<Stream<TypedToken<Kind>>, string> {
+): Parser<Stream<TypedToken<Kind>>, TypedToken<Kind>> {
   return simpleParser(
     `tokenOf '${kindStr}'`,
-    function _tokenOf(state: ParserContext): ParserResult<string> | null {
+    function _tokenOf(
+      state: ParserContext,
+    ): ParserResult<TypedToken<Kind>> | null {
       const start = state.stream.checkpoint();
       const next = state.stream.nextToken();
       if (next === null) return null;
@@ -91,7 +95,7 @@ export function tokenOf<const Kind extends string>(
         state.stream.reset(start);
         return null;
       }
-      return { value: next.text };
+      return { value: next as TypedToken<Kind> };
     },
   );
 }
@@ -339,7 +343,7 @@ const undefinedResult: ParserResult<undefined> = {
  */
 export function opt<P extends CombinatorArg>(
   arg: P,
-): Parser<InputFromArg<P>, ResultFromArg<P> | undefined> {
+): Parser<InputFromArg<P>, ResultFromArg<P> | null> {
   const p = parserArg(arg);
   const optParser = parser("opt", function _opt(state: ParserContext) {
     const start = state.stream.checkpoint();
@@ -542,9 +546,11 @@ export function req<A extends CombinatorArg>(
 }
 
 /** always succeeds, does not consume any tokens */
-export function yes(): Parser<ParserStream, true> {
+export function yes<T>(value: T): Parser<ParserStream, T>;
+export function yes(): Parser<ParserStream, null>;
+export function yes(value: any = null): Parser<ParserStream, any> {
   return simpleParser("yes", function _yes() {
-    return { value: true };
+    return { value: value };
   });
 }
 
