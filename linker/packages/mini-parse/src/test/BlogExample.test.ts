@@ -10,6 +10,7 @@ import {
 import { matchOneOf } from "../stream/RegexHelpers.js";
 import { MatchersStream, RegexMatchers } from "../stream/MatchersStream.js";
 import { FilterStream } from "../stream/FilterStream.js";
+import { assertThat } from "../Assertions.js";
 
 test("parse fn foo()", () => {
   const src = "fn foo()";
@@ -59,11 +60,10 @@ test("parse fn foo() with annotation in grammar", () => {
   // parsing and extracting result
   const result = fnDecl.parse({ stream });
 
-  if (result) {
-    const fnName = result.value[2];
-    expect(fnName).toBe("foo");
-  }
   expect(result).not.toBe(null);
+  assertThat(result !== null);
+  const fnName = result.value[2];
+  expect(fnName).toBe("foo");
 });
 
 test("parse fn foo() with seqObj", () => {

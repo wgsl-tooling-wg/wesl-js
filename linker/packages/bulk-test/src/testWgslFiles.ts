@@ -2,7 +2,6 @@ import { expectNoLog } from "mini-parse/test-util";
 import fs from "node:fs/promises";
 import { expect, test } from "vitest";
 import { bindingStructsPlugin, link, noSuffix } from "wesl";
-import { stripWesl } from "./stripWgsl";
 
 export interface NamedPath {
   name: string; // test name

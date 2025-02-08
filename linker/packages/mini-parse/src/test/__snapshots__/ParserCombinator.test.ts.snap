@@ -30,7 +30,7 @@ exports[`not() success 1`] = `
 exports[`opt() makes failing match ok 1`] = `
 {
   "value": [
-    undefined,
+    null,
     "foo",
   ],
 }

@@ -331,10 +331,6 @@ export function or<P extends CombinatorArg[]>(...args: P): OrParser<P> {
   return orParser as OrParser<P>;
 }
 
-const undefinedResult: ParserResult<undefined> = {
-  value: undefined,
-};
-
 /** Try a parser.
  *
  * If the parse succeeds, return the result.
@@ -345,21 +341,19 @@ export function opt<P extends CombinatorArg>(
   arg: P,
 ): Parser<InputFromArg<P>, ResultFromArg<P> | null> {
   const p = parserArg(arg);
-  const optParser = parser("opt", function _opt(state: ParserContext) {
-    const start = state.stream.checkpoint();
-    const result = p._run(state);
-
-    // If parsing fails, we return instead a success
-    // with 'undefined' as a value
-    if (result === null) {
-      state.stream.reset(start);
-      // cast the undefined result here and recover type with the ascription above
-      type PR = ParserResult<ResultFromArg<P>>;
-      return undefinedResult as PR;
-    }
-
-    return result;
-  });
+  const optParser = parser(
+    "opt",
+    function _opt(state: ParserContext): ParserResult<ResultFromArg<P> | null> {
+      const start = state.stream.checkpoint();
+      const result = p._run(state);
+      if (result === null) {
+        state.stream.reset(start);
+        return { value: null };
+      } else {
+        return result;
+      }
+    },
+  );
   trackChildren(optParser, p);
   return optParser;
 }
