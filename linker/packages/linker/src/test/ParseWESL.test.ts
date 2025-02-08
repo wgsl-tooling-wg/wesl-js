@@ -986,6 +986,36 @@ test("var foo: vec2<f32 >= vec2( 0.5, -0.5);", ctx => {
   `);
 });
 
+test("fn main() { var tmp: array<i32, 1 << 1>=array(1, 2); }", ctx => {
+  const ast = parseTest(ctx.task.name);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      fn main()
+        text 'fn '
+        decl %main
+        text '() { '
+        var %tmp : array<i32, '1 << 1'>
+          text 'var '
+          typeDecl %tmp : array<i32, '1 << 1'>
+            decl %tmp
+            text ': '
+            type array<i32, '1 << 1'>
+              ref array
+              text '<'
+              type i32
+                ref i32
+              text ', '
+              expression '1 << 1'
+                text '1 << 1'
+              text '>'
+          text '='
+          ref array
+          text '(1, 2)'
+        text '; }'"
+  `);
+});
+
 test("import a::b::c;", ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
