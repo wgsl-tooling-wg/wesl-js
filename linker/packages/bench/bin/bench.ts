@@ -80,7 +80,7 @@ function runBench(variant: ParserVariant, file: LoadedFile): number {
   const warmupIterations = 5;
   const benchIterations = 20;
 
-  // TODO try e.g. TinyBench instead
+  // TODO Use Deno.bench instead
 
   /* warmup */
   runNTimes(warmupIterations, variant, file);

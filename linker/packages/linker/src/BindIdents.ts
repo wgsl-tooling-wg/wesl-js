@@ -208,8 +208,7 @@ function findExport(
   modulePathParts: string[],
   parsed: ParsedRegistry,
 ): DeclIdent | undefined {
-  const legacyConvert = modulePathParts.map(p => (p === "." ? "package" : p)); // TODO rm after we update grammar
-  const modulePath = legacyConvert.slice(0, -1).join("::");
+  const modulePath = modulePathParts.slice(0, -1).join("::");
   const module = parsed.modules[modulePath];
   if (!module) {
     // TODO show error with source location

@@ -161,7 +161,7 @@ export interface ParenthesizedExpression extends AbstractElemBase {
 }
 export interface ComponentExpression extends AbstractElemBase {
   kind: "component-expression";
-  // TODO: How do I safely type this? As in, I want "first comes the name, then the component"
+  // To safely type this, don't use contents, but rather define your own props!
   contents: [ExpressionElem, ExpressionElem];
 }
 // TODO: We will emit these very soon (for the @if(expr))
