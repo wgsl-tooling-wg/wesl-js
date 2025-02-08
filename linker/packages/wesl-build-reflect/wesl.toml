@@ -1,0 +1,3 @@
+
+weslFiles = [ "shaders/**/*.w[eg]sl" ]
+weslRoot = "shaders"

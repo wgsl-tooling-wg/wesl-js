@@ -1,3 +1,4 @@
+import chokidar from "chokidar";
 import { glob } from "glob";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -21,9 +22,23 @@ import {
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
 import type { WeslPluginOptions } from "./weslPluginOptions.js";
 
-// TODO figure how to handle reloading & mutated AST produced by transforms
+/** loaded (or synthesized) info from .toml */
+export interface WeslToml {
+  /** glob search strings to find .wesl/.wgsl files */
+  weslFiles: string[];
 
-/** for now ?reflect is hardcoded */
+  /** base directory for wesl files */
+  weslRoot: string;
+}
+
+/** internal cache used by the plugin to avoid reloading files
+ * The assumption is that the plugin is used for a single wesl.toml and set of shaders
+ * (a plugin instance supports only one shader project)
+ */
+interface PluginCache {
+  registry?: ParsedRegistry;
+  weslToml?: WeslToml;
+}
 
 /** some types from unplugin */
 type Resolver = (
@@ -40,6 +55,13 @@ type Loader = (
   id: string,
 ) => Thenable<TransformResult>;
 
+/** convenient state for local functions */
+interface PluginContext {
+  cache: PluginCache;
+  options: WeslPluginOptions;
+  meta: UnpluginContextMeta;
+}
+
 /**
  * A bundler plugin for processing WESL files.
  *
@@ -54,10 +76,13 @@ export function weslPlugin(
   options: WeslPluginOptions = {},
   meta: UnpluginContextMeta,
 ): UnpluginOptions {
+  const cache: PluginCache = {};
+  const context: PluginContext = { cache, meta, options };
+
   return {
     name: "wesl-plugin",
     resolveId: buildResolver(options),
-    load: buildLoader(options),
+    load: buildLoader(context),
   };
 }
 
@@ -104,19 +129,21 @@ function pluginSuffixMatch(id: string, suffixes: string[]): PluginMatch | null {
 }
 
 function buildApi(
-  ctx: UnpluginBuildContext,
-  options: WeslPluginOptions,
+  context: PluginContext,
+  unpluginCtx: UnpluginBuildContext,
 ): PluginExtensionApi {
   return {
-    weslToml: async () => getWeslToml(ctx),
-    weslSrc: async () => loadWesl(ctx, options, false),
-    weslRegistry: async () => getRegistry(ctx, options),
+    weslToml: async () => getWeslToml(context, unpluginCtx),
+    weslSrc: async () => loadWesl(context, unpluginCtx),
+    weslRegistry: async () => getRegistry(context, unpluginCtx),
+    weslMain: makeGetWeslMain(context, unpluginCtx),
   };
 }
 
 /** build plugin function for serving a javascript module in response to
  * an import of of our virtual import modules. */
-function buildLoader(options: WeslPluginOptions): Loader {
+function buildLoader(context: PluginContext): Loader {
+  const { options } = context;
   const suffixes = pluginNames(options);
   const pluginsMap = pluginsByName(options);
   return loader;
@@ -124,7 +151,7 @@ function buildLoader(options: WeslPluginOptions): Loader {
   async function loader(this: UnpluginBuildContext, id: string) {
     const matched = pluginSuffixMatch(id, suffixes);
     if (matched) {
-      const buildPluginApi = buildApi(this, options);
+      const buildPluginApi = buildApi(context, this);
       const plugin = pluginsMap[matched.pluginName];
       return await plugin.emitFn(matched.baseId, buildPluginApi);
     }
@@ -133,49 +160,85 @@ function buildLoader(options: WeslPluginOptions): Loader {
   }
 }
 
-export interface WeslToml {
-  weslFiles: string[];
-  weslRoot: string;
-}
-
-let weslToml: WeslToml | undefined;
-
-// TODO cache
-
 /** load the wesl.toml  */
 async function getWeslToml(
-  ctx: UnpluginBuildContext,
-  tomlFile = "wesl.toml",
+  context: PluginContext,
+  unpluginCtx: UnpluginBuildContext,
 ): Promise<WeslToml> {
-  if (!weslToml) {
-    // TODO consider supporting default if no wesl.toml is provided: e.g. './shaders'
-    try {
-      const tomlString = await fs.readFile(tomlFile, "utf-8");
-      weslToml = toml.parse(tomlString) as WeslToml;
-    } catch {
-      console.log(`using defaults: no wesl.toml found at ${tomlFile}`);
-      weslToml = { weslFiles: ["shaders/**/*.wesl"], weslRoot: "shaders" };
-    }
-    ctx.addWatchFile(tomlFile);
+  const { cache, options } = context;
+  let { weslToml } = cache;
+  if (weslToml) return weslToml;
+  const { weslToml: tomlFile = "wesl.toml" } = options;
+
+  try {
+    const tomlString = await fs.readFile(tomlFile, "utf-8");
+    unpluginCtx.addWatchFile(tomlFile);
+    weslToml = toml.parse(tomlString) as WeslToml;
+  } catch {
+    console.log(`using defaults: no wesl.toml found at ${tomlFile}`);
+    weslToml = { weslFiles: ["shaders/**/*.w[eg]sl"], weslRoot: "shaders" };
   }
+  cache.weslToml = weslToml;
+
+  if (context.meta.watchMode) {
+    // clear cache on wesl.toml change
+    chokidar.watch(tomlFile).on("change", () => {
+      cache.registry = undefined;
+      cache.weslToml = undefined;
+    });
+  }
+
   return weslToml;
 }
 
-// TODO cache
 /** load and parse all the wesl files into a ParsedRegistry */
 async function getRegistry(
-  ctx: UnpluginBuildContext,
-  options: WeslPluginOptions,
+  context: PluginContext,
+  unpluginCtx: UnpluginBuildContext,
 ): Promise<ParsedRegistry> {
+  const { cache } = context;
+  let { registry } = cache;
+  if (registry) return registry;
+
   // load wesl files into registry
-  const loaded = await loadWesl(ctx, options);
-  const registry = parsedRegistry();
-  parseIntoRegistry(loaded, registry);
+  const loaded = await loadWesl(context, unpluginCtx);
+  const { weslRoot } = await getWeslToml(context, unpluginCtx);
+  const translatedEntries = Object.entries(loaded).map(([path, src]) => {
+    const newPath = rmPathPrefix(path, weslRoot);
+    return [newPath, src];
+  });
+  const translated = Object.fromEntries(translatedEntries);
+  registry = parsedRegistry();
+  parseIntoRegistry(translated, registry);
 
-  // trigger recompilation on wesl files
-  Object.keys(loaded).forEach(f => ctx.addWatchFile(f));
+  // trigger rebuild on shader file change
+  Object.keys(translated).forEach(f => unpluginCtx.addWatchFile(f));
 
+  // trigger clearing cache on shader file change
+  if (context.meta.watchMode) {
+    Object.keys(loaded).forEach(f => {
+      chokidar.watch(f).on("change", () => {
+        console.log("resetting cache", f);
+        cache.registry = undefined;
+      });
+    });
+  }
+
+  cache.registry = registry;
   return registry;
+}
+
+function makeGetWeslMain(
+  context: PluginContext,
+  unpluginContext: UnpluginBuildContext,
+): (baseId: string) => Promise<string> {
+  return getWeslMain;
+
+  async function getWeslMain(baseId: string): Promise<string> {
+    const { weslRoot } = await getWeslToml(context, unpluginContext);
+    const main = rmPathPrefix(baseId, weslRoot);
+    return main;
+  }
 }
 
 /**
@@ -186,18 +249,19 @@ async function getRegistry(
  *    values as wesl file contents.
  */
 async function loadWesl(
-  ctx: UnpluginBuildContext,
-  options: WeslPluginOptions,
-  weslRootRelative = true,
+  context: PluginContext,
+  unpluginCtx: UnpluginBuildContext,
 ): Promise<Record<string, string>> {
-  const { weslFiles, weslRoot } = await getWeslToml(ctx, options.weslToml);
+  const { options } = context;
+  const { weslFiles } = await getWeslToml(context, unpluginCtx);
   const { weslToml } = options;
   const tomlDir = weslToml ? path.dirname(weslToml) : process.cwd();
 
   const globs = weslFiles.map(g => tomlDir + "/" + g);
   const futureFiles = globs.map(g => glob(g));
   const files = (await Promise.all(futureFiles)).flat();
-  return loadFiles(files, weslRootRelative ? weslRoot : tomlDir);
+  // dlog({ files, weslRoot, tomlDir, globs });
+  return loadFiles(files, tomlDir);
 }
 
 /** load a set of files, converting to paths relative to the  wesl root directory */

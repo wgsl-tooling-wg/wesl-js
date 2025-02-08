@@ -57,6 +57,9 @@
     "onlyBuiltDependencies": [
       "core-js",
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "vite": "^6.1.0"
+    }
   }
 }

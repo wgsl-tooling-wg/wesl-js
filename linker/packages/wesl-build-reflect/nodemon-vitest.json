@@ -1,0 +1,12 @@
+{
+  "exec": "vitest",
+  "delay": "350ms",
+  "watch": [
+    "src/**",
+    "./shaders/**",
+    "wesl.toml",
+    "../linker/dist/**/*.js",
+    "../plugin/dist/**/*.js"
+  ],
+  "ext": "cjs,ts,js,wgsl,wesl,toml"
+}

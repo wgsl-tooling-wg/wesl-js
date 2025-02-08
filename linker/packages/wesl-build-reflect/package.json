@@ -1,0 +1,23 @@
+{
+  "name": "wesl-build-reflect",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "echo": "echo",
+    "typecheck": "tsc",
+    "format": "prettier . --write",
+    "lint": "eslint src",
+    "organize": "organize-imports-cli tsconfig.json",
+    "prepublishOnly": "run-s build",
+    "build": "echo NYI",
+    "test": "nodemon --config nodemon-vitest.json"
+  },
+  "dependencies": {
+    "wesl-plugin": "workspace:*"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "wesl": "workspace:*",
+    "wesl-plugin": "workspace:*"
+  }
+}
