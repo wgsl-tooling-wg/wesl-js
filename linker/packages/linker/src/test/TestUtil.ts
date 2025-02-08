@@ -1,4 +1,4 @@
-import { NoTags, Parser, Stream, TagRecord, withLogger } from "mini-parse";
+import { Parser, Stream, withLogger } from "mini-parse";
 import {
   expectNoLog,
   logCatch,
@@ -7,9 +7,9 @@ import {
 } from "mini-parse/test-util";
 import { WgslBundle } from "random_wgsl";
 import { link, LinkConfig } from "../Linker.js";
+import { WeslStream, WeslToken } from "../parse/WeslStream.js";
 import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
 import { Conditions } from "../Scope.js";
-import { WeslStream, WeslToken } from "../parse/WeslStream.js";
 
 export function testAppParse<T>(
   parser: Parser<Stream<WeslToken>, T>,

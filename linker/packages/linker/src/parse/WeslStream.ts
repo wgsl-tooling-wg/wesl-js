@@ -1,10 +1,10 @@
 import {
-  TypedToken,
-  Stream,
   CachingStream,
   MatchersStream,
-  RegexMatchers,
   matchOneOf,
+  RegexMatchers,
+  Stream,
+  TypedToken,
   withStreamAction,
 } from "mini-parse";
 import { keywords, reservedWords } from "./Keywords";

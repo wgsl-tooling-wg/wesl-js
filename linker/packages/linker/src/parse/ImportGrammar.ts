@@ -19,6 +19,9 @@ import {
   withSepPlus,
   yes,
 } from "mini-parse";
+import { ImportElem } from "../AbstractElems.js";
+import { assertUnreachable } from "../Assertions.js";
+import { importElem } from "../WESLCollect.js";
 import { mainTokens } from "../WESLTokens.js";
 import {
   ImportCollection,
@@ -26,10 +29,7 @@ import {
   ImportSegment,
   ImportStatement,
 } from "./ImportStatement.js";
-import { ImportElem } from "../AbstractElems.js";
-import { importElem } from "../WESLCollect.js";
 import { WeslToken } from "./WeslStream.js";
-import { assertUnreachable } from "../Assertions.js";
 
 const wordToken = kind(mainTokens.ident);
 

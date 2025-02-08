@@ -1,6 +1,5 @@
 import {
   AttributeElem,
-  ContainerElem,
   ExpressionElem,
   StuffElem,
   TypeRefElem,

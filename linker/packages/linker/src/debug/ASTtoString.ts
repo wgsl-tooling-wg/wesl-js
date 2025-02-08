@@ -5,9 +5,7 @@ import {
   ModuleElem,
   TypeRefElem,
   TypeTemplateParameter,
-  UnknownExpression,
 } from "../AbstractElems.ts";
-import { assertUnreachable } from "../Assertions.ts";
 import { importToString } from "./ImportToString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 

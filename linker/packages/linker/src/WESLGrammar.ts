@@ -1,4 +1,5 @@
 import {
+  collectArray,
   delimited,
   eof,
   fn,
@@ -11,15 +12,15 @@ import {
   repeatPlus,
   req,
   seq,
+  Stream,
   tagScope,
   text,
   tracing,
   withSep,
   withSepPlus,
-  Stream,
-  collectArray,
 } from "mini-parse";
 import { weslImports } from "./parse/ImportGrammar.ts";
+import { templateClose, templateOpen, WeslToken } from "./parse/WeslStream.ts";
 import {
   aliasCollect,
   collectAttribute,
@@ -41,7 +42,6 @@ import {
   typeRefCollect,
 } from "./WESLCollect.ts";
 import { mainTokens } from "./WESLTokens.ts";
-import { templateClose, templateOpen, WeslToken } from "./parse/WeslStream.ts";
 
 export const word = kind(mainTokens.ident);
 
