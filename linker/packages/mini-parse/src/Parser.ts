@@ -40,6 +40,7 @@ export interface ParserInit<C = any, S = any> {
   appState?: AppState<C, S>;
 }
 
+// TODO: Try merging this into the stream
 /* Information passed to the parsers during parsing */
 export interface ParserContext<C = any, S = any> {
   stream: Stream<Token>;
@@ -61,16 +62,12 @@ export interface ParserResult<T> {
   value: T;
 }
 
-// TODO: What's the C and S?
 export interface ExtendedResult<T, C = any, S = any> extends ParserResult<T> {
   app: AppState<C, S>;
 }
 
 /** parsers return null if they don't match */
-// prettier-ignore
-export type OptParserResult<T,> = 
-    ParserResult<T> 
-  | null;
+export type OptParserResult<T> = ParserResult<T> | null;
 
 /** Internal parsing functions return a value and also a set of tagged results from contained parser  */
 type ParseFn<T> = (context: ParserContext) => OptParserResult<T>;
@@ -376,9 +373,7 @@ function map<I, T, U>(p: Parser<I, T>, fn: (value: T) => U): Parser<I, U> {
   return mapParser;
 }
 
-type ToParserFn<I, T, X> = (
-  results: ExtendedResult<T>,
-) => Parser<I, X> | undefined;
+type ToParserFn<I, T, X> = (results: ParserResult<T>) => Parser<I, X> | null;
 
 function toParser<I, T, O>(
   p: Parser<I, T>,
@@ -386,21 +381,20 @@ function toParser<I, T, O>(
 ): Parser<I, T | O> {
   const newParser: Parser<I, T | O> = parser(
     "toParser",
-    function _toParser(ctx: ParserContext) {
-      const extended = runExtended(ctx, p);
-      if (!extended) return null;
+    function _toParser(ctx: ParserContext): OptParserResult<T | O> {
+      const result = p._run(ctx);
+      if (result === null) return null;
 
       // run the supplied function to get a parser
-      const newParser = toParserFn(extended);
+      const newParser = toParserFn(result);
 
-      if (newParser === undefined) {
-        return extended;
+      if (newParser === null) {
+        return result;
       }
 
       // run the parser returned by the supplied function
       const nextResult = newParser._run(ctx);
-      // TODO merge names record from p to newParser
-      return nextResult as any; // TODO fix typing
+      return nextResult;
     },
   );
   trackChildren(newParser, p);
