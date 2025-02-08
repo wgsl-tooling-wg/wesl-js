@@ -540,11 +540,9 @@ export function req<A extends CombinatorArg>(
 }
 
 /** always succeeds, does not consume any tokens */
-export function yes<T>(value: T): Parser<ParserStream, T>;
-export function yes(): Parser<ParserStream, null>;
-export function yes(value: any = null): Parser<ParserStream, any> {
+export function yes(): Parser<ParserStream, null> {
   return simpleParser("yes", function _yes() {
-    return { value: value };
+    return { value: null };
   });
 }
 

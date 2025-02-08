@@ -59,7 +59,7 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
       ),
     ),
     preceded("as", wordToken).map(v => new ImportItem("", v)),
-    yes(new ImportItem("")), // Optional
+    yes().map(() => new ImportItem("")), // Optional
   ),
 ).map(([name, next]): ImportStatement => {
   if (next instanceof ImportCollection) {
