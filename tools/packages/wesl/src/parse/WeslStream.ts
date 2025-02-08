@@ -60,6 +60,11 @@ const weslMatcher = new RegexMatchers<InternalTokenKind>({
   invalid: /[^]/,
 });
 
+/** To mark parts of the grammar implementation that are WESL specific extensions */
+export function weslExtension<T>(combinator: T): T {
+  return combinator;
+}
+
 export class WeslStream implements Stream<WeslToken> {
   private stream: Stream<TypedToken<InternalTokenKind>>;
   /** New line */
