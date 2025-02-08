@@ -20,7 +20,12 @@ import {
   withSepPlus,
 } from "mini-parse";
 import { weslImports } from "./parse/ImportGrammar.ts";
-import { templateClose, templateOpen, WeslToken } from "./parse/WeslStream.ts";
+import {
+  templateClose,
+  templateOpen,
+  weslExtension,
+  WeslToken,
+} from "./parse/WeslStream.ts";
 import {
   aliasCollect,
   collectAttribute,
@@ -45,7 +50,7 @@ import { mainTokens } from "./WESLTokens.ts";
 
 export const word = kind(mainTokens.ident);
 
-const qualified_ident = withSepPlus("::", word);
+const full_ident = weslExtension(withSepPlus("::", word));
 
 const diagnostic_rule_name = withSep(".", word, { requireOne: true });
 const diagnostic_control = seq(
@@ -139,15 +144,12 @@ export const fnNameDecl =
   );
 
 // prettier-ignore
-const std_type_specifier = seq(
-  word                              .collect(refIdent, "typeRefName"),
-  () => opt_template_list,
-)                                   .collect(typeRefCollect);
-
-// prettier-ignore
 export const type_specifier: Parser<Stream<WeslToken>,any> = tagScope(
-   std_type_specifier,
-)                                   .ctag("typeRefElem");
+  seq(
+    full_ident                        .collect(refIdent, "typeRefName"),
+    () => opt_template_list,
+  )                                   .collect(typeRefCollect),
+)                                     .ctag("typeRefElem");
 
 // prettier-ignore
 const optionally_typed_ident = tagScope(
@@ -183,7 +185,7 @@ export const struct_decl = seq(
 /** Also covers func_call_statement.post.ident */
 // prettier-ignore
 export const fn_call = seq(
-  qualified_ident                     .collect(refIdent),
+  full_ident                     .collect(refIdent),
   () => opt_template_list,
   argument_expression_list,
 );
@@ -225,20 +227,10 @@ const opt_template_list = opt(
   ),
 );
 
-/** template list of non-identifier words. e.g. var <storage> */
-// prettier-ignore
-const opt_template_words = opt(
-  seq(
-    templateOpen,
-    withSepPlus(",", qualified_ident        .ptag("templateParam")),
-    templateClose
-  ),
-);
-
 // prettier-ignore
 const template_elaborated_ident = 
   seq(
-    qualified_ident                           .collect(refIdent),
+    full_ident                           .collect(refIdent),
     opt_template_list,
   );
 
@@ -270,7 +262,7 @@ const component_or_swizzle = repeatPlus(
 /** parse simple struct.member style references specially, for binding struct lowering */
 const simple_component_reference = tagScope(
   seq(
-    qualified_ident                   .collect(refIdent, "structRef"),
+    full_ident                        .collect(refIdent, "structRef"),
     seq(".", word                     .collect(nameCollect, "component")),
     opt(component_or_swizzle          .collect(stuffCollect, "extra_components")),
   )                                   .collect(memberRefCollect),
@@ -435,7 +427,7 @@ const statement: Parser<Stream<WeslToken>, any> = or(
 const lhs_expression: Parser<Stream<WeslToken>,any> = or(
   simple_component_reference,
   seq(
-    qualified_ident                        .collect(refIdent), 
+    full_ident                        .collect(refIdent), 
     opt(component_or_swizzle)
   ),
   seq(
@@ -553,7 +545,7 @@ export const global_decl = tagScope(
 
 // prettier-ignore
 export const weslRoot = seq(
-    weslImports,
+    weslExtension(weslImports),
     repeat(global_directive),
     repeat(global_decl),
     req(eof()),
@@ -561,7 +553,7 @@ export const weslRoot = seq(
 
 if (tracing) {
   const names: Record<string, Parser<Stream<WeslToken>, unknown>> = {
-    qualified_ident,
+    full_ident,
     diagnostic_rule_name,
     diagnostic_control,
     attribute,
