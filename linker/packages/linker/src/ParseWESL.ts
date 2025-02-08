@@ -1,11 +1,9 @@
 import { AppState, ParserInit, SrcMap } from "mini-parse";
-import { ModuleElem } from "./AbstractElems.ts";
+import { ImportStatement, ModuleElem } from "./AbstractElems.ts";
 import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
-import { ImportStatement } from "./parse/ImportStatement.ts";
 import { emptyScope, resetScopeIds, Scope, SrcModule } from "./Scope.ts";
 import { OpenElem } from "./WESLCollect.ts";
 import { weslRoot } from "./WESLGrammar.ts";
-import { mainTokens } from "./WESLTokens.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
