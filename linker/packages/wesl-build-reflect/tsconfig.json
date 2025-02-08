@@ -21,6 +21,6 @@
       "wesl-plugin": ["../plugin"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "generated/**/*"],
   "exclude": ["node_modules"]
 }
