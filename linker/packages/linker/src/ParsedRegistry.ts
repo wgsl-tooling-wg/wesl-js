@@ -59,7 +59,6 @@ export function parseIntoRegistry(
   registry: ParsedRegistry,
   packageName: string = "package",
   weslRoot: string = "",
-  maxParseCount?: number,
 ): void {
   const srcModules: SrcModule[] = Object.entries(srcFiles).map(
     ([filePath, src]) => {
@@ -68,7 +67,7 @@ export function parseIntoRegistry(
     },
   );
   srcModules.forEach(mod => {
-    const parsed = parseSrcModule(mod, undefined, maxParseCount);
+    const parsed = parseSrcModule(mod, undefined);
     if (registry.modules[mod.modulePath]) {
       throw new Error(`duplicate module path: '${mod.modulePath}'`);
     }

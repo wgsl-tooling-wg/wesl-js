@@ -49,13 +49,15 @@ async function bench(argv: CliArgs): Promise<void> {
   const variant: ParserVariant = selectVariant(argv.variant);
 
   if (argv.bench) {
-    const ms = runBench(variant, texts);
-    const codeLines = texts
-      .map(t => t.text.split("\n").length)
-      .reduce((a, b) => a + b, 0);
-    const locSec = codeLines / ms;
-    const locSecStr = new Intl.NumberFormat().format(Math.round(locSec));
-    console.log(`${variant} LOC/sec: ${locSecStr}`);
+    for (const file of texts) {
+      const ms = runBench(variant, file);
+      const codeLines = file.text.split("\n").length;
+      const locSec = codeLines / ms;
+      const locSecStr = new Intl.NumberFormat("en-US").format(
+        Math.round(locSec),
+      );
+      console.log(`${variant} ${file.name} LOC/sec: ${locSecStr}`);
+    }
   }
 
   if (argv.profile) {
@@ -74,30 +76,26 @@ function selectVariant(variant: string): ParserVariant {
   throw new Error("NYI parser variant: " + variant);
 }
 
-function runBench(variant: ParserVariant, files: LoadedFile[]): number {
+function runBench(variant: ParserVariant, file: LoadedFile): number {
   const warmupIterations = 5;
   const benchIterations = 20;
 
-  // TODO try e.g. TinyBench instead
+  // TODO Use Deno.bench instead
 
   /* warmup */
-  runNTimes(warmupIterations, variant, files);
+  runNTimes(warmupIterations, variant, file);
 
   /* test */
   const start = performance.now();
-  runNTimes(benchIterations, variant, files);
+  runNTimes(benchIterations, variant, file);
   const ns = performance.now() - start;
   const ms = ns / benchIterations / 1000;
   return ms;
 }
 
-function runNTimes(
-  n: number,
-  variant: ParserVariant,
-  files: LoadedFile[],
-): void {
+function runNTimes(n: number, variant: ParserVariant, file: LoadedFile): void {
   for (let i = 0; i < n; i++) {
-    runOnAllFiles(variant, files);
+    parseOnce(variant, file.name, file.text);
   }
 }
 
@@ -117,15 +115,20 @@ async function loadAllFiles(): Promise<LoadedFile[]> {
     "reduceBuffer",
     "./src/examples/reduceBuffer.wgsl",
   );
-  const particle = await loadFile(
-    "reduceBuffer",
-    "../../../community-wgsl/webgpu-samples/sample/particles/particle.wgsl",
+  const particle = await loadFile("particle", "./src/examples/particle.wgsl");
+  const rasterize = await loadFile(
+    "rasterize",
+    "./src/examples/rasterize_05_fine.wgsl",
   );
   const boat = await loadFile(
     "unity_webgpu_0000026E5689B260",
-    "../../../community-wgsl/unity_web_research/webgpu/wgsl/boat_attack/unity_webgpu_0000026E5689B260.fs.wgsl",
+    "./src/examples/unity_webgpu_000002B8376A5020.fs.wgsl",
   );
-  return [particle, reduceBuffer];
+  const imports_only = await loadFile(
+    "imports_only",
+    "./src/examples/imports_only.wgsl",
+  );
+  return [reduceBuffer, particle, rasterize, boat, imports_only];
 }
 
 async function loadFile(name: string, path: string): Promise<LoadedFile> {

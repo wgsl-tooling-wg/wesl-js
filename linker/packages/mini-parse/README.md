@@ -40,7 +40,7 @@ export const simpleSum = seq(num, or("+", "-"), num);
 Here's a parser for nested block comments:
 
 ```ts
-export const blockComment: Parser<void> = seq(
+export const blockComment: Parser<any, void> = seq(
   "/*",
   repeat(or(() => blockComment, anyNot("*/"))),
   req("*/"),
@@ -67,7 +67,7 @@ Here's an example token matcher to identify three kinds of tokens for parsing
 simple arithmetic expressions.
 
 ```ts
-export const simpleTokens = tokenMatcher({
+export const simpleTokens = new RegexMatchers({
   number: /\d+/,
   symbol: matchOneOf("( ) ^ + - * /"),
   ws: /\s+/,
@@ -78,7 +78,7 @@ To create a lexer that walks over a source text producing tokens, use:
 
 ```ts
 const text = "3 + 4";
-const lexer = matchingLexer(text, simpleTokens);
+const stream = matchingLexer(text, simpleTokens);
 ```
 
 By default, the lexer will skip over whitespace tokens that you designate with
@@ -91,7 +91,7 @@ dynamically while parsing by using the `tokensIgnore()` combinator.
 To run a parser, just give it a lexer attached to your source text.
 
 ```ts
-const result = simpleSum.parse({ lexer });
+const result = simpleSum.parse({ stream });
 ```
 
 The result will contain the combined results of the parsers, in this case
@@ -105,7 +105,7 @@ successful parse and do a bit of format conversion.
 This parser will return a number rather than a string:
 
 ```ts
-const int = num.map(r => parseInt(r.value));
+const int = num.map(r => parseInt(r.value, 10));
 ```
 
 Here's an example that even does some computation, and returns a numeric sum or
@@ -167,12 +167,11 @@ Multiple results with the same name are accumulated into an array.
 ```ts
 const op = or("+", "-");
 
-export const namedSum = seq(
+export const taggedSum = seq(
   int,
-  repeat(seq(op, int).named("opRights")), // accumulate an array of [op, int] pairs
+  repeat(seq(op, int)), // accumulate an array of [op, int] pairs
 ).map(r => {
-  const { opRights } = r.named;
-  const left = r.value[0];
+  const [left, opRights] = r.value;
   if (!opRights) return left;
   return opRights.reduce((acc, opRight) => {
     const [op, right] = opRight;
@@ -191,6 +190,7 @@ To print out the progress of parsing:
 
 1. Call `enableTracing()` to turn on the tracing facility (normally off and
    removed from prod builds)
+1. Create your parsers.
 1. Call `.trace(opts?)` on any Parser. See `TraceOptions` for options
    controlling trace levels.
 1. Add application relevant trace names to any parser using `.traceName()` or
@@ -249,27 +249,13 @@ and information outside the source text may be required to decide.
 If you want to check a runtime dictionary to decide which parser to
 use for the next tokens, than `.toParser` is of use.
 
-### preParse() combinator
+### `Stream` tokenizer
 
 If the language you're parsing has some elements that can appear almost anywhere,
 it'd be awkward to mention those elements at every possible position in the grammar.
 Examples include nested block comments, comments containing semantic info, etc.
 
-To handle pervasive elements, **MiniParse** offers an unusual feature called preparsing
-that allows you to stack parsers. First the pre-parser will run,
-and if it fails to match at the current position, then the main parser will run.
-
-```ts
-const p = preParse(blockComments, mainParser);
-```
-
-Multiple preparsers can be attached. Preparsing can also be temporarily disabled
-in the grammar, e.g. to disable comment skipping inside quotes.
-
-Save preparsing for special situations.
-If the pervasive elements are easy to find and can be skipped,
-then adding a few token types to skip in the lexer is simpler and faster.
-That's typically the approach for white space.
+To handle pervasive elements, **MiniParse** lets you implement your own layered tokenizers.
 
 ### app.context
 

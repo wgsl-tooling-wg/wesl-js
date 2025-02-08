@@ -260,7 +260,10 @@ test("parse top level var", () => {
           expression '0'
             text '0'
           text ')'
-        text ' var<uniform> '
+        text ' var<'
+        type uniform
+          ref uniform
+        text '> '
         typeDecl %u : Uniforms
           decl %u
           text ': '
@@ -500,6 +503,33 @@ test("parse simple templated type", () => {
   `);
 });
 
+test("parse with space before template", () => {
+  const src = `fn main(a: array <MyStruct,4>) { }`;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      fn main(a: array<MyStruct, '4'>)
+        text 'fn '
+        decl %main
+        text '('
+        param
+          decl %a
+          typeDecl %a : array<MyStruct, '4'>
+            text ': '
+            type array<MyStruct, '4'>
+              ref array
+              text ' <'
+              type MyStruct
+                ref MyStruct
+              text ','
+              expression '4'
+                text '4'
+              text '>'
+        text ') { }'"
+  `);
+});
+
 test("parse nested template that ends with >> ", () => {
   const src = `fn main(a: vec2<array <MyStruct,4>>) { }`;
   const ast = parseTest(src);
@@ -539,7 +569,10 @@ test("parse type in <template> in global var", () => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       gvar %x : array<MyStruct, '8'>
-        text 'var<private> '
+        text 'var<'
+        type private
+          ref private
+        text '> '
         typeDecl %x : array<MyStruct, '8'>
           decl %x
           text ':'
@@ -908,7 +941,10 @@ test("var<workgroup> work: array<u32, 128>;", ctx => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       gvar %work : array<u32, '128'>
-        text 'var<workgroup> '
+        text 'var<'
+        type workgroup
+          ref workgroup
+        text '> '
         typeDecl %work : array<u32, '128'>
           decl %work
           text ': '
@@ -956,6 +992,36 @@ test("var foo: vec2<f32 >= vec2( 0.5, -0.5);", ctx => {
         text '= '
         ref vec2
         text '( 0.5, -0.5);'"
+  `);
+});
+
+test("fn main() { var tmp: array<i32, 1 << 1>=array(1, 2); }", ctx => {
+  const ast = parseTest(ctx.task.name);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      fn main()
+        text 'fn '
+        decl %main
+        text '() { '
+        var %tmp : array<i32, '1 << 1'>
+          text 'var '
+          typeDecl %tmp : array<i32, '1 << 1'>
+            decl %tmp
+            text ': '
+            type array<i32, '1 << 1'>
+              ref array
+              text '<'
+              type i32
+                ref i32
+              text ', '
+              expression '1 << 1'
+                text '1 << 1'
+              text '>'
+          text '='
+          ref array
+          text '(1, 2)'
+        text '; }'"
   `);
 });
 
@@ -1031,10 +1097,17 @@ test(`parse ptr`, ctx => {
           decl %particles
           text ': '
           type ptr<storage, f32, read_write>
-            text 'ptr<storage, '
+            ref ptr
+            text '<'
+            type storage
+              ref storage
+            text ', '
             type f32
               ref f32
-            text ', read_write>'
+            text ', '
+            type read_write
+              ref read_write
+            text '>'
         text ';'
       text '
       '"
@@ -1057,14 +1130,21 @@ test(`parse ptr with internal array`, ctx => {
           decl %particles
           text ': '
           type ptr<storage, array<f32>, read_write>
-            text 'ptr<storage, '
+            ref ptr
+            text '<'
+            type storage
+              ref storage
+            text ', '
             type array<f32>
               ref array
               text '<'
               type f32
                 ref f32
               text '>'
-            text ', read_write>'
+            text ', '
+            type read_write
+              ref read_write
+            text '>'
         text ';'
       text '
       '"
@@ -1104,14 +1184,21 @@ test(`parse binding struct`, ctx => {
           name particles
           text ': '
           type ptr<storage, array<f32>, read_write>
-            text 'ptr<storage, '
+            ref ptr
+            text '<'
+            type storage
+              ref storage
+            text ', '
             type array<f32>
               ref array
               text '<'
               type f32
                 ref f32
               text '>'
-            text ', read_write>'
+            text ', '
+            type read_write
+              ref read_write
+            text '>'
         text ', 
         }'
       text '
@@ -1344,14 +1431,21 @@ test("binding struct", () => {
           name particles
           text ': '
           type ptr<storage, array<f32>, read_write>
-            text 'ptr<storage, '
+            ref ptr
+            text '<'
+            type storage
+              ref storage
+            text ', '
             type array<f32>
               ref array
               text '<'
               type f32
                 ref f32
               text '>'
-            text ', read_write>'
+            text ', '
+            type read_write
+              ref read_write
+            text '>'
         text ', 
           '
         member @group @binding uniforms: ptr<uniform, Uniforms>
@@ -1370,7 +1464,11 @@ test("binding struct", () => {
           name uniforms
           text ': '
           type ptr<uniform, Uniforms>
-            text 'ptr<uniform, '
+            ref ptr
+            text '<'
+            type uniform
+              ref uniform
+            text ', '
             type Uniforms
               ref Uniforms
             text '>'

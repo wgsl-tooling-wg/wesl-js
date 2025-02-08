@@ -1,22 +1,23 @@
-import { NoTags, Parser, TagRecord, withLogger } from "mini-parse";
+import { NoTags, Parser, Stream, TagRecord, withLogger } from "mini-parse";
 import {
   expectNoLog,
   logCatch,
-  testParse,
   TestParseResult,
+  testParseWithStream,
 } from "mini-parse/test-util";
 import { WgslBundle } from "random_wgsl";
 import { link, LinkConfig } from "../Linker.js";
 import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
 import { Conditions } from "../Scope.js";
-import { mainTokens } from "../WESLTokens.js";
+import { WeslStream, WeslToken } from "../parse/WeslStream.js";
 
-export function testAppParse<T, N extends TagRecord = NoTags>(
-  parser: Parser<T, N>,
+export function testAppParse<T>(
+  parser: Parser<Stream<WeslToken>, T>,
   src: string,
-): TestParseResult<T, N, WeslAST> {
+): TestParseResult<T, WeslAST> {
   const appState = syntheticWeslParseState();
-  return testParse(parser, src, mainTokens, appState);
+  const stream = new WeslStream(src);
+  return testParseWithStream(parser, stream, appState);
 }
 
 /** Convenience wrapper to link wgsl for tests.
@@ -68,5 +69,5 @@ export function parseTest(src: string): WeslAST {
 
 /** test w/o any log collection, to not confuse debugging */
 export function parseTestRaw(src: string) {
-  return parseWESL(src, undefined, 500);
+  return parseWESL(src, undefined);
 }

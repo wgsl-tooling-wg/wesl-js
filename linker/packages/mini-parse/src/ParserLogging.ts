@@ -1,4 +1,4 @@
-import { ExtendedResult, ParserContext } from "./Parser.js";
+import { ParserContext } from "./Parser.js";
 import { parserLog, tracePos, tracing } from "./ParserTracing.js";
 import { SrcMap } from "./SrcMap.js";
 import { log } from "./WrappedLog.js";
@@ -15,6 +15,10 @@ export function srcLog(
   logInternal(log, src, pos, ...msgs);
 }
 
+export function quotedText(text?: string): string {
+  return text ? `'${text.replace(/\n/g, "\\n")}'` : "";
+}
+
 /** log a message along with src line, but only if tracing is active in the current parser */
 export function srcTrace(
   src: string | SrcMap,
@@ -24,17 +28,9 @@ export function srcTrace(
   logInternal(parserLog, src, pos, ...msgs);
 }
 
-export function resultLog(
-  result: ExtendedResult<any, any>,
-  ...msgs: any[]
-): void {
-  const { src, srcMap, start, end } = result;
-  srcLog(srcMap ?? src, [start, end - 1], ...msgs);
-}
-
 export function ctxLog(ctx: ParserContext, ...msgs: any[]): void {
-  const src = ctx.srcMap ?? ctx.lexer.src;
-  srcLog(src, ctx.lexer.position(), ...msgs);
+  const src = ctx.stream.src;
+  srcLog(src, ctx.stream.checkpoint(), ...msgs);
 }
 
 /**

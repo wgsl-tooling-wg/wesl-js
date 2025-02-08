@@ -1,4 +1,4 @@
-import { ImportStatement } from "./ImportStatement.ts";
+import { ImportStatement } from "./parse/ImportStatement.ts";
 import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
 
 /**
@@ -13,14 +13,15 @@ import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
  */
 export type AbstractElem = GrammarElem | SyntheticElem;
 
-export type GrammarElem = ContainerElem | TerminalElem;
+export type GrammarElem = ContainerElem | ExpressionElem | TerminalElem;
 
 export type ContainerElem =
   | AliasElem
   | AttributeElem
   | ConstAssertElem
   | ConstElem
-  | ExpressionElem
+  | UnknownExpression
+  | SimpleMemberRef
   | FnElem
   | TypedDeclElem
   | GlobalVarElem
@@ -29,17 +30,23 @@ export type ContainerElem =
   | ModuleElem
   | OverrideElem
   | FnParamElem
-  | SimpleMemberRef
   | StructElem
   | StructMemberElem
   | StuffElem
   | TypeRefElem
   | VarElem;
 
-// prettier-ignore
-export type TerminalElem = 
-  | DeclIdentElem
-  | NameElem 
+/** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
+export type ExpressionElem = LiteralElem | RefIdentElem;
+/*| ParenthesizedExpression
+  | ComponentExpression
+  | UnaryExpression
+  | BinaryExpression
+  | FunctionCallExpression*/
+
+export type TerminalElem =
+  | DeclIdentElem //
+  | NameElem
   | RefIdentElem
   | TextElem;
 
@@ -72,6 +79,12 @@ export interface ElemWithContentsBase extends AbstractElemBase {
  */
 export interface TextElem extends AbstractElemBase {
   kind: "text";
+  srcModule: SrcModule;
+}
+
+/** A literal value in WESL source. A boolean or a number. */
+export interface LiteralElem extends AbstractElemBase {
+  kind: "literal";
   srcModule: SrcModule;
 }
 
@@ -138,10 +151,54 @@ export interface ConstElem extends ElemWithContentsBase {
   name: TypedDeclElem;
 }
 
-/** an expression (generally we don't need details of expressions, just their contained idents) */
-export interface ExpressionElem extends ElemWithContentsBase {
+export interface UnknownExpression extends ElemWithContentsBase {
   kind: "expression";
 }
+/*
+export interface ParenthesizedExpression extends AbstractElemBase {
+  kind: "parenthesized-expression";
+  contents: [ExpressionElem];
+}
+export interface ComponentExpression extends AbstractElemBase {
+  kind: "component-expression";
+  // To safely type this, don't use contents, but rather define your own props!
+  contents: [ExpressionElem, ExpressionElem];
+}
+// TODO: We will emit these very soon (for the @if(expr))
+export interface UnaryExpression extends AbstractElemBase {
+  kind: "unary-expression";
+  operator: UnaryOperator;
+  contents: [ExpressionElem];
+}
+export interface BinaryExpression extends AbstractElemBase {
+  kind: "binary-expression";
+  operator: BinaryOperator;
+  contents: [ExpressionElem, ExpressionElem];
+}
+export interface FunctionCallExpression extends AbstractElemBase {
+  kind: "call-expression";
+  contents: [ExpressionElem, ExpressionElem];
+}
+export type UnaryOperator = "!" | "&" | "*" | "-" | "~";
+export type BinaryOperator =
+  | "||"
+  | "&&"
+  | "+"
+  | "-"
+  | "*"
+  | "/"
+  | "%"
+  | "=="
+  | "!="
+  | "<"
+  | "<="
+  | ">"
+  | ">="
+  | "|"
+  | "&"
+  | "^"
+  | "<<"
+  | ">>";*/
 
 /** a function declaration */
 export interface FnElem extends ElemWithContentsBase {
@@ -218,12 +275,12 @@ export interface StructMemberElem extends ElemWithContentsBase {
   mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
 }
 
-export type TypeTemplateParameter = TypeRefElem | ExpressionElem | string;
+export type TypeTemplateParameter = TypeRefElem | ExpressionElem;
 
 /** a reference to a type, like 'f32', or 'MyStruct', or 'ptr<storage, array<f32>, read_only>'   */
 export interface TypeRefElem extends ElemWithContentsBase {
   kind: "type";
-  name: RefIdent | string;
+  name: RefIdent;
   templateParams?: TypeTemplateParameter[];
 }
 

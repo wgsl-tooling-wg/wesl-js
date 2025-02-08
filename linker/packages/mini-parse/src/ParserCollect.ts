@@ -1,16 +1,18 @@
 import { CombinatorArg, ResultFromArg } from "./CombinatorTypes.js";
-import { Lexer } from "./MatchingLexer.js";
 import {
   AppState,
-  NoTags,
   OptParserResult,
   parser,
   Parser,
   ParserContext,
-  TagRecord,
+  ParserStream,
   trackChildren,
 } from "./Parser.js";
 import { parserArg } from "./ParserCombinator.js";
+import { Stream, Token } from "./Stream.js";
+
+export type TagRecord = Record<string | symbol, any[] | undefined>;
+export type NoTags = Record<string | symbol, never>;
 
 /** an entry in the table of deferred functions for collect() and tag() */
 export interface CollectFnEntry<V> {
@@ -54,11 +56,11 @@ export interface CollectPair<V> {
  *
  * optionally tag the collection results
  * */
-export function collect<N extends TagRecord, T, V>(
-  p: Parser<T, N>,
+export function collect<I, T, V>(
+  p: Parser<I, T>,
   collectFn: CollectFn<V> | CollectPair<V>,
   ctag?: string,
-): Parser<T, N> {
+): Parser<I, T> {
   const origAfter: CollectFn<V> =
     (collectFn as CollectPair<V>).after ?? collectFn;
   const beforeFn = (collectFn as Partial<CollectPair<V>>).before;
@@ -78,12 +80,12 @@ export function collect<N extends TagRecord, T, V>(
 
   const collectParser = parser(
     `collect`,
-    (ctx: ParserContext): OptParserResult<T, N> => {
+    function _collect(ctx: ParserContext): OptParserResult<T> {
       // if (tracing && ctx._trace) {
       // const deepName = ctx._debugNames.join(" > ");
       // ctxLog(ctx, `collect ${deepName}`);
       // }
-      const origStart = ctx.lexer.position();
+      const origStart = ctx.stream.checkpoint();
       if (beforeFn) {
         queueCollectFn(ctx, origStart, beforeFn, `${debugName}.before`);
       }
@@ -91,19 +93,18 @@ export function collect<N extends TagRecord, T, V>(
       return runAndCollectAfter(p, ctx, afterFn, debugName);
     },
   );
-  collectParser._collection = true;
   trackChildren(collectParser, p);
   return collectParser;
 }
 
 export function tagScope<A extends CombinatorArg>(
   arg: A,
-): Parser<ResultFromArg<A>, NoTags> {
+): Parser<ParserStream, ResultFromArg<A>> {
   const p = parserArg(arg);
   const sp = parser(
     `tagScope`,
-    (ctx: ParserContext): OptParserResult<ResultFromArg<A>, any> => {
-      const origStart = ctx.lexer.position();
+    function _tagScope(ctx: ParserContext): OptParserResult<ResultFromArg<A>> {
+      const origStart = ctx.stream.checkpoint();
       let origTags: TagRecord;
       queueCollectFn(
         ctx,
@@ -138,34 +139,34 @@ function cloneTags(tags: TagRecord): TagRecord {
 
 /** tag most recent collect result with a name that can be
  * referenced in later collection. */
-export function ctag<N extends TagRecord, T>(
-  p: Parser<T, N>,
-  name: string,
-): Parser<T, N> {
-  const cp = parser(`ctag`, (ctx: ParserContext): OptParserResult<T, N> => {
-    return runAndCollectAfter(
-      p,
-      ctx,
-      (cc: CollectContext) => {
-        const valueEntry = last(cc._values);
-        addTagValue(cc.tags, name, valueEntry.value);
-      },
-      `ctag ${name}`,
-    );
-  });
+export function ctag<I, T>(p: Parser<I, T>, name: string): Parser<I, T> {
+  const cp = parser(
+    `ctag`,
+    function _ctag(ctx: ParserContext): OptParserResult<T> {
+      return runAndCollectAfter(
+        p,
+        ctx,
+        (cc: CollectContext) => {
+          const valueEntry = last(cc._values);
+          addTagValue(cc.tags, name, valueEntry.value);
+        },
+        `ctag ${name}`,
+      );
+    },
+  );
   trackChildren(cp, p);
   return cp;
 }
 
 /** run the parser and if it succeeds, queue a provided function to run
  * during commit() */
-function runAndCollectAfter<T, N extends TagRecord>(
-  p: Parser<T, N>,
+function runAndCollectAfter<I, T>(
+  p: Parser<I, T>,
   ctx: ParserContext,
   collectFn: CollectFn<any>,
   debugName: string = "",
-): OptParserResult<T, N> {
-  const origStart = ctx.lexer.position();
+): OptParserResult<T> {
+  const origStart = ctx.stream.checkpoint();
   const result = p._run(ctx);
   if (result) {
     queueCollectFn(ctx, origStart, collectFn, debugName);
@@ -173,13 +174,13 @@ function runAndCollectAfter<T, N extends TagRecord>(
   return result;
 }
 
-function queueCollectFn<T, N extends TagRecord>(
+function queueCollectFn<T>(
   ctx: ParserContext,
   origStart: number,
   collectFn: CollectFn<any>,
   debugName: string,
 ) {
-  const srcPosition = refinePosition(ctx.lexer, origStart);
+  const srcPosition = refinePosition(ctx.stream, origStart);
   ctx._collect.push({
     srcPosition,
     collectFn,
@@ -201,22 +202,22 @@ export function closeArray(cc: CollectContext): void {
 
 /** tag parse results results with a name that can be
  * referenced in later collection. */
-export function ptag<N extends TagRecord, T>(
-  p: Parser<T, N>,
-  name: string,
-): Parser<T, N> {
-  const cp = parser(`ptag`, (ctx: ParserContext): OptParserResult<T, N> => {
-    const origStart = ctx.lexer.position();
-    const result = p._run(ctx);
+export function ptag<I, T>(p: Parser<I, T>, name: string): Parser<I, T> {
+  const cp = parser(
+    `ptag`,
+    function _ptag(ctx: ParserContext): OptParserResult<T> {
+      const origStart = ctx.stream.checkpoint();
+      const result = p._run(ctx);
 
-    // tag the parser resuts
-    if (result) {
-      const tagFn = (ctx: CollectContext) =>
-        addTagValue(ctx.tags, name, result.value);
-      queueCollectFn(ctx, origStart, tagFn, `ptag ${name}`);
-    }
-    return result;
-  });
+      // tag the parser resuts
+      if (result) {
+        const tagFn = (ctx: CollectContext) =>
+          addTagValue(ctx.tags, name, result.value);
+        queueCollectFn(ctx, origStart, tagFn, `ptag ${name}`);
+      }
+      return result;
+    },
+  );
   trackChildren(cp, p);
   return cp;
 }
@@ -234,10 +235,10 @@ function addTagValue(tags: TagRecord, name: string, value: any) {
 export function runCollection(
   _collect: CollectFnEntry<any>[],
   app: AppState<any, any>,
-  lexer: Lexer,
+  stream: Stream<Token>,
 ) {
   const tags: Record<string, any> = {};
-  const { src } = lexer;
+  const { src } = stream;
   const _values: CollectValue[] = [{ value: null, openArray: undefined }];
   // ctx._collect.forEach(entry => {
   //   dlog("collect-list", entry.debugName)
@@ -281,10 +282,24 @@ function last<T>(elems: T[]): T {
 /** We've succeeded in a parse, so refine the start position to skip past ws
  * (we don't consume ws earlier, in case an inner parser wants to use different ws skipping)
  */
-function refinePosition(lexer: Lexer, origStart: number): CollectPosition {
-  const end = lexer.position();
-  lexer.position(origStart);
-  const start = lexer.skipIgnored();
-  lexer.position(end);
+function refinePosition(
+  stream: Stream<Token>,
+  origStart: number,
+): CollectPosition {
+  const end = stream.checkpoint();
+  stream.reset(origStart);
+  const start = skipIgnored(stream);
+  stream.reset(end);
   return { start: start, end };
+}
+
+function skipIgnored(stream: Stream<Token>): number {
+  const result = stream.nextToken();
+  if (result === null) {
+    // Position of EOF
+    return stream.checkpoint();
+  } else {
+    stream.reset(result.span[0]);
+    return stream.checkpoint();
+  }
 }

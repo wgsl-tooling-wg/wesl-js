@@ -1,26 +1,25 @@
 import {
+  delimited,
   eof,
   fn,
   kind,
   opt,
   or,
   Parser,
-  preParse,
+  preceded,
   repeat,
   repeatPlus,
   req,
   seq,
-  setTraceName,
   tagScope,
   text,
-  tokens,
-  tokenSkipSet,
   tracing,
   withSep,
   withSepPlus,
+  Stream,
+  collectArray,
 } from "mini-parse";
-import { comment } from "./CommentsGrammar.ts";
-import { weslImport } from "./ImportGrammar.ts";
+import { weslImports } from "./parse/ImportGrammar.ts";
 import {
   aliasCollect,
   collectAttribute,
@@ -41,13 +40,12 @@ import {
   typedDecl,
   typeRefCollect,
 } from "./WESLCollect.ts";
-import { bracketTokens, mainTokens } from "./WESLTokens.ts";
+import { mainTokens } from "./WESLTokens.ts";
+import { templateClose, templateOpen, WeslToken } from "./parse/WeslStream.ts";
 
-/** parser that recognizes key parts of WGSL and also directives like #import */
+export const word = kind(mainTokens.ident);
 
-export const word = or(kind(mainTokens.ident), kind(mainTokens.textureStorage));
-
-const qualified_ident = withSepPlus("::", word); // TODO make this a lexer rule?
+const qualified_ident = withSepPlus("::", word);
 
 const diagnostic_rule_name = withSep(".", word, { requireOne: true });
 const diagnostic_control = seq(
@@ -147,33 +145,8 @@ const std_type_specifier = seq(
 )                                   .collect(typeRefCollect);
 
 // prettier-ignore
-// none of the elements of a texture_storage type generator are bindable idents
-// e.g. texture_storage_2d<rgba8unorm, write>
-const texture_storage_type = tagScope(
-  seq(
-    kind(mainTokens.textureStorage)   .ptag("typeRefName"),
-    () => opt_template_words,
-  )                                   .collect(typeRefCollect),
-);
-
-// the first and optional third elements of a ptr template are not bindable idents:
-// e.g. ptr<storage, MyStruct, read>
-// prettier-ignore
-const ptr_type = tagScope(
-  seq(
-    text("ptr")                     .ptag("typeRefName"),
-    req("<"),
-    word                            .ptag("templateParam"),
-    req(","),
-    () => template_parameter,
-    opt(seq(",", word               .ptag("templateParam"))),
-    req(">"),
-  )                                 .collect(typeRefCollect),
-)
-
-// prettier-ignore
-export const type_specifier: Parser<any> = tagScope(
-  or(texture_storage_type, ptr_type, std_type_specifier),
+export const type_specifier: Parser<Stream<WeslToken>,any> = tagScope(
+   std_type_specifier,
 )                                   .ctag("typeRefElem");
 
 // prettier-ignore
@@ -237,7 +210,7 @@ const local_variable_decl = seq(
 // prettier-ignore
 const global_variable_decl = seq(
   "var",
-  () => opt_template_words,
+  () => opt_template_list,
   req_optionally_typed_ident,
                                       // TODO shouldn't decl_scope include the ident type?
   opt(seq("=", () => expression       .collect(scopeCollect(), "decl_scope"))),
@@ -246,9 +219,9 @@ const global_variable_decl = seq(
 /** Aka template_elaborated_ident.post.ident */
 const opt_template_list = opt(
   seq(
-    tokens(bracketTokens, "<"),
+    templateOpen,
     withSepPlus(",", () => template_parameter),
-    tokens(bracketTokens, ">"),
+    templateClose,
   ),
 );
 
@@ -256,9 +229,9 @@ const opt_template_list = opt(
 // prettier-ignore
 const opt_template_words = opt(
   seq(
-    tokens(bracketTokens, "<"),
+    templateOpen,
     withSepPlus(",", qualified_ident        .ptag("templateParam")),
-    tokens(bracketTokens, ">"),
+    templateClose
   ),
 );
 
@@ -285,14 +258,14 @@ const primary_expression = or(
   template_elaborated_ident,
 );
 
-// prettier-ignore
 const component_or_swizzle = repeatPlus(
   or(
-    seq(".", word),
-    seq("[", () => expression, req("]")),
+    preceded(".", word),
+    collectArray(delimited("[", () => expression, req("]"))),
   ),
 );
 
+// TODO: Remove
 // prettier-ignore
 /** parse simple struct.member style references specially, for binding struct lowering */
 const simple_component_reference = tagScope(
@@ -320,16 +293,12 @@ const makeExpressionOperator = (isTemplate: boolean) => {
   return or(...allowedOps);
 };
 
-// prettier-ignore
-const unary_expression: Parser<any> = or(
+const unary_expression: Parser<Stream<WeslToken>, any> = or(
   seq(or(..."! & * - ~".split(" ")), () => unary_expression),
   or(
     simple_component_reference,
-    seq(
-      primary_expression,  
-      opt(component_or_swizzle)
-    ),
-  )
+    seq(primary_expression, opt(component_or_swizzle)),
+  ),
 );
 
 const makeExpression = (isTemplate: boolean) => {
@@ -346,6 +315,7 @@ const template_arg_expression = makeExpression(true);
  * that are types like array<f32> vs. expressions like 1+2 */
 // prettier-ignore
 const template_parameter = or(
+  // TODO: Remove this, it's wrong
   type_specifier                    .ctag("templateParam"),
   template_arg_expression           .collect(expressionCollect, "templateParam"),
 );
@@ -443,7 +413,7 @@ const while_statement = seq(
   compound_statement,
 );
 
-const statement: Parser<any> = or(
+const statement: Parser<Stream<WeslToken>, any> = or(
   for_statement,
   if_statement,
   loop_statement,
@@ -462,7 +432,7 @@ const statement: Parser<any> = or(
 );
 
 // prettier-ignore
-const lhs_expression: Parser<any> = or(
+const lhs_expression: Parser<Stream<WeslToken>,any> = or(
   simple_component_reference,
   seq(
     qualified_ident                        .collect(refIdent), 
@@ -497,7 +467,7 @@ const variable_or_value_statement = tagScope(
 const variable_updating_statement = or(
   seq(
     lhs_expression,
-    or("=", "<<=", ">>=", "%=", "&=", "*=", "+=", "-=", "/=", "^=", "|="), // TODO: try making this a lexer rule instead of a parser rule
+    or("=", "<<=", ">>=", "%=", "&=", "*=", "+=", "-=", "/=", "^=", "|="),
     expression,
   ),
   seq(lhs_expression, or("++", "--")),
@@ -555,8 +525,6 @@ const const_assert =
   )                                   .collect(collectSimpleElem("assert"),
 );
 
-const import_statement = weslImport;
-
 const global_directive = seq(
   or(
     seq("diagnostic", diagnostic_control),
@@ -567,6 +535,7 @@ const global_directive = seq(
 );
 
 // prettier-ignore
+// TODO: Hoist out the "opt_attributes"
 export const global_decl = tagScope(
   or(
     fn_decl,
@@ -582,21 +551,16 @@ export const global_decl = tagScope(
   ),
 );
 
-const end = tokenSkipSet(null, seq(repeat(kind(mainTokens.ws)), eof()));
-
 // prettier-ignore
-export const weslRoot = preParse(
-  comment,
-  seq(
-    repeat(weslImport),
+export const weslRoot = seq(
+    weslImports,
     repeat(global_directive),
     repeat(global_decl),
-    req(end),
-  )                                 .collect(collectModule, "collectModule"),
-);
+    req(eof()),
+  )                                 .collect(collectModule, "collectModule");
 
 if (tracing) {
-  const names: Record<string, Parser<unknown>> = {
+  const names: Record<string, Parser<Stream<WeslToken>, unknown>> = {
     qualified_ident,
     diagnostic_rule_name,
     diagnostic_control,
@@ -643,14 +607,12 @@ if (tracing) {
     global_value_decl,
     global_alias,
     const_assert,
-    import_statement,
     global_directive,
     global_decl,
-    end,
     weslRoot,
   };
 
   Object.entries(names).forEach(([name, parser]) => {
-    setTraceName(parser, name);
+    parser.setTraceName(name);
   });
 }

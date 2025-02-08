@@ -3,7 +3,7 @@ import {
   ImportItem,
   ImportSegment,
   ImportStatement,
-} from "./ImportStatement.js";
+} from "./parse/ImportStatement.js";
 
 export interface FlatImport {
   importPath: string[];

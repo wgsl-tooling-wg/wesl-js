@@ -25,6 +25,8 @@ import {
   TextElem,
   TypedDeclElem,
   TypeRefElem,
+  TypeTemplateParameter,
+  UnknownExpression,
   VarElem,
 } from "./AbstractElems.ts";
 import {
@@ -35,14 +37,13 @@ import {
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "./Scope.ts";
 
-export const importElem = collectElem(
-  "import",
-  (cc: CollectContext, openElem: PartElem<ImportElem>) => {
-    const importElem = cc.tags.owo?.[0] as ImportElem; // LATER ts typing
+export function importElem(cc: CollectContext) {
+  const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing
+  for (const importElem of importElems) {
     (cc.app.stable as StableState).imports.push(importElem.imports);
-    return importElem;
-  },
-);
+    addToOpenElem(cc, importElem as AbstractElem);
+  }
+}
 
 /** add an elem to the .contents array of the currently containing element */
 function addToOpenElem(cc: CollectContext, elem: AbstractElem): void {
@@ -271,21 +272,29 @@ export const collectAttribute = collectElem(
 
 export const typeRefCollect = collectElem(
   "type",
+  // @ts-ignore
   (cc: CollectContext, openElem: PartElem<TypeRefElem>) => {
-    const templateParams = cc.tags.templateParam?.flat(3);
+    let templateParamsTemp: any[] | undefined = cc.tags.templateParam?.flat(3);
+
     const typeRef = cc.tags.typeRefName?.[0] as string | RefIdentElem;
     const name = typeof typeRef === "string" ? typeRef : typeRef.ident;
-    const partElem = { ...openElem, name, templateParams };
+    const partElem = {
+      ...openElem,
+      name,
+      templateParams: templateParamsTemp as any[],
+    };
     // dlog("typeRefCollect", { tags: [...Object.keys(cc.tags)] });
     // collectLog(cc, "typeRefCollect", elemToString(partElem));
     // dlog({ typeRefCollect: elemToString(partElem) });
+    // @ts-ignore
     return withTextCover(partElem, cc);
   },
 );
 
+// TODO: This creates useless unknown-expression elements
 export const expressionCollect = collectElem(
   "expression",
-  (cc: CollectContext, openElem: PartElem<ExpressionElem>) => {
+  (cc: CollectContext, openElem: PartElem<UnknownExpression>) => {
     const partElem = { ...openElem };
     return withTextCover(partElem, cc);
   },
@@ -404,12 +413,14 @@ function coverWithText(cc: CollectContext, elem: ContainerElem): GrammarElem[] {
   const { contents, end } = elem;
   const sorted = (contents as GrammarElem[]).sort((a, b) => a.start - b.start);
 
-  const elems = sorted.flatMap(elem => {
-    const result = pos < elem.start ? [makeTextElem(elem.start), elem] : [elem];
+  const elems: GrammarElem[] = [];
+  for (const elem of sorted) {
+    if (pos < elem.start) {
+      elems.push(makeTextElem(elem.start));
+    }
+    elems.push(elem);
     pos = elem.end;
-    return result;
-  });
-
+  }
   if (pos < end) {
     elems.push(makeTextElem(end));
   }

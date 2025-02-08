@@ -12,10 +12,12 @@ import { RefIdent } from "./Scope.ts";
 import {
   multisampledTextureTypes,
   sampledTextureTypes,
+  textureStorageTypes,
 } from "./StandardTypes.ts";
-import { textureStorage } from "./WESLTokens.ts";
+import { assertThat } from "./Assertions.ts";
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
+export const textureStorage = matchOneOf(textureStorageTypes);
 
 export function reportBindingStructsPlugin(
   fn: BindingStructReportFn,
@@ -166,27 +168,45 @@ function layoutEntry(member: StructMemberElem): string {
       externalTextureLayoutEntry(typeRef);
   }
   if (!entry) {
-    console.error(`unhandled type: ${typeName}`);
+    console.error(`unhandled type`, typeName);
     entry = `{ }`;
   }
   return entry;
 }
 
 function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
-  const { name: typeName } = typeRef;
-  if (typeName === "ptr") {
+  if (typeRef.name.originalName === "ptr") {
     const param1 = typeRef.templateParams?.[0];
     const param3 = typeRef.templateParams?.[2];
-    if (param1 === "uniform") {
+    if (param1?.kind === "ref" && param1.ident.originalName === "uniform") {
       return `buffer: { type: "uniform" }`;
-    } else if (param1 === "storage") {
-      if (param3 === "read") {
+    } else if (
+      param1?.kind === "ref" &&
+      param1.ident.originalName === "storage"
+    ) {
+      if (param3?.kind === "ref" && param3.ident.originalName === "read") {
         return `buffer: { type: "read-only-storage" }`;
       } else {
         return `buffer: { type: "storage" }`;
       }
       // TODO what do we do with the element type (2nd parameter)
       // TODO should there be an ability to set hasDynamicOffset?
+    }
+    // TODO: Remove these (temporary hack)
+    else if (
+      param1?.kind === "type" &&
+      param1.name.originalName === "uniform"
+    ) {
+      return `buffer: { type: "uniform" }`;
+    } else if (
+      param1?.kind === "type" &&
+      param1.name.originalName === "storage"
+    ) {
+      if (param3?.kind === "type" && param3.name.originalName === "read") {
+        return `buffer: { type: "read-only-storage" }`;
+      } else {
+        return `buffer: { type: "storage" }`;
+      }
     }
   }
 }
@@ -227,15 +247,16 @@ function textureLayoutEntry(typeRef: TypeRefElem): string | undefined {
 }
 
 function storageTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
-  const name = typeRef.name;
-  if (typeof name === "string" && textureStorage.test(name)) {
-    const firstParam = typeRef.templateParams?.[0] as string;
-    const secondParam = typeRef.templateParams?.[1] as string;
+  if (textureStorage.test(typeRef.name.originalName)) {
+    const firstParam = typeRef.templateParams?.[0];
+    const secondParam = typeRef.templateParams?.[1];
+    assertThat(firstParam?.kind === "type"); // TODO: Temp hack
+    assertThat(secondParam?.kind === "type"); // TODO: Temp hack
     const sampleType = formatToTextureSampleType(
-      firstParam as GPUTextureFormat,
+      firstParam.name.originalName as GPUTextureFormat,
     );
-    const access = accessMode(secondParam);
-    return `storageTexture: { format: "${firstParam}", sampleType: "${sampleType}", access: "${access}" }`;
+    const access = accessMode(secondParam.name.originalName);
+    return `storageTexture: { format: "${firstParam.name.originalName}", sampleType: "${sampleType}", access: "${access}" }`;
   }
   return undefined;
 }
@@ -249,6 +270,7 @@ function externalTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
 }
 
 function paramText(expression: ExpressionElem): string {
+  // @ts-ignore
   const text = expression.contents[0] as TextElem;
   return text.srcModule.src.slice(expression.start, expression.end);
 }

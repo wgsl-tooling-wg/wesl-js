@@ -1,24 +1,31 @@
 import {
   AppState,
   enableTracing,
-  matchingLexer,
+  MatchersStream,
   matchOneOf,
-  NoTags,
   OptParserResult,
   Parser,
-  TagRecord,
-  TokenMatcher,
-  tokenMatcher,
+  RegexMatchers,
+  Stream,
+  Token,
   tracing,
   withLogger,
 } from "mini-parse";
 import { expect } from "vitest";
 import { logCatch } from "./LogCatcher.js";
+import { FilterStream } from "../stream/FilterStream.js";
 
 const symbolSet =
   "& && -> @ / ! [ ] { } : , = == != > >= < << <= % - -- ' \"" +
   ". + ++ | || ( ) ; * ~ ^ // /* */ += -= *= /= %= &= |= ^= >>= <<= <<";
-export const testTokens = tokenMatcher({
+export type TestMatcherKind =
+  | "directive"
+  | "word"
+  | "attr"
+  | "symbol"
+  | "digits"
+  | "ws";
+export const testMatcher = new RegexMatchers<TestMatcherKind>({
   directive: /#[a-zA-Z_]\w*/,
   word: /[a-zA-Z_]\w*/,
   attr: /@[a-zA-Z_]\w*/,
@@ -27,22 +34,34 @@ export const testTokens = tokenMatcher({
   ws: /\s+/,
 });
 
-export interface TestParseResult<T, N extends TagRecord = NoTags, S = any> {
-  parsed: OptParserResult<T, N>;
+export interface TestParseResult<T, S = any> {
+  parsed: OptParserResult<T>;
   position: number;
   stable: S;
 }
 
 /** utility for testing parsers */
-export function testParse<T, N extends TagRecord = NoTags, C = any, S = any>(
-  p: Parser<T, N>,
+export function testParse<T, C = any, S = any>(
+  p: Parser<Stream<Token>, T>,
   src: string,
-  tokenMatcher: TokenMatcher = testTokens,
+  tokenMatcher: RegexMatchers<string> = testMatcher,
   appState: AppState<C, S> = { context: {} as C, stable: [] as S },
-): TestParseResult<T, N, S> {
-  const lexer = matchingLexer(src, tokenMatcher);
-  const parsed = p.parse({ lexer, appState: appState, maxParseCount: 1000 });
-  return { parsed, position: lexer.position(), stable: appState.stable };
+): TestParseResult<T, S> {
+  const stream = new FilterStream(
+    new MatchersStream(src, tokenMatcher),
+    t => t.kind !== "ws",
+  );
+  const parsed = p.parse({ stream, appState });
+  return { parsed, position: stream.checkpoint(), stable: appState.stable };
+}
+
+export function testParseWithStream<T, C = any, S = any>(
+  p: Parser<Stream<Token>, T>,
+  stream: Stream<Token>,
+  appState: AppState<C, S> = { context: {} as C, stable: [] as S },
+): TestParseResult<T, S> {
+  const parsed = p.parse({ stream, appState: appState });
+  return { parsed, position: stream.checkpoint(), stable: appState.stable };
 }
 
 /** run a test function and expect that no error logs are produced */

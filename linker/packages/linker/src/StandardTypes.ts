@@ -1,3 +1,5 @@
+// From https://www.w3.org/TR/WGSL/#predeclared
+
 export const stdFns = `bitcast all any select arrayLength 
   abs acos acosh asin asinh atan atanh atan2 ceil clamp cos cosh 
   countLeadingZeros countOneBits countTrailingZeros cross 
@@ -22,6 +24,9 @@ export const stdFns = `bitcast all any select arrayLength
   unpack2x16snorm unpack2x16unorm unpack2x16float
   storageBarrier textureBarrier workgroupBarrier workgroupUniformLoad
   `.split(/\s+/);
+
+// TODO: Add subgroup functions
+// TODO: Add quad operations
 
 export const sampledTextureTypes = `
   texture_1d texture_2d texture_2d_array texture_3d 
@@ -61,6 +66,15 @@ export const stdTypes = `array atomic bool f16 f32 i32
   function uniform
   `.split(/\s+/); // LATER handle 'function' in template parser?
 
+/** https://www.w3.org/TR/WGSL/#predeclared-enumerants  */
+export const stdEnumerants = `read write read_write 
+  function private workgroup uniform storage
+  rgba8unorm rgba8snorm rgba8uint rgba8sint 
+  rgba16uint rgba16sint rgba16float 
+  r32uint r32sint r32float rg32uint rg32sint rg32float
+  rgba32uint rgba32sint rgba32float bgra8unorm
+  `.split(/\s+/);
+
 /* Note the texel formats like rgba8unorm are here because they appear in type position
  in <templates> for texture_storage_* types. 
  (We could parse texture_storage types specially, but user code is unlikely to alias 
@@ -75,4 +89,9 @@ export function stdType(name: string): boolean {
 /** return true if the name is for a built in fn (not a user function) */
 export function stdFn(name: string): boolean {
   return stdFns.includes(name) || stdType(name);
+}
+
+/** return true if the name is for a built in enumerant */
+export function stdEnumerant(name: string): boolean {
+  return stdEnumerants.includes(name);
 }

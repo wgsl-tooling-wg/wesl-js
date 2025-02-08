@@ -2,6 +2,7 @@ import { SrcMapBuilder, tracing } from "mini-parse";
 import {
   AbstractElem,
   DeclIdentElem,
+  LiteralElem,
   NameElem,
   RefIdentElem,
   SyntheticElem,
@@ -10,6 +11,7 @@ import {
 import { isGlobal } from "./BindIdents.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, Ident } from "./Scope.ts";
+import { assertUnreachable } from "./Assertions.ts";
 
 /** passed to the emitters */
 interface EmitContext {
@@ -48,6 +50,8 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     // terminal elements copy strings to the output
     case "text":
       return emitText(e, ctx);
+    case "literal":
+      return emitLiteral(e, ctx);
     case "name":
       return emitName(e, ctx);
     case "synthetic":
@@ -88,13 +92,14 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
       return emitContents(e, ctx);
 
     default:
-      const kind = (e as any).kind;
-      console.log("NYI for emit, elem kind:", kind);
-      throw new Error(`NYI emit elem kind: ${kind}`);
+      assertUnreachable(e);
   }
 }
 
 export function emitText(e: TextElem, ctx: EmitContext): void {
+  ctx.srcBuilder.addCopy(e.srcModule.src, e.start, e.end);
+}
+export function emitLiteral(e: LiteralElem, ctx: EmitContext): void {
   ctx.srcBuilder.addCopy(e.srcModule.src, e.start, e.end);
 }
 

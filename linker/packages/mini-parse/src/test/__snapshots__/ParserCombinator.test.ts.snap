@@ -6,6 +6,10 @@ exports[`not() success 1`] = `
     true,
     {
       "kind": "word",
+      "span": [
+        0,
+        3,
+      ],
       "text": "foo",
     },
   ],
@@ -13,6 +17,10 @@ exports[`not() success 1`] = `
     true,
     {
       "kind": "word",
+      "span": [
+        4,
+        7,
+      ],
       "text": "bar",
     },
   ],
@@ -21,9 +29,8 @@ exports[`not() success 1`] = `
 
 exports[`opt() makes failing match ok 1`] = `
 {
-  "tags": {},
   "value": [
-    undefined,
+    null,
     "foo",
   ],
 }
@@ -31,7 +38,6 @@ exports[`opt() makes failing match ok 1`] = `
 
 exports[`seq() handles two element match 1`] = `
 {
-  "tags": {},
   "value": [
     "#import",
     "foo",
@@ -42,17 +48,13 @@ exports[`seq() handles two element match 1`] = `
 exports[`tracing 1`] = `
 "..repeat
   ..wordz
-    ..seq
-      : 'a' (word)
-      a   Ln 1
-      ^
-      ✓ kind 'word'
-    ✓ seq
+    : 'a' (word)
+    a   Ln 1
+    ^
+    ✓ kind 'word'
   ✓ wordz
   ..wordz
-    ..seq
-      x kind 'word'
-    x seq
+    x kind 'word'
   x wordz
 ✓ repeat"
 `;

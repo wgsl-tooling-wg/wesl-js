@@ -7,7 +7,7 @@ test("print grammar", () => {
   const s = seq("a", "b", () => p);
   const result = parserToString(s);
   expect(result).toMatchInlineSnapshot(`
-    "collect
+    "seq
       'a'
       'b'
       fn()

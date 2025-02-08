@@ -5,7 +5,9 @@ import {
   ModuleElem,
   TypeRefElem,
   TypeTemplateParameter,
+  UnknownExpression,
 } from "../AbstractElems.ts";
+import { assertUnreachable } from "../Assertions.ts";
 import { importToString } from "./ImportToString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 
@@ -277,16 +279,22 @@ function addExpressionFields(
 }
 
 function expressionToString(elem: ExpressionElem): string {
-  const contents = elem.contents
-    .map(e => {
-      if (e.kind === "text") {
-        return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
-      } else {
-        return elemToString(e);
-      }
-    })
-    .join(" ");
-  return contents;
+  // TODO: Temp hack while I clean up the expression parsing
+  if ("contents" in elem) {
+    // @ts-ignore
+    const contents = elem.contents
+      // @ts-ignore
+      .map(e => {
+        if (e.kind === "text") {
+          return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
+        } else {
+          return elemToString(e);
+        }
+      })
+      .join(" ");
+    return contents;
+  }
+  return elemToString(elem);
 }
 
 function templateParamToString(p: TypeTemplateParameter): string {
@@ -294,6 +302,10 @@ function templateParamToString(p: TypeTemplateParameter): string {
     return p;
   } else if (p.kind === "type") {
     return typeRefElemToString(p);
+  } else if (p.kind === "literal" || p.kind === "ref") {
+    return expressionToString(p);
+    // TODO: Temp hack while I clean up the expression parsing
+    // @ts-ignore
   } else if (p.kind === "expression") {
     return expressionToString(p);
   } else {

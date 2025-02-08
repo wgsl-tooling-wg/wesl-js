@@ -1,46 +1,9 @@
 import { expectNoLog } from "mini-parse/test-util";
 
 import { expect, test } from "vitest";
-import { blockComment, lineComment } from "../CommentsGrammar.js";
 import { astToString } from "../debug/ASTtoString.js";
 import { parseWESL } from "../ParseWESL.js";
 import { testAppParse } from "./TestUtil.js";
-
-test("lineComment parse // foo bar", () => {
-  const src = "// foo bar";
-  const { position } = testAppParse(lineComment, src);
-  expect(position).toBe(src.length);
-});
-
-test("lineComment parse // foo bar \\n", () => {
-  const src = "// foo bar\n";
-  const { position } = testAppParse(lineComment, src);
-  expect(position).toBe(src.length);
-});
-
-test("blockComment parses /* comment */", () => {
-  const src = "/* comment */";
-  expectNoLog(() => {
-    const { parsed } = testAppParse(blockComment, src);
-    expect(parsed?.value).toMatchInlineSnapshot(`
-      [
-        "/*",
-        [
-          {
-            "kind": "ident",
-            "text": "comment",
-          },
-        ],
-        "*/",
-      ]
-    `);
-  });
-});
-
-test("skipBlockComment parses nested comment", () => {
-  const src = "/** comment1 /* comment2 */ */";
-  expectNoLog(() => testAppParse(blockComment, src));
-});
 
 test("parse fn with line comment", () => {
   const src = `

@@ -1,4 +1,5 @@
-import { Parser, ParserContext, setTraceName } from "./Parser.js";
+import { assertThat } from "./Assertions.js";
+import { AnyParser, Parser, ParserContext, ParserTraceInfo } from "./Parser.js";
 import { log } from "./WrappedLog.js";
 
 /** true if parser tracing is enabled */
@@ -16,7 +17,10 @@ const noLog: typeof console.log = () => {};
 /** logger while tracing is active, otherwise noop */
 export let parserLog: typeof console.log = noLog;
 
-/** enable tracing of parser activity via .trace() */
+/**
+ * enable tracing of parser activity via .trace()
+ * Make sure to enable tracing *before* the creation of parsers
+ */
 export function enableTracing(enable = true): void {
   tracing = enable;
   debugNames = enable;
@@ -28,10 +32,10 @@ export function enableTracePos(enable = true): void {
 }
 
 /** mutate the provided to set their trace names (if tracing is enabled) */
-export function setTraceNames(parsers: Record<string, Parser<any, any>>): void {
+export function setTraceNames(parsers: Record<string, AnyParser>): void {
   if (tracing) {
     Object.entries(parsers).forEach(([name, parser]) => {
-      setTraceName(parser, name);
+      parser.setTraceName(name);
     });
   }
 }
@@ -65,38 +69,23 @@ export interface TraceLogging {
   tstate: ParserContext;
 }
 
-type TraceLoggingFn<T> = (
-  ctx: any,
-  trace: TraceOptions | undefined,
-  fn: (ctx: ParserContext) => T,
-) => T;
-
-export const withTraceLogging = <T>(): TraceLoggingFn<T> =>
-  tracing ? withTraceLoggingInternal : stubTraceLogging;
-
-function stubTraceLogging<T>(
-  ctx: any,
-  trace: TraceOptions | undefined,
-  fn: (ctx: ParserContext) => T,
-): T {
-  return fn(ctx);
-}
-
 /** setup trace logging inside a parser stage */
-function withTraceLoggingInternal<T>(
+export function withTraceLogging<T>(
   // _trace has trace settings from parent
   ctx: ParserContext,
   // trace has trace options set on this stage
-  trace: TraceOptions | undefined,
+  traceInfo: ParserTraceInfo | undefined,
   fn: (ctxWithTracing: ParserContext) => T,
 ): T {
+  assertThat(tracing, "This function may only be called if tracing is enabled");
   let { _trace } = ctx;
+  const trace = traceInfo?.traceEnabled;
 
   // log if we're starting or inheriting a trace and we're inside requested position range
   let logging: boolean = (!!_trace || !!trace) && !trace?.hide;
   if (logging) {
     const { start = 0, end = 1e20 } = { ..._trace, ...trace };
-    const pos = ctx.lexer.position();
+    const pos = ctx.stream.checkpoint();
     if (pos < start || pos > end) {
       logging = false;
     }

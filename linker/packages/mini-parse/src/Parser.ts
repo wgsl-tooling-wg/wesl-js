@@ -1,5 +1,5 @@
-import { CombinatorArg, ParserFromArg } from "./CombinatorTypes.js";
-import { IgnoreFn, Lexer } from "./MatchingLexer.js";
+import { assertThat } from "./Assertions.js";
+import { CombinatorArg } from "./CombinatorTypes.js";
 import {
   collect,
   CollectFn,
@@ -9,8 +9,7 @@ import {
   ptag,
   runCollection,
 } from "./ParserCollect.js";
-import { ParseError, parserArg } from "./ParserCombinator.js";
-import { srcLog } from "./ParserLogging.js";
+import { parserArg } from "./ParserCombinator.js";
 import {
   debugNames,
   parserLog,
@@ -19,8 +18,7 @@ import {
   tracing,
   withTraceLogging,
 } from "./ParserTracing.js";
-import { mergeTags } from "./ParserUtil.js";
-import { SrcMap } from "./SrcMap.js";
+import { Stream, Token, TypedToken } from "./Stream.js";
 
 export interface AppState<C, S> {
   /**
@@ -36,38 +34,21 @@ export interface AppState<C, S> {
 
 export interface ParserInit<C = any, S = any> {
   /** supply tokens to the parser*/
-  lexer: Lexer;
+  stream: Stream<Token>;
 
   /** application specific context and result storage, shared with every parser */
   appState?: AppState<C, S>;
-
-  /** set this to avoid infinite looping by failing after more than this many parsing steps */
-  maxParseCount?: number;
-
-  /** if this text was preprocessed */
-  srcMap?: SrcMap;
 }
 
+// TODO: Try merging this into the stream
 /* Information passed to the parsers during parsing */
 export interface ParserContext<C = any, S = any> {
-  lexer: Lexer;
+  stream: Stream<Token>;
 
   app: AppState<C, S>;
 
-  maxParseCount?: number;
-
   /** during execution, debug trace logging */
   _trace?: TraceContext;
-
-  /** during execution, count parse attempts to avoid infinite looping */
-  _parseCount: number;
-
-  _preParse: Parser<unknown>[];
-
-  /** positions where the preparse has failed to match, so no need to retry */
-  _preCacheFails: Map<Parser<unknown>, Set<number>>;
-
-  srcMap?: SrcMap; // TODO can we remove this and just use the one in the lexer?
 
   /** current parser stack or parent parsers that called this one */
   _debugNames: string[];
@@ -75,53 +56,26 @@ export interface ParserContext<C = any, S = any> {
   _collect: CollectFnEntry<any>[];
 }
 
-export type TagRecord = Record<string | symbol, any[] | undefined>;
-export type NoTags = Record<string | symbol, never>;
-
 /** Result from a parser */
-export interface ParserResult<T, N extends TagRecord> {
+export interface ParserResult<T> {
   /** result from this stage */
   value: T;
-
-  /** tagged results from this stage and all child stages*/
-  tags: N;
 }
 
-export interface ExtendedResult<
-  T,
-  N extends TagRecord = NoTags,
-  C = any,
-  S = any,
-> extends ParserResult<T, N> {
-  src: string;
-  srcMap?: SrcMap;
-  start: number;
-  end: number;
+export interface ExtendedResult<T, C = any, S = any> extends ParserResult<T> {
   app: AppState<C, S>;
-  ctx: ParserContext<C, S>;
 }
 
 /** parsers return null if they don't match */
-// prettier-ignore
-export type OptParserResult<T, N extends TagRecord> = 
-    ParserResult<T, N> 
-  | null;
+export type OptParserResult<T> = ParserResult<T> | null;
 
 /** Internal parsing functions return a value and also a set of tagged results from contained parser  */
-type ParseFn<T, N extends TagRecord> = (
-  context: ParserContext,
-) => OptParserResult<T, N>;
+type ParseFn<T> = (context: ParserContext) => OptParserResult<T>;
 
 /** options for creating a core parser */
 export interface ParserArgs {
-  /** name to use for result in tagged results */
-  tag?: string | symbol;
-
   /** name to use for trace logging */
   traceName?: string;
-
-  /** use the debugName from this source parser for trace logging */
-  traceSrc?: Parser<any, any>;
 
   /** enable trace logging */
   trace?: TraceOptions;
@@ -130,155 +84,163 @@ export interface ParserArgs {
    * (to avoid intro log statement while tracing) */
   terminal?: boolean;
 
-  /** true if preparsing should be disabled in this parser (and its descendants) */
-  preDisabled?: true; // LATER just detect preParse combinator?, rather than a flag here..
-
-  /** true if this is a collect parser (which .tag handles specially, to tag collect time results) */
-  _collection?: true;
-
   /** set if the collection results are tagged */
-  _children?: Parser<any, any>[];
+  _children?: AnyParser[];
 }
 
-interface ConstructArgs<T, N extends TagRecord> extends ParserArgs {
-  fn: ParseFn<T, N>;
+interface ConstructArgs<T> extends ParserArgs {
+  fn: ParseFn<T>;
 }
 
 export type AnyParser = Parser<any, any>;
 
-/** a composable parsing element */
-export class Parser<T, N extends TagRecord = NoTags> {
-  _traceName: string | undefined;
-  traceSrc: Parser<any, any> | undefined;
-  tagName: string | symbol | undefined;
-  traceOptions: TraceOptions | undefined;
-  terminal: boolean | undefined;
-  preDisabled: true | undefined;
-  _collection: true | undefined;
-  _children: Parser<any, any>[] | undefined;
-  fn: ParseFn<T, N>;
+export class ParserTraceInfo {
+  constructor(
+    /** name to use for trace logging */
+    public traceName: string | undefined = undefined,
+    public traceChildren: AnyParser[] = [],
+    public traceEnabled: TraceOptions | undefined = undefined,
+  ) {}
+  /** true for elements without children like kind(), and text(),
+   * (to avoid intro log statement while tracing) */
+  traceIsTerminal: boolean = false;
+}
 
-  constructor(args: ConstructArgs<T, N>) {
-    this._traceName = args.traceName;
-    this.tagName = args.tag;
-    this.traceOptions = args.trace;
-    this.terminal = args.terminal;
-    this.traceSrc = args.traceSrc;
-    this.preDisabled = args.preDisabled;
-    this._collection = args._collection;
-    this._children = args._children;
+/** A parser with no requirements, a bottom type. */
+export type ParserStream = Stream<TypedToken<never>>;
+
+export class ParseError extends Error {
+  constructor(msg?: string) {
+    super(msg);
+  }
+}
+
+/**
+ * a composable parsing element
+ *
+ * I = input stream *requirements*. For example `seq(token("keyword"), token("word"), yes())` would
+ * - Require "keyword" to be a part of the token kinds
+ * - Require "word" to be a part of the token kinds
+ * - Not require anything for the yes() parser
+ * - Inherit the "keyword" requirement and the "word" requirement for the seq parser
+ *
+ * These requirements are then validated when `.parseNext()` is called
+ */
+export class Parser<I, T> {
+  /** If tracing is enabled, this exists. Otherwise it does not exist. */
+  _traceInfo?: ParserTraceInfo;
+  fn: ParseFn<T>;
+
+  constructor(args: ConstructArgs<T>) {
     this.fn = args.fn;
+    if (tracing) {
+      this._traceInfo = new ParserTraceInfo(
+        args.traceName,
+        args._children,
+        args.trace,
+      );
+      if (args.terminal) {
+        this._traceInfo.traceIsTerminal = true;
+      }
+    }
   }
 
-  /** copy this parser with slightly different settings */
-  _cloneWith(p: Partial<ConstructArgs<T, N>>): Parser<T, N> {
-    return new Parser({
-      traceName: this._traceName,
-      traceSrc: this.traceSrc,
-      tag: this.tagName,
-      trace: this.traceOptions,
-      terminal: this.terminal,
-      preDisabled: this.preDisabled,
-      _collection: this._collection,
-      _children: this._children,
-      fn: this.fn,
-      ...p,
-    });
-  }
-
-  /** run the parser given an already created parsing context */
-  _run(context: ParserContext): OptParserResult<T, N> {
-    return runParser(this, context);
-  }
-
-  /**
-   * tag results with a name,
+  /** run the parser given an already created parsing context
    *
-   * tagged results can be retrived with map(r => r.tags.myName)
-   * note that tagged results are collected into an array,
-   * multiple matches with the same name (even from different nested parsers) accumulate
+   * Execute a parser by running the core parsing fn given the parsing context
+   * also:
+   * . log if tracing is enabled
+   * . backtrack on failure
+   * . rollback context on failure
    */
-  tag<K extends string | symbol>(name: K): Parser<T, N & { [key in K]: T[] }> {
-    const p = this._cloneWith({
-      tag: name,
-      traceSrc: this,
-      traceName: undefined,
-    });
-    return p as Parser<T, N & { [key in K]: T[] }>;
+  _run(context: ParserContext): OptParserResult<T> {
+    if (tracing) {
+      return runParserWithTracing(
+        this.debugName,
+        this.fn,
+        context,
+        this._traceInfo,
+      );
+    } else {
+      const origAppContext = context.app.context;
+      const origCollectLength = context._collect.length;
+      const result = this.fn(context);
+      if (result === null) {
+        context.app.context = origAppContext;
+        context._collect.length = origCollectLength;
+      }
+
+      return result;
+    }
   }
 
   /** tag parse results */
-  ptag<K extends string>(name: K): Parser<T, N & { [key in K]: T[] }> {
-    return ptag(this, name) as Parser<T, N & { [key in K]: T[] }>;
+  ptag<K extends string>(name: K): Parser<I, T> {
+    return ptag(this, name) as Parser<I, T>;
   }
 
   /** tag collect results */
-  ctag<K extends string>(name: K): Parser<T, N & { [key in K]: T[] }> {
-    return ctag(this, name) as Parser<T, N & { [key in K]: T[] }>;
+  ctag<K extends string>(name: K): Parser<I, T> {
+    return ctag(this, name) as Parser<I, T>;
   }
 
   /** record a name for debug tracing */
-  traceName(name: string): Parser<T, N> {
-    return this._cloneWith({ traceName: name });
+  setTraceName(name: string): Parser<I, T> {
+    if (tracing) {
+      assertThat(this._traceInfo);
+      this._traceInfo.traceName = name;
+    }
+    return this;
   }
 
   /** trigger tracing for this parser (and by default also this parsers descendants) */
-  trace(opts: TraceOptions = {}): Parser<T, N> {
-    return this._cloneWith({ trace: opts });
+  setTrace(opts: TraceOptions = {}): Parser<I, T> {
+    if (tracing) {
+      assertThat(this._traceInfo);
+      this._traceInfo.traceEnabled = opts;
+    }
+    return this;
   }
 
   /** map results to a new value, or add to app state as a side effect.
    * Return null to cause the parser to fail.
    * SAFETY: Side-effects should not be done if backtracking could occur!
    */
-  map<U>(fn: ParserMapFn<T, N, U>): Parser<U, N> {
-    return map(this, fn);
+  mapExtended<U>(fn: ParserMapFn<T, U>): Parser<I, U> {
+    return mapExtended(this, fn);
   }
 
   /** map results to a new value.
-   * Return null to cause the parser to fail.
    */
-  mapValue<U>(fn: (value: T) => U | null): Parser<U, N> {
-    return map(this, v => fn(v.value));
+  map<U>(fn: (value: T) => U): Parser<I, U> {
+    return map(this, fn);
   }
 
   /** Queue a function that runs later, typically to collect AST elements from the parse.
    * when a commit() is parsed.
    * Collection functions are dropped with parser backtracking, so
    * only succsessful parses are collected. */
-  collect<U>(fn: CollectFn<U> | CollectPair<U>, ctag?: string): Parser<T, N> {
+  collect<U>(fn: CollectFn<U> | CollectPair<U>, ctag?: string): Parser<I, T> {
     return collect(this, fn, ctag);
   }
 
   /** switch next parser based on results */
-  toParser<U, V extends TagRecord>(
-    fn: ToParserFn<T, N, U, V>,
-  ): Parser<T | U, N & V> {
+  toParser<U>(fn: ToParserFn<I, T, U>): Parser<I, T | U> {
     return toParser(this, fn);
   }
 
   /** start parsing */
-  parse(init: ParserInit): OptParserResult<T, N> {
+  parse(init: ParserInit): OptParserResult<T> {
     try {
-      const {
-        lexer,
-        maxParseCount,
-        srcMap,
-        appState: app = { context: {}, stable: [] },
-      } = init;
+      const { stream, appState: app = { context: {}, stable: [] } } = init;
       const _collect: CollectFnEntry<any>[] = [];
       const result = this._run({
-        lexer,
+        stream,
         app,
-        srcMap,
-        _preParse: [],
-        _parseCount: 0,
-        _preCacheFails: new Map(),
-        maxParseCount,
         _collect,
         _debugNames: [],
       });
-      if (result) runCollection(_collect, app, lexer);
+      if (result) runCollection(_collect, app, stream);
       return result;
     } catch (e) {
       if (e instanceof ParseError) {
@@ -290,12 +252,10 @@ export class Parser<T, N extends TagRecord = NoTags> {
 
   /** name of this parser for debugging/tracing */
   get debugName(): string {
-    return (
-      this._traceName ??
-      this.traceSrc?._traceName ??
-      this.tagName?.toString() ??
-      "parser"
-    );
+    if (tracing) {
+      return this._traceInfo?.traceName ?? "parser";
+    }
+    return "parser";
   }
 }
 
@@ -303,182 +263,94 @@ export class Parser<T, N extends TagRecord = NoTags> {
  * @param fn the parser function
  * @param args static arguments provided by the user as the parser is constructed
  */
-export function parser<T, N extends TagRecord>(
+export function parser<I, T>(
   traceName: string,
-  fn: ParseFn<T, N>,
+  fn: ParseFn<T>,
   terminal?: boolean,
-): Parser<T, N> {
-  const terminalArg = terminal ? { terminal } : {};
-  return new Parser<T, N>({ fn, traceName, ...terminalArg });
+): Parser<I, T> {
+  return new Parser<I, T>({ fn, traceName, terminal: terminal });
 }
 
 /** Create a Parser from a function that parses and returns a value (w/no child parsers) */
 export function simpleParser<T>(
   traceName: string,
-  fn: (ctx: ParserContext) => T | null | undefined,
-): Parser<T, NoTags> {
-  const parserFn: ParseFn<T, NoTags> = (ctx: ParserContext) => {
-    const r = fn(ctx);
-    if (r == null || r === undefined) return null;
-
-    return { value: r, tags: {} };
-  };
-
+  parserFn: ParseFn<T>,
+): Parser<ParserStream, T> {
   return parser(traceName, parserFn, true);
 }
 
-/** modify the trace name of this parser */
-export function setTraceName(
-  parser: Parser<any, TagRecord>,
-  traceName: string,
-): void {
-  const origName = parser._traceName;
-  parser._traceName = `${traceName} (${origName})`;
-}
-
-/**
- * Execute a parser by running the core parsing fn given the parsing context
- * also:
- * . check for infinite loops
- * . log if tracing is enabled
- * . merge tagged results
- * . backtrack on failure
- * . rollback context on failure
- */
-function runParser<T, N extends TagRecord>(
-  p: Parser<T, N>,
+function runParserWithTracing<I, T>(
+  debugName: string,
+  fn: ParseFn<T>,
   context: ParserContext,
-): OptParserResult<T, N> {
-  const { lexer, _parseCount = 0, maxParseCount } = context;
-
-  // check for infinite looping
-  context._parseCount = _parseCount + 1;
-  // LATER counting tokens isn't so great to check for infinite looping. Possibly a count per parser per src position?
-  if (maxParseCount && _parseCount > maxParseCount) {
-    srcLog(lexer.src, lexer.position(), "infinite loop? ", p.debugName);
-    return null;
-  }
+  traceInfo: ParserTraceInfo | undefined,
+): OptParserResult<T> {
+  assertThat(tracing);
+  const { stream } = context;
 
   const origAppContext = context.app.context;
 
   // setup trace logging if enabled and active for this parser
-  const result = withTraceLogging<OptParserResult<T, N>>()(
+  const result = withTraceLogging<OptParserResult<T>>(
     context,
-    p.traceOptions,
+    traceInfo,
     runInContext,
   );
 
   return result;
 
-  function runInContext(ctx: ParserContext): OptParserResult<T, N> {
-    const origPosition = lexer.position();
+  function runInContext(ctx: ParserContext): OptParserResult<T> {
     const origCollectLength = ctx._collect.length;
 
-    if (debugNames) ctx._debugNames.push(p.debugName);
-    const traceSuccessOnly = ctx._trace?.successOnly;
-    if (!p.terminal && tracing && !traceSuccessOnly)
-      parserLog(`..${p.debugName}`);
-
-    const savePreParse = ctx._preParse;
-    if (!p.preDisabled) {
-      execPreParsers(ctx);
-    } else {
-      ctx._preParse = [];
+    if (debugNames) ctx._debugNames.push(debugName);
+    if (tracing) {
+      const traceSuccessOnly = ctx._trace?.successOnly;
+      if (!traceInfo?.traceIsTerminal && !traceSuccessOnly) {
+        parserLog(`..${debugName}`);
+      }
     }
 
     // run the parser function for this stage
-    let result = p.fn(ctx);
+    let result = fn(ctx);
 
     if (debugNames) ctx._debugNames.pop();
 
-    if (result === null || result === undefined) {
+    if (result === null) {
       // parser failed
-      if (tracing && !traceSuccessOnly) parserLog(`x ${p.debugName}`);
-      lexer.position(origPosition);
+      if (tracing) {
+        const traceSuccessOnly = ctx._trace?.successOnly;
+        if (!traceSuccessOnly) {
+          parserLog(`x ${debugName}`);
+        }
+      }
       context.app.context = origAppContext;
-      result = null;
-      // if (ctx._collect.length > origCollectLength) {
-      //   const obsolete = ctx._collect.slice(origCollectLength);
-      //   const collectNames = obsolete.map(c => c.debugName);
-      //   dlog("removing", { collectNames, inParser: p.debugName });
-      // }
       ctx._collect.length = origCollectLength;
     } else {
       // parser succeeded
-      if (tracing) parserLog(`✓ ${p.debugName}`);
-      const value = result.value;
-      let tags;
-      if (p.tagName && result.value !== undefined) {
-        // merge tagged result (if user set a name for this stage's result)
-        tags = mergeTags(result.tags, {
-          [p.tagName]: [result.value],
-        }) as N;
-      } else {
-        tags = result.tags;
-      }
-      result = { value, tags };
+      if (tracing) parserLog(`✓ ${debugName}`);
     }
-
-    ctx._preParse = savePreParse;
 
     return result;
   }
 }
 
-function execPreParsers(ctx: ParserContext): void {
-  const { _preParse, lexer } = ctx;
-
-  const ctxNoPre = { ...ctx, _preParse: [] };
-  _preParse.forEach(pre => {
-    const checkedCache = getPreParserCheckedCache(ctx, pre);
-
-    // exec each pre-parser until it fails
-    let position: number;
-    let preResult: OptParserResult<unknown, NoTags>;
-    do {
-      position = lexer.position();
-      if (checkedCache.has(position)) break;
-
-      preResult = pre._run(ctxNoPre);
-    } while (preResult !== null && preResult !== undefined);
-
-    checkedCache.add(position);
-    lexer.position(position); // reset position to end of last successful parse
-  });
-}
-
-/** get the cache of already checked positions for this pre-parser */
-function getPreParserCheckedCache(
-  ctx: ParserContext,
-  pre: Parser<unknown>,
-): Set<number> {
-  let cache = ctx._preCacheFails.get(pre);
-  if (!cache) {
-    cache = new Set();
-    ctx._preCacheFails.set(pre, cache);
-  }
-  return cache;
-}
-
-type ParserMapFn<T, N extends TagRecord, U> = (
-  results: ExtendedResult<T, N>,
-) => U | null;
+type ParserMapFn<T, U> = (results: ExtendedResult<T>) => U | null;
 
 /** return a parser that maps the current results */
-function map<T, N extends TagRecord, U>(
-  p: Parser<T, N>,
-  fn: ParserMapFn<T, N, U>,
-): Parser<U, N> {
+function mapExtended<I, T, U>(
+  p: Parser<I, T>,
+  fn: ParserMapFn<T, U>,
+): Parser<I, U> {
   const mapParser = parser(
-    `map`,
-    (ctx: ParserContext): OptParserResult<U, N> => {
+    `mapExtended`,
+    function _mapExtended(ctx: ParserContext): OptParserResult<U> {
       const extended = runExtended(ctx, p);
       if (!extended) return null;
 
       const mappedValue = fn(extended);
       if (mappedValue === null) return null;
 
-      return { value: mappedValue, tags: extended.tags };
+      return { value: mappedValue };
     },
   );
 
@@ -486,112 +358,70 @@ function map<T, N extends TagRecord, U>(
   return mapParser;
 }
 
-type ToParserFn<T, N extends TagRecord, X, Y extends TagRecord> = (
-  results: ExtendedResult<T, N>,
-) => Parser<X, Y> | undefined;
+/** return a parser that maps the current results */
+function map<I, T, U>(p: Parser<I, T>, fn: (value: T) => U): Parser<I, U> {
+  const mapParser = parser(
+    `map`,
+    function _map(ctx: ParserContext): OptParserResult<U> {
+      const result = p._run(ctx);
+      if (result === null) return null;
+      return { value: fn(result.value) };
+    },
+  );
 
-function toParser<T, N extends TagRecord, O, Y extends TagRecord>(
-  p: Parser<T, N>,
-  toParserFn: ToParserFn<T, N, O, Y>,
-): Parser<T | O, N & Y> {
-  const newParser: Parser<T | O, N & Y> = parser(
+  trackChildren(mapParser, p);
+  return mapParser;
+}
+
+type ToParserFn<I, T, X> = (results: ParserResult<T>) => Parser<I, X> | null;
+
+function toParser<I, T, O>(
+  p: Parser<I, T>,
+  toParserFn: ToParserFn<I, T, O>,
+): Parser<I, T | O> {
+  const newParser: Parser<I, T | O> = parser(
     "toParser",
-    (ctx: ParserContext) => {
-      const extended = runExtended(ctx, p);
-      if (!extended) return null;
+    function _toParser(ctx: ParserContext): OptParserResult<T | O> {
+      const result = p._run(ctx);
+      if (result === null) return null;
 
       // run the supplied function to get a parser
-      const newParser = toParserFn(extended);
+      const newParser = toParserFn(result);
 
-      if (newParser === undefined) {
-        return extended;
+      if (newParser === null) {
+        return result;
       }
 
       // run the parser returned by the supplied function
       const nextResult = newParser._run(ctx);
-      // TODO merge names record from p to newParser
-      return nextResult as any; // TODO fix typing
+      return nextResult;
     },
   );
   trackChildren(newParser, p);
   return newParser;
 }
 
-const neverIgnore: IgnoreFn = () => null;
-
-/** set which token kinds to ignore while executing this parser and its descendants.
- * If no parameters are provided, no tokens are ignored. */
-export function tokenSkipSet<T, N extends TagRecord>(
-  ignoreFn: IgnoreFn | undefined | null,
-  p: Parser<T, N>,
-): Parser<T, N> {
-  const ignoreValues = ignoreFn?.toString() ?? "(null)";
-
-  const ignoreParser = parser(
-    `tokenSkipSet ${ignoreValues}`,
-    (ctx: ParserContext): OptParserResult<T, N> =>
-      ctx.lexer.withIgnore(ignoreFn ?? neverIgnore, () => p._run(ctx)),
-  );
-
-  trackChildren(ignoreParser, p);
-  return ignoreParser;
-}
-
-/** attach a pre-parser to try parsing before this parser runs.
- * (e.g. to recognize comments that can appear almost anywhere in the main grammar) */
-export function preParse<T, N extends TagRecord>(
-  pre: Parser<unknown>,
-  p: Parser<T, N>,
-): Parser<T, N> {
-  const newParser = parser(
-    "preParse",
-    (ctx: ParserContext): OptParserResult<T, N> => {
-      const newCtx = { ...ctx, _preParse: [pre, ...ctx._preParse] };
-      return p._run(newCtx);
-    },
-  );
-  trackChildren(newParser, pre, p);
-  return newParser;
-}
-
-/** disable a previously attached pre-parser,
- * e.g. to disable a comment preparser in a quoted string parser */
-export function disablePreParse<A extends CombinatorArg>(
-  arg: A,
-): ParserFromArg<A> {
-  const parser = parserArg(arg);
-  return parser._cloneWith({ preDisabled: true });
-}
-
 /** run parser, return enriched results (to support map(), toParser()) */
-export function runExtended<T, N extends TagRecord>(
+export function runExtended<I, T>(
   ctx: ParserContext,
-  p: Parser<T, N>,
-): ExtendedResult<T, N> | null {
-  const origStart = ctx.lexer.position();
+  p: Parser<I, T>,
+): ExtendedResult<T> | null {
+  const origStart = ctx.stream.checkpoint();
 
   const origResults = p._run(ctx);
   if (origResults === null) {
-    ctx.lexer.position(origStart);
+    ctx.stream.reset(origStart);
     return null;
   }
-  const end = ctx.lexer.position();
-  const src = ctx.lexer.src;
-
-  // we've succeeded, so refine the start position to skip past ws
-  // (we don't consume ws earlier, in case an inner parser wants to use different ws skipping)
-  ctx.lexer.position(origStart);
-  const start = ctx.lexer.skipIgnored();
-  ctx.lexer.position(end);
-  const { app, srcMap } = ctx;
-
-  return { ...origResults, start, end, app, src, srcMap, ctx };
+  const { app } = ctx;
+  return { ...origResults, app };
 }
 
 /** for pretty printing, track subsidiary parsers */
 export function trackChildren(p: AnyParser, ...args: CombinatorArg[]) {
   if (tracing) {
+    assertThat(p._traceInfo);
     const kids = args.map(parserArg);
-    p._children = kids;
+    p._traceInfo.traceChildren = kids;
   }
 }

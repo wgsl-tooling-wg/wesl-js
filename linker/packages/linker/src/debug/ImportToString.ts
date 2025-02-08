@@ -2,7 +2,7 @@ import {
   ImportCollection,
   ImportItem,
   ImportStatement,
-} from "../ImportStatement.ts";
+} from "../parse/ImportStatement.ts";
 
 export function importToString(tree: ImportStatement): string {
   return importToStringImpl(tree) + ";";

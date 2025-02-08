@@ -175,12 +175,24 @@ test("builtin scope", () => {
   `);
 });
 
+test("builtin enums", () => {
+  const src = `struct read { a: vec2f } var<storage, read_write> storage_buffer: read;`;
+  const { rootScope } = parseWESL(src);
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %read, storage, read_write, %storage_buffer, read
+      { vec2f }
+    }"
+  `);
+});
+
 test("texture_storage_2d", () => {
   const src = `
     @binding(3) @group(0) var tex_out : texture_storage_2d<rgba8unorm, write>;
   `;
   const { rootScope } = parseWESL(src);
-  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`"{ %tex_out }"`);
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(
+    `"{ %tex_out, texture_storage_2d, rgba8unorm, write }"`,
+  );
 });
 
 test("ptr 2 params", () => {
@@ -190,7 +202,7 @@ test("ptr 2 params", () => {
   const { rootScope } = parseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
     "{ %foo
-      { %ptr, u32 }
+      { %ptr, ptr, private, u32 }
     }"
   `);
 });
@@ -202,7 +214,7 @@ test("ptr 3 params", () => {
   const { rootScope } = parseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
     "{ %foo
-      { %ptr, array, u32 }
+      { %ptr, ptr, storage, array, u32, read }
     }"
   `);
 });
@@ -248,9 +260,10 @@ test("larger example", () => {
 
   const { rootScope } = parseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-    "{ %UBO, %Buffer, %ubo, UBO, %buf_in, Buffer, %buf_out, 
-      Buffer, %tex_in, texture_2d, f32, %tex_out, %import_level, 
-      %export_level
+    "{ %UBO, %Buffer, uniform, %ubo, UBO, storage, read, 
+      %buf_in, Buffer, storage, read_write, %buf_out, Buffer, 
+      %tex_in, texture_2d, f32, %tex_out, texture_storage_2d, 
+      rgba8unorm, write, %import_level, %export_level
       { u32 }
       { array, f32 }
       { %coord, vec3u, buf_in, %offset, coord, coord, ubo, 
