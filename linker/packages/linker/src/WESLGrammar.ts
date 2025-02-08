@@ -210,7 +210,7 @@ const local_variable_decl = seq(
 // prettier-ignore
 const global_variable_decl = seq(
   "var",
-  () => opt_template_words,
+  () => opt_template_list,
   req_optionally_typed_ident,
                                       // TODO shouldn't decl_scope include the ident type?
   opt(seq("=", () => expression       .collect(scopeCollect(), "decl_scope"))),

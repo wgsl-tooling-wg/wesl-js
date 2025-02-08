@@ -260,7 +260,10 @@ test("parse top level var", () => {
           expression '0'
             text '0'
           text ')'
-        text ' var<uniform> '
+        text ' var<'
+        type uniform
+          ref uniform
+        text '> '
         typeDecl %u : Uniforms
           decl %u
           text ': '
@@ -566,7 +569,10 @@ test("parse type in <template> in global var", () => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       gvar %x : array<MyStruct, '8'>
-        text 'var<private> '
+        text 'var<'
+        type private
+          ref private
+        text '> '
         typeDecl %x : array<MyStruct, '8'>
           decl %x
           text ':'
@@ -935,7 +941,10 @@ test("var<workgroup> work: array<u32, 128>;", ctx => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       gvar %work : array<u32, '128'>
-        text 'var<workgroup> '
+        text 'var<'
+        type workgroup
+          ref workgroup
+        text '> '
         typeDecl %work : array<u32, '128'>
           decl %work
           text ': '
