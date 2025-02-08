@@ -247,6 +247,9 @@ importers:
 
   packages/plugin-test:
     dependencies:
+      mini-parse:
+        specifier: workspace:*
+        version: link:../mini-parse
       thimbleberry:
         specifier: ^0.2.9
         version: 0.2.9

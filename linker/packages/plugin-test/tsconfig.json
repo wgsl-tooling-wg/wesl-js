@@ -18,7 +18,8 @@
     "noEmit": true,
     "paths": {
       "wesl": ["../linker/src"],
-      "wesl-plugin": ["../plugin"]
+      "wesl-plugin": ["../plugin"],
+      "mini-parse/vitest-util": ["../mini-parse/src/vitest-util"]
     }
   },
   "include": ["main.ts", "vite.config.ts", "src/**/*"],
