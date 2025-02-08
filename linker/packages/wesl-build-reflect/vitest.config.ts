@@ -4,7 +4,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import viteWesl from "wesl-plugin/vite";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { wgslReflectExtension } from "./src/ReflectExtension.js";
+import { simpleReflect } from "./src/SimpleReflectExtension.js";
 
 const thisPath = fileURLToPath(import.meta.url);
 const weslToml = path.join(path.dirname(thisPath), "wesl.toml");
@@ -14,7 +14,7 @@ const config: UserConfig = {
     tsconfigPaths(),
     viteWesl({
       weslToml,
-      buildPlugins: [wgslReflectExtension],
+      buildPlugins: [simpleReflect],
     }),
   ],
 };
