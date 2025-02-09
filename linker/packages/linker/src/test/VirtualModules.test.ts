@@ -1,5 +1,6 @@
 import { test } from "vitest";
 import { linkTestOpts } from "./TestUtil.ts";
+import { expectTrimmedMatch } from "./shared/StringUtil.ts";
 
 test("simple virtual module", () => {
   const src = `
@@ -10,5 +11,9 @@ test("simple virtual module", () => {
     { virtualModules: { virt: () => "struct Uniforms { foo: u32 }" } },
     src,
   );
-  console.log(result);
+  const expected = `
+      @binding(0) @group(0) var<uniform> u: Uniforms;
+  struct Uniforms { foo: u32 }
+  `;
+  expectTrimmedMatch(result, expected);
 });

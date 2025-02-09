@@ -4,8 +4,15 @@ import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
 import { VirtualModuleFn } from "./Linker.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
-import { flatImports, WeslAST } from "./ParseWESL.ts";
-import { DeclIdent, exportDecl, RefIdent, Scope } from "./Scope.ts";
+import { flatImports, parseSrcModule, WeslAST } from "./ParseWESL.ts";
+import {
+  Conditions,
+  DeclIdent,
+  exportDecl,
+  RefIdent,
+  Scope,
+  SrcModule,
+} from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last } from "./Util.ts";
 
@@ -101,8 +108,6 @@ function bindIdentsRecursive(
   if (foundScopes.has(scope)) return [];
   foundScopes.add(scope);
 
-  // dlog(scopeIdentTree(scope));
-
   const { parsed, conditions } = bindContext;
   const { globalNames, knownDecls, virtuals } = bindContext;
   const newDecls: DeclIdent[] = []; // new decl idents to process (and return)
@@ -112,7 +117,7 @@ function bindIdentsRecursive(
       if (!ident.refersTo && !ident.std) {
         let foundDecl =
           findDeclInModule(ident.scope, ident) ??
-          findDeclImport(ident, parsed, virtuals);
+          findDeclImport(ident, parsed, conditions, virtuals);
 
         if (foundDecl) {
           ident.refersTo = foundDecl;
@@ -199,6 +204,7 @@ function findDeclInModule(
 function findDeclImport(
   refIdent: RefIdent,
   parsed: ParsedRegistry,
+  conditions: Conditions,
   virtuals?: VirtualModuleSet,
 ): DeclIdent | undefined {
   const flatImps = flatImports(refIdent.ast);
@@ -207,7 +213,7 @@ function findDeclImport(
   const modulePathParts = matchingImport(refIdent, flatImps); // module path in array form
 
   if (modulePathParts) {
-    return findExport(modulePathParts, parsed, virtuals);
+    return findExport(modulePathParts, parsed, conditions, virtuals);
   }
 }
 
@@ -228,11 +234,13 @@ function matchingImport(
 function findExport(
   modulePathParts: string[],
   parsed: ParsedRegistry,
+  conditions: Conditions = {},
   virtuals?: VirtualModuleSet,
 ): DeclIdent | undefined {
   const modulePath = modulePathParts.slice(0, -1).join("::");
   const module =
-    parsed.modules[modulePath] ?? getVirtualModule(modulePath, virtuals);
+    parsed.modules[modulePath] ??
+    virtualModule(modulePathParts[0], conditions, virtuals); // LATER consider virtual modules with submodules
 
   if (!module) {
     // TODO show error with source location
@@ -245,16 +253,26 @@ function findExport(
   return exportDecl(module.rootScope, last(modulePathParts)!);
 }
 
-function getVirtualModule(
-  modulePath: string,
+/** @return AST for a virtual module */
+function virtualModule(
+  moduleName: string,
+  conditions: Conditions = {},
   virtuals?: VirtualModuleSet,
 ): WeslAST | undefined {
-  console.log(modulePath);
-  const generateFn = virtuals?.generators[modulePath];
-  if (generateFn) {
-    console.log(`generating virtual module ${modulePath}`);
+  if (!virtuals) return undefined;
+  const found = virtuals[moduleName];
+  if (found) {
+    const { ast, fn } = found;
+    if (ast) return ast;
+    const src = fn(conditions); // generate the virtual module
+    const srcModule: SrcModule = {
+      modulePath: moduleName,
+      filePath: moduleName,
+      src,
+    };
+    found.ast = parseSrcModule(srcModule); // cache parsed virtual module
+    return found.ast;
   }
-  return undefined;
 }
 
 /** return mangled name for decl ident,
