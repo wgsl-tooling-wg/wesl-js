@@ -19,13 +19,13 @@ test("extract binding struct", () => {
     }
   `;
   let found: StructElem[] | undefined;
-  const linkConfig = {
+  const config = {
     plugins: [
       bindingStructsPlugin(),
       reportBindingStructsPlugin(report => (found = report)),
     ],
   };
-  linkTestOpts({ linkConfig }, src);
+  linkTestOpts({ config }, src);
 
   // verify struct found
   expect(found).toBeDefined();
@@ -60,13 +60,13 @@ test("binding struct to ts", () => {
     }
   `;
   let found: StructElem[] | undefined;
-  const linkConfig = {
+  const config = {
     plugins: [
       bindingStructsPlugin(),
       reportBindingStructsPlugin(report => (found = report)),
     ],
   };
-  linkTestOpts({ linkConfig }, src);
+  linkTestOpts({ config }, src);
   const ts = bindingGroupLayoutTs(found![0] as BindingStructElem);
   expect(ts).toMatchInlineSnapshot(`
     "
