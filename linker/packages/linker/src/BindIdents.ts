@@ -2,13 +2,12 @@ import { debugNames, srcLog } from "mini-parse";
 import { DeclarationElem } from "./AbstractElems.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
+import { VirtualModuleFn } from "./Linker.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, WeslAST } from "./ParseWESL.ts";
 import { DeclIdent, exportDecl, RefIdent, Scope } from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last } from "./Util.ts";
-import { VirtualModuleFn } from "./Linker.ts";
-import { refIdent } from "./WESLCollect.ts";
 
 export interface BindResults {
   /** global declarations that were referenced (these will need to be emitted in the link) */
