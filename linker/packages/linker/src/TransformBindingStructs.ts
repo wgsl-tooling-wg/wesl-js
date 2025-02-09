@@ -22,9 +22,9 @@ import {
   typeListToString,
   typeParamToString,
 } from "./RawEmit.ts";
+import { textureStorage } from "./Reflection.ts";
 import { DeclIdent, RefIdent } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
-import { textureStorage } from "./Reflection.ts";
 
 export function bindingStructsPlugin(): WeslJsPlugin {
   return {

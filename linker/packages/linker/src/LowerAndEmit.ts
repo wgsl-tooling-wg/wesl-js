@@ -8,10 +8,10 @@ import {
   SyntheticElem,
   TextElem,
 } from "./AbstractElems.ts";
+import { assertUnreachable } from "./Assertions.ts";
 import { isGlobal } from "./BindIdents.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, Ident } from "./Scope.ts";
-import { assertUnreachable } from "./Assertions.ts";
 
 /** passed to the emitters */
 interface EmitContext {

@@ -190,7 +190,7 @@ test("lower binding structs with conflicting root name", () => {
     }
   `;
 
-  const opts = { linkConfig: { plugins: [bindingStructsPlugin()] } };
+  const opts = { config: { plugins: [bindingStructsPlugin()] } };
   const linked = linkTestOpts(opts, src);
   expectTrimmedMatch(linked, expected);
 });
@@ -229,7 +229,7 @@ test("lower 5 bindings", () => {
     }
 `;
 
-  const opts = { linkConfig: { plugins: [bindingStructsPlugin()] } };
+  const opts = { config: { plugins: [bindingStructsPlugin()] } };
   const linked = linkTestOpts(opts, src);
   expectTrimmedMatch(linked, expected);
 });

@@ -6,6 +6,7 @@ import {
   TextElem,
   TypeRefElem,
 } from "./AbstractElems.ts";
+import { assertThat } from "./Assertions.ts";
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { identElemLog } from "./LinkerUtil.ts";
 import { RefIdent } from "./Scope.ts";
@@ -14,7 +15,6 @@ import {
   sampledTextureTypes,
   textureStorageTypes,
 } from "./StandardTypes.ts";
-import { assertThat } from "./Assertions.ts";
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
 export const textureStorage = matchOneOf(textureStorageTypes);

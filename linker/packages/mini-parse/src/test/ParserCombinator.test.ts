@@ -1,4 +1,4 @@
-import { logCatch, testParse, TestMatcherKind } from "mini-parse/test-util";
+import { logCatch, TestMatcherKind, testParse } from "mini-parse/test-util";
 import { expect, test } from "vitest";
 import { Parser } from "../Parser.js";
 import {
@@ -19,8 +19,8 @@ import {
   withSep,
 } from "../ParserCombinator.js";
 import { enableTracing } from "../ParserTracing.js";
-import { withLogger } from "../WrappedLog.js";
 import { Stream, Token } from "../Stream.js";
+import { withLogger } from "../WrappedLog.js";
 
 const m: Record<TestMatcherKind, TestMatcherKind> = {
   attr: "attr",

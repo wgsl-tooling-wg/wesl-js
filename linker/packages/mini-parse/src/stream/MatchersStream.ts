@@ -1,5 +1,5 @@
 import { Span } from "../Span.ts";
-import { Stream, Token, TypedToken } from "../Stream.ts";
+import { Stream, TypedToken } from "../Stream.ts";
 import { toRegexSource } from "./RegexHelpers.ts";
 
 /**

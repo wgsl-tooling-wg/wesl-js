@@ -25,7 +25,6 @@ import {
   TextElem,
   TypedDeclElem,
   TypeRefElem,
-  TypeTemplateParameter,
   UnknownExpression,
   VarElem,
 } from "./AbstractElems.ts";

@@ -7,9 +7,9 @@ import {
   sumResults,
   taggedSum,
 } from "../examples/DocExamples.js";
-import { MatchersStream, RegexMatchers } from "../stream/MatchersStream.js";
 import { Stream, Token } from "../Stream.js";
 import { FilterStream } from "../stream/FilterStream.js";
+import { MatchersStream, RegexMatchers } from "../stream/MatchersStream.js";
 
 test("parse 3 + 4", () => {
   const src = "3 + 4";

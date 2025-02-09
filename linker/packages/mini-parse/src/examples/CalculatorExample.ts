@@ -1,13 +1,5 @@
 import { Parser } from "../Parser.js";
-import {
-  delimited,
-  kind,
-  opt,
-  or,
-  preceded,
-  repeat,
-  seq,
-} from "../ParserCombinator.js";
+import { kind, opt, or, repeat, seq } from "../ParserCombinator.js";
 import { tracing } from "../ParserTracing.js";
 import { Stream, TypedToken } from "../Stream.js";
 import { RegexMatchers } from "../stream/MatchersStream.js";

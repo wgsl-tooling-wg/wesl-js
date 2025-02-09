@@ -1,15 +1,13 @@
-import { NoTags, Parser, Stream, TagRecord, withLogger } from "mini-parse";
+import { Parser, Stream, withLogger } from "mini-parse";
 import {
   expectNoLog,
   logCatch,
   TestParseResult,
   testParseWithStream,
 } from "mini-parse/test-util";
-import { WgslBundle } from "random_wgsl";
-import { link, LinkConfig } from "../Linker.js";
-import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
-import { Conditions } from "../Scope.js";
+import { link, LinkParams } from "../Linker.js";
 import { WeslStream, WeslToken } from "../parse/WeslStream.js";
+import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
 
 export function testAppParse<T>(
   parser: Parser<Stream<WeslToken>, T>,
@@ -28,12 +26,11 @@ export function linkTest(...rawWgsl: string[]): string {
   return linkTestOpts({}, ...rawWgsl);
 }
 
-export interface LinkTestOpts {
-  /** additional modules to link */
-  conditions?: Conditions;
-  linkConfig?: LinkConfig;
-  libs?: WgslBundle[];
-}
+export type LinkTestOpts = Pick<
+  LinkParams,
+  "conditions" | "libs" | "config" | "virtualModules"
+>;
+
 export function linkTestOpts(opts: LinkTestOpts, ...rawWgsl: string[]): string {
   const [root, ...rest] = rawWgsl;
   const restWgsl = Object.fromEntries(
@@ -41,9 +38,8 @@ export function linkTestOpts(opts: LinkTestOpts, ...rawWgsl: string[]): string {
   );
   const weslSrc = { "./test.wesl": root, ...restWgsl };
 
-  const { conditions = {}, libs = [], linkConfig: config } = opts;
   const rootModuleName = "test";
-  const srcMap = link({ weslSrc, rootModuleName, conditions, libs, config });
+  const srcMap = link({ weslSrc, rootModuleName, ...opts });
   return srcMap.dest;
 }
 

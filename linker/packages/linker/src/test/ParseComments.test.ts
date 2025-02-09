@@ -3,7 +3,6 @@ import { expectNoLog } from "mini-parse/test-util";
 import { expect, test } from "vitest";
 import { astToString } from "../debug/ASTtoString.js";
 import { parseWESL } from "../ParseWESL.js";
-import { testAppParse } from "./TestUtil.js";
 
 test("parse fn with line comment", () => {
   const src = `
