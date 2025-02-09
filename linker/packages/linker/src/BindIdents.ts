@@ -108,7 +108,8 @@ function bindIdentsRecursive(
     if (ident.kind === "ref") {
       if (!ident.refersTo && !ident.std) {
         let foundDecl =
-          findDeclInModule(ident.scope, ident) ?? findDeclImport(ident, parsed); //  ?? findVirtualDecl(ident, virtuals);
+          findDeclInModule(ident.scope, ident) ??
+          findDeclImport(ident, parsed, virtuals);
 
         if (foundDecl) {
           ident.refersTo = foundDecl;
@@ -195,6 +196,7 @@ function findDeclInModule(
 function findDeclImport(
   refIdent: RefIdent,
   parsed: ParsedRegistry,
+  virtuals?: VirtualModuleSet,
 ): DeclIdent | undefined {
   const flatImps = flatImports(refIdent.ast);
 
@@ -202,17 +204,8 @@ function findDeclImport(
   const modulePathParts = matchingImport(refIdent, flatImps); // module path in array form
 
   if (modulePathParts) {
-    return findExport(modulePathParts, parsed);
+    return findExport(modulePathParts, parsed, virtuals);
   }
-}
-
-function findVirtualDecl(
-  refIdent: RefIdent,
-  virtuals?: VirtualModuleSet,
-): DeclIdent | undefined {
-  console.log("findVirtualDecl", refIdent.originalName, virtuals);
-
-  return undefined;
 }
 
 /** using the flattened import array, find an import that matches a provided identifier */
@@ -232,9 +225,12 @@ function matchingImport(
 function findExport(
   modulePathParts: string[],
   parsed: ParsedRegistry,
+  virtuals?: VirtualModuleSet,
 ): DeclIdent | undefined {
   const modulePath = modulePathParts.slice(0, -1).join("::");
-  const module = parsed.modules[modulePath];
+  const module =
+    parsed.modules[modulePath] ?? getVirtualModule(modulePath, virtuals);
+
   if (!module) {
     // TODO show error with source location
     console.log(
@@ -244,6 +240,18 @@ function findExport(
   }
 
   return exportDecl(module.rootScope, last(modulePathParts)!);
+}
+
+function getVirtualModule(
+  modulePath: string,
+  virtuals?: VirtualModuleSet,
+): WeslAST | undefined {
+  console.log(modulePath);
+  const generateFn = virtuals?.generators[modulePath];
+  if (generateFn) {
+    console.log(`generating virtual module ${modulePath}`);
+  }
+  return undefined;
 }
 
 /** return mangled name for decl ident,
