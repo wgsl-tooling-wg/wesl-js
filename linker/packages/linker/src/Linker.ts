@@ -54,9 +54,14 @@ export interface LinkParams {
   /** libraries available for the link */
   libs?: WgslBundle[];
 
+  /** wesl from code generation */
+  virtualModules?: Record<string, VirtualModuleFn>;
+
   /** plugins and other configuration to use while linking */
   config?: LinkConfig;
 }
+
+export type VirtualModuleFn = (conditions: Conditions) => string;
 
 /**
  * Link a set of WESL source modules (typically the text from .wesl files) into a single WGSL string.
@@ -68,12 +73,19 @@ export interface LinkParams {
  * Only code that is valid with the current conditions is included in the output.
  */
 export function link(params: LinkParams): SrcMap {
-  const { weslSrc, weslRoot = "", rootModuleName, libs = [] } = params;
-  const { conditions, config } = params;
+  const { weslSrc, weslRoot = "", libs = [] } = params;
   const registry = parsedRegistry();
   parseIntoRegistry(weslSrc, registry, "package", weslRoot);
   parseLibsIntoRegistry(libs, registry);
-  return linkRegistry(registry, rootModuleName, conditions, config);
+  return linkRegistry({ registry, ...params });
+}
+
+export interface LinkRegistryParams
+  extends Pick<
+    LinkParams,
+    "rootModuleName" | "conditions" | "virtualModules" | "config"
+  > {
+  registry: ParsedRegistry;
 }
 
 /** Link wesl from a registry of already parsed modules.
@@ -83,16 +95,11 @@ export function link(params: LinkParams): SrcMap {
  * each time, or perhaps to produce multiple wgsl shaders
  * that share some sources.)
  */
-export function linkRegistry(
-  parsed: ParsedRegistry,
-  rootModuleName: string = "main",
-  conditions: Conditions = {},
-  config?: LinkConfig,
-): SrcMap {
-  const bound = bindAndTransform(parsed, rootModuleName, conditions, config);
+export function linkRegistry(params: LinkRegistryParams): SrcMap {
+  const bound = bindAndTransform(params);
   const { transformedAst, newDecls } = bound;
 
-  return emitWgsl(transformedAst.moduleElem, newDecls, conditions);
+  return emitWgsl(transformedAst.moduleElem, newDecls, params.conditions);
 }
 
 interface BoundAndTransformed {
@@ -102,16 +109,16 @@ interface BoundAndTransformed {
 
 /** bind identifers and apply any transform plugins */
 export function bindAndTransform(
-  parsed: ParsedRegistry,
-  rootModuleName: string = "main",
-  conditions: Conditions = {},
-  config?: LinkConfig,
+  params: LinkRegistryParams,
 ): BoundAndTransformed {
-  const rootModule = getRootModule(parsed, rootModuleName);
+  const { registry, rootModuleName = "main", conditions = {}, config } = params;
+  const { virtualModules: generators } = params;
+  const rootModule = getRootModule(registry, rootModuleName);
+  let virtuals = generators ? { generators, code: {} } : undefined;
 
   /* --- Step #2   Binding Idents --- */
   // link active Ident references to declarations, and uniquify global declarations
-  const bindResults = bindIdents(rootModule, parsed, conditions);
+  const bindResults = bindIdents(rootModule, registry, conditions, virtuals);
   const { globalNames, decls: newDecls } = bindResults;
 
   const transformedAst = applyTransformPlugins(rootModule, globalNames, config);
@@ -158,7 +165,7 @@ function applyTransformPlugins(
 function emitWgsl(
   rootModuleElem: ModuleElem,
   newDecls: AbstractElem[],
-  conditions: Conditions,
+  conditions: Conditions = {},
 ): SrcMap {
   /* --- Step #3   Writing WGSL --- */ // note doesn't require the scope tree anymore
   const srcBuilder = new SrcMapBuilder();

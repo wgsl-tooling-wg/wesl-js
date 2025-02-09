@@ -1,4 +1,4 @@
-import { bindAndTransform, bindingStructsPlugin } from "wesl";
+import { bindAndTransform, bindingStructsPlugin, LinkConfig } from "wesl";
 import {
     bindingGroupLayoutTs,
     reportBindingStructsPlugin
@@ -20,7 +20,7 @@ async function bindingLayoutJs(
   const main = await api.weslMain(baseId);
 
   let structsJs = "??";
-  const linkConfig = {
+  const config: LinkConfig = {
     plugins: [
       bindingStructsPlugin(),
       reportBindingStructsPlugin(structs => {
@@ -29,6 +29,6 @@ async function bindingLayoutJs(
     ],
   };
 
-  bindAndTransform(registry, main, {}, linkConfig);
+  bindAndTransform({ registry, rootModuleName: main, config });
   return structsJs;
 }

@@ -1,26 +1,39 @@
 import { expect, test } from "vitest";
 import { flattenTreeImport } from "../FlattenTreeImport.ts";
-import {
-  ImportCollection,
-  ImportItem,
-  ImportSegment,
-  ImportStatement,
-} from "../parse/ImportStatement.ts";
+import { ImportCollection, ImportStatement } from "../AbstractElems.ts";
 
 test("complex tree import", () => {
-  const zap = new ImportSegment("zap");
-  const foo = new ImportItem("foo", "bar"); // foo as bar
-  const doh = new ImportItem("doh");
-  const bib = new ImportSegment("bib");
-  const bog = new ImportItem("bog");
-  const subtree = new ImportStatement([bib], bog);
-  const list = new ImportCollection([
-    new ImportStatement([], foo),
-    new ImportStatement([], doh),
-    subtree,
-  ]);
+  const list: ImportCollection = {
+    kind: "import-collection",
+    subtrees: [
+      {
+        kind: "import-statement",
+        segments: [],
+        finalSegment: { kind: "import-item", name: "foo", as: "bar" },
+      },
+      {
+        kind: "import-statement",
+        segments: [],
+        finalSegment: { kind: "import-item", name: "doh" },
+      },
+      {
+        kind: "import-statement",
+        segments: [{ kind: "import-segment", name: "bib" }],
+        finalSegment: { kind: "import-item", name: "bog" },
+      },
+    ],
+  };
 
-  const tree = new ImportStatement([zap], list);
+  const tree: ImportStatement = {
+    kind: "import-statement",
+    segments: [
+      {
+        kind: "import-segment",
+        name: "zap",
+      },
+    ],
+    finalSegment: list,
+  };
   const flattened = flattenTreeImport(tree);
   expect(flattened).toMatchInlineSnapshot(`
     [

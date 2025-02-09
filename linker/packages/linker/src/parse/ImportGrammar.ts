@@ -19,27 +19,44 @@ import {
   withSepPlus,
   yes,
 } from "mini-parse";
-import { ImportElem } from "../AbstractElems.js";
 import { assertUnreachable } from "../Assertions.js";
 import { importElem } from "../WESLCollect.js";
 import { mainTokens } from "../WESLTokens.js";
-import {
+import type {
   ImportCollection,
+  ImportElem,
   ImportItem,
   ImportSegment,
   ImportStatement,
-} from "./ImportStatement.js";
+} from "../AbstractElems.js";
 import { WeslToken } from "./WeslStream.js";
 
 const wordToken = kind(mainTokens.ident);
 
-function segment(text: string) {
-  return new ImportSegment(text);
+function makeStatement(
+  segments: ImportSegment[],
+  finalSegment: ImportCollection | ImportItem,
+): ImportStatement {
+  return { kind: "import-statement", segments, finalSegment };
 }
-function segments(
-  ...values: (ImportSegment | ImportSegment[])[]
-): ImportSegment[] {
-  return values.flat();
+function makeSegment(name: string): ImportSegment {
+  return { kind: "import-segment", name };
+}
+function makeCollection(subtrees: ImportStatement[]): ImportCollection {
+  return {
+    kind: "import-collection",
+    subtrees,
+  };
+}
+function makeItem(name: string, as?: string): ImportItem {
+  return { kind: "import-item", name, as };
+}
+function prependSegments(
+  segments: ImportSegment[],
+  statement: ImportStatement,
+): ImportStatement {
+  statement.segments = segments.concat(statement.segments);
+  return statement;
 }
 
 // forward references for mutual recursion
@@ -58,20 +75,17 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
         fn(() => import_path_or_item),
       ),
     ),
-    preceded("as", wordToken).map(v => new ImportItem("", v)),
-    yes().map(() => new ImportItem("")), // Optional
+    preceded("as", wordToken).map(v => makeItem("", v)),
+    yes().map(() => makeItem("")), // Optional
   ),
 ).map(([name, next]): ImportStatement => {
-  if (next instanceof ImportCollection) {
-    return new ImportStatement([new ImportSegment(name)], next);
-  } else if (next instanceof ImportStatement) {
-    // more import path
-    next.segments.unshift(new ImportSegment(name));
-    return next;
-  } else if (next instanceof ImportItem) {
-    // as branch
+  if (next.kind === "import-collection") {
+    return makeStatement([makeSegment(name)], next);
+  } else if (next.kind === "import-statement") {
+    return prependSegments([makeSegment(name)], next);
+  } else if (next.kind === "import-item") {
     next.name = name;
-    return new ImportStatement([], next);
+    return makeStatement([], next);
   } else {
     assertUnreachable(next);
   }
@@ -79,13 +93,13 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
 
 import_collection = delimited(
   "{",
-  withSepPlus(",", () => import_path_or_item).map(v => new ImportCollection(v)),
+  withSepPlus(",", () => import_path_or_item).map(makeCollection),
   "}",
 );
 
 const import_relative = or(
-  terminated("package", "::").map(v => [segment(v)]),
-  repeatPlus(terminated("super", "::").map(segment)),
+  terminated("package", "::").map(v => [makeSegment(v)]),
+  repeatPlus(terminated("super", "::").map(makeSegment)),
 );
 
 const import_statement = span(
@@ -94,14 +108,11 @@ const import_statement = span(
     seqObj({
       relative: opt(import_relative),
       collection_or_statement: req(or(import_collection, import_path_or_item)),
-    }).map(v => {
-      if (v.collection_or_statement instanceof ImportStatement) {
-        return new ImportStatement(
-          segments(v.relative ?? [], v.collection_or_statement.segments),
-          v.collection_or_statement.finalSegment,
-        );
+    }).map(({ relative, collection_or_statement }): ImportStatement => {
+      if (collection_or_statement.kind === "import-statement") {
+        return prependSegments(relative ?? [], collection_or_statement);
       } else {
-        return new ImportStatement(v.relative ?? [], v.collection_or_statement);
+        return makeStatement(relative ?? [], collection_or_statement);
       }
     }),
     req(";"),
@@ -109,10 +120,10 @@ const import_statement = span(
 ).map(
   (v): ImportElem => ({
     kind: "import",
-    contents: [],
     imports: v.value,
     start: v.span[0],
     end: v.span[1],
+    srcModule: null as any, // Will be inserted by the importElem collection function
   }),
 );
 
