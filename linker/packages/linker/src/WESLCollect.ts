@@ -39,6 +39,7 @@ import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "./Scope.ts";
 export function importElem(cc: CollectContext) {
   const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing
   for (const importElem of importElems) {
+    importElem.srcModule = cc.app.stable;
     (cc.app.stable as StableState).imports.push(importElem.imports);
     addToOpenElem(cc, importElem as AbstractElem);
   }

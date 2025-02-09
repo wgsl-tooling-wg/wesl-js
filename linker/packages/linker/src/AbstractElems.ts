@@ -1,4 +1,3 @@
-import { ImportStatement } from "./parse/ImportStatement.ts";
 import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
 
 /**
@@ -25,7 +24,6 @@ export type ContainerElem =
   | FnElem
   | TypedDeclElem
   | GlobalVarElem
-  | ImportElem
   | LetElem
   | ModuleElem
   | OverrideElem
@@ -48,7 +46,8 @@ export type TerminalElem =
   | DeclIdentElem //
   | NameElem
   | RefIdentElem
-  | TextElem;
+  | TextElem
+  | ImportElem;
 
 export type DeclarationElem =
   | AliasElem
@@ -107,6 +106,51 @@ export interface DeclIdentElem extends AbstractElemBase {
   kind: DeclIdent["kind"];
   ident: DeclIdent;
   srcModule: SrcModule;
+}
+
+/** Holds an import statement, and has a span */
+export interface ImportElem extends AbstractElemBase {
+  kind: "import";
+  imports: ImportStatement;
+  srcModule: SrcModule;
+}
+
+/**
+ * An import statement, which is tree shaped.
+ * `import foo::bar::{baz, cat as neko};
+ */
+export interface ImportStatement {
+  kind: "import-statement";
+  segments: ImportSegment[];
+  finalSegment: ImportCollection | ImportItem;
+}
+
+/**
+ * A collection of import trees.
+ * `{baz, cat as neko}`
+ */
+export interface ImportSegment {
+  kind: "import-segment";
+  name: string;
+}
+
+/**
+ * A primitive segment in an import statement.
+ * `foo`
+ */
+export interface ImportCollection {
+  kind: "import-collection";
+  subtrees: ImportStatement[];
+}
+
+/**
+ * A renamed item at the end of an import statement.
+ * `cat as neko`
+ */
+export interface ImportItem {
+  kind: "import-item";
+  name: string;
+  as?: string;
 }
 
 /* ------   Synthetic element (for transformations, not produced by grammar) ------   */
@@ -213,12 +257,6 @@ export interface FnElem extends ElemWithContentsBase {
 export interface GlobalVarElem extends ElemWithContentsBase {
   kind: "gvar";
   name: TypedDeclElem;
-}
-
-/** an import statement */
-export interface ImportElem extends ElemWithContentsBase {
-  kind: "import";
-  imports: ImportStatement;
 }
 
 /** an entire file */

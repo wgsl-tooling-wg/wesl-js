@@ -3,7 +3,8 @@ import {
   ImportItem,
   ImportSegment,
   ImportStatement,
-} from "./parse/ImportStatement.js";
+} from "./AbstractElems";
+import { assertUnreachable } from "./Assertions";
 
 export interface FlatImport {
   importPath: string[];
@@ -30,9 +31,9 @@ export function flattenTreeImport(imp: ImportStatement): FlatImport[] {
       const importPath = [...resolvedImportPath, segment.name];
       const modulePath = [...resolvedExportPath, segment.name];
       return recursiveResolve(importPath, modulePath, rest, finalSegment);
-    } else if (finalSegment instanceof ImportCollection) {
+    } else if (finalSegment.kind === "import-collection") {
       // resolve path with each element in the list
-      return finalSegment.subTrees.flatMap(elem => {
+      return finalSegment.subtrees.flatMap(elem => {
         return recursiveResolve(
           resolvedImportPath,
           resolvedExportPath,
@@ -40,16 +41,15 @@ export function flattenTreeImport(imp: ImportStatement): FlatImport[] {
           elem.finalSegment,
         );
       });
-    } else if (finalSegment instanceof ImportItem) {
+    } else if (finalSegment.kind === "import-item") {
       const importPath = [
         ...resolvedImportPath,
-        finalSegment.as || finalSegment.name,
+        finalSegment.as ?? finalSegment.name,
       ];
       const modulePath = [...resolvedExportPath, finalSegment.name];
       return [{ importPath, modulePath }];
     } else {
-      console.error(finalSegment);
-      throw new Error("unknown segment type", { cause: finalSegment });
+      assertUnreachable(finalSegment);
     }
   }
 }
