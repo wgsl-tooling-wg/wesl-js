@@ -121,8 +121,9 @@ export function filterMap<T, U>(arr: T[], fn: (t: T) => U | undefined): U[] {
   return out;
 }
 
-export function mapValues<T, U>(obj: Record<string, T>, fn: (v: T) => U): Record<string, U> {
-  return Object.fromEntries(
-    Object.entries(obj).map(([k, v]) => [k, fn(v)]),
-  );
+export function mapValues<T, U>(
+  obj: Record<string, T>,
+  fn: (v: T) => U,
+): Record<string, U> {
+  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, fn(v)]));
 }

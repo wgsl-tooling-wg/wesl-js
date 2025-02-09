@@ -1,6 +1,6 @@
 import { test } from "vitest";
-import { linkTestOpts } from "./TestUtil.ts";
 import { expectTrimmedMatch } from "./shared/StringUtil.ts";
+import { linkTestOpts } from "./TestUtil.ts";
 
 test("simple virtual module", () => {
   const src = `
