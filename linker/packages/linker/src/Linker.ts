@@ -54,9 +54,14 @@ export interface LinkParams {
   /** libraries available for the link */
   libs?: WgslBundle[];
 
+  /** wesl from code generation */
+  virtualModules?: Record<string, VirtualModuleFn>;
+
   /** plugins and other configuration to use while linking */
   config?: LinkConfig;
 }
+
+export type VirtualModuleFn = (conditions: Conditions) => string;
 
 /**
  * Link a set of WESL source modules (typically the text from .wesl files) into a single WGSL string.
