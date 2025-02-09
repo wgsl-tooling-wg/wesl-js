@@ -19,7 +19,6 @@ import {
   withSepPlus,
   yes,
 } from "mini-parse";
-import { ImportElem } from "../AbstractElems.js";
 import { assertUnreachable } from "../Assertions.js";
 import { importElem } from "../WESLCollect.js";
 import { mainTokens } from "../WESLTokens.js";
@@ -124,6 +123,7 @@ const import_statement = span(
     imports: v.value,
     start: v.span[0],
     end: v.span[1],
+    srcModule: null as any, // Will be inserted by the importElem collection function
   }),
 );
 
