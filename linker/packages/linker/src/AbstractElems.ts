@@ -22,6 +22,7 @@ export type ContainerElem =
   | ConstElem
   | UnknownExpression
   | SimpleMemberRef
+  | DirectiveElem
   | FnElem
   | TypedDeclElem
   | GlobalVarElem
@@ -199,6 +200,12 @@ export type BinaryOperator =
   | "^"
   | "<<"
   | ">>";*/
+
+export interface DirectiveElem extends AbstractElemBase {
+  kind: "directive";
+  directive: "diagnostic" | "enable" | "requires";
+  arguments: string[];
+}
 
 /** a function declaration */
 export interface FnElem extends ElemWithContentsBase {

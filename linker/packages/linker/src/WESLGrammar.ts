@@ -12,6 +12,8 @@ import {
   repeatPlus,
   req,
   seq,
+  seqObj,
+  span,
   Stream,
   tagScope,
   text,
@@ -47,18 +49,24 @@ import {
   typeRefCollect,
 } from "./WESLCollect.ts";
 import { mainTokens } from "./WESLTokens.ts";
+import { DirectiveElem } from "./AbstractElems.ts";
+import { terminated } from "mini-parse";
 
 export const word = kind(mainTokens.ident);
 
 const full_ident = weslExtension(withSepPlus("::", word));
 
-const diagnostic_rule_name = withSep(".", word, { requireOne: true });
-const diagnostic_control = seq(
+const diagnostic_rule_name = withSep(".", word, { requireOne: true }).map(v =>
+  v.join("."),
+);
+const diagnostic_control = delimited(
   "(",
-  word,
-  ",",
-  diagnostic_rule_name,
-  opt(","),
+  seqObj({
+    severity: word,
+    _1: ",",
+    rule: diagnostic_rule_name,
+    _2: opt(","),
+  }).map(({ severity, rule }): string[] => [severity, rule]),
   ")",
 );
 
@@ -517,13 +525,23 @@ const const_assert =
   )                                   .collect(collectSimpleElem("assert"),
 );
 
-const global_directive = seq(
-  or(
-    seq("diagnostic", diagnostic_control),
-    seq("enable", withSep(",", word, { requireOne: true })),
-    seq("requires", withSep(",", word, { requireOne: true })),
+const global_directive = span(
+  terminated(
+    or(
+      seq("diagnostic", diagnostic_control),
+      seq("enable", withSep(",", word, { requireOne: true })),
+      seq("requires", withSep(",", word, { requireOne: true })),
+    ),
+    ";",
   ),
-  ";",
+).map(
+  ({ value: [directive, args], span: [start, end] }): DirectiveElem => ({
+    kind: "directive",
+    directive: directive as "diagnostic" | "enable" | "requires",
+    arguments: args,
+    start,
+    end,
+  }),
 );
 
 // prettier-ignore
