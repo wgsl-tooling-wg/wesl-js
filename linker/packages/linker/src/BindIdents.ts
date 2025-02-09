@@ -215,6 +215,7 @@ function findExport(
     console.log(
       `ident ${modulePathParts.join("::")} in import statement, but module not found`,
     );
+    return undefined;
   }
 
   return exportDecl(module.rootScope, last(modulePathParts)!);
