@@ -1,6 +1,6 @@
 import { SrcMap, SrcMapBuilder, tracing } from "mini-parse";
 import { AbstractElem, ModuleElem } from "./AbstractElems.ts";
-import { bindIdents } from "./BindIdents.ts";
+import { bindIdents, VirtualModuleSet } from "./BindIdents.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
 import {
   parsedRegistry,
@@ -11,7 +11,7 @@ import {
 } from "./ParsedRegistry.ts";
 import { WeslAST } from "./ParseWESL.ts";
 import { Conditions } from "./Scope.ts";
-import { filterMap } from "./Util.ts";
+import { filterMap, mapValues } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
@@ -111,10 +111,10 @@ interface BoundAndTransformed {
 export function bindAndTransform(
   params: LinkRegistryParams,
 ): BoundAndTransformed {
-  const { registry, rootModuleName = "main", conditions = {}, config } = params;
-  const { virtualModules: generators } = params;
+  const { registry, rootModuleName = "main", conditions = {} } = params;
+  const { virtualModules: generators, config } = params;
   const rootModule = getRootModule(registry, rootModuleName);
-  let virtuals = generators ? { generators, code: {} } : undefined;
+  let virtuals = generators && mapValues(generators, fn => ({ fn }));
 
   /* --- Step #2   Binding Idents --- */
   // link active Ident references to declarations, and uniquify global declarations
