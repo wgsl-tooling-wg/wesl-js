@@ -88,7 +88,7 @@ export function link(params: LinkParams): SrcMap {
 export interface LinkRegistryParams
   extends Pick<
     LinkParams,
-    "rootModuleName" | "conditions" | "virtualLibs" | "config"
+    "rootModuleName" | "conditions" | "virtualLibs" | "config" | "constants"
   > {
   registry: ParsedRegistry;
 }
@@ -117,9 +117,14 @@ export function bindAndTransform(
   params: LinkRegistryParams,
 ): BoundAndTransformed {
   const { registry, rootModuleName = "main", conditions = {} } = params;
-  const { virtualLibs: generators, config } = params;
   const rootModule = getRootModule(registry, rootModuleName);
-  let virtuals = generators && mapValues(generators, fn => ({ fn }));
+
+  const { constants, config } = params;
+  let { virtualLibs } = params;
+  if (constants) {
+    virtualLibs = { ...virtualLibs, constants: constantsGenerator(constants) };
+  }
+  let virtuals = virtualLibs && mapValues(virtualLibs, fn => ({ fn }));
 
   /* --- Step #2   Binding Idents --- */
   // link active Ident references to declarations, and uniquify global declarations
@@ -128,6 +133,15 @@ export function bindAndTransform(
 
   const transformedAst = applyTransformPlugins(rootModule, globalNames, config);
   return { transformedAst, newDecls };
+}
+
+function constantsGenerator(
+  constants: Record<string, string | number>,
+): () => string {
+  return () =>
+    Object.entries(constants)
+      .map(([name, value]) => `const ${name} = ${value};`)
+      .join("\n");
 }
 
 /** get a reference to the root module, selecting by module name */

@@ -17,3 +17,21 @@ test("simple virtual module", () => {
   `;
   expectTrimmedMatch(result, expected);
 });
+
+test("virtual constants", () => {
+  const src = `
+import constants::num_lights;
+fn main() {
+  for (var i = 0; i < num_lights; i++) { }
+}
+  `;
+  const result = linkTestOpts({ constants: { num_lights: 4 } }, src);
+  const expected = `
+fn main() {
+  for (var i = 0; i < num_lights; i++) { }
+}
+
+const num_lights = 4;
+  `;
+  expectTrimmedMatch(result, expected);
+});

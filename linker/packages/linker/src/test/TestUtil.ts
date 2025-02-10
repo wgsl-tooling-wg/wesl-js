@@ -28,7 +28,7 @@ export function linkTest(...rawWgsl: string[]): string {
 
 export type LinkTestOpts = Pick<
   LinkParams,
-  "conditions" | "libs" | "config" | "virtualLibs"
+  "conditions" | "libs" | "config" | "virtualLibs" | "constants"
 >;
 
 export function linkTestOpts(opts: LinkTestOpts, ...rawWgsl: string[]): string {

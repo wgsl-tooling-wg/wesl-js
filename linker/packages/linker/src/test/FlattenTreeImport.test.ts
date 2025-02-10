@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { flattenTreeImport } from "../FlattenTreeImport.ts";
 import { ImportCollection, ImportStatement } from "../AbstractElems.ts";
+import { flattenTreeImport } from "../FlattenTreeImport.ts";
 
 test("complex tree import", () => {
   const list: ImportCollection = {
