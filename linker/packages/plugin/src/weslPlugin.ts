@@ -133,7 +133,7 @@ function pluginSuffixMatch(id: string, suffixes: string[]): PluginMatch | null {
 
 function buildApi(
   context: PluginContext,
-  unpluginCtx: UnpluginBuildContext,
+  unpluginCtx: UnpluginBuildContext & UnpluginContext,
 ): PluginExtensionApi {
   return {
     weslToml: async () => getWeslToml(context, unpluginCtx),
@@ -200,7 +200,7 @@ async function getWeslToml(
 /** load and parse all the wesl files into a ParsedRegistry */
 async function getRegistry(
   context: PluginContext,
-  unpluginCtx: UnpluginBuildContext,
+  unpluginCtx: UnpluginBuildContext & UnpluginContext,
 ): Promise<ParsedRegistry> {
   const { cache } = context;
   let { registry } = cache;
@@ -209,10 +209,11 @@ async function getRegistry(
   // load wesl files into registry
   const loaded = await loadWesl(context, unpluginCtx);
   const { weslRoot } = await getWeslToml(context, unpluginCtx);
-  const translatedEntries = Object.entries(loaded).map(([path, src]) => {
-    const newPath = rmPathPrefix(path, weslRoot);
+  const translatedEntries = Object.entries(loaded).map(([p, src]) => {
+    const newPath = path.relative(weslRoot, p);
     return [newPath, src];
   });
+
   const translated = Object.fromEntries(translatedEntries);
   registry = parsedRegistry();
   parseIntoRegistry(translated, registry);
@@ -234,6 +235,7 @@ async function getRegistry(
   return registry;
 }
 
+// TODO: Remove this function
 function makeGetWeslMain(
   context: PluginContext,
   unpluginContext: UnpluginBuildContext,
@@ -242,8 +244,19 @@ function makeGetWeslMain(
 
   async function getWeslMain(baseId: string): Promise<string> {
     const { weslRoot } = await getWeslToml(context, unpluginContext);
-    const main = rmPathPrefix(baseId, weslRoot);
-    return main;
+    const { weslToml } = context.options;
+    // TODO: process.cwd() is probably wrong here
+    const tomlDir = weslToml ? path.dirname(weslToml) : process.cwd();
+
+    const main = path.relative(tomlDir, baseId);
+    // TODO: This is a dirty hack to handle windows paths
+    let unixPath = path.relative(weslRoot, main).replaceAll("\\", "/");
+
+    // TODO: Remove this temp hack
+    if (!unixPath.startsWith("./")) {
+      unixPath = "./" + unixPath;
+    }
+    return unixPath;
   }
 }
 
@@ -261,6 +274,7 @@ async function loadWesl(
   const { options } = context;
   const { weslFiles } = await getWeslToml(context, unpluginCtx);
   const { weslToml } = options;
+  // TODO: process.cwd() is probably wrong here
   const tomlDir = weslToml ? path.dirname(weslToml) : process.cwd();
 
   const globs = weslFiles.map(g => tomlDir + "/" + g);
@@ -273,27 +287,16 @@ async function loadWesl(
 /** load a set of files, converting to paths relative to the  wesl root directory */
 async function loadFiles(
   files: string[],
-  weslRoot?: string,
+  weslRoot: string,
 ): Promise<Record<string, string>> {
   const loaded: [string, string][] = [];
 
   for (const fullPath of files) {
     const data = await fs.readFile(fullPath, "utf-8");
-    const relativePath = weslRoot ? rmPathPrefix(fullPath, weslRoot) : fullPath;
+    const relativePath = path.relative(weslRoot, fullPath);
     loaded.push([relativePath, data]);
   }
   return Object.fromEntries(loaded);
-}
-
-// TODO DRY
-/** convert a fs path to a path relative to the wesl root directory */
-function rmPathPrefix(fullPath: string, weslRoot: string): string {
-  const rootStart = fullPath.indexOf(weslRoot);
-  if (rootStart === -1) {
-    throw new Error(`file ${fullPath} not in root ${weslRoot}`);
-  }
-  const pathWithSlashPrefix = fullPath.slice(rootStart + weslRoot.length);
-  return "." + pathWithSlashPrefix;
 }
 
 export const unplugin = createUnplugin(

@@ -1,7 +1,7 @@
 import { bindAndTransform, bindingStructsPlugin, LinkConfig } from "wesl";
 import {
-    bindingGroupLayoutTs,
-    reportBindingStructsPlugin
+  bindingGroupLayoutTs,
+  reportBindingStructsPlugin,
 } from "../../linker/src/Reflection.ts";
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.ts";
 
@@ -17,7 +17,7 @@ async function bindingLayoutJs(
   api: PluginExtensionApi,
 ): Promise<string> {
   const registry = await api.weslRegistry();
-  const main = await api.weslMain(baseId);
+  let main = await api.weslMain(baseId);
 
   let structsJs = "??";
   const config: LinkConfig = {
