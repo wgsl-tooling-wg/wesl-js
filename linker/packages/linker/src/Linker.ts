@@ -59,6 +59,11 @@ export interface LinkParams {
 
   /** plugins and other configuration to use while linking */
   config?: LinkConfig;
+
+  /** Host (ts/js) provided wgsl constants.
+   * Users can import the values from wesl code via the `constants' virtual library:
+   *  `import constants::num_lights;` */
+  constants?: Record<string, string | number>;
 }
 
 export type VirtualLibraryFn = (conditions: Conditions) => string;
@@ -112,7 +117,7 @@ export function bindAndTransform(
   params: LinkRegistryParams,
 ): BoundAndTransformed {
   const { registry, rootModuleName = "main", conditions = {} } = params;
-  const { virtualModules: generators, config } = params;
+  const { virtualLibs: generators, config } = params;
   const rootModule = getRootModule(registry, rootModuleName);
   let virtuals = generators && mapValues(generators, fn => ({ fn }));
 
