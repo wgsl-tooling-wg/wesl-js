@@ -108,7 +108,10 @@ function buildResolver(options: WeslPluginOptions): Resolver {
   const suffixes = pluginNames(options);
   return resolver;
 
-  function resolver(this: UnpluginBuildContext, id: string): string | null {
+  function resolver(
+    this: UnpluginBuildContext & UnpluginContext,
+    id: string,
+  ): string | null {
     if (id === options.weslToml || id === "wesl.toml") {
       return id;
     }
@@ -148,7 +151,10 @@ function buildLoader(context: PluginContext): Loader {
   const pluginsMap = pluginsByName(options);
   return loader;
 
-  async function loader(this: UnpluginBuildContext, id: string) {
+  async function loader(
+    this: UnpluginBuildContext & UnpluginContext,
+    id: string,
+  ) {
     const matched = pluginSuffixMatch(id, suffixes);
     if (matched) {
       const buildPluginApi = buildApi(context, this);

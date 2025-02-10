@@ -14,7 +14,7 @@ export function baseViteConfig(): UserConfig {
       lib: {
         name: "wgsl-linker",
         entry: [resolve(__dirname, "src/index.ts")],
-        formats: ["es", "cjs"],
+        formats: ["es"],
       },
       minify: false,
       sourcemap: true,

@@ -13,6 +13,7 @@ export function baseViteConfig(): UserConfig {
       lib: {
         name: "mini-parse",
         entry: [resolve(__dirname, "src/index.ts")],
+        formats: ["es"],
       },
       minify: false,
       sourcemap: true,

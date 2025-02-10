@@ -18,9 +18,9 @@
     "noEmit": true,
     "paths": {
       "wesl": ["../linker/src"],
-      "wesl-plugin": ["../plugin"]
+      "wesl-plugin": ["../plugin/src"]
     }
   },
-  "include": ["src/**/*", "generated/**/*"],
+  "include": ["vitest.config.ts", "src/**/*", "generated/**/*"],
   "exclude": ["node_modules"]
 }
