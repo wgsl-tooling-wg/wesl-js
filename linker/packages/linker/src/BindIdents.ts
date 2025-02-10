@@ -1,7 +1,7 @@
 import { debugNames, srcLog } from "mini-parse";
 import { DeclarationElem } from "./parse/AbstractElems.ts";
 import { identToString } from "./debug/ScopeToString.ts";
-import { FlatImport } from "./FlattenTreeImport.ts";
+import { FlatImport, makeModulePath } from "./FlattenTreeImport.ts";
 import { VirtualModuleFn } from "./Linker.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, WeslAST } from "./ParseWESL.ts";
@@ -233,8 +233,8 @@ function findExport(
   modulePathParts: string[],
   parsed: ParsedRegistry,
 ): DeclIdent | undefined {
-  const modulePath = modulePathParts.slice(0, -1).join("::");
-  const module = parsed.modules.get(modulePath);
+  const modulePath = modulePathParts.slice(0, -1);
+  const module = parsed.get(makeModulePath(modulePath));
   if (!module) {
     // TODO show error with source location
     console.log(

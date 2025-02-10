@@ -15,7 +15,7 @@ let argv: CliArgs;
 export async function cli(rawArgs: string[]): Promise<void> {
   enableTracing(); // so we get more debug info
   argv = parseArgs(rawArgs);
-  const files = argv.files as string[];
+  const files = (argv.files as string[]).filter(v => v);
   linkNormally(files);
 }
 
@@ -84,7 +84,7 @@ function linkNormally(paths: string[]): void {
     } catch (e) {
       console.error(e);
     }
-    Object.entries(registry.modules).forEach(([modulePath, ast]) => {
+    registry.modulesIter().forEach(([modulePath, ast]) => {
       log(`---\n${modulePath}`);
       log(`\n->ast`);
       log(astToString(ast.moduleElem));

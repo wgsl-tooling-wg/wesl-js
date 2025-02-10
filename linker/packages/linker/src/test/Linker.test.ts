@@ -135,7 +135,7 @@ test("parse into registry", () => {
   const src = "struct A { a: f32 }";
   const registry = parsedRegistry();
   parseIntoRegistry({ "./foo/bar/baz": src, a1: src }, registry);
-  expect(new Set(registry.modules.keys())).toEqual(
+  expect(new Set(registry.modulesIter().map(v => v[0]))).toEqual(
     new Set(["package::foo::bar::baz", "package::a1"]),
   );
 });

@@ -108,7 +108,10 @@ function buildResolver(options: WeslPluginOptions): Resolver {
   const suffixes = pluginNames(options);
   return resolver;
 
-  function resolver(this: UnpluginBuildContext, id: string): string | null {
+  function resolver(
+    this: UnpluginBuildContext & UnpluginContext,
+    id: string,
+  ): string | null {
     if (id === options.weslToml || id === "wesl.toml") {
       return id;
     }
@@ -130,7 +133,7 @@ function pluginSuffixMatch(id: string, suffixes: string[]): PluginMatch | null {
 
 function buildApi(
   context: PluginContext,
-  unpluginCtx: UnpluginBuildContext,
+  unpluginCtx: UnpluginBuildContext & UnpluginContext,
 ): PluginExtensionApi {
   return {
     weslToml: async () => getWeslToml(context, unpluginCtx),
@@ -148,7 +151,10 @@ function buildLoader(context: PluginContext): Loader {
   const pluginsMap = pluginsByName(options);
   return loader;
 
-  async function loader(this: UnpluginBuildContext, id: string) {
+  async function loader(
+    this: UnpluginBuildContext & UnpluginContext,
+    id: string,
+  ) {
     const matched = pluginSuffixMatch(id, suffixes);
     if (matched) {
       const buildPluginApi = buildApi(context, this);
@@ -194,7 +200,7 @@ async function getWeslToml(
 /** load and parse all the wesl files into a ParsedRegistry */
 async function getRegistry(
   context: PluginContext,
-  unpluginCtx: UnpluginBuildContext,
+  unpluginCtx: UnpluginBuildContext & UnpluginContext,
 ): Promise<ParsedRegistry> {
   const { cache } = context;
   let { registry } = cache;
@@ -204,9 +210,10 @@ async function getRegistry(
   const loaded = await loadWesl(context, unpluginCtx);
   const { weslRoot } = await getWeslToml(context, unpluginCtx);
   const translatedEntries = Object.entries(loaded).map(([path, src]) => {
-    const newPath = rmPathPrefix(path, weslRoot);
+    const newPath = relativeUnix(weslRoot, path);
     return [newPath, src];
   });
+
   const translated = Object.fromEntries(translatedEntries);
   registry = parsedRegistry();
   parseIntoRegistry(translated, registry);
@@ -236,7 +243,7 @@ function makeGetWeslMain(
 
   async function getWeslMain(baseId: string): Promise<string> {
     const { weslRoot } = await getWeslToml(context, unpluginContext);
-    const main = rmPathPrefix(baseId, weslRoot);
+    const main = relativeUnix(weslRoot, baseId);
     return main;
   }
 }
@@ -273,21 +280,10 @@ async function loadFiles(
 
   for (const fullPath of files) {
     const data = await fs.readFile(fullPath, "utf-8");
-    const relativePath = weslRoot ? rmPathPrefix(fullPath, weslRoot) : fullPath;
+    const relativePath = relativeUnix(weslRoot ?? ".", fullPath);
     loaded.push([relativePath, data]);
   }
   return Object.fromEntries(loaded);
-}
-
-// TODO DRY
-/** convert a fs path to a path relative to the wesl root directory */
-function rmPathPrefix(fullPath: string, weslRoot: string): string {
-  const rootStart = fullPath.indexOf(weslRoot);
-  if (rootStart === -1) {
-    throw new Error(`file ${fullPath} not in root ${weslRoot}`);
-  }
-  const pathWithSlashPrefix = fullPath.slice(rootStart + weslRoot.length);
-  return "." + pathWithSlashPrefix;
 }
 
 export const unplugin = createUnplugin(
@@ -296,3 +292,7 @@ export const unplugin = createUnplugin(
   },
 );
 export default unplugin;
+
+function relativeUnix(from: string, to: string): string {
+  return path.relative(from, to).replaceAll(path.sep, path.posix.sep);
+}

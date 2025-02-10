@@ -14,6 +14,7 @@ import { Conditions } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
 import { RelativePath } from "./PathUtil.ts";
+import { makeModulePath } from "./FlattenTreeImport.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 
@@ -167,10 +168,10 @@ function getRootModuleByName(
   parsed: ParsedRegistry,
   rootModuleName: string,
 ): WeslAST {
-  const rootModule = parsed.modules.get("package::" + rootModuleName);
+  const rootModule = parsed.get(makeModulePath(["package", rootModuleName]));
   if (!rootModule) {
     if (tracing) {
-      console.log(`parsed moduImportCasesles: ${Object.keys(parsed.modules)}`);
+      console.log(`parsed moduImportCasesles: ${parsed.modulesIter()}`);
       console.log(`root module not found: ${rootModuleName}`);
     }
     throw new Error(`Root module not found: ${rootModuleName}`);

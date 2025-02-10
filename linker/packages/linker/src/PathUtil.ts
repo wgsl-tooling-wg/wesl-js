@@ -22,7 +22,7 @@ export class RelativePath {
         if (result.length > 0) {
           result.pop();
         } else {
-          throw new Error("Path escapes the root");
+          throw new Error(`Path ${path} escapes the root`);
         }
       } else {
         result.push(part);

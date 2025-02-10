@@ -10,7 +10,7 @@ export class ParsedRegistry {
    * e.g. `rand_pkg::foo::bar`
    * e.g. `package::foo::bar::baz`
    */
-  public modules: Map<string, WeslAST>;
+  private modules: Map<string, WeslAST>;
 
   /** Maps a relative path to a module path */
   private pathToModule: Map<string, string>;
@@ -43,6 +43,10 @@ export class ParsedRegistry {
     } else {
       return null;
     }
+  }
+
+  modulesIter(): MapIterator<[string, WeslAST]> {
+    return this.modules.entries();
   }
 }
 
