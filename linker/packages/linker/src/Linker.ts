@@ -54,14 +54,14 @@ export interface LinkParams {
   /** libraries available for the link */
   libs?: WgslBundle[];
 
-  /** wesl from code generation */
-  virtualModules?: Record<string, VirtualModuleFn>;
+  /** generate wesl from code at runtime */
+  virtualLibs?: Record<string, VirtualLibraryFn>;
 
   /** plugins and other configuration to use while linking */
   config?: LinkConfig;
 }
 
-export type VirtualModuleFn = (conditions: Conditions) => string;
+export type VirtualLibraryFn = (conditions: Conditions) => string;
 
 /**
  * Link a set of WESL source modules (typically the text from .wesl files) into a single WGSL string.
@@ -83,7 +83,7 @@ export function link(params: LinkParams): SrcMap {
 export interface LinkRegistryParams
   extends Pick<
     LinkParams,
-    "rootModuleName" | "conditions" | "virtualModules" | "config"
+    "rootModuleName" | "conditions" | "virtualLibs" | "config"
   > {
   registry: ParsedRegistry;
 }

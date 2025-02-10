@@ -2,7 +2,7 @@ import { debugNames, srcLog } from "mini-parse";
 import { DeclarationElem } from "./AbstractElems.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
-import { VirtualModuleFn } from "./Linker.ts";
+import { VirtualLibraryFn } from "./Linker.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, parseSrcModule, WeslAST } from "./ParseWESL.ts";
 import {
@@ -24,16 +24,16 @@ export interface BindResults {
   globalNames: Set<string>;
 }
 
-export interface VirtualModule {
+export interface VirtualLibrary {
   /** function to generate the module */
-  fn: VirtualModuleFn;
+  fn: VirtualLibraryFn;
 
   /** parsed AST for the module (constructed lazily) */
   ast?: WeslAST;
 }
 
 /** key is virtual module name */
-export type VirtualModuleSet = Record<string, VirtualModule>;
+export type VirtualLibrarySet = Record<string, VirtualLibrary>;
 
 /**
  * Bind active reference idents to declaration Idents by mutating the refersTo: field
@@ -47,7 +47,7 @@ export function bindIdents(
   ast: WeslAST,
   parsed: ParsedRegistry,
   conditions: Record<string, any>,
-  virtuals?: VirtualModuleSet,
+  virtuals?: VirtualLibrarySet,
 ): BindResults {
   /* 
     For each module's scope, search through the scope tree to find all ref idents
@@ -90,7 +90,7 @@ interface BindContext {
   knownDecls: Set<DeclIdent>; // decl idents discovered so far
   foundScopes: Set<Scope>; // save work by not processing scopes multiple times
   globalNames: Set<string>; // root level names  used so far
-  virtuals?: VirtualModuleSet;
+  virtuals?: VirtualLibrarySet;
 }
 
 /**
@@ -205,7 +205,7 @@ function findDeclImport(
   refIdent: RefIdent,
   parsed: ParsedRegistry,
   conditions: Conditions,
-  virtuals?: VirtualModuleSet,
+  virtuals?: VirtualLibrarySet,
 ): DeclIdent | undefined {
   const flatImps = flatImports(refIdent.ast);
 
@@ -235,7 +235,7 @@ function findExport(
   modulePathParts: string[],
   parsed: ParsedRegistry,
   conditions: Conditions = {},
-  virtuals?: VirtualModuleSet,
+  virtuals?: VirtualLibrarySet,
 ): DeclIdent | undefined {
   const modulePath = modulePathParts.slice(0, -1).join("::");
   const module =
@@ -257,7 +257,7 @@ function findExport(
 function virtualModule(
   moduleName: string,
   conditions: Conditions = {},
-  virtuals?: VirtualModuleSet,
+  virtuals?: VirtualLibrarySet,
 ): WeslAST | undefined {
   if (!virtuals) return undefined;
   const found = virtuals[moduleName];

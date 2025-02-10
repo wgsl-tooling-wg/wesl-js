@@ -8,7 +8,7 @@ test("simple virtual module", () => {
     @binding(0) @group(0) var<uniform> u: Uniforms;
   `;
   const result = linkTestOpts(
-    { virtualModules: { virt: () => "struct Uniforms { foo: u32 }" } },
+    { virtualLibs: { virt: () => "struct Uniforms { foo: u32 }" } },
     src,
   );
   const expected = `
