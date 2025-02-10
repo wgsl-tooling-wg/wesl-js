@@ -19,8 +19,13 @@ import {
   withSep,
   withSepPlus,
 } from "mini-parse";
-import { weslImports } from "./parse/ImportGrammar.ts";
-import { templateClose, templateOpen, WeslToken } from "./parse/WeslStream.ts";
+import { weslImports } from "./ImportGrammar.ts";
+import {
+  mainTokens,
+  templateClose,
+  templateOpen,
+  WeslToken,
+} from "./WeslStream.ts";
 import {
   aliasCollect,
   collectAttribute,
@@ -41,7 +46,6 @@ import {
   typedDecl,
   typeRefCollect,
 } from "./WESLCollect.ts";
-import { mainTokens } from "./WESLTokens.ts";
 
 export const word = kind(mainTokens.ident);
 

@@ -1,50 +1,67 @@
 import { WgslBundle } from "wesl";
 import { parseSrcModule, parseWESL, WeslAST } from "./ParseWESL.ts";
-import { normalize, noSuffix } from "./PathUtil.ts";
+import { RelativePath } from "./PathUtil.ts";
 import { SrcModule } from "./Scope.ts";
+import { makeModulePath, ModulePath } from "./FlattenTreeImport.ts";
 
-export interface ParsedRegistry {
-  modules: Record<string, WeslAST>; // key is module path, e.g. "rand_pkg::foo::bar"
+export class ParsedRegistry {
+  /**
+   * key is module path, starting with `package` or with the library name
+   * e.g. `rand_pkg::foo::bar`
+   * e.g. `package::foo::bar::baz`
+   */
+  public modules: Map<string, WeslAST>;
+
+  /** Maps a relative path to a module path */
+  private pathToModule: Map<string, string>;
+  constructor(
+    modules: Map<string, WeslAST>,
+    pathToModule: Map<string, string>,
+  ) {
+    this.modules = modules;
+    this.pathToModule = pathToModule;
+  }
+
+  addModule(modulePath: ModulePath, src: SrcModule) {
+    const ast = parseSrcModule(src, undefined);
+    const stringPath = modulePath.join("::");
+    if (this.modules.has(stringPath)) {
+      throw new Error(`duplicate module path: '${stringPath}'`);
+    }
+    this.modules.set(stringPath, ast);
+    this.pathToModule.set(src.filePath.toString(), stringPath);
+  }
+
+  get(modulePath: ModulePath): WeslAST | null {
+    return this.modules.get(modulePath.join("::")) ?? null;
+  }
+
+  getByPath(filePath: RelativePath): WeslAST | null {
+    const modulePath = this.pathToModule.get(filePath.toString());
+    if (modulePath) {
+      return this.modules.get(modulePath) ?? null;
+    } else {
+      return null;
+    }
+  }
 }
 
 export function parsedRegistry(): ParsedRegistry {
-  return { modules: {} };
+  return new ParsedRegistry(new Map(), new Map());
 }
 
 /**
  * Parse WESL each src module (file) into AST elements and a Scope tree.
  * @param src keys are module paths, values are wesl src strings
  */
-export function parseWeslSrc(src: Record<string, string>): ParsedRegistry {
+export function parseModulesIntoRegistry(
+  src: Record<string, string>,
+): ParsedRegistry {
   const parsedEntries = Object.entries(src).map(([path, src]) => {
     const weslAST = parseWESL(src);
-    return [path, weslAST];
+    return [path, weslAST] as const;
   });
-  return { modules: Object.fromEntries(parsedEntries) };
-}
-
-/** Look up a module with a flexible selector.
- *    :: separated module path,   package::util
- *    / separated file path       ./util.wesl (or ./util)
- *          - note: a file path should not include a weslRoot prefix, e.g. not ./shaders/util.wesl
- *    simpleName                  util
- */
-export function selectModule(
-  parsed: ParsedRegistry,
-  selectPath: string,
-  packageName = "package",
-): WeslAST | undefined {
-  // dlog({reg: [...Object.keys(parsed.modules)]});
-  let modulePath: string;
-  if (selectPath.includes("::")) {
-    modulePath = selectPath;
-  } else if (selectPath.includes("/")) {
-    modulePath = fileToModulePath(selectPath, packageName, "");
-  } else {
-    modulePath = packageName + "::" + selectPath;
-  }
-
-  return parsed.modules[modulePath];
+  return new ParsedRegistry(new Map(parsedEntries), new Map());
 }
 
 /**
@@ -53,6 +70,7 @@ export function selectModule(
  *                    value is wesl source string
  * @param registry    add parsed modules to this registry
  * @param packageName name of package
+ * @package weslRoot  prefix of the path that will be trimmed off
  */
 export function parseIntoRegistry(
   srcFiles: Record<string, string>,
@@ -60,18 +78,18 @@ export function parseIntoRegistry(
   packageName: string = "package",
   weslRoot: string = "",
 ): void {
-  const srcModules: SrcModule[] = Object.entries(srcFiles).map(
-    ([filePath, src]) => {
-      const modulePath = fileToModulePath(filePath, packageName, weslRoot);
-      return { modulePath, filePath, src };
-    },
-  );
+  const weslRootParsed = RelativePath.parse(weslRoot);
+  const srcModules: { modulePath: ModulePath; srcModule: SrcModule }[] =
+    Object.entries(srcFiles).map(([filePath, src]) => {
+      const relativePath = RelativePath.parse(filePath);
+      const modulePath = fileToModulePath(
+        relativePath.stripPrefix(weslRootParsed),
+        packageName,
+      );
+      return { modulePath, srcModule: { filePath: relativePath, src } };
+    });
   srcModules.forEach(mod => {
-    const parsed = parseSrcModule(mod, undefined);
-    if (registry.modules[mod.modulePath]) {
-      throw new Error(`duplicate module path: '${mod.modulePath}'`);
-    }
-    registry.modules[mod.modulePath] = parsed;
+    registry.addModule(mod.modulePath, mod.srcModule);
   });
 }
 
@@ -86,29 +104,27 @@ export function parseLibsIntoRegistry(
 
 const libRegex = /^lib\.w[eg]sl$/i;
 
-/** convert a file path (./shaders/foo/bar.wesl) and a wesl root (./shaders)
+/** convert a relative file path (./shaders/foo/bar.wesl) and a wesl root (./shaders)
  *  to a module path (package::foo::bar) */
 function fileToModulePath(
-  filePath: string,
+  filePath: RelativePath,
   packageName: string,
-  weslRoot: string,
-): string {
-  if (filePath.includes("::")) {
-    // already a module path
-    return filePath;
-  }
-  if (packageName !== "package" && libRegex.test(filePath)) {
+): ModulePath {
+  // A bunch of quick hacks
+  if (
+    packageName !== "package" &&
+    filePath.components.length === 1 &&
+    libRegex.test(filePath.components[0])
+  ) {
     // special case for lib.wesl files in external packages
-    return packageName;
+    return makeModulePath([packageName]);
   }
 
-  const rootStart = filePath.indexOf(weslRoot);
-  if (rootStart === -1) {
-    throw new Error(`file ${filePath} not in root ${weslRoot}`);
-  }
-  const postRoot = filePath.slice(rootStart + weslRoot.length);
-  const strippedPath = noSuffix(normalize(postRoot));
-  const moduleSuffix = strippedPath.replaceAll("/", "::");
-  const modulePath = packageName + "::" + moduleSuffix;
-  return modulePath;
+  const modulePath: string[] = [packageName];
+  modulePath.push(...filePath.components.slice(0, -1));
+  let finalComponent = filePath.components[
+    filePath.components.length - 1
+  ].replace(/\.wgsl$|\.wesl$/, "");
+  modulePath.push(finalComponent);
+  return makeModulePath(modulePath);
 }

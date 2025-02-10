@@ -1,12 +1,10 @@
-import { DeclarationElem, RefIdentElem } from "./AbstractElems.ts";
+import { DeclarationElem, RefIdentElem } from "./parse/AbstractElems.ts";
 import { WeslAST } from "./ParseWESL.ts";
+import { RelativePath } from "./PathUtil.ts";
 
 export interface SrcModule {
-  /** module path "rand_pkg::sub::foo", or "package::main" */
-  modulePath: string; // TODO drop this?
-
   /** file path to the module for user error reporting e.g "rand_pkg:sub/foo.wesl", or "./sub/foo.wesl" */
-  filePath: string;
+  filePath: RelativePath;
 
   /** original src for module */
   src: string;

@@ -7,7 +7,7 @@ import {
   RefIdentElem,
   SyntheticElem,
   TextElem,
-} from "./AbstractElems.ts";
+} from "./parse/AbstractElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
 import { isGlobal } from "./BindIdents.ts";
 import { identToString } from "./debug/ScopeToString.ts";

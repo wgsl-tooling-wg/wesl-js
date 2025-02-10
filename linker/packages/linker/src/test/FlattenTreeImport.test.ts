@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { flattenTreeImport } from "../FlattenTreeImport.ts";
-import { ImportCollection, ImportStatement } from "../AbstractElems.ts";
+import { ImportCollection, ImportStatement } from "../parse/AbstractElems.ts";
 
 test("complex tree import", () => {
   const list: ImportCollection = {
@@ -18,7 +18,7 @@ test("complex tree import", () => {
       },
       {
         kind: "import-statement",
-        segments: [{ kind: "import-segment", name: "bib" }],
+        segments: ["bib"],
         finalSegment: { kind: "import-item", name: "bog" },
       },
     ],
@@ -26,12 +26,7 @@ test("complex tree import", () => {
 
   const tree: ImportStatement = {
     kind: "import-statement",
-    segments: [
-      {
-        kind: "import-segment",
-        name: "zap",
-      },
-    ],
+    segments: ["zap"],
     finalSegment: list,
   };
   const flattened = flattenTreeImport(tree);

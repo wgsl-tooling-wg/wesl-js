@@ -33,8 +33,8 @@ import {
   WeslAST,
   WeslParseContext,
   WeslParseState,
-} from "./ParseWESL.ts";
-import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "./Scope.ts";
+} from "../ParseWESL.ts";
+import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "../Scope.ts";
 
 export function importElem(cc: CollectContext) {
   const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing

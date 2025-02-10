@@ -5,7 +5,7 @@ import {
   StructMemberElem,
   TextElem,
   TypeRefElem,
-} from "./AbstractElems.ts";
+} from "./parse/AbstractElems.ts";
 import { assertThat } from "./Assertions.ts";
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { identElemLog } from "./LinkerUtil.ts";

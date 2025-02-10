@@ -5,7 +5,7 @@ import {
   ModuleElem,
   TypeRefElem,
   TypeTemplateParameter,
-} from "../AbstractElems.ts";
+} from "../parse/AbstractElems.ts";
 import { importToString } from "./ImportToString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 

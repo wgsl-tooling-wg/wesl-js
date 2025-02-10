@@ -424,7 +424,7 @@ function linkTest2(name: string, expectation: LinkExpectation): void {
   const weslSrc = Object.fromEntries(srcs);
 
   /* -- link -- */
-  const resultMap = link({ weslSrc, rootModuleName: srcs[0][0] });
+  const resultMap = link({ weslSrc, rootModulePath: srcs[0][0] });
   const result = resultMap.dest;
 
   /* -- trim and verify results line by line -- */

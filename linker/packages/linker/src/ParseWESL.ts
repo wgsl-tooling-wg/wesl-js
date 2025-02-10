@@ -1,10 +1,11 @@
 import { AppState, ParserInit, SrcMap } from "mini-parse";
-import { ImportStatement, ModuleElem } from "./AbstractElems.ts";
+import { ImportStatement, ModuleElem } from "./parse/AbstractElems.ts";
 import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
 import { emptyScope, resetScopeIds, Scope, SrcModule } from "./Scope.ts";
-import { OpenElem } from "./WESLCollect.ts";
-import { weslRoot } from "./WESLGrammar.ts";
+import { OpenElem } from "./parse/WESLCollect.ts";
+import { weslRoot } from "./parse/WESLGrammar.ts";
+import { RelativePath } from "./PathUtil.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
@@ -71,8 +72,7 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
 // for tests. TODO rename
 export function parseWESL(src: string, srcMap?: SrcMap): WeslAST {
   const srcModule: SrcModule = {
-    modulePath: "package::test",
-    filePath: "./test.wesl",
+    filePath: RelativePath.parse("./test.wesl"),
     src,
   };
 
@@ -90,8 +90,7 @@ export function blankWeslParseState(srcModule: SrcModule): WeslParseState {
 
 export function syntheticWeslParseState(): WeslParseState {
   const srcModule: SrcModule = {
-    modulePath: "package::test",
-    filePath: "./test.wesl",
+    filePath: RelativePath.parse("./test.wesl"),
     src: "",
   };
 

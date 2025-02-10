@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { BindingStructElem, StructElem } from "../AbstractElems.ts";
+import { BindingStructElem, StructElem } from "../parse/AbstractElems.ts";
 import { elemToString } from "../debug/ASTtoString.ts";
 import {
   bindingGroupLayoutTs,

@@ -20,27 +20,22 @@ import {
   yes,
 } from "mini-parse";
 import { assertUnreachable } from "../Assertions.js";
-import { importElem } from "../WESLCollect.js";
-import { mainTokens } from "../WESLTokens.js";
-import type {
-  ImportCollection,
-  ImportElem,
-  ImportItem,
-  ImportSegment,
-  ImportStatement,
-} from "../AbstractElems.js";
-import { WeslToken } from "./WeslStream.js";
+import { importElem } from "./WESLCollect.js";
+import {
+  type ImportCollection,
+  type ImportElem,
+  type ImportItem,
+  type ImportStatement,
+} from "./AbstractElems.js";
+import { mainTokens, WeslToken } from "./WeslStream.js";
 
 const wordToken = kind(mainTokens.ident);
 
 function makeStatement(
-  segments: ImportSegment[],
+  segments: string[],
   finalSegment: ImportCollection | ImportItem,
 ): ImportStatement {
   return { kind: "import-statement", segments, finalSegment };
-}
-function makeSegment(name: string): ImportSegment {
-  return { kind: "import-segment", name };
 }
 function makeCollection(subtrees: ImportStatement[]): ImportCollection {
   return {
@@ -52,7 +47,7 @@ function makeItem(name: string, as?: string): ImportItem {
   return { kind: "import-item", name, as };
 }
 function prependSegments(
-  segments: ImportSegment[],
+  segments: string[],
   statement: ImportStatement,
 ): ImportStatement {
   statement.segments = segments.concat(statement.segments);
@@ -80,9 +75,9 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
   ),
 ).map(([name, next]): ImportStatement => {
   if (next.kind === "import-collection") {
-    return makeStatement([makeSegment(name)], next);
+    return makeStatement([name], next);
   } else if (next.kind === "import-statement") {
-    return prependSegments([makeSegment(name)], next);
+    return prependSegments([name], next);
   } else if (next.kind === "import-item") {
     next.name = name;
     return makeStatement([], next);
@@ -98,8 +93,8 @@ import_collection = delimited(
 );
 
 const import_relative = or(
-  terminated("package", "::").map(v => [makeSegment(v)]),
-  repeatPlus(terminated("super", "::").map(makeSegment)),
+  terminated("package", "::").map(v => [v]),
+  repeatPlus(terminated("super", "::")),
 );
 
 const import_statement = span(

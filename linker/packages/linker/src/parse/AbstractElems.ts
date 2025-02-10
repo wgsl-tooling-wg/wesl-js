@@ -1,4 +1,4 @@
-import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
+import { DeclIdent, RefIdent, SrcModule } from "../Scope.ts";
 
 /**
  * Structures to describe the 'interesting' parts of a WESL source file.
@@ -121,22 +121,13 @@ export interface ImportElem extends AbstractElemBase {
  */
 export interface ImportStatement {
   kind: "import-statement";
-  segments: ImportSegment[];
+  segments: string[];
   finalSegment: ImportCollection | ImportItem;
 }
 
 /**
  * A collection of import trees.
  * `{baz, cat as neko}`
- */
-export interface ImportSegment {
-  kind: "import-segment";
-  name: string;
-}
-
-/**
- * A primitive segment in an import statement.
- * `foo`
  */
 export interface ImportCollection {
   kind: "import-collection";

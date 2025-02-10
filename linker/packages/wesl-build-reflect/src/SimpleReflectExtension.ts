@@ -3,7 +3,10 @@ import {
   PluginExtension,
   PluginExtensionApi,
 } from "wesl-plugin/src/PluginExtension.js"; // TODO fix type exports from wesl-plugin
-import { StructElem, TypeRefElem } from "../../linker/src/AbstractElems.js";
+import {
+  StructElem,
+  TypeRefElem,
+} from "../../linker/src/parse/AbstractElems.js";
 
 export interface WeslStruct {
   members: Record<string, WeslMember>;

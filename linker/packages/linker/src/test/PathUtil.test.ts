@@ -1,34 +1,35 @@
 import { expect, test } from "vitest";
-import { normalize } from "../PathUtil.js";
+import { RelativePath } from "../PathUtil.js";
 
 // ../../../lib/webgpu-samples/src/anim/anim.wgsl
 
-test("normalize ./foo", () => {
-  const n = normalize("./foo");
-  expect(n).toBe("foo");
+test("parse ./foo", () => {
+  const n = RelativePath.parse("./foo");
+  expect(n.components).toEqual(["foo"]);
 });
 
-test("normalize ./foo/./", () => {
-  const n = normalize("./foo/./");
-  expect(n).toBe("foo");
+test("parse ./foo/./", () => {
+  const n = RelativePath.parse("./foo/./");
+  expect(n.components).toEqual(["foo"]);
 });
 
-test("normalize foo/bar/..", () => {
-  const n = normalize("foo/bar/..");
-  expect(n).toBe("foo");
+test("parse foo/bar/..", () => {
+  const n = RelativePath.parse("foo/bar/..");
+  expect(n.components).toEqual(["foo"]);
 });
 
-test("normalize ./foo/bar/../.", () => {
-  const n = normalize("./foo/bar/../.");
-  expect(n).toBe("foo");
+test("parse ./foo/bar/../.", () => {
+  const n = RelativePath.parse("./foo/bar/../.");
+  expect(n.components).toEqual(["foo"]);
 });
 
-test("normalize ../foo", () => {
-  const n = normalize("../foo");
-  expect(n).toBe("../foo");
+test("throw exception for ../foo", () => {
+  expect(() => RelativePath.parse("../foo")).toThrow();
 });
 
-test("normalize ../../foo", () => {
-  const n = normalize("../../foo");
-  expect(n).toBe("../../foo");
+test("strip ./foo from foo/bar", () => {
+  const n = RelativePath.parse("foo/bar");
+  expect(n.components).toEqual(["foo", "bar"]);
+  const n2 = n.stripPrefix(RelativePath.parse("./foo"));
+  expect(n2.components).toEqual(["bar"]);
 });

@@ -8,9 +8,17 @@ import {
   withStreamAction,
 } from "mini-parse";
 import { keywords, reservedWords } from "./Keywords";
-export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
 
+export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
 export interface WeslToken extends TypedToken<WeslTokenKind> {}
+
+/** main set of tokens for WGSL */
+export const mainTokens: Record<string, WeslTokenKind> = {
+  ident: "word",
+  keyword: "keyword",
+  digits: "number",
+  symbol: "symbol",
+};
 
 // https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
 /** Whitespaces including new lines */
@@ -23,6 +31,16 @@ const symbolSet =
 
 const ident =
   /(?:(?:[_\p{XID_Start}][\p{XID_Continue}]+)|(?:[\p{XID_Start}]))/u;
+
+export function isWgslIdent(name: string): boolean {
+  if (name.replace(ident, "") !== "") {
+    return false;
+  }
+  if (keywordOrReserved.has(name)) {
+    return false;
+  }
+  return true;
+}
 
 const keywordOrReserved = new Set(keywords.concat(reservedWords));
 

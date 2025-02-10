@@ -3,17 +3,14 @@ import {
   ImportCollection,
   ImportItem,
   ImportStatement,
-} from "../AbstractElems";
+} from "../parse/AbstractElems";
 
 export function importToString(tree: ImportStatement): string {
   return importToStringImpl(tree) + ";";
 }
 
 function importToStringImpl(tree: ImportStatement): string {
-  return [
-    ...tree.segments.map(s => s.name),
-    segmentToString(tree.finalSegment),
-  ].join("::");
+  return [...tree.segments, segmentToString(tree.finalSegment)].join("::");
 }
 
 function segmentToString(segment: ImportCollection | ImportItem): string {

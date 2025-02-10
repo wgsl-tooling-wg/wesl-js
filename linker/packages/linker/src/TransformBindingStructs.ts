@@ -11,7 +11,7 @@ import {
   StructMemberElem,
   SyntheticElem,
   TypeTemplateParameter,
-} from "./AbstractElems.ts";
+} from "./parse/AbstractElems.ts";
 import { declUniqueName } from "./BindIdents.ts";
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { visitAst } from "./LinkerUtil.ts";

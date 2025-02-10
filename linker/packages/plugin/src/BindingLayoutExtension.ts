@@ -1,7 +1,7 @@
 import { bindAndTransform, bindingStructsPlugin, LinkConfig } from "wesl";
 import {
-    bindingGroupLayoutTs,
-    reportBindingStructsPlugin
+  bindingGroupLayoutTs,
+  reportBindingStructsPlugin,
 } from "../../linker/src/Reflection.ts";
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.ts";
 
@@ -29,6 +29,6 @@ async function bindingLayoutJs(
     ],
   };
 
-  bindAndTransform({ registry, rootModuleName: main, config });
+  bindAndTransform({ registry, rootModulePath: main, config });
   return structsJs;
 }

@@ -5,7 +5,7 @@ import {
   DeclIdentElem,
   RefIdentElem,
   TerminalElem,
-} from "./AbstractElems.ts";
+} from "./parse/AbstractElems.ts";
 
 export function visitAst(
   elem: AbstractElem,

@@ -1,6 +1,7 @@
-import { test } from "vitest";
+import { expect, test } from "vitest";
 import { expectTrimmedMatch } from "./shared/StringUtil.js";
 import { linkTest } from "./TestUtil.js";
+import { parsedRegistry, parseIntoRegistry } from "../ParsedRegistry.js";
 
 test("link global var", () => {
   const src = `var x: i32 = 1;`;
@@ -128,4 +129,13 @@ test("struct member ref with extra component_or_swizzle", () => {
  `;
   const result = linkTest(src);
   expectTrimmedMatch(result, src);
+});
+
+test("parse into registry", () => {
+  const src = "struct A { a: f32 }";
+  const registry = parsedRegistry();
+  parseIntoRegistry({ "./foo/bar/baz": src, a1: src }, registry);
+  expect(new Set(registry.modules.keys())).toEqual(
+    new Set(["package::foo::bar::baz", "package::a1"]),
+  );
 });

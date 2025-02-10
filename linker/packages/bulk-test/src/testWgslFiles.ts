@@ -1,10 +1,10 @@
 import { expectNoLog } from "mini-parse/test-util";
 import fs from "node:fs/promises";
 import { expect, test } from "vitest";
-import { bindingStructsPlugin, link, noSuffix } from "wesl";
+import { bindingStructsPlugin, link } from "wesl";
 
 export interface NamedPath {
-  name: string; // test name
+  shortPath: string; // test name (short file path)
   filePath: string; // path relative to project root (package.json dir)
 }
 
@@ -17,14 +17,13 @@ export interface NamedPath {
 export function testWgslFiles(namedPaths: NamedPath[]) {
   const config = { plugins: [bindingStructsPlugin()] };
 
-  namedPaths.forEach(({ name, filePath }) => {
-    const shortPath = "./" + name;
-    test(name, async () => {
+  namedPaths.forEach(({ shortPath, filePath }) => {
+    test(shortPath, async () => {
       const text = await fs.readFile(filePath, { encoding: "utf8" });
       const result = expectNoLog(() => {
         const weslSrc = { [shortPath]: text };
-        const rootModuleName = noSuffix(name);
-        return link({ weslSrc, rootModuleName, config });
+        const rootModulePath = shortPath;
+        return link({ weslSrc, rootModulePath, config });
       });
       expect(result.dest).eq(text);
     });

@@ -1,5 +1,5 @@
 import { SrcMap, SrcMapBuilder, tracing } from "mini-parse";
-import { AbstractElem, ModuleElem } from "./AbstractElems.ts";
+import { AbstractElem, ModuleElem } from "./parse/AbstractElems.ts";
 import { bindIdents } from "./BindIdents.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
 import {
@@ -7,12 +7,13 @@ import {
   ParsedRegistry,
   parseIntoRegistry,
   parseLibsIntoRegistry,
-  selectModule,
+  parseModulesIntoRegistry,
 } from "./ParsedRegistry.ts";
 import { WeslAST } from "./ParseWESL.ts";
 import { Conditions } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
+import { RelativePath } from "./PathUtil.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 
@@ -31,23 +32,6 @@ export interface LinkConfig {
 }
 
 export interface LinkParams {
-  /** record of file paths and wesl text for modules.
-   *   key is module path or file path
-   *     `package::foo::bar`, or './foo/bar.wesl', or './foo/bar'
-   *   value is wesl src
-   */
-  weslSrc: Record<string, string>;
-
-  /** root directory prefix for sources, e.g. /shaders */
-  weslRoot?: string;
-
-  /** name of root wesl module
-   *    for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
-   *    for a library, the root module defines the public api fo the library
-   *  can be specified as file path (./main.wesl), a module path (package::main), or just a module name (main)
-   */
-  rootModuleName?: string;
-
   /** runtime conditions for conditional compiling with @if and friends */
   conditions?: Conditions;
 
@@ -61,6 +45,39 @@ export interface LinkParams {
   config?: LinkConfig;
 }
 
+export interface LinkParamsWithPaths extends LinkParams {
+  /** record of file paths and wesl text for modules.
+   *   key is file path ./foo/bar'
+   *   value is wesl src
+   */
+  weslSrc: Record<string, string>;
+
+  /** root directory prefix for sources, e.g. /shaders */
+  weslRootPath?: string;
+
+  /** name of root wesl module
+   *    for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
+   *    for a library, the root module defines the public api fo the library
+   *  is specified as a file path (./main.wesl)
+   */
+  rootModulePath?: string;
+}
+
+export interface LinkParamsWithModules extends LinkParams {
+  /** record of file paths and wesl text for modules.
+   *   key is module path `package::foo::bar`
+   *   value is wesl src
+   */
+  weslSrc: Record<string, string>;
+
+  /** name of root wesl module
+   *    for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
+   *    for a library, the root module defines the public api fo the library
+   *  is specified as a module path (package::main)
+   */
+  rootModuleName?: string;
+}
+
 export type VirtualModuleFn = (conditions: Conditions) => string;
 
 /**
@@ -72,18 +89,35 @@ export type VirtualModuleFn = (conditions: Conditions) => string;
  * Additionally the caller can specify conditions for to control conditional compilation.
  * Only code that is valid with the current conditions is included in the output.
  */
-export function link(params: LinkParams): SrcMap {
-  const { weslSrc, weslRoot = "", libs = [] } = params;
+export function link(params: LinkParamsWithPaths): SrcMap {
+  const { weslSrc, weslRootPath = "", libs = [] } = params;
   const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry, "package", weslRoot);
+  parseIntoRegistry(weslSrc, registry, "package", weslRootPath);
+  parseLibsIntoRegistry(libs, registry);
+  return linkRegistry({ registry, ...params });
+}
+
+/**
+ * Link a set of WESL source modules (typically the text from .wesl files) into a single WGSL string.
+ * Linking starts with a specified 'root' source module, and recursively incorporates code
+ * referenced from other modules (in local files or libraries).
+ *
+ * Unreferenced (dead) code outside the root module is not included in the output WGSL.
+ * Additionally the caller can specify conditions for to control conditional compilation.
+ * Only code that is valid with the current conditions is included in the output.
+ */
+export function linkModules(params: LinkParamsWithModules): SrcMap {
+  const { weslSrc, libs = [] } = params;
+  const registry = parsedRegistry();
+  parseModulesIntoRegistry(weslSrc);
   parseLibsIntoRegistry(libs, registry);
   return linkRegistry({ registry, ...params });
 }
 
 export interface LinkRegistryParams
   extends Pick<
-    LinkParams,
-    "rootModuleName" | "conditions" | "virtualModules" | "config"
+    LinkParamsWithPaths,
+    "rootModulePath" | "conditions" | "virtualModules" | "config"
   > {
   registry: ParsedRegistry;
 }
@@ -111,9 +145,12 @@ interface BoundAndTransformed {
 export function bindAndTransform(
   params: LinkRegistryParams,
 ): BoundAndTransformed {
-  const { registry, rootModuleName = "main", conditions = {}, config } = params;
+  const { registry, rootModulePath = "main", conditions = {}, config } = params;
   const { virtualModules: generators } = params;
-  const rootModule = getRootModule(registry, rootModuleName);
+  const rootModule = registry.getByPath(RelativePath.parse(rootModulePath));
+  if (rootModule === null) {
+    throw new Error(`Could not find root module ${rootModulePath}`);
+  }
   let virtuals = generators ? { generators, code: {} } : undefined;
 
   /* --- Step #2   Binding Idents --- */
@@ -126,14 +163,14 @@ export function bindAndTransform(
 }
 
 /** get a reference to the root module, selecting by module name */
-function getRootModule(
+function getRootModuleByName(
   parsed: ParsedRegistry,
   rootModuleName: string,
 ): WeslAST {
-  const rootModule = selectModule(parsed, rootModuleName);
+  const rootModule = parsed.modules.get("package::" + rootModuleName);
   if (!rootModule) {
     if (tracing) {
-      console.log(`parsed modules: ${Object.keys(parsed.modules)}`);
+      console.log(`parsed moduImportCasesles: ${Object.keys(parsed.modules)}`);
       console.log(`root module not found: ${rootModuleName}`);
     }
     throw new Error(`Root module not found: ${rootModuleName}`);

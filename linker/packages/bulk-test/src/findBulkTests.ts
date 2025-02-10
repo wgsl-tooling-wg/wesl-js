@@ -45,7 +45,10 @@ async function loadBulkSet(bulk: BulkTest): Promise<NamedPath[]> {
   );
   const relativePaths: string[] = [...includeFiles, ...globFiles];
   const namePaths: NamedPath[] = relativePaths.map(f => ({
-    name: f,
+    shortPath: f
+      .replaceAll(path.sep, path.posix.sep)
+      .replaceAll("-", "_")
+      .replace(/\.(vert|frag|fs|vs|cs)/, "_$1"),
     filePath: path.join(baseDir, f),
   }));
   return namePaths;

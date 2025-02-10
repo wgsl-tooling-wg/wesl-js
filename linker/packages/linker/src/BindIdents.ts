@@ -1,5 +1,5 @@
 import { debugNames, srcLog } from "mini-parse";
-import { DeclarationElem } from "./AbstractElems.ts";
+import { DeclarationElem } from "./parse/AbstractElems.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
 import { VirtualModuleFn } from "./Linker.ts";
@@ -126,7 +126,7 @@ function bindIdentsRecursive(
           if (refIdentElem) {
             const { srcModule, start, end } = refIdentElem;
             const { filePath } = srcModule;
-            const msg = `unresolved identifier in file: ${filePath}`;
+            const msg = `unresolved identifier in file: ${filePath.toString()}`;
             srcLog(srcModule.src, [start, end], msg);
           }
         }
@@ -234,7 +234,7 @@ function findExport(
   parsed: ParsedRegistry,
 ): DeclIdent | undefined {
   const modulePath = modulePathParts.slice(0, -1).join("::");
-  const module = parsed.modules[modulePath];
+  const module = parsed.modules.get(modulePath);
   if (!module) {
     // TODO show error with source location
     console.log(

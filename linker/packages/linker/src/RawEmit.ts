@@ -5,7 +5,7 @@ import {
   TypeRefElem,
   TypeTemplateParameter,
   UnknownExpression,
-} from "./AbstractElems.ts";
+} from "./parse/AbstractElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
 import { findDecl } from "./LowerAndEmit.ts";
 import { RefIdent } from "./Scope.ts";

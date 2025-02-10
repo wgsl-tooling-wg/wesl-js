@@ -38,8 +38,8 @@ export function linkTestOpts(opts: LinkTestOpts, ...rawWgsl: string[]): string {
   );
   const weslSrc = { "./test.wesl": root, ...restWgsl };
 
-  const rootModuleName = "test";
-  const srcMap = link({ weslSrc, rootModuleName, ...opts });
+  const rootModulePath = "test.wesl";
+  const srcMap = link({ weslSrc, rootModulePath, ...opts });
   return srcMap.dest;
 }
 
