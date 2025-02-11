@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import viteWesl from "wesl-plugin/vite";
+import viteWesl from "../plugin/src/plugins/vite";
 import { bindingLayoutExtension } from "../plugin/src/BindingLayoutExtension.js";
 import { linkBuildPlugin } from "../plugin/src/LinkExtension.js";
 

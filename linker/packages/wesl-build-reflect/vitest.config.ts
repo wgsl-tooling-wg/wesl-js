@@ -1,7 +1,7 @@
 /// <reference types="vitest/config" />
 import { UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import viteWesl from "wesl-plugin/vite";
+import viteWesl from "../plugin/src/plugins/vite";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { simpleReflect } from "./src/SimpleReflectExtension.js";

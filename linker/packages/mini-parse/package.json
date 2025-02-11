@@ -25,13 +25,11 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     },
     "./minified": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/minified.js",
-      "require": "./dist/minified.cjs"
+      "import": "./dist/minified.js"
     },
     "./test-util": {
       "import": "./dist/testUtil.js",
