@@ -6,3 +6,7 @@
 	path = wesl-testsuite
 	url = https://github.com/wgsl-tooling-wg/wesl-testsuite.git
 	update = merge
+[submodule "cts"]
+	path = cts
+	url = https://github.com/wgsl-tooling-wg/cts.git
+	update = merge
