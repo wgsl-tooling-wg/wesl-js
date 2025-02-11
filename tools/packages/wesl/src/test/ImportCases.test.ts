@@ -15,8 +15,8 @@ interface LinkExpectation {
 // wgsl example src, indexed by name
 const examplesByName = new Map(importCases.map(t => [t.name, t.src]));
 
-test("import package::bar::foo;", ctx => {
-  linkTest2(ctx.task.name, {
+test.only("import package::bar::foo;", ctx => {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() {
         foo();
@@ -28,7 +28,7 @@ test("import package::bar::foo;", ctx => {
 });
 
 test("main has other root elements", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       struct Uniforms {
         a: u32
@@ -42,7 +42,7 @@ test("main has other root elements", ctx => {
 });
 
 test("import foo as bar", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() {
         bar();
@@ -54,7 +54,7 @@ test("import foo as bar", ctx => {
 });
 
 test("import twice doesn't get two copies", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() {
         foo();
@@ -69,7 +69,7 @@ test("import twice doesn't get two copies", ctx => {
 });
 
 test("imported fn calls support fn with root conflict", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() { foo(); }
 
@@ -86,7 +86,7 @@ test("imported fn calls support fn with root conflict", ctx => {
 });
 
 test("import twice with two as names", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() { bar(); bar(); }
 
@@ -96,7 +96,7 @@ test("import twice with two as names", ctx => {
 });
 
 test("import transitive conflicts with main", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() {
         mid();
@@ -114,7 +114,7 @@ test("import transitive conflicts with main", ctx => {
 });
 
 test("multiple exports from the same module", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() {
         foo();
@@ -129,7 +129,7 @@ test("multiple exports from the same module", ctx => {
 });
 
 test("import and resolve conflicting support function", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn support() {
         bar();
@@ -145,7 +145,7 @@ test("import and resolve conflicting support function", ctx => {
 });
 
 test("import support fn that references another import", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn support() {
         foo();
@@ -168,7 +168,7 @@ test("import support fn that references another import", ctx => {
 });
 
 test("import support fn from two exports", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() {
         foo();
@@ -189,7 +189,7 @@ test("import support fn from two exports", ctx => {
 });
 
 test("import a struct", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() {
         let a = AStruct(1u);
@@ -203,7 +203,7 @@ test("import a struct", ctx => {
 });
 
 test("struct referenced by a fn param", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
         fn main() { foo(); }
 
@@ -219,7 +219,7 @@ test("struct referenced by a fn param", ctx => {
 });
 
 test("import fn with support struct constructor", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() {
         let ze = elemOne();
@@ -237,7 +237,7 @@ test("import fn with support struct constructor", ctx => {
 });
 
 test("import a transitive struct", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       struct SrcStruct {
         a: AStruct,
@@ -255,7 +255,7 @@ test("import a transitive struct", ctx => {
 });
 
 test("'import as' a struct", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn foo (a: AA) { }
 
@@ -265,7 +265,7 @@ test("'import as' a struct", ctx => {
 });
 
 test("import a struct with name conflicting support struct", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       struct Base {
         b: i32
@@ -285,7 +285,7 @@ test("import a struct with name conflicting support struct", ctx => {
 });
 
 test("copy alias to output", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       alias MyType = u32;
     `,
@@ -293,7 +293,7 @@ test("copy alias to output", ctx => {
 });
 
 test("copy diagnostics to output", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       diagnostic(off,derivative_uniformity);
     `,
@@ -301,7 +301,7 @@ test("copy diagnostics to output", ctx => {
 });
 
 test("const referenced by imported fn", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
         fn main() { foo(); }
 
@@ -315,7 +315,7 @@ test("const referenced by imported fn", ctx => {
 });
 
 test("fn call with a separator", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
         fn main() { bar(); }
 
@@ -325,7 +325,7 @@ test("fn call with a separator", ctx => {
 });
 
 test("local var to struct", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
         fn main() {
           var a: AStruct; 
@@ -336,7 +336,7 @@ test("local var to struct", ctx => {
 });
 
 test("global var to struct", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
         @group(0) @binding(0) var<uniform> u: Uniforms;      
         struct Uniforms { model: mat4x4<f32> }
@@ -345,7 +345,7 @@ test("global var to struct", ctx => {
 });
 
 test("return type of function", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
         fn b() -> A { }
         struct A { y: i32 }
@@ -354,7 +354,7 @@ test("return type of function", ctx => {
 });
 
 test("import a const", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
         fn m() { let a = conA; }
         const conA = 11;
@@ -363,7 +363,7 @@ test("import a const", ctx => {
 });
 
 test("import an alias", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
         fn m() { let a: aliasA = 4; }
         alias aliasA = u32;
@@ -371,7 +371,7 @@ test("import an alias", ctx => {
   });
 });
 test("alias f32", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() { foo(); }
       fn foo(a: f32) { }
@@ -381,7 +381,7 @@ test("alias f32", ctx => {
   });
 });
 test("fn f32()", ctx => {
-  linkTest2(ctx.task.name, {
+  importCaseTest(ctx.task.name, {
     linked: `
       fn main() { foo(); }
       fn foo() { f32(); }
@@ -410,7 +410,7 @@ afterAll(c => {
   }
 });
 
-function linkTest2(name: string, expectation: LinkExpectation): void {
+function importCaseTest(name: string, expectation: LinkExpectation): void {
   /* -- find and trim source texts -- */
   const exampleSrc = examplesByName.get(name);
   if (!exampleSrc) {
