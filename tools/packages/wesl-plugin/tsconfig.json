@@ -13,7 +13,7 @@
     "esModuleInterop": true,
     "allowImportingTsExtensions": true,
     "paths": {
-      "wesl": ["../linker/src"],
+      "wesl": ["../wesl/src"],
       "mini-parse": ["../mini-parse/src"]
     },
     "noEmit": true

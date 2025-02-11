@@ -7,7 +7,7 @@ import yargs from "yargs";
 import {
   parsedRegistry,
   parseIntoRegistry,
-} from "../../linker/src/ParsedRegistry.js";
+} from "../../wesl/src/ParsedRegistry.js"; // TODO fix import
 
 type CliArgs = ReturnType<typeof parseArgs>;
 let argv: CliArgs;

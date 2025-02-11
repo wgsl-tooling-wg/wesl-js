@@ -17,8 +17,8 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "paths": {
-      "wesl": ["../linker/src"],
-      "wesl-plugin": ["../plugin/src"]
+      "wesl": ["../wesl/src"],
+      "wesl-plugin": ["../wesl-plugin/src"]
     }
   },
   "include": ["vitest.config.ts", "src/**/*", "generated/**/*"],

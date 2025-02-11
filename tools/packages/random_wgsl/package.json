@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "echo": "echo",
-    "build": "node ../packager/bin/wesl-packager --rootDir src"
+    "build": "node ../wesl-packager/bin/wesl-packager --rootDir src"
   },
   "exports": {
     ".": {
