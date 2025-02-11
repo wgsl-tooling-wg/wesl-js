@@ -15,18 +15,17 @@ async function emitLinkJs(
   const { weslRoot } = await api.weslToml();
   const weslSrc = await api.weslSrc();
   const rootModule = await api.weslMain(baseId);
-  const rootModuleName = noSuffix(rootModule);
-  const rootName = path.basename(rootModuleName);
 
-  const paramsName = `link${rootName}Config`;
+  const linkArgs = {
+    rootModuleName: rootModule,
+    weslRoot,
+    weslSrc,
+  };
+
   const src = `
-    export const ${paramsName}= {
-      rootModuleName: "${rootModuleName}",
-      weslRoot: "${weslRoot}",  
-      weslSrc: ${JSON.stringify(weslSrc, null, 2)},
-    };
-
-    export default ${paramsName};
+    export const shaders = ${JSON.stringify(linkArgs, null, 2)};
+    
+    export default shaders;
     `;
 
   return src;

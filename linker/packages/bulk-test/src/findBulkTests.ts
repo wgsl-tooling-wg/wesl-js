@@ -57,16 +57,12 @@ async function findGlobFiles(
   exclude: string[] | undefined,
 ): Promise<string[]> {
   const fullBaseDir = path.resolve(baseDir);
-  const cwd = process.cwd();
   const skip = exclude ?? [];
-  try {
-    process.chdir(fullBaseDir);
-    const futurePaths =
-      globs?.map(g => glob(g, { ignore: ["node_modules/**"] })) ?? [];
-    const pathSets = await Promise.all(futurePaths);
-    const filePaths = pathSets.flat();
-    return filePaths.filter(p => !skip.some(s => p.includes(s)));
-  } finally {
-    process.chdir(cwd);
-  }
+  const futurePaths =
+    globs?.map(g =>
+      glob(g, { ignore: ["node_modules/**"], cwd: fullBaseDir }),
+    ) ?? [];
+  const pathSets = await Promise.all(futurePaths);
+  const filePaths = pathSets.flat();
+  return filePaths.filter(p => !skip.some(s => p.includes(s)));
 }

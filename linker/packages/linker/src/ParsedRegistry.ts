@@ -40,6 +40,8 @@ export function selectModule(
     modulePath = selectPath;
   } else if (selectPath.includes("/")) {
     modulePath = fileToModulePath(selectPath, packageName, "");
+  } else if (selectPath.includes("\\")) {
+    modulePath = fileToModulePath(patchPath(selectPath), packageName, "");
   } else {
     modulePath = packageName + "::" + selectPath;
   }
@@ -62,7 +64,11 @@ export function parseIntoRegistry(
 ): void {
   const srcModules: SrcModule[] = Object.entries(srcFiles).map(
     ([filePath, src]) => {
-      const modulePath = fileToModulePath(filePath, packageName, weslRoot);
+      const modulePath = fileToModulePath(
+        patchPath(filePath),
+        packageName,
+        patchPath(weslRoot),
+      );
       return { modulePath, filePath, src };
     },
   );
@@ -111,4 +117,9 @@ function fileToModulePath(
   const moduleSuffix = strippedPath.replaceAll("/", "::");
   const modulePath = packageName + "::" + moduleSuffix;
   return modulePath;
+}
+
+// Dirty hack to accept Windows style paths (as long as they're relative)
+function patchPath(path: string): string {
+  return path.replaceAll("\\", "/");
 }

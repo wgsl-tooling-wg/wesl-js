@@ -80,6 +80,13 @@ export type VirtualLibraryFn = (conditions: Conditions) => string;
 export function link(params: LinkParams): SrcMap {
   const { weslSrc, weslRoot = "", libs = [] } = params;
   const registry = parsedRegistry();
+  if (
+    weslRoot.startsWith("C:") ||
+    weslRoot.startsWith("D:") ||
+    weslRoot.startsWith("/")
+  ) {
+    throw new Error(`Absolute paths are not supported ${weslRoot}`);
+  }
   parseIntoRegistry(weslSrc, registry, "package", weslRoot);
   parseLibsIntoRegistry(libs, registry);
   return linkRegistry({ registry, ...params });
