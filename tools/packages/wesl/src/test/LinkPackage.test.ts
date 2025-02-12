@@ -1,4 +1,4 @@
-import { expectNoLog, expectNoLogAsync } from "mini-parse/test-util";
+import { expectNoLogAsync } from "mini-parse/test-util";
 import lib from "random_wgsl";
 import { expect, test } from "vitest";
 import { link } from "../Linker.ts";
