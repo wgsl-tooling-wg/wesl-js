@@ -4,7 +4,7 @@ import { baseViteConfig } from "./base.vite.config.js";
 // import { visualizer } from "rollup-plugin-visualizer";
 
 const config = baseViteConfig();
-config.build.minify = "terser";
+config.build.minify = "esbuild";
 config.build.emptyOutDir = false;
 (config.build.lib as LibraryOptions).fileName = "minified";
 
