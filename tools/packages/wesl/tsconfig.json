@@ -26,7 +26,7 @@
       "wesl-testsuite": ["../../../wesl-testsuite/src"]
     }
   },
-  "include": ["src/**/*", "../../../wesl-testsuite/src/test-cases/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules"],
   "references": [{ "path": "./tsconfig-node.json" }]
 }
