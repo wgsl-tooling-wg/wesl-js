@@ -3,14 +3,14 @@
 export const stdFns = `bitcast all any select arrayLength 
   abs acos acosh asin asinh atan atanh atan2 ceil clamp cos cosh 
   countLeadingZeros countOneBits countTrailingZeros cross 
-  degrees determinant distance dot dot4UI8Packed dot4I8Packed 
+  degrees determinant distance dot dot4U8Packed dot4I8Packed 
   exp exp2 extractBits faceForward firstLeadingBit firstTrailingBit 
-  floor fma fract frexp inserBits inverseSqrt ldexp length log log2
+  floor fma fract frexp insertBits inverseSqrt ldexp length log log2
   max min mix modf normalize pow quantizeToF16 radians reflect refract
   reverseBits round saturate sign sin sinh smoothstep sqrt step tan tanh
   transpose trunc
   dpdx dpdxCoarse dpdxFine dpdy dpdyCoarse dpdyFine fwidth 
-  fwdithCoarse fwidthFine
+  fwidthCoarse fwidthFine
   textureDimensions textureGather textureGatherCompare textureLoad
   textureNumLayers textureNumLevels textureNumSamples
   textureSample textureSampleBias textureSampleCompare textureSampleCompareLevel
