@@ -49,13 +49,15 @@ type InternalTokenKind =
   | "number"
   | "blankspaces"
   | "commentStart"
-  | "symbol";
+  | "symbol"
+  | "invalid";
 const weslMatcher = new RegexMatchers<InternalTokenKind>({
   word: ident,
   number: digits,
   blankspaces,
   commentStart,
   symbol: matchOneOf(symbolSet),
+  invalid: /[^]/,
 });
 
 export class WeslStream implements Stream<WeslToken> {
@@ -94,6 +96,8 @@ export class WeslStream implements Stream<WeslToken> {
           returnToken.kind = "keyword";
         }
         return returnToken;
+      } else if (token.kind === "invalid") {
+        throw new Error("Invalid token " + token);
       } else {
         const kind = token.kind;
         return token as TypedToken<typeof kind>;
