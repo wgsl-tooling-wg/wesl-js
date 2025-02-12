@@ -1,9 +1,13 @@
-/** https://www.w3.org/TR/WGSL/#keyword-summary followed by https://www.w3.org/TR/WGSL/#reserved-words */
+// Use https://github.com/wgsl-tooling-wg/wgsl-spec to check this list in the future
+// I recommend checking whether a new list and the current list are equal
+
+/** https://www.w3.org/TR/WGSL/#keyword-summary */
 export const keywords =
   `alias break case const const_assert continue continuing 
   default diagnostic discard else enable false fn for if 
   let loop override requires return struct switch true var while`.split(/\s+/);
 
+/** https://www.w3.org/TR/WGSL/#reserved-words */
 export const reservedWords =
   `NULL Self abstract active alignas alignof as asm asm_fragment async attribute auto await 
   become binding_array cast catch class co_await co_return co_yield coherent column_major 

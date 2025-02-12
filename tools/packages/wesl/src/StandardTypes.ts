@@ -1,4 +1,5 @@
 // From https://www.w3.org/TR/WGSL/#predeclared
+// Use https://github.com/wgsl-tooling-wg/wgsl-spec to regenerate these list in the future
 
 export const stdFns = `bitcast all any select arrayLength 
   abs acos acosh asin asinh atan atanh atan2 ceil clamp cos cosh 
@@ -17,14 +18,18 @@ export const stdFns = `bitcast all any select arrayLength
   textureSampleGrad textureSampleLevel textureSampleBaseClampToEdge
   textureStore
   atomicLoad atomicStore atomicAdd atomicSub atomicMax atomicMin
-  atomicOr atomicXor atomicExchange atomicCompareExchangeWeak
+  atomicAnd atomicOr atomicXor atomicExchange atomicCompareExchangeWeak
   pack4x8snorm pack4x8unorm pack4xI8 pack4xU8 pack4xI8Clamp pack4xU8Clamp
   pack2x16snorm pack2x16unorm pack2x16float
   unpack4x8snorm unpack4x8unorm unpack4xI8 unpack4xU8 
   unpack2x16snorm unpack2x16unorm unpack2x16float
-  storageBarrier textureBarrier workgroupBarrier workgroupUniformLoad`.split(
-  /\s+/,
-);
+  storageBarrier textureBarrier workgroupBarrier workgroupUniformLoad
+  subgroupAdd subgroupAll subgroupAnd subgroupAny subgroupBallot 
+  subgroupBroadcast subgroupBroadcastFirst subgroupElect 
+  subgroupExclusiveAdd subgroupExclusiveMul subgroupInclusiveAdd 
+  subgroupInclusiveMul subgroupMax subgroupMin subgroupMul subgroupOr 
+  subgroupShuffle subgroupShuffleUp subgroupShuffleXor subgroupXor
+  quadBroadcast quadSwapDiagonal quadSwapX quadSwapY`.split(/\s+/);
 
 export const sampledTextureTypes = `
   texture_1d texture_2d texture_2d_array texture_3d 
