@@ -1,4 +1,4 @@
-import { Parser, Stream, withLogger } from "mini-parse";
+import { Parser, Stream, withLogger, withLoggerAsync } from "mini-parse";
 import {
   expectNoLog,
   logCatch,
@@ -22,7 +22,7 @@ export function testAppParse<T>(
  * The first module is named "./test.wesl",
  * subsequent modules are named "./file1.wesl", "./file2.wesl", etc.
  */
-export function linkTest(...rawWgsl: string[]): string {
+export async function linkTest(...rawWgsl: string[]): Promise<string> {
   return linkTestOpts({}, ...rawWgsl);
 }
 
@@ -31,7 +31,10 @@ export type LinkTestOpts = Pick<
   "conditions" | "libs" | "config" | "virtualLibs" | "constants"
 >;
 
-export function linkTestOpts(opts: LinkTestOpts, ...rawWgsl: string[]): string {
+export async function linkTestOpts(
+  opts: LinkTestOpts,
+  ...rawWgsl: string[]
+): Promise<string> {
   const [root, ...rest] = rawWgsl;
   const restWgsl = Object.fromEntries(
     rest.map((src, i) => [`./file${i + 1}.wesl`, src]),
@@ -39,22 +42,22 @@ export function linkTestOpts(opts: LinkTestOpts, ...rawWgsl: string[]): string {
   const weslSrc = { "./test.wesl": root, ...restWgsl };
 
   const rootModuleName = "test";
-  const srcMap = link({ weslSrc, rootModuleName, ...opts });
+  const srcMap = await link({ weslSrc, rootModuleName, ...opts });
   return srcMap.dest;
 }
 
 /** link wesl for tests, and return the console log as well */
-export function linkWithLog(...rawWgsl: string[]): {
+export async function linkWithLog(...rawWgsl: string[]): Promise<{
   log: string;
   result: string;
-} {
+}> {
   const { log, logged } = logCatch();
-  let result = "???";
-  withLogger(log, () => {
-    try {
-      result = linkTest(...rawWgsl);
-    } catch (e) {}
-  });
+  let result = "??";
+  try {
+    result = await withLoggerAsync(log, async () => linkTest(...rawWgsl));
+  } catch (e) {
+    console.error(e);
+  }
   return { result, log: logged() };
 }
 

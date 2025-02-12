@@ -170,7 +170,7 @@ test("lower binding structs", () => {
   expectTrimmedMatch(linked, expected);
 });
 
-test("lower binding structs with conflicting root name", () => {
+test("lower binding structs with conflicting root name", async () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -191,11 +191,11 @@ test("lower binding structs with conflicting root name", () => {
   `;
 
   const opts = { config: { plugins: [bindingStructsPlugin()] } };
-  const linked = linkTestOpts(opts, src);
+  const linked = await linkTestOpts(opts, src);
   expectTrimmedMatch(linked, expected);
 });
 
-test("lower 5 bindings", () => {
+test("lower 5 bindings", async () => {
   const src = `
     struct Uniforms {
       foo: u32
@@ -230,6 +230,6 @@ test("lower 5 bindings", () => {
 `;
 
   const opts = { config: { plugins: [bindingStructsPlugin()] } };
-  const linked = linkTestOpts(opts, src);
+  const linked = await linkTestOpts(opts, src);
   expectTrimmedMatch(linked, expected);
 });

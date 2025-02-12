@@ -2,12 +2,12 @@ import { test } from "vitest";
 import { expectTrimmedMatch } from "./shared/StringUtil.ts";
 import { linkTestOpts } from "./TestUtil.ts";
 
-test("simple virtual module", () => {
+test("simple virtual module", async () => {
   const src = `
     import virt::Uniforms;
     @binding(0) @group(0) var<uniform> u: Uniforms;
   `;
-  const result = linkTestOpts(
+  const result = await linkTestOpts(
     { virtualLibs: { virt: () => "struct Uniforms { foo: u32 }" } },
     src,
   );
@@ -18,14 +18,14 @@ test("simple virtual module", () => {
   expectTrimmedMatch(result, expected);
 });
 
-test("virtual constants", () => {
+test("virtual constants", async () => {
   const src = `
 import constants::num_lights;
 fn main() {
   for (var i = 0; i < num_lights; i++) { }
 }
   `;
-  const result = linkTestOpts({ constants: { num_lights: 4 } }, src);
+  const result = await linkTestOpts({ constants: { num_lights: 4 } }, src);
   const expected = `
 fn main() {
   for (var i = 0; i < num_lights; i++) { }

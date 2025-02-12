@@ -56,7 +56,7 @@ function parseArgs(args: string[]) {
     .parseSync();
 }
 
-function linkNormally(paths: string[]): void {
+async function linkNormally(paths: string[]): Promise<void> {
   const pathAndTexts = paths.map(f => {
     const text = fs.readFileSync(f, { encoding: "utf8" });
     const relativePath = path.relative(process.cwd(), f);
@@ -72,7 +72,7 @@ function linkNormally(paths: string[]): void {
   // TODO conditions
   // TODO external defines
   if (argv.emit) {
-    const linked = link({ weslSrc, rootModuleName, weslRoot });
+    const linked = await link({ weslSrc, rootModuleName, weslRoot });
     if (argv.emit) log(linked.dest);
   }
   if (argv.details) {

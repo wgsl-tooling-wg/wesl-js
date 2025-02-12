@@ -1,9 +1,9 @@
-import { expectNoLog } from "mini-parse/test-util";
+import { expectNoLog, expectNoLogAsync } from "mini-parse/test-util";
 import lib from "random_wgsl";
 import { expect, test } from "vitest";
 import { link } from "../Linker.ts";
 
-test("import rand() from a package", () => {
+test("import rand() from a package", async () => {
   const src = `
     import random_wgsl::pcg_2u_3f; 
 
@@ -18,7 +18,7 @@ test("import rand() from a package", () => {
   `;
 
   const weslSrc = { "./main.wesl": src };
-  const result = expectNoLog(() =>
+  const result = await expectNoLogAsync(async () =>
     link({ weslSrc, rootModuleName: "./main.wesl", libs: [lib] }),
   );
   expect(result.dest).toContain("fn pcg_2u_3f");

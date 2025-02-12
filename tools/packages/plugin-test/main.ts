@@ -20,7 +20,7 @@ async function main() {
     plugins: [bindingStructsPlugin()],
   };
   const params: LinkParams = { ...linkParams, config };
-  const code = link(params).dest;
+  const code = (await link(params)).dest;
 
   const module = device.createShaderModule({ code });
 
