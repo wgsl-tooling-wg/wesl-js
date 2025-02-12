@@ -19,7 +19,8 @@
     "paths": {
       "wesl": ["../wesl/src"],
       "mini-parse": ["../mini-parse/src"],
-      "mini-parse/test-util": ["../mini-parse/src/test-util"]
+      "mini-parse/test-util": ["../mini-parse/src/test-util"],
+      "wesl-testsuite": ["../../../wesl-testsuite/src"]
     }
   },
   "include": ["src/**/*", "src/viteTypes.d.ts"],
