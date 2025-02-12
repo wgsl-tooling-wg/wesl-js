@@ -10,44 +10,18 @@ interface LinkExpectation {
 }
 
 // wgsl example src, indexed by name
-const examplesByName = new Map(importCases.map(t => [t.name, t.src]));
+const examplesByName = new Map(importCases.map(t => [t.name, t]));
 
-test.only("import package::bar::foo;", ctx => {
-  importCaseTest(ctx.task.name, {
-    linked: `
-      fn main() {
-        foo();
-      }
-
-      fn foo() { }
-    `,
-  });
+test("import package::bar::foo;", ctx => {
+  importCaseTest(ctx.task.name);
 });
 
 test("main has other root elements", ctx => {
-  importCaseTest(ctx.task.name, {
-    linked: `
-      struct Uniforms {
-        a: u32
-      }
-
-      @group(0) @binding(0) var<uniform> u: Uniforms;
-
-      fn main() { }
-    `,
-  });
+  importCaseTest(ctx.task.name);
 });
 
-test("import foo as bar", ctx => {
-  importCaseTest(ctx.task.name, {
-    linked: `
-      fn main() {
-        bar();
-      }
-
-      fn bar() { /* fooImpl */ }
-    `,
-  });
+test.only("import foo as bar", ctx => {
+  importCaseTest(ctx.task.name);
 });
 
 test("import twice doesn't get two copies", ctx => {
@@ -407,36 +381,30 @@ afterAll(c => {
   }
 });
 
-function importCaseTest(name: string, expectation: LinkExpectation): void {
+function importCaseTest(name: string, expectation?: LinkExpectation): void {
   /* -- find and trim source texts -- */
-  const exampleSrc = examplesByName.get(name);
-  if (!exampleSrc) {
+  const caseFound = examplesByName.get(name);
+  if (!caseFound) {
     throw new Error(`Skipping test "${name}"\nNo example found.`);
   }
-  const srcs = Object.entries(exampleSrc).map(([name, wgsl]) => {
+
+  const { weslSrc, expectedWgsl } = caseFound;
+
+  const srcEntries = Object.entries(weslSrc).map(([name, wgsl]) => {
     const trimmedSrc = trimSrc(wgsl);
     return [name, trimmedSrc] as [string, string];
   });
 
-  const weslSrc = Object.fromEntries(srcs);
+  const trimmedWeslSrc = Object.fromEntries(srcEntries);
 
   /* -- link -- */
-  const resultMap = link({ weslSrc, rootModuleName: srcs[0][0] });
+  const resultMap = link({
+    weslSrc: trimmedWeslSrc,
+    rootModuleName: srcEntries[0][0],
+  });
   const result = resultMap.dest;
 
   /* -- trim and verify results line by line -- */
-  const { linked, includes, excludes } = expectation;
-  if (linked !== undefined) {
-    expectTrimmedMatch(result, linked);
-  }
-  if (includes !== undefined) {
-    includes.forEach(inc => {
-      expect(result).toContain(inc);
-    });
-  }
-  if (excludes !== undefined) {
-    excludes.forEach(exc => {
-      expect(result).not.toContain(exc);
-    });
-  }
+  expect(expectedWgsl).toBeDefined();
+  expectTrimmedMatch(result, expectedWgsl!);
 }
