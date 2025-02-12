@@ -22,11 +22,9 @@ export const stdFns = `bitcast all any select arrayLength
   pack2x16snorm pack2x16unorm pack2x16float
   unpack4x8snorm unpack4x8unorm unpack4xI8 unpack4xU8 
   unpack2x16snorm unpack2x16unorm unpack2x16float
-  storageBarrier textureBarrier workgroupBarrier workgroupUniformLoad
-  `.split(/\s+/);
-
-// TODO: Add subgroup functions
-// TODO: Add quad operations
+  storageBarrier textureBarrier workgroupBarrier workgroupUniformLoad`.split(
+  /\s+/,
+);
 
 export const sampledTextureTypes = `
   texture_1d texture_2d texture_2d_array texture_3d 
@@ -63,8 +61,7 @@ export const stdTypes = `array atomic bool f16 f32 i32
   r32uint r32sint r32float rg32uint rg32sint rg32float
   rgba32uint rgba32sint rgba32float
   bgra8unorm 
-  function uniform
-  `.split(/\s+/); // LATER handle 'function' in template parser?
+  function uniform`.split(/\s+/);
 
 /** https://www.w3.org/TR/WGSL/#predeclared-enumerants  */
 export const stdEnumerants = `read write read_write 
@@ -72,8 +69,7 @@ export const stdEnumerants = `read write read_write
   rgba8unorm rgba8snorm rgba8uint rgba8sint 
   rgba16uint rgba16sint rgba16float 
   r32uint r32sint r32float rg32uint rg32sint rg32float
-  rgba32uint rgba32sint rgba32float bgra8unorm
-  `.split(/\s+/);
+  rgba32uint rgba32sint rgba32float bgra8unorm`.split(/\s+/);
 
 /* Note the texel formats like rgba8unorm are here because they appear in type position
  in <templates> for texture_storage_* types. 
