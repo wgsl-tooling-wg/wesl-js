@@ -5,7 +5,7 @@ import { weslImports } from "./ImportGrammar.ts";
 import { WeslStream } from "./WeslStream.ts";
 
 /** Parse a wesl src string to find the names of referenced libraries.
- * 
+ *
  * Works by parsing the import statements at the top of the src to find
  * import statements that import from library packages.
  */
