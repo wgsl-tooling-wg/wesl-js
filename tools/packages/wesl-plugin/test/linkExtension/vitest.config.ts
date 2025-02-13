@@ -1,4 +1,3 @@
-/// <reference types="vitest" />
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { UserConfig } from "vite";
