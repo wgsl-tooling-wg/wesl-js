@@ -1,0 +1,11 @@
+{
+  "exec": "vitest",
+  "delay": "500ms",
+  "watch": [
+    "*.ts",
+    "./shaders/**",
+    "wesl.toml",
+    "../../../wesl-plugin/dist/**/*.js"
+  ],
+  "ext": "cjs,ts,js,wgsl,wesl,toml"
+}

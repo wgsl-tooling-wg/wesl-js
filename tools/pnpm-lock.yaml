@@ -270,6 +270,28 @@ importers:
         specifier: ^5.97.1
         version: 5.97.1(esbuild@0.24.2)
 
+  packages/wesl-plugin/test/linkExtension:
+    dependencies:
+      mini-parse:
+        specifier: workspace:*
+        version: link:../../../mini-parse
+      random_wgsl:
+        specifier: workspace:*
+        version: link:../../../random_wgsl
+      thimbleberry:
+        specifier: ^0.2.9
+        version: 0.2.9
+      webgpu:
+        specifier: ^0.2.6
+        version: 0.2.6
+      wesl-plugin:
+        specifier: workspace:*
+        version: link:../..
+    devDependencies:
+      nodemon:
+        specifier: ^3.1.9
+        version: 3.1.9
+
   packages/wesl-reflect:
     dependencies:
       wesl-plugin:

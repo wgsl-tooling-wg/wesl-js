@@ -1,5 +1,5 @@
 import path from "node:path";
-import { noSuffix } from "wesl";
+import { noSuffix, packageReferences } from "wesl";
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.ts";
 
 export const linkBuildPlugin: PluginExtension = {
@@ -17,17 +17,29 @@ async function emitLinkJs(
   const rootModule = await api.weslMain(baseId);
   const rootModuleName = noSuffix(rootModule);
   const rootName = path.basename(rootModuleName);
+  const packages = scanForPackages(weslSrc);
+
+  const bundleImports = packages
+    .map(p => `import ${p} from "${p}";`)
+    .join("\n");
 
   const paramsName = `link${rootName}Config`;
+
   const src = `
-    export const ${paramsName}= {
+    ${bundleImports}
+    export const ${paramsName} = {
       rootModuleName: "${rootModuleName}",
       weslRoot: "${weslRoot}",  
       weslSrc: ${JSON.stringify(weslSrc, null, 2)},
+      dependencies: [${packages.join(", ")}],
     };
 
     export default ${paramsName};
     `;
 
   return src;
+}
+
+function scanForPackages(weslSrc: Record<string, string>): string[] {
+  return Object.values(weslSrc).flatMap(packageReferences);
 }
