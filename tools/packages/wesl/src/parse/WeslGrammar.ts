@@ -130,6 +130,10 @@ const attribute = tagScope(
           word,
           opt(() => attribute_argument_list),
         ),
+        seq(
+          text("if")                      .ptag("name"), 
+          delimited("(", fn(() => attribute_if_expression), ")").ptag("attrParam")
+        )
       ),
     ),
   )                                       .collect(collectAttribute),

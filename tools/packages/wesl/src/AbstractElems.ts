@@ -22,7 +22,6 @@ export type ContainerElem =
   | ConstElem
   | UnknownExpression
   | SimpleMemberRef
-  | DirectiveElem
   | FnElem
   | TypedDeclElem
   | GlobalVarElem
@@ -49,6 +48,7 @@ export type ExpressionElem =
   | FunctionCallExpression;
 
 export type TerminalElem =
+  | DirectiveElem
   | DeclIdentElem //
   | NameElem
   | RefIdentElem
