@@ -39,6 +39,7 @@ export type ContainerElem =
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
 export type ExpressionElem =
   | LiteralElem
+  | TranslateTimeFeatureElem
   | RefIdentElem
   | ParenthesizedExpression
   | ComponentExpression
@@ -203,6 +204,12 @@ export interface ConstElem extends ElemWithContentsBase {
 
 export interface UnknownExpression extends ElemWithContentsBase {
   kind: "expression";
+}
+
+/** `words`s inside `@if` */
+export interface TranslateTimeFeatureElem extends AbstractElemBase {
+  kind: "translate-time-feature";
+  name: string;
 }
 
 /** (expr) */

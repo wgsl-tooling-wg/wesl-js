@@ -18,10 +18,13 @@ import {
   tagScope,
   text,
   token,
+  tokenKind,
   tokenOf,
   tracing,
+  TypedToken,
   withSep,
   withSepPlus,
+  yes,
 } from "mini-parse";
 import { weslImports } from "./ImportGrammar.ts";
 import {
@@ -29,6 +32,7 @@ import {
   templateOpen,
   weslExtension,
   WeslToken,
+  WeslTokenKind,
 } from "./WeslStream.ts";
 import {
   aliasCollect,
@@ -59,6 +63,7 @@ import {
   LiteralElem,
   ParenthesizedExpression,
   RefIdentElem,
+  TranslateTimeFeatureElem,
   UnaryExpression,
   UnaryOperator,
 } from "../AbstractElems.ts";
@@ -334,20 +339,20 @@ const template_parameter = or(
 
 const attribute_if_primary_expression: Parser<
   Stream<WeslToken>,
-  LiteralElem | ParenthesizedExpression | RefIdentElem
+  LiteralElem | ParenthesizedExpression | TranslateTimeFeatureElem
 > = or(
   tokenOf("keyword", ["true", "false"]).map(makeLiteral),
-  delimited(
-    "(",
+  seq(
+    token("symbol", "("),
     fn(() => attribute_if_expression),
-    ")",
+    token("symbol", ")"),
   ).map(makeParenthesizedExpression),
-  word.map(makeRefIdent),
+  tokenKind("word").map(makeTranslateTimeFeature),
 );
 
 const attribute_if_unary_expression: Parser<
   Stream<WeslToken>,
-  UnaryExpression | LiteralElem | ParenthesizedExpression | RefIdentElem
+  ExpressionElem
 > = or(
   seq(
     token("symbol", "!").map(makeUnaryOperator),
@@ -356,7 +361,10 @@ const attribute_if_unary_expression: Parser<
   attribute_if_primary_expression,
 );
 
-const attribute_if_expression = weslExtension(
+const attribute_if_expression: Parser<
+  Stream<WeslToken>,
+  ExpressionElem
+> = weslExtension(
   seq(
     attribute_if_unary_expression,
     or(
@@ -372,8 +380,9 @@ const attribute_if_expression = weslExtension(
           req(attribute_if_unary_expression),
         ),
       ),
+      yes().map(() => []),
     ),
-  ),
+  ).map(makeRepeatingBinaryExpression),
 );
 
 const unscoped_compound_statement = seq(
@@ -625,7 +634,7 @@ export const weslRoot = seq(
     req(eof()),
   )                                 .collect(collectModule, "collectModule");
 
-function makeLiteral(token: WeslToken): LiteralElem {
+function makeLiteral(token: WeslToken<"keyword" | "number">): LiteralElem {
   return {
     kind: "literal",
     value: token.text,
@@ -635,25 +644,37 @@ function makeLiteral(token: WeslToken): LiteralElem {
   };
 }
 
-function makeRefIdent(token: WeslToken): RefIdentElem {
+function makeTranslateTimeFeature(
+  token: WeslToken<"word">,
+): TranslateTimeFeatureElem {
   return {
-    kind: "ref",
-    ident: {
-      kind: "ref",
-    },
-    srcModule: null as any, // TODO: Remove this from the syntax tree (space shrinking)
+    kind: "translate-time-feature",
+    name: token.text,
     start: token.span[0],
     end: token.span[1],
   };
 }
 
-function makeUnaryOperator(token: WeslToken): UnaryOperator {
+function makeParenthesizedExpression([leftBracket, expression, rightBracket]: [
+  WeslToken<"symbol">,
+  ExpressionElem,
+  WeslToken<"symbol">,
+]): ParenthesizedExpression {
+  return {
+    kind: "parenthesized-expression",
+    expression,
+    start: leftBracket.span[0],
+    end: rightBracket.span[1],
+  };
+}
+
+function makeUnaryOperator(token: WeslToken<"symbol">): UnaryOperator {
   return {
     value: token.text as any,
     span: token.span,
   };
 }
-function makeBinaryOperator(token: WeslToken): BinaryOperator {
+function makeBinaryOperator(token: WeslToken<"symbol">): BinaryOperator {
   return {
     value: token.text as any,
     span: token.span,
@@ -670,6 +691,17 @@ function makeUnaryExpression([operator, expression]: [
     start: operator.span[0],
     end: expression.end,
   };
+}
+/** A list of left-to-right associative binary expressions */
+function makeRepeatingBinaryExpression([start, repeating]: [
+  ExpressionElem,
+  [BinaryOperator, ExpressionElem][],
+]): ExpressionElem {
+  let result: ExpressionElem = start;
+  for (const [op, left] of repeating) {
+    result = makeBinaryExpression([result, op, left]);
+  }
+  return result;
 }
 function makeBinaryExpression([left, operator, right]: [
   ExpressionElem,

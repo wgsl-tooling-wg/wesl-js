@@ -102,6 +102,32 @@ export function tokenOf<const Kind extends string>(
 
 /** Parse for a particular kind of token,
  * @return the matching text */
+export function tokenKind<const Kind extends string>(
+  kindStr: Kind,
+): Parser<Stream<TypedToken<Kind>>, TypedToken<Kind>> {
+  return simpleParser(
+    `tokenKind '${kindStr}'`,
+    function _tokenKind(
+      state: ParserContext,
+    ): ParserResult<TypedToken<Kind>> | null {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
+      if (tracing) {
+        const text = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
+      }
+      if (next.kind !== kindStr) {
+        state.stream.reset(start);
+        return null;
+      }
+      return { value: next as TypedToken<Kind> };
+    },
+  );
+}
+
+/** Parse for a particular kind of token,
+ * @return the matching text */
 export function kind<const Kind extends string>(
   kindStr: Kind,
 ): Parser<Stream<TypedToken<Kind>>, string> {
@@ -143,28 +169,6 @@ export function text(value: string): Parser<ParserStream, string> {
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
       }
       if (next.text !== value) {
-        state.stream.reset(start);
-        return null;
-      }
-      return { value: next.text };
-    },
-  );
-}
-
-/** Parse for a token containing a text value
- * @return the kind of token that matched */
-export function textOf(values: string[]): Parser<ParserStream, string> {
-  return simpleParser(
-    `${quotedText(values.join(","))}`,
-    function _text(state: ParserContext): ParserResult<string> | null {
-      const start = state.stream.checkpoint();
-      const next = state.stream.nextToken();
-      if (next === null) return null;
-      if (tracing) {
-        const text = quotedText(next.text);
-        srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
-      }
-      if (!values.includes(next.text)) {
         state.stream.reset(start);
         return null;
       }

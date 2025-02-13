@@ -10,7 +10,8 @@ import {
 import { keywords, reservedWords } from "./Keywords";
 export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
 
-export interface WeslToken extends TypedToken<WeslTokenKind> {}
+export interface WeslToken<Kind extends WeslTokenKind = WeslTokenKind>
+  extends TypedToken<Kind> {}
 
 // https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
 /** Whitespaces including new lines */
