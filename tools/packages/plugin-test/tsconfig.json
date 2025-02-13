@@ -18,7 +18,7 @@
     "noEmit": true,
     "paths": {
       "wesl": ["../wesl/src"],
-      "wesl-plugin": ["../plugin/src"],
+      "wesl-plugin": ["../wesl-plugin/src"],
       "mini-parse/vitest-util": ["../mini-parse/src/vitest-util"]
     }
   },

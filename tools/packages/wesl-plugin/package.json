@@ -5,12 +5,10 @@
   "scripts": {
     "echo": "echo",
     "build": "tsup",
-    "dev": "tsup --watch src --watch ../linker/dist",
+    "dev": "tsup --watch src --watch ../wesl/dist",
     "lint": "eslint .",
     "play": "npm -C playground run dev",
-    "prepublishOnly": "npm run build",
-    "release": "bumpp && npm publish",
-    "test": "vitest",
+    "prepublishOnly": "run-s build",
     "typecheck": "tsc"
   },
   "dependencies": {
