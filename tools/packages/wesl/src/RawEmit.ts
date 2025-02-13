@@ -4,7 +4,7 @@ import {
   StuffElem,
   TypeRefElem,
   TypeTemplateParameter,
-  UnknownExpression,
+  UnknownExpressionElem,
 } from "./AbstractElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
 import { findDecl } from "./LowerAndEmit.ts";
@@ -51,7 +51,7 @@ function refToString(ref: RefIdent | string): string {
 }
 
 export function contentsToString(
-  elem: ExpressionElem | StuffElem | UnknownExpression,
+  elem: ExpressionElem | StuffElem | UnknownExpressionElem,
 ): string {
   if (elem.kind === "ref") {
     return refToString(elem.ident);

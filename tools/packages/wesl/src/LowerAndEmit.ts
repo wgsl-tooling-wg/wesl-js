@@ -2,7 +2,7 @@ import { SrcMapBuilder, tracing } from "mini-parse";
 import {
   AbstractElem,
   DeclIdentElem,
-  LiteralElem,
+  Literal,
   NameElem,
   RefIdentElem,
   SyntheticElem,
@@ -99,7 +99,7 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
 export function emitText(e: TextElem, ctx: EmitContext): void {
   ctx.srcBuilder.addCopy(e.srcModule.src, e.start, e.end);
 }
-export function emitLiteral(e: LiteralElem, ctx: EmitContext): void {
+export function emitLiteral(e: Literal, ctx: EmitContext): void {
   ctx.srcBuilder.addCopy(e.srcModule.src, e.start, e.end);
 }
 

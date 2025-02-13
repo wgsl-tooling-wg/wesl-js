@@ -13,14 +13,17 @@ import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
  */
 export type AbstractElem = GrammarElem | SyntheticElem;
 
-export type GrammarElem = ContainerElem | ExpressionElem | TerminalElem;
+export type GrammarElem =
+  | ContainerElem
+  | TranslateTimeExpressionElem
+  | TerminalElem;
 
 export type ContainerElem =
   | AliasElem
   | AttributeElem
   | ConstAssertElem
   | ConstElem
-  | UnknownExpression
+  | UnknownExpressionElem
   | SimpleMemberRef
   | FnElem
   | TypedDeclElem
@@ -37,8 +40,8 @@ export type ContainerElem =
 
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
 export type ExpressionElem =
-  | LiteralElem
-  | TranslateTimeFeatureElem
+  | Literal
+  | TranslateTimeFeature
   | RefIdentElem
   | ParenthesizedExpression
   | ComponentExpression
@@ -84,13 +87,6 @@ export interface ElemWithContentsBase extends AbstractElemBase {
  */
 export interface TextElem extends AbstractElemBase {
   kind: "text";
-  srcModule: SrcModule;
-}
-
-/** A literal value in WESL source. A boolean or a number. */
-export interface LiteralElem extends AbstractElemBase {
-  kind: "literal";
-  value: string;
   srcModule: SrcModule;
 }
 
@@ -188,7 +184,7 @@ export interface AliasElem extends ElemWithContentsBase {
 export interface AttributeElem extends ElemWithContentsBase {
   kind: "attribute";
   name: string;
-  params?: ExpressionElem[];
+  params?: UnknownExpressionElem[] | TranslateTimeExpressionElem[];
 }
 
 /** a const_assert statement */
@@ -202,48 +198,61 @@ export interface ConstElem extends ElemWithContentsBase {
   name: TypedDeclElem;
 }
 
-export interface UnknownExpression extends ElemWithContentsBase {
+export interface UnknownExpressionElem extends ElemWithContentsBase {
   kind: "expression";
 }
 
+export interface TranslateTimeExpressionElem extends AbstractElemBase {
+  kind: "translate-time-expression";
+  expression: ExpressionElem;
+}
+
+/** A literal value in WESL source. A boolean or a number. */
+export interface Literal {
+  kind: "literal";
+  value: string;
+  span: Span;
+}
+
 /** `words`s inside `@if` */
-export interface TranslateTimeFeatureElem extends AbstractElemBase {
+export interface TranslateTimeFeature {
   kind: "translate-time-feature";
   name: string;
+  span: Span;
 }
 
 /** (expr) */
-export interface ParenthesizedExpression extends AbstractElemBase {
+export interface ParenthesizedExpression {
   kind: "parenthesized-expression";
   expression: ExpressionElem;
 }
 /** `foo[expr]` */
-export interface ComponentExpression extends AbstractElemBase {
+export interface ComponentExpression {
   kind: "component-expression";
   base: ExpressionElem;
   access: ExpressionElem;
 }
 /** `foo.member` */
-export interface ComponentMemberExpression extends AbstractElemBase {
+export interface ComponentMemberExpression {
   kind: "component-member-expression";
   base: ExpressionElem;
   access: NameElem;
 }
 /** `+foo` */
-export interface UnaryExpression extends AbstractElemBase {
+export interface UnaryExpression {
   kind: "unary-expression";
   operator: UnaryOperator;
   expression: ExpressionElem;
 }
 /** `foo + bar` */
-export interface BinaryExpression extends AbstractElemBase {
+export interface BinaryExpression {
   kind: "binary-expression";
   operator: BinaryOperator;
   left: ExpressionElem;
   right: ExpressionElem;
 }
 /** `foo(arg, arg)` */
-export interface FunctionCallExpression extends AbstractElemBase {
+export interface FunctionCallExpression {
   kind: "call-expression";
   function: RefIdentElem;
   arguments: ExpressionElem[];
@@ -335,7 +344,7 @@ export interface StructMemberElem extends ElemWithContentsBase {
   mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
 }
 
-export type TypeTemplateParameter = TypeRefElem | ExpressionElem;
+export type TypeTemplateParameter = TypeRefElem | UnknownExpressionElem;
 
 /** a reference to a type, like 'f32', or 'MyStruct', or 'ptr<storage, array<f32>, read_only>'   */
 export interface TypeRefElem extends ElemWithContentsBase {

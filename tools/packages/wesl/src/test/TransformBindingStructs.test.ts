@@ -1,7 +1,7 @@
 import { SrcMapBuilder } from "mini-parse";
 import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
-import { astToString, elemToString } from "../debug/ASTtoString.ts";
+import { astToString } from "../debug/ASTtoString.ts";
 import { lowerAndEmit } from "../LowerAndEmit.ts";
 import { parsedRegistry } from "../ParsedRegistry.ts";
 import {
@@ -109,7 +109,7 @@ test("transformBindingReference", () => {
   expect(found.length).toBe(1);
   const { memberRef, struct } = found[0];
   const synthElem = transformBindingReference(memberRef, struct);
-  const synthAst = elemToString(synthElem);
+  const synthAst = astToString(synthElem);
   expect(synthAst).toMatchInlineSnapshot(`"synthetic 'particles'"`);
 });
 

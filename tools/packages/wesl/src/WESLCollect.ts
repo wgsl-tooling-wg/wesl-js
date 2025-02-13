@@ -23,9 +23,10 @@ import {
   StructMemberElem,
   StuffElem,
   TextElem,
+  TranslateTimeExpressionElem,
   TypedDeclElem,
   TypeRefElem,
-  UnknownExpression,
+  UnknownExpressionElem,
   VarElem,
 } from "./AbstractElems.ts";
 import {
@@ -263,7 +264,9 @@ export const collectStructMember = collectElem(
 export const collectAttribute = collectElem(
   "attribute",
   (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
-    const params = cc.tags.attrParam as ExpressionElem[];
+    const params = cc.tags.attrParam as
+      | UnknownExpressionElem[]
+      | TranslateTimeExpressionElem[];
     const name = cc.tags.name?.[0]! as string;
     const partElem: AttributeElem = { ...openElem, params, name };
     return withTextCover(partElem, cc);
@@ -294,7 +297,7 @@ export const typeRefCollect = collectElem(
 // TODO: This creates useless unknown-expression elements
 export const expressionCollect = collectElem(
   "expression",
-  (cc: CollectContext, openElem: PartElem<UnknownExpression>) => {
+  (cc: CollectContext, openElem: PartElem<UnknownExpressionElem>) => {
     const partElem = { ...openElem };
     return withTextCover(partElem, cc);
   },

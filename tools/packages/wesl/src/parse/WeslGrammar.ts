@@ -13,6 +13,7 @@ import {
   req,
   seq,
   seqObj,
+  Span,
   span,
   Stream,
   tagScope,
@@ -60,10 +61,11 @@ import {
   BinaryOperator,
   DirectiveElem,
   ExpressionElem,
-  LiteralElem,
+  Literal,
   ParenthesizedExpression,
   RefIdentElem,
-  TranslateTimeFeatureElem,
+  TranslateTimeExpressionElem,
+  TranslateTimeFeature,
   UnaryExpression,
   UnaryOperator,
 } from "../AbstractElems.ts";
@@ -132,7 +134,7 @@ const attribute = tagScope(
         ),
         seq(
           text("if")                      .ptag("name"), 
-          delimited("(", fn(() => attribute_if_expression), ")").ptag("attrParam")
+          span(delimited("(", fn(() => attribute_if_expression), ")")).map(makeTranslateTimeExpressionElem).ptag("attrParam")
         )
       ),
     ),
@@ -343,10 +345,10 @@ const template_parameter = or(
 
 const attribute_if_primary_expression: Parser<
   Stream<WeslToken>,
-  LiteralElem | ParenthesizedExpression | TranslateTimeFeatureElem
+  Literal | ParenthesizedExpression | TranslateTimeFeature
 > = or(
   tokenOf("keyword", ["true", "false"]).map(makeLiteral),
-  seq(
+  delimited(
     token("symbol", "("),
     fn(() => attribute_if_expression),
     token("symbol", ")"),
@@ -638,37 +640,42 @@ export const weslRoot = seq(
     req(eof()),
   )                                 .collect(collectModule, "collectModule");
 
-function makeLiteral(token: WeslToken<"keyword" | "number">): LiteralElem {
+function makeTranslateTimeExpressionElem(args: {
+  value: ExpressionElem;
+  span: Span;
+}): TranslateTimeExpressionElem {
+  return {
+    kind: "translate-time-expression",
+    expression: args.value,
+    start: args.span[0],
+    end: args.span[1],
+  };
+}
+
+function makeLiteral(token: WeslToken<"keyword" | "number">): Literal {
   return {
     kind: "literal",
     value: token.text,
-    srcModule: null as any, // TODO: Remove this from the syntax tree (space shrinking)
-    start: token.span[0],
-    end: token.span[1],
+    span: token.span,
   };
 }
 
 function makeTranslateTimeFeature(
   token: WeslToken<"word">,
-): TranslateTimeFeatureElem {
+): TranslateTimeFeature {
   return {
     kind: "translate-time-feature",
     name: token.text,
-    start: token.span[0],
-    end: token.span[1],
+    span: token.span,
   };
 }
 
-function makeParenthesizedExpression([leftBracket, expression, rightBracket]: [
-  WeslToken<"symbol">,
-  ExpressionElem,
-  WeslToken<"symbol">,
-]): ParenthesizedExpression {
+function makeParenthesizedExpression(
+  expression: ExpressionElem,
+): ParenthesizedExpression {
   return {
     kind: "parenthesized-expression",
     expression,
-    start: leftBracket.span[0],
-    end: rightBracket.span[1],
   };
 }
 
@@ -692,8 +699,6 @@ function makeUnaryExpression([operator, expression]: [
     kind: "unary-expression",
     operator,
     expression,
-    start: operator.span[0],
-    end: expression.end,
   };
 }
 /** A list of left-to-right associative binary expressions */
@@ -717,8 +722,6 @@ function makeBinaryExpression([left, operator, right]: [
     operator,
     left,
     right,
-    start: left.start,
-    end: right.end,
   };
 }
 
