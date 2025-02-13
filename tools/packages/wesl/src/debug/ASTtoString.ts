@@ -8,6 +8,7 @@ import {
   ContainerElem,
   ExpressionElem,
   FnElem,
+  StuffElem,
   TranslateTimeExpressionElem,
   TypedDeclElem,
   TypeRefElem,
@@ -256,7 +257,7 @@ function typeRefElemToString(elem: TypeRefElem): string {
   return nameStr + params;
 }
 
-export function debugContentsToString(elem: ContainerElem): string {
+export function debugContentsToString(elem: StuffElem): string {
   const parts = elem.contents.map(c => {
     const { kind } = c;
     if (kind === "text") {

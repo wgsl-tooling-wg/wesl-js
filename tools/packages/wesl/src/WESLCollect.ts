@@ -40,7 +40,6 @@ import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "./Scope.ts";
 export function importElem(cc: CollectContext) {
   const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing
   for (const importElem of importElems) {
-    importElem.srcModule = cc.app.stable;
     (cc.app.stable as StableState).imports.push(importElem.imports);
     addToOpenElem(cc, importElem as AbstractElem);
   }
@@ -96,6 +95,7 @@ export function declCollect(cc: CollectContext): DeclIdentElem {
     originalName,
     scope,
     id: identId++,
+    srcModule,
   };
   const identElem: DeclIdentElem = { kind, start, end, srcModule, ident };
 
@@ -266,10 +266,16 @@ export const collectAttribute = collectElem(
   (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
     const params = cc.tags.attrParam as
       | UnknownExpressionElem[]
-      | TranslateTimeExpressionElem[];
+      | TranslateTimeExpressionElem[]
+      | undefined;
     const name = cc.tags.name?.[0]! as string;
-    const partElem: AttributeElem = { ...openElem, params, name };
-    return withTextCover(partElem, cc);
+    const partElem: AttributeElem = {
+      ...openElem,
+      params,
+      name,
+      contents: params ?? [],
+    };
+    return withTextCover(partElem, cc); // TODO: Remove this in a separate commit
   },
 );
 
@@ -331,9 +337,8 @@ export const memberRefCollect = collectElem(
 
 export function nameCollect(cc: CollectContext): NameElem {
   const { start, end, src, app } = cc;
-  const { srcModule } = app.stable as WeslAST;
   const name = src.slice(start, end);
-  const elem: NameElem = { kind: "name", srcModule, start, end, name };
+  const elem: NameElem = { kind: "name", start, end, name };
   addToOpenElem(cc, elem);
   return elem;
 }

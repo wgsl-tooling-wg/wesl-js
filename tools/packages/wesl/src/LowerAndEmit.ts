@@ -1,7 +1,11 @@
 import { SrcMapBuilder, tracing } from "mini-parse";
 import {
   AbstractElem,
+  AttributeElem,
+  ContainerElem,
   DeclIdentElem,
+  DirectiveElem,
+  ExpressionElem,
   Literal,
   NameElem,
   RefIdentElem,
@@ -50,8 +54,6 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     // terminal elements copy strings to the output
     case "text":
       return emitText(e, ctx);
-    case "literal":
-      return emitLiteral(e, ctx);
     case "name":
       return emitName(e, ctx);
     case "synthetic":
@@ -71,7 +73,6 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "module":
     case "member":
     case "memberRef":
-    case "attribute":
     case "expression":
     case "type":
     case "stuff":
@@ -91,47 +92,73 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
       }
       return emitContents(e, ctx);
 
+    case "attribute":
+      return emitAttribute(e, ctx);
+    case "translate-time-expression":
+      return emitExpression(e.expression, ctx);
+    case "directive":
+      return emitDirective(e, ctx);
+
     default:
       assertUnreachable(e);
   }
 }
 
 export function emitText(e: TextElem, ctx: EmitContext): void {
-  ctx.srcBuilder.addCopy(e.srcModule.src, e.start, e.end);
-}
-export function emitLiteral(e: Literal, ctx: EmitContext): void {
-  ctx.srcBuilder.addCopy(e.srcModule.src, e.start, e.end);
+  ctx.srcBuilder.addCopy(e.start, e.end);
 }
 
 export function emitName(e: NameElem, ctx: EmitContext): void {
-  ctx.srcBuilder.add(e.name, e.srcModule.src, e.start, e.end);
+  ctx.srcBuilder.add(e.name, e.start, e.end);
 }
 
 export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
   const { text } = e;
-  ctx.srcBuilder.add(text, text, 0, text.length);
+  ctx.srcBuilder.addSynthetic(text, text, 0, text.length);
 }
 
-export function emitContents(
-  elem: AbstractElem & { contents: AbstractElem[] },
-  ctx: EmitContext,
-): void {
+export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
   elem.contents.forEach(e => lowerAndEmitElem(e, ctx));
 }
 
 export function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {
   if (e.ident.std) {
-    ctx.srcBuilder.add(e.ident.originalName, e.srcModule.src, e.start, e.end);
+    ctx.srcBuilder.add(e.ident.originalName, e.start, e.end);
   } else {
     const declIdent = findDecl(e.ident);
     const mangledName = displayName(declIdent);
-    ctx.srcBuilder.add(mangledName!, e.srcModule.src, e.start, e.end);
+    ctx.srcBuilder.add(mangledName!, e.start, e.end);
   }
 }
 
 export function emitDeclIdent(e: DeclIdentElem, ctx: EmitContext): void {
   const mangledName = displayName(e.ident);
-  ctx.srcBuilder.add(mangledName!, e.srcModule.src, e.start, e.end);
+  ctx.srcBuilder.add(mangledName!, e.start, e.end);
+}
+
+function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
+  if (e.params === undefined || e.params.length === 0) {
+    ctx.srcBuilder.add("@" + e.name, e.start, e.end);
+  } else {
+    ctx.srcBuilder.add("@" + e.name + "(", e.start, e.params[0].start);
+    for (const param of e.params) {
+      if (param.kind === "expression") {
+        emitContents(param, ctx);
+      } else {
+        emitExpression(param.expression, ctx);
+      }
+    }
+    ctx.srcBuilder.add(")", e.params[e.params.length - 1].end, e.end);
+  }
+}
+
+function emitExpression(expression: ExpressionElem, ctx: EmitContext): void {
+  throw new Error("Emitting translate time attributes is not supported yet.");
+}
+
+function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
+  const directiveStatement = `${e.directive} ${e.arguments.join(", ")};`;
+  ctx.srcBuilder.add(directiveStatement, e.start, e.end);
 }
 
 function displayName(declIdent: DeclIdent): string {

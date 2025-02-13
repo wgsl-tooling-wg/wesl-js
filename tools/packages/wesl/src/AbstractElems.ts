@@ -20,7 +20,6 @@ export type GrammarElem =
 
 export type ContainerElem =
   | AliasElem
-  | AttributeElem
   | ConstAssertElem
   | ConstElem
   | UnknownExpressionElem
@@ -51,6 +50,7 @@ export type ExpressionElem =
   | FunctionCallExpression;
 
 export type TerminalElem =
+  | AttributeElem
   | DirectiveElem
   | DeclIdentElem //
   | NameElem
@@ -94,7 +94,6 @@ export interface TextElem extends AbstractElemBase {
 export interface NameElem extends AbstractElemBase {
   kind: "name";
   name: string;
-  srcModule: SrcModule;
 }
 
 /** an identifier that refers to a declaration (aka a symbol reference) */
@@ -115,7 +114,6 @@ export interface DeclIdentElem extends AbstractElemBase {
 export interface ImportElem extends AbstractElemBase {
   kind: "import";
   imports: ImportStatement;
-  srcModule: SrcModule;
 }
 
 /**
@@ -181,7 +179,7 @@ export interface AliasElem extends ElemWithContentsBase {
 }
 
 /** an attribute like '@compute' or '@binding(0)' */
-export interface AttributeElem extends ElemWithContentsBase {
+export interface AttributeElem extends AbstractElemBase {
   kind: "attribute";
   name: string;
   params?: UnknownExpressionElem[] | TranslateTimeExpressionElem[];

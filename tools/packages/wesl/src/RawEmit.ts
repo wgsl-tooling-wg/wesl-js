@@ -1,7 +1,7 @@
 import {
   AttributeElem,
-  ExpressionElem,
   StuffElem,
+  TranslateTimeExpressionElem,
   TypeRefElem,
   TypeTemplateParameter,
   UnknownExpressionElem,
@@ -25,15 +25,12 @@ export function typeListToString(params: TypeTemplateParameter[]): string {
 }
 
 export function typeParamToString(param?: TypeTemplateParameter): string {
+  if (param === undefined) return "?";
   if (typeof param === "string") return param;
-  if (param?.kind === "literal" || param?.kind === "ref") {
-    return contentsToString(param);
-  }
-  // @ts-ignore TODO: Remove this dummy case
-  if (param?.kind === "expression") return contentsToString(param);
 
-  if (param?.kind === "type") return typeRefToString(param);
-  else return `?${param}?`;
+  if (param.kind === "expression") return contentsToString(param);
+  if (param.kind === "type") return typeRefToString(param);
+  assertUnreachable(param);
 }
 
 export function typeRefToString(t?: TypeRefElem): string {
@@ -51,13 +48,11 @@ function refToString(ref: RefIdent | string): string {
 }
 
 export function contentsToString(
-  elem: ExpressionElem | StuffElem | UnknownExpressionElem,
+  elem: TranslateTimeExpressionElem | UnknownExpressionElem | StuffElem,
 ): string {
-  if (elem.kind === "ref") {
-    return refToString(elem.ident);
-  } else if (elem.kind === "literal") {
-    return elem.srcModule.src.slice(elem.start, elem.end);
-  } else if (elem.kind === "stuff" || elem.kind === "expression") {
+  if (elem.kind === "translate-time-expression") {
+    throw new Error("Not supported");
+  } else if (elem.kind === "expression" || elem.kind === "stuff") {
     const parts = elem.contents.map(c => {
       const { kind } = c;
       if (kind === "text") {

@@ -4,7 +4,9 @@ import {
   ExpressionElem,
   StructMemberElem,
   TextElem,
+  TranslateTimeExpressionElem,
   TypeRefElem,
+  UnknownExpressionElem,
 } from "./AbstractElems.ts";
 import { assertThat } from "./Assertions.ts";
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
@@ -178,25 +180,7 @@ function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
   if (typeRef.name.originalName === "ptr") {
     const param1 = typeRef.templateParams?.[0];
     const param3 = typeRef.templateParams?.[2];
-    if (param1?.kind === "ref" && param1.ident.originalName === "uniform") {
-      return `buffer: { type: "uniform" }`;
-    } else if (
-      param1?.kind === "ref" &&
-      param1.ident.originalName === "storage"
-    ) {
-      if (param3?.kind === "ref" && param3.ident.originalName === "read") {
-        return `buffer: { type: "read-only-storage" }`;
-      } else {
-        return `buffer: { type: "storage" }`;
-      }
-      // TODO what do we do with the element type (2nd parameter)
-      // TODO should there be an ability to set hasDynamicOffset?
-    }
-    // TODO: Remove these (temporary hack)
-    else if (
-      param1?.kind === "type" &&
-      param1.name.originalName === "uniform"
-    ) {
+    if (param1?.kind === "type" && param1.name.originalName === "uniform") {
       return `buffer: { type: "uniform" }`;
     } else if (
       param1?.kind === "type" &&
@@ -207,6 +191,8 @@ function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
       } else {
         return `buffer: { type: "storage" }`;
       }
+      // TODO what do we do with the element type (2nd parameter)
+      // TODO should there be an ability to set hasDynamicOffset?
     }
   }
 }
@@ -269,7 +255,13 @@ function externalTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   return undefined;
 }
 
-function paramText(expression: ExpressionElem): string {
+function paramText(
+  expression: UnknownExpressionElem | TranslateTimeExpressionElem,
+): string {
+  assertThat(
+    expression.kind === "expression",
+    "Translate time expressions are not supported in this position",
+  );
   // @ts-ignore
   const text = expression.contents[0] as TextElem;
   return text.srcModule.src.slice(expression.start, expression.end);
