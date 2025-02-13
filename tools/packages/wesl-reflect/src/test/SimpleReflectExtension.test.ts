@@ -1,5 +1,3 @@
-/// <reference types="vite/client" />
-/// <reference types="wesl-plugin" />
 import { expect, expectTypeOf, test } from "vitest";
 
 // --- load reflected structs ---
