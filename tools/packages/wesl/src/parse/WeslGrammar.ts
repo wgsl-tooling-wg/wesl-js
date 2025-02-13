@@ -17,6 +17,8 @@ import {
   Stream,
   tagScope,
   text,
+  token,
+  tokenOf,
   tracing,
   withSep,
   withSepPlus,
@@ -49,7 +51,17 @@ import {
   typeRefCollect,
 } from "../WESLCollect.ts";
 import { mainTokens } from "../WESLTokens.ts";
-import { DirectiveElem } from "../AbstractElems.ts";
+import {
+  BinaryExpression,
+  BinaryOperator,
+  DirectiveElem,
+  ExpressionElem,
+  LiteralElem,
+  ParenthesizedExpression,
+  RefIdentElem,
+  UnaryExpression,
+  UnaryOperator,
+} from "../AbstractElems.ts";
 import { terminated } from "mini-parse";
 
 const word = kind(mainTokens.ident);
@@ -320,30 +332,47 @@ const template_parameter = or(
   template_arg_expression           .collect(expressionCollect, "templateParam"),
 );
 
-const attribute_if_primary_expression = or(
-  "true",
-  "false",
+const attribute_if_primary_expression: Parser<
+  Stream<WeslToken>,
+  LiteralElem | ParenthesizedExpression | RefIdentElem
+> = or(
+  tokenOf("keyword", ["true", "false"]).map(makeLiteral),
   delimited(
     "(",
     fn(() => attribute_if_expression),
     ")",
-  ),
-  word,
+  ).map(makeParenthesizedExpression),
+  word.map(makeRefIdent),
 );
 
-const attribute_if_unary_expression: Parser<Stream<WeslToken>, any> = or(
+const attribute_if_unary_expression: Parser<
+  Stream<WeslToken>,
+  UnaryExpression | LiteralElem | ParenthesizedExpression | RefIdentElem
+> = or(
   seq(
-    "!",
+    token("symbol", "!").map(makeUnaryOperator),
     fn(() => attribute_if_unary_expression),
-  ),
+  ).map(makeUnaryExpression),
   attribute_if_primary_expression,
 );
 
-const attribute_if_expression = seq(
-  attribute_if_unary_expression,
-  or(
-    repeatPlus(seq("||", req(attribute_if_unary_expression))),
-    repeatPlus(seq("&&", req(attribute_if_unary_expression))),
+const attribute_if_expression = weslExtension(
+  seq(
+    attribute_if_unary_expression,
+    or(
+      repeatPlus(
+        seq(
+          token("symbol", "||").map(makeBinaryOperator),
+          req(attribute_if_unary_expression),
+        ),
+      ),
+      repeatPlus(
+        seq(
+          token("symbol", "&&").map(makeBinaryOperator),
+          req(attribute_if_unary_expression),
+        ),
+      ),
+    ),
   ),
 );
 
@@ -595,6 +624,67 @@ export const weslRoot = seq(
     repeat(global_decl),
     req(eof()),
   )                                 .collect(collectModule, "collectModule");
+
+function makeLiteral(token: WeslToken): LiteralElem {
+  return {
+    kind: "literal",
+    value: token.text,
+    srcModule: null as any, // TODO: Remove this from the syntax tree (space shrinking)
+    start: token.span[0],
+    end: token.span[1],
+  };
+}
+
+function makeRefIdent(token: WeslToken): RefIdentElem {
+  return {
+    kind: "ref",
+    ident: {
+      kind: "ref",
+    },
+    srcModule: null as any, // TODO: Remove this from the syntax tree (space shrinking)
+    start: token.span[0],
+    end: token.span[1],
+  };
+}
+
+function makeUnaryOperator(token: WeslToken): UnaryOperator {
+  return {
+    value: token.text as any,
+    span: token.span,
+  };
+}
+function makeBinaryOperator(token: WeslToken): BinaryOperator {
+  return {
+    value: token.text as any,
+    span: token.span,
+  };
+}
+function makeUnaryExpression([operator, expression]: [
+  UnaryOperator,
+  ExpressionElem,
+]): UnaryExpression {
+  return {
+    kind: "unary-expression",
+    operator,
+    expression,
+    start: operator.span[0],
+    end: expression.end,
+  };
+}
+function makeBinaryExpression([left, operator, right]: [
+  ExpressionElem,
+  BinaryOperator,
+  ExpressionElem,
+]): BinaryExpression {
+  return {
+    kind: "binary-expression",
+    operator,
+    left,
+    right,
+    start: left.start,
+    end: right.end,
+  };
+}
 
 if (tracing) {
   const names: Record<string, Parser<Stream<WeslToken>, unknown>> = {

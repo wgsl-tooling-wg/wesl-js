@@ -1,3 +1,4 @@
+import { Span } from "mini-parse";
 import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
 
 /**
@@ -36,12 +37,15 @@ export type ContainerElem =
   | VarElem;
 
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
-export type ExpressionElem = LiteralElem | RefIdentElem;
-/*| ParenthesizedExpression
+export type ExpressionElem =
+  | LiteralElem
+  | RefIdentElem
+  | ParenthesizedExpression
   | ComponentExpression
+  | ComponentMemberExpression
   | UnaryExpression
   | BinaryExpression
-  | FunctionCallExpression*/
+  | FunctionCallExpression;
 
 export type TerminalElem =
   | DeclIdentElem //
@@ -85,6 +89,7 @@ export interface TextElem extends AbstractElemBase {
 /** A literal value in WESL source. A boolean or a number. */
 export interface LiteralElem extends AbstractElemBase {
   kind: "literal";
+  value: string;
   srcModule: SrcModule;
 }
 
@@ -199,51 +204,54 @@ export interface ConstElem extends ElemWithContentsBase {
 export interface UnknownExpression extends ElemWithContentsBase {
   kind: "expression";
 }
-/*
+
+/** (expr) */
 export interface ParenthesizedExpression extends AbstractElemBase {
   kind: "parenthesized-expression";
-  contents: [ExpressionElem];
+  expression: ExpressionElem;
 }
+/** `foo[expr]` */
 export interface ComponentExpression extends AbstractElemBase {
   kind: "component-expression";
-  // To safely type this, don't use contents, but rather define your own props!
-  contents: [ExpressionElem, ExpressionElem];
+  base: ExpressionElem;
+  access: ExpressionElem;
 }
-// TODO: We will emit these very soon (for the @if(expr))
+/** `foo.member` */
+export interface ComponentMemberExpression extends AbstractElemBase {
+  kind: "component-member-expression";
+  base: ExpressionElem;
+  access: NameElem;
+}
+/** `+foo` */
 export interface UnaryExpression extends AbstractElemBase {
   kind: "unary-expression";
   operator: UnaryOperator;
-  contents: [ExpressionElem];
+  expression: ExpressionElem;
 }
+/** `foo + bar` */
 export interface BinaryExpression extends AbstractElemBase {
   kind: "binary-expression";
   operator: BinaryOperator;
-  contents: [ExpressionElem, ExpressionElem];
+  left: ExpressionElem;
+  right: ExpressionElem;
 }
+/** `foo(arg, arg)` */
 export interface FunctionCallExpression extends AbstractElemBase {
   kind: "call-expression";
-  contents: [ExpressionElem, ExpressionElem];
+  function: RefIdentElem;
+  arguments: ExpressionElem[];
 }
-export type UnaryOperator = "!" | "&" | "*" | "-" | "~";
-export type BinaryOperator =
-  | "||"
-  | "&&"
-  | "+"
-  | "-"
-  | "*"
-  | "/"
-  | "%"
-  | "=="
-  | "!="
-  | "<"
-  | "<="
-  | ">"
-  | ">="
-  | "|"
-  | "&"
-  | "^"
-  | "<<"
-  | ">>";*/
+export interface UnaryOperator {
+  value: "!" | "&" | "*" | "-" | "~";
+  span: Span;
+}
+export interface BinaryOperator {
+  value:
+    | ("||" | "&&" | "+" | "-" | "*" | "/" | "%" | "==")
+    | ("!=" | "<" | "<=" | ">" | ">=" | "|" | "&" | "^")
+    | ("<<" | ">>");
+  span: Span;
+}
 
 export interface DirectiveElem extends AbstractElemBase {
   kind: "directive";
