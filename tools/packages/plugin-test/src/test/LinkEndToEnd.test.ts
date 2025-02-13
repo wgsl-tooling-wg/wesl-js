@@ -25,7 +25,7 @@ test("gpu execution w/?link", async () => {
   const linkParams = (await import("../../shaders/linkTest/main.wesl?link"))
     .default;
 
-  const code = link(linkParams).dest;
+  const code = (await link(linkParams)).dest;
 
   // --- verify linked shader ---
   device.createShaderModule({ code }); // verify works for webgpu

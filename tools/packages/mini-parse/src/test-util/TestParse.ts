@@ -10,6 +10,7 @@ import {
   Token,
   tracing,
   withLogger,
+  withLoggerAsync,
 } from "mini-parse";
 import { expect } from "vitest";
 import { FilterStream } from "../stream/FilterStream.js";
@@ -77,6 +78,16 @@ export function expectNoLog<T>(fn: () => T): T {
     }
     expect(logged()).toBe("");
   }
+  return result;
+}
+
+export async function expectNoLogAsync<T>(fn: () => Promise<T>): Promise<T> {
+  const { log, logged } = logCatch();
+  const result = await withLoggerAsync(log, fn);
+  if (logged()) {
+    console.log(logged());
+  }
+  expect(logged()).toBe("");
   return result;
 }
 

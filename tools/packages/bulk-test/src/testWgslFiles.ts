@@ -1,4 +1,4 @@
-import { expectNoLog } from "mini-parse/test-util";
+import { expectNoLogAsync } from "mini-parse/test-util";
 import fs from "node:fs/promises";
 import { expect, test } from "vitest";
 import { bindingStructsPlugin, link, noSuffix } from "wesl";
@@ -14,14 +14,14 @@ export interface NamedPath {
  *
  * @param fileNames wgsl file paths to load and parse
  */
-export function testWgslFiles(namedPaths: NamedPath[]) {
+export async function testWgslFiles(namedPaths: NamedPath[]) {
   const config = { plugins: [bindingStructsPlugin()] };
 
   namedPaths.forEach(({ name, filePath }) => {
     const shortPath = "./" + name;
     test(name, async () => {
       const text = await fs.readFile(filePath, { encoding: "utf8" });
-      const result = expectNoLog(() => {
+      const result = await expectNoLogAsync(() => {
         const weslSrc = { [shortPath]: text };
         const rootModuleName = noSuffix(name);
         return link({ weslSrc, rootModuleName, config });

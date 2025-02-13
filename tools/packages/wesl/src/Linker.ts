@@ -77,7 +77,7 @@ export type VirtualLibraryFn = (conditions: Conditions) => string;
  * Additionally the caller can specify conditions for to control conditional compilation.
  * Only code that is valid with the current conditions is included in the output.
  */
-export function link(params: LinkParams): SrcMap {
+export async function link(params: LinkParams): Promise<SrcMap> {
   const { weslSrc, weslRoot = "", libs = [] } = params;
   const registry = parsedRegistry();
   parseIntoRegistry(weslSrc, registry, "package", weslRoot);

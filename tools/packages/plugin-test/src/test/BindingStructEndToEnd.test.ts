@@ -33,7 +33,7 @@ test("gpu execution w/binding structs lowered and reflected", async () => {
     plugins: [bindingStructsPlugin()],
   };
   const params: LinkParams = { ...linkParams, config };
-  const code = link(params).dest;
+  const code = (await link(params)).dest;
 
   // --- execute linked shader ---
   const module = device.createShaderModule({ code });
