@@ -8,3 +8,4 @@ export * from "./PathUtil.js";
 export * from "./TransformBindingStructs.js";
 export * from "./Util.js";
 export * from "./WgslBundle.js";
+export * from "./parse/PackageReferences.js";
