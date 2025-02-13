@@ -21,13 +21,13 @@ import {
   withSep,
   withSepPlus,
 } from "mini-parse";
-import { weslImports } from "./parse/ImportGrammar.ts";
+import { weslImports } from "./ImportGrammar.ts";
 import {
   templateClose,
   templateOpen,
   weslExtension,
   WeslToken,
-} from "./parse/WeslStream.ts";
+} from "./WeslStream.ts";
 import {
   aliasCollect,
   collectAttribute,
@@ -47,12 +47,12 @@ import {
   stuffCollect,
   typedDecl,
   typeRefCollect,
-} from "./WESLCollect.ts";
-import { mainTokens } from "./WESLTokens.ts";
-import { DirectiveElem } from "./AbstractElems.ts";
+} from "../WESLCollect.ts";
+import { mainTokens } from "../WESLTokens.ts";
+import { DirectiveElem } from "../AbstractElems.ts";
 import { terminated } from "mini-parse";
 
-export const word = kind(mainTokens.ident);
+const word = kind(mainTokens.ident);
 
 const full_ident = weslExtension(withSepPlus("::", word));
 
@@ -138,21 +138,21 @@ const opt_attributes = repeat(attribute);
 
 /** parse an identifier into a TypeNameElem */
 // prettier-ignore
-export const typeNameDecl = 
+const typeNameDecl = 
   req(
     word                            .collect(declCollect, "type_name")
   );
 
 /** parse an identifier into a TypeNameElem */
 // prettier-ignore
-export const fnNameDecl = 
+const fnNameDecl = 
   req(
     word                            .collect(declCollect, "fn_name"),
     "missing fn name",
   );
 
 // prettier-ignore
-export const type_specifier: Parser<Stream<WeslToken>,any> = tagScope(
+const type_specifier: Parser<Stream<WeslToken>,any> = tagScope(
   seq(
     full_ident                        .collect(refIdent, "typeRefName"),
     () => opt_template_list,
@@ -170,7 +170,7 @@ const optionally_typed_ident = tagScope(
 const req_optionally_typed_ident = req(optionally_typed_ident);
 
 // prettier-ignore
-export const struct_member = tagScope(
+const struct_member = tagScope(
   seq(
     opt_attributes,
     word                              .collect(nameCollect, "nameElem"),
@@ -180,7 +180,7 @@ export const struct_member = tagScope(
 )                                     .ctag("members");
 
 // prettier-ignore
-export const struct_decl = seq(
+const struct_decl = seq(
   "struct",
   req(typeNameDecl),
   seq(
@@ -192,7 +192,7 @@ export const struct_decl = seq(
 
 /** Also covers func_call_statement.post.ident */
 // prettier-ignore
-export const fn_call = seq(
+const fn_call = seq(
   full_ident                     .collect(refIdent),
   () => opt_template_list,
   argument_expression_list,
@@ -318,6 +318,33 @@ const template_parameter = or(
   // TODO: Remove this, it's wrong
   type_specifier                    .ctag("templateParam"),
   template_arg_expression           .collect(expressionCollect, "templateParam"),
+);
+
+const attribute_if_primary_expression = or(
+  "true",
+  "false",
+  delimited(
+    "(",
+    fn(() => attribute_if_expression),
+    ")",
+  ),
+  word,
+);
+
+const attribute_if_unary_expression: Parser<Stream<WeslToken>, any> = or(
+  seq(
+    "!",
+    fn(() => attribute_if_unary_expression),
+  ),
+  attribute_if_primary_expression,
+);
+
+const attribute_if_expression = seq(
+  attribute_if_unary_expression,
+  or(
+    repeatPlus(seq("||", req(attribute_if_unary_expression))),
+    repeatPlus(seq("&&", req(attribute_if_unary_expression))),
+  ),
 );
 
 const unscoped_compound_statement = seq(
@@ -475,7 +502,7 @@ const variable_updating_statement = or(
 );
 
 // prettier-ignore
-export const fn_decl = seq(
+const fn_decl = seq(
   opt_attributes                      .collect((cc) => cc.tags.attribute, "fn_attributes"), // filter out empties
   text("fn"),
   req(fnNameDecl),
@@ -508,7 +535,7 @@ const global_value_decl = or(
 );
 
 // prettier-ignore
-export const global_alias = seq(
+const global_alias = seq(
   "alias",
   req(word)                           .collect(declCollect, "alias_name"),
   req("="),
@@ -546,7 +573,7 @@ const global_directive = span(
 
 // prettier-ignore
 // TODO: Hoist out the "opt_attributes"
-export const global_decl = tagScope(
+const global_decl = tagScope(
   or(
     fn_decl,
     seq(
