@@ -16,6 +16,7 @@ export type AbstractElem = GrammarElem | SyntheticElem;
 export type GrammarElem = ContainerElem | TerminalElem;
 
 export type ContainerElem =
+  | AttributeElem
   | AliasElem
   | ConstAssertElem
   | ConstElem
@@ -47,7 +48,6 @@ export type ExpressionElem =
   | FunctionCallExpression;
 
 export type TerminalElem =
-  | AttributeElem
   | DirectiveElem
   | DeclIdentElem //
   | NameElem
@@ -182,7 +182,7 @@ export interface AliasElem extends ElemWithContentsBase {
 }
 
 /** an attribute like '@compute' or '@binding(0)' */
-export interface AttributeElem extends AbstractElemBase {
+export interface AttributeElem extends ElemWithContentsBase {
   kind: "attribute";
   attribute: Attribute;
 }

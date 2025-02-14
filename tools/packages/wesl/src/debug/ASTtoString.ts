@@ -1,21 +1,12 @@
-import {
-  assertThat,
-  assertUnreachable,
-} from "../../../mini-parse/src/Assertions.ts";
+import { assertUnreachable } from "../../../mini-parse/src/Assertions.ts";
 import {
   AbstractElem,
   Attribute,
-  AttributeElem,
-  ContainerElem,
   DiagnosticDirective,
-  DirectiveElem,
   EnableDirective,
-  ExpressionElem,
   FnElem,
-  NameElem,
   RequiresDirective,
   StuffElem,
-  TranslateTimeExpressionElem,
   TypedDeclElem,
   TypeRefElem,
   TypeTemplateParameter,
