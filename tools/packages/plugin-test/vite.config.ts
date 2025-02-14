@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 import { UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { bindingLayoutExtension } from "../wesl-plugin/src/BindingLayoutExtension.js";
-import { linkBuildPlugin } from "../wesl-plugin/src/LinkExtension.js";
-import viteWesl from "../wesl-plugin/src/plugins/vite"; // TODO fix imports
+import { linkBuildPlugin } from "wesl-plugin";
+import viteWesl from "wesl-plugin/vite";
 
 const thisPath = fileURLToPath(import.meta.url);
 const weslToml = path.join(path.dirname(thisPath), "wesl.toml");
