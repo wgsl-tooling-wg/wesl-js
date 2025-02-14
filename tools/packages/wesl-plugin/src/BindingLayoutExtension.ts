@@ -19,6 +19,7 @@ async function bindingLayoutJs(
   const registry = await api.weslRegistry();
   const main = await api.weslMain(baseId);
 
+  // partially link so we can reflect the translated binding structs
   let structsJs = "??";
   const config: LinkConfig = {
     plugins: [
@@ -28,7 +29,7 @@ async function bindingLayoutJs(
       }),
     ],
   };
-
   bindAndTransform({ registry, rootModuleName: main, config });
+
   return structsJs;
 }
