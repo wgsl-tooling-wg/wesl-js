@@ -36,7 +36,7 @@ import {
   WeslParseContext,
   WeslParseState,
 } from "./ParseWESL.ts";
-import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "./Scope.ts";
+import { DeclIdent, emptyScope, RefIdent, Scope } from "./Scope.ts";
 
 export function importElem(cc: CollectContext) {
   const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing
@@ -133,7 +133,7 @@ function saveIdent(
 /** start a new child Scope */
 function startScope(cc: CollectContext) {
   const { scope } = cc.app.context as WeslParseContext;
-  const newScope = emptyBodyScope(scope);
+  const newScope = emptyScope(scope);
   scope.children.push(newScope);
   cc.app.context.scope = newScope;
   // srcLog(cc.src, cc.start, "startScope", newScope.id);
@@ -149,8 +149,8 @@ function completeScope(cc: CollectContext): Scope {
   if (parent) {
     weslContext.scope = parent;
   } else if (tracing) {
-    const { idents, kind } = completedScope;
-    console.log("ERR: completeScope, no parent scope", { kind, idents });
+    const { idents } = completedScope;
+    console.log("ERR: completeScope, no parent scope", { idents });
   }
   return completedScope;
 }

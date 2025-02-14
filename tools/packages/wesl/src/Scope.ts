@@ -44,13 +44,14 @@ export type ScopeKind =
   | "module-scope" // root scope for a module (file)
   | "body-scope"; // a scope inside the module (fn body, nested block, etc.)
 
-/** tree of ident references, organized by lexical scope */
+/** tree of ident references, organized by lexical scope. */
 export interface Scope {
   id?: number; // for debugging
-  idents: Ident[]; // idents found in lexical order in this scope
-  parent: Scope | null; // null for root scope in a module
+  /** idents found in lexical order in this scope */
+  idents: Ident[];
+  /** null for root scope in a module */
+  parent: Scope | null;
   children: Scope[];
-  kind: ScopeKind;
 }
 
 export function resetScopeIds() {
@@ -65,17 +66,12 @@ export function makeScope(s: Omit<Scope, "id">): Scope {
   return { ...s, id: scopeId++ };
 }
 
-export interface RootAndScope {
-  rootScope: Scope;
-  scope: Scope;
-}
-
-export function emptyScope(kind: ScopeKind): Scope {
-  return makeScope({ idents: [], parent: null, children: [], kind });
-}
-
-export function emptyBodyScope(parent: Scope): Scope {
-  return makeScope({ kind: "body-scope", idents: [], parent, children: [] });
+export function emptyScope(parent: Scope | null): Scope {
+  return makeScope({
+    idents: [],
+    parent,
+    children: [],
+  });
 }
 
 /** For debugging,
