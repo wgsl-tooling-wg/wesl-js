@@ -8,7 +8,6 @@ test("parse complex condition", () => {
     "module
       fn a() @if(true || (!foo && !!false))
         attribute @if(true || (!foo && !!false))
-          text '@if(true || (!foo&&!!false) )'
         text '
     fn '
         decl %a

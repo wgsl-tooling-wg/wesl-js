@@ -120,7 +120,7 @@ const attribute = tagScope(
         .map(makeDiagnosticAttribute)
         .ptag("attribute"),
       preceded(
-        "if",
+        weslExtension("if"),
         span(
           delimited(
             "(",

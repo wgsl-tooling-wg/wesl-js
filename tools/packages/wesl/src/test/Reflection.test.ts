@@ -39,16 +39,12 @@ test("extract binding struct", () => {
           '
       member @group('0') @binding('0') particles: ptr<storage, array<f32>, read_write>
         attribute @group('0')
-          text '@group('
           expression '0'
             text '0'
-          text ')'
         text ' '
         attribute @binding('0')
-          text '@binding('
           expression '0'
             text '0'
-          text ')'
         text ' '
         name particles
         text ': '
@@ -81,16 +77,12 @@ test("extract binding struct", () => {
     `
     "member @group('0') @binding('0') particles: ptr<storage, array<f32>, read_write>
       attribute @group('0')
-        text '@group('
         expression '0'
           text '0'
-        text ')'
       text ' '
       attribute @binding('0')
-        text '@binding('
         expression '0'
           text '0'
-        text ')'
       text ' '
       name particles
       text ': '

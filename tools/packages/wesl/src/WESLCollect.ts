@@ -270,9 +270,8 @@ export const collectAttribute = collectElem(
       const partElem: AttributeElem = {
         ...openElem,
         attribute,
-        contents: [],
       };
-      return withTextCover(partElem, cc); // TODO: Remove this in a separate commit
+      return partElem;
     } else {
       const params = (cc.tags.attrParam ?? []) as UnknownExpressionElem[];
       const name = cc.tags.name?.[0]! as string;
@@ -283,9 +282,8 @@ export const collectAttribute = collectElem(
           name,
           params,
         },
-        contents: params,
       };
-      return withTextCover(partElem, cc); // TODO: Remove this in a separate commit
+      return partElem;
     }
   },
 );
