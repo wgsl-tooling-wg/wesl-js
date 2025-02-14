@@ -15,7 +15,7 @@ const config: UserConfig = {
     tsconfigPaths(),
     viteWesl({
       weslToml,
-      buildPlugins: [simpleReflect({ typesDir })],
+      extensions: [simpleReflect({ typesDir })],
     }),
   ],
 };

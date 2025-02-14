@@ -13,7 +13,7 @@ const config: UserConfig = {
     tsconfigPaths(),
     viteWesl({
       weslToml,
-      buildPlugins: [linkBuildPlugin],
+      extensions: [linkBuildPlugin],
     }),
   ],
 };
