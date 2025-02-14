@@ -11,6 +11,7 @@ import {
   repeat,
   repeatPlus,
   req,
+  separated_pair,
   seq,
   seqObj,
   Span,
@@ -89,13 +90,8 @@ const full_ident = weslExtension(withSepPlus("::", word));
 const diagnostic_rule_name = seq(name, opt(preceded(".", req(name))));
 const diagnostic_control = delimited(
   "(",
-  seqObj({
-    severity: name,
-    _1: ",",
-    rule: diagnostic_rule_name,
-    _2: opt(","),
-  }).map(({ severity, rule }) => [severity, rule] as const),
-  ")",
+  separated_pair(name, ",", diagnostic_rule_name),
+  seq(opt(","), ")"),
 );
 
 /** list of words that aren't identifiers (e.g. for @interpolate) */
@@ -125,7 +121,7 @@ const attribute = tagScope(
           delimited(
             "(",
             fn(() => attribute_if_expression),
-            ")",
+            seq(opt(","), ")"),
           ),
         ).map(makeTranslateTimeExpressionElem),
       )
