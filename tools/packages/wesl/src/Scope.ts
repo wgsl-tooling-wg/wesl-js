@@ -40,10 +40,6 @@ export interface DeclIdent extends IdentBase {
   srcModule: SrcModule; // To figure out which module this declaration is from.
 }
 
-export type ScopeKind =
-  | "module-scope" // root scope for a module (file)
-  | "body-scope"; // a scope inside the module (fn body, nested block, etc.)
-
 /** tree of ident references, organized by lexical scope. */
 export interface Scope {
   id?: number; // for debugging
