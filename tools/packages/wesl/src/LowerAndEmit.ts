@@ -1,6 +1,7 @@
 import { SrcMapBuilder, tracing } from "mini-parse";
 import {
   AbstractElem,
+  Attribute,
   AttributeElem,
   ContainerElem,
   DeclIdentElem,
@@ -94,8 +95,6 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
 
     case "attribute":
       return emitAttribute(e, ctx);
-    case "translate-time-expression":
-      return emitExpression(e.expression, ctx);
     case "directive":
       return emitDirective(e, ctx);
 
@@ -137,28 +136,114 @@ export function emitDeclIdent(e: DeclIdentElem, ctx: EmitContext): void {
 }
 
 function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
-  if (e.params === undefined || e.params.length === 0) {
-    ctx.srcBuilder.add("@" + e.name, e.start, e.end);
-  } else {
-    ctx.srcBuilder.add("@" + e.name + "(", e.start, e.params[0].start);
-    for (const param of e.params) {
-      if (param.kind === "expression") {
-        emitContents(param, ctx);
-      } else {
-        emitExpression(param.expression, ctx);
+  const { kind } = e.attribute;
+  // LATER emit more precise source map info by making use of all the spans
+  // Like the first case does
+  if (kind === "attribute") {
+    const { params } = e.attribute;
+    if (params.length === 0) {
+      ctx.srcBuilder.add("@" + e.attribute.name, e.start, e.end);
+    } else {
+      ctx.srcBuilder.add(
+        "@" + e.attribute.name + "(",
+        e.start,
+        params[0].start,
+      );
+      for (let i = 0; i < params.length; i++) {
+        emitContents(params[i], ctx);
+        if (i < params.length - 1) {
+          ctx.srcBuilder.add(",", params[i].end, params[i + 1].start);
+        }
       }
+      ctx.srcBuilder.add(")", params[params.length - 1].end, e.end);
     }
-    ctx.srcBuilder.add(")", e.params[e.params.length - 1].end, e.end);
+  } else if (kind === "builtin") {
+    ctx.srcBuilder.add(
+      "@builtin(" + e.attribute.param.name + ")",
+      e.start,
+      e.end,
+    );
+  } else if (kind === "diagnostic") {
+    ctx.srcBuilder.add(
+      "@diagnostic" +
+        diagnosticControlToString(e.attribute.severity, e.attribute.rule),
+      e.start,
+      e.end,
+    );
+  } else if (kind === "if") {
+    ctx.srcBuilder.add(
+      `@if(${expressionToString(e.attribute.param.expression)})`,
+      e.start,
+      e.end,
+    );
+  } else if (kind === "interpolate") {
+    ctx.srcBuilder.add(
+      `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`,
+      e.start,
+      e.end,
+    );
+  } else {
+    assertUnreachable(kind);
   }
 }
 
-function emitExpression(expression: ExpressionElem, ctx: EmitContext): void {
-  throw new Error("Emitting translate time attributes is not supported yet.");
+export function diagnosticControlToString(
+  severity: NameElem,
+  rule: [NameElem, NameElem | null],
+): string {
+  const ruleStr = rule[0].name + (rule[1] !== null ? "." + rule[1].name : "");
+  return `(${severity.name}, ${ruleStr})`;
+}
+
+export function expressionToString(elem: ExpressionElem): string {
+  const { kind } = elem;
+  if (kind === "binary-expression") {
+    return `${expressionToString(elem.left)} ${elem.operator.value} ${expressionToString(elem.right)}`;
+  } else if (kind === "unary-expression") {
+    return `${elem.operator.value}${expressionToString(elem.expression)}`;
+  } else if (kind === "ref") {
+    return elem.ident.originalName;
+  } else if (kind === "literal") {
+    return elem.value;
+  } else if (kind === "translate-time-feature") {
+    return elem.name;
+  } else if (kind === "parenthesized-expression") {
+    return `(${expressionToString(elem.expression)})`;
+  } else if (kind === "component-expression") {
+    return `${expressionToString(elem.base)}[${elem.access}]`;
+  } else if (kind === "component-member-expression") {
+    return `${expressionToString(elem.base)}.${elem.access}`;
+  } else if (kind === "call-expression") {
+    return `${elem.function.ident.originalName}(${elem.arguments.map(expressionToString).join(", ")})`;
+  } else {
+    assertUnreachable(kind);
+  }
 }
 
 function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
-  const directiveStatement = `${e.directive} ${e.arguments.join(", ")};`;
-  ctx.srcBuilder.add(directiveStatement, e.start, e.end);
+  const { directive } = e;
+  const { kind } = directive;
+  if (kind === "diagnostic") {
+    ctx.srcBuilder.add(
+      `diagnostic${diagnosticControlToString(directive.severity, directive.rule)}`,
+      e.start,
+      e.end,
+    );
+  } else if (kind === "enable") {
+    ctx.srcBuilder.add(
+      `enable${directive.extensions.map(v => v.name).join(", ")}`,
+      e.start,
+      e.end,
+    );
+  } else if (kind === "requires") {
+    ctx.srcBuilder.add(
+      `requires${directive.extensions.map(v => v.name).join(", ")}`,
+      e.start,
+      e.end,
+    );
+  } else {
+    assertUnreachable(kind);
+  }
 }
 
 function displayName(declIdent: DeclIdent): string {

@@ -2,6 +2,7 @@ import { CollectContext, CollectPair, srcLog, tracing } from "mini-parse";
 import {
   AbstractElem,
   AliasElem,
+  Attribute,
   AttributeElem,
   ConstElem,
   ContainerElem,
@@ -264,18 +265,28 @@ export const collectStructMember = collectElem(
 export const collectAttribute = collectElem(
   "attribute",
   (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
-    const params = cc.tags.attrParam as
-      | UnknownExpressionElem[]
-      | TranslateTimeExpressionElem[]
-      | undefined;
-    const name = cc.tags.name?.[0]! as string;
-    const partElem: AttributeElem = {
-      ...openElem,
-      params,
-      name,
-      contents: params ?? [],
-    };
-    return withTextCover(partElem, cc); // TODO: Remove this in a separate commit
+    const attribute = cc.tags.attribute?.[0] as Attribute | undefined;
+    if (attribute !== undefined) {
+      const partElem: AttributeElem = {
+        ...openElem,
+        attribute,
+        contents: [],
+      };
+      return withTextCover(partElem, cc); // TODO: Remove this in a separate commit
+    } else {
+      const params = (cc.tags.attrParam ?? []) as UnknownExpressionElem[];
+      const name = cc.tags.name?.[0]! as string;
+      const partElem: AttributeElem = {
+        ...openElem,
+        attribute: {
+          kind: "attribute",
+          name,
+          params,
+        },
+        contents: params,
+      };
+      return withTextCover(partElem, cc); // TODO: Remove this in a separate commit
+    }
   },
 );
 

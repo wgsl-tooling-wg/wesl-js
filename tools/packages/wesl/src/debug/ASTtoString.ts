@@ -4,10 +4,16 @@ import {
 } from "../../../mini-parse/src/Assertions.ts";
 import {
   AbstractElem,
+  Attribute,
   AttributeElem,
   ContainerElem,
+  DiagnosticDirective,
+  DirectiveElem,
+  EnableDirective,
   ExpressionElem,
   FnElem,
+  NameElem,
+  RequiresDirective,
   StuffElem,
   TranslateTimeExpressionElem,
   TypedDeclElem,
@@ -15,6 +21,10 @@ import {
   TypeTemplateParameter,
   UnknownExpressionElem,
 } from "../AbstractElems.ts";
+import {
+  diagnosticControlToString,
+  expressionToString,
+} from "../LowerAndEmit.ts";
 import { importToString } from "./ImportToString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 
@@ -55,7 +65,9 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   } else if (kind === "member") {
     const { name, typeRef, attributes } = elem;
     if (attributes) {
-      str.add(" " + attributes.map(a => "@" + a.name).join(" "));
+      for (const attribute of attributes) {
+        addAttribute(attribute.attribute, str);
+      }
     }
     str.add(" " + name.name);
     str.add(": " + typeRefElemToString(typeRef));
@@ -74,7 +86,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     str.add(" " + prefix + name.ident.originalName);
     str.add("=" + typeRefElemToString(typeRef));
   } else if (kind === "attribute") {
-    addAttribute(elem, str);
+    addAttribute(elem.attribute, str);
   } else if (kind === "expression") {
     const contents = elem.contents
       .map(e => {
@@ -116,31 +128,38 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     // TODO: This branch shouldn't exist
   } else if (kind === "stuff") {
     // Ignore
-  } else if (kind === "translate-time-expression") {
-    addTranslateTimeExpression(elem, str);
   } else if (kind === "directive") {
-    str.add(` ${elem.directive}${elem.arguments.join(",")}`);
+    addDirective(elem.directive, str);
   } else {
     assertUnreachable(kind);
   }
 }
 
-function addAttribute(elem: AttributeElem, str: LineWrapper) {
-  const { name, params } = elem;
-  str.add(" @" + name);
-  if (name === "if") {
-    assertThat(params !== undefined);
-    assertThat(params.every(p => p.kind === "translate-time-expression"));
-    str.add("(");
-    str.add(params.map(v => expressionToString(v.expression)).join(", "));
-    str.add(")");
-  } else {
-    if (params) {
-      assertThat(params.every(p => p.kind === "expression"));
+function addAttribute(elem: Attribute, str: LineWrapper) {
+  const { kind } = elem;
+  if (kind === "attribute") {
+    const { name, params } = elem;
+    str.add(" @" + name);
+    if (params.length > 0) {
       str.add("(");
       str.add(params.map(unknownExpressionToString).join(", "));
       str.add(")");
     }
+  } else if (kind === "builtin") {
+    str.add(` @builtin(${elem.param.name})`);
+  } else if (kind === "diagnostic") {
+    str.add(
+      ` @diagnostic${diagnosticControlToString(elem.severity, elem.rule)}`,
+    );
+  } else if (kind === "if") {
+    str.add(" @if");
+    str.add("(");
+    str.add(expressionToString(elem.param.expression));
+    str.add(")");
+  } else if (kind === "interpolate") {
+    str.add(` @interpolate(${elem.params.map(v => v.name).join(", ")})`);
+  } else {
+    assertUnreachable(kind);
   }
 }
 
@@ -173,40 +192,26 @@ function addFnFields(elem: FnElem, str: LineWrapper) {
   str.add(paramStrs);
   str.add(")");
 
-  fnAttributes?.forEach(a => addAttribute(a, str));
+  fnAttributes?.forEach(a => addAttribute(a.attribute, str));
 
   if (returnType) {
     str.add(" -> " + typeRefElemToString(returnType));
   }
 }
 
-function addTranslateTimeExpression(
-  elem: TranslateTimeExpressionElem,
+function addDirective(
+  elem: DiagnosticDirective | EnableDirective | RequiresDirective,
   str: LineWrapper,
 ) {
-  str.add(expressionToString(elem.expression));
-}
-
-function expressionToString(elem: ExpressionElem): string {
   const { kind } = elem;
-  if (kind === "binary-expression") {
-    return `${expressionToString(elem.left)} ${elem.operator.value} ${expressionToString(elem.right)}`;
-  } else if (kind === "unary-expression") {
-    return `${elem.operator.value}${expressionToString(elem.expression)}`;
-  } else if (kind === "ref") {
-    return elem.ident.originalName;
-  } else if (kind === "literal") {
-    return elem.value;
-  } else if (kind === "translate-time-feature") {
-    return elem.name;
-  } else if (kind === "parenthesized-expression") {
-    return `(${expressionToString(elem.expression)})`;
-  } else if (kind === "component-expression") {
-    return `${expressionToString(elem.base)}[${elem.access}]`;
-  } else if (kind === "component-member-expression") {
-    return `${expressionToString(elem.base)}.${elem.access}`;
-  } else if (kind === "call-expression") {
-    return `${elem.function.ident.originalName}(${elem.arguments.map(expressionToString).join(", ")})`;
+  if (kind === "diagnostic") {
+    str.add(
+      ` diagnostic${diagnosticControlToString(elem.severity, elem.rule)}`,
+    );
+  } else if (kind === "enable") {
+    str.add(` enable ${elem.extensions.map(v => v.name).join(", ")}`);
+  } else if (kind === "requires") {
+    str.add(` requires${elem.extensions.map(v => v.name).join(", ")}`);
   } else {
     assertUnreachable(kind);
   }

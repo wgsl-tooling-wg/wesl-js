@@ -13,10 +13,7 @@ import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
  */
 export type AbstractElem = GrammarElem | SyntheticElem;
 
-export type GrammarElem =
-  | ContainerElem
-  | TranslateTimeExpressionElem
-  | TerminalElem;
+export type GrammarElem = ContainerElem | TerminalElem;
 
 export type ContainerElem =
   | AliasElem
@@ -90,7 +87,13 @@ export interface TextElem extends AbstractElemBase {
   srcModule: SrcModule;
 }
 
-/** a name (e.g. a struct member name) that doesn't need to be an Ident */
+/** a name that doesn't need to be an Ident
+ * e.g.
+ * - a struct member name
+ * - a diagnostic rule name
+ * - an enable-extension name
+ * - an interpolation sampling name
+ */
 export interface NameElem extends AbstractElemBase {
   kind: "name";
   name: string;
@@ -181,8 +184,35 @@ export interface AliasElem extends ElemWithContentsBase {
 /** an attribute like '@compute' or '@binding(0)' */
 export interface AttributeElem extends AbstractElemBase {
   kind: "attribute";
+  attribute: Attribute;
+}
+export type Attribute =
+  | StandardAttribute
+  | InterpolateAttribute
+  | BuiltinAttribute
+  | DiagnosticAttribute
+  | IfAttribute;
+export interface StandardAttribute {
+  kind: "attribute";
   name: string;
-  params?: UnknownExpressionElem[] | TranslateTimeExpressionElem[];
+  params: UnknownExpressionElem[];
+}
+export interface InterpolateAttribute {
+  kind: "interpolate";
+  params: NameElem[];
+}
+export interface BuiltinAttribute {
+  kind: "builtin";
+  param: NameElem;
+}
+export interface DiagnosticAttribute {
+  kind: "diagnostic";
+  severity: NameElem;
+  rule: [NameElem, NameElem | null];
+}
+export interface IfAttribute {
+  kind: "if";
+  param: TranslateTimeExpressionElem;
 }
 
 /** a const_assert statement */
@@ -200,9 +230,10 @@ export interface UnknownExpressionElem extends ElemWithContentsBase {
   kind: "expression";
 }
 
-export interface TranslateTimeExpressionElem extends AbstractElemBase {
+export interface TranslateTimeExpressionElem {
   kind: "translate-time-expression";
   expression: ExpressionElem;
+  span: Span;
 }
 
 /** A literal value in WESL source. A boolean or a number. */
@@ -269,8 +300,21 @@ export interface BinaryOperator {
 
 export interface DirectiveElem extends AbstractElemBase {
   kind: "directive";
-  directive: "diagnostic" | "enable" | "requires";
-  arguments: string[];
+  directive: DiagnosticDirective | EnableDirective | RequiresDirective;
+}
+
+export interface DiagnosticDirective {
+  kind: "diagnostic";
+  severity: NameElem;
+  rule: [NameElem, NameElem | null];
+}
+export interface EnableDirective {
+  kind: "enable";
+  extensions: NameElem[];
+}
+export interface RequiresDirective {
+  kind: "requires";
+  extensions: NameElem[];
 }
 
 /** a function declaration */

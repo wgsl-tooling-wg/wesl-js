@@ -59,94 +59,107 @@ import { mainTokens } from "../WESLTokens.ts";
 import {
   BinaryExpression,
   BinaryOperator,
+  BuiltinAttribute,
+  DiagnosticAttribute,
+  DiagnosticDirective,
   DirectiveElem,
+  EnableDirective,
   ExpressionElem,
+  IfAttribute,
+  InterpolateAttribute,
   Literal,
+  NameElem,
   ParenthesizedExpression,
   RefIdentElem,
+  RequiresDirective,
+  StandardAttribute,
   TranslateTimeExpressionElem,
   TranslateTimeFeature,
   UnaryExpression,
   UnaryOperator,
+  UnknownExpressionElem,
 } from "../AbstractElems.ts";
 import { terminated } from "mini-parse";
 
 const word = kind(mainTokens.ident);
+const name = tokenKind("word").map(makeName);
 
 const full_ident = weslExtension(withSepPlus("::", word));
 
-const diagnostic_rule_name = withSep(".", word, { requireOne: true }).map(v =>
-  v.join("."),
-);
+const diagnostic_rule_name = seq(name, opt(preceded(".", req(name))));
 const diagnostic_control = delimited(
   "(",
   seqObj({
-    severity: word,
+    severity: name,
     _1: ",",
     rule: diagnostic_rule_name,
     _2: opt(","),
-  }).map(({ severity, rule }): string[] => [severity, rule]),
+  }).map(({ severity, rule }) => [severity, rule] as const),
   ")",
 );
 
-/** list of words that we don't need to collect (e.g. for @interpolate) */
-const word_list = seq("(", withSep(",", word, { requireOne: true }), ")");
+/** list of words that aren't identifiers (e.g. for @interpolate) */
+const name_list = withSep(",", name, { requireOne: true });
 
-// prettier-ignore
 const attribute = tagScope(
-  seq(
+  preceded(
     "@",
-    req(
-      or(
-        // These attributes have no arguments
+    or(
+      // These attributes have no arguments
+      or("compute", "const", "fragment", "invariant", "must_use", "vertex")
+        .map(name => makeStandardAttribute([name, []]))
+        .ptag("attribute"),
+      // These attributes have arguments, but the argument doesn't have any identifiers
+      preceded("interpolate", req(delimited("(", name_list, ")")))
+        .map(makeInterpolateAttribute)
+        .ptag("attribute"),
+      preceded("builtin", req(delimited("(", name, ")")))
+        .map(makeBuiltinAttribute)
+        .ptag("attribute"),
+      preceded("diagnostic", req(diagnostic_control))
+        .map(makeDiagnosticAttribute)
+        .ptag("attribute"),
+      preceded(
+        "if",
+        span(
+          delimited(
+            "(",
+            fn(() => attribute_if_expression),
+            ")",
+          ),
+        ).map(makeTranslateTimeExpressionElem),
+      )
+        .map(makeIfAttribute)
+        .ptag("attribute"),
+      // These are normal attributes
+      seq(
         or(
-          "compute",
-          "const",
-          "fragment",
-          "invariant",
-          "must_use",
-          "vertex",
-        )                                 .ptag("name"),
-        // These attributes have arguments, but the argument doesn't have any identifiers
-        seq(
-          or("interpolate", "builtin")    .ptag("name"),
-          req(() => word_list),
-        ),
-        seq("diagnostic", diagnostic_control),
-        // These are normal attributes
-        seq(
-          or(
-            "workgroup_size",
-            "align",
-            "binding",
-            "blend_src",
-            "group",
-            "id",
-            "location",
-            "size",
-          )                               .ptag("name"),
-          req(() => attribute_argument_list),
-        ),
-        // Everything else is also a normal attribute, it might have an expression list
-        seq(
-          word,
-          opt(() => attribute_argument_list),
-        ),
-        seq(
-          text("if")                      .ptag("name"), 
-          span(delimited("(", fn(() => attribute_if_expression), ")")).map(makeTranslateTimeExpressionElem).ptag("attrParam")
-        )
+          "workgroup_size",
+          "align",
+          "binding",
+          "blend_src",
+          "group",
+          "id",
+          "location",
+          "size",
+        ).ptag("name"),
+        req(() => attribute_argument_list),
+      ),
+      // Everything else is also a normal attribute, it might have an expression list
+      seq(
+        req(word).ptag("name"),
+        opt(() => attribute_argument_list),
       ),
     ),
-  )                                       .collect(collectAttribute),
-)                                         .ctag("attribute");
+  ).collect(collectAttribute),
+).ctag("attribute");
 
 // prettier-ignore
-const attribute_argument_list = seq(
+const attribute_argument_list = delimited(
   "(",
   withSep(
     ",",
-    fn(() => expression)               .collect(expressionCollect, "attrParam"),
+    span(fn(() => expression))               .collect(expressionCollect, "attrParam"), // TODO: These unknown expressions have decls inside of them, that's why they're tough to replace!
   ),
   req(")"),
 );
@@ -309,7 +322,7 @@ const simple_component_reference = tagScope(
  * shift_expression.post.unary_expression
  * % * / + - << >>
  */
-const makeExpressionOperator = (isTemplate: boolean) => {
+const expressionOperatorParser = (isTemplate: boolean) => {
   const allowedOps = (
     "& | ^ << <= < != == % * / + -" + (isTemplate ? "" : " && || >> >= >")
   ).split(" ");
@@ -324,15 +337,15 @@ const unary_expression: Parser<Stream<WeslToken>, any> = or(
   ),
 );
 
-const makeExpression = (isTemplate: boolean) => {
+const expressionParser = (isTemplate: boolean) => {
   return seq(
     unary_expression,
-    repeat(seq(makeExpressionOperator(isTemplate), unary_expression)),
+    repeat(seq(expressionOperatorParser(isTemplate), unary_expression)),
   );
 };
 
-export const expression = makeExpression(false);
-const template_arg_expression = makeExpression(true);
+export const expression = expressionParser(false);
+const template_arg_expression = expressionParser(true);
 
 /** a template_arg_expression with additional collection for parameters
  * that are types like array<f32> vs. expressions like 1+2 */
@@ -599,17 +612,16 @@ const const_assert =
 const global_directive = span(
   terminated(
     or(
-      seq("diagnostic", diagnostic_control),
-      seq("enable", withSep(",", word, { requireOne: true })),
-      seq("requires", withSep(",", word, { requireOne: true })),
+      preceded("diagnostic", diagnostic_control).map(makeDiagnosticDirective),
+      preceded("enable", name_list).map(makeEnableDirective),
+      preceded("requires", name_list).map(makeRequiresDirective),
     ),
     ";",
   ),
 ).map(
-  ({ value: [directive, args], span: [start, end] }): DirectiveElem => ({
+  ({ value: directive, span: [start, end] }): DirectiveElem => ({
     kind: "directive",
-    directive: directive as "diagnostic" | "enable" | "requires",
-    arguments: args,
+    directive: directive,
     start,
     end,
   }),
@@ -640,6 +652,57 @@ export const weslRoot = seq(
     req(eof()),
   )                                 .collect(collectModule, "collectModule");
 
+function makeDiagnosticDirective([severity, rule]: readonly [
+  NameElem,
+  [NameElem, NameElem | null],
+]): DiagnosticDirective {
+  return { kind: "diagnostic", severity, rule };
+}
+function makeEnableDirective(extensions: NameElem[]): EnableDirective {
+  return { kind: "enable", extensions };
+}
+function makeRequiresDirective(extensions: NameElem[]): RequiresDirective {
+  return { kind: "requires", extensions };
+}
+
+function makeStandardAttribute([name, params]: [
+  string,
+  UnknownExpressionElem[],
+]): StandardAttribute {
+  return {
+    kind: "attribute",
+    name,
+    params,
+  };
+}
+function makeInterpolateAttribute(params: NameElem[]): InterpolateAttribute {
+  return {
+    kind: "interpolate",
+    params,
+  };
+}
+function makeBuiltinAttribute(param: NameElem): BuiltinAttribute {
+  return {
+    kind: "builtin",
+    param,
+  };
+}
+function makeDiagnosticAttribute([severity, rule]: readonly [
+  NameElem,
+  [NameElem, NameElem | null],
+]): DiagnosticAttribute {
+  return {
+    kind: "diagnostic",
+    severity,
+    rule,
+  };
+}
+function makeIfAttribute(param: TranslateTimeExpressionElem): IfAttribute {
+  return {
+    kind: "if",
+    param,
+  };
+}
 function makeTranslateTimeExpressionElem(args: {
   value: ExpressionElem;
   span: Span;
@@ -647,8 +710,16 @@ function makeTranslateTimeExpressionElem(args: {
   return {
     kind: "translate-time-expression",
     expression: args.value,
-    start: args.span[0],
-    end: args.span[1],
+    span: args.span,
+  };
+}
+
+function makeName(token: WeslToken<"word">): NameElem {
+  return {
+    kind: "name",
+    name: token.text,
+    start: token.span[0],
+    end: token.span[1],
   };
 }
 

@@ -678,7 +678,7 @@ test("parse fn with attributes and suffix comma", () => {
         text '(
           '
         param
-          attribute @builtin
+          attribute @builtin(global_invocation_id)
             text '@builtin(global_invocation_id)'
           text ' '
           decl %grid
@@ -693,7 +693,7 @@ test("parse fn with attributes and suffix comma", () => {
         text ',
           '
         param
-          attribute @builtin
+          attribute @builtin(local_invocation_index)
             text '@builtin(local_invocation_index)'
           text ' '
           decl %localIndex
@@ -1168,7 +1168,7 @@ test(`parse binding struct`, ctx => {
         decl %Bindings
         text ' {
           '
-        member @group @binding particles: ptr<storage, array<f32>, read_write>
+        member @group('0') @binding('0') particles: ptr<storage, array<f32>, read_write>
           attribute @group('0')
             text '@group('
             expression '0'
@@ -1415,7 +1415,7 @@ test("binding struct", () => {
         decl %Bindings
         text ' {
           '
-        member @group @binding particles: ptr<storage, array<f32>, read_write>
+        member @group('0') @binding('0') particles: ptr<storage, array<f32>, read_write>
           attribute @group('0')
             text '@group('
             expression '0'
@@ -1448,7 +1448,7 @@ test("binding struct", () => {
             text '>'
         text ', 
           '
-        member @group @binding uniforms: ptr<uniform, Uniforms>
+        member @group('0') @binding('1') uniforms: ptr<uniform, Uniforms>
           attribute @group('0')
             text '@group('
             expression '0'
@@ -1474,7 +1474,7 @@ test("binding struct", () => {
             text '>'
         text ', 
           '
-        member @group @binding tex: texture_2d<rgba8unorm>
+        member @group('0') @binding('2') tex: texture_2d<rgba8unorm>
           attribute @group('0')
             text '@group('
             expression '0'
@@ -1497,7 +1497,7 @@ test("binding struct", () => {
             text '>'
         text ',
           '
-        member @group @binding samp: sampler
+        member @group('0') @binding('3') samp: sampler
           attribute @group('0')
             text '@group('
             expression '0'

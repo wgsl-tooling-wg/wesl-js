@@ -1,5 +1,6 @@
 import {
   AttributeElem,
+  NameElem,
   StuffElem,
   TranslateTimeExpressionElem,
   TypeRefElem,
@@ -7,17 +8,42 @@ import {
   UnknownExpressionElem,
 } from "./AbstractElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
-import { findDecl } from "./LowerAndEmit.ts";
+import {
+  diagnosticControlToString,
+  expressionToString,
+  findDecl,
+} from "./LowerAndEmit.ts";
 import { RefIdent } from "./Scope.ts";
 
 // LATER DRY emitting elements like this with LowerAndEmit?
 
-export function attributeToString(attribute: AttributeElem): string {
-  const params =
-    attribute.params ?
-      `(${attribute.params.map(contentsToString).join(", ")})`
-    : "";
-  return `@${attribute.name}${params}`;
+export function attributeToString(e: AttributeElem): string {
+  const { kind } = e.attribute;
+  // LATER emit more precise source map info by making use of all the spans
+  // Like the first case does
+  if (kind === "attribute") {
+    const { params } = e.attribute;
+    if (params === undefined || params.length === 0) {
+      return "@" + e.attribute.name;
+    } else {
+      return `@${e.attribute.name}(${params
+        .map(param => contentsToString(param))
+        .join(", ")})`;
+    }
+  } else if (kind === "builtin") {
+    return "@builtin(" + e.attribute.param.name + ")";
+  } else if (kind === "diagnostic") {
+    return (
+      "@diagnostic" +
+      diagnosticControlToString(e.attribute.severity, e.attribute.rule)
+    );
+  } else if (kind === "if") {
+    return `@if(${expressionToString(e.attribute.param.expression)})`;
+  } else if (kind === "interpolate") {
+    return `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`;
+  } else {
+    assertUnreachable(kind);
+  }
 }
 
 export function typeListToString(params: TypeTemplateParameter[]): string {
@@ -48,7 +74,11 @@ function refToString(ref: RefIdent | string): string {
 }
 
 export function contentsToString(
-  elem: TranslateTimeExpressionElem | UnknownExpressionElem | StuffElem,
+  elem:
+    | TranslateTimeExpressionElem
+    | UnknownExpressionElem
+    | NameElem
+    | StuffElem,
 ): string {
   if (elem.kind === "translate-time-expression") {
     throw new Error("Not supported");
@@ -64,6 +94,8 @@ export function contentsToString(
       }
     });
     return parts.join(" ");
+  } else if (elem.kind === "name") {
+    return elem.name;
   } else {
     assertUnreachable(elem);
   }

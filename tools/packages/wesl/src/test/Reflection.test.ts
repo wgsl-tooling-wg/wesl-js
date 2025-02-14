@@ -37,7 +37,7 @@ test("extract binding struct", () => {
       decl %Bindings
       text ' {
           '
-      member @group @binding particles: ptr<storage, array<f32>, read_write>
+      member @group('0') @binding('0') particles: ptr<storage, array<f32>, read_write>
         attribute @group('0')
           text '@group('
           expression '0'
@@ -79,7 +79,7 @@ test("extract binding struct", () => {
   const membersAst = members.map(e => astToString(e)).join("\n");
   expect(membersAst).toMatchInlineSnapshot(
     `
-    "member @group @binding particles: ptr<storage, array<f32>, read_write>
+    "member @group('0') @binding('0') particles: ptr<storage, array<f32>, read_write>
       attribute @group('0')
         text '@group('
         expression '0'

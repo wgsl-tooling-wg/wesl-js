@@ -2,6 +2,7 @@ import { matchOneOf } from "mini-parse";
 import {
   BindingStructElem,
   ExpressionElem,
+  NameElem,
   StructMemberElem,
   TextElem,
   TranslateTimeExpressionElem,
@@ -17,6 +18,7 @@ import {
   sampledTextureTypes,
   textureStorageTypes,
 } from "./StandardTypes.ts";
+import { findMap } from "./Util.ts";
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
 export const textureStorage = matchOneOf(textureStorageTypes);
@@ -119,13 +121,25 @@ function shaderVisiblity(struct: BindingStructElem): string {
     identElemLog(struct.name, "missing entry function for binding struct");
   } else {
     const { fnAttributes = [] } = entryFn;
-    if (fnAttributes.find(a => a.name === "compute")) {
+    if (
+      fnAttributes.find(
+        ({ attribute: a }) => a.kind === "attribute" && a.name === "compute",
+      )
+    ) {
       return "GPUShaderStage.COMPUTE";
     }
-    if (fnAttributes.find(a => a.name === "vertex")) {
+    if (
+      fnAttributes.find(
+        ({ attribute: a }) => a.kind === "attribute" && a.name === "vertex",
+      )
+    ) {
       return "GPUShaderStage.VERTEX";
     }
-    if (fnAttributes.find(a => a.name === "fragment")) {
+    if (
+      fnAttributes.find(
+        ({ attribute: a }) => a.kind === "attribute" && a.name === "fragment",
+      )
+    ) {
       return "GPUShaderStage.FRAGMENT";
     }
   }
@@ -141,8 +155,9 @@ function memberToLayoutEntry(
   member: StructMemberElem,
   visibility: string,
 ): string {
-  const bindingParam = member.attributes?.find(a => a.name === "binding")
-    ?.params?.[0];
+  const bindingParam = findMap(member.attributes ?? [], ({ attribute: a }) =>
+    a.kind === "attribute" && a.name === "binding" ? a : undefined,
+  )?.params?.[0];
   const binding = bindingParam ? paramText(bindingParam) : "?";
 
   const src = `
@@ -256,13 +271,12 @@ function externalTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
 }
 
 function paramText(
-  expression: UnknownExpressionElem | TranslateTimeExpressionElem,
+  expression: UnknownExpressionElem | NameElem | TranslateTimeExpressionElem,
 ): string {
   assertThat(
     expression.kind === "expression",
-    "Translate time expressions are not supported in this position",
+    "Only expression elements are supported in this position",
   );
-  // @ts-ignore
   const text = expression.contents[0] as TextElem;
   return text.srcModule.src.slice(expression.start, expression.end);
 }
