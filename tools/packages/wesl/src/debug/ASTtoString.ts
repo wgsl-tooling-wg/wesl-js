@@ -1,10 +1,29 @@
 import {
   AbstractElem,
+  AliasElem,
+  AttributeElem,
+  ConstElem,
   ContainerElem,
+  DeclIdentElem,
   ExpressionElem,
+  FnElem,
+  GlobalVarElem,
+  ImportElem,
+  LetElem,
   ModuleElem,
+  NameElem,
+  OverrideElem,
+  RefIdentElem,
+  SimpleMemberRef,
+  StructElem,
+  StructMemberElem,
+  SyntheticElem,
+  TextElem,
+  TypedDeclElem,
   TypeRefElem,
   TypeTemplateParameter,
+  UnknownExpression,
+  VarElem,
 } from "../AbstractElems.ts";
 import { importToString } from "./ImportToString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
@@ -42,238 +61,181 @@ export function elemToString(elem: AbstractElem): string {
   return str.result;
 }
 
+type DispatcherObj<Kind extends string, Rest extends any[], Return> = {
+  [K in Kind]: (elem: { kind: K }, ...rest: Rest) => Return;
+};
+
+function dispatcher<Kind extends string, Rest extends any[], Return>(
+  obj: DispatcherObj<Kind, Rest, Return>,
+): (elem: { kind: Kind }, ...rest: Rest) => Return {
+  return (elem, ...rest) => obj[elem.kind](elem, ...rest);
+}
+
 function addElemFields(elem: AbstractElem, str: LineWrapper): void {
-  addTextFields(elem, str) ||
-    addVarishFields(elem, str) ||
-    addStructFields(elem, str) ||
-    addStructMemberFields(elem, str) ||
-    addNameFields(elem, str) ||
-    addMemberRef(elem, str) ||
-    addFnFields(elem, str) ||
-    addAliasFields(elem, str) ||
-    addAttributeFields(elem, str) ||
-    addExpressionFields(elem, str) ||
-    addTypeRefFields(elem, str) ||
-    addSynthetic(elem, str) ||
-    addImport(elem, str) ||
-    addRefIdent(elem, str) ||
-    addTypedDeclIdent(elem, str) ||
-    addDeclIdent(elem, str);
+  ({
+    alias: addAliasFields,
+    text: addTextFields,
+    var: addVarishFields,
+    let: addVarishFields,
+    gvar: addVarishFields,
+    const: addVarishFields,
+    override: addVarishFields,
+    struct: addStructFields,
+    member: addStructMemberFields,
+    name: addNameFields,
+    memberRef: addMemberRef,
+    fn: addFnFields,
+    attribute: addAttributeFields,
+    expression: addExpressionFields,
+    type: addTypeRefFields,
+    synthetic: addSynthetic,
+    import: addImport,
+    ref: addRefIdent,
+    typeDecl: addTypedDeclIdent,
+    decl: addDeclIdent,
+    stuff: () => {},
+    assert: () => {},
+    module: () => {},
+    param: () => {},
+    literal: () => {},
+  })[elem.kind](elem, str);
+}
+
+function addAliasFields(elem: AliasElem, str: LineWrapper) {
+  const { name, typeRef } = elem;
+  const prefix = name.ident.kind === "decl" ? "%" : "";
+  str.add(" " + prefix + name.ident.originalName);
+  str.add("=" + typeRefElemToString(typeRef));
+}
+
+function addTextFields(elem: TextElem, str: LineWrapper) {
+  const { srcModule, start, end } = elem;
+  str.add(` '${srcModule.src.slice(start, end)}'`);
 }
 
 function addVarishFields(
-  elem: AbstractElem,
+  elem: VarElem | LetElem | GlobalVarElem | ConstElem | OverrideElem,
   str: LineWrapper,
-): true | undefined {
-  const { kind } = elem;
-  if (
-    kind === "var" ||
-    kind === "let" ||
-    kind === "gvar" ||
-    kind === "const" ||
-    kind === "override"
-  ) {
-    addTypedDeclIdent(elem.name, str);
-    return true;
-  }
+) {
+  addTypedDeclIdent(elem.name, str);
 }
 
-function addTextFields(elem: AbstractElem, str: LineWrapper): true | undefined {
-  if (elem.kind === "text") {
-    const { srcModule, start, end } = elem;
-    str.add(` '${srcModule.src.slice(start, end)}'`);
-    return true;
-  }
+function addStructFields(elem: StructElem, str: LineWrapper) {
+  str.add(" " + elem.name.ident.originalName);
 }
 
-function addRefIdent(elem: AbstractElem, str: LineWrapper): true | undefined {
-  if (elem.kind === "ref") {
-    str.add(" " + elem.ident.originalName);
-    return true;
+function addStructMemberFields(elem: StructMemberElem, str: LineWrapper) {
+  const { name, typeRef, attributes } = elem;
+  if (attributes) {
+    str.add(" " + attributes.map(a => "@" + (a && a.name)).join(" "));
   }
+  str.add(" " + name.name);
+  str.add(": " + typeRefElemToString(typeRef));
 }
 
-function addMemberRef(elem: AbstractElem, str: LineWrapper): true | undefined {
-  if (elem.kind === "memberRef") {
-    const { extraComponents } = elem;
-    const extraText =
-      extraComponents ? debugContentsToString(extraComponents) : "";
-    str.add(` ${elem.name.ident.originalName}.${elem.member.name}${extraText}`);
-    return true;
-  }
+function addNameFields(elem: NameElem, str: LineWrapper) {
+  str.add(" " + elem.name);
 }
 
-function addDeclIdent(elem: AbstractElem, str: LineWrapper): true | undefined {
-  if (elem.kind === "decl") {
-    const { ident } = elem;
-    str.add(" %" + ident.originalName);
-    return true;
-  }
+function addMemberRef(elem: SimpleMemberRef, str: LineWrapper) {
+  const { extraComponents } = elem;
+  const extraText =
+    extraComponents ? debugContentsToString(extraComponents) : "";
+  str.add(` ${elem.name.ident.originalName}.${elem.member.name}${extraText}`);
 }
 
-function addTypedDeclIdent(
-  elem: AbstractElem,
-  str: LineWrapper,
-): true | undefined {
-  if (elem.kind === "typeDecl") {
-    const { decl, typeRef } = elem;
-    str.add(" %" + decl.ident.originalName);
-    if (typeRef) {
-      str.add(" : " + typeRefElemToString(typeRef));
-    }
-    return true;
-  }
-}
+function addFnFields(elem: FnElem, str: LineWrapper) {
+  const { name, params, returnType, fnAttributes } = elem;
 
-function addAliasFields(
-  elem: AbstractElem,
-  str: LineWrapper,
-): true | undefined {
-  if (elem.kind === "alias") {
-    const { name, typeRef } = elem;
-    const prefix = name.ident.kind === "decl" ? "%" : "";
-    str.add(" " + prefix + name.ident.originalName);
-    str.add("=" + typeRefElemToString(typeRef));
-    return true;
-  }
-}
+  str.add(" " + name.ident.originalName);
 
-function addStructFields(
-  elem: AbstractElem,
-  str: LineWrapper,
-): true | undefined {
-  if (elem.kind === "struct") {
-    str.add(" " + elem.name.ident.originalName);
-    return true;
-  }
-}
+  str.add("(");
+  const paramStrs = params
+    .map(
+      (
+        p, // TODO DRY
+      ) => {
+        const { name } = p;
+        const { originalName } = name.decl.ident;
+        const typeRef = typeRefElemToString(name.typeRef!);
+        return originalName + ": " + typeRef;
+      },
+    )
+    .join(", ");
+  str.add(paramStrs);
+  str.add(")");
 
-function addStructMemberFields(
-  elem: AbstractElem,
-  str: LineWrapper,
-): true | undefined {
-  if (elem.kind === "member") {
-    const { name, typeRef, attributes } = elem;
-    if (attributes) {
-      str.add(" " + attributes.map(a => "@" + (a && a.name)).join(" "));
-    }
-    str.add(" " + name.name);
-    str.add(": " + typeRefElemToString(typeRef));
-    return true;
-  }
-}
-
-function addImport(elem: AbstractElem, str: LineWrapper): true | undefined {
-  if (elem.kind === "import") {
-    str.add(" " + importToString(elem.imports));
-    return true;
-  }
-}
-
-function addSynthetic(elem: AbstractElem, str: LineWrapper): true | undefined {
-  if (elem.kind === "synthetic") {
-    str.add(` '${elem.text}'`);
-    return true;
-  }
-}
-
-function addAttributeFields(
-  elem: AbstractElem,
-  str: LineWrapper,
-): true | undefined {
-  if (elem.kind === "attribute") {
-    const { name, params } = elem;
-    str.add(" @" + name);
-    if (params) {
+  fnAttributes?.forEach(a => {
+    str.add(" @" + a?.name);
+    if (a?.params) {
       str.add("(");
-      str.add(params.map(expressionToString).join(", "));
+      str.add(a.params.map(expressionToString).join(", "));
       str.add(")");
     }
-    return true;
+  });
+
+  if (returnType) {
+    str.add(" -> " + typeRefElemToString(returnType));
   }
 }
 
-function addNameFields(elem: AbstractElem, str: LineWrapper): true | undefined {
-  if (elem.kind === "name") {
-    str.add(" " + elem.name);
-    return true;
-  }
-}
-
-function addFnFields(elem: AbstractElem, str: LineWrapper): true | undefined {
-  if (elem.kind === "fn") {
-    const { name, params, returnType, fnAttributes } = elem;
-
-    str.add(" " + name.ident.originalName);
-
+function addAttributeFields(elem: AttributeElem, str: LineWrapper) {
+  const { name, params } = elem;
+  str.add(" @" + name);
+  if (params) {
     str.add("(");
-    const paramStrs = params
-      .map(
-        (
-          p, // TODO DRY
-        ) => {
-          const { name } = p;
-          const { originalName } = name.decl.ident;
-          const typeRef = typeRefElemToString(name.typeRef!);
-          return originalName + ": " + typeRef;
-        },
-      )
-      .join(", ");
-    str.add(paramStrs);
+    str.add(params.map(expressionToString).join(", "));
     str.add(")");
+  }
+}
 
-    fnAttributes?.forEach(a => {
-      str.add(" @" + a?.name);
-      if (a?.params) {
-        str.add("(");
-        str.add(a.params.map(expressionToString).join(", "));
-        str.add(")");
+function addExpressionFields(elem: UnknownExpression, str: LineWrapper) {
+  const contents = elem.contents
+    .map(e => {
+      if (e.kind === "text") {
+        return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
+      } else {
+        return elemToString(e);
       }
-    });
+    })
+    .join(" ");
+  str.add(" " + contents);
+}
 
-    if (returnType) {
-      str.add(" -> " + typeRefElemToString(returnType));
-    }
+function addTypeRefFields(elem: TypeRefElem, str: LineWrapper) {
+  const { name } = elem;
+  const nameStr = typeof name === "string" ? name : name.originalName;
+  str.add(" " + nameStr);
 
-    return true;
+  if (elem.templateParams !== undefined) {
+    const paramStrs = elem.templateParams.map(templateParamToString).join(", ");
+    str.add("<" + paramStrs + ">");
   }
 }
 
-function addTypeRefFields(
-  elem: AbstractElem,
-  str: LineWrapper,
-): true | undefined {
-  if (elem.kind === "type") {
-    const { name } = elem;
-    const nameStr = typeof name === "string" ? name : name.originalName;
-    str.add(" " + nameStr);
+function addSynthetic(elem: SyntheticElem, str: LineWrapper) {
+  str.add(` '${elem.text}'`);
+}
 
-    if (elem.templateParams !== undefined) {
-      const paramStrs = elem.templateParams
-        .map(templateParamToString)
-        .join(", ");
-      str.add("<" + paramStrs + ">");
-    }
-    return true;
+function addImport(elem: ImportElem, str: LineWrapper) {
+  str.add(" " + importToString(elem.imports));
+}
+
+function addRefIdent(elem: RefIdentElem, str: LineWrapper) {
+  str.add(" " + elem.ident.originalName);
+}
+
+function addTypedDeclIdent(elem: TypedDeclElem, str: LineWrapper) {
+  const { decl, typeRef } = elem;
+  str.add(" %" + decl.ident.originalName);
+  if (typeRef) {
+    str.add(" : " + typeRefElemToString(typeRef));
   }
 }
-function addExpressionFields(
-  elem: AbstractElem,
-  str: LineWrapper,
-): true | undefined {
-  if (elem.kind === "expression") {
-    const contents = elem.contents
-      .map(e => {
-        if (e.kind === "text") {
-          return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
-        } else {
-          return elemToString(e);
-        }
-      })
-      .join(" ");
-    str.add(" " + contents);
-    return true;
-  }
+
+function addDeclIdent(elem: DeclIdentElem, str: LineWrapper) {
+  const { ident } = elem;
+  str.add(" %" + ident.originalName);
 }
 
 function expressionToString(elem: ExpressionElem): string {
