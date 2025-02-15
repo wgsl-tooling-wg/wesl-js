@@ -3,9 +3,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { linkBuildPlugin } from "wesl-plugin";
+import viteWesl from "wesl-plugin/vite";
 import { bindingLayoutExtension } from "../wesl-plugin/src/BindingLayoutExtension.js";
-import { linkBuildPlugin } from "../wesl-plugin/src/LinkExtension.js";
-import viteWesl from "../wesl-plugin/src/plugins/vite"; // TODO fix imports
 
 const thisPath = fileURLToPath(import.meta.url);
 const weslToml = path.join(path.dirname(thisPath), "wesl.toml");
@@ -15,7 +15,7 @@ const config: UserConfig = {
     tsconfigPaths(),
     viteWesl({
       weslToml,
-      buildPlugins: [linkBuildPlugin, bindingLayoutExtension],
+      extensions: [linkBuildPlugin, bindingLayoutExtension],
     }),
   ],
   build: {

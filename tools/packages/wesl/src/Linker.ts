@@ -126,6 +126,7 @@ export function bindAndTransform(
   const { registry, rootModuleName = "main", conditions = {} } = params;
   const rootModule = getRootModule(registry, rootModuleName);
 
+  // setup virtual modules from code generation or host constants provided by the user
   const { constants, config } = params;
   let { virtualLibs } = params;
   if (constants) {

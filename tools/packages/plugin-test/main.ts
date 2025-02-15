@@ -1,4 +1,4 @@
-/// <reference types="wesl-plugin" />
+/// <reference types="wesl-plugin/suffixes" />
 /// <reference types="vite/client" />
 import { copyBuffer } from "thimbleberry";
 import { bindingStructsPlugin, link, LinkConfig, LinkParams } from "wesl";

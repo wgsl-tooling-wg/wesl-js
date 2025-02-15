@@ -80,7 +80,6 @@ import {
   UnaryOperator,
   UnknownExpressionElem,
 } from "../AbstractElems.ts";
-import { terminated } from "mini-parse";
 
 const word = kind(mainTokens.ident);
 const name = tokenKind("word").map(makeName);

@@ -87,16 +87,16 @@ export function weslPlugin(
 }
 
 function pluginNames(options: WeslPluginOptions): string[] {
-  const buildPlugins = options.buildPlugins || [];
-  const suffixes = filterMap(buildPlugins, p => p.extensionName);
+  const { extensions = [] } = options;
+  const suffixes = filterMap(extensions, p => p.extensionName);
   return suffixes;
 }
 
 function pluginsByName(
   options: WeslPluginOptions,
 ): Record<string, PluginExtension> {
-  const buildPlugins = options.buildPlugins || [];
-  const entries = filterMap(buildPlugins, p => [p.extensionName, p]);
+  const { extensions = [] } = options;
+  const entries = filterMap(extensions, p => [p.extensionName, p]);
   return Object.fromEntries(entries);
 }
 

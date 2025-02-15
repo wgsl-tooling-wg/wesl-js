@@ -1,5 +1,5 @@
 {
-  "name": "plugin-test",
+  "name": "link-extension-test",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,11 +9,11 @@
     "lint": "eslint src",
     "organize": "organize-imports-cli tsconfig.json",
     "prepublishOnly": "run-s build",
-    "dev": "nodemon --delay 350ms --watch '../wesl/dist/**/*.js' --watch '../wesl-plugin/dist/**/*.js' --ext cjs,ts,js --exec vite dev",
-    "test": "nodemon --delay 350ms --watch '../wesl/dist/**/*.js' --watch '../wesl-plugin/dist/**/*.js' --ext cjs,ts,js --exec vitest"
+    "test": "nodemon --config nodemon-vitest.json"
   },
   "dependencies": {
     "mini-parse": "workspace:*",
+    "random_wgsl": "workspace:*",
     "thimbleberry": "^0.2.9",
     "webgpu": "^0.2.6",
     "wesl-plugin": "workspace:*"

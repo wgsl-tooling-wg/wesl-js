@@ -1,4 +1,4 @@
-/// <reference types="wesl-plugin" />
+/// <reference types="wesl-plugin/suffixes" />
 import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { beforeAll, expect, test } from "vitest";
 import { link } from "wesl";
