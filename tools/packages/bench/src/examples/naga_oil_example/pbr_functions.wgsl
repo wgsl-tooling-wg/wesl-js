@@ -4,7 +4,7 @@ import package::mesh_types as MeshTypes;
 import package::mesh_bindings as MeshBindings;
 import package::mesh_view_types as ViewTypes;
 import package::mesh_view_bindings as ViewBindings;
-import package::lighting as Lighting;
+import package::pbr_lighting as Lighting;
 import package::clustered_forward as Clustering;
 import package::shadows as Shadows;
 
