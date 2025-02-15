@@ -13,7 +13,6 @@ import {
   req,
   separated_pair,
   seq,
-  seqObj,
   Span,
   span,
   Stream,
@@ -23,10 +22,10 @@ import {
   tokenKind,
   tokenOf,
   tracing,
-  TypedToken,
   withSep,
   withSepPlus,
   yes,
+  terminated,
 } from "mini-parse";
 import { weslImports } from "./ImportGrammar.ts";
 import {
@@ -34,7 +33,6 @@ import {
   templateOpen,
   weslExtension,
   WeslToken,
-  WeslTokenKind,
 } from "./WeslStream.ts";
 import {
   aliasCollect,
@@ -71,7 +69,6 @@ import {
   Literal,
   NameElem,
   ParenthesizedExpression,
-  RefIdentElem,
   RequiresDirective,
   StandardAttribute,
   TranslateTimeExpressionElem,
