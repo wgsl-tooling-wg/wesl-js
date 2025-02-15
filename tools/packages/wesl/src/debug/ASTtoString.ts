@@ -61,18 +61,45 @@ export function elemToString(elem: AbstractElem): string {
   return str.result;
 }
 
-type DispatcherObj<Kind extends string, Rest extends any[], Return> = {
-  [K in Kind]: (elem: { kind: K }, ...rest: Rest) => Return;
+type InferRest<T> =
+  T extends (
+    {
+      [key: string]: (_: any, ...rest: infer Rest) => any;
+    }
+  ) ?
+    Rest
+  : never;
+type InferReturn<T> =
+  T extends (
+    {
+      [key: string]: (_: any, ...rest: any) => infer Return;
+    }
+  ) ?
+    Return
+  : never;
+
+type DispatcherObj<T extends { kind: string }, Rest extends any[], Return> = {
+  [K in T["kind"]]: (elem: T & { kind: K }, ...rest: Rest) => Return;
 };
 
-function dispatcher<Kind extends string, Rest extends any[], Return>(
-  obj: DispatcherObj<Kind, Rest, Return>,
-): (elem: { kind: Kind }, ...rest: Rest) => Return {
-  return (elem, ...rest) => obj[elem.kind](elem, ...rest);
+function dispatcher<T extends { kind: string }, Rest extends any[], Return>(
+  obj: DispatcherObj<T, Rest, Return>,
+): (elem: T, ...rest: Rest) => Return {
+  return (elem, ...rest) => obj[elem.kind as T["kind"]](elem, ...rest);
+}
+
+function dispatcher2<T extends { kind: string }>(): <
+  U extends DispatcherObj<T, any, any>,
+>(
+  obj: U,
+) => (elem: T, ...rest: InferRest<U>) => InferReturn<U> {
+  return obj =>
+    (elem, ...rest) =>
+      obj[elem.kind as T["kind"]](elem, ...rest);
 }
 
 function addElemFields(elem: AbstractElem, str: LineWrapper): void {
-  ({
+  let a = dispatcher2<AbstractElem>()({
     alias: addAliasFields,
     text: addTextFields,
     var: addVarishFields,
@@ -93,12 +120,15 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     ref: addRefIdent,
     typeDecl: addTypedDeclIdent,
     decl: addDeclIdent,
-    stuff: () => {},
-    assert: () => {},
-    module: () => {},
-    param: () => {},
-    literal: () => {},
-  })[elem.kind](elem, str);
+    stuff: (a, b) => {
+      return true;
+    },
+    assert: (a, b) => {},
+    module: (a, b) => {},
+    param: (a, b) => {},
+    literal: (a, b) => {},
+  });
+  let b = a(elem, str);
 }
 
 function addAliasFields(elem: AliasElem, str: LineWrapper) {
