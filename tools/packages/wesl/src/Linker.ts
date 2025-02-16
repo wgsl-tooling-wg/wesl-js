@@ -2,6 +2,7 @@ import { SrcMap, SrcMapBuilder, tracing } from "mini-parse";
 import { AbstractElem, ModuleElem } from "./AbstractElems.ts";
 import { bindIdents } from "./BindIdents.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
+import { ManglerFn } from "./Mangler.ts";
 import {
   parsedRegistry,
   ParsedRegistry,
@@ -70,6 +71,9 @@ export interface LinkParams {
    * Users can import the values from wesl code via the `constants' virtual library:
    *  `import constants::num_lights;` */
   constants?: Record<string, string | number>;
+
+  /** function to construct globally unique wgsl identifiers */
+  mangler?: ManglerFn;
 }
 
 export type VirtualLibraryFn = (conditions: Conditions) => string;
@@ -94,7 +98,12 @@ export async function link(params: LinkParams): Promise<SrcMap> {
 export interface LinkRegistryParams
   extends Pick<
     LinkParams,
-    "rootModuleName" | "conditions" | "virtualLibs" | "config" | "constants"
+    | "rootModuleName"
+    | "conditions"
+    | "virtualLibs"
+    | "config"
+    | "constants"
+    | "mangler"
   > {
   registry: ParsedRegistry;
 }
@@ -122,8 +131,9 @@ interface BoundAndTransformed {
 export function bindAndTransform(
   params: LinkRegistryParams,
 ): BoundAndTransformed {
-  const { registry, rootModuleName = "main", conditions = {} } = params;
-  const rootModule = getRootModule(registry, rootModuleName);
+  const { registry, mangler } = params;
+  const { rootModuleName = "main", conditions = {} } = params;
+  const rootAst = getRootModule(registry, rootModuleName);
 
   // setup virtual modules from code generation or host constants provided by the user
   const { constants, config } = params;
@@ -135,10 +145,11 @@ export function bindAndTransform(
 
   /* --- Step #2   Binding Idents --- */
   // link active Ident references to declarations, and uniquify global declarations
-  const bindResults = bindIdents(rootModule, registry, conditions, virtuals);
+  const bindParams = { rootAst, registry, conditions, virtuals, mangler };
+  const bindResults = bindIdents(bindParams);
   const { globalNames, decls: newDecls } = bindResults;
 
-  const transformedAst = applyTransformPlugins(rootModule, globalNames, config);
+  const transformedAst = applyTransformPlugins(rootAst, globalNames, config);
   return { transformedAst, newDecls };
 }
 

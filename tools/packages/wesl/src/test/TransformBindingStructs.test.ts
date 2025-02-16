@@ -47,9 +47,9 @@ test("transformBindingStruct", () => {
     }
   `;
 
-  const ast = parseTest(src);
-  bindIdents(ast, parsedRegistry(), {});
-  const bindingStruct = markBindingStructs(ast.moduleElem)[0];
+  const rootAst = parseTest(src);
+  bindIdents({ rootAst, registry: parsedRegistry() });
+  const bindingStruct = markBindingStructs(rootAst.moduleElem)[0];
   const newVars = transformBindingStruct(bindingStruct, new Set());
 
   const srcBuilder = new SrcMapBuilder();
@@ -77,10 +77,10 @@ test("findRefsToBindingStructs", () => {
     }
   `;
 
-  const ast = parseTest(src);
-  bindIdents(ast, parsedRegistry(), {});
-  markBindingStructs(ast.moduleElem)[0];
-  const found = findRefsToBindingStructs(ast.moduleElem);
+  const rootAst = parseTest(src);
+  bindIdents({ rootAst, registry: parsedRegistry() });
+  markBindingStructs(rootAst.moduleElem)[0];
+  const found = findRefsToBindingStructs(rootAst.moduleElem);
   expect(found.length).toBe(1);
   const foundAst = astToString(found[0].memberRef);
   expect(foundAst).toMatchInlineSnapshot(`
@@ -101,11 +101,11 @@ test("transformBindingReference", () => {
     }
   `;
 
-  const ast = parseTest(src);
-  bindIdents(ast, parsedRegistry(), {});
-  const bindingStruct = markBindingStructs(ast.moduleElem)[0];
+  const rootAst = parseTest(src);
+  bindIdents({ rootAst, registry: parsedRegistry() });
+  const bindingStruct = markBindingStructs(rootAst.moduleElem)[0];
   transformBindingStruct(bindingStruct, new Set());
-  const found = findRefsToBindingStructs(ast.moduleElem);
+  const found = findRefsToBindingStructs(rootAst.moduleElem);
   expect(found.length).toBe(1);
   const { memberRef, struct } = found[0];
   const synthElem = transformBindingReference(memberRef, struct);
@@ -130,9 +130,9 @@ test("lower binding structs", () => {
       let x = particles;
     }
   `;
-  const weslAst = parseTest(src);
-  const { globalNames } = bindIdents(weslAst, parsedRegistry(), {});
-  const tAst = { ...weslAst, globalNames, notableElems: {} };
+  const rootAst = parseTest(src);
+  const { globalNames } = bindIdents({ rootAst, registry: parsedRegistry() });
+  const tAst = { ...rootAst, globalNames, notableElems: {} };
   const lowered = lowerBindingStructs(tAst);
 
   const loweredAst = astToString(lowered.moduleElem);
