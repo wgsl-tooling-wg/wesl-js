@@ -70,6 +70,7 @@ export function refIdent(cc: CollectContext): RefIdentElem {
     ast: cc.app.stable,
     scope,
     id: identId++,
+    refIdentElem: null as any, // set below
   };
   const identElem: RefIdentElem = { kind, start, end, srcModule, ident };
   ident.refIdentElem = identElem;
