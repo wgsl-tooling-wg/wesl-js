@@ -116,9 +116,21 @@ export function filterMap<T, U>(arr: T[], fn: (t: T) => U | undefined): U[] {
   const out: U[] = [];
   for (const t of arr) {
     const u = fn(t);
-    if (u) out.push(u);
+    if (u !== undefined) out.push(u);
   }
   return out;
+}
+
+/** filter an array, returning the truthy results of the filter function */
+export function findMap<T, U>(
+  arr: T[],
+  fn: (t: T) => U | undefined,
+): U | undefined {
+  for (const t of arr) {
+    const u = fn(t);
+    if (u !== undefined) return u;
+  }
+  return undefined;
 }
 
 export function mapValues<T, U>(

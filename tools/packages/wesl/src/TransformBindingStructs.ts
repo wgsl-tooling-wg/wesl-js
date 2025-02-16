@@ -140,7 +140,11 @@ function containsBinding(struct: StructElem): boolean {
 
 function bindingAttribute(attributes?: AttributeElem[]): boolean {
   if (!attributes) return false;
-  return attributes.some(({ name }) => name === "binding" || name === "group");
+  return attributes.some(
+    ({ attribute }) =>
+      attribute.kind === "attribute" &&
+      (attribute.name === "binding" || attribute.name === "group"),
+  );
 }
 
 /** convert each member of the binding struct into a synthetic global variable */

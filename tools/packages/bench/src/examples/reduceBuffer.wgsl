@@ -20,6 +20,8 @@ override workgroupThreads = 4u;
 
 var <workgroup> work: array<Output, workgroupThreads>; 
 
+const BlockArea = 16;
+
 // 
 // reduce a buffer of values to a single value, returned as the last element of the out array
 // 
@@ -42,7 +44,7 @@ fn main(
 ) {
     reduceBufferToWork(grid.xy, localIndex);
     let outDex = workgroupId.x + u.resultOffset;
-    reduceWorkgroup(localIndex);
+    // reduceWorkgroup(localIndex);
     if localIndex == 0u {
         out[outDex] = work[0];
     }
@@ -76,4 +78,14 @@ fn reduceSrcBlock(a: array<Output, BlockArea>) -> Output {
         v = binaryOp(v, a[i]);
     }
     return v;
+}
+
+fn loadOp(v: Input) -> Output {
+    return Output(v.sum);
+}
+fn identityOp() -> Output {
+    return Output(1.0);
+}
+fn binaryOp(a: Output, b: Output) -> Output {
+    return Output(a.sum + b.sum);
 }

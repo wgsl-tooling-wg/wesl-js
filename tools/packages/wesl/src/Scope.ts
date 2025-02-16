@@ -37,19 +37,17 @@ export interface DeclIdent extends IdentBase {
   mangledName?: string; // name in the output code
   declElem: DeclarationElem; // link to AST so that we can traverse scopes and know what elems to emit // TODO make separate GlobalDecl kind with this required
   scope: Scope; // scope for the references within this declaration
+  srcModule: SrcModule; // To figure out which module this declaration is from.
 }
 
-export type ScopeKind =
-  | "module-scope" // root scope for a module (file)
-  | "body-scope"; // a scope inside the module (fn body, nested block, etc.)
-
-/** tree of ident references, organized by lexical scope */
+/** tree of ident references, organized by lexical scope. */
 export interface Scope {
   id?: number; // for debugging
-  idents: Ident[]; // idents found in lexical order in this scope
-  parent: Scope | null; // null for root scope in a module
+  /** idents found in lexical order in this scope */
+  idents: Ident[];
+  /** null for root scope in a module */
+  parent: Scope | null;
   children: Scope[];
-  kind: ScopeKind;
 }
 
 export function resetScopeIds() {
@@ -64,17 +62,12 @@ export function makeScope(s: Omit<Scope, "id">): Scope {
   return { ...s, id: scopeId++ };
 }
 
-export interface RootAndScope {
-  rootScope: Scope;
-  scope: Scope;
-}
-
-export function emptyScope(kind: ScopeKind): Scope {
-  return makeScope({ idents: [], parent: null, children: [], kind });
-}
-
-export function emptyBodyScope(parent: Scope): Scope {
-  return makeScope({ kind: "body-scope", idents: [], parent, children: [] });
+export function emptyScope(parent: Scope | null): Scope {
+  return makeScope({
+    idents: [],
+    parent,
+    children: [],
+  });
 }
 
 /** For debugging,
