@@ -28,7 +28,7 @@ export async function linkTest(...rawWgsl: string[]): Promise<string> {
 
 export type LinkTestOpts = Pick<
   LinkParams,
-  "conditions" | "libs" | "config" | "virtualLibs" | "constants"
+  "conditions" | "libs" | "config" | "virtualLibs" | "constants" | "mangler"
 >;
 
 export async function linkTestOpts(
