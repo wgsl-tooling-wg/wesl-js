@@ -1,0 +1,64 @@
+So following the grammar in both places
+
+primary_expression(ident template_post_ident('<' # starting point
+    expression(   
+        unary_expression
+        OR(
+            bitwise_post_expression # must be a template, because infix & ^ | cannot be mixed with a <
+            relational_post_expression(
+                shift_post_expression(
+                    OR(
+                        mul and add  # don't know yet
+                        skip         # don't know yet
+                        shift_left   # don't know yet
+                        shift_right  # must be a template end
+                    )
+                )
+                OR(
+                    nothing                                                     # can only be followed by a ',' or a '>' if this is a template
+                    greater_than                                                # must be a template end
+                    greater_than_equal                                          # must be a template end
+                    less_than unary_expression shift_post_expression            # must be a template, because < cannot be mixed with a <
+                    less_than_equal unary_expression shift_post_expression      # must be a template, because <= cannot be mixed with a <
+                    '!='                                                        # cannot happen
+                    '=='                                                        # cannot happen
+                )
+            )
+            relational_post_expression(same as above) '&&'                      # cannot happen, templates cannot be mixed with &&
+            relational_post_expression(same as above) '||'                      # cannot happen, templates cannot be mixed with ||
+        )
+    )
+    OR(
+        ','  # DON'T KNOW! A comma is often valid after an expression!
+        '>'  # must be a template
+    )
+
+
+)
+
+
+)
+
+expression(
+    relational_post_expression(
+        shift_post_expression 
+        '<' # starting point
+        (
+            unary_expression 
+            shift_post_expression # same as above
+        )                         # parse a unary and a shift_post_expression. 3 possible results (template, not template, unknown)
+    )
+    OR(
+        nothing # don't know yet, but this is the final token in the expression.
+        '&&'    # was not a template
+        '||'    # was not a template   
+    )
+)
+
+So we first parse a unary and a shift_post_expression. 3 possible results (template, not template, unknown)
+Then we peek one token ahead.
+Template: '>', '>=', '<', '<='
+Not template: '!=', '==', '&&', '||', ')', ']', and also ';', '{', ':'
+Unknown-expression: Anything else, like a ','. At this point we know that it's the end of an expression.
+
+In the unknown-expression case, we need to parse the next expression in "maybe-template-end" mode.
