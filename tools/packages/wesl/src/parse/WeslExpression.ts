@@ -90,6 +90,8 @@ import { number, qualified_ident, word } from "./WeslBaseGrammar";
  *     - **Unknown-expression**: `,`. At this point we know that it's the end of an expression.
  *        We now need to parse the *next expressions* in a "maybe-template-end" mode, where we abort as soon as we see a `>`.
  *        Like `foo(a<b, 3, 5, 2, d>)`.
+ *   - In shift_post_unary, we early-return when it's a not-template. We actually finished the relational_post_unary's second shift_post_unary.
+ *   - In relational_post_unary's first shift_post_unary, we early return when it's a not-template. We actually finished the second shift_post_unary.
  */
 export const opt_template_list = opt(
   seq(
@@ -114,6 +116,8 @@ const primary_expression = or(
   // seq(template_elaborated_ident, opt(fn(() => argument_expression_list))),
   // We apply the algorithm from above
   seq(
+    qualified_ident.collect(refIdent),
+    templateOpen,
     fn(() => unary_expression),
     fn(() => shift_post_unary(true)),
     // And now we match on all the different variants
