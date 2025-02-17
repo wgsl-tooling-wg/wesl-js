@@ -72,13 +72,21 @@ import { number, qualified_ident, word } from "./WeslBaseGrammar";
  *   So we need to parse, pretending that we're in both cases, until we hit a ending character (`>` or one of `)`, `]`, `!=`,...)
  *   - This relies on the syntax tree being the same in either case.
  * - The algorithm is
+ *   - In bitwise_post_unary, always parse it as a template (no mixing `<` and `&`, `^`, `|`)
+ *   - In relational_post_unary after the comparison symbol, always parse it as a template (only one comparison symbol is allowed)
  *   - Parse a `unary_expression` followed by a `shift_expression.post.unary_expression` after a `<` in `primary_expression`
  *     Three results are possible here: Template, not template or *unknown*.
  *   - If it's *unknown*, we peek one token ahead.
- *     - **Template**: `>`, `>=`, `<`, `<=`
- *       (the first two end the template, the other two cannot be mixed with a `<` comparison, so they must be templates. `a < b <= c;` is invalid after all, while `a < b <= c >`is valid)
- *     - **Not template**: `!=`, `==`, `&&`, `||`, `)`,  `]`, `;`, `{`, `:`, `@`
- *       (straight from the template list discovery algorithm, and the `@` is for when an attribute follows an expression)
+ *     - **Template**: `>`, `>=`, `<`, `<=`, `&`, `^`, `|`
+ *       (the first two end the template, the other cannot be mixed with a `<` comparison, so they must be templates.)
+ *       (`a < b <= c` is invalid after all, while `a < b <= c >`is valid)
+ *       (`a < b | c` is invalid, while `a < b | c >`is valid)
+ *     - **Error**: `!=`, `==`, because they cannot be in a template, and `a < b != c` is also invalid
+ *     - **Not template - continue parsing**:  `&&`, `||`
+ *       (from the template list discovery algorithm)
+ *     - **Not template - end of expression**:  `)`,  `]`, `;`, `{`, `:`, `@`
+ *       (from the template list discovery algorithm, and the `@` is for when an attribute follows an expression)
+ *     - **Cannot happen**: `%`, `*`, `/`, `+`, `-` because `shift_expression.post.unary_expression` ate them
  *     - **Unknown-expression**: `,`. At this point we know that it's the end of an expression.
  *        We now need to parse the *next expressions* in a "maybe-template-end" mode, where we abort as soon as we see a `>`.
  *        Like `foo(a<b, 3, 5, 2, d>)`.
@@ -141,7 +149,7 @@ const bitwise_post_unary = or(
 );
 const multiplicative_operator = or("%", "*", "/");
 const additive_operator = or("+", "-");
-const shift_post_unary = (isTemplate: boolean) => {
+const shift_post_unary = (inTemplate: boolean) => {
   const shift_left = seq("<<", unary_expression);
   const shift_right = seq(">>", unary_expression);
   const mul_add = seq(
@@ -154,21 +162,21 @@ const shift_post_unary = (isTemplate: boolean) => {
       ),
     ),
   );
-  return isTemplate ?
+  return inTemplate ?
       or(shift_left, mul_add)
     : or(shift_left, shift_right, mul_add);
 };
-const relational_post_unary = (isTemplate: boolean) => {
+const relational_post_unary = (inTemplate: boolean) => {
   return seq(
-    shift_post_unary(isTemplate),
+    shift_post_unary(inTemplate),
     opt(
       seq(
         // '<' is unambiguous, since templates were already caught by the primary expression inside of the previous unary_expression!
-        isTemplate ?
+        inTemplate ?
           tokenOf("symbol", ["<", "<=", "!=", "=="])
         : tokenOf("symbol", [">", ">=", "<", "<=", "!=", "=="]),
         unary_expression,
-        shift_post_unary(isTemplate),
+        shift_post_unary(inTemplate),
       ),
     ),
   );
@@ -179,7 +187,7 @@ const relational_post_unary = (isTemplate: boolean) => {
  * `false` is maybe-template-expression: Does the template disambiguation.
  */
 const expressionParser = (
-  isTemplate: boolean,
+  inTemplate: boolean,
 ): Parser<Stream<WeslToken>, any> => {
   return seq(
     unary_expression,
@@ -187,8 +195,8 @@ const expressionParser = (
       // Not a template
       bitwise_post_unary,
       seq(
-        relational_post_unary(isTemplate),
-        isTemplate ?
+        relational_post_unary(inTemplate),
+        inTemplate ?
           // Don't accept || or && in template mode
           yes()
         : or(
