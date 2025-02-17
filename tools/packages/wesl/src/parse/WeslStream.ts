@@ -10,7 +10,7 @@ import {
 import { keywords, reservedWords } from "./Keywords";
 export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
 
-export interface WeslToken extends TypedToken<WeslTokenKind> {}
+export type WeslToken = TypedToken<WeslTokenKind>;
 
 // https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
 /** Whitespaces including new lines */
@@ -80,26 +80,25 @@ export class WeslStream implements Stream<WeslToken> {
       const token = this.stream.nextToken();
       if (token === null) return null;
 
-      if (token.kind === "blankspaces") {
+      const kind = token.kind;
+      if (kind === "blankspaces") {
         continue;
-      } else if (token.kind === "commentStart") {
+      } else if (kind === "commentStart") {
         // SAFETY: The underlying streams can be seeked to any position
         if (token.text === "//") {
           this.stream.reset(this.skipToEol(token.span[1]));
         } else {
           this.stream.reset(this.skipBlockComment(token.span[1]));
         }
-      } else if (token.kind === "word") {
-        const kind = token.kind;
+      } else if (kind === "word") {
         let returnToken = token as TypedToken<typeof kind | "keyword">;
         if (keywordOrReserved.has(token.text)) {
           returnToken.kind = "keyword";
         }
         return returnToken;
-      } else if (token.kind === "invalid") {
+      } else if (kind === "invalid") {
         throw new Error("Invalid token " + token);
       } else {
-        const kind = token.kind;
         return token as TypedToken<typeof kind>;
       }
     }
