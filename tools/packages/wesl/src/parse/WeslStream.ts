@@ -135,8 +135,12 @@ export class WeslStream implements Stream<WeslToken> {
     }
   }
 
-  /** Only matches the `<` and `>` tokens */
-  nextTemplateToken(): (WeslToken & { kind: "symbol" }) | null {
+  /**
+   * Only matches the `<` token if it is a template
+   * Precondition: An ident was parsed right before this.
+   * Runs the [template list discovery algorithm](https://www.w3.org/TR/WGSL/#template-list-discovery).
+   */
+  nextTemplateStartToken(): (WeslToken & { kind: "symbol" }) | null {
     const startPosition = this.stream.checkpoint();
     const token: WeslToken | null = this.nextToken();
     this.stream.reset(startPosition);
@@ -146,35 +150,110 @@ export class WeslStream implements Stream<WeslToken> {
       return null;
     }
 
-    const tokenStart = token.text[0];
-    if (tokenStart === "<" || tokenStart === ">") {
+    //<<= << <= cannot be templates, so we match the entire token text
+    if (token.text === "<") {
+      if (this.isTemplateStart(token.span[1])) {
+        this.stream.reset(token.span[1]);
+        return token as WeslToken & { kind: typeof token.kind };
+      } else {
+        this.stream.reset(startPosition);
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  nextTemplateEndToken(): (WeslToken & { kind: "symbol" }) | null {
+    const startPosition = this.stream.checkpoint();
+    const token: WeslToken | null = this.nextToken();
+    this.stream.reset(startPosition);
+    if (token === null) return null;
+
+    // template closing can also match a >= or >>, so we split the token
+    if (token.kind === "symbol" && token.text[0] === ">") {
       // SAFETY: The underlying streams implementations can be reset to any position.
       const tokenPosition = token.span[0];
       this.stream.reset(tokenPosition + 1);
       return {
         kind: "symbol",
         span: [tokenPosition, tokenPosition + 1],
-        text: tokenStart,
+        text: ">",
       };
     } else {
       return null;
     }
   }
+
+  isTemplateStart(afterToken: number): boolean {
+    // Skip over <
+    this.stream.reset(afterToken);
+    // We start with a < token
+    let pendingCounter = 1;
+    while (true) {
+      const nextToken = this.stream.nextToken();
+      if (nextToken === null) return false;
+      if (nextToken.kind !== "symbol") continue;
+      if (nextToken.text === "<") {
+        // Start a nested template
+        pendingCounter += 1;
+      } else if (nextToken.text[0] === ">") {
+        if (nextToken.text === ">" || nextToken.text == ">=") {
+          pendingCounter -= 1;
+        } else if (nextToken.text === ">>=" || nextToken.text === ">>") {
+          pendingCounter -= 2;
+        } else {
+          throw new Error(
+            "This case should never be reached, looks like we forgot one of the tokens that start with >",
+          );
+        }
+        if (pendingCounter <= 0) {
+          return true;
+        }
+      } else if (nextToken.text === "(") {
+        this.skipBracketsTo(")");
+      } else if (nextToken.text === "[") {
+        this.skipBracketsTo("]");
+      } else if (
+        nextToken.text === "==" ||
+        nextToken.text === "!=" ||
+        nextToken.text === ";" ||
+        nextToken.text === "{" ||
+        nextToken.text === ":" ||
+        nextToken.text === "&&" ||
+        nextToken.text === "||"
+      ) {
+        return false;
+      }
+    }
+  }
+
+  /**
+   * Call this after consuming an opening bracket.
+   * Skips until a closing bracket. This also consumes the closing bracket.
+   */
+  skipBracketsTo(closingBracket: string) {
+    while (true) {
+      const nextToken = this.stream.nextToken();
+      // TODO: Proper error reporting?
+      if (nextToken === null) throw new Error("Unclosed bracket!");
+
+      if (nextToken.kind !== "symbol") continue;
+      if (nextToken.text === "(") {
+        this.skipBracketsTo(")");
+      } else if (nextToken.text === "[") {
+        this.skipBracketsTo("]");
+      } else if (nextToken.text === closingBracket) {
+        // We're done!
+        return;
+      }
+    }
+  }
 }
 
 export const templateOpen = withStreamAction(stream => {
-  let result = (stream as WeslStream).nextTemplateToken();
-  if (result?.text === "<") {
-    return "<";
-  } else {
-    return null;
-  }
+  return (stream as WeslStream).nextTemplateStartToken();
 });
 export const templateClose = withStreamAction(stream => {
-  let result = (stream as WeslStream).nextTemplateToken();
-  if (result?.text === ">") {
-    return ">";
-  } else {
-    return null;
-  }
+  return (stream as WeslStream).nextTemplateEndToken();
 });
