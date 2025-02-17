@@ -16,6 +16,8 @@ import {
   yes,
   withSep,
   tracing,
+  tokenOf,
+  fn,
 } from "mini-parse";
 import {
   refIdent,
@@ -70,7 +72,7 @@ import { number, qualified_ident, word } from "./WeslBaseGrammar";
  *   So we need to parse, pretending that we're in both cases, until we hit a ending character (`>` or one of `)`, `]`, `!=`,...)
  *   - This relies on the syntax tree being the same in either case.
  * - The algorithm is
- *   - Parse a `unary_expression` followed by a `shift_expression.post.unary_expression`.
+ *   - Parse a `unary_expression` followed by a `shift_expression.post.unary_expression` after a `<` in `primary_expression`
  *     Three results are possible here: Template, not template or *unknown*.
  *   - If it's *unknown*, we peek one token ahead.
  *     - **Template**: `>`, `>=`, `<`, `<=`
@@ -88,6 +90,7 @@ export const opt_template_list = opt(
     templateClose,
   ),
 );
+
 // prettier-ignore
 const template_elaborated_ident = seq(
   qualified_ident.collect(refIdent),
@@ -95,15 +98,18 @@ const template_elaborated_ident = seq(
 );
 const literal = or("true", "false", number);
 const paren_expression = seq("(", () => expression, req(")"));
-const call_expression = seq(
-  template_elaborated_ident,
-  () => argument_expression_list,
-);
+
 const primary_expression = or(
   literal,
   paren_expression,
-  call_expression,
-  template_elaborated_ident,
+  // Instead of parsing a template like so
+  // seq(template_elaborated_ident, opt(fn(() => argument_expression_list))),
+  // We apply the algorithm from above
+  seq(
+    fn(() => unary_expression),
+    fn(() => shift_post_unary(true)),
+    // And now we match on all the different variants
+  ),
 );
 export const component_or_swizzle = repeatPlus(
   or(
@@ -122,7 +128,7 @@ export const simple_component_reference = tagScope(
   ).collect(memberRefCollect)
 );
 const unary_expression: Parser<Stream<WeslToken>, any> = or(
-  seq(or(..."! & * - ~".split(" ")), () => unary_expression),
+  seq(tokenOf("symbol", ["!", "&", "*", "-", "~"]), () => unary_expression),
   or(
     simple_component_reference,
     seq(primary_expression, opt(component_or_swizzle)),
@@ -136,9 +142,9 @@ const bitwise_post_unary = or(
 const multiplicative_operator = or("%", "*", "/");
 const additive_operator = or("+", "-");
 const shift_post_unary = (isTemplate: boolean) => {
-  const a = seq("<<", unary_expression);
-  const b = seq(">>", unary_expression);
-  const c = seq(
+  const shift_left = seq("<<", unary_expression);
+  const shift_right = seq(">>", unary_expression);
+  const mul_add = seq(
     repeat(seq(multiplicative_operator, unary_expression)),
     repeat(
       seq(
@@ -148,39 +154,53 @@ const shift_post_unary = (isTemplate: boolean) => {
       ),
     ),
   );
-  return isTemplate ? or(a, c) : or(a, b, c);
+  return isTemplate ?
+      or(shift_left, mul_add)
+    : or(shift_left, shift_right, mul_add);
 };
 const relational_post_unary = (isTemplate: boolean) => {
   return seq(
     shift_post_unary(isTemplate),
-    or(
+    opt(
       seq(
+        // '<' is unambiguous, since templates were already caught by the primary expression inside of the previous unary_expression!
         isTemplate ?
-          or("<", "<=", "!=", "==")
-        : or(">", ">=", "<", "<=", "!=", "=="),
+          tokenOf("symbol", ["<", "<=", "!=", "=="])
+        : tokenOf("symbol", [">", ">=", "<", "<=", "!=", "=="]),
         unary_expression,
         shift_post_unary(isTemplate),
       ),
-      yes(),
     ),
   );
 };
-const expressionParser = (isTemplate: boolean) => {
+
+/** The expression parser exists in two variants
+ * `true` is template-expression: Refuses to parse parse symbols like `&&` and `||`.
+ * `false` is maybe-template-expression: Does the template disambiguation.
+ */
+const expressionParser = (
+  isTemplate: boolean,
+): Parser<Stream<WeslToken>, any> => {
   return seq(
     unary_expression,
     or(
+      // Not a template
       bitwise_post_unary,
       seq(
         relational_post_unary(isTemplate),
         isTemplate ?
-          yes().map(() => [])
+          // Don't accept || or && in template mode
+          yes()
         : or(
+            // Not a template
             repeatPlus(
               seq("||", seq(unary_expression, relational_post_unary(false))),
             ),
+            // Not a template
             repeatPlus(
               seq("&&", seq(unary_expression, relational_post_unary(false))),
             ),
+            // Maybe a template
             yes().map(() => []),
           ),
       ),
@@ -188,8 +208,10 @@ const expressionParser = (isTemplate: boolean) => {
   );
 };
 
-export const expression = expressionParser(false);
-const template_arg_expression = expressionParser(true);
+let maybe_template = false;
+export const expression = expressionParser(maybe_template);
+let is_template = true;
+const template_arg_expression = expressionParser(is_template);
 
 // prettier-ignore
 const std_type_specifier = seq(
@@ -225,7 +247,6 @@ if (tracing) {
     template_elaborated_ident,
     literal,
     paren_expression,
-    call_expression,
     primary_expression,
     component_or_swizzle,
     unary_expression,
