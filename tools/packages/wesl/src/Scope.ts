@@ -3,7 +3,7 @@ import { WeslAST } from "./ParseWESL.ts";
 
 export interface SrcModule {
   /** module path "rand_pkg::sub::foo", or "package::main" */
-  modulePath: string; // TODO drop this?
+  modulePath: string;
 
   /** file path to the module for user error reporting e.g "rand_pkg:sub/foo.wesl", or "./sub/foo.wesl" */
   debugFilePath: string;
