@@ -34,7 +34,6 @@ import {
   refIdent,
   scopeCollect,
   typedDecl,
-  typeRefCollect,
 } from "../WESLCollect.ts";
 import {
   expression,
@@ -443,11 +442,9 @@ if (tracing) {
     diagnostic_rule_name,
     diagnostic_control,
     attribute,
-    argument_expression_list,
     opt_attributes,
     typeNameDecl,
     fnNameDecl,
-    type_specifier,
     optionally_typed_ident,
     struct_member,
     struct_decl,
@@ -456,7 +453,6 @@ if (tracing) {
     fnParamList,
     local_variable_decl,
     global_variable_decl,
-    opt_template_list,
     compound_statement,
     for_init,
     for_update,
