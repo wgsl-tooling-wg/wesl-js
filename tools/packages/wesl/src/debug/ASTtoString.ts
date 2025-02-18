@@ -136,18 +136,18 @@ function addAttribute(elem: Attribute, str: LineWrapper) {
       str.add(params.map(unknownExpressionToString).join(", "));
       str.add(")");
     }
-  } else if (kind === "builtin") {
+  } else if (kind === "@builtin") {
     str.add(` @builtin(${elem.param.name})`);
-  } else if (kind === "diagnostic") {
+  } else if (kind === "@diagnostic") {
     str.add(
       ` @diagnostic${diagnosticControlToString(elem.severity, elem.rule)}`,
     );
-  } else if (kind === "if") {
+  } else if (kind === "@if") {
     str.add(" @if");
     str.add("(");
     str.add(expressionToString(elem.param.expression));
     str.add(")");
-  } else if (kind === "interpolate") {
+  } else if (kind === "@interpolate") {
     str.add(` @interpolate(${elem.params.map(v => v.name).join(", ")})`);
   } else {
     assertUnreachable(kind);

@@ -198,20 +198,20 @@ export interface StandardAttribute {
   params: UnknownExpressionElem[];
 }
 export interface InterpolateAttribute {
-  kind: "interpolate";
+  kind: "@interpolate";
   params: NameElem[];
 }
 export interface BuiltinAttribute {
-  kind: "builtin";
+  kind: "@builtin";
   param: NameElem;
 }
 export interface DiagnosticAttribute {
-  kind: "diagnostic";
+  kind: "@diagnostic";
   severity: NameElem;
   rule: [NameElem, NameElem | null];
 }
 export interface IfAttribute {
-  kind: "if";
+  kind: "@if";
   param: TranslateTimeExpressionElem;
 }
 

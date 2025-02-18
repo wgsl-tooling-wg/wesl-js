@@ -669,13 +669,13 @@ function makeStandardAttribute([name, params]: [
 }
 function makeInterpolateAttribute(params: NameElem[]): InterpolateAttribute {
   return {
-    kind: "interpolate",
+    kind: "@interpolate",
     params,
   };
 }
 function makeBuiltinAttribute(param: NameElem): BuiltinAttribute {
   return {
-    kind: "builtin",
+    kind: "@builtin",
     param,
   };
 }
@@ -684,14 +684,14 @@ function makeDiagnosticAttribute([severity, rule]: readonly [
   [NameElem, NameElem | null],
 ]): DiagnosticAttribute {
   return {
-    kind: "diagnostic",
+    kind: "@diagnostic",
     severity,
     rule,
   };
 }
 function makeIfAttribute(param: TranslateTimeExpressionElem): IfAttribute {
   return {
-    kind: "if",
+    kind: "@if",
     param,
   };
 }

@@ -157,26 +157,26 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
       }
       ctx.srcBuilder.add(")", params[params.length - 1].end, e.end);
     }
-  } else if (kind === "builtin") {
+  } else if (kind === "@builtin") {
     ctx.srcBuilder.add(
       "@builtin(" + e.attribute.param.name + ")",
       e.start,
       e.end,
     );
-  } else if (kind === "diagnostic") {
+  } else if (kind === "@diagnostic") {
     ctx.srcBuilder.add(
       "@diagnostic" +
         diagnosticControlToString(e.attribute.severity, e.attribute.rule),
       e.start,
       e.end,
     );
-  } else if (kind === "if") {
+  } else if (kind === "@if") {
     ctx.srcBuilder.add(
       `@if(${expressionToString(e.attribute.param.expression)})`,
       e.start,
       e.end,
     );
-  } else if (kind === "interpolate") {
+  } else if (kind === "@interpolate") {
     ctx.srcBuilder.add(
       `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`,
       e.start,

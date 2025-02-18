@@ -30,16 +30,16 @@ export function attributeToString(e: AttributeElem): string {
         .map(param => contentsToString(param))
         .join(", ")})`;
     }
-  } else if (kind === "builtin") {
+  } else if (kind === "@builtin") {
     return "@builtin(" + e.attribute.param.name + ")";
-  } else if (kind === "diagnostic") {
+  } else if (kind === "@diagnostic") {
     return (
       "@diagnostic" +
       diagnosticControlToString(e.attribute.severity, e.attribute.rule)
     );
-  } else if (kind === "if") {
+  } else if (kind === "@if") {
     return `@if(${expressionToString(e.attribute.param.expression)})`;
-  } else if (kind === "interpolate") {
+  } else if (kind === "@interpolate") {
     return `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`;
   } else {
     assertUnreachable(kind);
