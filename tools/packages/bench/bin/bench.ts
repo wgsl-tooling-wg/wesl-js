@@ -146,11 +146,11 @@ async function loadAllFiles(): Promise<BenchTest[]> {
       "./clustered_forward.wgsl",
       "./mesh_bindings.wgsl",
       "./mesh_types.wgsl",
-      "./mesh_vertex_output.wgsl", // done
+      "./mesh_vertex_output.wgsl",
       "./mesh_view_bindings.wgsl",
       "./mesh_view_types.wgsl",
       "./pbr_bindings.wgsl",
-      "./pbr_functions.wgsl", //
+      "./pbr_functions.wgsl",
       "./pbr_lighting.wgsl",
       "./pbr_types.wgsl",
       "./shadows.wgsl",
