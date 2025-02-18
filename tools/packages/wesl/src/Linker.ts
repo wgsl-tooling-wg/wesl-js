@@ -38,9 +38,6 @@ export interface LinkParams {
    */
   weslSrc: Record<string, string>;
 
-  /** root directory prefix for sources, e.g. /shaders */
-  weslRoot?: string;
-
   /** name of root wesl module
    *    for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
    *    for a library, the root module defines the public api fo the library
@@ -78,9 +75,9 @@ export type VirtualLibraryFn = (conditions: Conditions) => string;
  * Only code that is valid with the current conditions is included in the output.
  */
 export async function link(params: LinkParams): Promise<SrcMap> {
-  const { weslSrc, weslRoot = "", libs = [] } = params;
+  const { weslSrc, libs = [] } = params;
   const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry, "package", weslRoot);
+  parseIntoRegistry(weslSrc, registry, "package");
   parseLibsIntoRegistry(libs, registry);
   return linkRegistry({ registry, ...params });
 }

@@ -57,28 +57,26 @@ function parseArgs(args: string[]) {
 }
 
 async function linkNormally(paths: string[]): Promise<void> {
+  const weslRoot = getBaseDir();
   const pathAndTexts = paths.map(f => {
     const text = fs.readFileSync(f, { encoding: "utf8" });
-    const relativePath = path.relative(process.cwd(), f);
+    const relativePath = path.relative(weslRoot, f);
     const basedPath = "./" + normalize(relativePath);
     return [basedPath, text];
   });
-  const rootModuleRelative = path.relative(getBaseDir(), paths[0]);
-  const rootModuleName = noSuffix(rootModuleRelative);
+  const rootModuleName = noSuffix(path.relative(weslRoot, paths[0]));
   const weslSrc = Object.fromEntries(pathAndTexts);
-
-  const weslRoot = path.relative(process.cwd(), getBaseDir());
 
   // TODO conditions
   // TODO external defines
   if (argv.emit) {
-    const linked = await link({ weslSrc, rootModuleName, weslRoot });
+    const linked = await link({ weslSrc, rootModuleName });
     if (argv.emit) log(linked.dest);
   }
   if (argv.details) {
     const registry = parsedRegistry();
     try {
-      parseIntoRegistry(weslSrc, registry, "package", weslRoot);
+      parseIntoRegistry(weslSrc, registry, "package");
     } catch (e) {
       console.error(e);
     }

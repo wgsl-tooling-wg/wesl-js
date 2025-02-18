@@ -8,10 +8,9 @@ test("verify ?link", async () => {
 
   const { rootModuleName, weslRoot, weslSrc, dependencies } = linkParams;
   expect(rootModuleName).toMatchInlineSnapshot(`"./app"`);
-  expect(weslRoot).toMatchInlineSnapshot(`"shaders"`);
   expect(weslSrc).toMatchInlineSnapshot(`
     {
-      "./shaders/app.wesl": "import random_wgsl::pcg_2u_3f;
+      "./app.wesl": "import random_wgsl::pcg_2u_3f;
 
     main() {
        let a = pcg_2u3f(vec2u(1, 2)); 

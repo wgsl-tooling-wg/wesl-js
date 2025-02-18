@@ -4,20 +4,20 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import toml from "toml";
 import type {
-    ExternalIdResult,
-    Thenable,
-    TransformResult,
-    UnpluginBuildContext,
-    UnpluginContext,
-    UnpluginContextMeta,
-    UnpluginOptions
+  ExternalIdResult,
+  Thenable,
+  TransformResult,
+  UnpluginBuildContext,
+  UnpluginContext,
+  UnpluginContextMeta,
+  UnpluginOptions,
 } from "unplugin";
 import { createUnplugin } from "unplugin";
 import {
-    filterMap,
-    parsedRegistry,
-    ParsedRegistry,
-    parseIntoRegistry
+  filterMap,
+  parsedRegistry,
+  ParsedRegistry,
+  parseIntoRegistry,
 } from "wesl";
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
 import type { WeslPluginOptions } from "./weslPluginOptions.js";
@@ -209,8 +209,8 @@ async function getRegistry(
   // load wesl files into registry
   const loaded = await loadWesl(context, unpluginCtx);
   const { weslRoot } = await getWeslToml(context, unpluginCtx);
-  const translatedEntries = Object.entries(loaded).map(([path, src]) => {
-    const newPath = rmPathPrefix(path, weslRoot);
+  const translatedEntries = Object.entries(loaded).map(([p, src]) => {
+    const newPath = path.relative(weslRoot, p);
     return [newPath, src];
   });
   const translated = Object.fromEntries(translatedEntries);
@@ -242,7 +242,7 @@ function makeGetWeslMain(
 
   async function getWeslMain(baseId: string): Promise<string> {
     const { weslRoot } = await getWeslToml(context, unpluginContext);
-    const main = rmPathPrefix(baseId, weslRoot);
+    const main = path.relative(weslRoot, baseId);
     return main;
   }
 }
@@ -259,7 +259,7 @@ async function loadWesl(
   unpluginCtx: UnpluginBuildContext,
 ): Promise<Record<string, string>> {
   const { options } = context;
-  const { weslFiles } = await getWeslToml(context, unpluginCtx);
+  const { weslFiles, weslRoot } = await getWeslToml(context, unpluginCtx);
   const { weslToml } = options;
   const tomlDir = weslToml ? path.dirname(weslToml) : process.cwd();
 
@@ -267,33 +267,22 @@ async function loadWesl(
   const futureFiles = globs.map(g => glob(g));
   const files = (await Promise.all(futureFiles)).flat();
   // dlog({ files, weslRoot, tomlDir, globs });
-  return loadFiles(files, tomlDir);
+  return loadFiles(files, weslRoot);
 }
 
 /** load a set of files, converting to paths relative to the  wesl root directory */
 async function loadFiles(
   files: string[],
-  weslRoot?: string,
+  weslRoot: string,
 ): Promise<Record<string, string>> {
   const loaded: [string, string][] = [];
 
   for (const fullPath of files) {
     const data = await fs.readFile(fullPath, "utf-8");
-    const relativePath = weslRoot ? rmPathPrefix(fullPath, weslRoot) : fullPath;
+    const relativePath = path.relative(weslRoot, fullPath);
     loaded.push([relativePath, data]);
   }
   return Object.fromEntries(loaded);
-}
-
-// TODO DRY
-/** convert a fs path to a path relative to the wesl root directory */
-function rmPathPrefix(fullPath: string, weslRoot: string): string {
-  const rootStart = fullPath.indexOf(weslRoot);
-  if (rootStart === -1) {
-    throw new Error(`file ${fullPath} not in root ${weslRoot}`);
-  }
-  const pathWithSlashPrefix = fullPath.slice(rootStart + weslRoot.length);
-  return "." + pathWithSlashPrefix;
 }
 
 export const unplugin = createUnplugin(
