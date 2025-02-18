@@ -200,7 +200,7 @@ async function getWeslToml(
     console.log(`using defaults: no wesl.toml found at ${tomlFile}`);
     parsedToml = { weslFiles: ["shaders/**/*.w[eg]sl"], weslRoot: "shaders" };
   }
-  const tomlDir = path.parse(tomlFile).dir;
+  const tomlDir = path.dirname(tomlFile);
   cache.weslToml = {
     tomlFile,
     tomlDir,
