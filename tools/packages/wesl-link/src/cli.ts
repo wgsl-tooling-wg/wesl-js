@@ -2,7 +2,7 @@ import { createTwoFilesPatch } from "diff";
 import fs from "fs";
 import { enableTracing, log } from "mini-parse";
 import path from "path";
-import { astToString, link, normalize, noSuffix, scopeToString } from "wesl";
+import { astToString, link, noSuffix, scopeToString } from "wesl";
 import yargs from "yargs";
 import {
   parsedRegistry,
@@ -61,8 +61,7 @@ async function linkNormally(paths: string[]): Promise<void> {
   const pathAndTexts = paths.map(f => {
     const text = fs.readFileSync(f, { encoding: "utf8" });
     const relativePath = path.relative(weslRoot, f);
-    const basedPath = "./" + normalize(relativePath);
-    return [basedPath, text];
+    return [toUnixPath(relativePath), text];
   });
   const rootModuleName = noSuffix(path.relative(weslRoot, paths[0]));
   const weslSrc = Object.fromEntries(pathAndTexts);
@@ -92,6 +91,14 @@ async function linkNormally(paths: string[]): Promise<void> {
 
   // TODO diff
   // if (argv.diff) printDiff(srcPath, origWgsl, linked);
+}
+
+function toUnixPath(p: string): string {
+  if (path.sep !== "/") {
+    return p.replaceAll(path.sep, "/");
+  } else {
+    return p;
+  }
 }
 
 function externalDefines(): Record<string, string> {

@@ -133,7 +133,7 @@ function pluginSuffixMatch(id: string, suffixes: string[]): PluginMatch | null {
 
 function buildApi(
   context: PluginContext,
-  unpluginCtx: UnpluginBuildContext,
+  unpluginCtx: UnpluginBuildContext & UnpluginContext,
 ): PluginExtensionApi {
   return {
     weslToml: async () => getWeslToml(context, unpluginCtx),
@@ -200,7 +200,7 @@ async function getWeslToml(
 /** load and parse all the wesl files into a ParsedRegistry */
 async function getRegistry(
   context: PluginContext,
-  unpluginCtx: UnpluginBuildContext,
+  unpluginCtx: UnpluginBuildContext & UnpluginContext,
 ): Promise<ParsedRegistry> {
   const { cache } = context;
   let { registry } = cache;
@@ -209,20 +209,19 @@ async function getRegistry(
   // load wesl files into registry
   const loaded = await loadWesl(context, unpluginCtx);
   const { weslRoot } = await getWeslToml(context, unpluginCtx);
-  const translatedEntries = Object.entries(loaded).map(([p, src]) => {
-    const newPath = path.relative(weslRoot, p);
-    return [newPath, src];
-  });
-  const translated = Object.fromEntries(translatedEntries);
+
   registry = parsedRegistry();
-  parseIntoRegistry(translated, registry);
+  parseIntoRegistry(loaded, registry);
+
+  // The paths are relative to the weslRoot, but vite needs actual filesystem paths
+  const fullPaths = Object.keys(loaded).map(p => path.resolve(weslRoot, p));
 
   // trigger rebuild on shader file change
-  Object.keys(translated).forEach(f => unpluginCtx.addWatchFile(f));
+  fullPaths.forEach(f => unpluginCtx.addWatchFile(f));
 
   // trigger clearing cache on shader file change
   if (context.meta.watchMode) {
-    Object.keys(loaded).forEach(f => {
+    fullPaths.forEach(f => {
       chokidar.watch(f).on("change", () => {
         console.log("resetting cache", f);
         cache.registry = undefined;
@@ -243,7 +242,7 @@ function makeGetWeslMain(
   async function getWeslMain(baseId: string): Promise<string> {
     const { weslRoot } = await getWeslToml(context, unpluginContext);
     const main = path.relative(weslRoot, baseId);
-    return main;
+    return toUnixPath(main);
   }
 }
 
@@ -280,9 +279,17 @@ async function loadFiles(
   for (const fullPath of files) {
     const data = await fs.readFile(fullPath, "utf-8");
     const relativePath = path.relative(weslRoot, fullPath);
-    loaded.push([relativePath, data]);
+    loaded.push([toUnixPath(relativePath), data]);
   }
   return Object.fromEntries(loaded);
+}
+
+function toUnixPath(p: string): string {
+  if (path.sep !== "/") {
+    return p.replaceAll(path.sep, "/");
+  } else {
+    return p;
+  }
 }
 
 export const unplugin = createUnplugin(
