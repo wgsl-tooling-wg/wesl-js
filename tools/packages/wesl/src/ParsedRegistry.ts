@@ -38,7 +38,11 @@ export function selectModule(
   let modulePath: string;
   if (selectPath.includes("::")) {
     modulePath = selectPath;
-  } else if (selectPath.includes("/")) {
+  } else if (
+    selectPath.includes("/") ||
+    selectPath.endsWith(".wesl") ||
+    selectPath.endsWith(".wgsl")
+  ) {
     modulePath = fileToModulePath(selectPath, packageName);
   } else {
     modulePath = packageName + "::" + selectPath;
@@ -85,7 +89,7 @@ export function parseLibsIntoRegistry(
 
 const libRegex = /^lib\.w[eg]sl$/i;
 
-/** convert a file path (./shaders/foo/bar.wesl) and a wesl root (./shaders)
+/** convert a file path (./foo/bar.wesl)
  *  to a module path (package::foo::bar) */
 function fileToModulePath(filePath: string, packageName: string): string {
   if (filePath.includes("::")) {

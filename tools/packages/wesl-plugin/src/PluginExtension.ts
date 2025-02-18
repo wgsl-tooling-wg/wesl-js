@@ -1,5 +1,5 @@
 import { ParsedRegistry, WeslJsPlugin } from "wesl";
-import { WeslToml } from "./weslPlugin.ts";
+import { WeslTomlInfo } from "./weslPlugin.ts";
 
 /** function type required for for emit extensions */
 export type ExtensionEmitFn = (
@@ -19,7 +19,7 @@ export interface PluginExtension extends WeslJsPlugin {
 
 /** api supplied to plugin extensions */
 export interface PluginExtensionApi {
-  weslToml: () => Promise<WeslToml>;
+  weslToml: () => Promise<WeslTomlInfo>;
   weslSrc: () => Promise<Record<string, string>>;
   weslRegistry: () => Promise<ParsedRegistry>;
   weslMain: (baseId: string) => Promise<string>;
