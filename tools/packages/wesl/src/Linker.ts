@@ -10,7 +10,7 @@ import {
   selectModule,
 } from "./ParsedRegistry.ts";
 import { WeslAST } from "./ParseWESL.ts";
-import { Conditions } from "./Scope.ts";
+import { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
 import { filterMap, mapValues } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
 
@@ -110,12 +110,19 @@ export function linkRegistry(params: LinkRegistryParams): SrcMap {
   const bound = bindAndTransform(params);
   const { transformedAst, newDecls } = bound;
 
-  return emitWgsl(transformedAst.moduleElem, newDecls, params.conditions);
+  return SrcMapBuilder.build(
+    emitWgsl(
+      transformedAst.moduleElem,
+      transformedAst.srcModule,
+      newDecls,
+      params.conditions,
+    ),
+  );
 }
 
 interface BoundAndTransformed {
   transformedAst: TransformedAST;
-  newDecls: AbstractElem[];
+  newDecls: DeclIdent[];
 }
 
 /** bind identifers and apply any transform plugins */
@@ -190,14 +197,20 @@ function applyTransformPlugins(
 /** traverse the AST and emit WGSL */
 function emitWgsl(
   rootModuleElem: ModuleElem,
-  newDecls: AbstractElem[],
+  srcModule: SrcModule,
+  newDecls: DeclIdent[],
   conditions: Conditions = {},
-): SrcMap {
+): SrcMapBuilder[] {
   /* --- Step #3   Writing WGSL --- */ // note doesn't require the scope tree anymore
-  const srcBuilder = new SrcMapBuilder();
+  const srcBuilder = new SrcMapBuilder(srcModule.src);
   lowerAndEmit(srcBuilder, [rootModuleElem], conditions, false); // emit the entire root module
-  lowerAndEmit(srcBuilder, newDecls, conditions); // emit referenced declarations from other modules
-  return srcBuilder.build();
+  return [srcBuilder].concat(
+    newDecls.map(decl => {
+      const builder = new SrcMapBuilder(decl.srcModule.src);
+      lowerAndEmit(builder, [decl.declElem], conditions); // emit referenced declarations from other modules
+      return builder;
+    }),
+  );
 }
 
 /* ---- Commentary on present and future features ---- */

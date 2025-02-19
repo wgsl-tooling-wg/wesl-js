@@ -65,8 +65,7 @@ export const stdTypes = `array atomic bool f16 f32 i32
   rgba16uint rgba16sint rgba16float 
   r32uint r32sint r32float rg32uint rg32sint rg32float
   rgba32uint rgba32sint rgba32float
-  bgra8unorm 
-  function uniform`.split(/\s+/);
+  bgra8unorm`.split(/\s+/);
 
 /** https://www.w3.org/TR/WGSL/#predeclared-enumerants  */
 export const stdEnumerants = `read write read_write 

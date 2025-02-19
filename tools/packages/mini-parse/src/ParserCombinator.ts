@@ -102,6 +102,32 @@ export function tokenOf<const Kind extends string>(
 
 /** Parse for a particular kind of token,
  * @return the matching text */
+export function tokenKind<const Kind extends string>(
+  kindStr: Kind,
+): Parser<Stream<TypedToken<Kind>>, TypedToken<Kind>> {
+  return simpleParser(
+    `tokenKind '${kindStr}'`,
+    function _tokenKind(
+      state: ParserContext,
+    ): ParserResult<TypedToken<Kind>> | null {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
+      if (tracing) {
+        const text = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
+      }
+      if (next.kind !== kindStr) {
+        state.stream.reset(start);
+        return null;
+      }
+      return { value: next as TypedToken<Kind> };
+    },
+  );
+}
+
+/** Parse for a particular kind of token,
+ * @return the matching text */
 export function kind<const Kind extends string>(
   kindStr: Kind,
 ): Parser<Stream<TypedToken<Kind>>, string> {
@@ -143,28 +169,6 @@ export function text(value: string): Parser<ParserStream, string> {
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
       }
       if (next.text !== value) {
-        state.stream.reset(start);
-        return null;
-      }
-      return { value: next.text };
-    },
-  );
-}
-
-/** Parse for a token containing a text value
- * @return the kind of token that matched */
-export function textOf(values: string[]): Parser<ParserStream, string> {
-  return simpleParser(
-    `${quotedText(values.join(","))}`,
-    function _text(state: ParserContext): ParserResult<string> | null {
-      const start = state.stream.checkpoint();
-      const next = state.stream.nextToken();
-      if (next === null) return null;
-      if (tracing) {
-        const text = quotedText(next.text);
-        srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
-      }
-      if (!values.includes(next.text)) {
         state.stream.reset(start);
         return null;
       }
@@ -265,6 +269,7 @@ export function terminated<
     "terminated",
     function _terminated(ctx: ParserContext) {
       const result = p._run(ctx);
+      if (result === null) return null;
       const ignoredResult = ignored._run(ctx);
       if (ignoredResult === null) return null;
       return result;
@@ -299,6 +304,7 @@ export function delimited<
       const ignoredResult1 = ignored1._run(ctx);
       if (ignoredResult1 === null) return null;
       const result = p._run(ctx);
+      if (result === null) return null;
       const ignoredResult2 = ignored2._run(ctx);
       if (ignoredResult2 === null) return null;
       return result;
@@ -308,6 +314,43 @@ export function delimited<
   trackChildren(delimitedParser, ignored1, p, ignored2);
 
   return delimitedParser;
+}
+
+/** Parse two values, and discard the second value
+ * @return the first value, or null if any parser fails */
+export function separated_pair<
+  P1 extends CombinatorArg,
+  Ignored extends CombinatorArg,
+  P2 extends CombinatorArg,
+>(
+  arg1: P1,
+  ignoredArg: Ignored,
+  arg2: P2,
+): Parser<
+  InputFromArg<P1> | InputFromArg<Ignored> | InputFromArg<P2>,
+  [ResultFromArg<P1>, ResultFromArg<P2>]
+> {
+  const p1 = parserArg(arg1);
+  const ignored = parserArg(ignoredArg);
+  const p2 = parserArg(arg2);
+  const terminatedParser = parser(
+    "terminated",
+    function _terminated(
+      ctx: ParserContext,
+    ): OptParserResult<[ResultFromArg<P1>, ResultFromArg<P2>]> {
+      const result1 = p1._run(ctx);
+      if (result1 === null) return null;
+      const ignoredResult = ignored._run(ctx);
+      if (ignoredResult === null) return null;
+      const result2 = p2._run(ctx);
+      if (result2 === null) return null;
+      return { value: [result1.value, result2.value] };
+    },
+  );
+
+  trackChildren(terminatedParser, p1, ignored, p2);
+
+  return terminatedParser;
 }
 
 /** Try parsing with one or more parsers,

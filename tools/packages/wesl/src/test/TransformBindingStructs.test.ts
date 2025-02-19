@@ -1,7 +1,7 @@
 import { SrcMapBuilder } from "mini-parse";
 import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
-import { astToString, elemToString } from "../debug/ASTtoString.ts";
+import { astToString } from "../debug/ASTtoString.ts";
 import { lowerAndEmit } from "../LowerAndEmit.ts";
 import { parsedRegistry } from "../ParsedRegistry.ts";
 import {
@@ -52,9 +52,9 @@ test("transformBindingStruct", () => {
   const bindingStruct = markBindingStructs(ast.moduleElem)[0];
   const newVars = transformBindingStruct(bindingStruct, new Set());
 
-  const srcBuilder = new SrcMapBuilder();
+  const srcBuilder = new SrcMapBuilder(ast.srcModule.src);
   lowerAndEmit(srcBuilder, newVars, {});
-  const linked = srcBuilder.build().dest;
+  const linked = SrcMapBuilder.build([srcBuilder]).dest;
   expect(linked).toMatchInlineSnapshot(
     `
     "@group(0) @binding(0) var<storage, read_write> particles : array<f32>;
@@ -109,7 +109,7 @@ test("transformBindingReference", () => {
   expect(found.length).toBe(1);
   const { memberRef, struct } = found[0];
   const synthElem = transformBindingReference(memberRef, struct);
-  const synthAst = elemToString(synthElem);
+  const synthAst = astToString(synthElem);
   expect(synthAst).toMatchInlineSnapshot(`"synthetic 'particles'"`);
 });
 
@@ -164,9 +164,9 @@ test("lower binding structs", () => {
       '"
   `);
 
-  const srcBuilder = new SrcMapBuilder();
+  const srcBuilder = new SrcMapBuilder(lowered.srcModule.src);
   lowerAndEmit(srcBuilder, [lowered.moduleElem], {}, false);
-  const linked = srcBuilder.build().dest;
+  const linked = SrcMapBuilder.build([srcBuilder]).dest;
   expectTrimmedMatch(linked, expected);
 });
 

@@ -1,5 +1,6 @@
 import { WGSLLinker } from "@use-gpu/shader";
 import fs from "fs/promises";
+import path from "node:path";
 import { link, parseWESL } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
@@ -32,7 +33,7 @@ function parseArgs(args: string[]) {
     })
     .option("variant", {
       choices: ["wgsl-linker", "wgsl_reflect", "use-gpu", "wesl-link"] as const,
-      default: "wgsl-linker",
+      default: "wgsl-linker" as const,
       describe: "select parser to test",
     })
     .option("profile", {
@@ -45,13 +46,13 @@ function parseArgs(args: string[]) {
 }
 
 async function bench(argv: CliArgs): Promise<void> {
-  const texts = await loadAllFiles();
+  const tests = await loadAllFiles();
   const variant: ParserVariant = selectVariant(argv.variant);
 
   if (argv.bench) {
-    for (const file of texts) {
+    for (const file of tests) {
       const ms = runBench(variant, file);
-      const codeLines = file.text.split("\n").length;
+      const codeLines = getCodeLines(file);
       const locSec = codeLines / ms;
       const locSecStr = new Intl.NumberFormat("en-US").format(
         Math.round(locSec),
@@ -62,7 +63,9 @@ async function bench(argv: CliArgs): Promise<void> {
 
   if (argv.profile) {
     console.profile();
-    runOnAllFiles(variant, texts);
+    for (const test of tests) {
+      runOnce(variant, test);
+    }
     console.profileEnd();
   }
 }
@@ -76,7 +79,7 @@ function selectVariant(variant: string): ParserVariant {
   throw new Error("NYI parser variant: " + variant);
 }
 
-function runBench(variant: ParserVariant, file: LoadedFile): number {
+function runBench(variant: ParserVariant, file: BenchTest): number {
   const warmupIterations = 5;
   const benchIterations = 20;
 
@@ -93,63 +96,113 @@ function runBench(variant: ParserVariant, file: LoadedFile): number {
   return ms;
 }
 
-function runNTimes(n: number, variant: ParserVariant, file: LoadedFile): void {
+function runNTimes(n: number, variant: ParserVariant, file: BenchTest): void {
   for (let i = 0; i < n; i++) {
-    parseOnce(variant, file.name, file.text);
+    runOnce(variant, file);
   }
 }
 
-function runOnAllFiles(variant: ParserVariant, files: LoadedFile[]): void {
-  for (const file of files) {
-    parseOnce(variant, file.name, file.text);
-  }
-}
-
-interface LoadedFile {
+interface BenchTest {
   name: string;
-  text: string;
+  /** Path to the main file */
+  mainFile: string;
+  /** All relevant files (file paths and their contents) */
+  files: Map<string, string>;
 }
 
-async function loadAllFiles(): Promise<LoadedFile[]> {
-  const reduceBuffer = await loadFile(
+async function loadAllFiles(): Promise<BenchTest[]> {
+  const examplesDir = "./src/examples";
+  const reduceBuffer = await loadBench(
     "reduceBuffer",
-    "./src/examples/reduceBuffer.wgsl",
+    examplesDir,
+    "./reduceBuffer.wgsl",
   );
-  const particle = await loadFile("particle", "./src/examples/particle.wgsl");
-  const rasterize = await loadFile(
+  const particle = await loadBench("particle", examplesDir, "./particle.wgsl");
+  const rasterize = await loadBench(
     "rasterize",
-    "./src/examples/rasterize_05_fine.wgsl",
+    examplesDir,
+    "./rasterize_05_fine.wgsl",
   );
-  const boat = await loadFile(
+  const boat = await loadBench(
     "unity_webgpu_0000026E5689B260",
-    "./src/examples/unity_webgpu_000002B8376A5020.fs.wgsl",
+    examplesDir,
+    "./unity_webgpu_000002B8376A5020.fs.wgsl",
   );
-  const imports_only = await loadFile(
+  const imports_only = await loadBench(
     "imports_only",
-    "./src/examples/imports_only.wgsl",
+    examplesDir,
+    "./imports_only.wgsl",
   );
-  return [reduceBuffer, particle, rasterize, boat, imports_only];
+  const bevy_deferred_lighting = await loadBench(
+    "bevy_deferred_lighting",
+    "./src/examples/bevy",
+    "./bevy_generated_deferred_lighting.wgsl",
+  );
+  const bevy_linking = await loadBench(
+    "bevy_linking",
+    "./src/examples/naga_oil_example",
+    "./pbr.wgsl",
+    [
+      "./clustered_forward.wgsl",
+      "./mesh_bindings.wgsl",
+      "./mesh_types.wgsl",
+      "./mesh_vertex_output.wgsl",
+      "./mesh_view_bindings.wgsl",
+      "./mesh_view_types.wgsl",
+      "./pbr_bindings.wgsl",
+      "./pbr_functions.wgsl",
+      "./pbr_lighting.wgsl",
+      "./pbr_types.wgsl",
+      "./shadows.wgsl",
+      "./utils.wgsl",
+    ],
+  );
+  return [
+    reduceBuffer,
+    particle,
+    rasterize,
+    boat,
+    imports_only,
+    bevy_deferred_lighting,
+    bevy_linking,
+  ];
 }
 
-async function loadFile(name: string, path: string): Promise<LoadedFile> {
-  const text = await fs.readFile(path, { encoding: "utf8" });
+async function loadBench(
+  name: string,
+  cwd: string,
+  mainFile: string,
+  extraFiles: string[] = [],
+): Promise<BenchTest> {
+  const files = new Map<string, string>();
+  const addFile = async (p: string) =>
+    files.set(p, await fs.readFile(path.join(cwd, p), { encoding: "utf8" }));
 
-  return { name, text };
+  await addFile(mainFile);
+  for (const path of extraFiles) {
+    await addFile(path);
+  }
+  return { name, mainFile, files };
 }
 
-function parseOnce(
-  parserVariant: ParserVariant,
-  filePath: string,
-  text: string,
-): void {
+function runOnce(parserVariant: ParserVariant, test: BenchTest): void {
   if (parserVariant === "wgsl-linker") {
-    parseWESL(text);
+    for (const [_, text] of test.files) {
+      parseWESL(text);
+    }
   } else if (parserVariant === "wesl-link") {
-    link({ weslSrc: { [filePath]: text }, rootModuleName: filePath });
+    link({
+      weslSrc: Object.fromEntries(test.files.entries()),
+      rootModuleName: test.mainFile,
+    });
   } else if (parserVariant === "wgsl_reflect") {
-    wgslReflectParse(filePath, text);
+    for (const [path, text] of test.files) {
+      wgslReflectParse(path, text);
+    }
   } else if (parserVariant === "use-gpu") {
-    useGpuParse(filePath, text);
+    for (const [path, text] of test.files) {
+      useGpuParse(path, text);
+    }
   } else {
     throw new Error("NYI parser variant: " + parserVariant);
   }
@@ -161,4 +214,11 @@ function wgslReflectParse(_filePath: string, text: string): void {
 
 function useGpuParse(_filePath: string, text: string): void {
   WGSLLinker.loadModule(text);
+}
+
+function getCodeLines(benchTest: BenchTest) {
+  return benchTest.files
+    .values()
+    .map(text => text.split("\n").length)
+    .reduce((sum, v) => sum + v, 0);
 }

@@ -18,10 +18,6 @@ export function visitAst(
   }
 }
 
-export function elemLog(elem: TerminalElem, ...messages: any[]): void {
-  srcLog(elem.srcModule.src, [elem.start, elem.end], ...messages);
-}
-
 export function identElemLog(
   identElem: DeclIdentElem | RefIdentElem,
   ...messages: any[]
