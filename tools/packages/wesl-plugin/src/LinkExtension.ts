@@ -12,7 +12,8 @@ async function emitLinkJs(
   baseId: string,
   api: PluginExtensionApi,
 ): Promise<string> {
-  const { weslRoot } = await api.weslToml();
+  const { resolvedWeslRoot } = await api.weslToml();
+  const debugWeslRoot = resolvedWeslRoot.replaceAll(path.sep, "/");
   const weslSrc = await api.weslSrc();
   const rootModule = await api.weslMain(baseId);
   const rootModuleName = noSuffix(rootModule);
@@ -25,15 +26,20 @@ async function emitLinkJs(
 
   const paramsName = `link${rootName}Config`;
 
+  const linkSettings = JSON.stringify(
+    {
+      rootModuleName,
+      weslSrc,
+      debugWeslRoot,
+      dependencies: packages,
+    },
+    null,
+    2,
+  );
+
   const src = `
     ${bundleImports}
-    export const ${paramsName} = {
-      rootModuleName: "${rootModuleName}",
-      weslRoot: "${weslRoot}",  
-      weslSrc: ${JSON.stringify(weslSrc, null, 2)},
-      dependencies: [${packages.join(", ")}],
-    };
-
+    export const ${paramsName} = ${linkSettings};
     export default ${paramsName};
     `;
 

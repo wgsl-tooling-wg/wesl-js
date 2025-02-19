@@ -6,7 +6,7 @@ export interface SrcModule {
   modulePath: string; // TODO drop this?
 
   /** file path to the module for user error reporting e.g "rand_pkg:sub/foo.wesl", or "./sub/foo.wesl" */
-  filePath: string;
+  debugFilePath: string;
 
   /** original src for module */
   src: string;

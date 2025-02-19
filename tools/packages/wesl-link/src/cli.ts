@@ -2,7 +2,7 @@ import { createTwoFilesPatch } from "diff";
 import fs from "fs";
 import { enableTracing, log } from "mini-parse";
 import path from "path";
-import { astToString, link, normalize, noSuffix, scopeToString } from "wesl";
+import { astToString, link, noSuffix, scopeToString } from "wesl";
 import yargs from "yargs";
 import {
   parsedRegistry,
@@ -57,28 +57,25 @@ function parseArgs(args: string[]) {
 }
 
 async function linkNormally(paths: string[]): Promise<void> {
+  const weslRoot = getBaseDir();
   const pathAndTexts = paths.map(f => {
     const text = fs.readFileSync(f, { encoding: "utf8" });
-    const relativePath = path.relative(process.cwd(), f);
-    const basedPath = "./" + normalize(relativePath);
-    return [basedPath, text];
+    const relativePath = path.relative(weslRoot, f);
+    return [toUnixPath(relativePath), text];
   });
-  const rootModuleRelative = path.relative(getBaseDir(), paths[0]);
-  const rootModuleName = noSuffix(rootModuleRelative);
+  const rootModuleName = noSuffix(path.relative(weslRoot, paths[0]));
   const weslSrc = Object.fromEntries(pathAndTexts);
-
-  const weslRoot = path.relative(process.cwd(), getBaseDir());
 
   // TODO conditions
   // TODO external defines
   if (argv.emit) {
-    const linked = await link({ weslSrc, rootModuleName, weslRoot });
+    const linked = await link({ weslSrc, rootModuleName });
     if (argv.emit) log(linked.dest);
   }
   if (argv.details) {
     const registry = parsedRegistry();
     try {
-      parseIntoRegistry(weslSrc, registry, "package", weslRoot);
+      parseIntoRegistry(weslSrc, registry, "package");
     } catch (e) {
       console.error(e);
     }
@@ -94,6 +91,14 @@ async function linkNormally(paths: string[]): Promise<void> {
 
   // TODO diff
   // if (argv.diff) printDiff(srcPath, origWgsl, linked);
+}
+
+function toUnixPath(p: string): string {
+  if (path.sep !== "/") {
+    return p.replaceAll(path.sep, "/");
+  } else {
+    return p;
+  }
 }
 
 function externalDefines(): Record<string, string> {

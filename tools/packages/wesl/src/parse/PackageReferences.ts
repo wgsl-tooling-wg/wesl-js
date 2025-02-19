@@ -13,7 +13,7 @@ export function packageReferences(src: string): string[] {
   // create fake boilerplate to setup parsing
   const srcModule: SrcModule = {
     modulePath: "package::packageImports",
-    filePath: "./synthetic.wesl",
+    debugFilePath: "./synthetic.wesl",
     src: src,
   };
   const appState = blankWeslParseState(srcModule);

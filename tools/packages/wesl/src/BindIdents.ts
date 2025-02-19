@@ -134,7 +134,7 @@ function bindIdentsRecursive(
           const { refIdentElem } = ident;
           if (refIdentElem) {
             const { srcModule, start, end } = refIdentElem;
-            const { filePath } = srcModule;
+            const { debugFilePath: filePath } = srcModule;
             const msg = `unresolved identifier in file: ${filePath}`;
             srcLog(srcModule.src, [start, end], msg);
           }
@@ -267,7 +267,7 @@ function virtualModule(
     const src = fn(conditions); // generate the virtual module
     const srcModule: SrcModule = {
       modulePath: moduleName,
-      filePath: moduleName,
+      debugFilePath: moduleName,
       src,
     };
     found.ast = parseSrcModule(srcModule); // cache parsed virtual module

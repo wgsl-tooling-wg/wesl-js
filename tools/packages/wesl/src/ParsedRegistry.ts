@@ -43,8 +43,12 @@ export function selectModule(
   let modulePath: string;
   if (selectPath.includes("::")) {
     modulePath = selectPath;
-  } else if (selectPath.includes("/")) {
-    modulePath = fileToModulePath(selectPath, packageName, "");
+  } else if (
+    selectPath.includes("/") ||
+    selectPath.endsWith(".wesl") ||
+    selectPath.endsWith(".wgsl")
+  ) {
+    modulePath = fileToModulePath(selectPath, packageName);
   } else {
     modulePath = packageName + "::" + selectPath;
   }
@@ -63,12 +67,17 @@ export function parseIntoRegistry(
   srcFiles: Record<string, string>,
   registry: ParsedRegistry,
   packageName: string = "package",
-  weslRoot: string = "",
+  debugWeslRoot?: string,
 ): void {
+  if (debugWeslRoot === undefined) {
+    debugWeslRoot = "";
+  } else if (!debugWeslRoot.endsWith("/")) {
+    debugWeslRoot += "/";
+  }
   const srcModules: SrcModule[] = Object.entries(srcFiles).map(
     ([filePath, src]) => {
-      const modulePath = fileToModulePath(filePath, packageName, weslRoot);
-      return { modulePath, filePath, src };
+      const modulePath = fileToModulePath(filePath, packageName);
+      return { modulePath, debugFilePath: debugWeslRoot + filePath, src };
     },
   );
   srcModules.forEach(mod => {
@@ -91,13 +100,9 @@ export function parseLibsIntoRegistry(
 
 const libRegex = /^lib\.w[eg]sl$/i;
 
-/** convert a file path (./shaders/foo/bar.wesl) and a wesl root (./shaders)
+/** convert a file path (./foo/bar.wesl)
  *  to a module path (package::foo::bar) */
-function fileToModulePath(
-  filePath: string,
-  packageName: string,
-  weslRoot: string,
-): string {
+function fileToModulePath(filePath: string, packageName: string): string {
   if (filePath.includes("::")) {
     // already a module path
     return filePath;
@@ -107,12 +112,7 @@ function fileToModulePath(
     return packageName;
   }
 
-  const rootStart = filePath.indexOf(weslRoot);
-  if (rootStart === -1) {
-    throw new Error(`file ${filePath} not in root ${weslRoot}`);
-  }
-  const postRoot = filePath.slice(rootStart + weslRoot.length);
-  const strippedPath = noSuffix(normalize(postRoot));
+  const strippedPath = noSuffix(normalize(filePath));
   const moduleSuffix = strippedPath.replaceAll("/", "::");
   const modulePath = packageName + "::" + moduleSuffix;
   return modulePath;

@@ -24,6 +24,17 @@ const symbolSet =
 const ident =
   /(?:(?:[_\p{XID_Start}][\p{XID_Continue}]+)|(?:[\p{XID_Start}]))/u;
 
+/** Checks if a word is a valid WGSL ident, and not a keyword */
+export function isIdent(text: string): boolean {
+  if (text.match(ident)?.[0] !== text) {
+    return false;
+  }
+  if (keywordOrReserved.has(text)) {
+    return false;
+  }
+  return true;
+}
+
 const keywordOrReserved = new Set(keywords.concat(reservedWords));
 
 const digits = new RegExp(

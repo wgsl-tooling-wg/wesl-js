@@ -35,11 +35,14 @@ export interface LinkParams {
    *   key is module path or file path
    *     `package::foo::bar`, or './foo/bar.wesl', or './foo/bar'
    *   value is wesl src
+   *
+   *
+   * Only accepts unix-style, relative filesystem paths that are valid WGSL identifiers
+   * - Unix-style: Slashes as separators.
+   * - Valid WGSL identifiers: No backslashes, no `..`, or other non-identifier symbols.
+   * - Relative paths: They have to be relative to the wesl root.
    */
   weslSrc: Record<string, string>;
-
-  /** root directory prefix for sources, e.g. /shaders */
-  weslRoot?: string;
 
   /** name of root wesl module
    *    for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
@@ -47,6 +50,9 @@ export interface LinkParams {
    *  can be specified as file path (./main.wesl), a module path (package::main), or just a module name (main)
    */
   rootModuleName?: string;
+
+  /** For debug logging. Will be prepended to file paths. */
+  debugWeslRoot?: string;
 
   /** runtime conditions for conditional compiling with @if and friends */
   conditions?: Conditions;
@@ -78,9 +84,9 @@ export type VirtualLibraryFn = (conditions: Conditions) => string;
  * Only code that is valid with the current conditions is included in the output.
  */
 export async function link(params: LinkParams): Promise<SrcMap> {
-  const { weslSrc, weslRoot = "", libs = [] } = params;
+  const { weslSrc, debugWeslRoot, libs = [] } = params;
   const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry, "package", weslRoot);
+  parseIntoRegistry(weslSrc, registry, "package", debugWeslRoot);
   parseLibsIntoRegistry(libs, registry);
   return linkRegistry({ registry, ...params });
 }

@@ -1,26 +1,5 @@
 /** simplistic path manipulation utilities */
 
-export function relativePath(
-  srcPath: string | undefined,
-  reqPath: string,
-): string {
-  if (!srcPath) return reqPath;
-  const srcDir = dirname(srcPath);
-  const relative = join(srcDir, reqPath);
-  return relative;
-}
-
-export function dirname(path: string): string {
-  const lastSlash = path.lastIndexOf("/");
-  if (lastSlash === -1) return ".";
-  return path.slice(0, lastSlash);
-}
-
-export function join(a: string, b: string): string {
-  const joined = b.startsWith("/") ? a + b : a + "/" + b;
-  return normalize(joined);
-}
-
 /** return path with ./ and foo/.. elements removed */
 export function normalize(path: string): string {
   const segments = path.split("/");

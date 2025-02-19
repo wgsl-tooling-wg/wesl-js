@@ -6,12 +6,12 @@ import linkParams from "./shaders/app.wesl?link";
 test("verify ?link", async () => {
   expectTypeOf(linkParams).toMatchTypeOf<LinkConfig>();
 
-  const { rootModuleName, weslRoot, weslSrc, dependencies } = linkParams;
+  const { rootModuleName, debugWeslRoot, weslSrc, dependencies } = linkParams;
   expect(rootModuleName).toMatchInlineSnapshot(`"./app"`);
-  expect(weslRoot).toMatchInlineSnapshot(`"shaders"`);
+  expect(debugWeslRoot).toMatchInlineSnapshot(`"./shaders"`); // I think. It's possible that it could have a slightly different format.
   expect(weslSrc).toMatchInlineSnapshot(`
     {
-      "./shaders/app.wesl": "import random_wgsl::pcg_2u_3f;
+      "./app.wesl": "import random_wgsl::pcg_2u_3f;
 
     main() {
        let a = pcg_2u3f(vec2u(1, 2)); 
