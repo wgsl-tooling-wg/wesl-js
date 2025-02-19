@@ -49,15 +49,15 @@ export type TerminalElem =
   | TextElem
   | ImportElem;
 
-export type DeclarationElem =
+export type GlobalDeclarationElem =
   | AliasElem
   | ConstElem
   | FnElem
   | GlobalVarElem
   | OverrideElem
-  | FnParamElem
-  | StructElem
-  | VarElem;
+  | StructElem;
+
+export type DeclarationElem = GlobalDeclarationElem | FnParamElem | VarElem;
 
 export interface AbstractElemBase {
   kind: AbstractElem["kind"];
