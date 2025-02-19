@@ -2,9 +2,12 @@ import { matchOneOf } from "mini-parse";
 import {
   BindingStructElem,
   ExpressionElem,
+  NameElem,
   StructMemberElem,
   TextElem,
+  TranslateTimeExpressionElem,
   TypeRefElem,
+  UnknownExpressionElem,
 } from "./AbstractElems.ts";
 import { assertThat } from "./Assertions.ts";
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
@@ -15,6 +18,7 @@ import {
   sampledTextureTypes,
   textureStorageTypes,
 } from "./StandardTypes.ts";
+import { findMap } from "./Util.ts";
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
 export const textureStorage = matchOneOf(textureStorageTypes);
@@ -117,13 +121,25 @@ function shaderVisiblity(struct: BindingStructElem): string {
     identElemLog(struct.name, "missing entry function for binding struct");
   } else {
     const { fnAttributes = [] } = entryFn;
-    if (fnAttributes.find(a => a.name === "compute")) {
+    if (
+      fnAttributes.find(
+        ({ attribute: a }) => a.kind === "attribute" && a.name === "compute",
+      )
+    ) {
       return "GPUShaderStage.COMPUTE";
     }
-    if (fnAttributes.find(a => a.name === "vertex")) {
+    if (
+      fnAttributes.find(
+        ({ attribute: a }) => a.kind === "attribute" && a.name === "vertex",
+      )
+    ) {
       return "GPUShaderStage.VERTEX";
     }
-    if (fnAttributes.find(a => a.name === "fragment")) {
+    if (
+      fnAttributes.find(
+        ({ attribute: a }) => a.kind === "attribute" && a.name === "fragment",
+      )
+    ) {
       return "GPUShaderStage.FRAGMENT";
     }
   }
@@ -139,8 +155,9 @@ function memberToLayoutEntry(
   member: StructMemberElem,
   visibility: string,
 ): string {
-  const bindingParam = member.attributes?.find(a => a.name === "binding")
-    ?.params?.[0];
+  const bindingParam = findMap(member.attributes ?? [], ({ attribute: a }) =>
+    a.kind === "attribute" && a.name === "binding" ? a : undefined,
+  )?.params?.[0];
   const binding = bindingParam ? paramText(bindingParam) : "?";
 
   const src = `
@@ -178,25 +195,7 @@ function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
   if (typeRef.name.originalName === "ptr") {
     const param1 = typeRef.templateParams?.[0];
     const param3 = typeRef.templateParams?.[2];
-    if (param1?.kind === "ref" && param1.ident.originalName === "uniform") {
-      return `buffer: { type: "uniform" }`;
-    } else if (
-      param1?.kind === "ref" &&
-      param1.ident.originalName === "storage"
-    ) {
-      if (param3?.kind === "ref" && param3.ident.originalName === "read") {
-        return `buffer: { type: "read-only-storage" }`;
-      } else {
-        return `buffer: { type: "storage" }`;
-      }
-      // TODO what do we do with the element type (2nd parameter)
-      // TODO should there be an ability to set hasDynamicOffset?
-    }
-    // TODO: Remove these (temporary hack)
-    else if (
-      param1?.kind === "type" &&
-      param1.name.originalName === "uniform"
-    ) {
+    if (param1?.kind === "type" && param1.name.originalName === "uniform") {
       return `buffer: { type: "uniform" }`;
     } else if (
       param1?.kind === "type" &&
@@ -207,6 +206,8 @@ function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
       } else {
         return `buffer: { type: "storage" }`;
       }
+      // TODO what do we do with the element type (2nd parameter)
+      // TODO should there be an ability to set hasDynamicOffset?
     }
   }
 }
@@ -269,8 +270,13 @@ function externalTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   return undefined;
 }
 
-function paramText(expression: ExpressionElem): string {
-  // @ts-ignore
+function paramText(
+  expression: UnknownExpressionElem | NameElem | TranslateTimeExpressionElem,
+): string {
+  assertThat(
+    expression.kind === "expression",
+    "Only expression elements are supported in this position",
+  );
   const text = expression.contents[0] as TextElem;
   return text.srcModule.src.slice(expression.start, expression.end);
 }

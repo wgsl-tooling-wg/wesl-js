@@ -80,7 +80,7 @@ export function parseWESL(src: string, srcMap?: SrcMap): WeslAST {
 }
 
 export function blankWeslParseState(srcModule: SrcModule): WeslParseState {
-  const rootScope = emptyScope("module-scope");
+  const rootScope = emptyScope(null);
   const moduleElem = null as any; // we'll fill this in later
   return {
     context: { scope: rootScope, openElems: [] },

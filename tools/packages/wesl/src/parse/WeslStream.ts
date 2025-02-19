@@ -10,7 +10,8 @@ import {
 import { keywords, reservedWords } from "./Keywords";
 export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
 
-export interface WeslToken extends TypedToken<WeslTokenKind> {}
+export interface WeslToken<Kind extends WeslTokenKind = WeslTokenKind>
+  extends TypedToken<Kind> {}
 
 // https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
 /** Whitespaces including new lines */
@@ -70,6 +71,11 @@ const weslMatcher = new RegexMatchers<InternalTokenKind>({
   symbol: matchOneOf(symbolSet),
   invalid: /[^]/,
 });
+
+/** To mark parts of the grammar implementation that are WESL specific extensions */
+export function weslExtension<T>(combinator: T): T {
+  return combinator;
+}
 
 export class WeslStream implements Stream<WeslToken> {
   private stream: Stream<TypedToken<InternalTokenKind>>;

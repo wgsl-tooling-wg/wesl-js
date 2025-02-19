@@ -1,8 +1,13 @@
 import { SrcMapBuilder, tracing } from "mini-parse";
 import {
   AbstractElem,
+  Attribute,
+  AttributeElem,
+  ContainerElem,
   DeclIdentElem,
-  LiteralElem,
+  DirectiveElem,
+  ExpressionElem,
+  Literal,
   NameElem,
   RefIdentElem,
   SyntheticElem,
@@ -50,8 +55,6 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     // terminal elements copy strings to the output
     case "text":
       return emitText(e, ctx);
-    case "literal":
-      return emitLiteral(e, ctx);
     case "name":
       return emitName(e, ctx);
     case "synthetic":
@@ -71,7 +74,6 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "module":
     case "member":
     case "memberRef":
-    case "attribute":
     case "expression":
     case "type":
     case "stuff":
@@ -91,47 +93,157 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
       }
       return emitContents(e, ctx);
 
+    case "attribute":
+      return emitAttribute(e, ctx);
+    case "directive":
+      return emitDirective(e, ctx);
+
     default:
       assertUnreachable(e);
   }
 }
 
 export function emitText(e: TextElem, ctx: EmitContext): void {
-  ctx.srcBuilder.addCopy(e.srcModule.src, e.start, e.end);
-}
-export function emitLiteral(e: LiteralElem, ctx: EmitContext): void {
-  ctx.srcBuilder.addCopy(e.srcModule.src, e.start, e.end);
+  ctx.srcBuilder.addCopy(e.start, e.end);
 }
 
 export function emitName(e: NameElem, ctx: EmitContext): void {
-  ctx.srcBuilder.add(e.name, e.srcModule.src, e.start, e.end);
+  ctx.srcBuilder.add(e.name, e.start, e.end);
 }
 
 export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
   const { text } = e;
-  ctx.srcBuilder.add(text, text, 0, text.length);
+  ctx.srcBuilder.addSynthetic(text, text, 0, text.length);
 }
 
-export function emitContents(
-  elem: AbstractElem & { contents: AbstractElem[] },
-  ctx: EmitContext,
-): void {
+export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
   elem.contents.forEach(e => lowerAndEmitElem(e, ctx));
 }
 
 export function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {
   if (e.ident.std) {
-    ctx.srcBuilder.add(e.ident.originalName, e.srcModule.src, e.start, e.end);
+    ctx.srcBuilder.add(e.ident.originalName, e.start, e.end);
   } else {
     const declIdent = findDecl(e.ident);
     const mangledName = displayName(declIdent);
-    ctx.srcBuilder.add(mangledName!, e.srcModule.src, e.start, e.end);
+    ctx.srcBuilder.add(mangledName!, e.start, e.end);
   }
 }
 
 export function emitDeclIdent(e: DeclIdentElem, ctx: EmitContext): void {
   const mangledName = displayName(e.ident);
-  ctx.srcBuilder.add(mangledName!, e.srcModule.src, e.start, e.end);
+  ctx.srcBuilder.add(mangledName!, e.start, e.end);
+}
+
+function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
+  const { kind } = e.attribute;
+  // LATER emit more precise source map info by making use of all the spans
+  // Like the first case does
+  if (kind === "attribute") {
+    const { params } = e.attribute;
+    if (params.length === 0) {
+      ctx.srcBuilder.add("@" + e.attribute.name, e.start, e.end);
+    } else {
+      ctx.srcBuilder.add(
+        "@" + e.attribute.name + "(",
+        e.start,
+        params[0].start,
+      );
+      for (let i = 0; i < params.length; i++) {
+        emitContents(params[i], ctx);
+        if (i < params.length - 1) {
+          ctx.srcBuilder.add(",", params[i].end, params[i + 1].start);
+        }
+      }
+      ctx.srcBuilder.add(")", params[params.length - 1].end, e.end);
+    }
+  } else if (kind === "@builtin") {
+    ctx.srcBuilder.add(
+      "@builtin(" + e.attribute.param.name + ")",
+      e.start,
+      e.end,
+    );
+  } else if (kind === "@diagnostic") {
+    ctx.srcBuilder.add(
+      "@diagnostic" +
+        diagnosticControlToString(e.attribute.severity, e.attribute.rule),
+      e.start,
+      e.end,
+    );
+  } else if (kind === "@if") {
+    ctx.srcBuilder.add(
+      `@if(${expressionToString(e.attribute.param.expression)})`,
+      e.start,
+      e.end,
+    );
+  } else if (kind === "@interpolate") {
+    ctx.srcBuilder.add(
+      `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`,
+      e.start,
+      e.end,
+    );
+  } else {
+    assertUnreachable(kind);
+  }
+}
+
+export function diagnosticControlToString(
+  severity: NameElem,
+  rule: [NameElem, NameElem | null],
+): string {
+  const ruleStr = rule[0].name + (rule[1] !== null ? "." + rule[1].name : "");
+  return `(${severity.name}, ${ruleStr})`;
+}
+
+export function expressionToString(elem: ExpressionElem): string {
+  const { kind } = elem;
+  if (kind === "binary-expression") {
+    return `${expressionToString(elem.left)} ${elem.operator.value} ${expressionToString(elem.right)}`;
+  } else if (kind === "unary-expression") {
+    return `${elem.operator.value}${expressionToString(elem.expression)}`;
+  } else if (kind === "ref") {
+    return elem.ident.originalName;
+  } else if (kind === "literal") {
+    return elem.value;
+  } else if (kind === "translate-time-feature") {
+    return elem.name;
+  } else if (kind === "parenthesized-expression") {
+    return `(${expressionToString(elem.expression)})`;
+  } else if (kind === "component-expression") {
+    return `${expressionToString(elem.base)}[${elem.access}]`;
+  } else if (kind === "component-member-expression") {
+    return `${expressionToString(elem.base)}.${elem.access}`;
+  } else if (kind === "call-expression") {
+    return `${elem.function.ident.originalName}(${elem.arguments.map(expressionToString).join(", ")})`;
+  } else {
+    assertUnreachable(kind);
+  }
+}
+
+function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
+  const { directive } = e;
+  const { kind } = directive;
+  if (kind === "diagnostic") {
+    ctx.srcBuilder.add(
+      `diagnostic${diagnosticControlToString(directive.severity, directive.rule)}`,
+      e.start,
+      e.end,
+    );
+  } else if (kind === "enable") {
+    ctx.srcBuilder.add(
+      `enable${directive.extensions.map(v => v.name).join(", ")}`,
+      e.start,
+      e.end,
+    );
+  } else if (kind === "requires") {
+    ctx.srcBuilder.add(
+      `requires${directive.extensions.map(v => v.name).join(", ")}`,
+      e.start,
+      e.end,
+    );
+  } else {
+    assertUnreachable(kind);
+  }
 }
 
 function displayName(declIdent: DeclIdent): string {

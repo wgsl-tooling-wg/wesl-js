@@ -4,41 +4,75 @@ import { SrcMap, SrcMapEntry } from "./SrcMap.js";
 
 /**
  * Incrementally append to a string, tracking source references
+ *
+ * TODO: Offer a tree-like API, where I can pass in a large span, and then a bunch of child spans.
+ * Like a large span that covers a whole attribute, and then smaller spans that only cover the attribute parameters.
  */
 export class SrcMapBuilder {
   #fragments: string[] = [];
   #destLength = 0;
   #entries: SrcMapEntry[] = [];
 
+  constructor(public source: string) {}
+
   /** append a string fragment to the destination string */
   // TODO allow for src file name not just string (e.g. SrcModule)
-  add(fragment: string, src: string, srcStart: number, srcEnd: number): void {
+  add(fragment: string, srcStart: number, srcEnd: number): void {
     // dlog({fragment})
     const destStart = this.#destLength;
     this.#destLength += fragment.length;
     const destEnd = this.#destLength;
 
     this.#fragments.push(fragment);
-    this.#entries.push({ src, srcStart, srcEnd, destStart, destEnd });
+    this.#entries.push({
+      src: this.source,
+      srcStart,
+      srcEnd,
+      destStart,
+      destEnd,
+    });
+  }
+
+  addSynthetic(
+    fragment: string,
+    syntheticSource: string,
+    srcStart: number,
+    srcEnd: number,
+  ): void {
+    // dlog({fragment})
+    const destStart = this.#destLength;
+    this.#destLength += fragment.length;
+    const destEnd = this.#destLength;
+
+    this.#fragments.push(fragment);
+    this.#entries.push({
+      src: syntheticSource,
+      srcStart,
+      srcEnd,
+      destStart,
+      destEnd,
+    });
   }
 
   /** append a synthetic newline, mapped to previous source location */
   addNl(): void {
-    const lastEntry = this.#entries.slice(-1)[0] ?? {};
-    const { src = "?", srcStart = 0, srcEnd = 0 } = lastEntry;
-    this.add("\n", src, srcStart, srcEnd);
+    const lastEntry = this.#entries.at(-1) ?? { srcStart: 0, srcEnd: 0 };
+    const { srcStart, srcEnd } = lastEntry;
+    this.add("\n", srcStart, srcEnd);
   }
 
   /** copy a string fragment from the src to the destination string */
-  addCopy(src: string, srcStart: number, srcEnd: number): void {
-    const fragment = src.slice(srcStart, srcEnd);
-    this.add(fragment, src, srcStart, srcEnd);
+  addCopy(srcStart: number, srcEnd: number): void {
+    const fragment = this.source.slice(srcStart, srcEnd);
+    this.add(fragment, srcStart, srcEnd);
   }
 
   /** return a SrcMap */
-  build(): SrcMap {
-    // dlog({ fragments: this.#fragments });
-    const map = new SrcMap(this.#fragments.join(""), this.#entries);
+  static build(builders: SrcMapBuilder[]): SrcMap {
+    const map = new SrcMap(
+      builders.map(b => b.#fragments.join("")).join(""),
+      builders.flatMap(b => b.#entries),
+    );
     map.compact();
     return map;
   }

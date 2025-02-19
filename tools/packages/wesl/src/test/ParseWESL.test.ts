@@ -191,7 +191,6 @@ test("parse @attribute before fn", () => {
     "module
       fn main() @compute
         attribute @compute
-          text '@compute'
         text ' fn '
         decl %main
         text '() {}'
@@ -213,20 +212,15 @@ test("parse @compute @workgroup_size(a, b, 1) before fn", () => {
         '
       fn main() @compute @workgroup_size(ref a, ref b, '1')
         attribute @compute
-          text '@compute'
         text ' 
         '
         attribute @workgroup_size(ref a, ref b, '1')
-          text '@workgroup_size('
           expression ref a
             ref a
-          text ', '
           expression ref b
             ref b
-          text ', '
           expression '1'
             text '1'
-          text ')'
         text ' 
         fn '
         decl %main
@@ -250,16 +244,12 @@ test("parse top level var", () => {
         '
       gvar %u : Uniforms
         attribute @group('0')
-          text '@group('
           expression '0'
             text '0'
-          text ')'
         text ' '
         attribute @binding('0')
-          text '@binding('
           expression '0'
             text '0'
-          text ')'
         text ' var<'
         type uniform
           ref uniform
@@ -658,28 +648,22 @@ test("parse fn with attributes and suffix comma", () => {
       '
       fn main(grid: vec3<u32>, localIndex: u32) @compute @workgroup_size(ref workgroupThreads, '1', '1')
         attribute @compute
-          text '@compute'
         text '
       '
         attribute @workgroup_size(ref workgroupThreads, '1', '1')
-          text '@workgroup_size('
           expression ref workgroupThreads
             ref workgroupThreads
-          text ', '
           expression '1'
             text '1'
-          text ', '
           expression '1'
             text '1'
-          text ')'
         text ' 
       fn '
         decl %main
         text '(
           '
         param
-          attribute @builtin
-            text '@builtin(global_invocation_id)'
+          attribute @builtin(global_invocation_id)
           text ' '
           decl %grid
           typeDecl %grid : vec3<u32>
@@ -693,8 +677,7 @@ test("parse fn with attributes and suffix comma", () => {
         text ',
           '
         param
-          attribute @builtin
-            text '@builtin(local_invocation_index)'
+          attribute @builtin(local_invocation_index)
           text ' '
           decl %localIndex
           typeDecl %localIndex : u32
@@ -746,7 +729,6 @@ test("parse @attribute before fn", () => {
     "module
       fn main() @compute
         attribute @compute
-          text '@compute'
         text ' fn '
         decl %main
         text '() {}'
@@ -1168,18 +1150,14 @@ test(`parse binding struct`, ctx => {
         decl %Bindings
         text ' {
           '
-        member @group @binding particles: ptr<storage, array<f32>, read_write>
+        member @group('0') @binding('0') particles: ptr<storage, array<f32>, read_write>
           attribute @group('0')
-            text '@group('
             expression '0'
               text '0'
-            text ')'
           text ' '
           attribute @binding('0')
-            text '@binding('
             expression '0'
               text '0'
-            text ')'
           text ' '
           name particles
           text ': '
@@ -1415,18 +1393,14 @@ test("binding struct", () => {
         decl %Bindings
         text ' {
           '
-        member @group @binding particles: ptr<storage, array<f32>, read_write>
+        member @group('0') @binding('0') particles: ptr<storage, array<f32>, read_write>
           attribute @group('0')
-            text '@group('
             expression '0'
               text '0'
-            text ')'
           text ' '
           attribute @binding('0')
-            text '@binding('
             expression '0'
               text '0'
-            text ')'
           text ' '
           name particles
           text ': '
@@ -1448,18 +1422,14 @@ test("binding struct", () => {
             text '>'
         text ', 
           '
-        member @group @binding uniforms: ptr<uniform, Uniforms>
+        member @group('0') @binding('1') uniforms: ptr<uniform, Uniforms>
           attribute @group('0')
-            text '@group('
             expression '0'
               text '0'
-            text ')'
           text ' '
           attribute @binding('1')
-            text '@binding('
             expression '1'
               text '1'
-            text ')'
           text ' '
           name uniforms
           text ': '
@@ -1474,18 +1444,14 @@ test("binding struct", () => {
             text '>'
         text ', 
           '
-        member @group @binding tex: texture_2d<rgba8unorm>
+        member @group('0') @binding('2') tex: texture_2d<rgba8unorm>
           attribute @group('0')
-            text '@group('
             expression '0'
               text '0'
-            text ')'
           text ' '
           attribute @binding('2')
-            text '@binding('
             expression '2'
               text '2'
-            text ')'
           text ' '
           name tex
           text ': '
@@ -1497,18 +1463,14 @@ test("binding struct", () => {
             text '>'
         text ',
           '
-        member @group @binding samp: sampler
+        member @group('0') @binding('3') samp: sampler
           attribute @group('0')
-            text '@group('
             expression '0'
               text '0'
-            text ')'
           text ' '
           attribute @binding('3')
-            text '@binding('
             expression '3'
               text '3'
-            text ')'
           text ' '
           name samp
           text ': '
