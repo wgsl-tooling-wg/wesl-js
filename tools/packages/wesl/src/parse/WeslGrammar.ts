@@ -1,13 +1,10 @@
 import {
-  collectArray,
-  delimited,
   eof,
   fn,
   kind,
   opt,
   or,
   Parser,
-  preceded,
   repeat,
   repeatPlus,
   req,
@@ -20,7 +17,7 @@ import {
   withSepPlus,
 } from "mini-parse";
 import { weslImports } from "./ImportGrammar.ts";
-import { templateClose, templateOpen, WeslToken } from "./WeslStream.ts";
+import { WeslToken } from "./WeslStream.ts";
 import {
   aliasCollect,
   collectAttribute,
@@ -33,19 +30,20 @@ import {
   collectVarLike,
   declCollect,
   expressionCollect,
-  memberRefCollect,
   nameCollect,
   refIdent,
   scopeCollect,
-  stuffCollect,
   typedDecl,
-  typeRefCollect,
 } from "../WESLCollect.ts";
-import { mainTokens } from "../WESLTokens.ts";
-
-export const word = kind(mainTokens.ident);
-
-const qualified_ident = withSepPlus("::", word);
+import {
+  expression,
+  opt_template_list,
+  simple_component_reference,
+  component_or_swizzle,
+  argument_expression_list,
+  type_specifier,
+} from "./WeslExpression.ts";
+import { qualified_ident, word } from "./WeslBaseGrammar.ts";
 
 const diagnostic_rule_name = withSep(".", word, { requireOne: true });
 const diagnostic_control = seq(
@@ -115,12 +113,6 @@ const attribute_argument_list = seq(
   req(")"),
 );
 
-const argument_expression_list = seq(
-  "(",
-  withSep(",", () => expression),
-  req(")"),
-);
-
 const opt_attributes = repeat(attribute);
 
 /** parse an identifier into a TypeNameElem */
@@ -137,17 +129,6 @@ export const fnNameDecl =
     word                            .collect(declCollect, "fn_name"),
     "missing fn name",
   );
-
-// prettier-ignore
-const std_type_specifier = seq(
-  word                              .collect(refIdent, "typeRefName"),
-  () => opt_template_list,
-)                                   .collect(typeRefCollect);
-
-// prettier-ignore
-export const type_specifier: Parser<Stream<WeslToken>,any> = tagScope(
-   std_type_specifier,
-)                                   .ctag("typeRefElem");
 
 // prettier-ignore
 const optionally_typed_ident = tagScope(
@@ -214,110 +195,6 @@ const global_variable_decl = seq(
   req_optionally_typed_ident,
                                       // TODO shouldn't decl_scope include the ident type?
   opt(seq("=", () => expression       .collect(scopeCollect(), "decl_scope"))),
-);
-
-/** Aka template_elaborated_ident.post.ident */
-const opt_template_list = opt(
-  seq(
-    templateOpen,
-    withSepPlus(",", () => template_parameter),
-    templateClose,
-  ),
-);
-
-/** template list of non-identifier words. e.g. var <storage> */
-// prettier-ignore
-const opt_template_words = opt(
-  seq(
-    templateOpen,
-    withSepPlus(",", qualified_ident        .ptag("templateParam")),
-    templateClose
-  ),
-);
-
-// prettier-ignore
-const template_elaborated_ident = 
-  seq(
-    qualified_ident                           .collect(refIdent),
-    opt_template_list,
-  );
-
-const literal = or("true", "false", kind(mainTokens.digits));
-
-const paren_expression = seq("(", () => expression, req(")"));
-
-const call_expression = seq(
-  template_elaborated_ident,
-  argument_expression_list,
-);
-
-const primary_expression = or(
-  literal,
-  paren_expression,
-  call_expression,
-  template_elaborated_ident,
-);
-
-const component_or_swizzle = repeatPlus(
-  or(
-    preceded(".", word),
-    collectArray(delimited("[", () => expression, req("]"))),
-  ),
-);
-
-// TODO: Remove
-// prettier-ignore
-/** parse simple struct.member style references specially, for binding struct lowering */
-const simple_component_reference = tagScope(
-  seq(
-    qualified_ident                   .collect(refIdent, "structRef"),
-    seq(".", word                     .collect(nameCollect, "component")),
-    opt(component_or_swizzle          .collect(stuffCollect, "extra_components")),
-  )                                   .collect(memberRefCollect),
-);
-
-/**
- * bitwise_expression.post.unary_expression
- * & ^ |
- * expression
- * && ||
- * relational_expression.post.unary_expression
- * > >= < <= != ==
- * shift_expression.post.unary_expression
- * % * / + - << >>
- */
-const makeExpressionOperator = (isTemplate: boolean) => {
-  const allowedOps = (
-    "& | ^ << <= < != == % * / + -" + (isTemplate ? "" : " && || >> >= >")
-  ).split(" ");
-  return or(...allowedOps);
-};
-
-const unary_expression: Parser<Stream<WeslToken>, any> = or(
-  seq(or(..."! & * - ~".split(" ")), () => unary_expression),
-  or(
-    simple_component_reference,
-    seq(primary_expression, opt(component_or_swizzle)),
-  ),
-);
-
-const makeExpression = (isTemplate: boolean) => {
-  return seq(
-    unary_expression,
-    repeat(seq(makeExpressionOperator(isTemplate), unary_expression)),
-  );
-};
-
-export const expression = makeExpression(false);
-const template_arg_expression = makeExpression(true);
-
-/** a template_arg_expression with additional collection for parameters
- * that are types like array<f32> vs. expressions like 1+2 */
-// prettier-ignore
-const template_parameter = or(
-  // TODO: Remove this, it's wrong
-  type_specifier                    .ctag("templateParam"),
-  template_arg_expression           .collect(expressionCollect, "templateParam"),
 );
 
 const unscoped_compound_statement = seq(
@@ -565,11 +442,9 @@ if (tracing) {
     diagnostic_rule_name,
     diagnostic_control,
     attribute,
-    argument_expression_list,
     opt_attributes,
     typeNameDecl,
     fnNameDecl,
-    type_specifier,
     optionally_typed_ident,
     struct_member,
     struct_decl,
@@ -578,16 +453,6 @@ if (tracing) {
     fnParamList,
     local_variable_decl,
     global_variable_decl,
-    opt_template_list,
-    template_elaborated_ident,
-    literal,
-    paren_expression,
-    call_expression,
-    primary_expression,
-    component_or_swizzle,
-    unary_expression,
-    expression,
-    template_arg_expression,
     compound_statement,
     for_init,
     for_update,
