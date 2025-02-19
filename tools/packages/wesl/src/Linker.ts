@@ -51,6 +51,9 @@ export interface LinkParams {
    */
   rootModuleName?: string;
 
+  /** For debug logging. Will be prepended to file paths. */
+  debugWeslRoot?: string;
+
   /** runtime conditions for conditional compiling with @if and friends */
   conditions?: Conditions;
 
@@ -81,9 +84,9 @@ export type VirtualLibraryFn = (conditions: Conditions) => string;
  * Only code that is valid with the current conditions is included in the output.
  */
 export async function link(params: LinkParams): Promise<SrcMap> {
-  const { weslSrc, libs = [] } = params;
+  const { weslSrc, debugWeslRoot, libs = [] } = params;
   const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry, "package");
+  parseIntoRegistry(weslSrc, registry, "package", debugWeslRoot);
   parseLibsIntoRegistry(libs, registry);
   return linkRegistry({ registry, ...params });
 }

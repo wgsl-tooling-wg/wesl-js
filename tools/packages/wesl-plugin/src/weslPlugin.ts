@@ -203,7 +203,10 @@ async function getWeslToml(
   cache.weslToml = {
     tomlFile,
     tomlDir,
-    resolvedWeslRoot: path.resolve(path.dirname(tomlFile), parsedToml.weslRoot),
+    resolvedWeslRoot: path.relative(
+      ".",
+      path.resolve(path.dirname(tomlFile), parsedToml.weslRoot),
+    ),
     toml: parsedToml,
   };
 

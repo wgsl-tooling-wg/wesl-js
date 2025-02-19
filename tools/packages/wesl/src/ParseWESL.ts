@@ -72,7 +72,7 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
 export function parseWESL(src: string, srcMap?: SrcMap): WeslAST {
   const srcModule: SrcModule = {
     modulePath: "package::test",
-    filePath: "./test.wesl",
+    debugFilePath: "./test.wesl",
     src,
   };
 
@@ -91,7 +91,7 @@ export function blankWeslParseState(srcModule: SrcModule): WeslParseState {
 export function syntheticWeslParseState(): WeslParseState {
   const srcModule: SrcModule = {
     modulePath: "package::test",
-    filePath: "./test.wesl",
+    debugFilePath: "./test.wesl",
     src: "",
   };
 
