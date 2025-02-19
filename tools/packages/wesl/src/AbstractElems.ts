@@ -179,6 +179,7 @@ export interface AliasElem extends ElemWithContentsBase {
   kind: "alias";
   name: DeclIdentElem;
   typeRef: TypeRefElem;
+  attributes: AttributeElem[];
 }
 
 /** an attribute like '@compute' or '@binding(0)' */
@@ -347,6 +348,7 @@ export interface OverrideElem extends ElemWithContentsBase {
 export interface FnParamElem extends ElemWithContentsBase {
   kind: "param";
   name: TypedDeclElem;
+  attributes: AttributeElem[];
 }
 
 /** simple references to structures, like myStruct.bar
@@ -364,6 +366,7 @@ export interface StructElem extends ElemWithContentsBase {
   name: DeclIdentElem;
   members: StructMemberElem[];
   bindingStruct?: true; // used later during binding struct transformation
+  attributes: AttributeElem[];
 }
 
 /** generic container of other elements */

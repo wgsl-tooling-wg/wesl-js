@@ -27,12 +27,7 @@ import {
   delimited,
 } from "mini-parse";
 import { weslImports } from "./ImportGrammar.ts";
-import {
-  templateClose,
-  templateOpen,
-  weslExtension,
-  WeslToken,
-} from "./WeslStream.ts";
+import { weslExtension, WeslToken } from "./WeslStream.ts";
 import {
   aliasCollect,
   collectAttribute,
@@ -196,6 +191,7 @@ const struct_member = tagScope(
 
 // prettier-ignore
 const struct_decl = seq(
+  weslExtension(opt_attributes)       .collect((cc) => cc.tags.attribute, "attributes"),
   "struct",
   req(typeNameDecl),
   seq(
@@ -216,7 +212,7 @@ const fn_call = seq(
 // prettier-ignore
 const fnParam = tagScope(
   seq(
-    opt_attributes,
+    opt_attributes                    .collect((cc) => cc.tags.attribute, "attributes"),
     word                              .collect(declCollect, "decl_elem"),
     opt(seq(":", req(type_specifier))).collect(typedDecl, "param_name"),
   )                                   .collect(collectFnParam),
@@ -460,7 +456,7 @@ const fn_decl = seq(
 // prettier-ignore
 const global_value_decl = or(
   seq(
-    opt_attributes,
+    opt_attributes                    .collect((cc) => cc.tags.attribute, "attributes"),
     "override",
     optionally_typed_ident,
     seq(opt(seq("=", expression       .collect(scopeCollect(), "decl_scope")))),
@@ -477,6 +473,7 @@ const global_value_decl = or(
 
 // prettier-ignore
 const global_alias = seq(
+  weslExtension(opt_attributes)       .collect((cc) => cc.tags.attribute, "attributes"),
   "alias",
   req(word)                           .collect(declCollect, "alias_name"),
   req("="),

@@ -191,7 +191,8 @@ export const aliasCollect = collectElem(
     const name = cc.tags.alias_name?.[0] as DeclIdentElem;
     const alias_scope = cc.tags.alias_scope?.[0] as Scope;
     const typeRef = cc.tags.typeRefElem?.[0] as TypeRefElem;
-    const partElem: AliasElem = { ...openElem, name, typeRef };
+    const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
+    const partElem: AliasElem = { ...openElem, name, attributes, typeRef };
     const aliasElem = withTextCover(partElem, cc);
     name.ident.scope = alias_scope;
     name.ident.declElem = aliasElem;
@@ -227,7 +228,8 @@ export const collectFnParam = collectElem(
   "param",
   (cc: CollectContext, openElem: PartElem<FnParamElem>) => {
     const name = cc.tags.param_name?.[0]! as TypedDeclElem;
-    const elem: FnParamElem = { ...openElem, name };
+    const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
+    const elem: FnParamElem = { ...openElem, name, attributes };
     const paramElem = withTextCover(elem, cc);
     name.decl.ident.declElem = paramElem; // TODO is this right?
 
@@ -241,8 +243,9 @@ export const collectStruct = collectElem(
     // dlog({ attributes: cc.tags.attributes?.flat(8).map(e => e && elemToString(e)) });
     const name = cc.tags.type_name?.[0] as DeclIdentElem;
     const members = cc.tags.members as StructMemberElem[];
+    const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
     name.ident.scope = cc.tags.struct_scope?.[0] as Scope;
-    const structElem = { ...openElem, name, members };
+    const structElem = { ...openElem, name, attributes, members };
     const elem = withTextCover(structElem, cc);
     (name.ident as DeclIdent).declElem = elem as DeclarationElem;
 
