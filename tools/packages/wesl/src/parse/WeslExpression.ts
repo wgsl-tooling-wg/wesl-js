@@ -153,7 +153,7 @@ const template_arg_expression = expressionParser(is_template);
 
 // prettier-ignore
 const std_type_specifier = seq(
-  word                              .collect(refIdent, "typeRefName"),
+  qualified_ident                   .collect(refIdent, "typeRefName"),
   () => opt_template_list,
 )                                   .collect(typeRefCollect);
 
