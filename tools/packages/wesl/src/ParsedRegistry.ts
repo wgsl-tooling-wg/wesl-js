@@ -11,6 +11,11 @@ export function parsedRegistry(): ParsedRegistry {
   return { modules: {} };
 }
 
+/** for debug */
+export function registryToString(registry: ParsedRegistry): string {
+  return `modules: ${[...Object.keys(registry.modules)]}`;
+}
+
 /**
  * Parse WESL each src module (file) into AST elements and a Scope tree.
  * @param src keys are module paths, values are wesl src strings
