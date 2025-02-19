@@ -2,7 +2,8 @@ import { debugNames, srcLog } from "mini-parse";
 import { DeclarationElem } from "./AbstractElems.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
-import { VirtualLibraryFn } from "./Linker.ts";
+import { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
+import { ManglerFn, minimalMangle } from "./Mangler.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, parseSrcModule, WeslAST } from "./ParseWESL.ts";
 import {
@@ -35,6 +36,12 @@ export interface VirtualLibrary {
 /** key is virtual module name */
 export type VirtualLibrarySet = Record<string, VirtualLibrary>;
 
+export interface BindIdentsParams
+  extends Pick<LinkRegistryParams, "registry" | "conditions" | "mangler"> {
+  rootAst: WeslAST;
+  virtuals?: VirtualLibrarySet;
+}
+
 /**
  * Bind active reference idents to declaration Idents by mutating the refersTo: field
  * Also in this pass, set the mangledName: field for all active global declaration idents.
@@ -43,12 +50,10 @@ export type VirtualLibrarySet = Record<string, VirtualLibrary>;
  * @param conditions  only bind to/from idents that are valid with the current condition set
  * @return any new declaration elements found (they will need to be emitted)
  */
-export function bindIdents(
-  ast: WeslAST,
-  parsed: ParsedRegistry,
-  conditions: Record<string, any>,
-  virtuals?: VirtualLibrarySet,
-): BindResults {
+export function bindIdents(params: BindIdentsParams): BindResults {
+  const { rootAst, registry, virtuals } = params;
+  const { conditions = {}, mangler = minimalMangle } = params;
+
   /* 
     For each module's scope, search through the scope tree to find all ref idents
       - For each ref ident, search up the scope tree to find a matching decl ident
@@ -57,7 +62,7 @@ export function bindIdents(
 
     As global decl idents are found, mutate their mangled name to be globally unique.
 */
-  const { rootScope } = ast;
+  const { rootScope } = rootAst;
 
   const globalNames = new Set<string>();
   const knownDecls = new Set<DeclIdent>();
@@ -70,12 +75,13 @@ export function bindIdents(
   });
 
   const bindContext = {
-    parsed,
+    registry,
     conditions,
     knownDecls,
     foundScopes: new Set<Scope>(),
     globalNames,
     virtuals,
+    mangler,
   };
   const foundDecls = bindIdentsRecursive(rootScope, bindContext);
   const decls = foundDecls.flatMap(d =>
@@ -85,11 +91,12 @@ export function bindIdents(
 }
 
 interface BindContext {
-  parsed: ParsedRegistry;
+  registry: ParsedRegistry;
   conditions: Record<string, any>;
   knownDecls: Set<DeclIdent>; // decl idents discovered so far
   foundScopes: Set<Scope>; // save work by not processing scopes multiple times
   globalNames: Set<string>; // root level names  used so far
+  mangler: ManglerFn; // construct unique identifer names for global declarations
   virtuals?: VirtualLibrarySet;
 }
 
@@ -104,28 +111,30 @@ function bindIdentsRecursive(
   bindContext: BindContext,
 ): DeclIdent[] {
   // early exist if we've processed this scope before
-  const { foundScopes } = bindContext;
+  const { foundScopes, mangler } = bindContext;
   if (foundScopes.has(scope)) return [];
   foundScopes.add(scope);
 
-  const { parsed, conditions } = bindContext;
+  const { registry, conditions } = bindContext;
   const { globalNames, knownDecls, virtuals } = bindContext;
   const newDecls: DeclIdent[] = []; // new decl idents to process (and return)
 
   scope.idents.forEach(ident => {
     if (ident.kind === "ref") {
       if (!ident.refersTo && !ident.std) {
-        let foundDecl =
-          findDeclInModule(ident.scope, ident) ??
-          findDeclImport(ident, parsed, conditions, virtuals);
+        const foundDecl =
+          findDeclInModule(scope, ident) ??
+          findDeclImport(ident, registry, conditions, virtuals);
 
         if (foundDecl) {
-          ident.refersTo = foundDecl;
-          if (!knownDecls.has(foundDecl)) {
-            knownDecls.add(foundDecl);
-            setDisplayName(ident.originalName, foundDecl, globalNames);
-            if (foundDecl.declElem && isGlobal(foundDecl.declElem)) {
-              newDecls.push(foundDecl);
+          const { decl: decl, srcModule } = foundDecl;
+          ident.refersTo = decl;
+          if (!knownDecls.has(decl)) {
+            knownDecls.add(decl);
+            const proposed = ident.originalName;
+            setMangledName(proposed, decl, globalNames, srcModule, mangler);
+            if (decl.declElem && isGlobal(decl.declElem)) {
+              newDecls.push(decl);
             }
           }
         } else if (stdWgsl(ident.originalName)) {
@@ -160,19 +169,29 @@ function bindIdentsRecursive(
   return [newDecls, newFromChildren, newFromRefs].flat();
 }
 
-function setDisplayName(
+/**
+ * Mutate a DeclIdent to set a unique name for global linking,
+ * using a mangling function to choose a unique name.
+ * Also update the set of globally unique names.
+ */
+function setMangledName(
   proposedName: string,
   decl: DeclIdent,
   globalNames: Set<string>,
+  srcModule: SrcModule,
+  mangler: ManglerFn,
 ): void {
   if (!decl.mangledName) {
+    let mangledName: string;
     if (decl.declElem && isGlobal(decl.declElem)) {
       const sep = proposedName.lastIndexOf("::");
       const name = sep === -1 ? proposedName : proposedName.slice(sep + 2);
-      decl.mangledName = declUniqueName(name, globalNames);
+      mangledName = mangler(decl, srcModule, name, globalNames);
     } else {
-      decl.mangledName = decl.originalName;
+      mangledName = decl.originalName;
     }
+    decl.mangledName = mangledName;
+    globalNames.add(mangledName);
   }
 }
 
@@ -184,14 +203,18 @@ function stdWgsl(name: string): boolean {
 function findDeclInModule(
   scope: Scope,
   ident: RefIdent,
-): DeclIdent | undefined {
+): FoundDecl | undefined {
   const { parent } = scope;
   const { originalName } = ident;
 
   const found = scope.idents.find(
     i => i.kind === "decl" && i.originalName === originalName,
   );
-  if (found) return found as DeclIdent;
+  if (found)
+    return {
+      decl: found as DeclIdent,
+      srcModule: ident.refIdentElem.srcModule,
+    };
 
   // recurse to check all idents in parent scope
   if (parent) {
@@ -206,7 +229,7 @@ function findDeclImport(
   parsed: ParsedRegistry,
   conditions: Conditions,
   virtuals?: VirtualLibrarySet,
-): DeclIdent | undefined {
+): FoundDecl | undefined {
   const flatImps = flatImports(refIdent.ast);
 
   // find module path by combining identifer reference with import statement
@@ -230,13 +253,19 @@ function matchingImport(
   }
 }
 
+/** discovered declaration found during binding */
+interface FoundDecl {
+  srcModule: SrcModule;
+  decl: DeclIdent;
+}
+
 /** @return an exported root element for the provided path */
 function findExport(
   modulePathParts: string[],
   parsed: ParsedRegistry,
   conditions: Conditions = {},
   virtuals?: VirtualLibrarySet,
-): DeclIdent | undefined {
+): FoundDecl | undefined {
   const modulePath = modulePathParts.slice(0, -1).join("::");
   const module =
     parsed.modules[modulePath] ??
@@ -250,7 +279,10 @@ function findExport(
     return undefined;
   }
 
-  return exportDecl(module.rootScope, last(modulePathParts)!);
+  const decl = exportDecl(module.rootScope, last(modulePathParts)!);
+  if (decl) {
+    return { srcModule: module.srcModule, decl };
+  }
 }
 
 /** @return AST for a virtual module */
@@ -273,31 +305,6 @@ function virtualModule(
     found.ast = parseSrcModule(srcModule); // cache parsed virtual module
     return found.ast;
   }
-}
-
-/** return mangled name for decl ident,
- *  mutating the Ident to remember mangled name if it hasn't yet been determined */
-export function declUniqueName(
-  proposedName: string,
-  globalNames: Set<string>,
-): string {
-  const displayName = uniquifyName(proposedName, globalNames);
-  globalNames.add(displayName);
-
-  return displayName;
-}
-
-/** construct global unique name for use in the output */
-function uniquifyName(proposedName: string, globalNames: Set<string>): string {
-  let renamed = proposedName;
-  let conflicts = 0;
-
-  // create a unique name
-  while (globalNames.has(renamed)) {
-    renamed = proposedName + conflicts++;
-  }
-
-  return renamed;
 }
 
 export function isGlobal(elem: DeclarationElem): boolean {
