@@ -1,7 +1,6 @@
 import {
   delimited,
   fn,
-  kind,
   opt,
   or,
   Parser,
@@ -28,10 +27,8 @@ import type {
 } from "../AbstractElems.js";
 import { assertUnreachable } from "../Assertions.js";
 import { importElem } from "../WESLCollect.js";
-import { mainTokens } from "../WESLTokens.js";
 import { WeslToken } from "./WeslStream.js";
-
-const wordToken = kind(mainTokens.ident);
+import { word } from "./WeslBaseGrammar.js";
 
 function makeStatement(
   segments: ImportSegment[],
@@ -66,7 +63,7 @@ let import_collection: Parser<
 > = null as any;
 
 const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
-  wordToken,
+  word,
   or(
     preceded(
       "::",
@@ -75,7 +72,7 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
         fn(() => import_path_or_item),
       ),
     ),
-    preceded("as", wordToken).map(v => makeItem("", v)),
+    preceded("as", word).map(v => makeItem("", v)),
     yes().map(() => makeItem("")), // Optional
   ),
 ).map(([name, next]): ImportStatement => {

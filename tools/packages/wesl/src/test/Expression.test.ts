@@ -1,6 +1,6 @@
 import { eof, seq } from "mini-parse";
 import { expect, test } from "vitest";
-import { expression } from "../parse/WeslGrammar.ts";
+import { expression } from "../parse/WeslExpression.ts";
 import { testAppParse } from "./TestUtil.ts";
 
 test("parse number", () => {

@@ -77,23 +77,34 @@ test("parse >>", () => {
 });
 
 test("parse >> as template", () => {
-  const src = "foo >>";
+  const src = "array<foo >>";
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "word",
-    text: "foo",
-    span: [0, 3],
+    text: "array",
+    span: [0, 5],
   });
-  expect(tokenizer.nextTemplateToken()).toEqual(<WeslToken>{
+  expect(tokenizer.nextTemplateStartToken()).toEqual(<WeslToken>{
+    kind: "symbol",
+    text: "<",
+    span: [5, 6],
+  });
+  expect(tokenizer.nextToken()).toEqual(<WeslToken>{
+    kind: "word",
+    text: "foo",
+    span: [6, 9],
+  });
+  expect(tokenizer.nextTemplateEndToken()).toEqual(<WeslToken>{
     kind: "symbol",
     text: ">",
-    span: [4, 5],
+    span: [10, 11],
   });
   expect(tokenizer.nextToken()).toEqual(<WeslToken>{
     kind: "symbol",
     text: ">",
-    span: [5, 6],
+    span: [11, 12],
   });
+  expect(tokenizer.nextToken()).toBe(null);
 });
 
 test("parse skip block comment", () => {
