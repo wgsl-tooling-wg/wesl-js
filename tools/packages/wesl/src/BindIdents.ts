@@ -177,7 +177,7 @@ function setDisplayName(
 }
 
 function stdWgsl(name: string): boolean {
-  return stdType(name) || stdFn(name) || stdEnumerant(name);
+  return stdType(name) || stdFn(name) || stdEnumerant(name); // TODO add tests for enumerants case (e.g. var x = read;)
 }
 
 /** search earlier in the scope and in parent scopes to find a matching decl ident */
