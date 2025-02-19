@@ -35,6 +35,12 @@ export interface LinkParams {
    *   key is module path or file path
    *     `package::foo::bar`, or './foo/bar.wesl', or './foo/bar'
    *   value is wesl src
+   *
+   *
+   * Only accepts unix-style, relative filesystem paths that are valid WGSL identifiers
+   * - Unix-style: Slashes as separators.
+   * - Valid WGSL identifiers: No backslashes, no `..`, or other non-identifier symbols.
+   * - Relative paths: They have to be relative to the wesl root.
    */
   weslSrc: Record<string, string>;
 

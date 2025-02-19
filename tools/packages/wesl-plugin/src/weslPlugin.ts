@@ -32,14 +32,13 @@ export interface WeslToml {
 }
 
 export interface WeslTomlInfo {
-  /** The path to the toml file */
+  /** The path to the toml file, relative to the cwd */
   tomlFile: string;
-  /** The path to the directory that contains the toml. Paths inside the toml are relative to this. */
+  /** The path to the directory that contains the toml. Relative to the cwd. Paths inside the toml are relative to this. */
   tomlDir: string;
 
   /**
-   * The wesl root, relative to the cwd.
-   * Exists because using `toml.weslRoot` directly is error-prone.
+   * The wesl root, relative to the cwd. This lets us correctly do `path.resolve(resolvedWeslRoot, someShaderFile)`
    */
   resolvedWeslRoot: string;
 
