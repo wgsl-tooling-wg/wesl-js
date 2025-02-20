@@ -68,7 +68,6 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   return appState.stable as WeslAST;
 }
 
-// for tests. TODO rename
 export function parseWESL(src: string, srcMap?: SrcMap): WeslAST {
   const srcModule: SrcModule = {
     modulePath: "package::test",

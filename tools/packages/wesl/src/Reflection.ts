@@ -205,8 +205,8 @@ function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
       } else {
         return `buffer: { type: "storage" }`;
       }
-      // TODO what do we do with the element type (2nd parameter)
-      // TODO should there be an ability to set hasDynamicOffset?
+      // LATER what do we do with the element type (2nd parameter)
+      // LATER should there be an ability to set hasDynamicOffset?
     }
   }
 }
@@ -214,7 +214,7 @@ function ptrLayoutEntry(typeRef: TypeRefElem): string | undefined {
 function samplerLayoutEntry(typeRef: TypeRefElem): string | undefined {
   const { originalName } = typeRef.name as RefIdent;
   if (originalName === "sampler") {
-    // TODO how do we set: type GPUSamplerBindingType = | "filtering" | "non-filtering";
+    // LATER how do we set: type GPUSamplerBindingType = | "filtering" | "non-filtering";
     // (just assuming filtering as a placeholder for now)
     return `sampler: { type: "filtering" }`;
   }
@@ -231,7 +231,7 @@ function textureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   const multisampled =
     multiNames.test(originalName) ? ", multisampled: true, " : "";
   if (multisampled || textureTypes.test(originalName)) {
-    // TODO viewDimension
+    // LATER viewDimension
     const sampleType = getSampleType(typeRef);
     return `texture: { sampleType: "${sampleType}"${multisampled} }`;
   }
@@ -250,8 +250,8 @@ function storageTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   if (textureStorage.test(typeRef.name.originalName)) {
     const firstParam = typeRef.templateParams?.[0];
     const secondParam = typeRef.templateParams?.[1];
-    assertThat(firstParam?.kind === "type"); // TODO: Temp hack
-    assertThat(secondParam?.kind === "type"); // TODO: Temp hack
+    assertThat(firstParam?.kind === "type"); // LATER: Temp hack
+    assertThat(secondParam?.kind === "type"); // LATER: Temp hack
     const sampleType = formatToTextureSampleType(
       firstParam.name.originalName as GPUTextureFormat,
     );
@@ -264,7 +264,7 @@ function storageTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
 function externalTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   const { originalName } = typeRef.name as RefIdent;
   if (originalName === "texture_external") {
-    // TODO. how would we set the required source: HTMLVideoElement or VideoFrame?
+    // LATER. how would we set the required source: HTMLVideoElement or VideoFrame?
   }
   return undefined;
 }
