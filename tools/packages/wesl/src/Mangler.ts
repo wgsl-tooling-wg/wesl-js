@@ -32,7 +32,7 @@ export function underscoreMangle(
   const { modulePath } = srcModule;
   const escaped = modulePath.replaceAll("_", "__");
   const separated = escaped.replaceAll("::", "_");
-  const mangled = separated + "_" + decl.originalName;
+  const mangled = separated + "_" + decl.originalName.replaceAll("_", "__");
   return mangled;
 }
 
