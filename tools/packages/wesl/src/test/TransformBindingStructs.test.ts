@@ -52,7 +52,7 @@ test("transformBindingStruct", () => {
   const bindingStruct = markBindingStructs(rootAst.moduleElem)[0];
   const newVars = transformBindingStruct(bindingStruct, new Set());
 
-  const srcBuilder = new SrcMapBuilder(ast.srcModule.src);
+  const srcBuilder = new SrcMapBuilder(rootAst.srcModule.src);
   lowerAndEmit(srcBuilder, newVars, {});
   const linked = SrcMapBuilder.build([srcBuilder]).dest;
   expect(linked).toMatchInlineSnapshot(
