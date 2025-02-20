@@ -86,7 +86,7 @@ export function contentsToString(
     const parts = elem.contents.map(c => {
       const { kind } = c;
       if (kind === "text") {
-        return c.srcModule.src.slice(c.start, c.end);
+        return c.text;
       } else if (kind === "ref") {
         return refToString(c.ident);
       } else {

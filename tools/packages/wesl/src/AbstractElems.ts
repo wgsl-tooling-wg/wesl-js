@@ -67,8 +67,7 @@ export type DeclarationElem = GlobalDeclarationElem | FnParamElem | VarElem;
 
 export interface AbstractElemBase {
   kind: AbstractElem["kind"];
-  start: number;
-  end: number;
+  span: Span;
 }
 
 export interface ElemWithContentsBase extends AbstractElemBase {
@@ -84,6 +83,7 @@ export interface ElemWithContentsBase extends AbstractElemBase {
  */
 export interface TextElem extends AbstractElemBase {
   kind: "text";
+  text: string;
   srcModule: SrcModule;
 }
 

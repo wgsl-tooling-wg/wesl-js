@@ -140,10 +140,10 @@ function bindIdentsRecursive(
         } else {
           const { refIdentElem } = ident;
           if (refIdentElem) {
-            const { srcModule, start, end } = refIdentElem;
+            const { srcModule, span } = refIdentElem;
             const { debugFilePath: filePath } = srcModule;
             const msg = `unresolved identifier in file: ${filePath}`;
-            srcLog(srcModule.src, [start, end], msg);
+            srcLog(srcModule.src, span, msg);
           }
         }
       }

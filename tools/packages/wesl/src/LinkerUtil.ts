@@ -21,9 +21,5 @@ export function identElemLog(
   identElem: DeclIdentElem | RefIdentElem,
   ...messages: any[]
 ): void {
-  srcLog(
-    identElem.srcModule.src,
-    [identElem.start, identElem.end],
-    ...messages,
-  );
+  srcLog(identElem.srcModule.src, identElem.span, ...messages);
 }

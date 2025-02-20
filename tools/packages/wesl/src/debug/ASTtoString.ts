@@ -41,8 +41,8 @@ export function astToString(elem: AbstractElem, indent = 0): string {
 function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   const { kind } = elem;
   if (kind === "text") {
-    const { srcModule, start, end } = elem;
-    str.add(` '${srcModule.src.slice(start, end)}'`);
+    const { text } = elem;
+    str.add(` '${text}'`);
   } else if (
     kind === "var" ||
     kind === "let" ||
@@ -82,7 +82,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     const contents = elem.contents
       .map(e => {
         if (e.kind === "text") {
-          return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
+          return "'" + e.text + "'";
         } else {
           return astToString(e);
         }
@@ -216,7 +216,7 @@ function unknownExpressionToString(elem: UnknownExpressionElem): string {
       // @ts-ignore
       .map(e => {
         if (e.kind === "text") {
-          return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
+          return "'" + e.text + "'";
         } else {
           return astToString(e);
         }
@@ -257,7 +257,7 @@ export function debugContentsToString(elem: StuffElem): string {
   const parts = elem.contents.map(c => {
     const { kind } = c;
     if (kind === "text") {
-      return c.srcModule.src.slice(c.start, c.end);
+      return c.text;
     } else if (kind === "ref") {
       return c.ident.originalName; // not using the mapped to decl name, so this can be used for debug..
     } else {

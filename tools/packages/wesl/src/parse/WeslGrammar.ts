@@ -499,11 +499,10 @@ const global_directive = span(
     ";",
   ),
 ).map(
-  ({ value: directive, span: [start, end] }): DirectiveElem => ({
+  ({ value: directive, span }): DirectiveElem => ({
     kind: "directive",
     directive: directive,
-    start,
-    end,
+    span,
   }),
 );
 
@@ -598,8 +597,7 @@ function makeName(token: WeslToken<"word">): NameElem {
   return {
     kind: "name",
     name: token.text,
-    start: token.span[0],
-    end: token.span[1],
+    span: token.span,
   };
 }
 

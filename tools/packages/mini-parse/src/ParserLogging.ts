@@ -1,6 +1,7 @@
 import { ParserContext } from "./Parser.js";
 import { parserLog, tracePos, tracing } from "./ParserTracing.js";
-import { SrcMap } from "./SrcMap.js";
+import { isSpan, Span } from "./Span.js";
+import { SrcMap, SrcPosition } from "./SrcMap.js";
 import { log } from "./WrappedLog.js";
 
 /** log an message along with the source line and a caret indicating the error position in the line
@@ -9,7 +10,7 @@ import { log } from "./WrappedLog.js";
  */
 export function srcLog(
   src: string | SrcMap,
-  pos: number | [number, number],
+  pos: number | Span,
   ...msgs: any[]
 ): void {
   logInternal(log, src, pos, ...msgs);
@@ -39,7 +40,7 @@ export function ctxLog(ctx: ParserContext, ...msgs: any[]): void {
 function logInternal(
   log: typeof console.log,
   srcOrSrcMap: string | SrcMap,
-  destPos: number | [number, number],
+  destPos: number | Span,
   ...msgs: any[]
 ): void {
   if (typeof srcOrSrcMap === "string") {
@@ -52,31 +53,29 @@ function logInternal(
 }
 
 interface SrcPositions {
-  positions: number | [number, number];
+  positions: number | Span;
   src: string;
 }
 
-function mapSrcPositions(
-  srcMap: SrcMap,
-  destPos: number | [number, number],
-): SrcPositions {
-  const srcPos = srcMap.mapPositions(...[destPos].flat());
-  const { src } = srcPos[0];
-
-  let positions: [number, number] | number;
-  if (srcPos[1]?.src === src) {
-    positions = srcPos.map(p => p.position) as [number, number];
+function mapSrcPositions(srcMap: SrcMap, destPos: number | Span): SrcPositions {
+  let srcPos: [SrcPosition, SrcPosition | null];
+  if (isSpan(destPos)) {
+    srcPos = [srcMap.destToSrc(destPos[0]), srcMap.destToSrc(destPos[1])];
   } else {
-    positions = srcPos[0].position;
+    srcPos = [srcMap.destToSrc(destPos), null];
   }
-
-  return { src, positions };
+  const { src } = srcPos[0];
+  if (srcPos[1]?.src === src) {
+    return { src, positions: [srcPos[0].position, srcPos[1].position] };
+  } else {
+    return { src, positions: srcPos[0].position };
+  }
 }
 
 function logInternalSrc(
   log: typeof console.log,
   src: string,
-  pos: number | [number, number],
+  pos: number | Span,
   ...msgs: any[]
 ): void {
   log(...msgs);
@@ -120,10 +119,7 @@ interface SrcLine {
 }
 
 /** return the line in the src containing a given character postion */
-export function srcLine(
-  src: string,
-  position: number | [number, number],
-): SrcLine {
+export function srcLine(src: string, position: number | Span): SrcLine {
   let pos: number;
   let pos2: number | undefined;
   if (typeof position === "number") {

@@ -10,25 +10,37 @@ test("slice middle", () => {
   expect(entries).toMatchInlineSnapshot(`
     [
       {
-        "destEnd": 3,
-        "destStart": 0,
+        "destSpan": [
+          0,
+          3,
+        ],
         "src": "aaabbbc",
-        "srcEnd": 3,
-        "srcStart": 0,
+        "srcSpan": [
+          0,
+          3,
+        ],
       },
       {
-        "destEnd": 4,
-        "destStart": 3,
+        "destSpan": [
+          3,
+          4,
+        ],
         "src": "aaabbbc",
-        "srcEnd": 6,
-        "srcStart": 3,
+        "srcSpan": [
+          3,
+          6,
+        ],
       },
       {
-        "destEnd": 5,
-        "destStart": 4,
+        "destSpan": [
+          4,
+          5,
+        ],
         "src": "aaabbbc",
-        "srcEnd": 7,
-        "srcStart": 6,
+        "srcSpan": [
+          6,
+          7,
+        ],
       },
     ]
   `);
@@ -96,8 +108,8 @@ function validateDestCovered(srcMap: SrcMap): void {
   const { dest, entries } = srcMap;
   let destPos = 0;
   entries.forEach(e => {
-    expect(e.destStart).toBe(destPos);
-    destPos = e.destEnd;
+    expect(e.destSpan[0]).toBe(destPos);
+    destPos = e.destSpan[1];
   });
   expect(destPos).toBe(dest.length);
 }

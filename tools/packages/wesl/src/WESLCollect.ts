@@ -71,7 +71,12 @@ export function refIdent(cc: CollectContext): RefIdentElem {
     id: identId++,
     refIdentElem: null as any, // set below
   };
-  const identElem: RefIdentElem = { kind, start, end, srcModule, ident };
+  const identElem: RefIdentElem = {
+    kind,
+    span: [start, end],
+    srcModule,
+    ident,
+  };
   ident.refIdentElem = identElem;
 
   saveIdent(cc, identElem);
@@ -97,7 +102,12 @@ export function declCollect(cc: CollectContext): DeclIdentElem {
     id: identId++,
     srcModule,
   };
-  const identElem: DeclIdentElem = { kind, start, end, srcModule, ident };
+  const identElem: DeclIdentElem = {
+    kind,
+    span: [start, end],
+    srcModule,
+    ident,
+  };
 
   saveIdent(cc, identElem);
   addToOpenElem(cc, identElem);
@@ -160,7 +170,7 @@ export type OpenElem<T extends ContainerElem = ContainerElem> =
 
 // prettier-ignore
 export type PartElem<T extends ContainerElem = ContainerElem > = 
-  Pick< T, "kind" | "start" | "end" | "contents"> ;
+  Pick< T, "kind" | "span" | "contents"> ;
 
 // prettier-ignore
 type VarLikeElem =
@@ -214,6 +224,7 @@ export const collectFn = collectElem(
       fnAttributes,
       params,
       returnType,
+      body: [],
     };
     const fnElem = withTextCover(partElem, cc);
     (name.ident as DeclIdent).declElem = fnElem;
@@ -349,7 +360,7 @@ export const memberRefCollect = collectElem(
 export function nameCollect(cc: CollectContext): NameElem {
   const { start, end, src, app } = cc;
   const name = src.slice(start, end);
-  const elem: NameElem = { kind: "name", start, end, name };
+  const elem: NameElem = { kind: "name", span: [start, end], name };
   addToOpenElem(cc, elem);
   return elem;
 }
@@ -404,7 +415,7 @@ function collectElem<V extends ContainerElem>(
       const weslContext: WeslParseContext = cc.app.context;
       const partialElem = weslContext.openElems.pop()!;
       console.assert(partialElem && partialElem.kind === kind);
-      const elem = fn(cc, { ...partialElem, start: cc.start, end: cc.end });
+      const elem = fn(cc, { ...partialElem, span: [cc.start, cc.end] });
       if (elem) addToOpenElem(cc, elem as AbstractElem);
       return elem;
     },
@@ -429,16 +440,21 @@ function withTextCover<T extends ContainerElem>(
 function coverWithText(cc: CollectContext, elem: ContainerElem): GrammarElem[] {
   let { start: pos } = cc;
   const ast: WeslAST = cc.app.stable;
-  const { contents, end } = elem;
-  const sorted = (contents as GrammarElem[]).sort((a, b) => a.start - b.start);
+  const {
+    contents,
+    span: [_start, end],
+  } = elem;
+  const sorted = (contents as GrammarElem[]).sort(
+    (a, b) => a.span[0] - b.span[0],
+  );
 
   const elems: GrammarElem[] = [];
   for (const elem of sorted) {
-    if (pos < elem.start) {
-      elems.push(makeTextElem(elem.start));
+    if (pos < elem.span[0]) {
+      elems.push(makeTextElem(elem.span[0]));
     }
     elems.push(elem);
-    pos = elem.end;
+    pos = elem.span[1];
   }
   if (pos < end) {
     elems.push(makeTextElem(end));
@@ -447,7 +463,12 @@ function coverWithText(cc: CollectContext, elem: ContainerElem): GrammarElem[] {
   return elems;
 
   function makeTextElem(end: number): TextElem {
-    return { kind: "text", start: pos, end, srcModule: ast.srcModule };
+    return {
+      kind: "text",
+      text: ast.srcModule.src.slice(pos, end),
+      span: [pos, end],
+      srcModule: ast.srcModule,
+    };
   }
 }
 

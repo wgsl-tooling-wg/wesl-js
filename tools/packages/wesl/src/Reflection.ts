@@ -277,7 +277,7 @@ function paramText(
     "Only expression elements are supported in this position",
   );
   const text = expression.contents[0] as TextElem;
-  return text.srcModule.src.slice(expression.start, expression.end);
+  return text.text;
 }
 
 export function formatToTextureSampleType(

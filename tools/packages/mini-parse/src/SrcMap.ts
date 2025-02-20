@@ -1,11 +1,11 @@
 // TODO add file or path name to src
 
+import { Span } from "./Span";
+
 export interface SrcMapEntry {
   src: string;
-  srcStart: number;
-  srcEnd: number;
-  destStart: number;
-  destEnd: number;
+  srcSpan: Span;
+  destSpan: Span;
 }
 
 export interface SrcPosition {
@@ -32,7 +32,7 @@ export class SrcMap {
 
   /** given positions in the dest string,
    * @return corresponding positions in the src strings */
-  mapPositions(...positions: number[]): SrcPosition[] {
+  mapPositions(positions: number[]): SrcPosition[] {
     return positions.map(p => this.destToSrc(p));
   }
 
@@ -46,12 +46,12 @@ export class SrcMap {
       const e = this.entries[i];
       if (
         e.src === prev.src &&
-        prev.destEnd === e.destStart &&
-        prev.srcEnd === e.srcStart
+        prev.destSpan[1] === e.destSpan[0] &&
+        prev.srcSpan[1] === e.srcSpan[0]
       ) {
         // combine adjacent range entries into one
-        prev.destEnd = e.destEnd;
-        prev.srcEnd = e.srcEnd;
+        prev.destSpan = [prev.destSpan[0], e.destSpan[1]];
+        prev.srcSpan = [prev.srcSpan[0], e.srcSpan[1]];
       } else {
         newEntries.push(e);
         prev = e;
@@ -62,7 +62,7 @@ export class SrcMap {
 
   /** sort in destination order */
   sort(): void {
-    this.entries.sort((a, b) => a.destStart - b.destStart);
+    this.entries.sort((a, b) => a.destSpan[0] - b.destSpan[0]);
   }
 
   /** This SrcMap's destination is a src for the other srcmap,
@@ -80,15 +80,13 @@ export class SrcMap {
     }
     sortSrc(mappedEntries);
     const newEntries = mappedEntries.map(e => {
-      const { src, position: srcStart } = this.destToSrc(e.srcStart);
-      const { src: endSrc, position: srcEnd } = this.destToSrc(e.srcEnd);
+      const { src, position: srcStart } = this.destToSrc(e.srcSpan[0]);
+      const { src: endSrc, position: srcEnd } = this.destToSrc(e.srcSpan[1]);
       if (endSrc !== src) throw new Error("NYI, need to split");
       const newEntry: SrcMapEntry = {
         src,
-        srcStart,
-        srcEnd,
-        destStart: e.destStart,
-        destEnd: e.destEnd,
+        srcSpan: [srcStart, srcEnd],
+        destSpan: e.destSpan,
       };
       // dlog({ newEntry });
       return newEntry;
@@ -102,13 +100,13 @@ export class SrcMap {
   }
 
   /**
-   * @param entries should be sorted in destStart order
+   * @param entries should be sorted in destSpan[0] order
    * @return the source position corresponding to a provided destination position
    *
    */
   destToSrc(destPos: number): SrcPosition {
     const entry = this.entries.find(
-      e => e.destStart <= destPos && e.destEnd >= destPos,
+      e => e.destSpan[0] <= destPos && e.destSpan[1] >= destPos,
     );
     if (!entry) {
       /* TODO this console.log triggers during debugging, now that preprocessing doesn't produce a real srcMap. 
@@ -123,12 +121,12 @@ export class SrcMap {
     }
     return {
       src: entry.src,
-      position: entry.srcStart + destPos - entry.destStart,
+      position: entry.srcSpan[0] + destPos - entry.destSpan[0],
     };
   }
 }
 
 /** sort entries in place by src start position */
 function sortSrc(entries: SrcMapEntry[]): void {
-  entries.sort((a, b) => a.srcStart - b.srcStart);
+  entries.sort((a, b) => a.srcSpan[0] - b.srcSpan[0]);
 }

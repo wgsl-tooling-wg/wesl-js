@@ -118,8 +118,7 @@ const import_statement = span(
   (v): ImportElem => ({
     kind: "import",
     imports: v.value,
-    start: v.span[0],
-    end: v.span[1],
+    span: v.span,
   }),
 );
 

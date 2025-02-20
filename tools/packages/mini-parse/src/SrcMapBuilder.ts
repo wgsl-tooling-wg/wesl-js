@@ -1,3 +1,4 @@
+import { Span } from "./Span.js";
 import { SrcMap, SrcMapEntry } from "./SrcMap.js";
 
 // TODO untested
@@ -17,7 +18,7 @@ export class SrcMapBuilder {
 
   /** append a string fragment to the destination string */
   // TODO allow for src file name not just string (e.g. SrcModule)
-  add(fragment: string, srcStart: number, srcEnd: number): void {
+  add(fragment: string, srcSpan: Span): void {
     // dlog({fragment})
     const destStart = this.#destLength;
     this.#destLength += fragment.length;
@@ -26,19 +27,12 @@ export class SrcMapBuilder {
     this.#fragments.push(fragment);
     this.#entries.push({
       src: this.source,
-      srcStart,
-      srcEnd,
-      destStart,
-      destEnd,
+      srcSpan,
+      destSpan: [destStart, destEnd],
     });
   }
 
-  addSynthetic(
-    fragment: string,
-    syntheticSource: string,
-    srcStart: number,
-    srcEnd: number,
-  ): void {
+  addSynthetic(fragment: string, syntheticSource: string, srcSpan: Span): void {
     // dlog({fragment})
     const destStart = this.#destLength;
     this.#destLength += fragment.length;
@@ -47,24 +41,22 @@ export class SrcMapBuilder {
     this.#fragments.push(fragment);
     this.#entries.push({
       src: syntheticSource,
-      srcStart,
-      srcEnd,
-      destStart,
-      destEnd,
+      srcSpan,
+      destSpan: [destStart, destEnd],
     });
   }
 
   /** append a synthetic newline, mapped to previous source location */
   addNl(): void {
-    const lastEntry = this.#entries.at(-1) ?? { srcStart: 0, srcEnd: 0 };
-    const { srcStart, srcEnd } = lastEntry;
-    this.add("\n", srcStart, srcEnd);
+    const lastEntry = this.#entries.at(-1) ?? { srcSpan: [0, 0] as const };
+    const { srcSpan } = lastEntry;
+    this.add("\n", srcSpan);
   }
 
   /** copy a string fragment from the src to the destination string */
-  addCopy(srcStart: number, srcEnd: number): void {
-    const fragment = this.source.slice(srcStart, srcEnd);
-    this.add(fragment, srcStart, srcEnd);
+  addCopy(srcSpan: Span): void {
+    const fragment = this.source.slice(srcSpan[0], srcSpan[1]);
+    this.add(fragment, srcSpan);
   }
 
   /** return a SrcMap */

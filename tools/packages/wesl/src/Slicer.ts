@@ -73,10 +73,8 @@ export function sliceReplace(
       const { srcPos } = progress;
       newEntries = entries.concat({
         src,
-        srcStart: srcPos,
-        srcEnd: newSrcPos,
-        destStart: destPos,
-        destEnd: newDestPos,
+        srcSpan: [srcPos, newSrcPos],
+        destSpan: [destPos, newDestPos],
       });
     }
 

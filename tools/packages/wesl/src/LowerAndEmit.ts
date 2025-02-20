@@ -102,16 +102,16 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
 }
 
 export function emitText(e: TextElem, ctx: EmitContext): void {
-  ctx.srcBuilder.addCopy(e.start, e.end);
+  ctx.srcBuilder.addCopy(e.span);
 }
 
 export function emitName(e: NameElem, ctx: EmitContext): void {
-  ctx.srcBuilder.add(e.name, e.start, e.end);
+  ctx.srcBuilder.add(e.name, e.span);
 }
 
 export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
   const { text } = e;
-  ctx.srcBuilder.addSynthetic(text, text, 0, text.length);
+  ctx.srcBuilder.addSynthetic(text, text, [0, text.length]);
 }
 
 export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
@@ -120,17 +120,17 @@ export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
 
 export function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {
   if (e.ident.std) {
-    ctx.srcBuilder.add(e.ident.originalName, e.start, e.end);
+    ctx.srcBuilder.add(e.ident.originalName, e.span);
   } else {
     const declIdent = findDecl(e.ident);
     const mangledName = displayName(declIdent);
-    ctx.srcBuilder.add(mangledName!, e.start, e.end);
+    ctx.srcBuilder.add(mangledName!, e.span);
   }
 }
 
 export function emitDeclIdent(e: DeclIdentElem, ctx: EmitContext): void {
   const mangledName = displayName(e.ident);
-  ctx.srcBuilder.add(mangledName!, e.start, e.end);
+  ctx.srcBuilder.add(mangledName!, e.span);
 }
 
 function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
@@ -140,45 +140,37 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
   if (kind === "attribute") {
     const { params } = e.attribute;
     if (params.length === 0) {
-      ctx.srcBuilder.add("@" + e.attribute.name, e.start, e.end);
+      ctx.srcBuilder.add("@" + e.attribute.name, e.span);
     } else {
-      ctx.srcBuilder.add(
-        "@" + e.attribute.name + "(",
-        e.start,
-        params[0].start,
-      );
+      ctx.srcBuilder.add("@" + e.attribute.name + "(", [
+        e.span[0],
+        params[0].span[0],
+      ]);
       for (let i = 0; i < params.length; i++) {
         emitContents(params[i], ctx);
         if (i < params.length - 1) {
-          ctx.srcBuilder.add(",", params[i].end, params[i + 1].start);
+          ctx.srcBuilder.add(",", [params[i].span[1], params[i + 1].span[0]]);
         }
       }
-      ctx.srcBuilder.add(")", params[params.length - 1].end, e.end);
+      ctx.srcBuilder.add(")", [params[params.length - 1].span[1], e.span[1]]);
     }
   } else if (kind === "@builtin") {
-    ctx.srcBuilder.add(
-      "@builtin(" + e.attribute.param.name + ")",
-      e.start,
-      e.end,
-    );
+    ctx.srcBuilder.add("@builtin(" + e.attribute.param.name + ")", e.span);
   } else if (kind === "@diagnostic") {
     ctx.srcBuilder.add(
       "@diagnostic" +
         diagnosticControlToString(e.attribute.severity, e.attribute.rule),
-      e.start,
-      e.end,
+      e.span,
     );
   } else if (kind === "@if") {
     ctx.srcBuilder.add(
       `@if(${expressionToString(e.attribute.param.expression)})`,
-      e.start,
-      e.end,
+      e.span,
     );
   } else if (kind === "@interpolate") {
     ctx.srcBuilder.add(
       `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`,
-      e.start,
-      e.end,
+      e.span,
     );
   } else {
     assertUnreachable(kind);
@@ -224,20 +216,17 @@ function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
   if (kind === "diagnostic") {
     ctx.srcBuilder.add(
       `diagnostic${diagnosticControlToString(directive.severity, directive.rule)}`,
-      e.start,
-      e.end,
+      e.span,
     );
   } else if (kind === "enable") {
     ctx.srcBuilder.add(
       `enable${directive.extensions.map(v => v.name).join(", ")}`,
-      e.start,
-      e.end,
+      e.span,
     );
   } else if (kind === "requires") {
     ctx.srcBuilder.add(
       `requires${directive.extensions.map(v => v.name).join(", ")}`,
-      e.start,
-      e.end,
+      e.span,
     );
   } else {
     assertUnreachable(kind);
