@@ -5,7 +5,6 @@ import { DeclIdent, SrcModule } from "./Scope.ts";
  *
  * Three manglers are currently available:
  * . minimalMangle preserves original source names where possible
- * . underscoreMangle constructs long but predictable names for every declaration
  * . lengthPrefixMangle constructs long but predictable names for every declaration
  */
 export type ManglerFn = (
@@ -21,21 +20,6 @@ export type ManglerFn = (
   /** current set of mangled root level names for the linked result (read only) */
   globalNames: Set<string>,
 ) => string;
-
-/**
- * Construct a globally unique name based on the declaration
- * module path separated by underscores.
- */
-export function underscoreMangle(
-  decl: DeclIdent,
-  srcModule: SrcModule,
-): string {
-  const { modulePath } = srcModule;
-  const escaped = modulePath.replaceAll("_", "__");
-  const separated = escaped.replaceAll("::", "_");
-  const mangled = separated + "_" + decl.originalName.replaceAll("_", "__");
-  return mangled;
-}
 
 /**
  * Construct a globally unique name based on the declaration

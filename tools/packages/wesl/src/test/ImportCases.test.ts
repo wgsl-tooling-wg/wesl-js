@@ -1,8 +1,8 @@
 import { afterAll, expect, test } from "vitest";
 import { importCases } from "wesl-testsuite";
 import { link } from "../Linker.js";
-import { underscoreMangle } from "../Mangler.js";
 import { expectTrimmedMatch, trimSrc } from "./shared/StringUtil.js";
+import { lengthPrefixMangle } from "../Mangler.js";
 
 // wgsl example src, indexed by name
 const examplesByName = new Map(importCases.map(t => [t.name, t]));
@@ -56,6 +56,9 @@ test("circular import", ctx => importCaseTest(ctx.task.name));
 // TODO add case for const_assert in non root module
 // TODO add case for diagnostic in non-root module (should fail?)
 
+// TODO: When moving to Deno, just refactor this to
+// 1. Run all tests with importCases.forEach(v => Deno.test(v.name, () => { run the test }));
+// 2. Have a dummy test where I can drop in a name. That one is for debugging
 afterAll(c => {
   const testNameSet = new Set(c.tasks.map(t => t.name));
   const cases = importCases.map(c => c.name);
@@ -73,11 +76,7 @@ async function importCaseTest(name: string): Promise<void> {
     throw new Error(`Skipping test "${name}"\nNo example found.`);
   }
 
-  const {
-    weslSrc,
-    expectedWgsl = "",
-    underscoreWgsl = expectedWgsl,
-  } = caseFound;
+  const { weslSrc, expectedWgsl = "" } = caseFound;
 
   const srcEntries = Object.entries(weslSrc).map(([name, wgsl]) => {
     const trimmedSrc = trimSrc(wgsl);
@@ -90,17 +89,10 @@ async function importCaseTest(name: string): Promise<void> {
   const stdResultMap = await link({
     weslSrc: trimmedWeslSrc,
     rootModuleName: srcEntries[0][0],
+    mangler: lengthPrefixMangle,
   });
   const stdResult = stdResultMap.dest;
 
-  const underscoreResultMap = await link({
-    weslSrc: trimmedWeslSrc,
-    rootModuleName: srcEntries[0][0],
-    mangler: underscoreMangle,
-  });
-  const underscoreResult = underscoreResultMap.dest;
-
   /* -- trim and verify results line by line -- */
   expectTrimmedMatch(stdResult, expectedWgsl);
-  expectTrimmedMatch(underscoreResult, underscoreWgsl);
 }

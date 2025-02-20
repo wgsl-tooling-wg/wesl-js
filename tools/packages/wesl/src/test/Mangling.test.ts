@@ -1,10 +1,10 @@
 import { test } from "vitest";
 import { link } from "../Linker.ts";
-import { underscoreMangle } from "../Mangler.ts";
+import { lengthPrefixMangle } from "../Mangler.ts";
 import { expectTrimmedMatch } from "./shared/StringUtil.ts";
 import { linkTestOpts } from "./TestUtil.ts";
 
-test("underscoreMangle", async () => {
+test("lengthPrefixMangle", async () => {
   const main = `
     import package::file1::bar;
 fn main() { bar(); }
@@ -13,15 +13,19 @@ fn main() { bar(); }
     fn bar() {};
   `;
 
-  const linked = await linkTestOpts({ mangler: underscoreMangle }, main, file1);
+  const linked = await linkTestOpts(
+    { mangler: lengthPrefixMangle },
+    main,
+    file1,
+  );
   const expected = `
-    fn main() { package_file1_bar(); }
-    fn package_file1_bar() {}
+    fn main() { _7package5file13bar(); }
+    fn _7package5file13bar() {}
   `;
   expectTrimmedMatch(linked, expected);
 });
 
-test("underscoreMangle longer ident", async () => {
+test("lengthPrefixMangle longer ident", async () => {
   const main = `
     import package::container::file1::bar;
 fn main() { bar(); }
@@ -32,14 +36,14 @@ fn main() { bar(); }
   const weslSrc = { "./main.wesl": main, "./container/file1.wesl": file1 };
 
   const linked = await link({
-    mangler: underscoreMangle,
+    mangler: lengthPrefixMangle,
     weslSrc,
     debugWeslRoot: "main",
   });
 
   const expected = `
-    fn main() { package_container_file1_bar(); }
-    fn package_container_file1_bar() {}
+    fn main() { _7package9container5file13bar(); }
+    fn _7package9container5file13bar() {}
   `;
   expectTrimmedMatch(linked.dest, expected);
 });
