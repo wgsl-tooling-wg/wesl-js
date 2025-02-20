@@ -84,7 +84,6 @@ export interface ElemWithContentsBase extends AbstractElemBase {
 export interface TextElem extends AbstractElemBase {
   kind: "text";
   text: string;
-  srcModule: SrcModule;
 }
 
 /** a name that doesn't need to be an Ident

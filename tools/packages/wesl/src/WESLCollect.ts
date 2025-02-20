@@ -467,7 +467,6 @@ function coverWithText(cc: CollectContext, elem: ContainerElem): GrammarElem[] {
       kind: "text",
       text: ast.srcModule.src.slice(pos, end),
       span: [pos, end],
-      srcModule: ast.srcModule,
     };
   }
 }
