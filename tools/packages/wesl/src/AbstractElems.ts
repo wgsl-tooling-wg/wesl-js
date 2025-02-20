@@ -1,3 +1,4 @@
+import { Span } from "mini-parse";
 import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
 
 /**
@@ -12,14 +13,14 @@ import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
  */
 export type AbstractElem = GrammarElem | SyntheticElem;
 
-export type GrammarElem = ContainerElem | ExpressionElem | TerminalElem;
+export type GrammarElem = ContainerElem | TerminalElem;
 
 export type ContainerElem =
-  | AliasElem
   | AttributeElem
+  | AliasElem
   | ConstAssertElem
   | ConstElem
-  | UnknownExpression
+  | UnknownExpressionElem
   | SimpleMemberRef
   | FnElem
   | TypedDeclElem
@@ -35,14 +36,19 @@ export type ContainerElem =
   | VarElem;
 
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
-export type ExpressionElem = LiteralElem | RefIdentElem;
-/*| ParenthesizedExpression
+export type ExpressionElem =
+  | Literal
+  | TranslateTimeFeature
+  | RefIdentElem
+  | ParenthesizedExpression
   | ComponentExpression
+  | ComponentMemberExpression
   | UnaryExpression
   | BinaryExpression
-  | FunctionCallExpression*/
+  | FunctionCallExpression;
 
 export type TerminalElem =
+  | DirectiveElem
   | DeclIdentElem //
   | NameElem
   | RefIdentElem
@@ -81,17 +87,16 @@ export interface TextElem extends AbstractElemBase {
   srcModule: SrcModule;
 }
 
-/** A literal value in WESL source. A boolean or a number. */
-export interface LiteralElem extends AbstractElemBase {
-  kind: "literal";
-  srcModule: SrcModule;
-}
-
-/** a name (e.g. a struct member name) that doesn't need to be an Ident */
+/** a name that doesn't need to be an Ident
+ * e.g.
+ * - a struct member name
+ * - a diagnostic rule name
+ * - an enable-extension name
+ * - an interpolation sampling name
+ */
 export interface NameElem extends AbstractElemBase {
   kind: "name";
   name: string;
-  srcModule: SrcModule;
 }
 
 /** an identifier that refers to a declaration (aka a symbol reference) */
@@ -112,7 +117,6 @@ export interface DeclIdentElem extends AbstractElemBase {
 export interface ImportElem extends AbstractElemBase {
   kind: "import";
   imports: ImportStatement;
-  srcModule: SrcModule;
 }
 
 /**
@@ -175,13 +179,41 @@ export interface AliasElem extends ElemWithContentsBase {
   kind: "alias";
   name: DeclIdentElem;
   typeRef: TypeRefElem;
+  attributes: AttributeElem[];
 }
 
 /** an attribute like '@compute' or '@binding(0)' */
 export interface AttributeElem extends ElemWithContentsBase {
   kind: "attribute";
+  attribute: Attribute;
+}
+export type Attribute =
+  | StandardAttribute
+  | InterpolateAttribute
+  | BuiltinAttribute
+  | DiagnosticAttribute
+  | IfAttribute;
+export interface StandardAttribute {
+  kind: "attribute";
   name: string;
-  params?: ExpressionElem[];
+  params: UnknownExpressionElem[];
+}
+export interface InterpolateAttribute {
+  kind: "@interpolate";
+  params: NameElem[];
+}
+export interface BuiltinAttribute {
+  kind: "@builtin";
+  param: NameElem;
+}
+export interface DiagnosticAttribute {
+  kind: "@diagnostic";
+  severity: NameElem;
+  rule: [NameElem, NameElem | null];
+}
+export interface IfAttribute {
+  kind: "@if";
+  param: TranslateTimeExpressionElem;
 }
 
 /** a const_assert statement */
@@ -195,54 +227,96 @@ export interface ConstElem extends ElemWithContentsBase {
   name: TypedDeclElem;
 }
 
-export interface UnknownExpression extends ElemWithContentsBase {
+export interface UnknownExpressionElem extends ElemWithContentsBase {
   kind: "expression";
 }
-/*
-export interface ParenthesizedExpression extends AbstractElemBase {
+
+export interface TranslateTimeExpressionElem {
+  kind: "translate-time-expression";
+  expression: ExpressionElem;
+  span: Span;
+}
+
+/** A literal value in WESL source. A boolean or a number. */
+export interface Literal {
+  kind: "literal";
+  value: string;
+  span: Span;
+}
+
+/** `words`s inside `@if` */
+export interface TranslateTimeFeature {
+  kind: "translate-time-feature";
+  name: string;
+  span: Span;
+}
+
+/** (expr) */
+export interface ParenthesizedExpression {
   kind: "parenthesized-expression";
-  contents: [ExpressionElem];
+  expression: ExpressionElem;
 }
-export interface ComponentExpression extends AbstractElemBase {
+/** `foo[expr]` */
+export interface ComponentExpression {
   kind: "component-expression";
-  // To safely type this, don't use contents, but rather define your own props!
-  contents: [ExpressionElem, ExpressionElem];
+  base: ExpressionElem;
+  access: ExpressionElem;
 }
-// TODO: We will emit these very soon (for the @if(expr))
-export interface UnaryExpression extends AbstractElemBase {
+/** `foo.member` */
+export interface ComponentMemberExpression {
+  kind: "component-member-expression";
+  base: ExpressionElem;
+  access: NameElem;
+}
+/** `+foo` */
+export interface UnaryExpression {
   kind: "unary-expression";
   operator: UnaryOperator;
-  contents: [ExpressionElem];
+  expression: ExpressionElem;
 }
-export interface BinaryExpression extends AbstractElemBase {
+/** `foo + bar` */
+export interface BinaryExpression {
   kind: "binary-expression";
   operator: BinaryOperator;
-  contents: [ExpressionElem, ExpressionElem];
+  left: ExpressionElem;
+  right: ExpressionElem;
 }
-export interface FunctionCallExpression extends AbstractElemBase {
+/** `foo(arg, arg)` */
+export interface FunctionCallExpression {
   kind: "call-expression";
-  contents: [ExpressionElem, ExpressionElem];
+  function: RefIdentElem;
+  arguments: ExpressionElem[];
 }
-export type UnaryOperator = "!" | "&" | "*" | "-" | "~";
-export type BinaryOperator =
-  | "||"
-  | "&&"
-  | "+"
-  | "-"
-  | "*"
-  | "/"
-  | "%"
-  | "=="
-  | "!="
-  | "<"
-  | "<="
-  | ">"
-  | ">="
-  | "|"
-  | "&"
-  | "^"
-  | "<<"
-  | ">>";*/
+export interface UnaryOperator {
+  value: "!" | "&" | "*" | "-" | "~";
+  span: Span;
+}
+export interface BinaryOperator {
+  value:
+    | ("||" | "&&" | "+" | "-" | "*" | "/" | "%" | "==")
+    | ("!=" | "<" | "<=" | ">" | ">=" | "|" | "&" | "^")
+    | ("<<" | ">>");
+  span: Span;
+}
+
+export interface DirectiveElem extends AbstractElemBase {
+  kind: "directive";
+  directive: DiagnosticDirective | EnableDirective | RequiresDirective;
+}
+
+export interface DiagnosticDirective {
+  kind: "diagnostic";
+  severity: NameElem;
+  rule: [NameElem, NameElem | null];
+}
+export interface EnableDirective {
+  kind: "enable";
+  extensions: NameElem[];
+}
+export interface RequiresDirective {
+  kind: "requires";
+  extensions: NameElem[];
+}
 
 /** a function declaration */
 export interface FnElem extends ElemWithContentsBase {
@@ -274,6 +348,7 @@ export interface OverrideElem extends ElemWithContentsBase {
 export interface FnParamElem extends ElemWithContentsBase {
   kind: "param";
   name: TypedDeclElem;
+  attributes: AttributeElem[];
 }
 
 /** simple references to structures, like myStruct.bar
@@ -291,6 +366,7 @@ export interface StructElem extends ElemWithContentsBase {
   name: DeclIdentElem;
   members: StructMemberElem[];
   bindingStruct?: true; // used later during binding struct transformation
+  attributes: AttributeElem[];
 }
 
 /** generic container of other elements */
@@ -313,7 +389,7 @@ export interface StructMemberElem extends ElemWithContentsBase {
   mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
 }
 
-export type TypeTemplateParameter = TypeRefElem | ExpressionElem;
+export type TypeTemplateParameter = TypeRefElem | UnknownExpressionElem;
 
 /** a reference to a type, like 'f32', or 'MyStruct', or 'ptr<storage, array<f32>, read_only>'   */
 export interface TypeRefElem extends ElemWithContentsBase {

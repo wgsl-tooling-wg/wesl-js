@@ -1,23 +1,49 @@
 import {
   AttributeElem,
-  ExpressionElem,
+  NameElem,
   StuffElem,
+  TranslateTimeExpressionElem,
   TypeRefElem,
   TypeTemplateParameter,
-  UnknownExpression,
+  UnknownExpressionElem,
 } from "./AbstractElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
-import { findDecl } from "./LowerAndEmit.ts";
+import {
+  diagnosticControlToString,
+  expressionToString,
+  findDecl,
+} from "./LowerAndEmit.ts";
 import { RefIdent } from "./Scope.ts";
 
 // LATER DRY emitting elements like this with LowerAndEmit?
 
-export function attributeToString(attribute: AttributeElem): string {
-  const params =
-    attribute.params ?
-      `(${attribute.params.map(contentsToString).join(", ")})`
-    : "";
-  return `@${attribute.name}${params}`;
+export function attributeToString(e: AttributeElem): string {
+  const { kind } = e.attribute;
+  // LATER emit more precise source map info by making use of all the spans
+  // Like the first case does
+  if (kind === "attribute") {
+    const { params } = e.attribute;
+    if (params === undefined || params.length === 0) {
+      return "@" + e.attribute.name;
+    } else {
+      return `@${e.attribute.name}(${params
+        .map(param => contentsToString(param))
+        .join(", ")})`;
+    }
+  } else if (kind === "@builtin") {
+    return "@builtin(" + e.attribute.param.name + ")";
+  } else if (kind === "@diagnostic") {
+    return (
+      "@diagnostic" +
+      diagnosticControlToString(e.attribute.severity, e.attribute.rule)
+    );
+  } else if (kind === "@if") {
+    return `@if(${expressionToString(e.attribute.param.expression)})`;
+  } else if (kind === "@interpolate") {
+    return `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`;
+  } else {
+    assertUnreachable(kind);
+  }
 }
 
 export function typeListToString(params: TypeTemplateParameter[]): string {
@@ -25,15 +51,12 @@ export function typeListToString(params: TypeTemplateParameter[]): string {
 }
 
 export function typeParamToString(param?: TypeTemplateParameter): string {
+  if (param === undefined) return "?";
   if (typeof param === "string") return param;
-  if (param?.kind === "literal" || param?.kind === "ref") {
-    return contentsToString(param);
-  }
-  // @ts-ignore TODO: Remove this dummy case
-  if (param?.kind === "expression") return contentsToString(param);
 
-  if (param?.kind === "type") return typeRefToString(param);
-  else return `?${param}?`;
+  if (param.kind === "expression") return contentsToString(param);
+  if (param.kind === "type") return typeRefToString(param);
+  assertUnreachable(param);
 }
 
 export function typeRefToString(t?: TypeRefElem): string {
@@ -51,13 +74,15 @@ function refToString(ref: RefIdent | string): string {
 }
 
 export function contentsToString(
-  elem: ExpressionElem | StuffElem | UnknownExpression,
+  elem:
+    | TranslateTimeExpressionElem
+    | UnknownExpressionElem
+    | NameElem
+    | StuffElem,
 ): string {
-  if (elem.kind === "ref") {
-    return refToString(elem.ident);
-  } else if (elem.kind === "literal") {
-    return elem.srcModule.src.slice(elem.start, elem.end);
-  } else if (elem.kind === "stuff" || elem.kind === "expression") {
+  if (elem.kind === "translate-time-expression") {
+    throw new Error("Not supported");
+  } else if (elem.kind === "expression" || elem.kind === "stuff") {
     const parts = elem.contents.map(c => {
       const { kind } = c;
       if (kind === "text") {
@@ -69,6 +94,8 @@ export function contentsToString(
       }
     });
     return parts.join(" ");
+  } else if (elem.kind === "name") {
+    return elem.name;
   } else {
     assertUnreachable(elem);
   }

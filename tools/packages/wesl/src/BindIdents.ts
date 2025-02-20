@@ -19,7 +19,7 @@ import { last } from "./Util.ts";
 
 export interface BindResults {
   /** global declarations that were referenced (these will need to be emitted in the link) */
-  decls: DeclarationElem[];
+  decls: DeclIdent[];
 
   /** root level names (including names mangled due to conflict with earlier names) */
   globalNames: Set<string>;
@@ -84,9 +84,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     mangler,
   };
   const foundDecls = bindIdentsRecursive(rootScope, bindContext);
-  const decls = foundDecls.flatMap(d =>
-    d.declElem && isGlobal(d.declElem) ? [d.declElem] : [],
-  );
+  const decls = foundDecls.filter(d => isGlobal(d.declElem));
   return { decls, globalNames };
 }
 

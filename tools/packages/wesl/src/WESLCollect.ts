@@ -2,6 +2,7 @@ import { CollectContext, CollectPair, srcLog, tracing } from "mini-parse";
 import {
   AbstractElem,
   AliasElem,
+  Attribute,
   AttributeElem,
   ConstElem,
   ContainerElem,
@@ -23,9 +24,10 @@ import {
   StructMemberElem,
   StuffElem,
   TextElem,
+  TranslateTimeExpressionElem,
   TypedDeclElem,
   TypeRefElem,
-  UnknownExpression,
+  UnknownExpressionElem,
   VarElem,
 } from "./AbstractElems.ts";
 import {
@@ -34,12 +36,11 @@ import {
   WeslParseContext,
   WeslParseState,
 } from "./ParseWESL.ts";
-import { DeclIdent, emptyBodyScope, RefIdent, Scope } from "./Scope.ts";
+import { DeclIdent, emptyScope, RefIdent, Scope } from "./Scope.ts";
 
 export function importElem(cc: CollectContext) {
   const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing
   for (const importElem of importElems) {
-    importElem.srcModule = cc.app.stable;
     (cc.app.stable as StableState).imports.push(importElem.imports);
     addToOpenElem(cc, importElem as AbstractElem);
   }
@@ -96,6 +97,7 @@ export function declCollect(cc: CollectContext): DeclIdentElem {
     originalName,
     scope,
     id: identId++,
+    srcModule,
   };
   const identElem: DeclIdentElem = { kind, start, end, srcModule, ident };
 
@@ -132,7 +134,7 @@ function saveIdent(
 /** start a new child Scope */
 function startScope(cc: CollectContext) {
   const { scope } = cc.app.context as WeslParseContext;
-  const newScope = emptyBodyScope(scope);
+  const newScope = emptyScope(scope);
   scope.children.push(newScope);
   cc.app.context.scope = newScope;
   // srcLog(cc.src, cc.start, "startScope", newScope.id);
@@ -148,8 +150,8 @@ function completeScope(cc: CollectContext): Scope {
   if (parent) {
     weslContext.scope = parent;
   } else if (tracing) {
-    const { idents, kind } = completedScope;
-    console.log("ERR: completeScope, no parent scope", { kind, idents });
+    const { idents } = completedScope;
+    console.log("ERR: completeScope, no parent scope", { idents });
   }
   return completedScope;
 }
@@ -190,7 +192,8 @@ export const aliasCollect = collectElem(
     const name = cc.tags.alias_name?.[0] as DeclIdentElem;
     const alias_scope = cc.tags.alias_scope?.[0] as Scope;
     const typeRef = cc.tags.typeRefElem?.[0] as TypeRefElem;
-    const partElem: AliasElem = { ...openElem, name, typeRef };
+    const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
+    const partElem: AliasElem = { ...openElem, name, attributes, typeRef };
     const aliasElem = withTextCover(partElem, cc);
     name.ident.scope = alias_scope;
     name.ident.declElem = aliasElem;
@@ -226,7 +229,8 @@ export const collectFnParam = collectElem(
   "param",
   (cc: CollectContext, openElem: PartElem<FnParamElem>) => {
     const name = cc.tags.param_name?.[0]! as TypedDeclElem;
-    const elem: FnParamElem = { ...openElem, name };
+    const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
+    const elem: FnParamElem = { ...openElem, name, attributes };
     const paramElem = withTextCover(elem, cc);
     name.decl.ident.declElem = paramElem; // TODO is this right?
 
@@ -240,8 +244,9 @@ export const collectStruct = collectElem(
     // dlog({ attributes: cc.tags.attributes?.flat(8).map(e => e && elemToString(e)) });
     const name = cc.tags.type_name?.[0] as DeclIdentElem;
     const members = cc.tags.members as StructMemberElem[];
+    const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
     name.ident.scope = cc.tags.struct_scope?.[0] as Scope;
-    const structElem = { ...openElem, name, members };
+    const structElem = { ...openElem, name, attributes, members };
     const elem = withTextCover(structElem, cc);
     (name.ident as DeclIdent).declElem = elem as DeclarationElem;
 
@@ -264,10 +269,26 @@ export const collectStructMember = collectElem(
 export const collectAttribute = collectElem(
   "attribute",
   (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
-    const params = cc.tags.attrParam as ExpressionElem[];
-    const name = cc.tags.name?.[0]! as string;
-    const partElem: AttributeElem = { ...openElem, params, name };
-    return withTextCover(partElem, cc);
+    const attribute = cc.tags.attribute?.[0] as Attribute | undefined;
+    if (attribute !== undefined) {
+      const partElem: AttributeElem = {
+        ...openElem,
+        attribute,
+      };
+      return partElem;
+    } else {
+      const params = (cc.tags.attrParam ?? []) as UnknownExpressionElem[];
+      const name = cc.tags.name?.[0]! as string;
+      const partElem: AttributeElem = {
+        ...openElem,
+        attribute: {
+          kind: "attribute",
+          name,
+          params,
+        },
+      };
+      return partElem;
+    }
   },
 );
 
@@ -295,7 +316,7 @@ export const typeRefCollect = collectElem(
 // TODO: This creates useless unknown-expression elements
 export const expressionCollect = collectElem(
   "expression",
-  (cc: CollectContext, openElem: PartElem<UnknownExpression>) => {
+  (cc: CollectContext, openElem: PartElem<UnknownExpressionElem>) => {
     const partElem = { ...openElem };
     return withTextCover(partElem, cc);
   },
@@ -329,9 +350,8 @@ export const memberRefCollect = collectElem(
 
 export function nameCollect(cc: CollectContext): NameElem {
   const { start, end, src, app } = cc;
-  const { srcModule } = app.stable as WeslAST;
   const name = src.slice(start, end);
-  const elem: NameElem = { kind: "name", srcModule, start, end, name };
+  const elem: NameElem = { kind: "name", start, end, name };
   addToOpenElem(cc, elem);
   return elem;
 }

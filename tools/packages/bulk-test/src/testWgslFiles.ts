@@ -2,6 +2,7 @@ import { expectNoLogAsync } from "mini-parse/test-util";
 import fs from "node:fs/promises";
 import { expect, test } from "vitest";
 import { bindingStructsPlugin, link, noSuffix } from "wesl";
+import { stripWesl } from "./stripWgsl";
 
 export interface NamedPath {
   name: string; // test name
@@ -26,7 +27,7 @@ export async function testWgslFiles(namedPaths: NamedPath[]) {
         const rootModuleName = noSuffix(name);
         return link({ weslSrc, rootModuleName, config });
       });
-      expect(result.dest).eq(text);
+      expect(stripWesl(result.dest)).toBe(stripWesl(text));
     });
   });
 }
