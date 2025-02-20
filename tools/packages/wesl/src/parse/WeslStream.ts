@@ -9,13 +9,17 @@ import {
 } from "mini-parse";
 import { keywords, reservedWords } from "./Keywords";
 export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
-
 export type WeslToken<Kind extends WeslTokenKind = WeslTokenKind> =
   TypedToken<Kind>;
 
+export type WeslTriviaTokenKind = "whitespace" | "comment";
+export type WeslTriviaToken<
+  Kind extends WeslTriviaTokenKind = WeslTriviaTokenKind,
+> = TypedToken<Kind>;
+
 // https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
 /** Whitespaces including new lines */
-const blankspaces = /[ \t\n\v\f\r\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}]+/u;
+const whitespace = /[ \t\n\v\f\r\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}]+/u;
 const symbolSet =
   "& && -> @ / ! [ ] { } :: : , == = != >>= >> >= > <<= << <= < % - --" +
   " . + ++ | || ( ) ; * ~ ^ // /* */ += -= *= /= %= &= |= ^=" +
@@ -59,14 +63,14 @@ const commentStart = /\/\/|\/\*/;
 type InternalTokenKind =
   | "word"
   | "number"
-  | "blankspaces"
+  | "whitespace"
   | "commentStart"
   | "symbol"
   | "invalid";
 const weslMatcher = new RegexMatchers<InternalTokenKind>({
   word: ident,
   number: digits,
-  blankspaces,
+  whitespace,
   commentStart,
   symbol: matchOneOf(symbolSet),
   invalid: /[^]/,
@@ -98,7 +102,7 @@ export class WeslStream implements Stream<WeslToken> {
       if (token === null) return null;
 
       const kind = token.kind;
-      if (kind === "blankspaces") {
+      if (kind === "whitespace") {
         continue;
       } else if (kind === "commentStart") {
         // SAFETY: The underlying streams can be seeked to any position
@@ -263,6 +267,34 @@ export class WeslStream implements Stream<WeslToken> {
       } else if (nextToken.text === closingBracket) {
         // We're done!
         return;
+      }
+    }
+  }
+
+  /** Gets the next trivia tokens. Used to extract all trivia tokens separately from the usual parsing. */
+  nextTriviaToken(): WeslTriviaToken | null {
+    while (true) {
+      const token = this.stream.nextToken();
+      if (token === null) return null;
+
+      const kind = token.kind;
+      if (kind === "whitespace") {
+        return token as TypedToken<typeof kind>;
+      } else if (kind === "commentStart") {
+        // SAFETY: The underlying streams can be seeked to any position
+        if (token.text === "//") {
+          this.stream.reset(this.skipToEol(token.span[1]));
+        } else {
+          this.stream.reset(this.skipBlockComment(token.span[1]));
+        }
+        const span = [token.span[0], this.stream.checkpoint()] as const;
+        return {
+          kind: "comment",
+          text: this.src.slice(span[0], span[1]),
+          span,
+        };
+      } else {
+        continue;
       }
     }
   }
