@@ -3,9 +3,10 @@ import { DeclIdent, SrcModule } from "./Scope.ts";
  * A function for constructing a unique identifier name for a global declaration.
  * Global names must be unique in the linked wgsl.
  *
- * Two manglers are currently available:
+ * Three manglers are currently available:
  * . minimalMangle preserves original source names where possible
  * . underscoreMangle constructs long but predictable names for every declaration
+ * . lengthPrefixMangle constructs long but predictable names for every declaration
  */
 export type ManglerFn = (
   /** global declaration that needs a name */
@@ -34,6 +35,24 @@ export function underscoreMangle(
   const separated = escaped.replaceAll("::", "_");
   const mangled = separated + "_" + decl.originalName.replaceAll("_", "__");
   return mangled;
+}
+
+/**
+ * Construct a globally unique name based on the declaration
+ * module path separated by underscores.
+ */
+export function lengthPrefixMangle(
+  decl: DeclIdent,
+  srcModule: SrcModule,
+): string {
+  function codepointCount(text: string): number {
+    return [...text].length;
+  }
+  const qualifiedIdent = [
+    ...srcModule.modulePath.split("::"),
+    decl.originalName,
+  ];
+  return "_" + qualifiedIdent.map(v => codepointCount(v) + v).join("");
 }
 
 /**
