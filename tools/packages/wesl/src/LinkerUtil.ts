@@ -4,7 +4,6 @@ import {
   ContainerElem,
   DeclIdentElem,
   RefIdentElem,
-  TerminalElem,
 } from "./AbstractElems.ts";
 
 export function visitAst(

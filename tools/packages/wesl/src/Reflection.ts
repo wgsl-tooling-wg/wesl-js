@@ -1,7 +1,6 @@
 import { matchOneOf } from "mini-parse";
 import {
   BindingStructElem,
-  ExpressionElem,
   NameElem,
   StructMemberElem,
   TextElem,

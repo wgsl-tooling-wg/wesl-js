@@ -27,8 +27,8 @@ import type {
 } from "../AbstractElems.js";
 import { assertUnreachable } from "../Assertions.js";
 import { importElem } from "../WESLCollect.js";
-import { WeslToken } from "./WeslStream.js";
 import { word } from "./WeslBaseGrammar.js";
+import { WeslToken } from "./WeslStream.js";
 
 function makeStatement(
   segments: ImportSegment[],

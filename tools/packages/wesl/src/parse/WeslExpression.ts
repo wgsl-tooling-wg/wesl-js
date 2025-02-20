@@ -1,34 +1,33 @@
 import {
-  opt,
-  seq,
-  withSepPlus,
-  or,
-  kind,
-  req,
-  repeatPlus,
-  preceded,
   collectArray,
   delimited,
-  tagScope,
-  Parser,
-  Stream,
-  repeat,
-  yes,
-  withSep,
-  tracing,
-  tokenOf,
   fn,
+  opt,
+  or,
+  Parser,
+  preceded,
+  repeat,
+  repeatPlus,
+  req,
+  seq,
+  Stream,
+  tagScope,
+  tokenOf,
+  tracing,
+  withSep,
+  withSepPlus,
+  yes,
 } from "mini-parse";
 import {
-  refIdent,
-  nameCollect,
-  stuffCollect,
-  memberRefCollect,
   expressionCollect,
+  memberRefCollect,
+  nameCollect,
+  refIdent,
+  stuffCollect,
   typeRefCollect,
 } from "../WESLCollect";
-import { templateOpen, templateClose, WeslToken } from "./WeslStream";
 import { number, qualified_ident, word } from "./WeslBaseGrammar";
+import { templateClose, templateOpen, WeslToken } from "./WeslStream";
 
 export const opt_template_list = opt(
   seq(

@@ -1,10 +1,11 @@
 import {
+  delimited,
   eof,
   fn,
-  kind,
   opt,
   or,
   Parser,
+  preceded,
   repeat,
   repeatPlus,
   req,
@@ -14,6 +15,7 @@ import {
   span,
   Stream,
   tagScope,
+  terminated,
   text,
   token,
   tokenKind,
@@ -22,38 +24,7 @@ import {
   withSep,
   withSepPlus,
   yes,
-  terminated,
-  preceded,
-  delimited,
 } from "mini-parse";
-import { weslImports } from "./ImportGrammar.ts";
-import { weslExtension, WeslToken } from "./WeslStream.ts";
-import {
-  aliasCollect,
-  collectAttribute,
-  collectFn,
-  collectFnParam,
-  collectModule,
-  collectSimpleElem,
-  collectStruct,
-  collectStructMember,
-  collectVarLike,
-  declCollect,
-  expressionCollect,
-  nameCollect,
-  refIdent,
-  scopeCollect,
-  typedDecl,
-} from "../WESLCollect.ts";
-import {
-  expression,
-  opt_template_list,
-  simple_component_reference,
-  component_or_swizzle,
-  argument_expression_list,
-  type_specifier,
-} from "./WeslExpression.ts";
-import { qualified_ident, word } from "./WeslBaseGrammar.ts";
 import {
   BinaryExpression,
   BinaryOperator,
@@ -76,6 +47,34 @@ import {
   UnaryOperator,
   UnknownExpressionElem,
 } from "../AbstractElems.ts";
+import {
+  aliasCollect,
+  collectAttribute,
+  collectFn,
+  collectFnParam,
+  collectModule,
+  collectSimpleElem,
+  collectStruct,
+  collectStructMember,
+  collectVarLike,
+  declCollect,
+  expressionCollect,
+  nameCollect,
+  refIdent,
+  scopeCollect,
+  typedDecl,
+} from "../WESLCollect.ts";
+import { weslImports } from "./ImportGrammar.ts";
+import { qualified_ident, word } from "./WeslBaseGrammar.ts";
+import {
+  argument_expression_list,
+  component_or_swizzle,
+  expression,
+  opt_template_list,
+  simple_component_reference,
+  type_specifier,
+} from "./WeslExpression.ts";
+import { weslExtension, WeslToken } from "./WeslStream.ts";
 
 const name = tokenKind("word").map(makeName);
 
