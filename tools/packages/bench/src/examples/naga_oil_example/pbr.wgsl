@@ -28,7 +28,7 @@ fn fragment(
         pbr_input.material.flags = MaterialBindings::material.flags;
         pbr_input.material.alpha_cutoff = MaterialBindings::material.alpha_cutoff;
 
-        // TODO use .a for exposure compensation in HDR
+        // T0DO use .a for exposure compensation in HDR
         var emissive: vec4<f32> = MaterialBindings::material.emissive;
         if ((MaterialBindings::material.flags & PbrTypes::STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT) != 0u) {
             emissive = vec4<f32>(emissive.rgb * textureSample(MaterialBindings::emissive_texture, MaterialBindings::emissive_sampler, mesh.uv).rgb, 1.0);
