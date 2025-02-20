@@ -38,7 +38,7 @@ export type ContainerElem =
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
 export type ExpressionElem =
   | Literal
-  | TranslateTimeFeature
+  | TranslateTimeFeature // TODO: replace with NameElem
   | RefIdentElem
   | ParenthesizedExpression
   | ComponentExpression
@@ -93,6 +93,7 @@ export interface TextElem extends AbstractElemBase {
  * - a diagnostic rule name
  * - an enable-extension name
  * - an interpolation sampling name
+ * - a translate time feature
  */
 export interface NameElem extends AbstractElemBase {
   kind: "name";
@@ -318,15 +319,6 @@ export interface RequiresDirective {
   extensions: NameElem[];
 }
 
-/** a function declaration */
-export interface FnElem extends ElemWithContentsBase {
-  kind: "fn";
-  name: DeclIdentElem;
-  params: FnParamElem[];
-  fnAttributes?: AttributeElem[];
-  returnType?: TypeRefElem;
-}
-
 /** a global variable declaration (at the root level) */
 export interface GlobalVarElem extends ElemWithContentsBase {
   kind: "gvar";
@@ -369,6 +361,15 @@ export interface StructElem extends ElemWithContentsBase {
   attributes: AttributeElem[];
 }
 
+/** a member of a struct declaration */
+export interface StructMemberElem extends ElemWithContentsBase {
+  kind: "member";
+  name: NameElem;
+  attributes?: AttributeElem[];
+  typeRef: TypeRefElem;
+  mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
+}
+
 /** generic container of other elements */
 export interface StuffElem extends ElemWithContentsBase {
   kind: "stuff";
@@ -380,15 +381,6 @@ export interface BindingStructElem extends StructElem {
   entryFn?: FnElem;
 }
 
-/** a member of a struct declaration */
-export interface StructMemberElem extends ElemWithContentsBase {
-  kind: "member";
-  name: NameElem;
-  attributes?: AttributeElem[];
-  typeRef: TypeRefElem;
-  mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
-}
-
 export type TypeTemplateParameter = TypeRefElem | UnknownExpressionElem;
 
 /** a reference to a type, like 'f32', or 'MyStruct', or 'ptr<storage, array<f32>, read_only>'   */
@@ -396,6 +388,41 @@ export interface TypeRefElem extends ElemWithContentsBase {
   kind: "type";
   name: RefIdent;
   templateParams?: TypeTemplateParameter[];
+}
+
+/** a function declaration */
+export interface FnElem extends ElemWithContentsBase {
+  kind: "fn";
+  fnAttributes?: AttributeElem[]; // TODO: rename
+  name: DeclIdentElem;
+  params: FnParamElem[];
+  returnType?: TypeRefElem;
+  body: Statement[];
+  // TODO: Model everything
+}
+
+export type Statement =
+  | ForStatement
+  | IfStatement
+  | LoopStatement
+  | SwitchStatement
+  | WhileStatement
+  | CompoundStatement
+  | FunctionCallStatement
+  | VarStatement
+  | LetStatement
+  | ConstElem
+  | VariableUpdatingStatement
+  | BreakStatement
+  | ContinueStatement
+  | DiscardStatement
+  | ReturnStatement
+  | ConstAssertElem;
+
+interface StatementBase {
+  kind: Statement["kind"];
+  attributes: AttributeElem[];
+  span: Span;
 }
 
 /** a variable declaration */
@@ -407,4 +434,123 @@ export interface VarElem extends ElemWithContentsBase {
 export interface LetElem extends ElemWithContentsBase {
   kind: "let";
   name: TypedDeclElem;
+}
+
+/** for(let i = 0; i < 10; i++) { } */
+export interface ForStatement extends StatementBase {
+  kind: "for-statement";
+  // TODO:
+  body: Statement[];
+}
+
+/** if(1 == 1) { } */
+export interface IfStatement extends StatementBase {
+  kind: "if-else-statement";
+  condition: ExpressionElem;
+  accept: CompoundStatement;
+  reject: IfStatement | CompoundStatement;
+}
+
+export interface LoopStatement extends StatementBase {
+  kind: "loop-statement";
+  // TODO:
+}
+
+export interface SwitchStatement extends StatementBase {
+  kind: "switch-statement";
+  selector: ExpressionElem;
+  cases: SwitchCase;
+}
+/**
+ * `case foo: {}` or `default: {}`.
+ * A `default:` is modeled as a `case default:`
+ */
+export interface SwitchCase {
+  cases: SwitchCaseSelector[];
+  body: CompoundStatement;
+  span: Span;
+}
+export type SwitchCaseSelector = ExpressionCaseSelector | DefaultCaseSelector;
+export interface ExpressionCaseSelector {
+  expression: ExpressionElem;
+}
+export interface DefaultCaseSelector {
+  expression: "default";
+  span: Span;
+}
+
+export interface WhileStatement extends StatementBase {
+  kind: "while-statement";
+}
+
+export interface CompoundStatement extends StatementBase {
+  kind: "compound-statement";
+  body: Statement[];
+}
+
+/** `foo(arg, arg);` */
+export interface FunctionCallStatement extends StatementBase {
+  kind: "call-statement";
+  function: RefIdentElem;
+  arguments: ExpressionElem[];
+}
+
+type VarStatement = VarElem;
+type LetStatement = LetElem;
+
+export interface VariableUpdatingStatement extends StatementBase {
+  kind: "variable-updating-statement";
+  // TODO:
+}
+
+export interface BreakStatement extends StatementBase {
+  kind: "break-statement";
+}
+
+export interface ContinueStatement extends StatementBase {
+  kind: "continue-statement";
+}
+
+export interface DiscardStatement extends StatementBase {
+  kind: "discard-statement";
+}
+
+export interface ReturnStatement extends StatementBase {
+  kind: "return-statement";
+  expression?: ExpressionElem;
+}
+
+export type LhsExpression =
+  | LhsUnaryExpression
+  | LhsComponentExpression
+  | LhsComponentMemberExpression
+  | LhsParenthesizedExpression
+  | DeclIdentElem;
+
+/** (expr) */
+export interface LhsParenthesizedExpression {
+  kind: "parenthesized-expression";
+  expression: LhsExpression;
+}
+/** `foo[expr]` */
+export interface LhsComponentExpression {
+  kind: "component-expression";
+  base: LhsExpression;
+  access: LhsExpression;
+}
+/** `foo.member` */
+export interface LhsComponentMemberExpression {
+  kind: "component-member-expression";
+  base: LhsExpression;
+  access: NameElem;
+}
+/** `+foo` */
+export interface LhsUnaryExpression {
+  kind: "unary-expression";
+  operator: LhsUnaryOperator;
+  expression: LhsExpression;
+}
+export interface LhsUnaryOperator {
+  value: "&" | "*";
+  span: Span;
 }
