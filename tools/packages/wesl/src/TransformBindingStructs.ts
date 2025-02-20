@@ -12,10 +12,10 @@ import {
   SyntheticElem,
   TypeTemplateParameter,
 } from "./AbstractElems.ts";
-import { declUniqueName } from "./BindIdents.ts";
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { visitAst } from "./LinkerUtil.ts";
 import { findDecl } from "./LowerAndEmit.ts";
+import { minimallyMangledName } from "./Mangler.ts";
 import {
   attributeToString,
   contentsToString,
@@ -157,7 +157,7 @@ export function transformBindingStruct(
     const { name: typeName } = typeRef!; // members should always have a typeRef.. TODO fix typing to show this
     const typeParameters = typeRef?.templateParams;
 
-    const varName = declUniqueName(memberName.name, globalNames);
+    const varName = minimallyMangledName(memberName.name, globalNames);
     member.mangledVarName = varName; // save new name so we can rewrite references to this member later
     globalNames.add(varName);
 

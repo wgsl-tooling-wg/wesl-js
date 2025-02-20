@@ -3,7 +3,7 @@ import { WeslAST } from "./ParseWESL.ts";
 
 export interface SrcModule {
   /** module path "rand_pkg::sub::foo", or "package::main" */
-  modulePath: string; // TODO drop this?
+  modulePath: string;
 
   /** file path to the module for user error reporting e.g "rand_pkg:sub/foo.wesl", or "./sub/foo.wesl" */
   debugFilePath: string;
@@ -29,7 +29,7 @@ export interface RefIdent extends IdentBase {
   std?: true; // true if this is a standard wgsl identifier (like sin, or u32)
   ast: WeslAST; // AST from module that contains this ident (to find imports during decl binding)
   scope: Scope; // scope containing this reference (bind to decls starting from this scope)
-  refIdentElem?: RefIdentElem; // for error reporting
+  refIdentElem: RefIdentElem; // for error reporting and mangling
 }
 
 export interface DeclIdent extends IdentBase {
