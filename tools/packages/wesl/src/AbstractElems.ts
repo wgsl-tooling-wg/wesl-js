@@ -117,8 +117,14 @@ export type GlobalDeclarationElem =
   | OverrideElem
   | StructElem;
 
+interface GlobalDeclarationBase {
+  kind: GlobalDeclarationElem["kind"];
+  span: Span;
+  attributes?: AttributeElem[];
+}
+
 /** an alias statement */
-export interface AliasElem extends ElemWithContentsBase {
+export interface AliasElem extends ElemWithContentsBase, GlobalDeclarationBase {
   kind: "alias";
   name: DeclIdentElem;
   typeRef: TypeRefElem;
@@ -126,20 +132,21 @@ export interface AliasElem extends ElemWithContentsBase {
 }
 
 /** a const_assert statement */
-export interface ConstAssertElem extends ElemWithContentsBase {
+export interface ConstAssertElem
+  extends ElemWithContentsBase,
+    GlobalDeclarationBase {
   kind: "assert";
 }
 
 /** a const declaration */
-export interface ConstElem extends ElemWithContentsBase {
+export interface ConstElem extends ElemWithContentsBase, GlobalDeclarationBase {
   kind: "const";
   name: TypedDeclElem;
 }
 
 /** a function declaration */
-export interface FnElem extends ElemWithContentsBase {
+export interface FnElem extends ElemWithContentsBase, GlobalDeclarationBase {
   kind: "fn";
-  fnAttributes?: AttributeElem[]; // TODO: rename
   name: DeclIdentElem;
   params: FnParamElem[];
   returnType?: TypeRefElem;
@@ -148,19 +155,25 @@ export interface FnElem extends ElemWithContentsBase {
 }
 
 /** a global variable declaration (at the root level) */
-export interface GlobalVarElem extends ElemWithContentsBase {
+export interface GlobalVarElem
+  extends ElemWithContentsBase,
+    GlobalDeclarationBase {
   kind: "gvar";
   name: TypedDeclElem;
 }
 
 /** an override declaration */
-export interface OverrideElem extends ElemWithContentsBase {
+export interface OverrideElem
+  extends ElemWithContentsBase,
+    GlobalDeclarationBase {
   kind: "override";
   name: TypedDeclElem;
 }
 
 /** a struct declaration */
-export interface StructElem extends ElemWithContentsBase {
+export interface StructElem
+  extends ElemWithContentsBase,
+    GlobalDeclarationBase {
   kind: "struct";
   name: DeclIdentElem;
   members: StructMemberElem[];

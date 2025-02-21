@@ -195,7 +195,7 @@ function addTypedDeclIdent(elem: TypedDeclElem, str: LineWrapper) {
 }
 
 function addFnFields(elem: FnElem, str: LineWrapper) {
-  const { name, params, returnType, fnAttributes } = elem;
+  const { name, params, returnType, attributes } = elem;
 
   str.add(" " + name.ident.originalName);
 
@@ -215,7 +215,7 @@ function addFnFields(elem: FnElem, str: LineWrapper) {
   str.add(paramStrs);
   str.add(")");
 
-  fnAttributes?.forEach(a => addAttribute(a.attribute, str));
+  attributes?.forEach(a => addAttribute(a.attribute, str));
 
   if (returnType) {
     str.add(" -> " + typeRefElemToString(returnType));

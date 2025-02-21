@@ -208,13 +208,13 @@ export const collectFn = collectElem(
     const name = cc.tags.fn_name?.[0] as DeclIdentElem;
     const body_scope = cc.tags.body_scope?.[0] as Scope;
     const params: FnParamElem[] = cc.tags.fnParam?.flat(3) ?? [];
-    const fnAttributes: AttributeElem[] | undefined =
+    const attributes: AttributeElem[] | undefined =
       cc.tags.fn_attributes?.flat();
     const returnType: TypeRefElem | undefined = cc.tags.returnType?.flat(3)[0];
     const partElem: FnElem = {
       ...openElem,
       name,
-      fnAttributes,
+      attributes,
       params,
       returnType,
       body: [],
