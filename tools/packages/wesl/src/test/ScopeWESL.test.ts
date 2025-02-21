@@ -283,3 +283,20 @@ test("larger example", () => {
     }"
   `);
 });
+
+test("scope with an attribute", () => {
+  const src = `
+    fn main() {
+      @if(foo){ }
+    }
+  `;
+  const { rootScope } = parseWESL(src);
+
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %main
+      { 
+         @if(foo) {  }
+      }
+    }"
+  `);
+});
