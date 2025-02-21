@@ -1,4 +1,4 @@
-import { DeclarationElem, RefIdentElem } from "./AbstractElems.ts";
+import { DeclarationElem, IfAttribute, RefIdentElem } from "./AbstractElems.ts";
 import { WeslAST } from "./ParseWESL.ts";
 
 export interface SrcModule {
@@ -43,11 +43,18 @@ export interface DeclIdent extends IdentBase {
 /** tree of ident references, organized by lexical scope. */
 export interface Scope {
   id?: number; // for debugging
+
   /** idents found in lexical order in this scope */
   idents: Ident[];
+
   /** null for root scope in a module */
   parent: Scope | null;
+
+  /** null for root scope in a module */
   children: Scope[];
+
+  /** @if conditions for conditionally translating this scope */
+  ifAttributes?: IfAttribute[];
 }
 
 export function resetScopeIds() {
