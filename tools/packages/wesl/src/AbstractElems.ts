@@ -55,14 +55,6 @@ export type TerminalElem =
   | RefIdentElem
   | TextElem;
 
-export type GlobalDeclarationElem =
-  | AliasElem
-  | ConstElem
-  | FnElem
-  | GlobalVarElem
-  | OverrideElem
-  | StructElem;
-
 export type DeclarationElem = GlobalDeclarationElem | FnParamElem | VarElem;
 
 export interface AbstractElemBase {
@@ -87,6 +79,14 @@ export interface ModuleElem extends ElemWithContentsBase {
   /** declarations found in this module */
   declarations: GlobalDeclarationElem[];
 }
+
+export type GlobalDeclarationElem =
+  | AliasElem
+  | ConstElem
+  | FnElem
+  | GlobalVarElem
+  | OverrideElem
+  | StructElem;
 
 /* ------   Terminal Elements  (don't contain other elements)  ------   */
 

@@ -69,7 +69,7 @@ import {
   opt_template_list,
   simple_component_reference,
   type_specifier,
-} from "./WeslExpression.ts";
+} from "./WeslExpressionGrammar.ts";
 import { weslExtension, WeslToken } from "./WeslStream.ts";
 import {
   DiagnosticDirective,
