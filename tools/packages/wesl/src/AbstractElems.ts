@@ -187,30 +187,36 @@ export interface AttributeElem extends ElemWithContentsBase {
   kind: "attribute";
   attribute: Attribute;
 }
+
 export type Attribute =
   | StandardAttribute
   | InterpolateAttribute
   | BuiltinAttribute
   | DiagnosticAttribute
   | IfAttribute;
+
 export interface StandardAttribute {
   kind: "attribute";
   name: string;
   params: UnknownExpressionElem[];
 }
+
 export interface InterpolateAttribute {
   kind: "@interpolate";
   params: NameElem[];
 }
+
 export interface BuiltinAttribute {
   kind: "@builtin";
   param: NameElem;
 }
+
 export interface DiagnosticAttribute {
   kind: "@diagnostic";
   severity: NameElem;
   rule: [NameElem, NameElem | null];
 }
+
 export interface IfAttribute {
   kind: "@if";
   param: TranslateTimeExpressionElem;
@@ -256,24 +262,28 @@ export interface ParenthesizedExpression {
   kind: "parenthesized-expression";
   expression: ExpressionElem;
 }
+
 /** `foo[expr]` */
 export interface ComponentExpression {
   kind: "component-expression";
   base: ExpressionElem;
   access: ExpressionElem;
 }
+
 /** `foo.member` */
 export interface ComponentMemberExpression {
   kind: "component-member-expression";
   base: ExpressionElem;
   access: NameElem;
 }
+
 /** `+foo` */
 export interface UnaryExpression {
   kind: "unary-expression";
   operator: UnaryOperator;
   expression: ExpressionElem;
 }
+
 /** `foo + bar` */
 export interface BinaryExpression {
   kind: "binary-expression";
@@ -281,16 +291,19 @@ export interface BinaryExpression {
   left: ExpressionElem;
   right: ExpressionElem;
 }
+
 /** `foo(arg, arg)` */
 export interface FunctionCallExpression {
   kind: "call-expression";
   function: RefIdentElem;
   arguments: ExpressionElem[];
 }
+
 export interface UnaryOperator {
   value: "!" | "&" | "*" | "-" | "~";
   span: Span;
 }
+
 export interface BinaryOperator {
   value:
     | ("||" | "&&" | "+" | "-" | "*" | "/" | "%" | "==")
@@ -309,10 +322,12 @@ export interface DiagnosticDirective {
   severity: NameElem;
   rule: [NameElem, NameElem | null];
 }
+
 export interface EnableDirective {
   kind: "enable";
   extensions: NameElem[];
 }
+
 export interface RequiresDirective {
   kind: "requires";
   extensions: NameElem[];
