@@ -14,6 +14,7 @@ import { WeslAST } from "./ParseWESL.ts";
 import { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
 import { filterMap, mapValues } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
+import { ImportElem } from "./parse/ImportElems.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 
@@ -22,10 +23,7 @@ export interface WeslJsPlugin {
 }
 
 export interface TransformedAST
-  extends Pick<
-    WeslAST,
-    "srcModule" | "imports" | "directives" | "declarations"
-  > {
+  extends Pick<WeslAST, "srcModule" | "moduleElem"> {
   globalNames: Set<string>;
   notableElems: Record<string, AbstractElem[]>;
 }
@@ -197,7 +195,12 @@ function applyTransformPlugins(
   const { moduleElem, srcModule } = rootModule;
 
   // for now only transform the root module
-  const startAst = { moduleElem, srcModule, globalNames, notableElems: {} };
+  const startAst: TransformedAST = {
+    moduleElem,
+    srcModule,
+    globalNames,
+    notableElems: {},
+  };
   const plugins = config?.plugins ?? [];
   const transforms = filterMap(plugins, plugin => plugin.transform);
   const transformedAst = transforms.reduce(

@@ -8,8 +8,7 @@ import { repeatPlus } from "mini-parse";
 function expectParseFail(src: string): void {
   withLogSpy(() => {
     const result = testAppParse(repeatPlus(import_statement), src);
-    expect(result.parsed).not.toBe(null);
-    expect(result.parsed!.value).toEqual([]); // TODO tighten test, shouldn't parse
+    expect(result.parsed).toBe(null);
   });
 }
 

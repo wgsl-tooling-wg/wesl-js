@@ -3,10 +3,13 @@ import { LineWrapper } from "./LineWrapper.ts";
 
 /** A debugging print of the scope tree with identifiers in nested brackets */
 export function scopeToString(scope: Scope, indent = 0): string {
-  const { children } = scope;
-  let childStrings: string[] = [];
-  if (children.length)
-    childStrings = children.map(c => scopeToString(c, indent + 2));
+  const str = new LineWrapper(indent);
+  scopeToStringInner(scope, str);
+  return str.print();
+}
+
+function scopeToStringInner(scope: Scope, str: LineWrapper): void {
+  str.add("{ ");
 
   // list of identifiers, with decls prefixed with '%'
   const identStrings = scope.idents.map(({ kind, originalName }) => {
@@ -14,28 +17,21 @@ export function scopeToString(scope: Scope, indent = 0): string {
     return `${prefix}${originalName}`;
   });
 
-  const str = new LineWrapper(indent);
-  str.add("{ ");
-
   const last = identStrings.length - 1;
   identStrings.forEach((s, i) => {
     const element = i < last ? s + ", " : s;
     str.add(element);
   });
 
-  if (childStrings.length) {
-    str.nl();
-    str.addBlock(childStrings.join("\n"));
+  for (const child of scope.children) {
+    scopeToStringInner(child, str.indentedBlock(2));
   }
-
-  if (str.oneLine) {
-    str.add(" }");
-  } else {
-    if (!childStrings.length) str.nl();
+  if (scope.children.length > 0) {
+    str.add("\n");
     str.add("}");
+  } else {
+    str.add(" }");
   }
-
-  return str.result;
 }
 
 export function identToString(ident?: Ident): string {

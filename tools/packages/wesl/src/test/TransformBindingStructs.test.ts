@@ -135,7 +135,7 @@ test("lower binding structs", () => {
   const tAst = { ...rootAst, globalNames, notableElems: {} };
   const lowered = lowerBindingStructs(tAst);
 
-  const loweredAst = astToString(lowered);
+  const loweredAst = astToString(lowered.moduleElem);
   expect(loweredAst).toMatchInlineSnapshot(`
     "module
       synthetic '@group(0) @binding(0) var<storage, read_write> particles : array<f32>;

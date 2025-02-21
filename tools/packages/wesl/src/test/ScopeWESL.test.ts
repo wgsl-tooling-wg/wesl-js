@@ -267,18 +267,16 @@ test("larger example", () => {
       { u32 }
       { array, f32 }
       { %coord, vec3u, buf_in, %offset, coord, coord, ubo, 
-        buf_out, offset, textureLoad, tex_in, vec2i, coord
-      }
+        buf_out, offset, textureLoad, tex_in, vec2i, coord }
       { %coord, vec3u, all, coord, vec2u, textureDimensions, 
         tex_out
         { %dst_offset, coord, coord, ubo, %src_offset, coord, 
           coord, ubo, %a, buf_in, src_offset, %b, buf_in, 
           src_offset, %c, buf_in, src_offset, ubo, %d, buf_in, 
           src_offset, ubo, %sum, dot, vec4f, a, b, c, d, vec4f, 
-          buf_out, dst_offset, sum, %probabilities, vec4f, a, a, 
-          b, a, b, c, sum, max, sum, textureStore, tex_out, 
-          vec2i, coord, probabilities
-        }
+          buf_out, dst_offset, sum, %probabilities, vec4f, a, 
+          a, b, a, b, c, sum, max, sum, textureStore, tex_out, 
+          vec2i, coord, probabilities }
       }
     }"
   `);

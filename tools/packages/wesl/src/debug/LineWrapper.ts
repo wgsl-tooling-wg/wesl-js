@@ -1,67 +1,74 @@
-/** debug utility for constructing strings that wrap at a fixed column width
- * text beyond the column width is wrapped to start on the next line
- */
-export class LineWrapper {
-  #fragments: string[] = [];
-  #column = 0;
-  #spc: string;
-  #oneLine = true;
-  #isHanging = false;
-  #hangingSpc: string;
+type IndentedBlock = {
+  indent: number;
+  text: (string | IndentedBlock)[];
+};
 
-  constructor(
-    readonly indent = 0,
-    readonly maxWidth = 60,
-    readonly hangingIndent = 2,
-  ) {
-    this.#spc = " ".repeat(indent);
-    this.#hangingSpc = " ".repeat(hangingIndent);
+export class LineWrapper {
+  block: IndentedBlock;
+
+  constructor(indent: number) {
+    this.block = {
+      indent,
+      text: [],
+    };
+  }
+
+  indentedBlock(indent: number): LineWrapper {
+    const newWrapper = new LineWrapper(indent);
+    this.block.text.push(newWrapper.block);
+    return newWrapper;
   }
 
   /** add a new line to the constructed string */
   nl() {
-    this.#fragments.push("\n");
-    this.#column = 0;
-    this.#oneLine = false;
-    this.#isHanging = false;
+    this.block.text.push("\n");
   }
 
   /** add a string, wrapping to the next line if necessary */
   add(s: string) {
-    if (this.#column + firstLineLength(s) > this.maxWidth) {
-      this.hangingNl();
-    }
-    if (this.#column === 0) {
-      this.#fragments.push(this.#spc);
-      if (this.#isHanging) {
-        this.#fragments.push(this.#hangingSpc);
-      }
-      this.#column = this.indent;
-    }
-    this.#fragments.push(s);
-    this.#column += s.length;
-  }
-
-  /** add a raw block of text with no wrapping */
-  addBlock(s: string, andNewLine = true) {
-    this.#fragments.push(s);
-    if (andNewLine) this.nl();
+    this.block.text.push(s);
   }
 
   /** @return the constructed string */
-  get result(): string {
-    return this.#fragments.join("");
+  print(maxWidth = 60, hangingIndent = 2): string {
+    return printBlock(this.block, maxWidth, hangingIndent);
   }
+}
+function printBlock(
+  block: IndentedBlock,
+  maxWidth = 60,
+  hangingIndent = 2,
+): string {
+  let result = "";
+  const spc = " ".repeat(block.indent);
+  const hangingSpc = " ".repeat(hangingIndent);
+  for (const s of block.text) {
+    if (typeof s === "string") {
+      const column = getColumn(result);
+      if (column + firstLineLength(s) > maxWidth) {
+        result += "\n";
+        result += spc;
+        result += hangingSpc;
+      } else if (column === 0) {
+        result += spc;
+      }
+      result += s;
+    } else {
+      // A nested block
+      result += "\n";
+      result += printBlock(
+        { indent: block.indent + s.indent, text: s.text },
+        maxWidth,
+        hangingIndent,
+      );
+    }
+  }
+  return result;
+}
 
-  /** true if the result contains no newlines */
-  get oneLine(): boolean {
-    return this.#oneLine;
-  }
-
-  private hangingNl() {
-    this.nl();
-    this.#isHanging = true;
-  }
+function getColumn(text: string): number {
+  let afterLastNewline = text.lastIndexOf("\n") + 1;
+  return text.length - afterLastNewline;
 }
 
 function firstLineLength(s: string): number {

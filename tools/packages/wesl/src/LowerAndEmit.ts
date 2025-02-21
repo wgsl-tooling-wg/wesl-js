@@ -5,6 +5,7 @@ import {
   ContainerElem,
   DeclIdentElem,
   ExpressionElem,
+  ModuleElem,
   NameElem,
   RefIdentElem,
   SyntheticElem,
@@ -44,12 +45,8 @@ function lowerAndEmitRecursive(
   validElems.forEach(e => lowerAndEmitElem(e, emitContext));
 }
 
-export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
+function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
   switch (e.kind) {
-    // import statements are dropped from from emitted text
-    case "import":
-      return;
-
     // terminal elements copy strings to the output
     case "text":
       return emitText(e, ctx);
@@ -69,13 +66,15 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "var":
     case "typeDecl":
     case "let":
-    case "module":
     case "member":
     case "memberRef":
     case "expression":
     case "type":
     case "stuff":
       return emitContents(e, ctx);
+
+    case "module":
+      return emitModule(e, ctx);
 
     // root level container elements get some extra newlines to make the output prettier
     case "fn":
@@ -93,14 +92,13 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
 
     case "attribute":
       return emitAttribute(e, ctx);
-    case "directive":
-      return emitDirective(e, ctx);
 
     default:
       assertUnreachable(e);
   }
 }
 
+// TODO: Remove this (once we've got our entire AST parsing)
 export function emitText(e: TextElem, ctx: EmitContext): void {
   ctx.srcBuilder.addCopy(e.span);
 }
@@ -115,6 +113,14 @@ export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
 }
 
 export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
+  elem.contents.forEach(e => lowerAndEmitElem(e, ctx));
+}
+
+export function emitModule(elem: ModuleElem, ctx: EmitContext): void {
+  elem.directives.forEach(e => emitDirective(e, ctx));
+  elem.declarations.forEach(e => lowerAndEmitElem(e, ctx));
+
+  // TODO: Remove
   elem.contents.forEach(e => lowerAndEmitElem(e, ctx));
 }
 
@@ -215,17 +221,17 @@ function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
   const { kind } = directive;
   if (kind === "diagnostic") {
     ctx.srcBuilder.add(
-      `diagnostic${diagnosticControlToString(directive.severity, directive.rule)}`,
+      `diagnostic${diagnosticControlToString(directive.severity, directive.rule)};`,
       e.span,
     );
   } else if (kind === "enable") {
     ctx.srcBuilder.add(
-      `enable${directive.extensions.map(v => v.name).join(", ")}`,
+      `enable ${directive.extensions.map(v => v.name).join(", ")};`,
       e.span,
     );
   } else if (kind === "requires") {
     ctx.srcBuilder.add(
-      `requires${directive.extensions.map(v => v.name).join(", ")}`,
+      `requires ${directive.extensions.map(v => v.name).join(", ")};`,
       e.span,
     );
   } else {

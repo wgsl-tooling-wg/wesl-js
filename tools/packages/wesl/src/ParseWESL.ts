@@ -21,13 +21,6 @@ export interface WeslAST {
   /** source text for this module */
   srcModule: SrcModule;
 
-  /** imports found in this module */
-  imports: ImportElem[];
-
-  directives: DirectiveElem[];
-
-  declarations: GlobalDeclarationElem[];
-
   /** root module element */
   moduleElem: ModuleElem;
 
@@ -91,9 +84,6 @@ export function blankWeslParseState(srcModule: SrcModule): WeslParseState {
     context: { scope: rootScope, openElems: [] },
     stable: {
       srcModule,
-      imports: [],
-      directives: [],
-      declarations: [],
       rootScope,
       moduleElem,
     },
@@ -114,7 +104,9 @@ export function syntheticWeslParseState(): WeslParseState {
 export function flatImports(ast: BindingAST): FlatImport[] {
   if (ast._flatImports) return ast._flatImports;
 
-  const flat = ast.imports.flatMap(t => flattenTreeImport(t.imports));
+  const flat = ast.moduleElem.imports.flatMap(t =>
+    flattenTreeImport(t.imports),
+  );
   ast._flatImports = flat;
   return flat;
 }

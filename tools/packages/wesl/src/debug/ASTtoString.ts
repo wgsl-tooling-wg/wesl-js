@@ -1,8 +1,11 @@
+import { Module } from "node:vm";
 import { assertUnreachable } from "../../../mini-parse/src/Assertions.ts";
 import {
   AbstractElem,
   Attribute,
+  AttributeElem,
   FnElem,
+  ModuleElem,
   StuffElem,
   TypedDeclElem,
   TypeRefElem,
@@ -15,34 +18,49 @@ import {
 } from "../LowerAndEmit.ts";
 import {
   DiagnosticDirective,
+  DirectiveElem,
   EnableDirective,
   RequiresDirective,
 } from "../parse/DirectiveElem.ts";
-import { WeslAST } from "../ParseWESL.ts";
+import { ImportElem } from "../parse/ImportElems.ts";
 import { importToString } from "./ImportToString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 
 const maxLineLength = 150;
 
-export function astToString(elem: WeslAST, indent = 0): string {
-  return globalDeclToString(elem.moduleElem);
+export function astToString(ast: ModuleElem, indent = 0): string {
+  const str = new LineWrapper(indent);
+  str.add("module");
+  for (const importElem of ast.imports) {
+    printImportElem(importElem, str.indentedBlock(2));
+  }
+  for (const directive of ast.directives) {
+    printDirectiveElem(directive, str.indentedBlock(2));
+  }
+  for (const decl of ast.declarations) {
+    printGlobalDecl(decl, str.indentedBlock(2));
+  }
+
+  // TODO: Remove this
+  for (const decl of ast.contents) {
+    printGlobalDecl(decl, str.indentedBlock(2));
+  }
+  return str.print(maxLineLength);
 }
 
 export function globalDeclToString(elem: AbstractElem, indent = 0): string {
+  const str = new LineWrapper(indent);
+  printGlobalDecl(elem, str);
+  return str.print(maxLineLength);
+}
+
+function printGlobalDecl(elem: AbstractElem, str: LineWrapper): void {
   const { kind } = elem;
-  const str = new LineWrapper(indent, maxLineLength);
   str.add(kind);
   addElemFields(elem, str);
-  let childStrings: string[] = [];
   if ("contents" in elem) {
-    childStrings = elem.contents.map(e => globalDeclToString(e, indent + 2));
+    elem.contents.forEach(e => printGlobalDecl(e, str.indentedBlock(2)));
   }
-  if (childStrings.length) {
-    str.nl();
-    str.addBlock(childStrings.join("\n"), false);
-  }
-
-  return str.result;
 }
 
 function addElemFields(elem: AbstractElem, str: LineWrapper): void {
@@ -109,8 +127,6 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     }
   } else if (kind === "synthetic") {
     str.add(` '${elem.text}'`);
-  } else if (kind === "import") {
-    str.add(" " + importToString(elem.imports));
   } else if (kind === "ref") {
     str.add(" " + elem.ident.originalName);
   } else if (kind === "typeDecl") {
@@ -126,10 +142,19 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     // TODO: This branch shouldn't exist
   } else if (kind === "stuff") {
     // Ignore
-  } else if (kind === "directive") {
-    addDirective(elem.directive, str);
   } else {
     assertUnreachable(kind);
+  }
+}
+
+function printImportElem(elem: ImportElem, str: LineWrapper) {
+  printAttributes(elem.attributes, str);
+  str.add(importToString(elem.imports));
+}
+
+function printAttributes(elems: AttributeElem[], str: LineWrapper) {
+  for (const attribute of elems) {
+    addAttribute(attribute.attribute, str);
   }
 }
 
@@ -197,15 +222,18 @@ function addFnFields(elem: FnElem, str: LineWrapper) {
   }
 }
 
-function addDirective(
+function printDirectiveElem(elem: DirectiveElem, str: LineWrapper) {
+  printAttributes(elem.attributes, str);
+  printDirective(elem.directive, str);
+}
+
+function printDirective(
   elem: DiagnosticDirective | EnableDirective | RequiresDirective,
   str: LineWrapper,
 ) {
   const { kind } = elem;
   if (kind === "diagnostic") {
-    str.add(
-      ` diagnostic${diagnosticControlToString(elem.severity, elem.rule)}`,
-    );
+    str.add(`diagnostic${diagnosticControlToString(elem.severity, elem.rule)}`);
   } else if (kind === "enable") {
     str.add(` enable ${elem.extensions.map(v => v.name).join(", ")}`);
   } else if (kind === "requires") {

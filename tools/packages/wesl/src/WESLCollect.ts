@@ -364,11 +364,22 @@ export const collectModule = collectElem(
     const imports = cc.tags.import ?? ([] as ImportElem[]);
     const directives = cc.tags.directive ?? ([] as DirectiveElem[]);
     const ccComplete = { ...cc, start: 0, end: cc.src.length }; // force module to cover entire source despite ws skipping
-    const moduleElem: ModuleElem = withTextCover(openElem, ccComplete);
+    openElem.contents.unshift(...[...imports, ...directives]); // TODO: Remove this hack to get withTextCover to not cover the imports & directives
+    const moduleElem: ModuleElem = withTextCover(
+      {
+        ...openElem,
+        imports,
+        directives,
+        declarations: [], // TODO: Fill in the declarations
+      },
+      ccComplete,
+    );
+    moduleElem.contents = moduleElem.contents.filter(
+      v => (v.kind as any) !== "import" && (v.kind as any) !== "directive",
+    ); // TODO: Remove this hack to get withTextCover to not cover the imports & directives
+
     const weslState: StableState = cc.app.stable;
     weslState.moduleElem = moduleElem;
-    weslState.imports = imports;
-    weslState.directives = directives;
     return moduleElem;
   },
 );

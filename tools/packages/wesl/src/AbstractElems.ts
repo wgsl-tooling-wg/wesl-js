@@ -1,5 +1,7 @@
-import { Span } from "mini-parse";
-import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
+import type { Span } from "mini-parse";
+import type { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
+import type { ImportElem } from "./parse/ImportElems.ts";
+import type { DirectiveElem } from "./parse/DirectiveElem.ts";
 
 /**
  * Structures to describe the 'interesting' parts of a WESL source file.
@@ -70,6 +72,20 @@ export interface AbstractElemBase {
 
 export interface ElemWithContentsBase extends AbstractElemBase {
   contents: AbstractElem[];
+}
+
+/** a wesl module */
+export interface ModuleElem extends ElemWithContentsBase {
+  kind: "module";
+
+  /** imports found in this module */
+  imports: ImportElem[];
+
+  /** directives found in this module */
+  directives: DirectiveElem[];
+
+  /** declarations found in this module */
+  declarations: GlobalDeclarationElem[];
 }
 
 /* ------   Terminal Elements  (don't contain other elements)  ------   */
@@ -257,11 +273,6 @@ export interface BinaryOperator {
 export interface GlobalVarElem extends ElemWithContentsBase {
   kind: "gvar";
   name: TypedDeclElem;
-}
-
-/** an entire file */
-export interface ModuleElem extends ElemWithContentsBase {
-  kind: "module";
 }
 
 /** an override declaration */

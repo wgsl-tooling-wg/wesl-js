@@ -6,7 +6,7 @@ import {
 } from "../parse/ImportElems";
 
 export function importToString(tree: ImportStatement): string {
-  return importToStringImpl(tree) + ";";
+  return "import " + importToStringImpl(tree) + ";";
 }
 
 function importToStringImpl(tree: ImportStatement): string {

@@ -9,7 +9,7 @@ test("parse fn with line comment", () => {
     fn binaryOp() { // binOpImpl
     }`;
   const parsed = parseWESL(src);
-  expect(astToString(parsed)).toMatchInlineSnapshot(`
+  expect(astToString(parsed.moduleElem)).toMatchInlineSnapshot(`
     "module
       text '
         '

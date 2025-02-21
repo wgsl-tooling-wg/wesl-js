@@ -82,7 +82,7 @@ async function linkNormally(paths: string[]): Promise<void> {
     Object.entries(registry.modules).forEach(([modulePath, ast]) => {
       log(`---\n${modulePath}`);
       log(`\n->ast`);
-      log(astToString(ast));
+      log(astToString(ast.moduleElem));
       log(`\n->scope`);
       log(scopeToString(ast.rootScope));
       log();
