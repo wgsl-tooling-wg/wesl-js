@@ -12,6 +12,7 @@ import {
   FnParamElem,
   GlobalVarElem,
   GrammarElem,
+  IfAttribute,
   ImportElem,
   LetElem,
   ModuleElem,
@@ -35,6 +36,7 @@ import {
   WeslParseState,
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyScope, RefIdent, Scope } from "./Scope.ts";
+import { filterMap } from "./Util.ts";
 
 export function importElem(cc: CollectContext) {
   const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing
@@ -142,6 +144,8 @@ function startScope(cc: CollectContext) {
 function completeScope(cc: CollectContext): Scope {
   const weslContext = cc.app.context as WeslParseContext;
   const completedScope = weslContext.scope;
+  const ifAttributes = collectIfAttributes(cc);
+
   // srcLog(cc.src, cc.start, "completeScope", completedScope.id);
   // console.log(scopeIdentTree(completedScope));
   const { parent } = completedScope;
@@ -151,7 +155,17 @@ function completeScope(cc: CollectContext): Scope {
     const { idents } = completedScope;
     console.log("ERR: completeScope, no parent scope", { idents });
   }
+  completedScope.ifAttributes = ifAttributes;
   return completedScope;
+}
+
+/** return @if attributes from the 'attribute' tag */
+function collectIfAttributes(cc: CollectContext): IfAttribute[] | undefined {
+  const attributes = cc.tags.attribute as AttributeElem[] | undefined;
+  if (!attributes) return;
+  return filterMap(attributes, a =>
+    a.attribute.kind === "@if" ? a.attribute : undefined,
+  );
 }
 
 // prettier-ignore
