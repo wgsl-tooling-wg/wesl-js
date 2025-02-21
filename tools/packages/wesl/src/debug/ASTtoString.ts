@@ -154,6 +154,13 @@ function addAttribute(attr: Attribute, str: LineWrapper) {
   }
 }
 
+/** @return string representation of an attribute (for test/debug) */
+export function attributeToString(attr: Attribute): string {
+  const str = new LineWrapper(0, maxLineLength);
+  addAttribute(attr, str);
+  return str.result;
+}
+
 function addTypedDeclIdent(elem: TypedDeclElem, str: LineWrapper) {
   const { decl, typeRef } = elem;
   str.add(" %" + decl.ident.originalName);

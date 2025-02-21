@@ -1,20 +1,24 @@
 import { Ident, Scope } from "../Scope.ts";
+import { attributeToString } from "./ASTtoString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 
 /** A debugging print of the scope tree with identifiers in nested brackets */
 export function scopeToString(scope: Scope, indent = 0): string {
-  const { children } = scope;
+  const { children, idents, ifAttributes = [] } = scope;
   let childStrings: string[] = [];
   if (children.length)
     childStrings = children.map(c => scopeToString(c, indent + 2));
 
   // list of identifiers, with decls prefixed with '%'
-  const identStrings = scope.idents.map(({ kind, originalName }) => {
+  const identStrings = idents.map(({ kind, originalName }) => {
     const prefix = kind === "decl" ? "%" : "";
     return `${prefix}${originalName}`;
   });
 
+  const attrStrings = ifAttributes.map(a => attributeToString(a)).join(" ");
+
   const str = new LineWrapper(indent);
+  if (attrStrings) str.add(attrStrings + " ");
   str.add("{ ");
 
   const last = identStrings.length - 1;
