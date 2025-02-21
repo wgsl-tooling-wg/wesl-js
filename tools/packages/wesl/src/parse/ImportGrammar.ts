@@ -18,7 +18,7 @@ import {
 } from "mini-parse";
 
 import { assertUnreachable } from "../Assertions.js";
-import { word } from "./WeslBaseGrammar.js";
+import { word } from "./BaseGrammar.js";
 import { WeslToken } from "./WeslStream.js";
 import {
   ImportSegment,

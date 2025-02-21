@@ -26,20 +26,13 @@ import {
   yes,
 } from "mini-parse";
 import {
-  BinaryExpression,
-  BinaryOperator,
   BuiltinAttribute,
   DiagnosticAttribute,
-  ExpressionElem,
   IfAttribute,
   InterpolateAttribute,
-  Literal,
   NameElem,
-  ParenthesizedExpression,
   StandardAttribute,
   TranslateTimeExpressionElem,
-  UnaryExpression,
-  UnaryOperator,
   UnknownExpressionElem,
 } from "../AbstractElems.ts";
 import {
@@ -60,7 +53,7 @@ import {
   typedDecl,
 } from "../WESLCollect.ts";
 import { import_statement } from "./ImportGrammar.ts";
-import { qualified_ident, word } from "./WeslBaseGrammar.ts";
+import { qualified_ident, word } from "./BaseGrammar.ts";
 import {
   argument_expression_list,
   component_or_swizzle,
@@ -68,7 +61,7 @@ import {
   opt_template_list,
   simple_component_reference,
   type_specifier,
-} from "./WeslExpressionGrammar.ts";
+} from "./ExpressionGrammar.ts";
 import { weslExtension, WeslToken } from "./WeslStream.ts";
 import {
   DiagnosticDirective,
@@ -76,6 +69,15 @@ import {
   EnableDirective,
   RequiresDirective,
 } from "./DirectiveElem.ts";
+import {
+  BinaryExpression,
+  BinaryOperator,
+  ExpressionElem,
+  Literal,
+  ParenthesizedExpression,
+  UnaryExpression,
+  UnaryOperator,
+} from "./ExpressionElem.ts";
 
 const name = tokenKind("word").map(makeName);
 
