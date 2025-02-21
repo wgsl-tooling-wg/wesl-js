@@ -126,10 +126,10 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   }
 }
 
-function addAttribute(elem: Attribute, str: LineWrapper) {
-  const { kind } = elem;
+function addAttribute(attr: Attribute, str: LineWrapper) {
+  const { kind } = attr;
   if (kind === "attribute") {
-    const { name, params } = elem;
+    const { name, params } = attr;
     str.add(" @" + name);
     if (params.length > 0) {
       str.add("(");
@@ -137,18 +137,18 @@ function addAttribute(elem: Attribute, str: LineWrapper) {
       str.add(")");
     }
   } else if (kind === "@builtin") {
-    str.add(` @builtin(${elem.param.name})`);
+    str.add(` @builtin(${attr.param.name})`);
   } else if (kind === "@diagnostic") {
     str.add(
-      ` @diagnostic${diagnosticControlToString(elem.severity, elem.rule)}`,
+      ` @diagnostic${diagnosticControlToString(attr.severity, attr.rule)}`,
     );
   } else if (kind === "@if") {
     str.add(" @if");
     str.add("(");
-    str.add(expressionToString(elem.param.expression));
+    str.add(expressionToString(attr.param.expression));
     str.add(")");
   } else if (kind === "@interpolate") {
-    str.add(` @interpolate(${elem.params.map(v => v.name).join(", ")})`);
+    str.add(` @interpolate(${attr.params.map(v => v.name).join(", ")})`);
   } else {
     assertUnreachable(kind);
   }
