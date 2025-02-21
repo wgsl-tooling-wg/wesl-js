@@ -25,21 +25,27 @@ export type ManglerFn = (
 /**
  * Construct a globally unique name based on the declaration
  * module path separated by underscores.
+ * Corresponds to "Underscore-count mangling" from [NameMangling.md](https://github.com/wgsl-tooling-wg/wesl-spec/blob/main/NameMangling.md)
  */
 export function underscoreMangle(
   decl: DeclIdent,
   srcModule: SrcModule,
 ): string {
   const { modulePath } = srcModule;
-  const escaped = modulePath.replaceAll("_", "__");
-  const separated = escaped.replaceAll("::", "_");
-  const mangled = separated + "_" + decl.originalName.replaceAll("_", "__");
-  return mangled;
+  return [...modulePath.split("::"), decl.originalName]
+    .map(v => {
+      const underscoreCount = (v.match(/_/g) ?? []).length;
+      if (underscoreCount > 0) {
+        return "_" + underscoreCount + v;
+      } else {
+        return v;
+      }
+    })
+    .join("_");
 }
 
 /**
  * Construct a globally unique name based on the declaration
- * module path separated by underscores.
  */
 export function lengthPrefixMangle(
   decl: DeclIdent,
