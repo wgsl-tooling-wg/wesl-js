@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { BindingStructElem, StructElem } from "../AbstractElems.ts";
-import { astToString } from "../debug/ASTtoString.ts";
+import { globalDeclToString } from "../debug/ASTtoString.ts";
 import {
   bindingGroupLayoutTs,
   reportBindingStructsPlugin,
@@ -31,7 +31,7 @@ test("extract binding struct", () => {
   expect(found).toBeDefined();
   const s = found![0];
   expect(s).toBeDefined();
-  expect(astToString(s)).toMatchInlineSnapshot(`
+  expect(globalDeclToString(s)).toMatchInlineSnapshot(`
     "struct Bindings
       text 'struct '
       decl %Bindings
@@ -72,7 +72,7 @@ test("extract binding struct", () => {
 
   // verify struct members
   const members = s.members.filter(e => e.kind === "member");
-  const membersAst = members.map(e => astToString(e)).join("\n");
+  const membersAst = members.map(e => globalDeclToString(e)).join("\n");
   expect(membersAst).toMatchInlineSnapshot(
     `
     "member @group('0') @binding('0') particles: ptr<storage, array<f32>, read_write>

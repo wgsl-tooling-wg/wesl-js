@@ -30,16 +30,12 @@ import {
   BinaryOperator,
   BuiltinAttribute,
   DiagnosticAttribute,
-  DiagnosticDirective,
-  DirectiveElem,
-  EnableDirective,
   ExpressionElem,
   IfAttribute,
   InterpolateAttribute,
   Literal,
   NameElem,
   ParenthesizedExpression,
-  RequiresDirective,
   StandardAttribute,
   TranslateTimeExpressionElem,
   TranslateTimeFeature,
@@ -64,7 +60,7 @@ import {
   scopeCollect,
   typedDecl,
 } from "../WESLCollect.ts";
-import { weslImports } from "./ImportGrammar.ts";
+import { import_statement } from "./ImportGrammar.ts";
 import { qualified_ident, word } from "./WeslBaseGrammar.ts";
 import {
   argument_expression_list,
@@ -75,6 +71,12 @@ import {
   type_specifier,
 } from "./WeslExpression.ts";
 import { weslExtension, WeslToken } from "./WeslStream.ts";
+import {
+  DiagnosticDirective,
+  DirectiveElem,
+  EnableDirective,
+  RequiresDirective,
+} from "./DirectiveElem.ts";
 
 const name = tokenKind("word").map(makeName);
 
@@ -501,6 +503,7 @@ const global_directive = span(
 ).map(
   ({ value: directive, span }): DirectiveElem => ({
     kind: "directive",
+    attributes: [], // TODO: Parse attributes and fill this in
     directive: directive,
     span,
   }),
@@ -525,8 +528,8 @@ const global_decl = tagScope(
 
 // prettier-ignore
 export const weslRoot = seq(
-    weslExtension(weslImports),
-    repeat(global_directive),
+    weslExtension(repeat(import_statement.ptag("import"))),
+    repeat(global_directive.ptag("directive")),
     repeat(global_decl),
     req(eof()),
   )                                 .collect(collectModule, "collectModule");

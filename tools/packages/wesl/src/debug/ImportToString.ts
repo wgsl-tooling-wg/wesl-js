@@ -3,7 +3,7 @@ import {
   ImportCollection,
   ImportItem,
   ImportStatement,
-} from "../AbstractElems";
+} from "../parse/ImportElems";
 
 export function importToString(tree: ImportStatement): string {
   return importToStringImpl(tree) + ";";

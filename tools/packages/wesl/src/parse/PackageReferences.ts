@@ -1,8 +1,9 @@
-import { ParserInit } from "mini-parse";
+import { ParserInit, repeat } from "mini-parse";
 import { blankWeslParseState } from "../ParseWESL.ts";
 import { SrcModule } from "../Scope.ts";
-import { weslImports } from "./ImportGrammar.ts";
+import { import_statement } from "./ImportGrammar.ts";
 import { WeslStream } from "./WeslStream.ts";
+import { ImportElem } from "./ImportElems.ts";
 
 /** Parse a wesl src string to find the names of referenced libraries.
  *
@@ -21,11 +22,12 @@ export function packageReferences(src: string): string[] {
   const init: ParserInit = { stream, appState };
 
   // parse for import statements only at the top of the file
-  weslImports.parse(init);
+  let imports: ImportElem[] = (
+    repeat(import_statement).parse(init) ?? { value: [] }
+  ).value;
 
   // filter for any import statement references to libraries
-  const imports = appState.stable.imports;
-  const importStarts = imports.map(imp => imp.segments[0].name); // first segment of import path
+  const importStarts = imports.map(imp => imp.imports.segments[0].name); // first segment of import path
   const packages = importStarts.filter(
     name => name !== "super" && name !== "package",
   );

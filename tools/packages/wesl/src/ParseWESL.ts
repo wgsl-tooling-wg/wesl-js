@@ -1,10 +1,12 @@
 import { AppState, ParserInit, SrcMap } from "mini-parse";
-import { ImportStatement, ModuleElem } from "./AbstractElems.ts";
+import { GlobalDeclarationElem, ModuleElem } from "./AbstractElems.ts";
 import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
 import { emptyScope, resetScopeIds, Scope, SrcModule } from "./Scope.ts";
 import { OpenElem } from "./WESLCollect.ts";
+import { ImportElem } from "./parse/ImportElems.ts";
+import { DirectiveElem } from "./parse/DirectiveElem.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
@@ -19,14 +21,18 @@ export interface WeslAST {
   /** source text for this module */
   srcModule: SrcModule;
 
+  /** imports found in this module */
+  imports: ImportElem[];
+
+  directives: DirectiveElem[];
+
+  declarations: GlobalDeclarationElem[];
+
   /** root module element */
   moduleElem: ModuleElem;
 
   /** root scope for this module */
   rootScope: Scope;
-
-  /** imports found in this module */
-  imports: ImportStatement[];
 }
 
 /** an extended version of the AST */
@@ -83,7 +89,14 @@ export function blankWeslParseState(srcModule: SrcModule): WeslParseState {
   const moduleElem = null as any; // we'll fill this in later
   return {
     context: { scope: rootScope, openElems: [] },
-    stable: { srcModule, imports: [], rootScope, moduleElem },
+    stable: {
+      srcModule,
+      imports: [],
+      directives: [],
+      declarations: [],
+      rootScope,
+      moduleElem,
+    },
   };
 }
 
@@ -101,7 +114,7 @@ export function syntheticWeslParseState(): WeslParseState {
 export function flatImports(ast: BindingAST): FlatImport[] {
   if (ast._flatImports) return ast._flatImports;
 
-  const flat = ast.imports.flatMap(flattenTreeImport);
+  const flat = ast.imports.flatMap(t => flattenTreeImport(t.imports));
   ast._flatImports = flat;
   return flat;
 }

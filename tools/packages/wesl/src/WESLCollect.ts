@@ -12,7 +12,6 @@ import {
   FnParamElem,
   GlobalVarElem,
   GrammarElem,
-  ImportElem,
   LetElem,
   ModuleElem,
   NameElem,
@@ -35,14 +34,8 @@ import {
   WeslParseState,
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyScope, RefIdent, Scope } from "./Scope.ts";
-
-export function importElem(cc: CollectContext) {
-  const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing
-  for (const importElem of importElems) {
-    (cc.app.stable as StableState).imports.push(importElem.imports);
-    addToOpenElem(cc, importElem as AbstractElem);
-  }
-}
+import { ImportElem } from "./parse/ImportElems.ts";
+import { DirectiveElem } from "./parse/DirectiveElem.ts";
 
 /** add an elem to the .contents array of the currently containing element */
 function addToOpenElem(cc: CollectContext, elem: AbstractElem): void {
@@ -368,10 +361,14 @@ export function nameCollect(cc: CollectContext): NameElem {
 export const collectModule = collectElem(
   "module",
   (cc: CollectContext, openElem: PartElem<ModuleElem>) => {
+    const imports = cc.tags.import ?? ([] as ImportElem[]);
+    const directives = cc.tags.directive ?? ([] as DirectiveElem[]);
     const ccComplete = { ...cc, start: 0, end: cc.src.length }; // force module to cover entire source despite ws skipping
     const moduleElem: ModuleElem = withTextCover(openElem, ccComplete);
     const weslState: StableState = cc.app.stable;
     weslState.moduleElem = moduleElem;
+    weslState.imports = imports;
+    weslState.directives = directives;
     return moduleElem;
   },
 );

@@ -48,12 +48,10 @@ export type ExpressionElem =
   | FunctionCallExpression;
 
 export type TerminalElem =
-  | DirectiveElem
   | DeclIdentElem //
   | NameElem
   | RefIdentElem
-  | TextElem
-  | ImportElem;
+  | TextElem;
 
 export type GlobalDeclarationElem =
   | AliasElem
@@ -111,50 +109,6 @@ export interface DeclIdentElem extends AbstractElemBase {
   kind: DeclIdent["kind"];
   ident: DeclIdent;
   srcModule: SrcModule;
-}
-
-/** Holds an import statement, and has a span */
-export interface ImportElem extends AbstractElemBase {
-  kind: "import";
-  imports: ImportStatement;
-}
-
-/**
- * An import statement, which is tree shaped.
- * `import foo::bar::{baz, cat as neko};
- */
-export interface ImportStatement {
-  kind: "import-statement";
-  segments: ImportSegment[];
-  finalSegment: ImportCollection | ImportItem;
-}
-
-/**
- * A collection of import trees.
- * `{baz, cat as neko}`
- */
-export interface ImportSegment {
-  kind: "import-segment";
-  name: string;
-}
-
-/**
- * A primitive segment in an import statement.
- * `foo`
- */
-export interface ImportCollection {
-  kind: "import-collection";
-  subtrees: ImportStatement[];
-}
-
-/**
- * A renamed item at the end of an import statement.
- * `cat as neko`
- */
-export interface ImportItem {
-  kind: "import-item";
-  name: string;
-  as?: string;
 }
 
 /* ------   Synthetic element (for transformations, not produced by grammar) ------   */
@@ -297,25 +251,6 @@ export interface BinaryOperator {
     | ("!=" | "<" | "<=" | ">" | ">=" | "|" | "&" | "^")
     | ("<<" | ">>");
   span: Span;
-}
-
-export interface DirectiveElem extends AbstractElemBase {
-  kind: "directive";
-  directive: DiagnosticDirective | EnableDirective | RequiresDirective;
-}
-
-export interface DiagnosticDirective {
-  kind: "diagnostic";
-  severity: NameElem;
-  rule: [NameElem, NameElem | null];
-}
-export interface EnableDirective {
-  kind: "enable";
-  extensions: NameElem[];
-}
-export interface RequiresDirective {
-  kind: "requires";
-  extensions: NameElem[];
 }
 
 /** a global variable declaration (at the root level) */

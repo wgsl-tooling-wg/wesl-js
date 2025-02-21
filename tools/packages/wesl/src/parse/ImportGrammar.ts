@@ -5,30 +5,28 @@ import {
   or,
   Parser,
   preceded,
-  repeat,
   repeatPlus,
   req,
   seq,
   seqObj,
   span,
   Stream,
-  tagScope,
   terminated,
   tracing,
   withSepPlus,
   yes,
 } from "mini-parse";
-import type {
-  ImportCollection,
-  ImportElem,
-  ImportItem,
-  ImportSegment,
-  ImportStatement,
-} from "../AbstractElems.js";
+
 import { assertUnreachable } from "../Assertions.js";
-import { importElem } from "../WESLCollect.js";
 import { word } from "./WeslBaseGrammar.js";
 import { WeslToken } from "./WeslStream.js";
+import {
+  ImportSegment,
+  ImportCollection,
+  ImportItem,
+  ImportStatement,
+  ImportElem,
+} from "./ImportElems.js";
 
 function makeStatement(
   segments: ImportSegment[],
@@ -99,7 +97,7 @@ const import_relative = or(
   repeatPlus(terminated("super", "::").map(makeSegment)),
 );
 
-const import_statement = span(
+export const import_statement: Parser<Stream<WeslToken>, ImportElem> = span(
   delimited(
     "import",
     seqObj({
@@ -117,14 +115,10 @@ const import_statement = span(
 ).map(
   (v): ImportElem => ({
     kind: "import",
+    attributes: [], // TODO: Parse and fill in
     imports: v.value,
     span: v.span,
   }),
-);
-
-/** parse a WESL style wgsl import statement. */
-export const weslImports: Parser<Stream<WeslToken>, ImportElem[]> = tagScope(
-  repeat(import_statement).ptag("owo").collect(importElem),
 );
 
 if (tracing) {
@@ -133,7 +127,6 @@ if (tracing) {
     import_path_or_item,
     import_relative,
     import_statement,
-    weslImports,
   };
 
   Object.entries(names).forEach(([name, parser]) => {

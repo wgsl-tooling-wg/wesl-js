@@ -22,7 +22,10 @@ export interface WeslJsPlugin {
 }
 
 export interface TransformedAST
-  extends Pick<WeslAST, "srcModule" | "moduleElem"> {
+  extends Pick<
+    WeslAST,
+    "srcModule" | "imports" | "directives" | "declarations"
+  > {
   globalNames: Set<string>;
   notableElems: Record<string, AbstractElem[]>;
 }

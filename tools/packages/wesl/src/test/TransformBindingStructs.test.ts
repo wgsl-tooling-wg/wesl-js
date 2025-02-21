@@ -1,7 +1,7 @@
 import { SrcMapBuilder } from "mini-parse";
 import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
-import { astToString } from "../debug/ASTtoString.ts";
+import { astToString, globalDeclToString } from "../debug/ASTtoString.ts";
 import { lowerAndEmit } from "../LowerAndEmit.ts";
 import { parsedRegistry } from "../ParsedRegistry.ts";
 import {
@@ -82,7 +82,7 @@ test("findRefsToBindingStructs", () => {
   markBindingStructs(rootAst.moduleElem)[0];
   const found = findRefsToBindingStructs(rootAst.moduleElem);
   expect(found.length).toBe(1);
-  const foundAst = astToString(found[0].memberRef);
+  const foundAst = globalDeclToString(found[0].memberRef);
   expect(foundAst).toMatchInlineSnapshot(`
     "memberRef b.particles
       ref b
@@ -109,7 +109,7 @@ test("transformBindingReference", () => {
   expect(found.length).toBe(1);
   const { memberRef, struct } = found[0];
   const synthElem = transformBindingReference(memberRef, struct);
-  const synthAst = astToString(synthElem);
+  const synthAst = globalDeclToString(synthElem);
   expect(synthAst).toMatchInlineSnapshot(`"synthetic 'particles'"`);
 });
 
@@ -135,7 +135,7 @@ test("lower binding structs", () => {
   const tAst = { ...rootAst, globalNames, notableElems: {} };
   const lowered = lowerBindingStructs(tAst);
 
-  const loweredAst = astToString(lowered.moduleElem);
+  const loweredAst = astToString(lowered);
   expect(loweredAst).toMatchInlineSnapshot(`
     "module
       synthetic '@group(0) @binding(0) var<storage, read_write> particles : array<f32>;

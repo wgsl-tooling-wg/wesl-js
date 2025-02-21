@@ -4,7 +4,6 @@ import {
   AttributeElem,
   ContainerElem,
   DeclIdentElem,
-  DirectiveElem,
   ExpressionElem,
   NameElem,
   RefIdentElem,
@@ -15,6 +14,7 @@ import { assertUnreachable } from "./Assertions.ts";
 import { isGlobal } from "./BindIdents.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, Ident } from "./Scope.ts";
+import { DirectiveElem } from "./parse/DirectiveElem.ts";
 
 /** passed to the emitters */
 interface EmitContext {

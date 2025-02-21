@@ -2,10 +2,7 @@ import { assertUnreachable } from "../../../mini-parse/src/Assertions.ts";
 import {
   AbstractElem,
   Attribute,
-  DiagnosticDirective,
-  EnableDirective,
   FnElem,
-  RequiresDirective,
   StuffElem,
   TypedDeclElem,
   TypeRefElem,
@@ -16,19 +13,29 @@ import {
   diagnosticControlToString,
   expressionToString,
 } from "../LowerAndEmit.ts";
+import {
+  DiagnosticDirective,
+  EnableDirective,
+  RequiresDirective,
+} from "../parse/DirectiveElem.ts";
+import { WeslAST } from "../ParseWESL.ts";
 import { importToString } from "./ImportToString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 
 const maxLineLength = 150;
 
-export function astToString(elem: AbstractElem, indent = 0): string {
+export function astToString(elem: WeslAST, indent = 0): string {
+  return globalDeclToString(elem.moduleElem);
+}
+
+export function globalDeclToString(elem: AbstractElem, indent = 0): string {
   const { kind } = elem;
   const str = new LineWrapper(indent, maxLineLength);
   str.add(kind);
   addElemFields(elem, str);
   let childStrings: string[] = [];
   if ("contents" in elem) {
-    childStrings = elem.contents.map(e => astToString(e, indent + 2));
+    childStrings = elem.contents.map(e => globalDeclToString(e, indent + 2));
   }
   if (childStrings.length) {
     str.nl();
@@ -84,7 +91,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
         if (e.kind === "text") {
           return "'" + e.text + "'";
         } else {
-          return astToString(e);
+          return globalDeclToString(e);
         }
       })
       .join(" ");
@@ -218,13 +225,13 @@ function unknownExpressionToString(elem: UnknownExpressionElem): string {
         if (e.kind === "text") {
           return "'" + e.text + "'";
         } else {
-          return astToString(e);
+          return globalDeclToString(e);
         }
       })
       .join(" ");
     return contents;
   }
-  return astToString(elem);
+  return globalDeclToString(elem);
 }
 
 function templateParamToString(p: TypeTemplateParameter): string {

@@ -1,10 +1,10 @@
+import { assertUnreachable } from "./Assertions";
 import {
+  ImportStatement,
+  ImportSegment,
   ImportCollection,
   ImportItem,
-  ImportSegment,
-  ImportStatement,
-} from "./AbstractElems";
-import { assertUnreachable } from "./Assertions";
+} from "./parse/ImportElems";
 
 export interface FlatImport {
   importPath: string[];

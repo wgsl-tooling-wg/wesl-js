@@ -12,10 +12,7 @@ export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
 export type WeslToken<Kind extends WeslTokenKind = WeslTokenKind> =
   TypedToken<Kind>;
 
-export type WeslTriviaTokenKind = "whitespace" | "comment";
-export type WeslTriviaToken<
-  Kind extends WeslTriviaTokenKind = WeslTriviaTokenKind,
-> = TypedToken<Kind>;
+export type WeslTriviaToken = TypedToken<"comment">;
 
 // https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
 /** Whitespaces including new lines */
@@ -278,9 +275,7 @@ export class WeslStream implements Stream<WeslToken> {
       if (token === null) return null;
 
       const kind = token.kind;
-      if (kind === "whitespace") {
-        return token as TypedToken<typeof kind>;
-      } else if (kind === "commentStart") {
+      if (kind === "commentStart") {
         // SAFETY: The underlying streams can be seeked to any position
         if (token.text === "//") {
           this.stream.reset(this.skipToEol(token.span[1]));
