@@ -291,13 +291,15 @@ const unscoped_compound_statement = seq(
 );
 
 // prettier-ignore
-const compound_statement = seq(
-  opt_attributes,
+const compound_statement = tagScope(
   seq(
-    text("{"),
-    repeat(() => statement),
-    req("}"),
-  )                                 .collect(scopeCollect()),
+    opt_attributes,
+    seq(
+      text("{"),
+      repeat(() => statement),
+      req("}"),
+    )                                 .collect(scopeCollect()),
+  )
 );
 
 const for_init = or(
