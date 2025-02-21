@@ -40,7 +40,7 @@ export type ContainerElem =
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
 export type ExpressionElem =
   | Literal
-  | TranslateTimeFeature // TODO: replace with NameElem
+  | NameElem
   | RefIdentElem
   | ParenthesizedExpression
   | ComponentExpression
@@ -65,28 +65,6 @@ export interface AbstractElemBase {
 export interface ElemWithContentsBase extends AbstractElemBase {
   contents: AbstractElem[];
 }
-
-/** a wesl module */
-export interface ModuleElem extends ElemWithContentsBase {
-  kind: "module";
-
-  /** imports found in this module */
-  imports: ImportElem[];
-
-  /** directives found in this module */
-  directives: DirectiveElem[];
-
-  /** declarations found in this module */
-  declarations: GlobalDeclarationElem[];
-}
-
-export type GlobalDeclarationElem =
-  | AliasElem
-  | ConstElem
-  | FnElem
-  | GlobalVarElem
-  | OverrideElem
-  | StructElem;
 
 /* ------   Terminal Elements  (don't contain other elements)  ------   */
 
@@ -127,6 +105,89 @@ export interface DeclIdentElem extends AbstractElemBase {
   srcModule: SrcModule;
 }
 
+/** a wesl module */
+export interface ModuleElem extends ElemWithContentsBase {
+  kind: "module";
+
+  /** imports found in this module */
+  imports: ImportElem[];
+
+  /** directives found in this module */
+  directives: DirectiveElem[];
+
+  /** declarations found in this module */
+  declarations: GlobalDeclarationElem[];
+}
+
+export type GlobalDeclarationElem =
+  | AliasElem
+  | ConstAssertElem
+  | ConstElem
+  | FnElem
+  | GlobalVarElem
+  | OverrideElem
+  | StructElem;
+
+/** an alias statement */
+export interface AliasElem extends ElemWithContentsBase {
+  kind: "alias";
+  name: DeclIdentElem;
+  typeRef: TypeRefElem;
+  attributes: AttributeElem[];
+}
+
+/** a const_assert statement */
+export interface ConstAssertElem extends ElemWithContentsBase {
+  kind: "assert";
+}
+
+/** a const declaration */
+export interface ConstElem extends ElemWithContentsBase {
+  kind: "const";
+  name: TypedDeclElem;
+}
+
+/** a function declaration */
+export interface FnElem extends ElemWithContentsBase {
+  kind: "fn";
+  fnAttributes?: AttributeElem[]; // TODO: rename
+  name: DeclIdentElem;
+  params: FnParamElem[];
+  returnType?: TypeRefElem;
+  body: Statement[];
+  // TODO: Model everything
+}
+
+/** a global variable declaration (at the root level) */
+export interface GlobalVarElem extends ElemWithContentsBase {
+  kind: "gvar";
+  name: TypedDeclElem;
+}
+
+/** an override declaration */
+export interface OverrideElem extends ElemWithContentsBase {
+  kind: "override";
+  name: TypedDeclElem;
+}
+
+/** a struct declaration */
+export interface StructElem extends ElemWithContentsBase {
+  kind: "struct";
+  name: DeclIdentElem;
+  members: StructMemberElem[];
+  bindingStruct?: true; // used later during binding struct transformation
+  attributes: AttributeElem[];
+}
+
+/** a member of a struct declaration */
+export interface StructMemberElem extends ElemWithContentsBase {
+  kind: "member";
+  name: NameElem;
+  attributes?: AttributeElem[];
+  typeRef: TypeRefElem;
+  mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
+}
+
 /* ------   Synthetic element (for transformations, not produced by grammar) ------   */
 
 /** generated element, produced after parsing and binding */
@@ -142,14 +203,6 @@ export interface TypedDeclElem extends ElemWithContentsBase {
   kind: "typeDecl";
   decl: DeclIdentElem;
   typeRef?: TypeRefElem; // TODO Consider a variant for fn params and alias where typeRef is required
-}
-
-/** an alias statement */
-export interface AliasElem extends ElemWithContentsBase {
-  kind: "alias";
-  name: DeclIdentElem;
-  typeRef: TypeRefElem;
-  attributes: AttributeElem[];
 }
 
 /** an attribute like '@compute' or '@binding(0)' */
@@ -186,17 +239,6 @@ export interface IfAttribute {
   param: TranslateTimeExpressionElem;
 }
 
-/** a const_assert statement */
-export interface ConstAssertElem extends ElemWithContentsBase {
-  kind: "assert";
-}
-
-/** a const declaration */
-export interface ConstElem extends ElemWithContentsBase {
-  kind: "const";
-  name: TypedDeclElem;
-}
-
 export interface UnknownExpressionElem extends ElemWithContentsBase {
   kind: "expression";
 }
@@ -211,13 +253,6 @@ export interface TranslateTimeExpressionElem {
 export interface Literal {
   kind: "literal";
   value: string;
-  span: Span;
-}
-
-/** `words`s inside `@if` */
-export interface TranslateTimeFeature {
-  kind: "translate-time-feature";
-  name: string;
   span: Span;
 }
 
@@ -269,18 +304,6 @@ export interface BinaryOperator {
   span: Span;
 }
 
-/** a global variable declaration (at the root level) */
-export interface GlobalVarElem extends ElemWithContentsBase {
-  kind: "gvar";
-  name: TypedDeclElem;
-}
-
-/** an override declaration */
-export interface OverrideElem extends ElemWithContentsBase {
-  kind: "override";
-  name: TypedDeclElem;
-}
-
 /** a parameter in a function declaration */
 export interface FnParamElem extends ElemWithContentsBase {
   kind: "param";
@@ -295,24 +318,6 @@ export interface SimpleMemberRef extends ElemWithContentsBase {
   name: RefIdentElem;
   member: NameElem;
   extraComponents?: StuffElem;
-}
-
-/** a struct declaration */
-export interface StructElem extends ElemWithContentsBase {
-  kind: "struct";
-  name: DeclIdentElem;
-  members: StructMemberElem[];
-  bindingStruct?: true; // used later during binding struct transformation
-  attributes: AttributeElem[];
-}
-
-/** a member of a struct declaration */
-export interface StructMemberElem extends ElemWithContentsBase {
-  kind: "member";
-  name: NameElem;
-  attributes?: AttributeElem[];
-  typeRef: TypeRefElem;
-  mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
 }
 
 /** generic container of other elements */
@@ -333,17 +338,6 @@ export interface TypeRefElem extends ElemWithContentsBase {
   kind: "type";
   name: RefIdent;
   templateParams?: TypeTemplateParameter[];
-}
-
-/** a function declaration */
-export interface FnElem extends ElemWithContentsBase {
-  kind: "fn";
-  fnAttributes?: AttributeElem[]; // TODO: rename
-  name: DeclIdentElem;
-  params: FnParamElem[];
-  returnType?: TypeRefElem;
-  body: Statement[];
-  // TODO: Model everything
 }
 
 export type Statement =

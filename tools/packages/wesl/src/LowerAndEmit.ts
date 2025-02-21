@@ -201,7 +201,7 @@ export function expressionToString(elem: ExpressionElem): string {
     return elem.ident.originalName;
   } else if (kind === "literal") {
     return elem.value;
-  } else if (kind === "translate-time-feature") {
+  } else if (kind === "name") {
     return elem.name;
   } else if (kind === "parenthesized-expression") {
     return `(${expressionToString(elem.expression)})`;

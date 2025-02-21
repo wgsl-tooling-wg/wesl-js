@@ -38,7 +38,6 @@ import {
   ParenthesizedExpression,
   StandardAttribute,
   TranslateTimeExpressionElem,
-  TranslateTimeFeature,
   UnaryExpression,
   UnaryOperator,
   UnknownExpressionElem,
@@ -239,7 +238,7 @@ const global_variable_decl = seq(
 );
 const attribute_if_primary_expression: Parser<
   Stream<WeslToken>,
-  Literal | ParenthesizedExpression | TranslateTimeFeature
+  Literal | ParenthesizedExpression | NameElem
 > = or(
   tokenOf("keyword", ["true", "false"]).map(makeLiteral),
   delimited(
@@ -247,7 +246,7 @@ const attribute_if_primary_expression: Parser<
     fn(() => attribute_if_expression),
     token("symbol", ")"),
   ).map(makeParenthesizedExpression),
-  tokenKind("word").map(makeTranslateTimeFeature),
+  tokenKind("word").map(makeName),
 );
 
 const attribute_if_unary_expression: Parser<
@@ -608,16 +607,6 @@ function makeLiteral(token: WeslToken<"keyword" | "number">): Literal {
   return {
     kind: "literal",
     value: token.text,
-    span: token.span,
-  };
-}
-
-function makeTranslateTimeFeature(
-  token: WeslToken<"word">,
-): TranslateTimeFeature {
-  return {
-    kind: "translate-time-feature",
-    name: token.text,
     span: token.span,
   };
 }
