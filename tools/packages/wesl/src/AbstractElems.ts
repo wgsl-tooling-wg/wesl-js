@@ -2,7 +2,7 @@ import type { Span } from "mini-parse";
 import type { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
 import type { ImportElem } from "./parse/ImportElems.ts";
 import type { DirectiveElem } from "./parse/DirectiveElem.ts";
-import { ExpressionElem } from "./parse/ExpressionElem.ts";
+import { ExpressionElem, TemplatedIdentElem } from "./parse/ExpressionElem.ts";
 
 /**
  * Structures to describe the 'interesting' parts of a WESL source file.
@@ -20,7 +20,7 @@ export type GrammarElem = ContainerElem | TerminalElem;
 
 export type ContainerElem =
   | AttributeElem
-  | AliasElem
+  | AliasElemOld
   | ConstAssertElem
   | ConstElem
   | UnknownExpressionElem
@@ -55,14 +55,13 @@ export interface ElemWithContentsBase extends AbstractElemBase {
   contents: AbstractElem[];
 }
 
-/* ------   Terminal Elements  (don't contain other elements)  ------   */
-
 /**
  * a raw bit of text in WESL source that's typically copied to the linked WGSL.
  * e.g. a keyword  like 'var'
  * or a phrase we needn't analyze further like '@diagnostic(off,derivative_uniformity)'
  */
 export interface TextElem extends AbstractElemBase {
+  // TODO: Remove
   kind: "text";
   text: string;
 }
@@ -80,6 +79,14 @@ export interface NameElem extends AbstractElemBase {
   name: string;
 }
 
+/** an identifier */
+export interface IdentElem {
+  kind: "ident";
+  name: string;
+  span: Span;
+}
+
+/* ------   Terminal Elements  (don't contain other elements)  ------   */
 /** an identifier that refers to a declaration (aka a symbol reference) */
 export interface RefIdentElem extends AbstractElemBase {
   kind: RefIdent["kind"];
@@ -109,7 +116,7 @@ export interface ModuleElem extends ElemWithContentsBase {
 }
 
 export type GlobalDeclarationElem =
-  | AliasElem
+  | AliasElemOld
   | ConstAssertElem
   | ConstElem
   | FnElem
@@ -124,11 +131,17 @@ interface GlobalDeclarationBase {
 }
 
 /** an alias statement */
-export interface AliasElem extends ElemWithContentsBase, GlobalDeclarationBase {
+export interface AliasElemOld extends ElemWithContentsBase {
   kind: "alias";
   name: DeclIdentElem;
   typeRef: TypeRefElem;
-  attributes: AttributeElem[];
+}
+
+/** an alias statement */
+export interface AliasElem extends GlobalDeclarationBase {
+  kind: "alias";
+  name: IdentElem;
+  type: TemplatedIdentElem;
 }
 
 /** a const_assert statement */
@@ -136,6 +149,7 @@ export interface ConstAssertElem
   extends ElemWithContentsBase,
     GlobalDeclarationBase {
   kind: "assert";
+  expression: ExpressionElem;
 }
 
 /** a const declaration */

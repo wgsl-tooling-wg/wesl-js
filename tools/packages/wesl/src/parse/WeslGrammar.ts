@@ -28,6 +28,7 @@ import {
 import {
   BuiltinAttribute,
   DiagnosticAttribute,
+  IdentElem,
   IfAttribute,
   InterpolateAttribute,
   NameElem,
@@ -53,9 +54,10 @@ import {
   typedDecl,
 } from "../WESLCollect.ts";
 import { import_statement } from "./ImportGrammar.ts";
-import { qualified_ident, word } from "./BaseGrammar.ts";
+import { qualified_ident, word, name, ident } from "./BaseGrammar.ts";
 import {
   argument_expression_list,
+  attribute_if_expression,
   component_or_swizzle,
   expression,
   opt_template_list,
@@ -78,8 +80,6 @@ import {
   UnaryExpression,
   UnaryOperator,
 } from "./ExpressionElem.ts";
-
-const name = tokenKind("word").map(makeName);
 
 const diagnostic_rule_name = seq(name, opt(preceded(".", req(name))));
 const diagnostic_control = delimited(
@@ -237,53 +237,6 @@ const global_variable_decl = seq(
   req_optionally_typed_ident,
                                       // TODO shouldn't decl_scope include the ident type?
   opt(seq("=", () => expression       .collect(scopeCollect(), "decl_scope"))),
-);
-const attribute_if_primary_expression: Parser<
-  Stream<WeslToken>,
-  Literal | ParenthesizedExpression | NameElem
-> = or(
-  tokenOf("keyword", ["true", "false"]).map(makeLiteral),
-  delimited(
-    token("symbol", "("),
-    fn(() => attribute_if_expression),
-    token("symbol", ")"),
-  ).map(makeParenthesizedExpression),
-  tokenKind("word").map(makeName),
-);
-
-const attribute_if_unary_expression: Parser<
-  Stream<WeslToken>,
-  ExpressionElem
-> = or(
-  seq(
-    token("symbol", "!").map(makeUnaryOperator),
-    fn(() => attribute_if_unary_expression),
-  ).map(makeUnaryExpression),
-  attribute_if_primary_expression,
-);
-
-const attribute_if_expression: Parser<
-  Stream<WeslToken>,
-  ExpressionElem
-> = weslExtension(
-  seq(
-    attribute_if_unary_expression,
-    or(
-      repeatPlus(
-        seq(
-          token("symbol", "||").map(makeBinaryOperator),
-          req(attribute_if_unary_expression),
-        ),
-      ),
-      repeatPlus(
-        seq(
-          token("symbol", "&&").map(makeBinaryOperator),
-          req(attribute_if_unary_expression),
-        ),
-      ),
-      yes().map(() => []),
-    ),
-  ).map(makeRepeatingBinaryExpression),
 );
 
 const unscoped_compound_statement = seq(
@@ -475,7 +428,6 @@ const global_value_decl = or(
 
 // prettier-ignore
 const global_alias = seq(
-  weslExtension(opt_attributes)       .collect((cc) => cc.tags.attribute, "attributes"),
   "alias",
   req(word)                           .collect(declCollect, "alias_name"),
   req("="),
@@ -594,77 +546,6 @@ function makeTranslateTimeExpressionElem(args: {
     kind: "translate-time-expression",
     expression: args.value,
     span: args.span,
-  };
-}
-
-function makeName(token: WeslToken<"word">): NameElem {
-  return {
-    kind: "name",
-    name: token.text,
-    span: token.span,
-  };
-}
-
-function makeLiteral(token: WeslToken<"keyword" | "number">): Literal {
-  return {
-    kind: "literal",
-    value: token.text,
-    span: token.span,
-  };
-}
-
-function makeParenthesizedExpression(
-  expression: ExpressionElem,
-): ParenthesizedExpression {
-  return {
-    kind: "parenthesized-expression",
-    expression,
-  };
-}
-
-function makeUnaryOperator(token: WeslToken<"symbol">): UnaryOperator {
-  return {
-    value: token.text as any,
-    span: token.span,
-  };
-}
-function makeBinaryOperator(token: WeslToken<"symbol">): BinaryOperator {
-  return {
-    value: token.text as any,
-    span: token.span,
-  };
-}
-function makeUnaryExpression([operator, expression]: [
-  UnaryOperator,
-  ExpressionElem,
-]): UnaryExpression {
-  return {
-    kind: "unary-expression",
-    operator,
-    expression,
-  };
-}
-/** A list of left-to-right associative binary expressions */
-function makeRepeatingBinaryExpression([start, repeating]: [
-  ExpressionElem,
-  [BinaryOperator, ExpressionElem][],
-]): ExpressionElem {
-  let result: ExpressionElem = start;
-  for (const [op, left] of repeating) {
-    result = makeBinaryExpression([result, op, left]);
-  }
-  return result;
-}
-function makeBinaryExpression([left, operator, right]: [
-  ExpressionElem,
-  BinaryOperator,
-  ExpressionElem,
-]): BinaryExpression {
-  return {
-    kind: "binary-expression",
-    operator,
-    left,
-    right,
   };
 }
 

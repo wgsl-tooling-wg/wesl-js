@@ -12,6 +12,7 @@ import {
   seq,
   Stream,
   tagScope,
+  token,
   tokenOf,
   tracing,
   withSep,
@@ -26,8 +27,23 @@ import {
   stuffCollect,
   typeRefCollect,
 } from "../WESLCollect";
-import { number, qualified_ident, word } from "./BaseGrammar";
-import { templateClose, templateOpen, WeslToken } from "./WeslStream";
+import { number, qualified_ident, word, name } from "./BaseGrammar";
+import {
+  templateClose,
+  templateOpen,
+  weslExtension,
+  WeslToken,
+} from "./WeslStream";
+import {
+  BinaryExpression,
+  BinaryOperator,
+  ExpressionElem,
+  Literal,
+  ParenthesizedExpression,
+  UnaryExpression,
+  UnaryOperator,
+} from "./ExpressionElem";
+import { NameElem } from "../AbstractElems";
 
 export const opt_template_list = opt(
   seq(
@@ -150,16 +166,12 @@ export const expression = expressionParser(maybe_template);
 let is_template = true;
 const template_arg_expression = expressionParser(is_template);
 
-// prettier-ignore
-const std_type_specifier = seq(
-  qualified_ident                   .collect(refIdent, "typeRefName"),
-  () => opt_template_list,
-)                                   .collect(typeRefCollect);
-
-// prettier-ignore
-export const type_specifier: Parser<Stream<WeslToken>,any> = tagScope(
-   std_type_specifier,
-)                                   .ctag("typeRefElem");
+export const type_specifier: Parser<Stream<WeslToken>, any> = tagScope(
+  seq(
+    qualified_ident.collect(refIdent, "typeRefName"),
+    opt_template_list,
+  ).collect(typeRefCollect),
+).ctag("typeRefElem");
 
 /** a template_arg_expression with additional collection for parameters
  * that are types like array<f32> vs. expressions like 1+2 */
@@ -175,6 +187,118 @@ export const argument_expression_list = seq(
   withSep(",", expression),
   req(")"),
 );
+
+//--------- Specialized parser for @if(expr) -----------//
+const attribute_if_primary_expression: Parser<
+  Stream<WeslToken>,
+  Literal | ParenthesizedExpression | NameElem
+> = or(
+  tokenOf("keyword", ["true", "false"]).map(makeLiteral),
+  delimited(
+    token("symbol", "("),
+    fn(() => attribute_if_expression),
+    token("symbol", ")"),
+  ).map(makeParenthesizedExpression),
+  name,
+);
+
+const attribute_if_unary_expression: Parser<
+  Stream<WeslToken>,
+  ExpressionElem
+> = or(
+  seq(
+    token("symbol", "!").map(makeUnaryOperator),
+    fn(() => attribute_if_unary_expression),
+  ).map(makeUnaryExpression),
+  attribute_if_primary_expression,
+);
+
+export const attribute_if_expression: Parser<
+  Stream<WeslToken>,
+  ExpressionElem
+> = weslExtension(
+  seq(
+    attribute_if_unary_expression,
+    or(
+      repeatPlus(
+        seq(
+          token("symbol", "||").map(makeBinaryOperator),
+          req(attribute_if_unary_expression),
+        ),
+      ),
+      repeatPlus(
+        seq(
+          token("symbol", "&&").map(makeBinaryOperator),
+          req(attribute_if_unary_expression),
+        ),
+      ),
+      yes().map(() => []),
+    ),
+  ).map(makeRepeatingBinaryExpression),
+);
+
+function makeLiteral(token: WeslToken<"keyword" | "number">): Literal {
+  return {
+    kind: "literal",
+    value: token.text,
+    span: token.span,
+  };
+}
+
+function makeParenthesizedExpression(
+  expression: ExpressionElem,
+): ParenthesizedExpression {
+  return {
+    kind: "parenthesized-expression",
+    expression,
+  };
+}
+
+function makeUnaryOperator(token: WeslToken<"symbol">): UnaryOperator {
+  return {
+    value: token.text as any,
+    span: token.span,
+  };
+}
+function makeBinaryOperator(token: WeslToken<"symbol">): BinaryOperator {
+  return {
+    value: token.text as any,
+    span: token.span,
+  };
+}
+function makeUnaryExpression([operator, expression]: [
+  UnaryOperator,
+  ExpressionElem,
+]): UnaryExpression {
+  return {
+    kind: "unary-expression",
+    operator,
+    expression,
+  };
+}
+/** A list of left-to-right associative binary expressions */
+function makeRepeatingBinaryExpression([start, repeating]: [
+  ExpressionElem,
+  [BinaryOperator, ExpressionElem][],
+]): ExpressionElem {
+  let result: ExpressionElem = start;
+  for (const [op, left] of repeating) {
+    result = makeBinaryExpression([result, op, left]);
+  }
+  return result;
+}
+function makeBinaryExpression([left, operator, right]: [
+  ExpressionElem,
+  BinaryOperator,
+  ExpressionElem,
+]): BinaryExpression {
+  return {
+    kind: "binary-expression",
+    operator,
+    left,
+    right,
+  };
+}
 
 if (tracing) {
   const names: Record<string, Parser<Stream<WeslToken>, unknown>> = {

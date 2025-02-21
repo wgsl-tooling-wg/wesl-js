@@ -1,7 +1,7 @@
 import { CollectContext, CollectPair, srcLog, tracing } from "mini-parse";
 import {
   AbstractElem,
-  AliasElem,
+  AliasElemOld,
   Attribute,
   AttributeElem,
   ConstElem,
@@ -189,12 +189,15 @@ export function collectVarLike<E extends VarLikeElem>(
 
 export const aliasCollect = collectElem(
   "alias",
-  (cc: CollectContext, openElem: PartElem<AliasElem>) => {
+  (cc: CollectContext, openElem: PartElem<AliasElemOld>) => {
     const name = cc.tags.alias_name?.[0] as DeclIdentElem;
     const alias_scope = cc.tags.alias_scope?.[0] as Scope;
     const typeRef = cc.tags.typeRefElem?.[0] as TypeRefElem;
-    const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
-    const partElem: AliasElem = { ...openElem, name, attributes, typeRef };
+    const partElem: AliasElemOld = {
+      ...openElem,
+      name: name,
+      typeRef,
+    };
     const aliasElem = withTextCover(partElem, cc);
     name.ident.scope = alias_scope;
     name.ident.declElem = aliasElem;

@@ -1,11 +1,11 @@
 import type { Span } from "mini-parse";
-import type { NameElem, RefIdentElem } from "../AbstractElems";
+import type { NameElem, IdentElem } from "../AbstractElems";
 
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
 export type ExpressionElem =
   | Literal
   | NameElem
-  | RefIdentElem
+  | TemplatedIdentElem
   | ParenthesizedExpression
   | ComponentExpression
   | ComponentMemberExpression
@@ -17,6 +17,14 @@ export type ExpressionElem =
 export interface Literal {
   kind: "literal";
   value: string;
+  span: Span;
+}
+
+/** an identifier with template arguments */
+export interface TemplatedIdentElem {
+  kind: "templated-ident";
+  ident: IdentElem;
+  template?: ExpressionElem[];
   span: Span;
 }
 
@@ -53,7 +61,7 @@ export interface BinaryExpression {
 /** `foo(arg, arg)` */
 export interface FunctionCallExpression {
   kind: "call-expression";
-  function: RefIdentElem;
+  function: TemplatedIdentElem;
   arguments: ExpressionElem[];
 }
 export interface UnaryOperator {

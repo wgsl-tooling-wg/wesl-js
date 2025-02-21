@@ -197,8 +197,8 @@ export function expressionToString(elem: ExpressionElem): string {
     return `${expressionToString(elem.left)} ${elem.operator.value} ${expressionToString(elem.right)}`;
   } else if (kind === "unary-expression") {
     return `${elem.operator.value}${expressionToString(elem.expression)}`;
-  } else if (kind === "ref") {
-    return elem.ident.originalName;
+  } else if (kind === "templated-ident") {
+    return elem.ident.name + templateToString(elem.template);
   } else if (kind === "literal") {
     return elem.value;
   } else if (kind === "name") {
@@ -210,10 +210,17 @@ export function expressionToString(elem: ExpressionElem): string {
   } else if (kind === "component-member-expression") {
     return `${expressionToString(elem.base)}.${elem.access}`;
   } else if (kind === "call-expression") {
-    return `${elem.function.ident.originalName}(${elem.arguments.map(expressionToString).join(", ")})`;
+    return `${expressionToString(elem.function)}(${elem.arguments.map(expressionToString).join(", ")})`;
   } else {
     assertUnreachable(kind);
   }
+}
+
+function templateToString(template: ExpressionElem[] | undefined): string {
+  if (template === undefined) return "";
+  if (template.length === 0) return "";
+
+  return "<" + template.map(expressionToString).join(", ") + ">";
 }
 
 function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
