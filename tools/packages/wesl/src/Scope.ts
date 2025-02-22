@@ -42,7 +42,8 @@ export interface DeclIdent extends IdentBase {
 
 /** tree of ident references, organized by lexical scope. */
 export interface Scope {
-  id?: number; // for debugging
+  /** id for debugging */
+  id: number;
 
   /** idents found in lexical order in this scope */
   idents: Ident[];

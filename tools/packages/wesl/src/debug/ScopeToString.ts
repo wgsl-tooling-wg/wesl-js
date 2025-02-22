@@ -38,6 +38,7 @@ export function scopeToString(scope: Scope, indent = 0): string {
     if (!childStrings.length) str.nl();
     str.add("}");
   }
+  str.add(` #${scope.id}`);
 
   return str.result;
 }
