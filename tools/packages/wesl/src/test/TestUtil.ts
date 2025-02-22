@@ -7,15 +7,14 @@ import {
 } from "mini-parse/test-util";
 import { link, LinkParams } from "../Linker.js";
 import { WeslStream, WeslToken } from "../parse/WeslStream.js";
-import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
+import { parseWESL, WeslAST } from "../ParseWESL.js";
 
 export function testAppParse<T>(
   parser: Parser<Stream<WeslToken>, T>,
   src: string,
-): TestParseResult<T, WeslAST> {
-  const appState = syntheticWeslParseState();
+): TestParseResult<T> {
   const stream = new WeslStream(src);
-  return testParseWithStream(parser, stream, appState);
+  return testParseWithStream(parser, stream);
 }
 
 /** Convenience wrapper to link wgsl for tests.
@@ -68,5 +67,5 @@ export function parseTest(src: string): WeslAST {
 
 /** test w/o any log collection, to not confuse debugging */
 export function parseTestRaw(src: string) {
-  return parseWESL(src, undefined);
+  return parseWESL(src);
 }

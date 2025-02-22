@@ -602,7 +602,7 @@ function makeStructMember(obj: {
 }): StructMemberElem {
   return {
     name: obj.name,
-    typeRef: obj.typeRef,
+    type: obj.typeRef,
     attributes: obj.attributes ?? undefined,
   };
 }

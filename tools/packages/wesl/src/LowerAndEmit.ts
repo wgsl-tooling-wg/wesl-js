@@ -13,7 +13,7 @@ import {
 import { assertUnreachable } from "./Assertions.ts";
 import { isGlobal } from "./BindIdents.ts";
 import { identToString } from "./debug/ScopeToString.ts";
-import { Conditions, DeclIdent, Ident } from "./Scope.ts";
+import { Conditions, DeclIdent, RefIdent } from "./Scope.ts";
 import { DirectiveElem } from "./parse/DirectiveElem.ts";
 import { ExpressionElem } from "./parse/ExpressionElem.ts";
 
@@ -260,8 +260,8 @@ function displayName(declIdent: DeclIdent): string {
 /** trace through refersTo links in reference Idents until we find the declaration
  * expects that bindIdents has filled in all refersTo: links
  */
-export function findDecl(ident: Ident): DeclIdent {
-  let i: Ident | undefined = ident;
+export function findDecl(ident: DeclIdent | RefIdent): DeclIdent {
+  let i: DeclIdent | RefIdent | undefined = ident;
   do {
     if (i.kind === "decl") {
       return i;

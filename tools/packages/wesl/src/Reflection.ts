@@ -173,7 +173,7 @@ function memberToLayoutEntry(
  * references to WGSL samplers become 'sampler' GPUSamplerBindingLayout instances, etc.
  */
 function layoutEntry(member: StructMemberElem): string {
-  const { typeRef } = member;
+  const { type: typeRef } = member;
   let entry: string | undefined;
   const { name: typeName } = typeRef;
   entry = ptrLayoutEntry(typeRef) ?? storageTextureLayoutEntry(typeRef);

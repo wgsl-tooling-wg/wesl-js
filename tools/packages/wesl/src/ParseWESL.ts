@@ -1,12 +1,10 @@
-import { AppState, ParserInit, SrcMap } from "mini-parse";
-import { GlobalDeclarationElem, ModuleElem } from "./AbstractElems.ts";
+import { ParserInit, SrcMap } from "mini-parse";
+import { ModuleElem } from "./AbstractElems.ts";
 import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
-import { emptyScope, resetScopeIds, Scope, SrcModule } from "./Scope.ts";
-import { OpenElem } from "./WESLCollect.ts";
-import { ImportElem } from "./parse/ImportElems.ts";
-import { DirectiveElem } from "./parse/DirectiveElem.ts";
+import { resetScopeIds, Scope, SrcModule } from "./Scope.ts";
+import { generateScopes } from "./pass/GenerateScopes.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
@@ -34,71 +32,31 @@ export interface BindingAST extends WeslAST {
   _flatImports?: FlatImport[];
 }
 
-/** stable and unstable state used during parsing */
-export interface WeslParseState
-  extends AppState<WeslParseContext, StableState> {
-  context: WeslParseContext;
-  stable: StableState;
-}
-
-/** stable values used or accumulated during parsing */
-export type StableState = WeslAST;
-
-/** unstable values used during parse collection */
-export interface WeslParseContext {
-  scope: Scope; // current scope (points somewhere in rootScope)
-  openElems: OpenElem[]; // elems that are collecting their contents
-}
-
-export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
+export function parseSrcModule(srcModule: SrcModule): WeslAST {
   // TODO allow returning undefined for failure, or throw?
 
   resetScopeIds();
   const stream = new WeslStream(srcModule.src);
 
-  const appState = blankWeslParseState(srcModule);
-
-  const init: ParserInit = { stream, appState };
+  const init: ParserInit = { stream };
   const parseResult = weslRoot.parse(init);
   if (parseResult === null) {
     throw new Error("parseWESL failed");
   }
-  appState.stable.moduleElem = parseResult.value;
 
-  return appState.stable as WeslAST;
+  const rootScope = generateScopes(parseResult.value);
+
+  return { srcModule, moduleElem: parseResult.value, rootScope };
 }
 
-export function parseWESL(src: string, srcMap?: SrcMap): WeslAST {
+export function parseWESL(src: string): WeslAST {
   const srcModule: SrcModule = {
     modulePath: "package::test",
     debugFilePath: "./test.wesl",
     src,
   };
 
-  return parseSrcModule(srcModule, srcMap);
-}
-
-export function blankWeslParseState(srcModule: SrcModule): WeslParseState {
-  const rootScope = emptyScope(null);
-  const moduleElem = null as any; // we'll fill this in later
-  return {
-    context: { scope: rootScope, openElems: [] },
-    stable: {
-      srcModule,
-      rootScope,
-      moduleElem,
-    },
-  };
-}
-
-export function syntheticWeslParseState(): WeslParseState {
-  const srcModule: SrcModule = {
-    modulePath: "package::test",
-    debugFilePath: "./test.wesl",
-    src: "",
-  };
-
-  return blankWeslParseState(srcModule);
+  return parseSrcModule(srcModule);
 }
 
 /** @return a flattened form of the import tree for convenience in binding idents. */

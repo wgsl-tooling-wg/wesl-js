@@ -35,34 +35,31 @@ export const testMatcher = new RegexMatchers<TestMatcherKind>({
   ws: /\s+/,
 });
 
-export interface TestParseResult<T, S = any> {
+export interface TestParseResult<T> {
   parsed: OptParserResult<T>;
   position: number;
-  stable: S;
 }
 
 /** utility for testing parsers */
-export function testParse<T, C = any, S = any>(
+export function testParse<T>(
   p: Parser<Stream<Token>, T>,
   src: string,
   tokenMatcher: RegexMatchers<string> = testMatcher,
-  appState: AppState<C, S> = { context: {} as C, stable: [] as S },
-): TestParseResult<T, S> {
+): TestParseResult<T> {
   const stream = new FilterStream(
     new MatchersStream(src, tokenMatcher),
     t => t.kind !== "ws",
   );
-  const parsed = p.parse({ stream, appState });
-  return { parsed, position: stream.checkpoint(), stable: appState.stable };
+  const parsed = p.parse({ stream });
+  return { parsed, position: stream.checkpoint() };
 }
 
-export function testParseWithStream<T, C = any, S = any>(
+export function testParseWithStream<T>(
   p: Parser<Stream<Token>, T>,
   stream: Stream<Token>,
-  appState: AppState<C, S> = { context: {} as C, stable: [] as S },
-): TestParseResult<T, S> {
-  const parsed = p.parse({ stream, appState: appState });
-  return { parsed, position: stream.checkpoint(), stable: appState.stable };
+): TestParseResult<T> {
+  const parsed = p.parse({ stream });
+  return { parsed, position: stream.checkpoint() };
 }
 
 /** run a test function and expect that no error logs are produced */

@@ -1,4 +1,4 @@
-import { Ident, Scope } from "../Scope.ts";
+import { DeclIdent, RefIdent, Scope } from "../Scope.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 
 /** A debugging print of the scope tree with identifiers in nested brackets */
@@ -34,7 +34,7 @@ function scopeToStringInner(scope: Scope, str: LineWrapper): void {
   }
 }
 
-export function identToString(ident?: Ident): string {
+export function identToString(ident?: DeclIdent | RefIdent): string {
   if (!ident) return JSON.stringify(ident);
   const { kind, originalName } = ident;
   const idStr = ident.id ? `#${ident.id}` : "";

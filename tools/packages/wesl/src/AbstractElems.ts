@@ -33,6 +33,71 @@ export type TerminalElem =
   | NameElem
   | RefIdentElem;
 
+/* ------   OLD ELEMENTS  ------   */
+
+/* ------   Terminal Elements  (don't contain other elements)  ------   */
+/** an identifier that refers to a declaration (aka a symbol reference) */
+export interface RefIdentElem extends AbstractElemBase {
+  kind: RefIdent["kind"];
+  ident: RefIdent;
+  srcModule: SrcModule;
+}
+
+/** a declaration identifier (aka a symbol declaration) */
+export interface DeclIdentElem extends AbstractElemBase {
+  kind: DeclIdent["kind"];
+  ident: DeclIdent;
+  srcModule: SrcModule;
+}
+
+export interface AbstractElemBase {
+  kind: string;
+  span: Span;
+}
+
+export interface ElemWithContentsBase extends AbstractElemBase {
+  contents: AbstractElem[];
+}
+/** generated element, produced after parsing and binding */
+export interface SyntheticElem {
+  kind: "synthetic";
+  text: string;
+}
+
+/** a declaration identifer with a possible type */
+export interface TypedDeclElem extends ElemWithContentsBase {
+  kind: "typeDecl";
+  decl: DeclIdentElem;
+  typeRef?: TypeRefElem; // TODO Consider a variant for fn params and alias where typeRef is required
+}
+
+/** a parameter in a function declaration */
+export interface FnParamElem extends ElemWithContentsBase {
+  kind: "param";
+  name: TypedDeclElem;
+  attributes: AttributeElem[];
+}
+
+/** generic container of other elements */
+export interface StuffElem extends ElemWithContentsBase {
+  kind: "stuff";
+}
+
+/** a struct declaration that's been marked as a bindingStruct */
+export interface BindingStructElem extends StructElem {
+  bindingStruct: true;
+  entryFn?: FunctionDeclarationElem;
+}
+
+export type TypeTemplateParameter = ExpressionElem;
+
+/** a reference to a type, like 'f32', or 'MyStruct', or 'ptr<storage, array<f32>, read_only>'   */
+export interface TypeRefElem extends ElemWithContentsBase {
+  kind: "type";
+  name: RefIdent;
+  templateParams?: TypeTemplateParameter[];
+}
+
 // TODO: Remove the above ^^^^
 
 /** a name that doesn't need to be an Ident
@@ -54,6 +119,7 @@ export interface IdentElem {
   kind: "ident";
   name: string;
   span: Span;
+  scopeIdent?: DeclIdent | RefIdent;
 }
 
 /** a wesl module */
@@ -138,81 +204,10 @@ export interface StructElem extends GlobalDeclarationBase {
 /** a member of a struct declaration */
 export interface StructMemberElem {
   name: NameElem;
-  typeRef: TemplatedIdentElem;
+  type: TemplatedIdentElem;
   attributes?: AttributeElem[];
   mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
 }
-
-/* ------   OLD ELEMENTS  ------   */
-
-/* ------   Terminal Elements  (don't contain other elements)  ------   */
-/** an identifier that refers to a declaration (aka a symbol reference) */
-export interface RefIdentElem extends AbstractElemBase {
-  kind: RefIdent["kind"];
-  ident: RefIdent;
-  srcModule: SrcModule;
-}
-
-/** a declaration identifier (aka a symbol declaration) */
-export interface DeclIdentElem extends AbstractElemBase {
-  kind: DeclIdent["kind"];
-  ident: DeclIdent;
-  srcModule: SrcModule;
-}
-
-export interface AbstractElemBase {
-  kind: string;
-  span: Span;
-}
-
-export interface ElemWithContentsBase extends AbstractElemBase {
-  contents: AbstractElem[];
-}
-/** generated element, produced after parsing and binding */
-export interface SyntheticElem {
-  kind: "synthetic";
-  text: string;
-}
-
-/** a declaration identifer with a possible type */
-export interface TypedDeclElem extends ElemWithContentsBase {
-  kind: "typeDecl";
-  decl: DeclIdentElem;
-  typeRef?: TypeRefElem; // TODO Consider a variant for fn params and alias where typeRef is required
-}
-
-/** a parameter in a function declaration */
-export interface FnParamElem extends ElemWithContentsBase {
-  kind: "param";
-  name: TypedDeclElem;
-  attributes: AttributeElem[];
-}
-
-/** generic container of other elements */
-export interface StuffElem extends ElemWithContentsBase {
-  kind: "stuff";
-}
-
-/** a struct declaration that's been marked as a bindingStruct */
-export interface BindingStructElem extends StructElem {
-  bindingStruct: true;
-  entryFn?: FunctionDeclarationElem;
-}
-
-export type TypeTemplateParameter = ExpressionElem;
-
-/** a reference to a type, like 'f32', or 'MyStruct', or 'ptr<storage, array<f32>, read_only>'   */
-export interface TypeRefElem extends ElemWithContentsBase {
-  kind: "type";
-  name: RefIdent;
-  templateParams?: TypeTemplateParameter[];
-}
-
-//
-//
-// END OF OLD
-//
-//
 
 /** an attribute like '@compute' or '@binding(0)' */
 export interface AttributeElem {

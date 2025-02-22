@@ -151,7 +151,7 @@ export function transformBindingStruct(
   globalNames: Set<string>,
 ): SyntheticElem[] {
   return s.members.map(member => {
-    const { typeRef, name: memberName } = member;
+    const { type: typeRef, name: memberName } = member;
     const { name: typeName } = typeRef!; // members should always have a typeRef.. TODO fix typing to show this
     const typeParameters = typeRef?.templateParams;
 
