@@ -7,7 +7,7 @@ let gpu: GPU;
 
 beforeAll(async () => {
   const webgpu = await import("webgpu");
-  Object.assign(globalThis, (webgpu as any).globals); // TODO fix types upstream in webgpu package
+  Object.assign(globalThis, (webgpu as any).globals); // LATER fix types upstream in webgpu package
 
   gpu = webgpu.create([]);
 });
