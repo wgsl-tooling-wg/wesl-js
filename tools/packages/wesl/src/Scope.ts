@@ -27,8 +27,11 @@ export interface RefIdent extends IdentBase {
   kind: "ref";
   refersTo?: Ident; // import or decl ident in scope to which this ident refers. undefined before binding
   std?: true; // true if this is a standard wgsl identifier (like sin, or u32)
+
+  // TODO can we get to ast and scope indirectly, e.g. via refIdentElem?
   ast: WeslAST; // AST from module that contains this ident (to find imports during decl binding)
   scope: Scope; // scope containing this reference (bind to decls starting from this scope)
+
   refIdentElem: RefIdentElem; // for error reporting and mangling
 }
 
