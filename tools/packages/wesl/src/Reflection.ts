@@ -6,7 +6,6 @@ import {
   TextElem,
   TranslateTimeExpressionElem,
   TypeRefElem,
-  UnknownExpressionElem,
 } from "./AbstractElems.ts";
 import { assertThat } from "./Assertions.ts";
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
@@ -18,6 +17,7 @@ import {
   textureStorageTypes,
 } from "./StandardTypes.ts";
 import { findMap } from "./Util.ts";
+import { expressionToString } from "./LowerAndEmit.ts";
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
 export const textureStorage = matchOneOf(textureStorageTypes);
@@ -157,7 +157,7 @@ function memberToLayoutEntry(
   const bindingParam = findMap(member.attributes ?? [], ({ attribute: a }) =>
     a.kind === "attribute" && a.name === "binding" ? a : undefined,
   )?.params?.[0];
-  const binding = bindingParam ? paramText(bindingParam) : "?";
+  const binding = bindingParam ? expressionToString(bindingParam) : "?";
 
   const src = `
       {
@@ -267,17 +267,6 @@ function externalTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
     // LATER. how would we set the required source: HTMLVideoElement or VideoFrame?
   }
   return undefined;
-}
-
-function paramText(
-  expression: UnknownExpressionElem | NameElem | TranslateTimeExpressionElem,
-): string {
-  assertThat(
-    expression.kind === "expression",
-    "Only expression elements are supported in this position",
-  );
-  const text = expression.contents[0] as TextElem;
-  return text.text;
 }
 
 export function formatToTextureSampleType(

@@ -1,33 +1,25 @@
 import {
-  collectArray,
   delimited,
   fn,
   opt,
   or,
-  Parser,
   preceded,
   repeat,
   repeatPlus,
   req,
   seq,
+  span,
+  Span,
   Stream,
-  tagScope,
   token,
+  tokenKind,
   tokenOf,
   tracing,
   withSep,
   withSepPlus,
   yes,
 } from "mini-parse";
-import {
-  expressionCollect,
-  memberRefCollect,
-  nameCollect,
-  refIdent,
-  stuffCollect,
-  typeRefCollect,
-} from "../WESLCollect";
-import { number, qualified_ident, word, name } from "./BaseGrammar";
+import { qualified_ident, name, WeslParser } from "./BaseGrammar";
 import {
   templateClose,
   templateOpen,
@@ -38,106 +30,113 @@ import {
   BinaryExpression,
   BinaryOperator,
   ExpressionElem,
+  FunctionCallExpression,
   Literal,
   ParenthesizedExpression,
+  TemplatedIdentElem,
   UnaryExpression,
   UnaryOperator,
 } from "./ExpressionElem";
-import { NameElem } from "../AbstractElems";
+import {
+  IdentElem,
+  LhsExpression,
+  LhsIdentElem,
+  LhsParenthesizedExpression,
+  LhsUnaryExpression,
+  LhsUnaryOperator,
+  NameElem,
+} from "../AbstractElems";
 
-export const opt_template_list = opt(
-  seq(
-    templateOpen,
-    withSepPlus(",", () => template_parameter),
-    req(templateClose),
-  ),
-);
+const literal = or(
+  tokenOf("keyword", ["true", "false"]),
+  tokenKind("number"),
+).map(makeLiteral);
 
-// prettier-ignore
-const template_elaborated_ident = seq(
-  qualified_ident.collect(refIdent),
-  opt_template_list
-);
-const literal = or("true", "false", number);
-const paren_expression = seq("(", () => expression, req(")"));
+const paren_expression = delimited(
+  "(",
+  req(fn(() => expression)),
+  req(")"),
+).map(makeParenthesizedExpression);
 
-const primary_expression = or(
+const primary_expression: WeslParser<ExpressionElem> = or(
   literal,
   paren_expression,
-  seq(template_elaborated_ident, opt(fn(() => argument_expression_list))),
-);
-export const component_or_swizzle = repeatPlus(
-  or(
-    preceded(".", word),
-    collectArray(delimited("[", () => expression, req("]"))),
-  ),
-);
-// TODO: Remove
-// prettier-ignore
-/** parse simple struct.member style references specially, for binding struct lowering */
-export const simple_component_reference = tagScope(
   seq(
-    qualified_ident.collect(refIdent, "structRef"),
-    seq(".", word.collect(nameCollect, "component")),
-    opt(component_or_swizzle.collect(stuffCollect, "extra_components"))
-  ).collect(memberRefCollect)
+    fn(() => templated_ident),
+    opt(fn(() => argument_expression_list)),
+  ).map(tryMakeFunctionCall),
 );
-const unary_expression: Parser<Stream<WeslToken>, any> = or(
-  seq(tokenOf("symbol", ["!", "&", "*", "-", "~"]), () => unary_expression),
-  or(
-    simple_component_reference,
-    seq(primary_expression, opt(component_or_swizzle)),
+export const component_or_swizzle: WeslParser<(NameElem | ExpressionElem)[]> =
+  repeatPlus(
+    or(
+      preceded(".", name),
+      delimited("[", () => expression, req("]")),
+    ),
+  );
+const unary_expression: WeslParser<ExpressionElem> = or(
+  seq(unaryOperator(["!", "&", "*", "-", "~"]), () => unary_expression).map(
+    makeUnaryExpression,
+  ),
+  seq(primary_expression, opt(component_or_swizzle)).map(
+    tryMakeComponentOrSwizzle,
   ),
 );
-const bitwise_post_unary = or(
+const bitwise_post_unary: WeslParser<PartialBinaryExpression[]> = or(
   // TODO: I can skip template list discovery in these cases, because a&b<c cannot be a comparison. Must be a template
-  repeatPlus(seq("&", unary_expression)),
-  repeatPlus(seq("^", unary_expression)),
-  repeatPlus(seq("|", unary_expression)),
+  repeatPlus(seq(binaryOperator("&"), unary_expression)),
+  repeatPlus(seq(binaryOperator("^"), unary_expression)),
+  repeatPlus(seq(binaryOperator("|"), unary_expression)),
 );
-const multiplicative_operator = or("%", "*", "/");
-const additive_operator = or("+", "-");
-const shift_post_unary = (inTemplate: boolean) => {
-  const shift_left = seq("<<", unary_expression);
-  const shift_right = seq(">>", unary_expression);
-  const mul_add = seq(
+const multiplicative_operator = binaryOperator(["%", "*", "/"]);
+// TODO: "// this handles the special case `x = 5--7` which must be parsed as `x = 5 - (-7)`" is in mathis implementation
+const additive_operator = binaryOperator(["+", "-"]);
+const shift_post_unary = (
+  inTemplate: boolean,
+): WeslParser<PartialBinaryExpression[]> => {
+  const shift_left = seq(binaryOperator("<<"), unary_expression).map(v => [v]);
+  const shift_right = seq(binaryOperator(">>"), unary_expression).map(v => [v]);
+  const mul_add: WeslParser<PartialBinaryExpression[]> = seq(
     repeat(seq(multiplicative_operator, unary_expression)),
     repeat(
       seq(
         additive_operator,
-        unary_expression,
-        repeat(seq(multiplicative_operator, unary_expression)),
+        seq(
+          unary_expression,
+          repeat(seq(multiplicative_operator, unary_expression)),
+        ).map(makeRepeatingBinaryExpression),
       ),
     ),
-  );
+  ).map(([a, b]) => [...a, ...b]);
+
   return inTemplate ?
       or(shift_left, mul_add)
     : or(shift_left, shift_right, mul_add);
 };
-const relational_post_unary = (inTemplate: boolean) => {
+const relational_post_unary = (
+  inTemplate: boolean,
+): WeslParser<PartialBinaryExpression[]> => {
   return seq(
     shift_post_unary(inTemplate),
     opt(
       seq(
         // '<' is unambiguous, since templates were already caught by the primary expression inside of the previous unary_expression!
         inTemplate ?
-          tokenOf("symbol", ["<", "<=", "!=", "=="])
-        : tokenOf("symbol", [">", ">=", "<", "<=", "!=", "=="]),
+          binaryOperator(["<", "<=", "!=", "=="])
+        : binaryOperator([">", ">=", "<", "<=", "!=", "=="]),
         // TODO: I can skip template list discovery in this cases, because a>=b<c cannot be a comparison. Must be a template
-        unary_expression,
-        shift_post_unary(inTemplate),
+        seq(unary_expression, shift_post_unary(inTemplate)).map(
+          makeRepeatingBinaryExpression,
+        ),
       ),
     ),
-  );
+  ).map(([a, b]) => (b !== null ? [...a, b] : a));
 };
 
 /** The expression parser exists in two variants
  * `true` is template-expression: Refuses to parse parse symbols like `&&` and `||`.
  * `false` is maybe-template-expression: Does the template disambiguation.
  */
-const expressionParser = (
-  inTemplate: boolean,
-): Parser<Stream<WeslToken>, any> => {
+const expressionParser = (inTemplate: boolean): WeslParser<ExpressionElem> => {
   return seq(
     unary_expression,
     or(
@@ -149,16 +148,26 @@ const expressionParser = (
           yes()
         : or(
             repeatPlus(
-              seq("||", seq(unary_expression, relational_post_unary(false))),
+              seq(
+                binaryOperator("||"),
+                seq(unary_expression, relational_post_unary(false)).map(
+                  makeRepeatingBinaryExpression,
+                ),
+              ),
             ),
             repeatPlus(
-              seq("&&", seq(unary_expression, relational_post_unary(false))),
+              seq(
+                binaryOperator("&&"),
+                seq(unary_expression, relational_post_unary(false)).map(
+                  makeRepeatingBinaryExpression,
+                ),
+              ),
             ),
-            yes().map(() => []),
+            yes(),
           ),
-      ),
+      ).map(([a, b]) => (b !== null ? [...a, ...b] : a)),
     ),
-  );
+  ).map(makeRepeatingBinaryExpression);
 };
 
 let maybe_template = false;
@@ -166,31 +175,26 @@ export const expression = expressionParser(maybe_template);
 let is_template = true;
 const template_arg_expression = expressionParser(is_template);
 
-export const type_specifier: Parser<Stream<WeslToken>, any> = tagScope(
-  seq(
-    qualified_ident.collect(refIdent, "typeRefName"),
-    opt_template_list,
-  ).collect(typeRefCollect),
-).ctag("typeRefElem");
-
-/** a template_arg_expression with additional collection for parameters
- * that are types like array<f32> vs. expressions like 1+2 */
-// prettier-ignore
-const template_parameter = or(
-  // TODO: Remove this, it's wrong
-  type_specifier.ctag("templateParam"),
-  template_arg_expression.collect(expressionCollect, "templateParam")
+export const opt_template_list: WeslParser<ExpressionElem[] | null> = opt(
+  delimited(
+    templateOpen,
+    withSepPlus(",", template_arg_expression),
+    req(templateClose),
+  ),
 );
 
-export const argument_expression_list = seq(
+export const templated_ident: WeslParser<TemplatedIdentElem> = span(
+  seq(qualified_ident, opt_template_list),
+).map(makeTemplatedIdent);
+
+export const argument_expression_list = delimited(
   "(",
   withSep(",", expression),
   req(")"),
 );
 
 //--------- Specialized parser for @if(expr) -----------//
-const attribute_if_primary_expression: Parser<
-  Stream<WeslToken>,
+const attribute_if_primary_expression: WeslParser<
   Literal | ParenthesizedExpression | NameElem
 > = or(
   tokenOf("keyword", ["true", "false"]).map(makeLiteral),
@@ -202,40 +206,135 @@ const attribute_if_primary_expression: Parser<
   name,
 );
 
-const attribute_if_unary_expression: Parser<
-  Stream<WeslToken>,
-  ExpressionElem
-> = or(
+const attribute_if_unary_expression: WeslParser<ExpressionElem> = or(
   seq(
-    token("symbol", "!").map(makeUnaryOperator),
+    unaryOperator("!"),
     fn(() => attribute_if_unary_expression),
   ).map(makeUnaryExpression),
   attribute_if_primary_expression,
 );
 
-export const attribute_if_expression: Parser<
-  Stream<WeslToken>,
-  ExpressionElem
-> = weslExtension(
+export const attribute_if_expression: WeslParser<ExpressionElem> =
+  weslExtension(
+    seq(
+      attribute_if_unary_expression,
+      or(
+        repeatPlus(
+          seq(binaryOperator("||"), req(attribute_if_unary_expression)),
+        ),
+        repeatPlus(
+          seq(binaryOperator("&&"), req(attribute_if_unary_expression)),
+        ),
+        yes().map(() => []),
+      ),
+    ).map(makeRepeatingBinaryExpression),
+  );
+
+export const lhs_expression: WeslParser<LhsExpression> = or(
+  seq(qualified_ident.map(makeLhsIdentElem), opt(component_or_swizzle)).map(
+    tryMakeLhsComponentOrSwizzle,
+  ),
   seq(
-    attribute_if_unary_expression,
-    or(
-      repeatPlus(
-        seq(
-          token("symbol", "||").map(makeBinaryOperator),
-          req(attribute_if_unary_expression),
-        ),
-      ),
-      repeatPlus(
-        seq(
-          token("symbol", "&&").map(makeBinaryOperator),
-          req(attribute_if_unary_expression),
-        ),
-      ),
-      yes().map(() => []),
+    delimited("(", () => lhs_expression, ")").map(
+      makeLhsParenthesizedExpression,
     ),
-  ).map(makeRepeatingBinaryExpression),
+    opt(component_or_swizzle),
+  ).map(tryMakeLhsComponentOrSwizzle),
+  seq(lhsUnaryOperator("&"), () => lhs_expression).map(makeLhsUnaryExpression),
+  seq(lhsUnaryOperator("*"), () => lhs_expression).map(makeLhsUnaryExpression),
 );
+
+function tryMakeFunctionCall([ident, args]: [
+  TemplatedIdentElem,
+  ExpressionElem[] | null,
+]): TemplatedIdentElem | FunctionCallExpression {
+  if (args !== null) {
+    return {
+      kind: "call-expression",
+      function: ident,
+      arguments: args,
+    };
+  } else {
+    return ident;
+  }
+}
+
+// LATER how do I combine the two?
+function tryMakeComponentOrSwizzle([expression, componentOrSwizzle]: [
+  ExpressionElem,
+  (NameElem | ExpressionElem)[] | null,
+]): ExpressionElem {
+  if (componentOrSwizzle === null || componentOrSwizzle.length === 0) {
+    return expression;
+  }
+  let result = expression;
+  for (const v of componentOrSwizzle) {
+    if (v.kind === "name") {
+      result = {
+        kind: "component-member-expression",
+        access: v,
+        base: result,
+      };
+    } else {
+      result = {
+        kind: "component-expression",
+        access: v,
+        base: result,
+      };
+    }
+  }
+  return result;
+}
+function tryMakeLhsComponentOrSwizzle([expression, componentOrSwizzle]: [
+  LhsExpression,
+  (NameElem | ExpressionElem)[] | null,
+]): LhsExpression {
+  if (componentOrSwizzle === null || componentOrSwizzle.length === 0) {
+    return expression;
+  }
+  let result = expression;
+  for (const v of componentOrSwizzle) {
+    if (v.kind === "name") {
+      result = {
+        kind: "component-member-expression",
+        access: v,
+        base: result,
+      };
+    } else {
+      result = {
+        kind: "component-expression",
+        access: v,
+        base: result,
+      };
+    }
+  }
+  return result;
+}
+
+function makeTemplatedIdent({
+  value: [qualified_ident, template],
+  span,
+}: {
+  value: [IdentElem[], ExpressionElem[] | null];
+  span: Span;
+}): TemplatedIdentElem {
+  return {
+    kind: "templated-ident",
+    span,
+    path: qualified_ident.slice(0, -1),
+    ident: qualified_ident[qualified_ident.length - 1],
+    template: template ?? undefined,
+  };
+}
+function makeLhsIdentElem(qualified_ident: IdentElem[]): LhsIdentElem {
+  const name = qualified_ident[qualified_ident.length - 1];
+  return {
+    kind: "lhs-ident",
+    name,
+    path: qualified_ident.slice(0, -1),
+    span: [qualified_ident[0].span[0], name.span[1]],
+  };
+}
 
 function makeLiteral(token: WeslToken<"keyword" | "number">): Literal {
   return {
@@ -253,18 +352,48 @@ function makeParenthesizedExpression(
     expression,
   };
 }
-
-function makeUnaryOperator(token: WeslToken<"symbol">): UnaryOperator {
+function makeLhsParenthesizedExpression(
+  expression: LhsExpression,
+): LhsParenthesizedExpression {
   return {
-    value: token.text as any,
-    span: token.span,
+    kind: "parenthesized-expression",
+    expression,
   };
 }
-function makeBinaryOperator(token: WeslToken<"symbol">): BinaryOperator {
-  return {
+
+function unaryOperator(
+  text: UnaryOperator["value"] | UnaryOperator["value"][],
+): WeslParser<UnaryOperator> {
+  return (
+    Array.isArray(text) ?
+      tokenOf("symbol", text)
+    : token("symbol", text)).map(token => ({
     value: token.text as any,
     span: token.span,
-  };
+  }));
+}
+function lhsUnaryOperator(
+  text: LhsUnaryOperator["value"] | LhsUnaryOperator["value"][],
+): WeslParser<LhsUnaryOperator> {
+  return (
+    Array.isArray(text) ?
+      tokenOf("symbol", text)
+    : token("symbol", text)).map(token => ({
+    value: token.text as any,
+    span: token.span,
+  }));
+}
+
+function binaryOperator(
+  text: BinaryOperator["value"] | BinaryOperator["value"][],
+): WeslParser<BinaryOperator> {
+  return (
+    Array.isArray(text) ?
+      tokenOf("symbol", text)
+    : token("symbol", text)).map(token => ({
+    value: token.text as any,
+    span: token.span,
+  }));
 }
 function makeUnaryExpression([operator, expression]: [
   UnaryOperator,
@@ -276,10 +405,22 @@ function makeUnaryExpression([operator, expression]: [
     expression,
   };
 }
+function makeLhsUnaryExpression([operator, expression]: [
+  LhsUnaryOperator,
+  LhsExpression,
+]): LhsUnaryExpression {
+  return {
+    kind: "unary-expression",
+    operator,
+    expression,
+  };
+}
+
+type PartialBinaryExpression = [BinaryOperator, ExpressionElem];
 /** A list of left-to-right associative binary expressions */
 function makeRepeatingBinaryExpression([start, repeating]: [
   ExpressionElem,
-  [BinaryOperator, ExpressionElem][],
+  PartialBinaryExpression[],
 ]): ExpressionElem {
   let result: ExpressionElem = start;
   for (const [op, left] of repeating) {
@@ -301,11 +442,10 @@ function makeBinaryExpression([left, operator, right]: [
 }
 
 if (tracing) {
-  const names: Record<string, Parser<Stream<WeslToken>, unknown>> = {
+  const names: Record<string, WeslParser<unknown>> = {
     argument_expression_list,
-    type_specifier,
+    templated_ident,
     opt_template_list,
-    template_elaborated_ident,
     literal,
     paren_expression,
     primary_expression,

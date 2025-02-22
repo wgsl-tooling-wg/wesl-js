@@ -10,7 +10,6 @@ import {
   TypedDeclElem,
   TypeRefElem,
   TypeTemplateParameter,
-  UnknownExpressionElem,
 } from "../AbstractElems.ts";
 import {
   diagnosticControlToString,
@@ -89,11 +88,6 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     str.add(": " + typeRefElemToString(typeRef));
   } else if (kind === "name") {
     str.add(" " + elem.name);
-  } else if (kind === "memberRef") {
-    const { extraComponents } = elem;
-    const extraText =
-      extraComponents ? debugContentsToString(extraComponents) : "";
-    str.add(` ${elem.name.ident.originalName}.${elem.member.name}${extraText}`);
   } else if (kind === "fn") {
     addFnFields(elem, str);
   } else if (kind === "alias") {
@@ -103,26 +97,13 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     str.add("=" + typeRefElemToString(typeRef));
   } else if (kind === "attribute") {
     addAttribute(elem.attribute, str);
-  } else if (kind === "expression") {
-    const contents = elem.contents
-      .map(e => {
-        if (e.kind === "text") {
-          return "'" + e.text + "'";
-        } else {
-          return globalDeclToString(e);
-        }
-      })
-      .join(" ");
-    str.add(" " + contents);
   } else if (kind === "type") {
     const { name } = elem;
     const nameStr = typeof name === "string" ? name : name.originalName;
     str.add(" " + nameStr);
 
     if (elem.templateParams !== undefined) {
-      const paramStrs = elem.templateParams
-        .map(templateParamToString)
-        .join(", ");
+      const paramStrs = elem.templateParams.map(expressionToString).join(", ");
       str.add("<" + paramStrs + ">");
     }
   } else if (kind === "synthetic") {
@@ -165,7 +146,7 @@ function addAttribute(elem: Attribute, str: LineWrapper) {
     str.add(" @" + name);
     if (params.length > 0) {
       str.add("(");
-      str.add(params.map(unknownExpressionToString).join(", "));
+      str.add(params.map(expressionToString).join(", "));
       str.add(")");
     }
   } else if (kind === "@builtin") {
@@ -243,38 +224,6 @@ function printDirective(
   }
 }
 
-function unknownExpressionToString(elem: UnknownExpressionElem): string {
-  // TODO: Temp hack while I clean up the expression parsing
-  if ("contents" in elem) {
-    // @ts-ignore
-    const contents = elem.contents
-      // @ts-ignore
-      .map(e => {
-        if (e.kind === "text") {
-          return "'" + e.text + "'";
-        } else {
-          return globalDeclToString(e);
-        }
-      })
-      .join(" ");
-    return contents;
-  }
-  return globalDeclToString(elem);
-}
-
-function templateParamToString(p: TypeTemplateParameter): string {
-  if (typeof p === "string") {
-    return p;
-  } else if (p.kind === "type") {
-    return typeRefElemToString(p);
-  } else if (p.kind === "expression") {
-    return unknownExpressionToString(p);
-  } else {
-    console.log("unknown template parameter type", p);
-    return "??";
-  }
-}
-
 function typeRefElemToString(elem: TypeRefElem): string {
   if (!elem) return "?type?";
   const { name } = elem;
@@ -282,7 +231,7 @@ function typeRefElemToString(elem: TypeRefElem): string {
 
   let params = "";
   if (elem.templateParams !== undefined) {
-    const paramStrs = elem.templateParams.map(templateParamToString).join(", ");
+    const paramStrs = elem.templateParams.map(expressionToString).join(", ");
     params = "<" + paramStrs + ">";
   }
   return nameStr + params;

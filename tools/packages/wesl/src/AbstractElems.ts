@@ -20,51 +20,20 @@ export type GrammarElem = ContainerElem | TerminalElem;
 
 export type ContainerElem =
   | AttributeElem
-  | AliasElemOld
   | ConstAssertElem
-  | ConstElem
-  | UnknownExpressionElem
-  | SimpleMemberRef
-  | FnElem
+  | FunctionDeclarationElem
   | TypedDeclElem
-  | GlobalVarElem
-  | LetElem
-  | ModuleElem
-  | OverrideElem
   | FnParamElem
   | StructElem
   | StructMemberElem
   | StuffElem
-  | TypeRefElem
-  | VarElem;
-
+  | TypeRefElem;
 export type TerminalElem =
   | DeclIdentElem //
   | NameElem
-  | RefIdentElem
-  | TextElem;
+  | RefIdentElem;
 
-export type DeclarationElem = GlobalDeclarationElem | FnParamElem | VarElem;
-
-export interface AbstractElemBase {
-  kind: AbstractElem["kind"];
-  span: Span;
-}
-
-export interface ElemWithContentsBase extends AbstractElemBase {
-  contents: AbstractElem[];
-}
-
-/**
- * a raw bit of text in WESL source that's typically copied to the linked WGSL.
- * e.g. a keyword  like 'var'
- * or a phrase we needn't analyze further like '@diagnostic(off,derivative_uniformity)'
- */
-export interface TextElem extends AbstractElemBase {
-  // TODO: Remove
-  kind: "text";
-  text: string;
-}
+// TODO: Remove the above ^^^^
 
 /** a name that doesn't need to be an Ident
  * e.g.
@@ -74,9 +43,10 @@ export interface TextElem extends AbstractElemBase {
  * - an interpolation sampling name
  * - a translate time feature
  */
-export interface NameElem extends AbstractElemBase {
+export interface NameElem {
   kind: "name";
   name: string;
+  span: Span;
 }
 
 /** an identifier */
@@ -85,6 +55,95 @@ export interface IdentElem {
   name: string;
   span: Span;
 }
+
+/** a wesl module */
+export interface ModuleElem {
+  kind: "module";
+
+  /** imports found in this module */
+  imports: ImportElem[];
+
+  /** directives found in this module */
+  directives: DirectiveElem[];
+
+  /** declarations found in this module */
+  declarations: GlobalDeclarationElem[];
+}
+
+export type GlobalDeclarationElem =
+  | AliasElem
+  | ConstAssertElem
+  | DeclarationElem
+  | FunctionDeclarationElem
+  | StructElem;
+
+interface GlobalDeclarationBase {
+  kind: GlobalDeclarationElem["kind"];
+  span: Span;
+  attributes?: AttributeElem[];
+}
+
+/** an alias statement */
+export interface AliasElem extends GlobalDeclarationBase {
+  kind: "alias";
+  name: IdentElem;
+  type: TemplatedIdentElem;
+}
+
+/** a const_assert statement */
+export interface ConstAssertElem extends GlobalDeclarationBase {
+  kind: "assert";
+  expression: ExpressionElem;
+}
+
+/** a var/let/const/override declaration */
+export interface DeclarationElem extends GlobalDeclarationBase {
+  kind: "declaration";
+  variant: DeclarationVariant;
+  name: IdentElem;
+  type?: TemplatedIdentElem;
+  initializer?: ExpressionElem;
+}
+
+export type DeclarationVariant =
+  | { kind: "const" }
+  | { kind: "override" }
+  | { kind: "let" }
+  | { kind: "var"; template?: ExpressionElem[] };
+
+/** a function declaration */
+export interface FunctionDeclarationElem extends GlobalDeclarationBase {
+  kind: "function";
+  name: IdentElem;
+  params: FunctionParam[];
+  returnAttributes?: AttributeElem[];
+  returnType?: TemplatedIdentElem;
+  body: CompoundStatement;
+}
+export interface FunctionParam {
+  attributes?: AttributeElem[];
+  name: IdentElem;
+  type: TemplatedIdentElem;
+}
+
+/** a struct declaration */
+export interface StructElem extends GlobalDeclarationBase {
+  kind: "struct";
+  name: IdentElem;
+  members: StructMemberElem[];
+  span: Span;
+  bindingStruct?: true; // used later during binding struct transformation
+}
+
+/** a member of a struct declaration */
+export interface StructMemberElem {
+  name: NameElem;
+  typeRef: TemplatedIdentElem;
+  attributes?: AttributeElem[];
+  mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
+}
+
+/* ------   OLD ELEMENTS  ------   */
 
 /* ------   Terminal Elements  (don't contain other elements)  ------   */
 /** an identifier that refers to a declaration (aka a symbol reference) */
@@ -101,118 +160,19 @@ export interface DeclIdentElem extends AbstractElemBase {
   srcModule: SrcModule;
 }
 
-/** a wesl module */
-export interface ModuleElem extends ElemWithContentsBase {
-  kind: "module";
-
-  /** imports found in this module */
-  imports: ImportElem[];
-
-  /** directives found in this module */
-  directives: DirectiveElem[];
-
-  /** declarations found in this module */
-  declarations: GlobalDeclarationElem[];
-}
-
-export type GlobalDeclarationElem =
-  | AliasElemOld
-  | ConstAssertElem
-  | ConstElem
-  | FnElem
-  | GlobalVarElem
-  | OverrideElem
-  | StructElem;
-
-interface GlobalDeclarationBase {
-  kind: GlobalDeclarationElem["kind"];
+export interface AbstractElemBase {
+  kind: string;
   span: Span;
-  attributes?: AttributeElem[];
 }
 
-/** an alias statement */
-export interface AliasElemOld extends ElemWithContentsBase {
-  kind: "alias";
-  name: DeclIdentElem;
-  typeRef: TypeRefElem;
+export interface ElemWithContentsBase extends AbstractElemBase {
+  contents: AbstractElem[];
 }
-
-/** an alias statement */
-export interface AliasElem extends GlobalDeclarationBase {
-  kind: "alias";
-  name: IdentElem;
-  type: TemplatedIdentElem;
-}
-
-/** a const_assert statement */
-export interface ConstAssertElem
-  extends ElemWithContentsBase,
-    GlobalDeclarationBase {
-  kind: "assert";
-  expression: ExpressionElem;
-}
-
-/** a const declaration */
-export interface ConstElem extends ElemWithContentsBase, GlobalDeclarationBase {
-  kind: "const";
-  name: TypedDeclElem;
-}
-
-/** a function declaration */
-export interface FnElem extends ElemWithContentsBase, GlobalDeclarationBase {
-  kind: "fn";
-  name: DeclIdentElem;
-  params: FnParamElem[];
-  returnType?: TypeRefElem;
-  body: Statement[];
-  // TODO: Model everything
-}
-
-/** a global variable declaration (at the root level) */
-export interface GlobalVarElem
-  extends ElemWithContentsBase,
-    GlobalDeclarationBase {
-  kind: "gvar";
-  name: TypedDeclElem;
-}
-
-/** an override declaration */
-export interface OverrideElem
-  extends ElemWithContentsBase,
-    GlobalDeclarationBase {
-  kind: "override";
-  name: TypedDeclElem;
-}
-
-/** a struct declaration */
-export interface StructElem
-  extends ElemWithContentsBase,
-    GlobalDeclarationBase {
-  kind: "struct";
-  name: DeclIdentElem;
-  members: StructMemberElem[];
-  bindingStruct?: true; // used later during binding struct transformation
-  attributes: AttributeElem[];
-}
-
-/** a member of a struct declaration */
-export interface StructMemberElem extends ElemWithContentsBase {
-  kind: "member";
-  name: NameElem;
-  attributes?: AttributeElem[];
-  typeRef: TypeRefElem;
-  mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
-}
-
-/* ------   Synthetic element (for transformations, not produced by grammar) ------   */
-
 /** generated element, produced after parsing and binding */
 export interface SyntheticElem {
   kind: "synthetic";
   text: string;
 }
-
-/* ------   Container Elements  (contain other elements)  ------   */
 
 /** a declaration identifer with a possible type */
 export interface TypedDeclElem extends ElemWithContentsBase {
@@ -221,10 +181,44 @@ export interface TypedDeclElem extends ElemWithContentsBase {
   typeRef?: TypeRefElem; // TODO Consider a variant for fn params and alias where typeRef is required
 }
 
+/** a parameter in a function declaration */
+export interface FnParamElem extends ElemWithContentsBase {
+  kind: "param";
+  name: TypedDeclElem;
+  attributes: AttributeElem[];
+}
+
+/** generic container of other elements */
+export interface StuffElem extends ElemWithContentsBase {
+  kind: "stuff";
+}
+
+/** a struct declaration that's been marked as a bindingStruct */
+export interface BindingStructElem extends StructElem {
+  bindingStruct: true;
+  entryFn?: FunctionDeclarationElem;
+}
+
+export type TypeTemplateParameter = ExpressionElem;
+
+/** a reference to a type, like 'f32', or 'MyStruct', or 'ptr<storage, array<f32>, read_only>'   */
+export interface TypeRefElem extends ElemWithContentsBase {
+  kind: "type";
+  name: RefIdent;
+  templateParams?: TypeTemplateParameter[];
+}
+
+//
+//
+// END OF OLD
+//
+//
+
 /** an attribute like '@compute' or '@binding(0)' */
-export interface AttributeElem extends ElemWithContentsBase {
+export interface AttributeElem {
   kind: "attribute";
   attribute: Attribute;
+  span: Span;
 }
 export type Attribute =
   | StandardAttribute
@@ -235,7 +229,7 @@ export type Attribute =
 export interface StandardAttribute {
   kind: "attribute";
   name: string;
-  params: UnknownExpressionElem[];
+  params: ExpressionElem[];
 }
 export interface InterpolateAttribute {
   kind: "@interpolate";
@@ -255,50 +249,10 @@ export interface IfAttribute {
   param: TranslateTimeExpressionElem;
 }
 
-export interface UnknownExpressionElem extends ElemWithContentsBase {
-  kind: "expression";
-}
-
 export interface TranslateTimeExpressionElem {
   kind: "translate-time-expression";
   expression: ExpressionElem;
   span: Span;
-}
-
-/** a parameter in a function declaration */
-export interface FnParamElem extends ElemWithContentsBase {
-  kind: "param";
-  name: TypedDeclElem;
-  attributes: AttributeElem[];
-}
-
-/** simple references to structures, like myStruct.bar
- * (used for transforming refs to binding structs) */
-export interface SimpleMemberRef extends ElemWithContentsBase {
-  kind: "memberRef";
-  name: RefIdentElem;
-  member: NameElem;
-  extraComponents?: StuffElem;
-}
-
-/** generic container of other elements */
-export interface StuffElem extends ElemWithContentsBase {
-  kind: "stuff";
-}
-
-/** a struct declaration that's been marked as a bindingStruct */
-export interface BindingStructElem extends StructElem {
-  bindingStruct: true;
-  entryFn?: FnElem;
-}
-
-export type TypeTemplateParameter = TypeRefElem | UnknownExpressionElem;
-
-/** a reference to a type, like 'f32', or 'MyStruct', or 'ptr<storage, array<f32>, read_only>'   */
-export interface TypeRefElem extends ElemWithContentsBase {
-  kind: "type";
-  name: RefIdent;
-  templateParams?: TypeTemplateParameter[];
 }
 
 export type Statement =
@@ -309,10 +263,10 @@ export type Statement =
   | WhileStatement
   | CompoundStatement
   | FunctionCallStatement
-  | VarStatement
-  | LetStatement
-  | ConstElem
-  | VariableUpdatingStatement
+  | DeclarationElem
+  | AssignmentStatement
+  | IncrementStatement
+  | DecrementStatement
   | BreakStatement
   | ContinueStatement
   | DiscardStatement
@@ -321,51 +275,67 @@ export type Statement =
 
 interface StatementBase {
   kind: Statement["kind"];
-  attributes: AttributeElem[];
+  attributes?: AttributeElem[];
   span: Span;
-}
-
-/** a variable declaration */
-export interface VarElem extends ElemWithContentsBase {
-  kind: "var";
-  name: TypedDeclElem;
-}
-
-export interface LetElem extends ElemWithContentsBase {
-  kind: "let";
-  name: TypedDeclElem;
 }
 
 /** for(let i = 0; i < 10; i++) { } */
 export interface ForStatement extends StatementBase {
   kind: "for-statement";
-  // TODO:
-  body: Statement[];
+  initializer?: Statement;
+  condition?: ExpressionElem;
+  update?: Statement;
+  body: CompoundStatement;
 }
 
 /** if(1 == 1) { } */
 export interface IfStatement extends StatementBase {
   kind: "if-else-statement";
+  main: IfClause;
+}
+
+/** A clause in an if statement (`if`, `else if`, `else`), without attributes. */
+export interface IfClause {
   condition: ExpressionElem;
   accept: CompoundStatement;
-  reject: IfStatement | CompoundStatement;
+  reject?: IfClause | CompoundStatement;
 }
 
 export interface LoopStatement extends StatementBase {
   kind: "loop-statement";
-  // TODO:
+  body: CompoundStatement;
+  /** Last element in the body */
+  continuing?: ContinuingStatement;
+}
+
+export interface ContinuingStatement {
+  kind: "continuing-statement";
+  attributes?: AttributeElem[];
+  body: CompoundStatement;
+  /** Last element in the body */
+  breakIf?: BreakIfStatement;
+  span: Span;
+}
+
+export interface BreakIfStatement {
+  kind: "break-if-statement";
+  attributes?: AttributeElem[];
+  expression: ExpressionElem;
+  span: Span;
 }
 
 export interface SwitchStatement extends StatementBase {
   kind: "switch-statement";
   selector: ExpressionElem;
-  cases: SwitchCase;
+  bodyAttributes?: AttributeElem[];
+  clauses: SwitchClause[];
 }
 /**
  * `case foo: {}` or `default: {}`.
  * A `default:` is modeled as a `case default:`
  */
-export interface SwitchCase {
+export interface SwitchClause {
+  attributes?: AttributeElem[];
   cases: SwitchCaseSelector[];
   body: CompoundStatement;
   span: Span;
@@ -381,6 +351,8 @@ export interface DefaultCaseSelector {
 
 export interface WhileStatement extends StatementBase {
   kind: "while-statement";
+  condition: ExpressionElem;
+  body: CompoundStatement;
 }
 
 export interface CompoundStatement extends StatementBase {
@@ -391,16 +363,32 @@ export interface CompoundStatement extends StatementBase {
 /** `foo(arg, arg);` */
 export interface FunctionCallStatement extends StatementBase {
   kind: "call-statement";
-  function: RefIdentElem;
+  function: TemplatedIdentElem;
   arguments: ExpressionElem[];
 }
 
-type VarStatement = VarElem;
-type LetStatement = LetElem;
+export interface AssignmentStatement extends StatementBase {
+  kind: "assignment-statement";
+  left: LhsExpression | LhsDiscard;
+  operator: AssignmentOperator;
+  right: ExpressionElem;
+}
 
-export interface VariableUpdatingStatement extends StatementBase {
-  kind: "variable-updating-statement";
-  // TODO:
+export interface AssignmentOperator {
+  value:
+    | ("=" | "<<=" | ">>=" | "%=" | "&=")
+    | ("*=" | "+=" | "-=" | "/=" | "^=" | "|=");
+  span: Span;
+}
+
+export interface IncrementStatement extends StatementBase {
+  kind: "increment-statement";
+  expression: LhsExpression;
+}
+
+export interface DecrementStatement extends StatementBase {
+  kind: "decrement-statement";
+  expression: LhsExpression;
 }
 
 export interface BreakStatement extends StatementBase {
@@ -420,12 +408,25 @@ export interface ReturnStatement extends StatementBase {
   expression?: ExpressionElem;
 }
 
+export interface LhsDiscard {
+  kind: "discard-expression";
+  span: Span;
+}
+
 export type LhsExpression =
   | LhsUnaryExpression
   | LhsComponentExpression
   | LhsComponentMemberExpression
   | LhsParenthesizedExpression
-  | DeclIdentElem;
+  | LhsIdentElem;
+
+/** Analogous to the `TemplatedIdentElem` */
+export interface LhsIdentElem {
+  kind: "lhs-ident";
+  name: IdentElem;
+  path?: IdentElem[];
+  span: Span;
+}
 
 /** (expr) */
 export interface LhsParenthesizedExpression {
@@ -436,7 +437,7 @@ export interface LhsParenthesizedExpression {
 export interface LhsComponentExpression {
   kind: "component-expression";
   base: LhsExpression;
-  access: LhsExpression;
+  access: ExpressionElem;
 }
 /** `foo.member` */
 export interface LhsComponentMemberExpression {

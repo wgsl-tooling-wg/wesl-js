@@ -63,6 +63,7 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   if (parseResult === null) {
     throw new Error("parseWESL failed");
   }
+  appState.stable.moduleElem = parseResult.value;
 
   return appState.stable as WeslAST;
 }

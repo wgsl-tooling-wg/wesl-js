@@ -1,4 +1,4 @@
-import { CollectContext, CollectPair, srcLog, tracing } from "mini-parse";
+import { CollectContext, CollectPair, Span, srcLog, tracing } from "mini-parse";
 import {
   AbstractElem,
   AliasElemOld,
@@ -12,19 +12,18 @@ import {
   FnParamElem,
   GlobalVarElem,
   GrammarElem,
+  IdentElem,
   LetElem,
   ModuleElem,
   NameElem,
   OverrideElem,
   RefIdentElem,
-  SimpleMemberRef,
   StructElem,
   StructMemberElem,
   StuffElem,
   TextElem,
   TypedDeclElem,
   TypeRefElem,
-  UnknownExpressionElem,
   VarElem,
 } from "./AbstractElems.ts";
 import {
@@ -36,6 +35,11 @@ import {
 import { DeclIdent, emptyScope, RefIdent, Scope } from "./Scope.ts";
 import { ImportElem } from "./parse/ImportElems.ts";
 import { DirectiveElem } from "./parse/DirectiveElem.ts";
+import {
+  assertThat,
+  assertUnreachable,
+} from "../../mini-parse/src/Assertions.ts";
+import { ExpressionElem } from "./parse/ExpressionElem.ts";
 
 /** add an elem to the .contents array of the currently containing element */
 function addToOpenElem(cc: CollectContext, elem: AbstractElem): void {
@@ -67,6 +71,37 @@ export function refIdent(cc: CollectContext): RefIdentElem {
   const identElem: RefIdentElem = {
     kind,
     span: [start, end],
+    srcModule,
+    ident,
+  };
+  ident.refIdentElem = identElem;
+
+  saveIdent(cc, identElem);
+  addToOpenElem(cc, identElem);
+  return identElem;
+}
+
+function makeRefIdent(
+  path: IdentElem[],
+  realIdent: IdentElem,
+  cc: CollectContext,
+): RefIdentElem {
+  const app = cc.app as WeslParseState;
+  const { scope } = app.context;
+  const { srcModule } = app.stable;
+
+  const kind = "ref";
+  const ident: RefIdent = {
+    kind,
+    originalName: [...path.map(v => v.name), realIdent.name].join("::"),
+    ast: cc.app.stable,
+    scope,
+    id: identId++,
+    refIdentElem: null as any, // set below
+  };
+  const identElem: RefIdentElem = {
+    kind,
+    span: realIdent.span,
     srcModule,
     ident,
   };
@@ -274,82 +309,59 @@ export const collectStructMember = collectElem(
 export const collectAttribute = collectElem(
   "attribute",
   (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
-    const attribute = cc.tags.attribute?.[0] as Attribute | undefined;
-    if (attribute !== undefined) {
-      const partElem: AttributeElem = {
-        ...openElem,
-        attribute,
-      };
-      return partElem;
-    } else {
-      const params = (cc.tags.attrParam ?? []) as UnknownExpressionElem[];
-      const name = cc.tags.name?.[0]! as string;
-      const partElem: AttributeElem = {
-        ...openElem,
-        attribute: {
-          kind: "attribute",
-          name,
-          params,
-        },
-      };
-      return partElem;
+    const attribute = cc.tags.attribute?.[0] as Attribute;
+    if (!attribute) {
+      throw new Error("missing attribute");
     }
-  },
-);
-
-export const typeRefCollect = collectElem(
-  "type",
-  // @ts-ignore
-  (cc: CollectContext, openElem: PartElem<TypeRefElem>) => {
-    let templateParamsTemp: any[] | undefined = cc.tags.templateParam?.flat(3);
-
-    const typeRef = cc.tags.typeRefName?.[0] as string | RefIdentElem;
-    const name = typeof typeRef === "string" ? typeRef : typeRef.ident;
-    const partElem = {
+    const partElem: AttributeElem = {
       ...openElem,
-      name,
-      templateParams: templateParamsTemp as any[],
+      attribute,
     };
-    // dlog("typeRefCollect", { tags: [...Object.keys(cc.tags)] });
-    // collectLog(cc, "typeRefCollect", elemToString(partElem));
-    // dlog({ typeRefCollect: elemToString(partElem) });
-    // @ts-ignore
-    return withTextCover(partElem, cc);
+    return partElem;
   },
 );
 
-// TODO: This creates useless unknown-expression elements
-export const expressionCollect = collectElem(
-  "expression",
-  (cc: CollectContext, openElem: PartElem<UnknownExpressionElem>) => {
-    const partElem = { ...openElem };
-    return withTextCover(partElem, cc);
-  },
-);
+export function expressionDataCollect(cc: CollectContext) {
+  const expression = cc.tags.expression?.[0] as ExpressionElem | undefined;
+  assertThat(expression !== undefined);
+
+  // And now add the refIdents
+  function iter(e: ExpressionElem) {
+    if (e.kind === "binary-expression") {
+      iter(e.left);
+      iter(e.right);
+    } else if (e.kind === "unary-expression") {
+      iter(e.expression);
+    } else if (e.kind === "call-expression") {
+      iter(e.function);
+      e.arguments.forEach(v => iter(v));
+    } else if (e.kind === "component-expression") {
+      //
+      iter(e.base);
+      iter(e.access);
+    } else if (e.kind === "component-member-expression") {
+      iter(e.base);
+    } else if (e.kind === "literal" || e.kind === "name") {
+      // do nothing
+    } else if (e.kind === "parenthesized-expression") {
+      // This calls the expression parser, which does collect. Nothing to do here
+      // iter(e.expression);
+    } else if (e.kind === "templated-ident") {
+      makeRefIdent(e.path ?? [], e.ident, cc);
+      // This calls the expression parser, which does collect. Nothing to do here
+      // e.template?.forEach(v => iter(v));
+    } else {
+      assertUnreachable(e);
+    }
+  }
+  iter(expression);
+}
 
 export const stuffCollect = collectElem(
   "stuff",
   (cc: CollectContext, openElem: PartElem<StuffElem>) => {
     const partElem = { ...openElem };
     return withTextCover(partElem, cc);
-  },
-);
-
-export const memberRefCollect = collectElem(
-  "memberRef",
-  (cc: CollectContext, openElem: PartElem<SimpleMemberRef>) => {
-    const { component, structRef, extra_components } = cc.tags;
-    const member = component![0] as NameElem;
-    const name = structRef?.flat()[0] as RefIdentElem;
-    const extraComponents = extra_components?.flat()[0] as StuffElem;
-
-    const partElem: SimpleMemberRef = {
-      ...openElem,
-      name,
-      member,
-      extraComponents,
-    };
-    return withTextCover(partElem, cc) as any;
   },
 );
 
@@ -360,32 +372,6 @@ export function nameCollect(cc: CollectContext): NameElem {
   addToOpenElem(cc, elem);
   return elem;
 }
-
-export const collectModule = collectElem(
-  "module",
-  (cc: CollectContext, openElem: PartElem<ModuleElem>) => {
-    const imports = cc.tags.import ?? ([] as ImportElem[]);
-    const directives = cc.tags.directive ?? ([] as DirectiveElem[]);
-    const ccComplete = { ...cc, start: 0, end: cc.src.length }; // force module to cover entire source despite ws skipping
-    openElem.contents.unshift(...[...imports, ...directives]); // TODO: Remove this hack to get withTextCover to not cover the imports & directives
-    const moduleElem: ModuleElem = withTextCover(
-      {
-        ...openElem,
-        imports,
-        directives,
-        declarations: [], // TODO: Fill in the declarations
-      },
-      ccComplete,
-    );
-    moduleElem.contents = moduleElem.contents.filter(
-      v => (v.kind as any) !== "import" && (v.kind as any) !== "directive",
-    ); // TODO: Remove this hack to get withTextCover to not cover the imports & directives
-
-    const weslState: StableState = cc.app.stable;
-    weslState.moduleElem = moduleElem;
-    return moduleElem;
-  },
-);
 
 /** collect a scope start starts before and ends after a parser */
 export function scopeCollect(): CollectPair<Scope> {

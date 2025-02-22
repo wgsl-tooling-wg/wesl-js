@@ -5,7 +5,6 @@ import {
   TranslateTimeExpressionElem,
   TypeRefElem,
   TypeTemplateParameter,
-  UnknownExpressionElem,
 } from "./AbstractElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
 import {
@@ -27,7 +26,7 @@ export function attributeToString(e: AttributeElem): string {
       return "@" + e.attribute.name;
     } else {
       return `@${e.attribute.name}(${params
-        .map(param => contentsToString(param))
+        .map(param => expressionToString(param))
         .join(", ")})`;
     }
   } else if (kind === "@builtin") {
@@ -47,23 +46,7 @@ export function attributeToString(e: AttributeElem): string {
 }
 
 export function typeListToString(params: TypeTemplateParameter[]): string {
-  return `<${params.map(typeParamToString).join(", ")}>`;
-}
-
-export function typeParamToString(param?: TypeTemplateParameter): string {
-  if (param === undefined) return "?";
-  if (typeof param === "string") return param;
-
-  if (param.kind === "expression") return contentsToString(param);
-  if (param.kind === "type") return typeRefToString(param);
-  assertUnreachable(param);
-}
-
-export function typeRefToString(t?: TypeRefElem): string {
-  if (!t) return "?";
-  const { name, templateParams } = t;
-  const params = templateParams ? typeListToString(templateParams) : "";
-  return `${refToString(name)}${params}`;
+  return `<${params.map(expressionToString).join(", ")}>`;
 }
 
 function refToString(ref: RefIdent | string): string {
@@ -73,10 +56,8 @@ function refToString(ref: RefIdent | string): string {
   return decl.mangledName || decl.originalName;
 }
 
-export function contentsToString(
-  elem: UnknownExpressionElem | NameElem | StuffElem,
-): string {
-  if (elem.kind === "expression" || elem.kind === "stuff") {
+export function contentsToString(elem: NameElem | StuffElem): string {
+  if (elem.kind === "stuff") {
     const parts = elem.contents.map(c => {
       const { kind } = c;
       if (kind === "text") {

@@ -6,7 +6,6 @@ import {
   DeclarationElem,
   FnElem,
   ModuleElem,
-  SimpleMemberRef,
   StructElem,
   StructMemberElem,
   SyntheticElem,
@@ -20,7 +19,6 @@ import {
   attributeToString,
   contentsToString,
   typeListToString,
-  typeParamToString,
 } from "./RawEmit.ts";
 import { textureStorage } from "./Reflection.ts";
 import { DeclIdent, RefIdent } from "./Scope.ts";
@@ -309,10 +307,10 @@ export function transformBindingReference(
     if (tracing) console.log(`missing mangledVarName for ${refName}`);
     return { kind: "synthetic", text: refName };
   }
-  const { extraComponents } = memberRef;
-  const extraText = extraComponents ? contentsToString(extraComponents) : "";
+  // const { extraComponents } = memberRef;
+  // const extraText = extraComponents ? contentsToString(extraComponents) : "";
 
-  const text = structMember.mangledVarName + extraText;
+  const text = structMember.mangledVarName + "";
   const synthElem: SyntheticElem = { kind: "synthetic", text };
   memberRef.contents = [synthElem];
   return synthElem;

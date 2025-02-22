@@ -23,6 +23,7 @@ export interface Literal {
 /** an identifier with template arguments */
 export interface TemplatedIdentElem {
   kind: "templated-ident";
+  path?: IdentElem[];
   ident: IdentElem;
   template?: ExpressionElem[];
   span: Span;

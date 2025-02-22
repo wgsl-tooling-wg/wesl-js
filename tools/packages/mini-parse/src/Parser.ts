@@ -18,7 +18,8 @@ import {
   tracing,
   withTraceLogging,
 } from "./ParserTracing.js";
-import { Stream, Token, TypedToken } from "./Stream.js";
+import { Span } from "./Span.js";
+import { peekToken, Stream, Token, TypedToken } from "./Stream.js";
 
 export interface AppState<C, S> {
   /**
@@ -216,6 +217,18 @@ export class Parser<I, T> {
     return map(this, fn);
   }
 
+  /** map results to a new value.
+   */
+  mapSpanned<U>(fn: (value: T, span: Span) => U): Parser<I, U> {
+    return mapSpanned(this, fn);
+  }
+
+  /** map results to a new value, or backtracks
+   */
+  verifyMap<U>(fn: (value: T) => OptParserResult<U>): Parser<I, U> {
+    return verifyMap(this, fn);
+  }
+
   /** Queue a function that runs later, typically to collect AST elements from the parse.
    * when a commit() is parsed.
    * Collection functions are dropped with parser backtracking, so
@@ -371,6 +384,43 @@ function map<I, T, U>(p: Parser<I, T>, fn: (value: T) => U): Parser<I, U> {
 
   trackChildren(mapParser, p);
   return mapParser;
+}
+
+/** return a parser that maps the current results */
+function mapSpanned<I, T, U>(
+  p: Parser<I, T>,
+  fn: (value: T, span: Span) => U,
+): Parser<I, U> {
+  const mapSpannedParser = parser(
+    `mapSpanned`,
+    function _mapSpanned(ctx: ParserContext): OptParserResult<U> {
+      const start = peekToken(ctx.stream)?.span?.[0] ?? null;
+      const result = p._run(ctx);
+      if (result === null) return null;
+      const end = ctx.stream.checkpoint();
+      return { value: fn(result.value, [start ?? end, end]) };
+    },
+  );
+
+  trackChildren(mapSpannedParser, p);
+  return mapSpannedParser;
+}
+
+function verifyMap<I, T, U>(
+  p: Parser<I, T>,
+  fn: (value: T) => OptParserResult<U>,
+): Parser<I, U> {
+  const verifyMapParser = parser(
+    `verifyMap`,
+    function _verifyMap(ctx: ParserContext): OptParserResult<U> {
+      const result = p._run(ctx);
+      if (result === null) return null;
+      return fn(result.value);
+    },
+  );
+
+  trackChildren(verifyMapParser, p);
+  return verifyMapParser;
 }
 
 type ToParserFn<I, T, X> = (results: ParserResult<T>) => Parser<I, X> | null;

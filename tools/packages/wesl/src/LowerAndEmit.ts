@@ -67,8 +67,6 @@ function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "typeDecl":
     case "let":
     case "member":
-    case "memberRef":
-    case "expression":
     case "type":
     case "stuff":
       return emitContents(e, ctx);
@@ -148,17 +146,14 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
     if (params.length === 0) {
       ctx.srcBuilder.add("@" + e.attribute.name, e.span);
     } else {
-      ctx.srcBuilder.add("@" + e.attribute.name + "(", [
-        e.span[0],
-        params[0].span[0],
-      ]);
-      for (let i = 0; i < params.length; i++) {
-        emitContents(params[i], ctx);
-        if (i < params.length - 1) {
-          ctx.srcBuilder.add(",", [params[i].span[1], params[i + 1].span[0]]);
-        }
-      }
-      ctx.srcBuilder.add(")", [params[params.length - 1].span[1], e.span[1]]);
+      ctx.srcBuilder.add(
+        "@" +
+          e.attribute.name +
+          "(" +
+          params.map(expressionToString).join(", ") +
+          ")",
+        e.span,
+      );
     }
   } else if (kind === "@builtin") {
     ctx.srcBuilder.add("@builtin(" + e.attribute.param.name + ")", e.span);
