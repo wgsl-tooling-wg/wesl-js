@@ -59,6 +59,29 @@ export interface Scope {
 
   /** @if conditions for conditionally translating this scope */
   ifAttributes?: IfAttribute[];
+
+  /**
+   * Efficient access to declarations in this scope.
+   * constructed on demand, for module root scopes only */
+  scopeDecls?: Map<string, DeclIdent>;
+}
+
+/** return the declarations in this scope */
+export function scopeDecls(scope: Scope): Map<string, DeclIdent> {
+  if (scope.parent) {
+    console.warn("Warning: scopeDecls called on non-root scope");
+  }
+  if (scope.scopeDecls) {
+    return scope.scopeDecls;
+  }
+  const declMap = new Map<string, DeclIdent>();
+  for (const ident of scope.idents) {
+    if (ident.kind === "decl") {
+      declMap.set(ident.originalName, ident);
+    }
+  }
+  scope.scopeDecls = declMap;
+  return declMap;
 }
 
 export function resetScopeIds() {
