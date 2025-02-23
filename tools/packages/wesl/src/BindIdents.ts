@@ -88,13 +88,26 @@ export function bindIdents(params: BindIdentsParams): BindResults {
   return { decls, globalNames };
 }
 
+/** state used during the recursive scope tree walk to bind references to declarations */
 interface BindContext {
   registry: ParsedRegistry;
+
+  /** live runtime conditions currently defined by the user */
   conditions: Record<string, any>;
-  knownDecls: Set<DeclIdent>; // decl idents discovered so far
-  foundScopes: Set<Scope>; // save work by not processing scopes multiple times
-  globalNames: Set<string>; // root level names  used so far
-  mangler: ManglerFn; // construct unique identifer names for global declarations
+
+  /** decl idents discovered so far (to avoid re-traversing) */
+  knownDecls: Set<DeclIdent>;
+
+  /** save work by not processing scopes multiple times */
+  foundScopes: Set<Scope>;
+
+  /** root level names used so far (so that manglers or ast rewriting plugins can pick unique names) */
+  globalNames: Set<string>;
+
+  /** construct unique identifer names for global declarations */
+  mangler: ManglerFn;
+
+  /** virtual libraries provided by the user (e.g. for code generators or constants) */
   virtuals?: VirtualLibrarySet;
 }
 
