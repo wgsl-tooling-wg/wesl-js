@@ -99,7 +99,7 @@ export interface NameElem extends AbstractElemBase {
   name: string;
 }
 
-/** an identifier that refers to a declaration (aka a symbol reference) */
+/** an identifier that 'refers to' a declaration (aka a symbol reference) */
 export interface RefIdentElem extends AbstractElemBase {
   kind: RefIdent["kind"];
   ident: RefIdent;
