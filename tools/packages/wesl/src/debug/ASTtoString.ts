@@ -1,19 +1,24 @@
-import { Module } from "node:vm";
-import { assertUnreachable } from "../../../mini-parse/src/Assertions.ts";
 import {
   AbstractElem,
   Attribute,
   AttributeElem,
-  FnElem,
+  CompoundStatement,
+  ConstAssertElem,
+  DeclarationElem,
+  FunctionDeclarationElem,
+  GlobalDeclarationElem,
   ModuleElem,
+  Statement,
   StuffElem,
   TypedDeclElem,
   TypeRefElem,
   TypeTemplateParameter,
 } from "../AbstractElems.ts";
+import { assertUnreachable } from "../Assertions.ts";
 import {
   diagnosticControlToString,
   expressionToString,
+  lhsExpressionToString,
 } from "../LowerAndEmit.ts";
 import {
   DiagnosticDirective,
@@ -21,6 +26,7 @@ import {
   EnableDirective,
   RequiresDirective,
 } from "../parse/DirectiveElem.ts";
+import { ExpressionElem, TemplatedIdentElem } from "../parse/ExpressionElem.ts";
 import { ImportElem } from "../parse/ImportElems.ts";
 import { importToString } from "./ImportToString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
@@ -39,93 +45,49 @@ export function astToString(ast: ModuleElem, indent = 0): string {
   for (const decl of ast.declarations) {
     printGlobalDecl(decl, str.indentedBlock(2));
   }
-
-  // TODO: Remove this
-  for (const decl of ast.contents) {
-    printGlobalDecl(decl, str.indentedBlock(2));
-  }
   return str.print(maxLineLength);
 }
 
-export function globalDeclToString(elem: AbstractElem, indent = 0): string {
+export function globalDeclToString(
+  elem: GlobalDeclarationElem,
+  indent = 0,
+): string {
   const str = new LineWrapper(indent);
   printGlobalDecl(elem, str);
   return str.print(maxLineLength);
 }
 
-function printGlobalDecl(elem: AbstractElem, str: LineWrapper): void {
+function printGlobalDecl(elem: GlobalDeclarationElem, str: LineWrapper): void {
   const { kind } = elem;
-  str.add(kind);
-  addElemFields(elem, str);
-  if ("contents" in elem) {
-    elem.contents.forEach(e => printGlobalDecl(e, str.indentedBlock(2)));
-  }
-}
-
-function addElemFields(elem: AbstractElem, str: LineWrapper): void {
-  const { kind } = elem;
-  if (kind === "text") {
-    const { text } = elem;
-    str.add(` '${text}'`);
-  } else if (
-    kind === "var" ||
-    kind === "let" ||
-    kind === "gvar" ||
-    kind === "const" ||
-    kind === "override"
-  ) {
-    addTypedDeclIdent(elem.name, str);
-  } else if (kind === "struct") {
-    str.add(" " + elem.name.ident.originalName);
-  } else if (kind === "member") {
-    const { name, typeRef, attributes } = elem;
-    if (attributes) {
-      for (const attribute of attributes) {
-        addAttribute(attribute.attribute, str);
-      }
-    }
-    str.add(" " + name.name);
-    str.add(": " + typeRefElemToString(typeRef));
-  } else if (kind === "name") {
-    str.add(" " + elem.name);
-  } else if (kind === "fn") {
-    addFnFields(elem, str);
-  } else if (kind === "alias") {
-    const { name, typeRef } = elem;
-    const prefix = name.ident.kind === "decl" ? "%" : "";
-    str.add(" " + prefix + name.ident.originalName);
-    str.add("=" + typeRefElemToString(typeRef));
-  } else if (kind === "attribute") {
-    addAttribute(elem.attribute, str);
-  } else if (kind === "type") {
-    const { name } = elem;
-    const nameStr = typeof name === "string" ? name : name.originalName;
-    str.add(" " + nameStr);
-
-    if (elem.templateParams !== undefined) {
-      const paramStrs = elem.templateParams.map(expressionToString).join(", ");
-      str.add("<" + paramStrs + ">");
-    }
-  } else if (kind === "synthetic") {
-    str.add(` '${elem.text}'`);
-  } else if (kind === "ref") {
-    str.add(" " + elem.ident.originalName);
-  } else if (kind === "typeDecl") {
-    addTypedDeclIdent(elem, str);
-  } else if (kind === "decl") {
-    const { ident } = elem;
-    str.add(" %" + ident.originalName);
+  printAttributes(elem.attributes, str);
+  if (kind === "alias") {
+    str.add("alias " + elem.name.name);
+    str.add("=" + templatedIdentToString(elem.type));
   } else if (kind === "assert") {
-    // Nothing to do for now
-  } else if (kind === "module") {
-    // Ignore this kind of elem
-  } else if (kind === "param") {
-    // TODO: This branch shouldn't exist
-  } else if (kind === "stuff") {
-    // Ignore
+    printConstAssert(elem, str);
+  } else if (kind === "declaration") {
+    printDeclaration(elem, str);
+  } else if (kind === "function") {
+    printFunction(elem, str);
+  } else if (kind === "struct") {
+    str.add("struct " + elem.name.name);
+    const childPrinter = str.indentedBlock(2);
+    for (const member of elem.members) {
+      printAttributes(member.attributes, str);
+      childPrinter.add(member.name.name);
+      childPrinter.add(": " + templatedIdentToString(member.type));
+      childPrinter.nl();
+    }
   } else {
     assertUnreachable(kind);
   }
+  str.nl();
+}
+
+function printConstAssert(elem: ConstAssertElem, str: LineWrapper) {
+  str.add("const_assert(");
+  str.add(expressionToString(elem.expression));
+  str.add(")");
 }
 
 function printImportElem(elem: ImportElem, str: LineWrapper) {
@@ -133,21 +95,26 @@ function printImportElem(elem: ImportElem, str: LineWrapper) {
   str.add(importToString(elem.imports));
 }
 
-function printAttributes(elems: AttributeElem[], str: LineWrapper) {
-  for (const attribute of elems) {
-    addAttribute(attribute.attribute, str);
+function printAttributes(elems: AttributeElem[] | undefined, str: LineWrapper) {
+  if (elems === undefined || elems.length === 0) return;
+  for (let i = 0; i < elems.length - 1; i++) {
+    printAttribute(elems[i].attribute, str);
+    str.add(" ");
   }
+  printAttribute(elems[elems.length - 1].attribute, str);
+  str.nl();
 }
 
-function addAttribute(elem: Attribute, str: LineWrapper) {
+function printAttribute(elem: Attribute, str: LineWrapper) {
   const { kind } = elem;
   if (kind === "attribute") {
     const { name, params } = elem;
-    str.add(" @" + name);
     if (params.length > 0) {
-      str.add("(");
-      str.add(params.map(expressionToString).join(", "));
+      str.add("@" + name + "(");
+      printExpressions(params, str);
       str.add(")");
+    } else {
+      str.add("@" + name);
     }
   } else if (kind === "@builtin") {
     str.add(` @builtin(${elem.param.name})`);
@@ -156,51 +123,25 @@ function addAttribute(elem: Attribute, str: LineWrapper) {
       ` @diagnostic${diagnosticControlToString(elem.severity, elem.rule)}`,
     );
   } else if (kind === "@if") {
-    str.add(" @if");
+    str.add("@if");
     str.add("(");
     str.add(expressionToString(elem.param.expression));
     str.add(")");
   } else if (kind === "@interpolate") {
-    str.add(` @interpolate(${elem.params.map(v => v.name).join(", ")})`);
+    str.add("@interpolate(");
+    printExpressions(elem.params, str);
+    str.add(")");
   } else {
     assertUnreachable(kind);
   }
 }
 
-function addTypedDeclIdent(elem: TypedDeclElem, str: LineWrapper) {
-  const { decl, typeRef } = elem;
-  str.add(" %" + decl.ident.originalName);
-  if (typeRef) {
-    str.add(" : " + typeRefElemToString(typeRef));
+function printExpressions(expressions: ExpressionElem[], str: LineWrapper) {
+  if (expressions.length === 0) return;
+  for (let i = 0; i < expressions.length - 1; i++) {
+    str.add(expressionToString(expressions[i]) + ", ");
   }
-}
-
-function addFnFields(elem: FnElem, str: LineWrapper) {
-  const { name, params, returnType, attributes } = elem;
-
-  str.add(" " + name.ident.originalName);
-
-  str.add("(");
-  const paramStrs = params
-    .map(
-      (
-        p, // TODO DRY
-      ) => {
-        const { name } = p;
-        const { originalName } = name.decl.ident;
-        const typeRef = typeRefElemToString(name.typeRef!);
-        return originalName + ": " + typeRef;
-      },
-    )
-    .join(", ");
-  str.add(paramStrs);
-  str.add(")");
-
-  attributes?.forEach(a => addAttribute(a.attribute, str));
-
-  if (returnType) {
-    str.add(" -> " + typeRefElemToString(returnType));
-  }
+  str.add(expressionToString(expressions[expressions.length - 1]));
 }
 
 function printDirectiveElem(elem: DirectiveElem, str: LineWrapper) {
@@ -216,37 +157,102 @@ function printDirective(
   if (kind === "diagnostic") {
     str.add(`diagnostic${diagnosticControlToString(elem.severity, elem.rule)}`);
   } else if (kind === "enable") {
-    str.add(` enable ${elem.extensions.map(v => v.name).join(", ")}`);
+    str.add(`enable ${elem.extensions.map(v => v.name).join(", ")}`);
   } else if (kind === "requires") {
-    str.add(` requires${elem.extensions.map(v => v.name).join(", ")}`);
+    str.add(`requires${elem.extensions.map(v => v.name).join(", ")}`);
   } else {
     assertUnreachable(kind);
   }
 }
 
-function typeRefElemToString(elem: TypeRefElem): string {
-  if (!elem) return "?type?";
-  const { name } = elem;
-  const nameStr = typeof name === "string" ? name : name.originalName;
-
+function templatedIdentToString(elem: TemplatedIdentElem): string {
+  let name = elem.ident.name;
+  if (elem.path !== undefined && elem.path.length > 0) {
+    name = elem.path.map(p => p.name).join("::") + "::" + name;
+  }
   let params = "";
-  if (elem.templateParams !== undefined) {
-    const paramStrs = elem.templateParams.map(expressionToString).join(", ");
+  if (elem.template !== undefined) {
+    const paramStrs = elem.template.map(expressionToString).join(", ");
     params = "<" + paramStrs + ">";
   }
-  return nameStr + params;
+  return name + params;
 }
 
-export function debugContentsToString(elem: StuffElem): string {
-  const parts = elem.contents.map(c => {
-    const { kind } = c;
-    if (kind === "text") {
-      return c.text;
-    } else if (kind === "ref") {
-      return c.ident.originalName; // not using the mapped to decl name, so this can be used for debug..
+function printDeclaration(elem: DeclarationElem, str: LineWrapper) {
+  str.add(elem.variant.kind);
+  str.add(" " + elem.name.name);
+  if (elem.type) {
+    str.add(" : " + templatedIdentToString(elem.type));
+  }
+  if (elem.initializer) {
+    str.add(" = ");
+    str.add(expressionToString(elem.initializer));
+  }
+}
+
+function printFunction(elem: FunctionDeclarationElem, str: LineWrapper) {
+  str.add("fn " + elem.name.name);
+  str.add("(");
+  const paramsStr = elem.params
+    .map(p => p.name.kind + ": " + templatedIdentToString(p.type))
+    .join(", ");
+  str.add(paramsStr);
+  str.add(")");
+  printAttributes(elem.returnAttributes, str);
+  if (elem.returnType) {
+    str.add(" -> " + templatedIdentToString(elem.returnType));
+  }
+  printStatement(elem.body, str);
+}
+
+function printStatement(stmt: Statement, str: LineWrapper) {
+  printAttributes(stmt.attributes, str);
+  if (stmt.kind === "compound-statement") {
+    const bodyStr = str.indentedBlock(2);
+    stmt.body.forEach(v => printStatement(v, bodyStr));
+  } else if (stmt.kind === "assert") {
+    printConstAssert(stmt, str);
+  } else if (stmt.kind === "assignment-statement") {
+    if (stmt.left.kind === "discard-expression") {
+      str.add("_");
     } else {
-      return `?${c.kind}?`;
+      str.add(lhsExpressionToString(stmt.left));
     }
-  });
-  return parts.join(" ");
+    str.add(" " + stmt.operator.value + " ");
+    str.add(expressionToString(stmt.right));
+  } else if (stmt.kind === "call-statement") {
+    str.add(templatedIdentToString(stmt.function) + "(");
+    printExpressions(stmt.arguments, str);
+    str.add(")");
+  } else if (stmt.kind === "declaration") {
+    printDeclaration(stmt, str);
+  } else if (
+    stmt.kind === "break-statement" ||
+    stmt.kind === "continue-statement" ||
+    stmt.kind === "discard-statement"
+  ) {
+    str.add(stmt.kind);
+  } else if (stmt.kind === "return-statement") {
+    if (stmt.expression) {
+      str.add("return " + expressionToString(stmt.expression));
+    } else {
+      str.add("return");
+    }
+  } else if (stmt.kind === "postfix-statement") {
+    str.add(lhsExpressionToString(stmt.expression));
+    str.add(stmt.operator.value);
+  } else if (stmt.kind === "for-statement") {
+    throw new Error("TODO:");
+  } else if (stmt.kind === "if-else-statement") {
+    throw new Error("TODO:");
+  } else if (stmt.kind === "loop-statement") {
+    throw new Error("TODO:");
+  } else if (stmt.kind === "switch-statement") {
+    throw new Error("TODO:");
+  } else if (stmt.kind === "while-statement") {
+    throw new Error("TODO:");
+  } else {
+    assertUnreachable(stmt);
+  }
+  str.nl();
 }

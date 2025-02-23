@@ -4,6 +4,7 @@ import {
   AttributeElem,
   ContainerElem,
   DeclIdentElem,
+  LhsExpression,
   ModuleElem,
   NameElem,
   RefIdentElem,
@@ -199,11 +200,28 @@ export function expressionToString(elem: ExpressionElem): string {
   } else if (kind === "parenthesized-expression") {
     return `(${expressionToString(elem.expression)})`;
   } else if (kind === "component-expression") {
-    return `${expressionToString(elem.base)}[${elem.access}]`;
+    return `${expressionToString(elem.base)}[${expressionToString(elem.access)}]`;
   } else if (kind === "component-member-expression") {
-    return `${expressionToString(elem.base)}.${elem.access}`;
+    return `${expressionToString(elem.base)}.${elem.access.name}`;
   } else if (kind === "call-expression") {
     return `${expressionToString(elem.function)}(${elem.arguments.map(expressionToString).join(", ")})`;
+  } else {
+    assertUnreachable(kind);
+  }
+}
+
+export function lhsExpressionToString(elem: LhsExpression): string {
+  const { kind } = elem;
+  if (kind === "unary-expression") {
+    return `${elem.operator.value}${lhsExpressionToString(elem.expression)}`;
+  } else if (kind === "lhs-ident") {
+    return elem.name.name;
+  } else if (kind === "parenthesized-expression") {
+    return `(${lhsExpressionToString(elem.expression)})`;
+  } else if (kind === "component-expression") {
+    return `${lhsExpressionToString(elem.base)}[${expressionToString(elem.access)}]`;
+  } else if (kind === "component-member-expression") {
+    return `${lhsExpressionToString(elem.base)}.${elem.access.name}`;
   } else {
     assertUnreachable(kind);
   }
