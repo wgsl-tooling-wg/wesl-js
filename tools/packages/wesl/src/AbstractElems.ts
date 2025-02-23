@@ -68,7 +68,7 @@ export interface SyntheticElem {
 export interface TypedDeclElem extends ElemWithContentsBase {
   kind: "typeDecl";
   decl: DeclIdentElem;
-  typeRef?: TypeRefElem; // TODO Consider a variant for fn params and alias where typeRef is required
+  typeRef?: TypeRefElem; //  Consider a variant for fn params and alias where typeRef is required
 }
 
 /** a parameter in a function declaration */

@@ -3,7 +3,7 @@ import { ModuleElem } from "./AbstractElems.ts";
 import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
-import { resetScopeIds, SrcModule } from "./Scope.ts";
+import { SrcModule } from "./Scope.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
@@ -41,6 +41,7 @@ export function parseSrcModule(srcModule: SrcModule): WeslAST {
   return { srcModule, moduleElem: parseResult.value };
 }
 
+// TODO: Move to test utils
 export function parseWESL(src: string): WeslAST {
   const srcModule: SrcModule = {
     modulePath: "package::test",
