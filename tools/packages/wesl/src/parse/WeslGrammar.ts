@@ -262,14 +262,16 @@ const for_statement = preceded(
 ).mapSpanned(makeForStatement);
 
 const if_statement: WeslParser<IfStatement> = preceded(
-  "if",
-  seqObj({
-    ifBranch: req(seq(expression, compound_statement)),
-    elseIfBranch: repeat(
-      preceded(seq("else", "if"), req(seq(expression, compound_statement))),
-    ),
-    elseBranch: opt(preceded("else", req(compound_statement))),
-  }),
+  token("keyword", "if"),
+  req(
+    seqObj({
+      ifBranch: req(seq(expression, compound_statement)),
+      elseIfBranch: repeat(
+        preceded(seq("else", "if"), req(seq(expression, compound_statement))),
+      ),
+      elseBranch: opt(preceded("else", req(compound_statement))),
+    }),
+  ),
 ).mapSpanned(makeIfStatement);
 
 interface CustomCompoundStatement {

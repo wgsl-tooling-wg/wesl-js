@@ -14,7 +14,7 @@ import { assertUnreachable } from "./Assertions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, RefIdent } from "./Scope.ts";
 import { DirectiveElem } from "./parse/DirectiveElem.ts";
-import { ExpressionElem } from "./parse/ExpressionElem.ts";
+import { ExpressionElem, TemplatedIdentElem } from "./parse/ExpressionElem.ts";
 
 /** passed to the emitters */
 interface EmitContext {
@@ -192,7 +192,7 @@ export function expressionToString(elem: ExpressionElem): string {
   } else if (kind === "unary-expression") {
     return `${elem.operator.value}${expressionToString(elem.expression)}`;
   } else if (kind === "templated-ident") {
-    return elem.ident.name + templateToString(elem.template);
+    return templatedIdentToString(elem);
   } else if (kind === "literal") {
     return elem.value;
   } else if (kind === "name") {
@@ -208,6 +208,19 @@ export function expressionToString(elem: ExpressionElem): string {
   } else {
     assertUnreachable(kind);
   }
+}
+
+export function templatedIdentToString(elem: TemplatedIdentElem): string {
+  let name = elem.ident.name;
+  if (elem.path !== undefined && elem.path.length > 0) {
+    name = elem.path.map(p => p.name).join("::") + "::" + name;
+  }
+  let params = "";
+  if (elem.template !== undefined) {
+    const paramStrs = elem.template.map(expressionToString).join(", ");
+    params = "<" + paramStrs + ">";
+  }
+  return name + params;
 }
 
 export function lhsExpressionToString(elem: LhsExpression): string {

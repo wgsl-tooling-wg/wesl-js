@@ -1,24 +1,22 @@
+import { assertThat } from "../../../mini-parse/src/Assertions.ts";
 import {
-  AbstractElem,
   Attribute,
   AttributeElem,
-  CompoundStatement,
   ConstAssertElem,
   DeclarationElem,
   FunctionDeclarationElem,
   GlobalDeclarationElem,
+  IfClause,
   ModuleElem,
   Statement,
-  StuffElem,
-  TypedDeclElem,
-  TypeRefElem,
-  TypeTemplateParameter,
+  SwitchCaseSelector,
 } from "../AbstractElems.ts";
 import { assertUnreachable } from "../Assertions.ts";
 import {
   diagnosticControlToString,
   expressionToString,
   lhsExpressionToString,
+  templatedIdentToString,
 } from "../LowerAndEmit.ts";
 import {
   DiagnosticDirective,
@@ -36,14 +34,16 @@ const maxLineLength = 150;
 export function astToString(ast: ModuleElem, indent = 0): string {
   const str = new LineWrapper(indent);
   str.add("module");
+  str.nl();
+  const moduleStr = str.indentedBlock(2);
   for (const importElem of ast.imports) {
-    printImportElem(importElem, str.indentedBlock(2));
+    printImportElem(importElem, moduleStr);
   }
   for (const directive of ast.directives) {
-    printDirectiveElem(directive, str.indentedBlock(2));
+    printDirectiveElem(directive, moduleStr);
   }
   for (const decl of ast.declarations) {
-    printGlobalDecl(decl, str.indentedBlock(2));
+    printGlobalDecl(decl, moduleStr);
   }
   return str.print(maxLineLength);
 }
@@ -62,18 +62,22 @@ function printGlobalDecl(elem: GlobalDeclarationElem, str: LineWrapper): void {
   printAttributes(elem.attributes, str);
   if (kind === "alias") {
     str.add("alias " + elem.name.name);
-    str.add("=" + templatedIdentToString(elem.type));
+    str.add(" = " + templatedIdentToString(elem.type));
+    str.nl();
   } else if (kind === "assert") {
     printConstAssert(elem, str);
+    str.nl();
   } else if (kind === "declaration") {
     printDeclaration(elem, str);
+    str.nl();
   } else if (kind === "function") {
     printFunction(elem, str);
   } else if (kind === "struct") {
     str.add("struct " + elem.name.name);
+    str.nl();
     const childPrinter = str.indentedBlock(2);
     for (const member of elem.members) {
-      printAttributes(member.attributes, str);
+      printAttributes(member.attributes, childPrinter);
       childPrinter.add(member.name.name);
       childPrinter.add(": " + templatedIdentToString(member.type));
       childPrinter.nl();
@@ -81,18 +85,18 @@ function printGlobalDecl(elem: GlobalDeclarationElem, str: LineWrapper): void {
   } else {
     assertUnreachable(kind);
   }
-  str.nl();
 }
 
+/** Does not include the new line */
 function printConstAssert(elem: ConstAssertElem, str: LineWrapper) {
-  str.add("const_assert(");
+  str.add("const_assert ");
   str.add(expressionToString(elem.expression));
-  str.add(")");
 }
 
 function printImportElem(elem: ImportElem, str: LineWrapper) {
   printAttributes(elem.attributes, str);
   str.add(importToString(elem.imports));
+  str.nl();
 }
 
 function printAttributes(elems: AttributeElem[] | undefined, str: LineWrapper) {
@@ -117,7 +121,7 @@ function printAttribute(elem: Attribute, str: LineWrapper) {
       str.add("@" + name);
     }
   } else if (kind === "@builtin") {
-    str.add(` @builtin(${elem.param.name})`);
+    str.add(`@builtin(${elem.param.name})`);
   } else if (kind === "@diagnostic") {
     str.add(
       ` @diagnostic${diagnosticControlToString(elem.severity, elem.rule)}`,
@@ -147,6 +151,7 @@ function printExpressions(expressions: ExpressionElem[], str: LineWrapper) {
 function printDirectiveElem(elem: DirectiveElem, str: LineWrapper) {
   printAttributes(elem.attributes, str);
   printDirective(elem.directive, str);
+  str.nl();
 }
 
 function printDirective(
@@ -165,19 +170,7 @@ function printDirective(
   }
 }
 
-function templatedIdentToString(elem: TemplatedIdentElem): string {
-  let name = elem.ident.name;
-  if (elem.path !== undefined && elem.path.length > 0) {
-    name = elem.path.map(p => p.name).join("::") + "::" + name;
-  }
-  let params = "";
-  if (elem.template !== undefined) {
-    const paramStrs = elem.template.map(expressionToString).join(", ");
-    params = "<" + paramStrs + ">";
-  }
-  return name + params;
-}
-
+/** Does not include the new line */
 function printDeclaration(elem: DeclarationElem, str: LineWrapper) {
   str.add(elem.variant.kind);
   str.add(" " + elem.name.name);
@@ -193,24 +186,44 @@ function printDeclaration(elem: DeclarationElem, str: LineWrapper) {
 function printFunction(elem: FunctionDeclarationElem, str: LineWrapper) {
   str.add("fn " + elem.name.name);
   str.add("(");
-  const paramsStr = elem.params
-    .map(p => p.name.kind + ": " + templatedIdentToString(p.type))
-    .join(", ");
-  str.add(paramsStr);
+  if (
+    elem.params.some(v => v.attributes !== undefined && v.attributes.length > 0)
+  ) {
+    // Switch to long param printing mode iff there are attributes
+    str.nl();
+    const paramsStr = str.indentedBlock(2);
+    for (const p of elem.params) {
+      printAttributes(p.attributes, paramsStr);
+      paramsStr.add(p.name.name + ": " + templatedIdentToString(p.type));
+      paramsStr.nl();
+    }
+  } else {
+    const paramsStr = elem.params
+      .map(p => p.name.name + ": " + templatedIdentToString(p.type))
+      .join(", ");
+    str.add(paramsStr);
+  }
+
   str.add(")");
   printAttributes(elem.returnAttributes, str);
   if (elem.returnType) {
     str.add(" -> " + templatedIdentToString(elem.returnType));
   }
+  str.nl();
   printStatement(elem.body, str);
 }
 
 function printStatement(stmt: Statement, str: LineWrapper) {
   printAttributes(stmt.attributes, str);
   if (stmt.kind === "compound-statement") {
-    const bodyStr = str.indentedBlock(2);
-    stmt.body.forEach(v => printStatement(v, bodyStr));
-  } else if (stmt.kind === "assert") {
+    if (stmt.body.length > 0) {
+      const bodyStr = str.indentedBlock(2);
+      stmt.body.forEach(v => printStatement(v, bodyStr));
+    }
+    return; // Skip printing the final newline
+  }
+
+  if (stmt.kind === "assert") {
     printConstAssert(stmt, str);
   } else if (stmt.kind === "assignment-statement") {
     if (stmt.left.kind === "discard-expression") {
@@ -242,17 +255,93 @@ function printStatement(stmt: Statement, str: LineWrapper) {
     str.add(lhsExpressionToString(stmt.expression));
     str.add(stmt.operator.value);
   } else if (stmt.kind === "for-statement") {
-    throw new Error("TODO:");
+    str.add("for(");
+    str.nl();
+    const childStr = str.indentedBlock(2);
+    if (stmt.initializer !== undefined) {
+      printStatement(stmt.initializer, childStr);
+    }
+    if (stmt.condition !== undefined) {
+      childStr.add(expressionToString(stmt.condition));
+      childStr.nl();
+    }
+    if (stmt.update !== undefined) {
+      printStatement(stmt.update, childStr);
+    }
+    str.add(")");
+    str.nl();
+    printStatement(stmt.body, str);
   } else if (stmt.kind === "if-else-statement") {
-    throw new Error("TODO:");
+    printIfClause(stmt.main, str);
   } else if (stmt.kind === "loop-statement") {
-    throw new Error("TODO:");
+    str.add("loop");
+    str.nl();
+    printStatement(stmt.body, str);
+    if (stmt.continuing !== undefined) {
+      const bodyStr = str.indentedBlock(2);
+      printAttributes(stmt.continuing.attributes, bodyStr);
+      bodyStr.add("continuing");
+      bodyStr.nl();
+      printStatement(stmt.continuing.body, bodyStr);
+
+      const breakIf = stmt.continuing.breakIf;
+      if (breakIf !== undefined) {
+        const continuingStr = str.indentedBlock(2);
+        printAttributes(breakIf.attributes, continuingStr);
+        continuingStr.add("break if " + expressionToString(breakIf.expression));
+        continuingStr.nl();
+      }
+    }
   } else if (stmt.kind === "switch-statement") {
-    throw new Error("TODO:");
+    str.add("switch ");
+    str.add(expressionToString(stmt.selector));
+    str.nl();
+    printAttributes(stmt.bodyAttributes, str);
+    const clauseStr = str.indentedBlock(2);
+    for (const clause of stmt.clauses) {
+      printAttributes(clause.attributes, clauseStr);
+      assertThat(clause.cases.length > 0);
+      clauseStr.add("case ");
+      printSwitchCase(clause.cases[0], clauseStr);
+      for (let i = 1; i < clause.cases.length; i++) {
+        clauseStr.add(", ");
+        printSwitchCase(clause.cases[i], clauseStr);
+      }
+      clauseStr.add(":");
+      clauseStr.nl();
+      printStatement(clause.body, clauseStr);
+    }
   } else if (stmt.kind === "while-statement") {
-    throw new Error("TODO:");
+    str.add("while ");
+    str.add(expressionToString(stmt.condition));
+    str.nl();
+    printStatement(stmt.body, str);
   } else {
     assertUnreachable(stmt);
   }
   str.nl();
+}
+
+function printIfClause(clause: IfClause, str: LineWrapper) {
+  str.add("if ");
+  str.add(expressionToString(clause.condition));
+  str.nl();
+  printStatement(clause.accept, str);
+  if (clause.reject !== undefined) {
+    if (clause.reject.kind === "compound-statement") {
+      str.add("else");
+      str.nl();
+      printStatement(clause.reject, str);
+    } else {
+      str.add("else ");
+      printIfClause(clause.reject, str);
+    }
+  }
+}
+function printSwitchCase(switchCase: SwitchCaseSelector, str: LineWrapper) {
+  if (switchCase.expression === "default") {
+    str.add("default");
+  } else {
+    str.add(expressionToString(switchCase.expression));
+  }
 }

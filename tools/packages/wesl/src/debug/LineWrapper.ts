@@ -43,8 +43,8 @@ function printBlock(
   const spc = " ".repeat(block.indent);
   const hangingSpc = " ".repeat(hangingIndent);
   for (const s of block.text) {
+    const column = getColumn(result);
     if (typeof s === "string") {
-      const column = getColumn(result);
       if (column + firstLineLength(s) > maxWidth) {
         result += "\n";
         result += spc;
@@ -55,7 +55,6 @@ function printBlock(
       result += s;
     } else {
       // A nested block
-      result += "\n";
       result += printBlock(
         { indent: block.indent + s.indent, text: s.text },
         maxWidth,

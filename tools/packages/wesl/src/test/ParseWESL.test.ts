@@ -614,6 +614,27 @@ test("parse for(;;) {} not as a fn call", () => {
   `);
 });
 
+test("parse if chain", () => {
+  const src = `
+  fn foo() {
+    if(true) { } else if(false) {} else { if(true) {} }
+  }
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      fn foo()
+        if (true)
+        
+        else if (false)
+
+        else
+          if (true)
+          
+  `);
+});
+
 test("eolf followed by blank line", () => {
   const src = `
     fn foo() { }
