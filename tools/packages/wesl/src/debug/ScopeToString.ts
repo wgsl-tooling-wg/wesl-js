@@ -51,6 +51,6 @@ export function identToString(ident?: Ident): string {
     const ref = identToString(ident.refersTo!);
     return `${originalName} ${idStr} -> ${ref}`;
   } else {
-    return `%${originalName} ${idStr} (${ident.mangledName})`;
+    return `%${originalName}'${ident.mangledName}) ${idStr} `;
   }
 }
