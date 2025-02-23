@@ -8,10 +8,8 @@ import {
   NameElem,
   RefIdentElem,
   SyntheticElem,
-  TextElem,
 } from "./AbstractElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
-import { isGlobal } from "./BindIdents.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, RefIdent } from "./Scope.ts";
 import { DirectiveElem } from "./parse/DirectiveElem.ts";

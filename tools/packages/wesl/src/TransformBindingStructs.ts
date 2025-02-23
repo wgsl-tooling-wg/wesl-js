@@ -4,7 +4,6 @@ import {
   AttributeElem,
   BindingStructElem,
   DeclarationElem,
-  FnElem,
   ModuleElem,
   StructElem,
   StructMemberElem,
@@ -12,7 +11,6 @@ import {
   TypeTemplateParameter,
 } from "./AbstractElems.ts";
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
-import { visitAst } from "./LinkerUtil.ts";
 import { findDecl } from "./LowerAndEmit.ts";
 import { minimallyMangledName } from "./Mangler.ts";
 import {

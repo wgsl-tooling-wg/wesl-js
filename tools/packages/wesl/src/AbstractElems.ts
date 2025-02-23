@@ -260,8 +260,7 @@ export type Statement =
   | FunctionCallStatement
   | DeclarationElem
   | AssignmentStatement
-  | IncrementStatement
-  | DecrementStatement
+  | PostfixStatement
   | BreakStatement
   | ContinueStatement
   | DiscardStatement
@@ -291,6 +290,7 @@ export interface IfStatement extends StatementBase {
 
 /** A clause in an if statement (`if`, `else if`, `else`), without attributes. */
 export interface IfClause {
+  kind: "if-clause";
   condition: ExpressionElem;
   accept: CompoundStatement;
   reject?: IfClause | CompoundStatement;
@@ -376,14 +376,15 @@ export interface AssignmentOperator {
   span: Span;
 }
 
-export interface IncrementStatement extends StatementBase {
-  kind: "increment-statement";
+export interface PostfixStatement extends StatementBase {
+  kind: "postfix-statement";
+  operator: PostfixOperator;
   expression: LhsExpression;
 }
 
-export interface DecrementStatement extends StatementBase {
-  kind: "decrement-statement";
-  expression: LhsExpression;
+export interface PostfixOperator {
+  value: "++" | "--";
+  span: Span;
 }
 
 export interface BreakStatement extends StatementBase {

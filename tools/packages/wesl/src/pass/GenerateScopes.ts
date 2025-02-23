@@ -1,127 +1,132 @@
 import { assertUnreachable } from "../../../mini-parse/src/Assertions";
 import type {
-  AttributeElem,
   GlobalDeclarationElem,
   IdentElem,
   ModuleElem,
+  Statement,
 } from "../AbstractElems";
-import { visitAst } from "../LinkerUtil";
+import {
+  AstVisitor,
+  walkAst,
+  walkAttributes,
+  walkGlobalDeclarationInner,
+  walkImport,
+  walkStatementInner,
+} from "../AstVisitor";
 import { ExpressionElem } from "../parse/ExpressionElem";
 import { ImportElem } from "../parse/ImportElems";
-import { DeclIdent, emptyScope, SrcModule, type Scope } from "../Scope";
+import {
+  attachScope,
+  DeclIdent,
+  emptyScope,
+  RefIdent,
+  SrcModule,
+  type Scope,
+} from "../Scope";
+
+class GenerateScopesVisitor extends AstVisitor {
+  public rootScope: Scope;
+  currentScope: Scope;
+  constructor(public srcModule: SrcModule) {
+    super();
+    this.rootScope = emptyScope(null);
+    this.currentScope = this.rootScope;
+  }
+
+  import(importElem: ImportElem): void {
+    walkImport(importElem, this);
+    // importElem.imports.
+    // TODO: Emit all the imports
+  }
+
+  globalDeclarationInner(declaration: GlobalDeclarationElem): void {
+    const handleDeclIdent = (ident: IdentElem) => {
+      const decl: DeclIdent = {
+        kind: "decl",
+        originalName: ident.name,
+        declElem: declaration,
+        srcModule: this.srcModule,
+      };
+      this.rootScope.idents.push(decl);
+      ident.scopeIdent = decl;
+    };
+
+    const kind = declaration.kind;
+    if (kind === "alias") {
+      handleDeclIdent(declaration.name);
+      walkGlobalDeclarationInner(declaration, this);
+    } else if (kind === "assert") {
+      walkGlobalDeclarationInner(declaration, this);
+    } else if (kind === "declaration") {
+      handleDeclIdent(declaration.name);
+      walkGlobalDeclarationInner(declaration, this);
+    } else if (kind === "function") {
+      handleDeclIdent(declaration.name);
+      const prevScope = this.currentScope;
+      this.currentScope = attachScope(prevScope);
+      // TODO: Function arguments
+      // TODO: Function body without an extra scope
+      this.currentScope = prevScope;
+    } else if (kind === "struct") {
+      handleDeclIdent(declaration.name);
+      walkGlobalDeclarationInner(declaration, this);
+    } else {
+      assertUnreachable(kind);
+    }
+  }
+
+  statementInner(statement: Statement): void {
+    if (statement.kind === "for-statement") {
+      const prevScope = this.currentScope;
+      this.currentScope = attachScope(prevScope);
+      if (statement.initializer !== undefined) {
+        this.statement(statement.initializer);
+      }
+      if (statement.condition !== undefined) {
+        this.expression(statement.condition);
+      }
+      if (statement.update !== undefined) {
+        this.statement(statement.update);
+      }
+      // The body shouldn't introduce a new scope.
+      walkAttributes(statement.body.attributes, this);
+      statement.body.body.forEach(v => this.statement(v));
+      this.currentScope = prevScope;
+    } else if (statement.kind === "declaration") {
+      // TODO:
+    } else if (statement.kind === "compound-statement") {
+      const prevScope = this.currentScope;
+      this.currentScope = attachScope(prevScope);
+      // TODO: Walk over the compound statement body
+      this.currentScope = prevScope;
+    } else {
+      walkStatementInner(statement, this);
+    }
+  }
+
+  expression(expression: ExpressionElem): void {
+    if (expression.kind === "templated-ident") {
+      const originalName =
+        expression.path !== undefined ?
+          [...expression.path, expression.ident].map(v => v.name).join("::")
+        : expression.ident.name;
+      const refIdent: RefIdent = {
+        kind: "ref",
+        originalName,
+      };
+      this.currentScope.idents.push(refIdent);
+      expression.ident.scopeIdent = refIdent;
+
+      expression.template?.forEach(v => this.expression(v));
+    }
+  }
+}
 
 export function generateScopes(
   module: ModuleElem,
   srcModule: SrcModule,
 ): Scope {
-  const rootScope = emptyScope(null);
-  visitAst(module, {});
-  for (const importElem of module.imports) {
-    handleImportElem(importElem, rootScope);
-  }
-  for (const directive of module.directives) {
-    handleAttributes(directive.attributes, rootScope);
-  }
-  for (const declaration of module.declarations) {
-    handleDeclaration(declaration, rootScope, srcModule);
-  }
-
-  return rootScope;
-}
-
-function handleAttributes(
-  attributes: AttributeElem[] | undefined,
-  scope: Scope,
-) {
-  if (attributes === undefined) return;
-  for (const { attribute } of attributes) {
-    if (attribute.kind === "attribute") {
-      attribute.params.forEach(expression =>
-        handleExpression(expression, scope),
-      );
-    } else if (
-      attribute.kind === "@builtin" ||
-      attribute.kind === "@diagnostic" ||
-      attribute.kind === "@if" ||
-      attribute.kind === "@interpolate"
-    ) {
-      // Nothing to do
-    } else {
-      assertUnreachable(attribute);
-    }
-  }
-}
-function handleDeclaration(
-  declaration: GlobalDeclarationElem,
-  rootScope: Scope,
-  srcModule: SrcModule,
-) {
-  const handleDeclIdent = (ident: IdentElem) => {
-    const decl: DeclIdent = {
-      kind: "decl",
-      originalName: ident.name,
-      declElem: declaration,
-      srcModule,
-    };
-    rootScope.idents.push(decl);
-    ident.scopeIdent = decl;
-  };
-
-  handleAttributes(declaration.attributes, rootScope);
-  const kind = declaration.kind;
-  if (kind === "alias") {
-    handleDeclIdent(declaration.name);
-    handleExpression(declaration.type, rootScope);
-  } else if (kind === "assert") {
-    handleExpression(declaration.expression, rootScope);
-  } else if (kind === "declaration") {
-    handleDeclIdent(declaration.name);
-    if (declaration.type) {
-      handleExpression(declaration.type, rootScope);
-    }
-    if (declaration.initializer !== undefined) {
-      handleExpression(declaration.initializer, rootScope);
-    }
-  } else if (kind === "function") {
-    // TODO:
-  } else if (kind === "struct") {
-    handleDeclIdent(declaration.name);
-    declaration.members.forEach(member => {
-      handleAttributes(member.attributes, rootScope);
-      handleExpression(member.type, rootScope);
-    });
-  } else {
-    assertUnreachable(kind);
-  }
-}
-
-function handleExpression(expression: ExpressionElem, scope: Scope): void {
-  const kind = expression.kind;
-  if (kind === "binary-expression") {
-    handleExpression(expression.left, scope);
-    handleExpression(expression.right, scope);
-  } else if (kind === "call-expression") {
-    handleExpression(expression.function, scope);
-    expression.arguments.forEach(arg => handleExpression(arg, scope));
-  } else if (kind === "component-expression") {
-    handleExpression(expression.base, scope);
-    handleExpression(expression.access, scope);
-  } else if (kind === "component-member-expression") {
-    handleExpression(expression.base, scope);
-  } else if (kind === "literal" || kind === "name") {
-    // Nothing to do
-  } else if (kind === "parenthesized-expression") {
-    handleExpression(expression.expression, scope);
-  } else if (kind === "templated-ident") {
-    // TODO:
-  } else if (kind === "unary-expression") {
-    handleExpression(expression.expression, scope);
-  } else {
-    assertUnreachable(kind);
-  }
-}
-function handleImportElem(importElem: ImportElem, rootScope: Scope) {
-  handleAttributes(importElem.attributes, rootScope);
-  // importElem.imports.
-  // TODO: Emit all the imports
+  const visitor = new GenerateScopesVisitor(srcModule);
+  walkAst(module, visitor);
+  return visitor.rootScope;
 }

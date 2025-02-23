@@ -1,6 +1,7 @@
 import {
   delimited,
   fn,
+  kind,
   opt,
   or,
   Parser,
@@ -18,7 +19,6 @@ import {
 } from "mini-parse";
 
 import { assertUnreachable } from "../Assertions.js";
-import { word } from "./BaseGrammar.js";
 import { WeslToken } from "./WeslStream.js";
 import {
   ImportSegment,
@@ -53,6 +53,8 @@ function prependSegments(
   statement.segments = segments.concat(statement.segments);
   return statement;
 }
+
+const word = kind("word");
 
 // forward references for mutual recursion
 let import_collection: Parser<

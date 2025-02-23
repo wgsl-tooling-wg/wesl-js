@@ -1,10 +1,9 @@
-import { ParserInit, SrcMap } from "mini-parse";
+import { ParserInit } from "mini-parse";
 import { ModuleElem } from "./AbstractElems.ts";
 import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
-import { resetScopeIds, Scope, SrcModule } from "./Scope.ts";
-import { generateScopes } from "./pass/GenerateScopes.ts";
+import { resetScopeIds, SrcModule } from "./Scope.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
@@ -21,9 +20,6 @@ export interface WeslAST {
 
   /** root module element */
   moduleElem: ModuleElem;
-
-  /** root scope for this module */
-  rootScope: Scope;
 }
 
 /** an extended version of the AST */
@@ -35,18 +31,14 @@ export interface BindingAST extends WeslAST {
 export function parseSrcModule(srcModule: SrcModule): WeslAST {
   // TODO allow returning undefined for failure, or throw?
 
-  resetScopeIds();
   const stream = new WeslStream(srcModule.src);
-
   const init: ParserInit = { stream };
   const parseResult = weslRoot.parse(init);
   if (parseResult === null) {
     throw new Error("parseWESL failed");
   }
 
-  const rootScope = generateScopes(parseResult.value);
-
-  return { srcModule, moduleElem: parseResult.value, rootScope };
+  return { srcModule, moduleElem: parseResult.value };
 }
 
 export function parseWESL(src: string): WeslAST {

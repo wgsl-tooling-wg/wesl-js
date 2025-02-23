@@ -63,6 +63,16 @@ export function emptyScope(parent: Scope | null): Scope {
   });
 }
 
+export function attachScope(parent: Scope): Scope {
+  const scope = makeScope({
+    idents: [],
+    parent,
+    children: [],
+  });
+  parent.children.push(scope);
+  return scope;
+}
+
 /** For debugging,
  * @return true if a scope is in the rootScope tree somewhere */
 export function containsScope(rootScope: Scope, scope: Scope): boolean {

@@ -1,6 +1,5 @@
 import { SrcMap, SrcMapBuilder, tracing } from "mini-parse";
 import { AbstractElem, ModuleElem } from "./AbstractElems.ts";
-import { bindIdents } from "./BindIdents.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
 import { ManglerFn } from "./Mangler.ts";
 import {

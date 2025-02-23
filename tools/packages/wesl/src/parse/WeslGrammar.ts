@@ -40,7 +40,6 @@ import {
   ContinuingStatement,
   DeclarationElem,
   DeclarationVariant,
-  DecrementStatement,
   DefaultCaseSelector,
   DiagnosticAttribute,
   DiscardStatement,
@@ -54,13 +53,14 @@ import {
   IfAttribute,
   IfClause,
   IfStatement,
-  IncrementStatement,
   InterpolateAttribute,
   LhsDiscard,
   LhsExpression,
   LoopStatement,
   ModuleElem,
   NameElem,
+  PostfixOperator,
+  PostfixStatement,
   ReturnStatement,
   StandardAttribute,
   Statement,
@@ -73,13 +73,7 @@ import {
   WhileStatement,
 } from "../AbstractElems.ts";
 import { import_statement } from "./ImportGrammar.ts";
-import {
-  qualified_ident,
-  name,
-  ident,
-  WeslParser,
-  symbol,
-} from "./BaseGrammar.ts";
+import { name, ident, WeslParser, symbol } from "./BaseGrammar.ts";
 import {
   argument_expression_list,
   attribute_if_expression,
@@ -174,7 +168,7 @@ const lhs_discard: WeslParser<LhsDiscard> = symbol("_").map(v => ({
 }));
 
 const variable_updating_statement: WeslParser<
-  AssignmentStatement | IncrementStatement | DecrementStatement
+  AssignmentStatement | PostfixStatement
 > = or(
   seq(
     lhs_expression,
@@ -186,7 +180,7 @@ const variable_updating_statement: WeslParser<
         ]),
         expression,
       ),
-      tokenOf("symbol", ["++", "--"]),
+      postfixOperator(["++", "--"]),
     ),
   ).mapSpanned(makeVariableUpdatingStatement),
   seq(lhs_discard, assignmentOperator("="), expression).mapSpanned(
@@ -217,6 +211,7 @@ const fn_call: WeslParser<FunctionCallStatement> = seq(
 
 /**
  * Covers variable_or_value_statement, variable_decl, global_variable_decl, global_value_decl.
+ * Does not include a semicolon.
  */
 const declaration: WeslParser<DeclarationElem> = seqObj({
   variant: tokenOf("keyword", ["const", "var", "override", "let"]),
@@ -353,11 +348,11 @@ const discard_statement = token("keyword", "discard").map(
 );
 const return_statement = preceded(
   token("keyword", "return"),
-  expression,
+  opt(expression),
 ).mapSpanned(
   (expression, span): ReturnStatement => ({
     kind: "return-statement",
-    expression,
+    expression: expression ?? undefined,
     span,
   }),
 );
@@ -452,8 +447,11 @@ const global_decl: WeslParser<GlobalDeclarationElem> = seq(
   opt_attributes,
   or(
     function_decl,
-    declaration.verifyMap(v =>
-      v.variant.kind !== "let" ? { value: v } : null,
+    terminated(
+      declaration.verifyMap(v =>
+        v.variant.kind !== "let" ? { value: v } : null,
+      ),
+      ";",
     ),
     global_alias,
     terminated(const_assert, ";"),
@@ -461,10 +459,16 @@ const global_decl: WeslParser<GlobalDeclarationElem> = seq(
   ),
 ).map(attachAttributes<GlobalDeclarationElem>);
 
+/** The translation_unit rule allows for stray semicolons */
+const global_decls: WeslParser<GlobalDeclarationElem[]> = preceded(
+  repeat(";"),
+  repeat(terminated(global_decl, repeat(";"))),
+);
+
 export const weslRoot = seq(
   weslExtension(repeat(import_statement)),
   repeat(global_directive),
-  repeat(global_decl),
+  global_decls,
   req(eof()),
 ).map(makeModule);
 
@@ -715,12 +719,14 @@ function makeIfStatement(
   span: Span,
 ): IfStatement {
   let main: IfClause = {
+    kind: "if-clause",
     condition: value.ifBranch[0],
     accept: value.ifBranch[1],
   };
   let previous = main;
   for (const [condition, accept] of value.elseIfBranch) {
     previous.reject = {
+      kind: "if-clause",
       condition,
       accept,
     };
@@ -805,10 +811,10 @@ function assignmentOperator(
 function makeVariableUpdatingStatement(
   value: [
     LhsExpression,
-    [AssignmentOperator, ExpressionElem] | WeslToken<"symbol">,
+    [AssignmentOperator, ExpressionElem] | PostfixOperator,
   ],
   span: Span,
-): AssignmentStatement | IncrementStatement | DecrementStatement {
+): AssignmentStatement | PostfixStatement {
   if (Array.isArray(value[1])) {
     return {
       kind: "assignment-statement",
@@ -818,22 +824,26 @@ function makeVariableUpdatingStatement(
       span,
     };
   } else {
-    if (value[1].text === "++") {
-      return {
-        kind: "increment-statement",
-        expression: value[0],
-        span,
-      };
-    } else {
-      assertThat(value[1].text === "--");
-      return {
-        kind: "decrement-statement",
-        expression: value[0],
-        span,
-      };
-    }
+    return {
+      kind: "postfix-statement",
+      expression: value[0],
+      operator: value[1],
+      span,
+    };
   }
 }
+function postfixOperator(
+  text: PostfixOperator["value"] | PostfixOperator["value"][],
+): WeslParser<PostfixOperator> {
+  return (
+    Array.isArray(text) ?
+      tokenOf("symbol", text)
+    : token("symbol", text)).map(token => ({
+    value: token.text as any,
+    span: token.span,
+  }));
+}
+
 function makeVariableDiscardStatement(
   [left, operator, right]: [LhsDiscard, AssignmentOperator, ExpressionElem],
   span: Span,

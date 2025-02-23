@@ -1,5 +1,4 @@
 import { ParserInit, repeat } from "mini-parse";
-import { blankWeslParseState } from "../ParseWESL.ts";
 import { SrcModule } from "../Scope.ts";
 import { import_statement } from "./ImportGrammar.ts";
 import { WeslStream } from "./WeslStream.ts";
@@ -17,9 +16,8 @@ export function packageReferences(src: string): string[] {
     debugFilePath: "./synthetic.wesl",
     src: src,
   };
-  const appState = blankWeslParseState(srcModule);
   const stream = new WeslStream(src);
-  const init: ParserInit = { stream, appState };
+  const init: ParserInit = { stream };
 
   // parse for import statements only at the top of the file
   let imports: ImportElem[] = (
