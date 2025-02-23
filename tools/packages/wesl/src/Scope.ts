@@ -58,7 +58,9 @@ export interface Scope {
   /** null for root scope in a module */
   parent: Scope | null;
 
-  /** null for root scope in a module */
+  // TODO child scopes should be in lexical order intermixed with idents 
+  // (declarations that are lexicaly after a child scope are not visible from that child scope)
+  /** null for root scope in a module */ 
   children: Scope[];
 
   /** @if conditions for conditionally translating this scope */
