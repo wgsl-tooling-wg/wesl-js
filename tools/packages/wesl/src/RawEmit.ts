@@ -1,18 +1,9 @@
-import {
-  AttributeElem,
-  NameElem,
-  StuffElem,
-  TranslateTimeExpressionElem,
-  TypeRefElem,
-  TypeTemplateParameter,
-} from "./AbstractElems.ts";
+import { AttributeElem, TypeTemplateParameter } from "./AbstractElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
 import {
   diagnosticControlToString,
   expressionToString,
-  findDecl,
 } from "./LowerAndEmit.ts";
-import { RefIdent } from "./Scope.ts";
 
 // LATER DRY emitting elements like this with LowerAndEmit?
 
@@ -47,31 +38,4 @@ export function attributeToString(e: AttributeElem): string {
 
 export function typeListToString(params: TypeTemplateParameter[]): string {
   return `<${params.map(expressionToString).join(", ")}>`;
-}
-
-function refToString(ref: RefIdent | string): string {
-  if (typeof ref === "string") return ref;
-  if (ref.std) return ref.originalName;
-  const decl = findDecl(ref);
-  return decl.mangledName || decl.originalName;
-}
-
-export function contentsToString(elem: NameElem | StuffElem): string {
-  if (elem.kind === "stuff") {
-    const parts = elem.contents.map(c => {
-      const { kind } = c;
-      if (kind === "text") {
-        return c.text;
-      } else if (kind === "ref") {
-        return refToString(c.ident);
-      } else {
-        return `?${c.kind}?`;
-      }
-    });
-    return parts.join(" ");
-  } else if (elem.kind === "name") {
-    return elem.name;
-  } else {
-    assertUnreachable(elem);
-  }
 }

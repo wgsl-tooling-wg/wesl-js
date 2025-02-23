@@ -13,11 +13,7 @@ import {
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { findDecl } from "./LowerAndEmit.ts";
 import { minimallyMangledName } from "./Mangler.ts";
-import {
-  attributeToString,
-  contentsToString,
-  typeListToString,
-} from "./RawEmit.ts";
+import { attributeToString, typeListToString } from "./RawEmit.ts";
 import { textureStorage } from "./Reflection.ts";
 import { DeclIdent, RefIdent } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
