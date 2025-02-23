@@ -245,7 +245,7 @@ function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
 }
 
 function displayName(declIdent: DeclIdent): string {
-  if (declIdent.declElem && isGlobal(declIdent.declElem)) {
+  if (isGlobal(declIdent)) {
     // mangled name was set in binding step
     const mangledName = declIdent.mangledName;
     if (tracing && !mangledName) {

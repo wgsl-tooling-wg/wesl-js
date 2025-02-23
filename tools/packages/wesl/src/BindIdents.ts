@@ -211,7 +211,7 @@ function setMangledName(
 ): void {
   if (!decl.mangledName) {
     let mangledName: string;
-    if (decl.declElem && isGlobal(decl.declElem)) {
+    if (isGlobal(decl)) {
       const sep = proposedName.lastIndexOf("::");
       const name = sep === -1 ? proposedName : proposedName.slice(sep + 2);
       mangledName = mangler(decl, srcModule, name, globalNames);
@@ -336,8 +336,12 @@ function virtualModule(
 }
 
 // LATER capture isGlobal in the ident during parsing
-export function isGlobal(elem: DeclarationElem): boolean {
+/** @return true if this decl is at the root scope level of a module */
+export function isGlobal(declIdent: DeclIdent): boolean {
+  const { declElem } = declIdent;
+  if (!declElem) return false;
+
   return ["alias", "const", "override", "fn", "struct", "gvar"].includes(
-    elem.kind,
+    declElem.kind,
   );
 }
