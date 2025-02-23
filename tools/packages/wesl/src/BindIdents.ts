@@ -17,6 +17,29 @@ import {
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last } from "./Util.ts";
 
+/**
+  BindIdents pass
+
+  Goals:
+  - link references identifiers to their declaration identifiers. 
+  - produce a list of declarations that are used (and need to be emitted in the link)
+  - create mangled names for global declarations (to avoid name conflicts)
+
+  BindIdents proceeds as a recursive tree walk of the scope tree, starting from the root module (e.g. main.wesl).
+  It traverses the scope tree depth first (and not the syntax tree). 
+  - For each ref ident, search prior declarations in the current scope, then 
+    up the scope tree to find a matching declaration
+  - If no local match is found, check for partial matches with import statements
+    - combine the ident with import statement to match a decl in an exporting module
+  - As global declaration identifies are found, also:
+     - mutate their mangled name to be globally unique.
+     - collect the declarations (they will be emitted) 
+  
+  When iterating through the idents inside a scope, we maintain a parallel data structure of
+  'liveDecls', the declarations that are visible in the current scope at the currently
+  processed ident, along with a link to parent liveDecls for their current decl visibility.
+*/
+
 export interface BindResults {
   /** global declarations that were referenced (these will need to be emitted in the link) */
   decls: DeclIdent[];
@@ -53,15 +76,6 @@ export interface BindIdentsParams
 export function bindIdents(params: BindIdentsParams): BindResults {
   const { rootAst, registry, virtuals } = params;
   const { conditions = {}, mangler = minimalMangle } = params;
-
-  /* 
-    For each module's scope, search through the scope tree to find all ref idents
-      - For each ref ident, search up the scope tree to find a matching decl ident
-      - If no local match is found, check for partial matches with import statements
-        - combine ident with import statement to match a decl in exporting module
-
-    As global decl idents are found, mutate their mangled name to be globally unique.
-*/
   const { rootScope } = rootAst;
 
   const globalNames = new Set<string>();
