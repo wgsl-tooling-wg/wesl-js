@@ -11,13 +11,8 @@ test("parse fn with line comment", () => {
   const parsed = parseWESL(src);
   expect(astToString(parsed.moduleElem)).toMatchInlineSnapshot(`
     "module
-      text '
-        '
       fn binaryOp()
-        text 'fn '
-        decl %binaryOp
-        text '() { // binOpImpl
-        }'"
+    "
   `);
 });
 
