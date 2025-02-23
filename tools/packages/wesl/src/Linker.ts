@@ -1,4 +1,4 @@
-import { SrcMap, SrcMapBuilder, tracing } from "mini-parse";
+import { joinSrcMaps, SrcMap, tracing } from "mini-parse";
 import { AbstractElem, ModuleElem } from "./AbstractElems.ts";
 import { bindIdents } from "./BindIdents.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
@@ -119,7 +119,7 @@ export function linkRegistry(params: LinkRegistryParams): SrcMap {
   const bound = bindAndTransform(params);
   const { transformedAst, newDecls } = bound;
 
-  return SrcMapBuilder.build(
+  return joinSrcMaps(
     emitWgsl(
       transformedAst.moduleElem,
       transformedAst.srcModule,
@@ -211,15 +211,22 @@ function emitWgsl(
   srcModule: SrcModule,
   newDecls: DeclIdent[],
   conditions: Conditions = {},
-): SrcMapBuilder[] {
+): SrcMap[] {
   /* --- Step #3   Writing WGSL --- */ // note doesn't require the scope tree anymore
-  const srcBuilder = new SrcMapBuilder(srcModule.src);
-  lowerAndEmit(srcBuilder, [rootModuleElem], conditions, false); // emit the entire root module
+  const srcBuilder = lowerAndEmit(
+    [rootModuleElem],
+    [rootModuleElem.start, rootModuleElem.end],
+    conditions,
+    false,
+  ).build(srcModule.src); // emit the entire root module
   return [srcBuilder].concat(
     newDecls.map(decl => {
-      const builder = new SrcMapBuilder(decl.srcModule.src);
-      lowerAndEmit(builder, [decl.declElem], conditions); // emit referenced declarations from other modules
-      return builder;
+      // emit referenced declarations from other modules
+      return lowerAndEmit(
+        [decl.declElem],
+        [decl.declElem.start, decl.declElem.end],
+        conditions,
+      ).build(decl.srcModule.src);
     }),
   );
 }

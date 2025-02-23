@@ -1,4 +1,4 @@
-import { SrcMapBuilder } from "mini-parse";
+import { SpannedText } from "mini-parse";
 import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
 import { astToString } from "../debug/ASTtoString.ts";
@@ -52,9 +52,12 @@ test("transformBindingStruct", () => {
   const bindingStruct = markBindingStructs(rootAst.moduleElem)[0];
   const newVars = transformBindingStruct(bindingStruct, new Set());
 
-  const srcBuilder = new SrcMapBuilder(rootAst.srcModule.src);
-  lowerAndEmit(srcBuilder, newVars, {});
-  const linked = SrcMapBuilder.build([srcBuilder]).dest;
+  const srcBuilder = lowerAndEmit(
+    newVars,
+    [0, 0], // synthetic elements don't have a span
+    {},
+  );
+  const linked = srcBuilder.build(rootAst.srcModule.src).dest;
   expect(linked).toMatchInlineSnapshot(
     `
     "@group(0) @binding(0) var<storage, read_write> particles : array<f32>;
@@ -164,9 +167,13 @@ test("lower binding structs", () => {
       '"
   `);
 
-  const srcBuilder = new SrcMapBuilder(lowered.srcModule.src);
-  lowerAndEmit(srcBuilder, [lowered.moduleElem], {}, false);
-  const linked = SrcMapBuilder.build([srcBuilder]).dest;
+  const srcBuilder = lowerAndEmit(
+    [lowered.moduleElem],
+    [lowered.moduleElem.start, lowered.moduleElem.end],
+    {},
+    false,
+  );
+  const linked = srcBuilder.build(lowered.srcModule.src).dest;
   expectTrimmedMatch(linked, expected);
 });
 

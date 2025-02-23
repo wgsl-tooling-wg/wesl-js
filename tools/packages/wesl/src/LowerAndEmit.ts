@@ -1,4 +1,11 @@
-import { SrcMapBuilder, tracing } from "mini-parse";
+import {
+  Span,
+  spannedText,
+  SpannedText,
+  SyntheticText,
+  syntheticText,
+  tracing,
+} from "mini-parse";
 import {
   AbstractElem,
   AttributeElem,
@@ -10,6 +17,7 @@ import {
   RefIdentElem,
   SyntheticElem,
   TextElem,
+  UnknownExpressionElem,
 } from "./AbstractElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
 import { isGlobal } from "./BindIdents.ts";
@@ -18,51 +26,57 @@ import { Conditions, DeclIdent, Ident } from "./Scope.ts";
 
 /** passed to the emitters */
 interface EmitContext {
-  srcBuilder: SrcMapBuilder; // constructing the linked output
   conditions: Conditions; // settings for conditional compilation
   extracting: boolean; // are we extracting or copying the root module
 }
 
 /** traverse the AST, starting from root elements, emitting wgsl for each */
 export function lowerAndEmit(
-  srcBuilder: SrcMapBuilder,
   rootElems: AbstractElem[],
+  span: Span,
   conditions: Conditions,
   extracting = true,
-): void {
-  const emitContext: EmitContext = { conditions, srcBuilder, extracting };
-  lowerAndEmitRecursive(rootElems, emitContext);
+): SpannedText {
+  const emitContext: EmitContext = { conditions, extracting };
+  return lowerAndEmitRecursive(rootElems, span, emitContext);
 }
 
 function lowerAndEmitRecursive(
   elems: AbstractElem[],
+  span: Span,
   emitContext: EmitContext,
-): void {
+): SpannedText {
   const validElems = elems.filter(e =>
     conditionsValid(e, emitContext.conditions),
   );
-  validElems.forEach(e => lowerAndEmitElem(e, emitContext));
+  const children = validElems
+    .map(e => lowerAndEmitElem(e, emitContext))
+    .filter(v => v !== null);
+  return spannedText(span, ...children);
 }
 
-export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
+export function lowerAndEmitElem(
+  e: AbstractElem,
+  ctx: EmitContext,
+): SpannedText | SyntheticText | null {
   switch (e.kind) {
     // import statements are dropped from from emitted text
     case "import":
-      return;
+      return null;
 
     // terminal elements copy strings to the output
     case "text":
-      return emitText(e, ctx);
+      return emitText(e);
     case "name":
-      return emitName(e, ctx);
+      return emitName(e);
     case "synthetic":
-      return emitSynthetic(e, ctx);
+      return emitSynthetic(e);
 
     // identifiers are copied to the output, but with potentially mangled names
     case "ref":
-      return emitRefIdent(e, ctx);
+      return emitRefIdent(e);
     case "decl":
-      return emitDeclIdent(e, ctx);
+      return emitDeclIdent(e);
 
     // container elements just emit their child elements
     case "param":
@@ -85,11 +99,15 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "assert":
     case "alias":
     case "gvar":
+      let contents = emitContents(e, ctx);
       if (ctx.extracting) {
-        ctx.srcBuilder.addNl();
-        ctx.srcBuilder.addNl();
+        contents = spannedText(
+          contents.srcSpan,
+          syntheticText("\n\n"),
+          contents,
+        );
       }
-      return emitContents(e, ctx);
+      return contents;
 
     case "attribute":
       return emitAttribute(e, ctx);
@@ -101,88 +119,104 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
   }
 }
 
-export function emitText(e: TextElem, ctx: EmitContext): void {
-  ctx.srcBuilder.addCopy(e.start, e.end);
+export function emitText(e: TextElem): SpannedText {
+  return spannedText([e.start, e.end], e.srcModule.src.slice(e.start, e.end));
 }
 
-export function emitName(e: NameElem, ctx: EmitContext): void {
-  ctx.srcBuilder.add(e.name, e.start, e.end);
+export function emitName(e: NameElem): SpannedText {
+  return spannedText([e.start, e.end], e.name);
 }
 
-export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
-  const { text } = e;
-  ctx.srcBuilder.addSynthetic(text, text, 0, text.length);
+export function emitSynthetic(e: SyntheticElem): SyntheticText {
+  return syntheticText(e.text);
 }
 
-export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
-  elem.contents.forEach(e => lowerAndEmitElem(e, ctx));
+export function emitContents(
+  elem: ContainerElem,
+  ctx: EmitContext,
+): SpannedText {
+  return spannedText(
+    [elem.start, elem.end],
+    ...elem.contents.map(e => lowerAndEmitElem(e, ctx)).filter(v => v !== null),
+  );
 }
 
-export function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {
+export function emitRefIdent(e: RefIdentElem): SpannedText {
   if (e.ident.std) {
-    ctx.srcBuilder.add(e.ident.originalName, e.start, e.end);
+    return spannedText([e.start, e.end], e.ident.originalName);
   } else {
     const declIdent = findDecl(e.ident);
     const mangledName = displayName(declIdent);
-    ctx.srcBuilder.add(mangledName!, e.start, e.end);
+    return spannedText([e.start, e.end], mangledName);
   }
 }
 
-export function emitDeclIdent(e: DeclIdentElem, ctx: EmitContext): void {
+export function emitDeclIdent(e: DeclIdentElem): SpannedText {
   const mangledName = displayName(e.ident);
-  ctx.srcBuilder.add(mangledName!, e.start, e.end);
+  return spannedText([e.start, e.end], mangledName);
 }
 
-function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
+function emitAttribute(e: AttributeElem, ctx: EmitContext): SpannedText {
   const { kind } = e.attribute;
-  // LATER emit more precise source map info by making use of all the spans
-  // Like the first case does
+  let span: Span = [e.start, e.end];
   if (kind === "attribute") {
     const { params } = e.attribute;
     if (params.length === 0) {
-      ctx.srcBuilder.add("@" + e.attribute.name, e.start, e.end);
+      return spannedText(span, "@", e.attribute.name);
     } else {
-      ctx.srcBuilder.add(
-        "@" + e.attribute.name + "(",
-        e.start,
-        params[0].start,
+      return spannedText(
+        span,
+        "@",
+        e.attribute.name,
+        "(",
+        ...emitParams(params, ctx),
+        ")",
       );
-      for (let i = 0; i < params.length; i++) {
-        emitContents(params[i], ctx);
-        if (i < params.length - 1) {
-          ctx.srcBuilder.add(",", params[i].end, params[i + 1].start);
-        }
-      }
-      ctx.srcBuilder.add(")", params[params.length - 1].end, e.end);
     }
   } else if (kind === "@builtin") {
-    ctx.srcBuilder.add(
-      "@builtin(" + e.attribute.param.name + ")",
-      e.start,
-      e.end,
-    );
+    return spannedText(span, "@builtin(", emitName(e.attribute.param), ")");
   } else if (kind === "@diagnostic") {
-    ctx.srcBuilder.add(
-      "@diagnostic" +
-        diagnosticControlToString(e.attribute.severity, e.attribute.rule),
-      e.start,
-      e.end,
+    return spannedText(
+      span,
+      "@diagnostic",
+      diagnosticControlToString(e.attribute.severity, e.attribute.rule),
     );
   } else if (kind === "@if") {
-    ctx.srcBuilder.add(
+    return spannedText(
+      span,
       `@if(${expressionToString(e.attribute.param.expression)})`,
-      e.start,
-      e.end,
     );
   } else if (kind === "@interpolate") {
-    ctx.srcBuilder.add(
-      `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`,
-      e.start,
-      e.end,
+    return spannedText(
+      span,
+      "@interpolate(",
+      ...emitNames(e.attribute.params),
+      ")",
     );
   } else {
     assertUnreachable(kind);
   }
+}
+
+function emitParams(
+  params: ContainerElem[],
+  ctx: EmitContext,
+): (string | SpannedText)[] {
+  let result: (SpannedText | string)[] = [emitContents(params[0], ctx)];
+  for (let i = 1; i < params.length; i++) {
+    result.push(",");
+    result.push(emitContents(params[i], ctx));
+  }
+  return result;
+}
+
+function emitNames(names: NameElem[]): (string | SpannedText)[] {
+  let result: (SpannedText | string)[] = [emitName(names[0])];
+  for (let i = 1; i < names.length; i++) {
+    result.push(", ");
+    result.push(emitName(names[i]));
+  }
+  return result;
 }
 
 export function diagnosticControlToString(
@@ -218,27 +252,20 @@ export function expressionToString(elem: ExpressionElem): string {
   }
 }
 
-function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
+function emitDirective(e: DirectiveElem, ctx: EmitContext): SpannedText {
   const { directive } = e;
+  let span: Span = [e.start, e.end];
   const { kind } = directive;
   if (kind === "diagnostic") {
-    ctx.srcBuilder.add(
-      `diagnostic${diagnosticControlToString(directive.severity, directive.rule)}`,
-      e.start,
-      e.end,
+    return spannedText(
+      span,
+      "diagnostic",
+      diagnosticControlToString(directive.severity, directive.rule),
     );
   } else if (kind === "enable") {
-    ctx.srcBuilder.add(
-      `enable${directive.extensions.map(v => v.name).join(", ")}`,
-      e.start,
-      e.end,
-    );
+    return spannedText(span, "enable ", ...emitNames(directive.extensions));
   } else if (kind === "requires") {
-    ctx.srcBuilder.add(
-      `requires${directive.extensions.map(v => v.name).join(", ")}`,
-      e.start,
-      e.end,
-    );
+    return spannedText(span, "requires ", ...emitNames(directive.extensions));
   } else {
     assertUnreachable(kind);
   }
