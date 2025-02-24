@@ -315,8 +315,8 @@ function matchingImport(
 
 /** discovered declaration found during binding */
 interface FoundDecl {
-  srcModule: SrcModule;
   decl: DeclIdent;
+  // LATER leave room for returning the ast from new modules, to avoid having to store ast with refident
 }
 
 /** @return an exported root declIdent for the provided path */
@@ -341,7 +341,7 @@ function findExport(
 
   const decl = exportDecl(module.rootScope, last(modulePathParts)!);
   if (decl) {
-    return { srcModule: module.srcModule, decl };
+    return { decl };
   }
 }
 
