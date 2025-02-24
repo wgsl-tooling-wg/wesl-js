@@ -1,7 +1,7 @@
 {
   "name": "wesl-plugin",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.6.0-pre5",
   "scripts": {
     "echo": "echo",
     "build": "tsup",

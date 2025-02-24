@@ -27,9 +27,6 @@ export interface RefIdent {
   // TODO consider tracking the current ast in BindIdents so that this field is unnecessary
   ast: WeslAST; // AST from module that contains this ident (to find imports during decl binding)
 
-  // TODO drop this, I don't think it's used anymore.
-  scope: Scope; // scope containing this reference (bind to decls starting from this scope)
-
   refIdentElem: RefIdentElem; // for error reporting and mangling
 }
 

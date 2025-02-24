@@ -19,5 +19,6 @@
     "nodemon": "^3.1.9",
     "wesl": "workspace:*",
     "wesl-plugin": "workspace:*"
-  }
+  },
+  "version": "0.6.0-pre5"
 }

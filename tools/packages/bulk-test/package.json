@@ -1,6 +1,7 @@
 {
   "name": "bulk-test",
-  "version": "0.6.0-pre2",
+  "private": true,
+  "version": "0.6.0-pre5",
   "type": "module",
   "scripts": {
     "echo": "echo",
