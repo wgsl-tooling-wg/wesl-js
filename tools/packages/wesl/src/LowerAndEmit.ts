@@ -75,6 +75,8 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "expression":
     case "type":
     case "stuff":
+    case "statement":
+    case "switch-clause":
       return emitContents(e, ctx);
 
     // root level container elements get some extra newlines to make the output prettier
