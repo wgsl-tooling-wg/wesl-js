@@ -155,26 +155,13 @@ function bindIdentsRecursive(
           findDeclImport(ident, registry, conditions, virtuals);
 
         if (foundDecl) {
-          const { decl: decl, srcModule } = foundDecl;
-          ident.refersTo = decl;
-          if (!knownDecls.has(decl)) {
-            knownDecls.add(decl);
-            const proposed = ident.originalName;
-            setMangledName(proposed, decl, globalNames, srcModule, mangler);
-            if (decl.declElem && isGlobal(decl.declElem)) {
-              newDecls.push(decl);
-            }
-          }
+          ident.refersTo = foundDecl.decl;
+          const foundGlobal = handleNewDecl(ident, foundDecl.decl, bindContext);
+          foundGlobal && newGlobals.push(foundGlobal);
         } else if (stdWgsl(ident.originalName)) {
           ident.std = true;
         } else {
-          const { refIdentElem } = ident;
-          if (refIdentElem) {
-            const { srcModule, start, end } = refIdentElem;
-            const { debugFilePath: filePath } = srcModule;
-            const msg = `unresolved identifier in file: ${filePath}`;
-            srcLog(srcModule.src, [start, end], msg);
-          }
+          warnMissingIdent(ident);
         }
       }
     }
@@ -198,7 +185,52 @@ function bindIdentsRecursive(
 }
 
 /**
- * Mutate a DeclIdent to set a unique name for global linking,
+ * If the found declaration is new, mangle its name and update the
+ * knownDecls and globalNames sets.
+ * If the found declaration is new and also a global declaration, return it
+ * for ruther processing (bindident traversing, and emitting to wgsl).
+ */
+function handleNewDecl(
+  refIdent: RefIdent,
+  decl: DeclIdent,
+  bindContext: BindContext,
+): DeclIdent | undefined {
+  const { knownDecls, globalNames, mangler } = bindContext;
+  if (!knownDecls.has(decl)) {
+    knownDecls.add(decl);
+
+    const { srcModule } = decl;
+    const proposed = refIdent.originalName;
+    setMangledName(proposed, decl, globalNames, srcModule, mangler);
+
+    if (isGlobal(decl)) {
+      return decl;
+    }
+  }
+}
+
+/** given a global declIdent, return the liveDecls for its root scope */
+function globalDeclToRootLiveDecls(decl: DeclIdent): LiveDecls | undefined {
+  const foundsScope = decl.scope;
+  const foundsScopeParent = foundsScope.parent;
+  if (foundsScopeParent?.parent === null) {
+    return { decls: scopeDecls(foundsScopeParent) };
+  }
+}
+
+/** warn the user about a missing identifer */
+function warnMissingIdent(ident: RefIdent): void {
+  const { refIdentElem } = ident;
+  if (refIdentElem) {
+    const { srcModule, start, end } = refIdentElem;
+    const { debugFilePath: filePath } = srcModule;
+    const msg = `unresolved identifier in file: ${filePath}`; // TODO make error message clickable
+    srcLog(srcModule.src, [start, end], msg);
+  }
+}
+
+/**
+ * Mutate a DeclIdent to set a unique name for global linking
  * using a mangling function to choose a unique name.
  * Also update the set of globally unique names.
  */
