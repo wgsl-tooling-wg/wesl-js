@@ -25,11 +25,11 @@
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "exports": {
     ".": {
-      "types": "./dist/linker/src/index.d.ts",
+      "types": "./dist/tools/packages/wesl/src/index.d.ts",
       "import": "./dist/index.js"
     },
     "./minified": {
-      "types": "./dist/linker/src/index.d.ts",
+      "types": "./dist/tools/packages/wesl/src/index.d.ts",
       "import": "./dist/minified.js"
     }
   },
