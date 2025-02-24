@@ -1,7 +1,7 @@
 import { afterAll, expect, test } from "vitest";
 import { importCases } from "wesl-testsuite";
 import { link } from "../Linker.js";
-import { underscoreMangle } from "../Mangler.js";
+import { ManglerFn, underscoreMangle } from "../Mangler.js";
 import { expectTrimmedMatch, trimSrc } from "./shared/StringUtil.js";
 
 // wgsl example src, indexed by name
@@ -84,23 +84,27 @@ async function importCaseTest(name: string): Promise<void> {
     return [name, trimmedSrc] as [string, string];
   });
 
-  const trimmedWeslSrc = Object.fromEntries(srcEntries);
+  const trimmedWesl = Object.fromEntries(srcEntries);
 
+  const rootName = srcEntries[0][0];
+  await testLink(trimmedWesl, rootName, expectedWgsl);
+  await testLink(trimmedWesl, rootName, underscoreWgsl, underscoreMangle);
+}
+
+async function testLink(
+  weslSrc: Record<string, string>,
+  rootModuleName: string,
+  expectedWgsl: string,
+  mangler?: ManglerFn,
+): Promise<void> {
   /* -- link -- */
   const stdResultMap = await link({
-    weslSrc: trimmedWeslSrc,
-    rootModuleName: srcEntries[0][0],
+    weslSrc,
+    rootModuleName,
+    mangler,
   });
   const stdResult = stdResultMap.dest;
 
-  const underscoreResultMap = await link({
-    weslSrc: trimmedWeslSrc,
-    rootModuleName: srcEntries[0][0],
-    mangler: underscoreMangle,
-  });
-  const underscoreResult = underscoreResultMap.dest;
-
   /* -- trim and verify results line by line -- */
   expectTrimmedMatch(stdResult, expectedWgsl);
-  expectTrimmedMatch(underscoreResult, underscoreWgsl);
 }

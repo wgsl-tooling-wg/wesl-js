@@ -1,4 +1,5 @@
 import { DeclIdent, RefIdent, Scope } from "../Scope.ts";
+import { attributeToString } from "./ASTtoString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 
 /** A debugging print of the scope tree with identifiers in nested brackets */
@@ -12,11 +13,13 @@ function scopeToStringInner(scope: Scope, str: LineWrapper): void {
   str.add("{ ");
 
   // list of identifiers, with decls prefixed with '%'
-  const identStrings = scope.idents.map(({ kind, originalName }) => {
+  const identStrings = idents.map(({ kind, originalName }) => {
     const prefix = kind === "decl" ? "%" : "";
     return `${prefix}${originalName}`;
   });
 
+  const attrStrings = ifAttributes.map(a => attributeToString(a)).join(" ");
+  if (attrStrings) str.add(attrStrings + " ");
   const last = identStrings.length - 1;
   identStrings.forEach((s, i) => {
     const element = i < last ? s + ", " : s;
@@ -32,6 +35,9 @@ function scopeToStringInner(scope: Scope, str: LineWrapper): void {
   } else {
     str.add(" }");
   }
+  str.add(` #${scope.id}`);
+
+  return str.result;
 }
 
 export function identToString(ident?: DeclIdent | RefIdent): string {
@@ -42,6 +48,6 @@ export function identToString(ident?: DeclIdent | RefIdent): string {
     const ref = identToString(ident.refersTo!);
     return `${originalName} ${idStr} -> ${ref}`;
   } else {
-    return `%${originalName} ${idStr} (${ident.mangledName})`;
+    return `%${originalName}'${ident.mangledName}) ${idStr} `;
   }
 }

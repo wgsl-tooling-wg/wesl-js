@@ -222,7 +222,7 @@ function emitWgsl(
   return [srcBuilder].concat(
     newDecls.map(decl => {
       const builder = new SrcMapBuilder(decl.srcModule.src);
-      lowerAndEmit(builder, [decl.declElem], conditions); // emit referenced declarations from other modules
+      lowerAndEmit(builder, [decl.declElem!], conditions); // emit referenced declarations from other modules
       return builder;
     }),
   );

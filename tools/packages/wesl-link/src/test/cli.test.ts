@@ -72,8 +72,8 @@ test("link --details", async () => {
 
     ->scope
     { %main
-      { foo }
-    }
+      { foo } #1
+    } #0
 
     ---
     package::util
@@ -89,8 +89,8 @@ test("link --details", async () => {
 
     ->scope
     { %foo
-      {  }
-    }
+      {  } #3
+    } #2
   `,
   );
 });

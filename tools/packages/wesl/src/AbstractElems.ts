@@ -215,30 +215,36 @@ export interface AttributeElem {
   attribute: Attribute;
   span: Span;
 }
+
 export type Attribute =
   | StandardAttribute
   | InterpolateAttribute
   | BuiltinAttribute
   | DiagnosticAttribute
   | IfAttribute;
+
 export interface StandardAttribute {
   kind: "attribute";
   name: string;
   params: ExpressionElem[];
 }
+
 export interface InterpolateAttribute {
   kind: "@interpolate";
   params: NameElem[];
 }
+
 export interface BuiltinAttribute {
   kind: "@builtin";
   param: NameElem;
 }
+
 export interface DiagnosticAttribute {
   kind: "@diagnostic";
   severity: NameElem;
   rule: [NameElem, NameElem | null];
 }
+
 export interface IfAttribute {
   kind: "@if";
   param: TranslateTimeExpressionElem;

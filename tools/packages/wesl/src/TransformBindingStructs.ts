@@ -266,7 +266,7 @@ function traceToStruct(ident: RefIdent): StructTrace | undefined {
   const decl = findDecl(ident);
   const declElem = decl.declElem;
   // for now only handle the case where the reference points at a fn parameter
-  if (declElem.kind === "param") {
+  if (declElem && declElem.kind === "param") {
     const name = declElem.name.typeRef!.name;
     if (typeof name !== "string") {
       if (name.std) {
@@ -275,7 +275,7 @@ function traceToStruct(ident: RefIdent): StructTrace | undefined {
 
       const paramDecl = findDecl(name);
       const structElem = paramDecl.declElem;
-      if (structElem.kind === "struct") {
+      if (structElem?.kind === "struct") {
         return { struct: structElem, intermediates: [declElem] };
       }
       return undefined;
