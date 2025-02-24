@@ -1,8 +1,8 @@
 import { debugNames, srcLog } from "mini-parse";
-import { DeclarationElem } from "./AbstractElems.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
 import { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
+import { LiveDecls, makeLiveDecls } from "./LiveDeclarations.ts";
 import { ManglerFn, minimalMangle } from "./Mangler.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, parseSrcModule, WeslAST } from "./ParseWESL.ts";
@@ -12,6 +12,7 @@ import {
   exportDecl,
   RefIdent,
   Scope,
+  scopeDecls,
   SrcModule,
 } from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
@@ -100,8 +101,16 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     virtuals,
     mangler,
   };
-  const foundDecls = bindIdentsRecursive(rootScope, bindContext);
-  const decls = foundDecls.filter(d => isGlobal(d.declElem));
+  const rootDecls = rootScope.idents.filter(i => i.kind === "decl");
+
+  // initialize liveDecls with all module level declarations
+  // (note that in wgsl module level declarations may appear in any order, incl after their references.)
+  const declEntries = rootDecls.map(d => [d.originalName, d] as const);
+  const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
+  const rootLive: RootLiveDecls = { root: liveDecls };
+
+  const foundDecls = bindIdentsRecursive(rootScope, bindContext, rootLive);
+  const decls = foundDecls.filter(d => isGlobal(d));
   return { decls, globalNames };
 }
 
@@ -128,30 +137,51 @@ interface BindContext {
   virtuals?: VirtualLibrarySet;
 }
 
+/** during recursion, the root module is handled differently because its declarations may appear in any order */
+type ParentOrRootDecls = ParentLiveDecls | RootLiveDecls;
+
+interface ParentLiveDecls {
+  parent: LiveDecls;
+  root?: null;
+}
+interface RootLiveDecls {
+  root: LiveDecls;
+}
+
 /**
  * Recursively bind references to declarations in this scope and
  * any child scopes referenced by these declarations.
  * Uses a hash set of found declarations to avoid duplication
- * @ return any new declarations found
+ * @return any new declarations found
+ * @param parentOrRoot - parent liveDecls or root module liveDecls
  */
 function bindIdentsRecursive(
   scope: Scope,
   bindContext: BindContext,
+  parentOrRoot: ParentOrRootDecls,
 ): DeclIdent[] {
-  // early exist if we've processed this scope before
-  const { foundScopes, mangler } = bindContext;
+  // early exit if we've processed this scope before
+  const { foundScopes } = bindContext;
   if (foundScopes.has(scope)) return [];
   foundScopes.add(scope);
 
   const { registry, conditions } = bindContext;
-  const { globalNames, knownDecls, virtuals } = bindContext;
-  const newDecls: DeclIdent[] = []; // new decl idents to process (and return)
+  const { virtuals } = bindContext;
+  const newGlobals: DeclIdent[] = []; // new decl idents to process for binding (and return for emitting)
 
+  // active declarations in this scope
+  const liveDecls = parentOrRoot.root ?? makeLiveDecls(parentOrRoot.parent);
+  const isRoot = !!parentOrRoot.root;
+
+  // trace all identifiers in this scope 
   scope.idents.forEach(ident => {
-    if (ident.kind === "ref") {
+    const { kind: identKind } = ident;
+    if (identKind === "decl") {
+      !isRoot && liveDecls.decls.set(ident.originalName, ident);
+    } else {
       if (!ident.refersTo && !ident.std) {
         const foundDecl =
-          findDeclInModule(scope, ident) ??
+          findDeclInModule(ident, liveDecls) ??
           findDeclImport(ident, registry, conditions, virtuals);
 
         if (foundDecl) {
@@ -169,19 +199,22 @@ function bindIdentsRecursive(
 
   // follow references from child scopes
   const newFromChildren = scope.children.flatMap(child => {
-    return bindIdentsRecursive(child, bindContext);
+    return bindIdentsRecursive(child, bindContext, { parent: liveDecls });
   });
 
   // follow references from referenced declarations
-  const newFromRefs = newDecls.flatMap(decl => {
-    if (debugNames && !decl.scope) {
-      console.log(`--- decl ${identToString(decl)} has no scope`);
-      return [];
+  const newFromRefs = newGlobals.flatMap(decl => {
+    const foundsScope = decl.scope;
+    const decls = globalDeclToRootLiveDecls(decl);
+    if (decls) {
+      return bindIdentsRecursive(foundsScope, bindContext, { parent: decls });
     }
-    return bindIdentsRecursive(decl.scope, bindContext);
+    // (for debug) shouldn't happen. newGlobals should be globals (their scope parents should be the module scope)
+    if (debugNames) console.log("WARNING decl not from root", identToString(decl));
+    return [];
   });
 
-  return [newDecls, newFromChildren, newFromRefs].flat();
+  return [newGlobals, newFromChildren, newFromRefs].flat();
 }
 
 /**
@@ -255,30 +288,25 @@ function setMangledName(
   }
 }
 
+/** @return true if ident is a standard wgsl type, fn, or enumerant */
 function stdWgsl(name: string): boolean {
   return stdType(name) || stdFn(name) || stdEnumerant(name); // TODO add tests for enumerants case (e.g. var x = read;)
 }
 
-/** search earlier in the scope and in parent scopes to find a matching decl ident */
+/** using the LiveDecls, search earlier in the scope and in parent scopes to find a matching decl ident */
 function findDeclInModule(
-  scope: Scope,
   ident: RefIdent,
+  liveDecls: LiveDecls,
 ): FoundDecl | undefined {
-  const { parent } = scope;
   const { originalName } = ident;
-
-  const found = scope.idents.find(
-    i => i.kind === "decl" && i.originalName === originalName,
-  );
-  if (found)
-    return {
-      decl: found as DeclIdent,
-      srcModule: ident.refIdentElem.srcModule,
-    };
-
+  const found = liveDecls.decls.get(originalName);
+  if (found) {
+    return { decl: found };
+  }
   // recurse to check all idents in parent scope
+  const { parent } = liveDecls;
   if (parent) {
-    return findDeclInModule(parent, ident);
+    return findDeclInModule(ident, parent);
   }
 }
 
