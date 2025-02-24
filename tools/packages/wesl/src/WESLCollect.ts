@@ -60,7 +60,6 @@ function addToOpenElem(cc: CollectContext, elem: AbstractElem): void {
 export function refIdent(cc: CollectContext): RefIdentElem {
   const { src, start, end } = cc;
   const app = cc.app as WeslParseState;
-  const { scope } = app.context;
   const { srcModule } = app.stable;
   const originalName = src.slice(start, end);
 
@@ -69,7 +68,6 @@ export function refIdent(cc: CollectContext): RefIdentElem {
     kind,
     originalName,
     ast: cc.app.stable,
-    scope,
     id: identId++,
     refIdentElem: null as any, // set below
   };
