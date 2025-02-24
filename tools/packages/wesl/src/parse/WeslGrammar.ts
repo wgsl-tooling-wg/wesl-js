@@ -302,17 +302,22 @@ const compound_statement = tagScope(
   )
 );
 
-const for_init = or(
-  fn_call,
-  () => variable_or_value_statement,
-  () => variable_updating_statement,
+const for_init = seq(
+  opt_attributes, // TODO: Collect
+  or(
+    fn_call,
+    () => variable_or_value_statement,
+    () => variable_updating_statement,
+  ), // TODO: collect as AnyStatement and add the attributes
 );
 
-const for_update = or(fn_call, () => variable_updating_statement);
+const for_update = seq(
+  opt_attributes, // TODO: Collect and attach
+  or(fn_call, () => variable_updating_statement),
+);
 
 // prettier-ignore
 const for_statement = seq(
-  opt_attributes,
   "for",
   seq(
     req("("),
@@ -327,7 +332,6 @@ const for_statement = seq(
 );
 
 const if_statement = seq(
-  opt_attributes,
   "if",
   req(seq(expression, compound_statement)),
   repeat(seq("else", "if", req(seq(expression, compound_statement)))),
@@ -335,9 +339,8 @@ const if_statement = seq(
 );
 
 const loop_statement = seq(
-  opt_attributes,
   "loop",
-  opt_attributes,
+  opt_attributes, // TODO: collect and attach to scope 1
   req(
     seq(
       "{",
@@ -345,57 +348,59 @@ const loop_statement = seq(
       opt(
         seq(
           "continuing",
-          opt_attributes,
+          opt_attributes, // TODO: collect and attach to scope 2
           "{",
           repeat(() => statement),
           opt(seq("break", "if", expression, ";")),
-          "}",
+          "}", // TODO: Scope 2 collect
         ),
       ),
-      "}",
+      "}", // TODO: Scope 1 collect
     ),
   ),
 );
 
 const case_selector = or("default", expression);
-const switch_clause = or(
-  seq(
-    "case",
-    withSep(",", case_selector, { requireOne: true }),
-    opt(":"),
-    compound_statement,
-  ),
-  seq("default", opt(":"), compound_statement),
+const switch_clause = seq(
+  opt_attributes, // TODO: collect and then attach
+  or(
+    seq(
+      "case",
+      withSep(",", case_selector, { requireOne: true }),
+      opt(":"),
+      compound_statement,
+    ),
+    seq("default", opt(":"), compound_statement),
+  ), // TODO: collect as SwitchClause
 );
 
 const switch_body = seq(opt_attributes, "{", repeatPlus(switch_clause), "}");
-const switch_statement = seq(opt_attributes, "switch", expression, switch_body);
+const switch_statement = seq("switch", expression, switch_body);
 
-const while_statement = seq(
-  opt_attributes,
-  "while",
-  expression,
-  compound_statement,
-);
+const while_statement = seq("while", expression, compound_statement);
 
 const statement: Parser<Stream<WeslToken>, any> = or(
-  for_statement,
-  if_statement,
-  loop_statement,
-  switch_statement,
-  while_statement,
-  compound_statement,
-  seq("break", ";"),
-  seq("continue", ";"),
-  seq(";"),
-  () => const_assert,
-  seq("discard", ";"),
-  seq("return", opt(expression), ";"),
-  seq(fn_call, ";"),
-  seq(() => variable_or_value_statement, ";"),
-  seq(() => variable_updating_statement, ";"),
+  compound_statement, // This one is special and collects its own attributes
+  seq(
+    opt_attributes, // TODO: collect and then attach
+    or(
+      for_statement,
+      if_statement,
+      loop_statement,
+      switch_statement,
+      while_statement,
+      seq("break", ";"),
+      seq("continue", ";"),
+      seq(";"), // LATER this one cannot have attributes in front of it
+      () => const_assert,
+      seq("discard", ";"),
+      seq("return", opt(expression), ";"),
+      seq(fn_call, ";"),
+      seq(() => variable_or_value_statement, ";"),
+      seq(() => variable_updating_statement, ";"),
+    ), // TODO: Collect as AnyStatement
+  ),
 );
-
 // prettier-ignore
 const lhs_expression: Parser<Stream<WeslToken>,any> = or(
   simple_component_reference,
@@ -457,13 +462,14 @@ const fn_decl = seq(
 // prettier-ignore
 const global_value_decl = or(
   seq(
-    opt_attributes                    .collect((cc) => cc.tags.attribute, "attributes"),
+    opt_attributes                    .collect((cc) => cc.tags.attribute, "attributes"), // TODO: attach to override
     "override",
     optionally_typed_ident,
     seq(opt(seq("=", expression       .collect(scopeCollect(), "decl_scope")))),
     ";",
   )                                   .collect(collectVarLike("override")),
   seq(
+    opt_attributes                    .collect((cc) => cc.tags.attribute, "attributes"), // TODO: attach to const
     "const",
     optionally_typed_ident,
     "=",
@@ -485,6 +491,7 @@ const global_alias = seq(
 // prettier-ignore
 const const_assert = 
   seq(
+    opt_attributes, // TODO: collect and attach
     "const_assert", 
     req(expression), 
     ";"
@@ -492,18 +499,22 @@ const const_assert =
 );
 
 const global_directive = span(
-  terminated(
-    or(
-      preceded("diagnostic", diagnostic_control).map(makeDiagnosticDirective),
-      preceded("enable", name_list).map(makeEnableDirective),
-      preceded("requires", name_list).map(makeRequiresDirective),
+  seq(
+    opt_attributes,
+    terminated(
+      or(
+        preceded("diagnostic", diagnostic_control).map(makeDiagnosticDirective),
+        preceded("enable", name_list).map(makeEnableDirective),
+        preceded("requires", name_list).map(makeRequiresDirective),
+      ),
+      ";",
     ),
-    ";",
   ),
 ).map(
-  ({ value: directive, span: [start, end] }): DirectiveElem => ({
+  ({ value: [attributes, directive], span: [start, end] }): DirectiveElem => ({
     kind: "directive",
-    directive: directive,
+    directive,
+    attributes, // TODO: Convert this to a .collect
     start,
     end,
   }),
@@ -515,7 +526,7 @@ const global_decl = tagScope(
   or(
     fn_decl,
     seq(
-      opt_attributes, 
+      opt_attributes, // TODO: Attach attributes
       global_variable_decl, 
       ";")                          .collect(collectVarLike("gvar")),
     global_value_decl,

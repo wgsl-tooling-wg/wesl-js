@@ -119,23 +119,23 @@ function shaderVisiblity(struct: BindingStructElem): string {
   if (!entryFn) {
     identElemLog(struct.name, "missing entry function for binding struct");
   } else {
-    const { fnAttributes = [] } = entryFn;
+    const { attributes = [] } = entryFn;
     if (
-      fnAttributes.find(
+      attributes.find(
         ({ attribute: a }) => a.kind === "attribute" && a.name === "compute",
       )
     ) {
       return "GPUShaderStage.COMPUTE";
     }
     if (
-      fnAttributes.find(
+      attributes.find(
         ({ attribute: a }) => a.kind === "attribute" && a.name === "vertex",
       )
     ) {
       return "GPUShaderStage.VERTEX";
     }
     if (
-      fnAttributes.find(
+      attributes.find(
         ({ attribute: a }) => a.kind === "attribute" && a.name === "fragment",
       )
     ) {
