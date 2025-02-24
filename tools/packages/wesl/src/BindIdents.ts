@@ -173,7 +173,7 @@ function bindIdentsRecursive(
   const liveDecls = parentOrRoot.root ?? makeLiveDecls(parentOrRoot.parent);
   const isRoot = !!parentOrRoot.root;
 
-  // trace all identifiers in this scope 
+  // trace all identifiers in this scope
   scope.idents.forEach(ident => {
     const { kind: identKind } = ident;
     if (identKind === "decl") {
@@ -210,7 +210,8 @@ function bindIdentsRecursive(
       return bindIdentsRecursive(foundsScope, bindContext, { parent: decls });
     }
     // (for debug) shouldn't happen. newGlobals should be globals (their scope parents should be the module scope)
-    if (debugNames) console.log("WARNING decl not from root", identToString(decl));
+    if (debugNames)
+      console.log("WARNING decl not from root", identToString(decl));
     return [];
   });
 
