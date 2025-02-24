@@ -1,7 +1,7 @@
 {
   "name": "bench",
   "private": true,
-  "version": "0.6.0-pre2",
+  "version": "0.6.0-pre3",
   "type": "module",
   "scripts": {
     "echo": "echo",
