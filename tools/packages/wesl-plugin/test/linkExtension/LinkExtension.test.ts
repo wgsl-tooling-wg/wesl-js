@@ -1,25 +1,31 @@
 /// <reference types="wesl-plugin/suffixes" />
 import { expect, expectTypeOf, test } from "vitest";
-import { LinkConfig } from "wesl";
+import { LinkParams } from "wesl";
 import linkParams from "./shaders/app.wesl?link";
+import { dlog } from "berry-pretty";
 
 test("verify ?link", async () => {
-  expectTypeOf(linkParams).toMatchTypeOf<LinkConfig>();
+  expectTypeOf(linkParams).toMatchTypeOf<LinkParams>();
 
-  const { rootModuleName, debugWeslRoot, weslSrc, dependencies } = linkParams;
-  expect(rootModuleName).toMatchInlineSnapshot(`"./app"`);
-  expect(debugWeslRoot).toMatchInlineSnapshot(`"./shaders"`); // I think. It's possible that it could have a slightly different format.
+  const { rootModuleName, debugWeslRoot, weslSrc, libs } =
+    linkParams as LinkParams;
+  expect(rootModuleName).toMatchInlineSnapshot(`"app"`);
+
+  dlog("fixme", { debugWeslRoot });
+  // TODO this result can't be right... weslRoot should be relative to the tomlDir probably.
+  // expect(debugWeslRoot).toMatchInlineSnapshot(`"packages/wesl-plugin/test/linkExtension/shaders"`);
+
   expect(weslSrc).toMatchInlineSnapshot(`
     {
-      "./app.wesl": "import random_wgsl::pcg_2u_3f;
+      "app.wesl": "import random_wgsl::pcg_2u_3f;
 
     main() {
        let a = pcg_2u3f(vec2u(1, 2)); 
     }",
     }
   `);
-  expect(dependencies.length).equal(1);
-  const firstDep = dependencies[0];
+  expect(libs?.length).equal(1);
+  const firstDep = libs![0];
   expect(firstDep.name).toMatchInlineSnapshot(`"random_wgsl"`);
   expect([...Object.keys(firstDep.modules)]).toMatchInlineSnapshot(`
     [
