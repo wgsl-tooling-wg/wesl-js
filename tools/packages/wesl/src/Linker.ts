@@ -14,6 +14,7 @@ import { WeslAST } from "./ParseWESL.ts";
 import { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
 import { filterMap, mapValues } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
+import { LinkedWesl } from "./LinkedWesl.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 
@@ -77,13 +78,6 @@ export interface LinkParams {
 }
 
 export type VirtualLibraryFn = (conditions: Conditions) => string;
-
-export class LinkedWesl {
-  constructor(public sourceMap: SrcMap) {}
-  get dest() {
-    return this.sourceMap.dest.text;
-  }
-}
 
 /**
  * Link a set of WESL source modules (typically the text from .wesl files) into a single WGSL string.
