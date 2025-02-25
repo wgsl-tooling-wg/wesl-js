@@ -75,6 +75,7 @@ export function makeWeslDevice(device: GPUDevice): WeslDevice {
   }
 
   // Keep track of the error scopes so that we can inject our errors into them
+  // Based on https://jsgist.org/?src=e3fb4659a668e00c69b03c82ec8f0ad1 from @greggman
   device.pushErrorScope = ((
     baseFn: GPUDevice["pushErrorScope"],
   ): GPUDevice["pushErrorScope"] => {
