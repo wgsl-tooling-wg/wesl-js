@@ -225,19 +225,19 @@ function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
   const { kind } = directive;
   if (kind === "diagnostic") {
     ctx.srcBuilder.add(
-      `diagnostic${diagnosticControlToString(directive.severity, directive.rule)}`,
+      `diagnostic${diagnosticControlToString(directive.severity, directive.rule)};`,
       e.start,
       e.end,
     );
   } else if (kind === "enable") {
     ctx.srcBuilder.add(
-      `enable${directive.extensions.map(v => v.name).join(", ")}`,
+      `enable${directive.extensions.map(v => v.name).join(", ")};`,
       e.start,
       e.end,
     );
   } else if (kind === "requires") {
     ctx.srcBuilder.add(
-      `requires${directive.extensions.map(v => v.name).join(", ")}`,
+      `requires${directive.extensions.map(v => v.name).join(", ")};`,
       e.start,
       e.end,
     );
