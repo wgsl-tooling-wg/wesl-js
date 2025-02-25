@@ -1,6 +1,6 @@
-// PCG pseudo random generator from vec2u to vec4f
+// PCG pseudo random generator from vec2u to vec3f
 // the random output is in the range from zero to 1
-fn pcg_2u_3f(pos: vec3u) -> vec3f {
+fn pcg_2u_3f(pos: vec2u) -> vec3f {
     let seed = mix2to3(pos);
     let random = pcg_3u_3u(seed);
     let normalized = ldexp(vec3f(random), vec3(-32));
