@@ -243,9 +243,6 @@ async function getRegistry(
     path.resolve(resolvedWeslRoot, p),
   );
 
-  // trigger rebuild on shader file change
-  fullPaths.forEach(f => unpluginCtx.addWatchFile(f));
-
   // trigger clearing cache on shader file change
   if (context.meta.watchMode) {
     fullPaths.forEach(f => {
@@ -293,7 +290,10 @@ async function loadWesl(
     glob(g, { cwd: tomlDir, absolute: true }),
   );
   const files = (await Promise.all(futureFiles)).flat();
-  // dlog({ files, weslRoot, tomlDir, globs });
+
+  // trigger rebuild on shader file change
+  files.forEach(f => unpluginCtx.addWatchFile(f));
+
   return await loadFiles(files, resolvedWeslRoot);
 }
 
