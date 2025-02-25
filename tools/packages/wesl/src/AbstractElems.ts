@@ -316,10 +316,15 @@ export interface BinaryOperator {
   span: Span;
 }
 
+export type DirectiveVariant =
+  | DiagnosticDirective
+  | EnableDirective
+  | RequiresDirective;
+
 export interface DirectiveElem extends AbstractElemBase {
   kind: "directive";
   attributes?: AttributeElem[];
-  directive: DiagnosticDirective | EnableDirective | RequiresDirective;
+  directive: DirectiveVariant;
 }
 
 export interface DiagnosticDirective {
