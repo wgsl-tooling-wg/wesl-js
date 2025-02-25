@@ -29,6 +29,9 @@ export interface WeslToml {
 
   /** base directory for wesl files. Relative to the toml directory. */
   weslRoot: string;
+
+  /** names of directly referenced wesl shader packages (e.g. npm package names) */
+  dependencies?: string[];
 }
 
 export interface WeslTomlInfo {
