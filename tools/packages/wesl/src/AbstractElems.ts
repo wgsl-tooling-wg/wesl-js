@@ -318,7 +318,7 @@ export interface BinaryOperator {
 
 export interface DirectiveElem extends AbstractElemBase {
   kind: "directive";
-  attributes: AttributeElem[];
+  attributes?: AttributeElem[];
   directive: DiagnosticDirective | EnableDirective | RequiresDirective;
 }
 
