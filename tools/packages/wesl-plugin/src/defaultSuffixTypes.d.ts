@@ -1,7 +1,7 @@
 /** @hidden */
 declare module "*?link" {
-  const linkConfig: LinkConfig;
-  export default linkConfig;
+  const linkParams: LinkParams;
+  export default linkParams;
 }
 
 /** @hidden */ // TODO move to separate package
