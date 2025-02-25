@@ -1,8 +1,8 @@
 /// <reference types="wesl-plugin/suffixes" />
+import { dlog } from "berry-pretty";
 import { expect, expectTypeOf, test } from "vitest";
 import { LinkParams } from "wesl";
 import linkParams from "./shaders/app.wesl?link";
-import { dlog } from "berry-pretty";
 
 test("verify ?link", async () => {
   expectTypeOf(linkParams).toMatchTypeOf<LinkParams>();
