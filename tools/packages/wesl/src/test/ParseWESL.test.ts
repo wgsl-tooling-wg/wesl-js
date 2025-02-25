@@ -171,7 +171,9 @@ test("parse global diagnostic", () => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       text '
-        diagnostic(off,derivative_uniformity);
+        '
+      directive diagnostic(off, derivative_uniformity)
+      text '
 
         '
       fn main()
@@ -1551,3 +1553,21 @@ test("memberRef with ref in array", () => {
       '"
   `);
 });
+
+
+test("@if(false) enable f16", () => {
+  const src = `
+    @if(false) enable f16;
+  `
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      attribute @if(false)
+      directive enable f16
+      text '
+      '"
+  `);
+})

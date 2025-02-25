@@ -8,6 +8,8 @@ import {
   ContainerElem,
   DeclarationElem,
   DeclIdentElem,
+  DirectiveVariant,
+  DirectiveElem,
   FnElem,
   FnParamElem,
   GlobalVarElem,
@@ -37,6 +39,7 @@ import {
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyScope, RefIdent, Scope } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
+import { dlog } from "berry-pretty";
 
 export function importElem(cc: CollectContext) {
   const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing
@@ -375,6 +378,17 @@ export const collectModule = collectElem(
     return moduleElem;
   },
 );
+
+export function directiveCollect(cc: CollectContext): DirectiveElem {
+  const { start, end } = cc;
+  const directive: DirectiveVariant = cc.tags.directive?.flat()[0];
+  const attributes: AttributeElem[] | undefined = cc.tags.attributes?.flat();
+
+  const kind = "directive";
+  const elem: DirectiveElem = { kind, attributes, start, end, directive };
+  addToOpenElem(cc, elem);
+  return elem;
+}
 
 /** collect a scope start starts before and ends after a parser */
 export function scopeCollect(): CollectPair<Scope> {

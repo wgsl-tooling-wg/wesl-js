@@ -58,6 +58,7 @@ import {
   collectStructMember,
   collectVarLike,
   declCollect,
+  directiveCollect,
   expressionCollect,
   nameCollect,
   refIdent,
@@ -498,27 +499,20 @@ const const_assert =
   )                                   .collect(collectSimpleElem("assert"),
 );
 
+// prettier-ignore
 const global_directive = span(
   seq(
     opt_attributes,
     terminated(
       or(
-        preceded("diagnostic", diagnostic_control).map(makeDiagnosticDirective),
-        preceded("enable", name_list).map(makeEnableDirective),
-        preceded("requires", name_list).map(makeRequiresDirective),
-      ),
+        preceded("diagnostic", diagnostic_control)      .map(makeDiagnosticDirective),
+        preceded("enable", name_list)                   .map(makeEnableDirective),
+        preceded("requires", name_list)                 .map(makeRequiresDirective),
+      )                                                   .ptag("directive"),
       ";",
     ),
   ),
-).map(
-  ({ value: [attributes, directive], span: [start, end] }): DirectiveElem => ({
-    kind: "directive",
-    directive,
-    attributes, // TODO: Convert this to a .collect
-    start,
-    end,
-  }),
-);
+)                                                         .collect(directiveCollect);
 
 // prettier-ignore
 // TODO: Hoist out the "opt_attributes"
