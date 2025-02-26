@@ -116,7 +116,7 @@ const attribute = tagScope(
             ),
           )                               .map(makeTranslateTimeExpressionElem),
         )                                 .map(makeIfAttribute),
-      )                                     .ptag("attribute"),
+      )                                     .ptag("variant"),
 
       // These are normal attributes
       seq(

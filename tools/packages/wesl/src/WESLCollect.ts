@@ -281,7 +281,7 @@ export const collectStructMember = collectElem(
 export const collectAttribute = collectElem(
   "attribute",
   (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
-    const attribute = cc.tags.attribute?.[0] as Attribute | undefined;
+    const attribute = cc.tags.variant?.[0] as Attribute | undefined;
     if (attribute !== undefined) {
       const partElem: AttributeElem = {
         ...openElem,
