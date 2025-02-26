@@ -89,36 +89,35 @@ const diagnostic_control = delimited(
 /** list of words that aren't identifiers (e.g. for @interpolate) */
 const name_list = withSep(",", name, { requireOne: true });
 
+// prettier-ignore
 const attribute = tagScope(
   preceded(
     "@",
     or(
-      // These attributes have no arguments
-      or("compute", "const", "fragment", "invariant", "must_use", "vertex")
-        .map(name => makeStandardAttribute([name, []]))
-        .ptag("attribute"),
-      // These attributes have arguments, but the argument doesn't have any identifiers
-      preceded("interpolate", req(delimited("(", name_list, ")")))
-        .map(makeInterpolateAttribute)
-        .ptag("attribute"),
-      preceded("builtin", req(delimited("(", name, ")")))
-        .map(makeBuiltinAttribute)
-        .ptag("attribute"),
-      preceded("diagnostic", req(diagnostic_control))
-        .map(makeDiagnosticAttribute)
-        .ptag("attribute"),
-      preceded(
-        weslExtension("if"),
-        span(
-          delimited(
-            "(",
-            fn(() => attribute_if_expression),
-            seq(opt(","), ")"),
-          ),
-        ).map(makeTranslateTimeExpressionElem),
-      )
-        .map(makeIfAttribute)
-        .ptag("attribute"),
+      or(
+        // These attributes have no arguments
+        or("compute", "const", "fragment", "invariant", "must_use", "vertex")
+                                          .map(name => makeStandardAttribute([name, []])),
+
+        // These attributes have arguments, but the argument doesn't have any identifiers
+        preceded("interpolate", req(delimited("(", name_list, ")")))
+                                          .map(makeInterpolateAttribute),
+        preceded("builtin", req(delimited("(", name, ")")))
+                                          .map(makeBuiltinAttribute),
+        preceded("diagnostic", req(diagnostic_control))
+                                          .map(makeDiagnosticAttribute),
+        preceded(
+          weslExtension("if"),
+          span(
+            delimited(
+              "(",
+              fn(() => attribute_if_expression),
+              seq(opt(","), ")"),
+            ),
+          )                               .map(makeTranslateTimeExpressionElem),
+        )                                 .map(makeIfAttribute),
+      )                                     .ptag("attribute"),
+
       // These are normal attributes
       seq(
         or(
@@ -130,17 +129,18 @@ const attribute = tagScope(
           "id",
           "location",
           "size",
-        ).ptag("name"),
+        )                                   .ptag("name"),
         req(() => attribute_argument_list),
       ),
+
       // Everything else is also a normal attribute, it might have an expression list
       seq(
-        req(word).ptag("name"),
+        req(word)                           .ptag("name"),
         opt(() => attribute_argument_list),
       ),
     ),
-  ).collect(collectAttribute),
-).ctag("attribute");
+  )                                         .collect(collectAttribute),
+)                                           .ctag("attribute");
 
 // prettier-ignore
 const attribute_argument_list = delimited(

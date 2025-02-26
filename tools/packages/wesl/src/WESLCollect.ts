@@ -383,6 +383,7 @@ export function directiveCollect(cc: CollectContext): DirectiveElem {
   const { start, end } = cc;
   const directive: DirectiveVariant = cc.tags.directive?.flat()[0];
   const attributes: AttributeElem[] | undefined = cc.tags.attributes?.flat();
+  attributes; //?
 
   const kind = "directive";
   const elem: DirectiveElem = { kind, attributes, start, end, directive };
