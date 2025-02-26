@@ -386,7 +386,7 @@ const switch_statement = seq("switch", expression, switch_body);
 const while_statement = seq("while", expression, compound_statement);
 
 const statement: Parser<Stream<WeslToken>, any> = or(
-  compound_statement, // This one is special and collects its own attributes
+  compound_statement, // collects its own scope
   seq(
     opt_attributes, // TODO: collect and then attach
     or(
@@ -523,7 +523,7 @@ const global_decl = tagScope(
   or(
     fn_decl,
     seq(
-      opt_attributes, // TODO: Attach attributes
+      opt_attributes,
       global_variable_decl, 
       ";")                          .collect(collectVarLike("gvar")),
     global_value_decl,
