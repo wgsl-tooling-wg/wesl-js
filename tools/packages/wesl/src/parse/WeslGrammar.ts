@@ -91,20 +91,27 @@ const diagnostic_control = delimited(
 const name_list = withSep(",", name, { requireOne: true });
 
 // prettier-ignore
-const special_attribute = or(
-  // These attributes have no arguments
-  or("compute", "const", "fragment", "invariant", "must_use", "vertex")
-                                    .map(name => makeStandardAttribute([name, []])),
+const special_attribute = tagScope(
+  preceded("@", 
+    or(
+      // These attributes have no arguments
+      or("compute", "const", "fragment", "invariant", "must_use", "vertex")
+                                        .map(name => makeStandardAttribute([name, []])),
 
-  // These attributes have arguments, but the argument doesn't have any identifiers
-  preceded("interpolate", req(delimited("(", name_list, ")")))
-                                    .map(makeInterpolateAttribute),
-  preceded("builtin", req(delimited("(", name, ")")))
-                                    .map(makeBuiltinAttribute),
-  preceded("diagnostic", req(diagnostic_control))
-                                    .map(makeDiagnosticAttribute),
-  preceded(
-    weslExtension("if"),
+      // These attributes have arguments, but the argument doesn't have any identifiers
+      preceded("interpolate", req(delimited("(", name_list, ")")))
+                                        .map(makeInterpolateAttribute),
+      preceded("builtin", req(delimited("(", name, ")")))
+                                        .map(makeBuiltinAttribute),
+      preceded("diagnostic", req(diagnostic_control))
+                                        .map(makeDiagnosticAttribute),
+    )                                     .ptag("attr_variant")  
+  )                                       .collect(specialAttribute)
+);
+
+// prettier-ignore
+const if_attribute = tagScope(
+  preceded(seq("@", weslExtension("if")),
     span(
       delimited(
         "(",
@@ -112,41 +119,47 @@ const special_attribute = or(
         seq(opt(","), ")"),
       ),
     )                               .map(makeTranslateTimeExpressionElem),
-  )                                 .map(makeIfAttribute),
+  )                                 .map(makeIfAttribute).ptag("attr_variant")
+                                    .collect(specialAttribute)
+);
+
+
+
+// prettier-ignore
+const normal_attribute = tagScope(
+  preceded("@",
+    or(
+      // These are normal attributes, with required arguments
+      seq(
+        or(
+          "workgroup_size",
+          "align",
+          "binding",
+          "blend_src",
+          "group",
+          "id",
+          "location",
+          "size",
+        )                        .ptag("name"),
+        req(() => attribute_argument_list),
+      ),
+
+      // Everything else is also a normal attribute, optional expression list
+      seq(
+        req(word)                .ptag("name"),
+        opt(() => attribute_argument_list),
+      ),
+    ),
+  )                              .collect(collectAttribute),
 );
 
 // prettier-ignore
-const attribute = tagScope(
-  or (
-    preceded("@", 
-      special_attribute               .ptag("attr_variant")
-    )                                 .collect(specialAttribute),
-    preceded("@",
-      or(
-        // These are normal attributes
-        seq(
-          or(
-            "workgroup_size",
-            "align",
-            "binding",
-            "blend_src",
-            "group",
-            "id",
-            "location",
-            "size",
-          )                                   .ptag("name"),
-          req(() => attribute_argument_list),
-        ),
+const attribute = or (
+  special_attribute,
+  if_attribute, 
+  normal_attribute
+)                                  .ctag("attribute");
 
-        // Everything else is also a normal attribute, it might have an expression list
-        seq(
-          req(word)                           .ptag("name"),
-          opt(() => attribute_argument_list),
-        ),
-      ),
-    )                                         .collect(collectAttribute),
-  )
-)                                           .ctag("attribute");
 
 // prettier-ignore
 const attribute_argument_list = delimited(
