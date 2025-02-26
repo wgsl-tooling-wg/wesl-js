@@ -6,7 +6,7 @@ test("parse complex condition", () => {
   const ast = parseTest("@if(true || (!foo&&!!false) )\nfn a() {}");
   expect(astToString(ast.moduleElem)).toMatchInlineSnapshot(`
     "module
-      fn a() @if(true || (!foo && !!false))
+      fn a() @if
         attribute @if(true || (!foo && !!false))
         text '
     fn '

@@ -201,7 +201,16 @@ function listAttributeElems(
   attributes: AttributeElem[] | undefined,
   str: LineWrapper,
 ) {
-  attributes?.forEach(a => addAttributeFields(a.attribute, str));
+  attributes?.forEach(a => str.add(" " + attributeName(a.attribute)));
+}
+
+function attributeName(attr: Attribute): string {
+  const { kind } = attr;
+  if (kind === "@attribute") {
+    return "@" + attr.name;
+  } else {
+    return kind;
+  }
 }
 
 function addDirective(elem: DirectiveElem, str: LineWrapper) {

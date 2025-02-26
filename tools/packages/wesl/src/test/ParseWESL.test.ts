@@ -212,7 +212,7 @@ test("parse @compute @workgroup_size(a, b, 1) before fn", () => {
     "module
       text '
         '
-      fn main() @compute @workgroup_size(ref a, ref b, '1')
+      fn main() @compute @workgroup_size
         attribute @compute
         text ' 
         '
@@ -648,7 +648,7 @@ test("parse fn with attributes and suffix comma", () => {
     "module
       text '
       '
-      fn main(grid: vec3<u32>, localIndex: u32) @compute @workgroup_size(ref workgroupThreads, '1', '1')
+      fn main(grid: vec3<u32>, localIndex: u32) @compute @workgroup_size
         attribute @compute
         text '
       '
@@ -1152,7 +1152,7 @@ test(`parse binding struct`, ctx => {
         decl %Bindings
         text ' {
           '
-        member @group('0') @binding('0') particles: ptr<storage, array<f32>, read_write>
+        member @group @binding particles: ptr<storage, array<f32>, read_write>
           attribute @group('0')
             expression '0'
               text '0'
@@ -1395,7 +1395,7 @@ test("binding struct", () => {
         decl %Bindings
         text ' {
           '
-        member @group('0') @binding('0') particles: ptr<storage, array<f32>, read_write>
+        member @group @binding particles: ptr<storage, array<f32>, read_write>
           attribute @group('0')
             expression '0'
               text '0'
@@ -1424,7 +1424,7 @@ test("binding struct", () => {
             text '>'
         text ', 
           '
-        member @group('0') @binding('1') uniforms: ptr<uniform, Uniforms>
+        member @group @binding uniforms: ptr<uniform, Uniforms>
           attribute @group('0')
             expression '0'
               text '0'
@@ -1446,7 +1446,7 @@ test("binding struct", () => {
             text '>'
         text ', 
           '
-        member @group('0') @binding('2') tex: texture_2d<rgba8unorm>
+        member @group @binding tex: texture_2d<rgba8unorm>
           attribute @group('0')
             expression '0'
               text '0'
@@ -1465,7 +1465,7 @@ test("binding struct", () => {
             text '>'
         text ',
           '
-        member @group('0') @binding('3') samp: sampler
+        member @group @binding samp: sampler
           attribute @group('0')
             expression '0'
               text '0'
@@ -1566,7 +1566,7 @@ test("@if(false) enable f16", () => {
       text '
         '
       attribute @if(false)
-      directive enable f16 @if(false)
+      directive enable f16 @if
       text '
       '"
   `);
