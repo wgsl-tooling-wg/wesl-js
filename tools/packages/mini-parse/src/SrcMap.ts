@@ -1,6 +1,6 @@
-// TODO add file or path name to src
-
+/** A source map file, and a path for debug purposes. */
 export interface SrcWithPath {
+  /** User friendly path */
   path?: string;
   text: string;
 }

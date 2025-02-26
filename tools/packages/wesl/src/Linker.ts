@@ -76,11 +76,16 @@ export interface LinkParams {
   mangler?: ManglerFn;
 }
 
+/** Generate a virtual WESL module based on a set of conditions. */
 export type VirtualLibraryFn = (conditions: Conditions) => string;
 
+/**
+ * Multiple WESL files that have been linked together.
+ */
 export class LinkedWesl {
   constructor(public sourceMap: SrcMap) {}
   get dest() {
+    // LATER consider picking a different name for `.dest`
     return this.sourceMap.dest.text;
   }
 }
