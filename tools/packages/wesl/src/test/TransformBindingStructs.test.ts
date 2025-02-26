@@ -52,9 +52,9 @@ test("transformBindingStruct", () => {
   const bindingStruct = markBindingStructs(rootAst.moduleElem)[0];
   const newVars = transformBindingStruct(bindingStruct, new Set());
 
-  const srcBuilder = new SrcMapBuilder(rootAst.srcModule.src);
+  const srcBuilder = new SrcMapBuilder({ text: rootAst.srcModule.src });
   lowerAndEmit(srcBuilder, newVars, {});
-  const linked = SrcMapBuilder.build([srcBuilder]).dest;
+  const linked = SrcMapBuilder.build([srcBuilder]).dest.text;
   expect(linked).toMatchInlineSnapshot(
     `
     "@group(0) @binding(0) var<storage, read_write> particles : array<f32>;
@@ -166,9 +166,9 @@ test("lower binding structs", () => {
       '"
   `);
 
-  const srcBuilder = new SrcMapBuilder(lowered.srcModule.src);
+  const srcBuilder = new SrcMapBuilder({ text: lowered.srcModule.src });
   lowerAndEmit(srcBuilder, [lowered.moduleElem], {}, false);
-  const linked = SrcMapBuilder.build([srcBuilder]).dest;
+  const linked = SrcMapBuilder.build([srcBuilder]).dest.text;
   expectTrimmedMatch(linked, expected);
 });
 

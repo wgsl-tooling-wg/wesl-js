@@ -76,7 +76,19 @@ export interface LinkParams {
   mangler?: ManglerFn;
 }
 
+/** Generate a virtual WESL module based on a set of conditions. */
 export type VirtualLibraryFn = (conditions: Conditions) => string;
+
+/**
+ * Multiple WESL files that have been linked together.
+ */
+export class LinkedWesl {
+  constructor(public sourceMap: SrcMap) {}
+  get dest() {
+    // LATER consider picking a different name for `.dest`
+    return this.sourceMap.dest.text;
+  }
+}
 
 /**
  * Link a set of WESL source modules (typically the text from .wesl files) into a single WGSL string.
@@ -87,12 +99,12 @@ export type VirtualLibraryFn = (conditions: Conditions) => string;
  * Additionally the caller can specify conditions for to control conditional compilation.
  * Only code that is valid with the current conditions is included in the output.
  */
-export async function link(params: LinkParams): Promise<SrcMap> {
+export async function link(params: LinkParams): Promise<LinkedWesl> {
   const { weslSrc, debugWeslRoot, libs = [] } = params;
   const registry = parsedRegistry();
   parseIntoRegistry(weslSrc, registry, "package", debugWeslRoot);
   parseLibsIntoRegistry(libs, registry);
-  return linkRegistry({ registry, ...params });
+  return new LinkedWesl(linkRegistry({ registry, ...params }));
 }
 
 export interface LinkRegistryParams
@@ -213,11 +225,17 @@ function emitWgsl(
   conditions: Conditions = {},
 ): SrcMapBuilder[] {
   /* --- Step #3   Writing WGSL --- */ // note doesn't require the scope tree anymore
-  const srcBuilder = new SrcMapBuilder(srcModule.src);
+  const srcBuilder = new SrcMapBuilder({
+    text: srcModule.src,
+    path: srcModule.debugFilePath,
+  });
   lowerAndEmit(srcBuilder, [rootModuleElem], conditions, false); // emit the entire root module
   return [srcBuilder].concat(
     newDecls.map(decl => {
-      const builder = new SrcMapBuilder(decl.srcModule.src);
+      const builder = new SrcMapBuilder({
+        text: decl.srcModule.src,
+        path: decl.srcModule.debugFilePath,
+      });
       lowerAndEmit(builder, [decl.declElem!], conditions); // emit referenced declarations from other modules
       return builder;
     }),
