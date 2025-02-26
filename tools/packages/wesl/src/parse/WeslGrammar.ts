@@ -519,7 +519,6 @@ const global_directive = span(
 )                                                         .collect(directiveCollect);
 
 // prettier-ignore
-// TODO: Hoist out the "opt_attributes"
 const global_decl = tagScope(
   or(
     fn_decl,
