@@ -207,13 +207,10 @@ function addDirective(
 ) {
   const { kind } = elem;
   if (kind === "diagnostic") {
-    str.add(
-      ` diagnostic${diagnosticControlToString(elem.severity, elem.rule)}`,
-    );
-  } else if (kind === "enable") {
-    str.add(` enable ${elem.extensions.map(v => v.name).join(", ")}`);
-  } else if (kind === "requires") {
-    str.add(` requires${elem.extensions.map(v => v.name).join(", ")}`);
+    const control = diagnosticControlToString(elem.severity, elem.rule);
+    str.add(` diagnostic${control}`);
+  } else if (kind === "enable" || kind === "requires") {
+    str.add(` ${kind} ${elem.extensions.map(v => v.name).join(", ")}`);
   } else {
     assertUnreachable(kind);
   }
