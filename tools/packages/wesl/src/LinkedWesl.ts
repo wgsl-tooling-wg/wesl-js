@@ -1,19 +1,21 @@
 import { SrcMap } from "mini-parse";
 import type { WeslDevice } from "./WeslDevice";
 import { offsetToLineNumber } from "./Util";
+import { assertThat } from "../../mini-parse/src/Assertions";
 
+/** Results of shader compilation. Has {@link WeslGPUCompilationMessage} which are aware of the WESL module that an error was thrown from. */
 export interface WeslGPUCompilationInfo extends GPUCompilationInfo {
   messages: WeslGPUCompilationMessage[];
 }
 
 export interface WeslGPUCompilationMessage extends GPUCompilationMessage {
   module: {
-    url: string;
-    text?: string;
+    url: string; // LATER this should be a qualified module path. And something else should map it to a URL that is relative to the correct place.
+    text?: string; // LATER: I don't think that the text should be a part of the compilation message. Instead the module url should be usable as a key.
   };
 }
 
-/** A GPUValidationError with an inner error (for a stack trace). Can also point at a WESL source file. */
+/** A {@link GPUValidationError} with an inner error (for a stack trace). Can also point at a WESL source file. */
 export class ExtendedGPUValidationError extends GPUValidationError {
   public cause?: Error;
   public compilationInfo?: WeslGPUCompilationInfo;
@@ -60,20 +62,22 @@ export class LinkedWesl {
     let { promise, resolve } = Promise.withResolvers<GPUError | null>();
     device.injectError("validation", promise); // Inject our custom error
     module.getCompilationInfo().then(compilationInfo => {
+      if (compilationInfo.messages.length === 0) {
+        resolve(null);
+      }
+
       const mappedCompilationInfo = this.mapGPUCompilationInfo(compilationInfo);
-      let errorMessage = compilationInfoToErrorMessage(
+      const errorMessage = compilationInfoToErrorMessage(
         mappedCompilationInfo,
         module,
       );
-      if (errorMessage === null) {
-        resolve(null);
-      } else {
-        const error = new ExtendedGPUValidationError(errorMessage, {
-          cause: new Error("createShaderModule failed"),
-        });
-        error.compilationInfo = mappedCompilationInfo;
-        resolve(error);
-      }
+      // Error message cannot be null, since we're passing at least one message to it.
+      assertThat(errorMessage !== null);
+      const error = new ExtendedGPUValidationError(errorMessage, {
+        cause: new Error("createShaderModule failed"),
+      });
+      error.compilationInfo = mappedCompilationInfo;
+      resolve(error);
     });
     return module;
   }
@@ -130,6 +134,7 @@ export class LinkedWesl {
 /**
  * Tries to imitate the way the browser logs the compilation info.
  * Does not do the remapping.
+ * @returns A string with errors, or `null` if there were no compilation messages.
  */
 function compilationInfoToErrorMessage(
   compilationInfo: WeslGPUCompilationInfo,
