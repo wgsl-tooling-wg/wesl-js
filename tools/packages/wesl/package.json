@@ -34,7 +34,8 @@
     }
   },
   "dependencies": {
-    "mini-parse": "workspace:*"
+    "mini-parse": "workspace:*",
+    "wesl-bundle": "workspace:*"
   },
   "devDependencies": {
     "ncp": "^2.0.0",

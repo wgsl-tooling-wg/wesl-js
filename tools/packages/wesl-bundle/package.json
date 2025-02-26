@@ -1,0 +1,31 @@
+{
+    "name": "wesl-bundle",
+    "version": "0.0.1",
+    "files": [
+        "dist",
+        "src"
+    ],
+    "scripts": {
+        "echo": "echo",
+        "build": "vite build",
+        "typecheck": "tsc",
+        "format": "prettier . --write",
+        "lint": "eslint src",
+        "organize": "organize-imports-cli tsconfig.json",
+        "prepublishOnly": "run-s build",
+        "test": "vitest",
+        "test:once": "vitest run"
+    },
+    "type": "module",
+    "repository": "github:wgsl-tooling-wg/wesl-js",
+    "exports": {
+        ".": {
+            "types": "./dist/tools/packages/wesl-bundle/src/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "vite-plugin-dts": "^4.5.0"
+    }
+}

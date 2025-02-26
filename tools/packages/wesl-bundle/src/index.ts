@@ -1,9 +1,6 @@
-export interface WgslBundle {
+export interface WeslBundle {
   /** name of the package, e.g. random_wgsl */
   name: string;
-
-  /** npm version of the package  e.g. 0.4.1 */
-  version: string;
 
   /** wesl edition of the code e.g. wesl_unstable_2024_1 */
   edition: string;
@@ -15,5 +12,5 @@ export interface WgslBundle {
   modules: Record<string, string>;
 
   /** packages referenced by this package */
-  dependencies?: WgslBundle[];
+  dependencies?: WeslBundle[];
 }

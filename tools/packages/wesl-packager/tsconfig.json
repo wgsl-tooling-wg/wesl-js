@@ -18,6 +18,7 @@
     "noEmit": true,
     "paths": {
       "wesl": ["../wesl/src"],
+      "wesl-bundle": ["../wesl-bundle/src"],
       "mini-parse": ["../mini-parse/src"]
     }
   },

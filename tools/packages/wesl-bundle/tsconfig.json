@@ -18,16 +18,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "paths": {
-      "mini-parse": ["../mini-parse/src"],
-      "wesl": ["./src"],
-      "wesl-bundle": ["../wesl-bundle/src"],
-      "mini-parse/test-util": ["../mini-parse/src/test-util"],
-      "wesl-testsuite": ["../../../wesl-testsuite/src"]
-    }
+    "noEmit": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules"],
-  "references": [{ "path": "./tsconfig-node.json" }]
+  "exclude": ["node_modules"]
 }
