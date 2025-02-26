@@ -356,6 +356,7 @@ export interface FnElem extends ElemWithContentsBase {
 export interface GlobalVarElem extends ElemWithContentsBase {
   kind: "gvar";
   name: TypedDeclElem;
+  attributes?: AttributeElem[];
 }
 
 /** an entire file */
