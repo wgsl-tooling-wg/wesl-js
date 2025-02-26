@@ -46,8 +46,28 @@ export async function linkTestOpts(
   return srcMap.dest;
 }
 
-/** link wesl for tests, and return the console log as well */
+/** Link wesl for tests, and return the console log as well */
 export async function linkWithLog(...rawWgsl: string[]): Promise<{
+  log: string;
+  result: string;
+}> {
+  return linkWithLogInternal(rawWgsl);
+}
+
+/** Link wesl for tests, and return the console log as well. 
+ * Quietly swallow any exceptions thrown */
+export async function linkWithLogQuietly(...rawWgsl: string[]): Promise<{
+  log: string;
+  result: string;
+}> {
+  return linkWithLogInternal(rawWgsl, true);
+}
+
+/** link wesl for tests */
+async function linkWithLogInternal(
+  rawWgsl: string[],
+  quiet = false,
+): Promise<{
   log: string;
   result: string;
 }> {
@@ -56,7 +76,7 @@ export async function linkWithLog(...rawWgsl: string[]): Promise<{
   try {
     result = await withLoggerAsync(log, async () => linkTest(...rawWgsl));
   } catch (e) {
-    console.error(e);
+    if (!quiet) console.error(e);
   }
   return { result, log: logged() };
 }
