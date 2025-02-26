@@ -4,12 +4,13 @@ import {
   AliasElem,
   Attribute,
   AttributeElem,
+  ConstAssertElem,
   ConstElem,
   ContainerElem,
   DeclarationElem,
   DeclIdentElem,
-  DirectiveVariant,
   DirectiveElem,
+  DirectiveVariant,
   FnElem,
   FnParamElem,
   GlobalVarElem,
@@ -22,6 +23,8 @@ import {
   OverrideElem,
   RefIdentElem,
   SimpleMemberRef,
+  StandardAttribute,
+  StatementElem,
   StructElem,
   StructMemberElem,
   StuffElem,
@@ -30,9 +33,6 @@ import {
   TypeRefElem,
   UnknownExpressionElem,
   VarElem,
-  StandardAttribute,
-  ConstAssertElem,
-  StatementElem,
 } from "./AbstractElems.ts";
 import {
   StableState,
@@ -42,7 +42,6 @@ import {
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyScope, RefIdent, Scope } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
-import { dlog } from "berry-pretty";
 
 export function importElem(cc: CollectContext) {
   const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing

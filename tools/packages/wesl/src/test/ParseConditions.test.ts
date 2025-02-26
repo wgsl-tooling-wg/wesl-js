@@ -2,7 +2,6 @@ import { expect, test } from "vitest";
 import { astToString } from "../debug/ASTtoString.ts";
 import { parseTest } from "./TestUtil.ts";
 
-
 test("@if(false) enable f16", () => {
   const src = `
     @if(false) enable f16;
@@ -70,8 +69,6 @@ test("conditional statement", () => {
   const astString = astToString(ast.moduleElem); //?
   // expect(astString).toMatchInlineSnapshot('tbd');
 });
-
-
 
 // test("", () => {
 //   const src = `
