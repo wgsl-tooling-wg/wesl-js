@@ -1588,3 +1588,24 @@ test("@if(false) const_assert true;", () => {
       '"
   `);
 });
+
+test("@if(true) var x = 7", () => {
+  const src = `
+    @if(true) var x = 7; 
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      gvar %x @if
+        attribute @if(true)
+        text ' var '
+        typeDecl %x
+          decl %x
+        text ' = 7;'
+      text ' 
+      '"
+  `);
+});
