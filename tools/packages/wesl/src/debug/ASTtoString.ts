@@ -38,6 +38,7 @@ export function astToString(elem: AbstractElem, indent = 0): string {
   return str.result;
 }
 
+// LATER rewrite to be shorter and easier to read
 function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   const { kind } = elem;
   if (kind === "text") {
@@ -55,11 +56,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     str.add(" " + elem.name.ident.originalName);
   } else if (kind === "member") {
     const { name, typeRef, attributes } = elem;
-    if (attributes) {
-      for (const attribute of attributes) {
-        addAttribute(attribute.attribute, str);
-      }
-    }
+    listAttributeElems(attributes, str);
     str.add(" " + name.name);
     str.add(": " + typeRefElemToString(typeRef));
   } else if (kind === "name") {
@@ -77,7 +74,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     str.add(" " + prefix + name.ident.originalName);
     str.add("=" + typeRefElemToString(typeRef));
   } else if (kind === "attribute") {
-    addAttribute(elem.attribute, str);
+    addAttributeFields(elem.attribute, str);
   } else if (kind === "expression") {
     const contents = elem.contents
       .map(e => {
@@ -130,7 +127,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   }
 }
 
-function addAttribute(attr: Attribute, str: LineWrapper) {
+function addAttributeFields(attr: Attribute, str: LineWrapper) {
   const { kind } = attr;
   if (kind === "@attribute") {
     const { name, params } = attr;
@@ -161,7 +158,7 @@ function addAttribute(attr: Attribute, str: LineWrapper) {
 /** @return string representation of an attribute (for test/debug) */
 export function attributeToString(attr: Attribute): string {
   const str = new LineWrapper(0, maxLineLength);
-  addAttribute(attr, str);
+  addAttributeFields(attr, str);
   return str.result;
 }
 
@@ -194,18 +191,19 @@ function addFnFields(elem: FnElem, str: LineWrapper) {
   str.add(paramStrs);
   str.add(")");
 
-  attributes?.forEach(a => addAttribute(a.attribute, str));
+  listAttributeElems(attributes, str);
 
   if (returnType) {
     str.add(" -> " + typeRefElemToString(returnType));
   }
 }
 
-function addDirective(
-  elem: DiagnosticDirective | EnableDirective | RequiresDirective,
+function listAttributeElems(
+  attributes: AttributeElem[] | undefined,
   str: LineWrapper,
 ) {
-  const { kind } = elem;
+  attributes?.forEach(a => addAttributeFields(a.attribute, str));
+}
   if (kind === "diagnostic") {
     const control = diagnosticControlToString(elem.severity, elem.rule);
     str.add(` diagnostic${control}`);
