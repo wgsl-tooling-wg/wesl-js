@@ -141,7 +141,7 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
   // Like the first case does
   if (kind === "attribute") {
     const { params } = e.attribute;
-    if (params.length === 0) {
+    if (!params || params.length === 0) {
       ctx.srcBuilder.add("@" + e.attribute.name, e.start, e.end);
     } else {
       ctx.srcBuilder.add(

@@ -289,7 +289,7 @@ export const collectAttribute = collectElem(
       };
       return partElem;
     } else {
-      const params = (cc.tags.attrParam ?? []) as UnknownExpressionElem[];
+      const params = cc.tags.attrParam as UnknownExpressionElem[] | undefined;
       const name = cc.tags.name?.[0]! as string;
       const partElem: AttributeElem = {
         ...openElem,

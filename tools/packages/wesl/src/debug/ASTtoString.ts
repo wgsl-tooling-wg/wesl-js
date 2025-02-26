@@ -135,7 +135,7 @@ function addAttribute(attr: Attribute, str: LineWrapper) {
   if (kind === "attribute") {
     const { name, params } = attr;
     str.add(" @" + name);
-    if (params.length > 0) {
+    if (params && params.length > 0) {
       str.add("(");
       str.add(params.map(unknownExpressionToString).join(", "));
       str.add(")");
