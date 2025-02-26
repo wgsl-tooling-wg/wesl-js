@@ -1566,7 +1566,7 @@ test("@if(false) enable f16", () => {
       text '
         '
       attribute @if(false)
-      directive enable f16
+      directive enable f16 @if(false)
       text '
       '"
   `);

@@ -2,10 +2,9 @@ import { assertUnreachable } from "../../../mini-parse/src/Assertions.ts";
 import {
   AbstractElem,
   Attribute,
-  DiagnosticDirective,
-  EnableDirective,
+  AttributeElem,
+  DirectiveElem,
   FnElem,
-  RequiresDirective,
   StuffElem,
   TypedDeclElem,
   TypeRefElem,
@@ -117,7 +116,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   } else if (kind === "stuff") {
     // Ignore
   } else if (kind === "directive") {
-    addDirective(elem.directive, str);
+    addDirective(elem, str);
   } else if (kind === "statement") {
     // Nothing to do for now
   } else if (kind === "switch-clause") {
@@ -204,14 +203,20 @@ function listAttributeElems(
 ) {
   attributes?.forEach(a => addAttributeFields(a.attribute, str));
 }
+
+function addDirective(elem: DirectiveElem, str: LineWrapper) {
+  const { directive, attributes } = elem;
+  const { kind } = directive;
   if (kind === "diagnostic") {
-    const control = diagnosticControlToString(elem.severity, elem.rule);
+    const { severity, rule } = directive;
+    const control = diagnosticControlToString(severity, rule);
     str.add(` diagnostic${control}`);
   } else if (kind === "enable" || kind === "requires") {
-    str.add(` ${kind} ${elem.extensions.map(v => v.name).join(", ")}`);
+    str.add(` ${kind} ${directive.extensions.map(v => v.name).join(", ")}`);
   } else {
     assertUnreachable(kind);
   }
+  listAttributeElems(attributes, str);
 }
 
 function unknownExpressionToString(elem: UnknownExpressionElem): string {
