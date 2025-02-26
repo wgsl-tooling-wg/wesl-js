@@ -255,6 +255,7 @@ const global_variable_decl = seq(
                                       // TODO shouldn't decl_scope include the ident type?
   opt(seq("=", () => expression       .collect(scopeCollect(), "decl_scope"))),
 );
+
 const attribute_if_primary_expression: Parser<
   Stream<WeslToken>,
   Literal | ParenthesizedExpression | TranslateTimeFeature
@@ -564,9 +565,11 @@ function makeDiagnosticDirective([severity, rule]: readonly [
 ]): DiagnosticDirective {
   return { kind: "diagnostic", severity, rule };
 }
+
 function makeEnableDirective(extensions: NameElem[]): EnableDirective {
   return { kind: "enable", extensions };
 }
+
 function makeRequiresDirective(extensions: NameElem[]): RequiresDirective {
   return { kind: "requires", extensions };
 }
@@ -581,18 +584,21 @@ function makeStandardAttribute([name, params]: [
     params,
   };
 }
+
 function makeInterpolateAttribute(params: NameElem[]): InterpolateAttribute {
   return {
     kind: "@interpolate",
     params,
   };
 }
+
 function makeBuiltinAttribute(param: NameElem): BuiltinAttribute {
   return {
     kind: "@builtin",
     param,
   };
 }
+
 function makeDiagnosticAttribute([severity, rule]: readonly [
   NameElem,
   [NameElem, NameElem | null],
@@ -609,6 +615,7 @@ function makeIfAttribute(param: TranslateTimeExpressionElem): IfAttribute {
     param,
   };
 }
+
 function makeTranslateTimeExpressionElem(args: {
   value: ExpressionElem;
   span: Span;
@@ -662,12 +669,14 @@ function makeUnaryOperator(token: WeslToken<"symbol">): UnaryOperator {
     span: token.span,
   };
 }
+
 function makeBinaryOperator(token: WeslToken<"symbol">): BinaryOperator {
   return {
     value: token.text as any,
     span: token.span,
   };
 }
+
 function makeUnaryExpression([operator, expression]: [
   UnaryOperator,
   ExpressionElem,
@@ -678,6 +687,7 @@ function makeUnaryExpression([operator, expression]: [
     expression,
   };
 }
+
 /** A list of left-to-right associative binary expressions */
 function makeRepeatingBinaryExpression([start, repeating]: [
   ExpressionElem,
@@ -689,6 +699,7 @@ function makeRepeatingBinaryExpression([start, repeating]: [
   }
   return result;
 }
+
 function makeBinaryExpression([left, operator, right]: [
   ExpressionElem,
   BinaryOperator,
