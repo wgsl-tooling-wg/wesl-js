@@ -34,7 +34,7 @@ export type ContainerElem =
   | StuffElem
   | TypeRefElem
   | VarElem
-  | AnyStatement
+  | StatementElem
   | SwitchClause;
 
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
@@ -438,7 +438,7 @@ export interface LetElem extends ElemWithContentsBase {
   name: TypedDeclElem;
 }
 
-export interface AnyStatement extends ElemWithContentsBase {
+export interface StatementElem extends ElemWithContentsBase {
   kind: "statement";
   attributes: AttributeElem[];
 }
