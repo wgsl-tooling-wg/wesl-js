@@ -1554,11 +1554,10 @@ test("memberRef with ref in array", () => {
   `);
 });
 
-
 test("@if(false) enable f16", () => {
   const src = `
     @if(false) enable f16;
-  `
+  `;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -1570,4 +1569,22 @@ test("@if(false) enable f16", () => {
       text '
       '"
   `);
-})
+});
+
+test("@if(false) const_assert true;", () => {
+  const src = `
+    @if(false) const_assert true;
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      assert
+        attribute @if(false)
+        text ' const_assert true;'
+      text '
+      '"
+  `);
+});

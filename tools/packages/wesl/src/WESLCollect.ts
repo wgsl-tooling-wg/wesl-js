@@ -31,6 +31,7 @@ import {
   UnknownExpressionElem,
   VarElem,
   StandardAttribute,
+  ConstAssertElem,
 } from "./AbstractElems.ts";
 import {
   StableState,
@@ -290,6 +291,15 @@ export const specialAttribute = collectElem(
   },
 );
 
+export const constAssertCollect = collectElem(
+  "assert",
+  (cc: CollectContext, openElem: PartElem<ConstAssertElem>) => {
+    const attributes = cc.tags.attribute?.flat(3) as AttributeElem[];
+    const partElem = { ...openElem, attributes };
+    return withTextCover(partElem, cc);
+  });
+
+
 export const collectAttribute = collectElem(
   "attribute",
   (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
@@ -395,12 +405,6 @@ export function scopeCollect(): CollectPair<Scope> {
     before: startScope,
     after: completeScope,
   };
-}
-
-export function collectSimpleElem<V extends AbstractElem & ContainerElem>(
-  kind: V["kind"],
-): CollectPair<V> {
-  return collectElem(kind, (cc, part) => withTextCover(part as V, cc) as V);
 }
 
 /** utility to collect an ElemWithContents

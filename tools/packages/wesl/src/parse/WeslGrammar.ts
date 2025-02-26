@@ -31,7 +31,6 @@ import {
   BuiltinAttribute,
   DiagnosticAttribute,
   DiagnosticDirective,
-  DirectiveElem,
   EnableDirective,
   ExpressionElem,
   IfAttribute,
@@ -53,10 +52,10 @@ import {
   collectFn,
   collectFnParam,
   collectModule,
-  collectSimpleElem,
   collectStruct,
   collectStructMember,
   collectVarLike,
+  constAssertCollect,
   declCollect,
   directiveCollect,
   expressionCollect,
@@ -502,8 +501,7 @@ const const_assert =
     "const_assert", 
     req(expression), 
     ";"
-  )                                   .collect(collectSimpleElem("assert"),
-);
+  )                                   .collect(constAssertCollect);
 
 // prettier-ignore
 const global_directive = span(
