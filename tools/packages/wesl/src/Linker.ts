@@ -77,6 +77,7 @@ export interface LinkParams {
   mangler?: ManglerFn;
 }
 
+/** Generate a virtual WESL module based on a set of conditions. */
 export type VirtualLibraryFn = (conditions: Conditions) => string;
 
 /**

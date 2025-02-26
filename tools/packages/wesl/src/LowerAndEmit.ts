@@ -75,6 +75,8 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "expression":
     case "type":
     case "stuff":
+    case "statement":
+    case "switch-clause":
       return emitContents(e, ctx);
 
     // root level container elements get some extra newlines to make the output prettier
@@ -137,9 +139,9 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
   const { kind } = e.attribute;
   // LATER emit more precise source map info by making use of all the spans
   // Like the first case does
-  if (kind === "attribute") {
+  if (kind === "@attribute") {
     const { params } = e.attribute;
-    if (params.length === 0) {
+    if (!params || params.length === 0) {
       ctx.srcBuilder.add("@" + e.attribute.name, e.start, e.end);
     } else {
       ctx.srcBuilder.add(
@@ -223,19 +225,19 @@ function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
   const { kind } = directive;
   if (kind === "diagnostic") {
     ctx.srcBuilder.add(
-      `diagnostic${diagnosticControlToString(directive.severity, directive.rule)}`,
+      `diagnostic${diagnosticControlToString(directive.severity, directive.rule)};`,
       e.start,
       e.end,
     );
   } else if (kind === "enable") {
     ctx.srcBuilder.add(
-      `enable${directive.extensions.map(v => v.name).join(", ")}`,
+      `enable${directive.extensions.map(v => v.name).join(", ")};`,
       e.start,
       e.end,
     );
   } else if (kind === "requires") {
     ctx.srcBuilder.add(
-      `requires${directive.extensions.map(v => v.name).join(", ")}`,
+      `requires${directive.extensions.map(v => v.name).join(", ")};`,
       e.start,
       e.end,
     );

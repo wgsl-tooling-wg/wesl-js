@@ -31,7 +31,6 @@ import {
   BuiltinAttribute,
   DiagnosticAttribute,
   DiagnosticDirective,
-  DirectiveElem,
   EnableDirective,
   ExpressionElem,
   IfAttribute,
@@ -53,15 +52,18 @@ import {
   collectFn,
   collectFnParam,
   collectModule,
-  collectSimpleElem,
   collectStruct,
   collectStructMember,
   collectVarLike,
+  constAssertCollect,
   declCollect,
+  directiveCollect,
   expressionCollect,
   nameCollect,
   refIdent,
   scopeCollect,
+  specialAttribute,
+  statementCollect,
   typedDecl,
 } from "../WESLCollect.ts";
 import { weslImports } from "./ImportGrammar.ts";
@@ -88,58 +90,63 @@ const diagnostic_control = delimited(
 /** list of words that aren't identifiers (e.g. for @interpolate) */
 const name_list = withSep(",", name, { requireOne: true });
 
-const attribute = tagScope(
+// prettier-ignore
+const special_attribute = or(
+  // These attributes have no arguments
+  or("compute", "const", "fragment", "invariant", "must_use", "vertex")
+                                    .map(name => makeStandardAttribute([name, []])),
+
+  // These attributes have arguments, but the argument doesn't have any identifiers
+  preceded("interpolate", req(delimited("(", name_list, ")")))
+                                    .map(makeInterpolateAttribute),
+  preceded("builtin", req(delimited("(", name, ")")))
+                                    .map(makeBuiltinAttribute),
+  preceded("diagnostic", req(diagnostic_control))
+                                    .map(makeDiagnosticAttribute),
   preceded(
-    "@",
-    or(
-      // These attributes have no arguments
-      or("compute", "const", "fragment", "invariant", "must_use", "vertex")
-        .map(name => makeStandardAttribute([name, []]))
-        .ptag("attribute"),
-      // These attributes have arguments, but the argument doesn't have any identifiers
-      preceded("interpolate", req(delimited("(", name_list, ")")))
-        .map(makeInterpolateAttribute)
-        .ptag("attribute"),
-      preceded("builtin", req(delimited("(", name, ")")))
-        .map(makeBuiltinAttribute)
-        .ptag("attribute"),
-      preceded("diagnostic", req(diagnostic_control))
-        .map(makeDiagnosticAttribute)
-        .ptag("attribute"),
-      preceded(
-        weslExtension("if"),
-        span(
-          delimited(
-            "(",
-            fn(() => attribute_if_expression),
-            seq(opt(","), ")"),
-          ),
-        ).map(makeTranslateTimeExpressionElem),
-      )
-        .map(makeIfAttribute)
-        .ptag("attribute"),
-      // These are normal attributes
-      seq(
-        or(
-          "workgroup_size",
-          "align",
-          "binding",
-          "blend_src",
-          "group",
-          "id",
-          "location",
-          "size",
-        ).ptag("name"),
-        req(() => attribute_argument_list),
+    weslExtension("if"),
+    span(
+      delimited(
+        "(",
+        fn(() => attribute_if_expression),
+        seq(opt(","), ")"),
       ),
-      // Everything else is also a normal attribute, it might have an expression list
-      seq(
-        req(word).ptag("name"),
-        opt(() => attribute_argument_list),
+    )                               .map(makeTranslateTimeExpressionElem),
+  )                                 .map(makeIfAttribute),
+);
+
+// prettier-ignore
+const attribute = tagScope(
+  or (
+    preceded("@", 
+      special_attribute               .ptag("attr_variant")
+    )                                 .collect(specialAttribute),
+    preceded("@",
+      or(
+        // These are normal attributes
+        seq(
+          or(
+            "workgroup_size",
+            "align",
+            "binding",
+            "blend_src",
+            "group",
+            "id",
+            "location",
+            "size",
+          )                                   .ptag("name"),
+          req(() => attribute_argument_list),
+        ),
+
+        // Everything else is also a normal attribute, it might have an expression list
+        seq(
+          req(word)                           .ptag("name"),
+          opt(() => attribute_argument_list),
+        ),
       ),
-    ),
-  ).collect(collectAttribute),
-).ctag("attribute");
+    )                                         .collect(collectAttribute),
+  )
+)                                           .ctag("attribute");
 
 // prettier-ignore
 const attribute_argument_list = delimited(
@@ -302,17 +309,22 @@ const compound_statement = tagScope(
   )
 );
 
-const for_init = or(
-  fn_call,
-  () => variable_or_value_statement,
-  () => variable_updating_statement,
+const for_init = seq(
+  opt_attributes, // TODO: Collect
+  or(
+    fn_call,
+    () => variable_or_value_statement,
+    () => variable_updating_statement,
+  ), // TODO: collect as AnyStatement and add the attributes
 );
 
-const for_update = or(fn_call, () => variable_updating_statement);
+const for_update = seq(
+  opt_attributes, // TODO: Collect and attach
+  or(fn_call, () => variable_updating_statement),
+);
 
 // prettier-ignore
 const for_statement = seq(
-  opt_attributes,
   "for",
   seq(
     req("("),
@@ -327,7 +339,6 @@ const for_statement = seq(
 );
 
 const if_statement = seq(
-  opt_attributes,
   "if",
   req(seq(expression, compound_statement)),
   repeat(seq("else", "if", req(seq(expression, compound_statement)))),
@@ -335,9 +346,8 @@ const if_statement = seq(
 );
 
 const loop_statement = seq(
-  opt_attributes,
   "loop",
-  opt_attributes,
+  opt_attributes, // TODO: collect and attach to scope 1
   req(
     seq(
       "{",
@@ -345,55 +355,59 @@ const loop_statement = seq(
       opt(
         seq(
           "continuing",
-          opt_attributes,
+          opt_attributes, // TODO: collect and attach to scope 2
           "{",
           repeat(() => statement),
           opt(seq("break", "if", expression, ";")),
-          "}",
+          "}", // TODO: Scope 2 collect
         ),
       ),
-      "}",
+      "}", // TODO: Scope 1 collect
     ),
   ),
 );
 
 const case_selector = or("default", expression);
-const switch_clause = or(
-  seq(
-    "case",
-    withSep(",", case_selector, { requireOne: true }),
-    opt(":"),
-    compound_statement,
-  ),
-  seq("default", opt(":"), compound_statement),
+const switch_clause = seq(
+  opt_attributes, // TODO: collect and then attach
+  or(
+    seq(
+      "case",
+      withSep(",", case_selector, { requireOne: true }),
+      opt(":"),
+      compound_statement,
+    ),
+    seq("default", opt(":"), compound_statement),
+  ), // TODO: collect as SwitchClause
 );
 
 const switch_body = seq(opt_attributes, "{", repeatPlus(switch_clause), "}");
-const switch_statement = seq(opt_attributes, "switch", expression, switch_body);
+const switch_statement = seq("switch", expression, switch_body);
 
-const while_statement = seq(
-  opt_attributes,
-  "while",
-  expression,
-  compound_statement,
-);
+const while_statement = seq("while", expression, compound_statement);
 
+// prettier-ignore
 const statement: Parser<Stream<WeslToken>, any> = or(
-  for_statement,
-  if_statement,
-  loop_statement,
-  switch_statement,
-  while_statement,
-  compound_statement,
-  seq("break", ";"),
-  seq("continue", ";"),
-  seq(";"),
-  () => const_assert,
-  seq("discard", ";"),
-  seq("return", opt(expression), ";"),
-  seq(fn_call, ";"),
-  seq(() => variable_or_value_statement, ";"),
-  seq(() => variable_updating_statement, ";"),
+  compound_statement, // collects its own scope
+  seq(
+    opt_attributes, // TODO: collect and then attach
+    or(
+      for_statement,
+      if_statement,
+      loop_statement,
+      switch_statement,
+      while_statement,
+      seq("break", ";"),
+      seq("continue", ";"),
+      seq(";"), // LATER this one cannot have attributes in front of it
+      () => const_assert,
+      seq("discard", ";"),
+      seq("return", opt(expression), ";"),
+      seq(fn_call, ";"),
+      seq(() => variable_or_value_statement, ";"),
+      seq(() => variable_updating_statement, ";"),
+    ),
+  )                                        .collect(statementCollect),
 );
 
 // prettier-ignore
@@ -457,13 +471,14 @@ const fn_decl = seq(
 // prettier-ignore
 const global_value_decl = or(
   seq(
-    opt_attributes                    .collect((cc) => cc.tags.attribute, "attributes"),
+    opt_attributes                    .collect((cc) => cc.tags.attribute, "attributes"), // TODO: attach to override
     "override",
     optionally_typed_ident,
     seq(opt(seq("=", expression       .collect(scopeCollect(), "decl_scope")))),
     ";",
   )                                   .collect(collectVarLike("override")),
   seq(
+    opt_attributes                    .collect((cc) => cc.tags.attribute, "attributes"), // TODO: attach to const
     "const",
     optionally_typed_ident,
     "=",
@@ -485,37 +500,33 @@ const global_alias = seq(
 // prettier-ignore
 const const_assert = 
   seq(
+    opt_attributes, // TODO: collect and attach
     "const_assert", 
     req(expression), 
     ";"
-  )                                   .collect(collectSimpleElem("assert"),
-);
-
-const global_directive = span(
-  terminated(
-    or(
-      preceded("diagnostic", diagnostic_control).map(makeDiagnosticDirective),
-      preceded("enable", name_list).map(makeEnableDirective),
-      preceded("requires", name_list).map(makeRequiresDirective),
-    ),
-    ";",
-  ),
-).map(
-  ({ value: directive, span: [start, end] }): DirectiveElem => ({
-    kind: "directive",
-    directive: directive,
-    start,
-    end,
-  }),
-);
+  )                                   .collect(constAssertCollect);
 
 // prettier-ignore
-// TODO: Hoist out the "opt_attributes"
+const global_directive = span(
+  seq(
+    opt_attributes,
+    terminated(
+      or(
+        preceded("diagnostic", diagnostic_control)      .map(makeDiagnosticDirective),
+        preceded("enable", name_list)                   .map(makeEnableDirective),
+        preceded("requires", name_list)                 .map(makeRequiresDirective),
+      )                                                   .ptag("directive"),
+      ";",
+    ),
+  ),
+)                                                         .collect(directiveCollect);
+
+// prettier-ignore
 const global_decl = tagScope(
   or(
     fn_decl,
     seq(
-      opt_attributes, 
+      opt_attributes,
       global_variable_decl, 
       ";")                          .collect(collectVarLike("gvar")),
     global_value_decl,
@@ -552,7 +563,7 @@ function makeStandardAttribute([name, params]: [
   UnknownExpressionElem[],
 ]): StandardAttribute {
   return {
-    kind: "attribute",
+    kind: "@attribute",
     name,
     params,
   };

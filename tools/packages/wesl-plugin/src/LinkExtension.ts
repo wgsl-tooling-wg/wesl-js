@@ -1,5 +1,5 @@
 import path from "node:path";
-import { noSuffix, packageReferences } from "wesl";
+import { LinkParams, noSuffix } from "wesl";
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.ts";
 
 export const linkBuildPlugin: PluginExtension = {
@@ -12,40 +12,43 @@ async function emitLinkJs(
   baseId: string,
   api: PluginExtensionApi,
 ): Promise<string> {
-  const { resolvedWeslRoot } = await api.weslToml();
+  const { resolvedWeslRoot, toml } = await api.weslToml();
+  const { dependencies = [] } = toml;
   const debugWeslRoot = resolvedWeslRoot.replaceAll(path.sep, "/");
   const weslSrc = await api.weslSrc();
   const rootModule = await api.weslMain(baseId);
   const rootModuleName = noSuffix(rootModule);
   const rootName = path.basename(rootModuleName);
-  const packages = scanForPackages(weslSrc);
 
-  const bundleImports = packages
+  const bundleImports = dependencies
     .map(p => `import ${p} from "${p}";`)
     .join("\n");
 
   const paramsName = `link${rootName}Config`;
 
-  const linkSettings = JSON.stringify(
-    {
-      rootModuleName,
-      weslSrc,
-      debugWeslRoot,
-      dependencies: packages,
-    },
-    null,
-    2,
-  );
+  const linkParams: LinkParams = {
+    rootModuleName,
+    weslSrc,
+    debugWeslRoot,
+  };
+
+  const libsStr = `libs: [${dependencies.join(", ")}]`;
+  const linkParamsStr = `{
+    ${serializeFields(linkParams)},
+    ${libsStr},
+  }`;
 
   const src = `
     ${bundleImports}
-    export const ${paramsName} = ${linkSettings};
+    export const ${paramsName} = ${linkParamsStr};
     export default ${paramsName};
     `;
 
   return src;
 }
 
-function scanForPackages(weslSrc: Record<string, string>): string[] {
-  return Object.values(weslSrc).flatMap(packageReferences);
+function serializeFields(record: Record<string, any>) {
+  return Object.entries(record)
+    .map(([k, v]) => `    ${k}: ${JSON.stringify(v, null, 2)}`)
+    .join(",\n");
 }

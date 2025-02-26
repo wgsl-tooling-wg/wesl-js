@@ -1,1 +1,1 @@
-export default ["tools/packages/*"];
+export default ["tools/packages/*", "packages/wesl-plugin/test/*"];

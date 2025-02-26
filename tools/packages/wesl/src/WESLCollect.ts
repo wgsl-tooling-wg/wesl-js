@@ -4,10 +4,13 @@ import {
   AliasElem,
   Attribute,
   AttributeElem,
+  ConstAssertElem,
   ConstElem,
   ContainerElem,
   DeclarationElem,
   DeclIdentElem,
+  DirectiveElem,
+  DirectiveVariant,
   FnElem,
   FnParamElem,
   GlobalVarElem,
@@ -20,6 +23,8 @@ import {
   OverrideElem,
   RefIdentElem,
   SimpleMemberRef,
+  StandardAttribute,
+  StatementElem,
   StructElem,
   StructMemberElem,
   StuffElem,
@@ -118,6 +123,7 @@ export const typedDecl = collectElem(
 );
 
 let identId = 0;
+
 /** add Ident to current open scope, add IdentElem to current open element */
 function saveIdent(
   cc: CollectContext,
@@ -188,7 +194,8 @@ export function collectVarLike<E extends VarLikeElem>(
   return collectElem(kind, (cc: CollectContext, openElem: PartElem<E>) => {
     const name = cc.tags.var_name?.[0] as TypedDeclElem;
     const decl_scope = cc.tags.decl_scope?.[0] as Scope;
-    const partElem = { ...openElem, name } as E;
+    const attributes = cc.tags.attribute as AttributeElem[] | undefined;
+    const partElem = { ...openElem, name, attributes } as E;
     const varElem = withTextCover(partElem, cc);
     (name.decl.ident as DeclIdent).declElem = varElem as DeclarationElem;
     name.decl.ident.scope = decl_scope;
@@ -217,16 +224,17 @@ export const collectFn = collectElem(
     const name = cc.tags.fn_name?.[0] as DeclIdentElem;
     const body_scope = cc.tags.body_scope?.[0] as Scope;
     const params: FnParamElem[] = cc.tags.fnParam?.flat(3) ?? [];
-    const fnAttributes: AttributeElem[] | undefined =
+    const attributes: AttributeElem[] | undefined =
       cc.tags.fn_attributes?.flat();
     const returnType: TypeRefElem | undefined = cc.tags.returnType?.flat(3)[0];
     const partElem: FnElem = {
       ...openElem,
       name,
-      fnAttributes,
+      attributes,
       params,
       returnType,
     };
+
     const fnElem = withTextCover(partElem, cc);
     (name.ident as DeclIdent).declElem = fnElem;
     name.ident.scope = body_scope;
@@ -276,29 +284,42 @@ export const collectStructMember = collectElem(
   },
 );
 
+export const specialAttribute = collectElem(
+  "attribute",
+  (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
+    const attribute = cc.tags.attr_variant?.[0] as Attribute;
+    const attrElem: AttributeElem = { ...openElem, attribute };
+    return attrElem;
+  },
+);
+
+export const constAssertCollect = collectElem(
+  "assert",
+  (cc: CollectContext, openElem: PartElem<ConstAssertElem>) => {
+    const attributes = cc.tags.attribute?.flat(3) as AttributeElem[];
+    const partElem = { ...openElem, attributes };
+    return withTextCover(partElem, cc);
+  },
+);
+
+export const statementCollect = collectElem(
+  "statement",
+  (cc: CollectContext, openElem: PartElem<StatementElem>) => {
+    const attributes = cc.tags.attribute?.flat(3) as AttributeElem[];
+    const partElem = { ...openElem, attributes };
+    return withTextCover(partElem, cc);
+  },
+);
+
 export const collectAttribute = collectElem(
   "attribute",
   (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
-    const attribute = cc.tags.attribute?.[0] as Attribute | undefined;
-    if (attribute !== undefined) {
-      const partElem: AttributeElem = {
-        ...openElem,
-        attribute,
-      };
-      return partElem;
-    } else {
-      const params = (cc.tags.attrParam ?? []) as UnknownExpressionElem[];
-      const name = cc.tags.name?.[0]! as string;
-      const partElem: AttributeElem = {
-        ...openElem,
-        attribute: {
-          kind: "attribute",
-          name,
-          params,
-        },
-      };
-      return partElem;
-    }
+    const params = cc.tags.attrParam as UnknownExpressionElem[] | undefined;
+    const name = cc.tags.name?.[0]! as string;
+    const kind = "@attribute";
+    const stdAttribute: StandardAttribute = { kind, name, params };
+    const attrElem: AttributeElem = { ...openElem, attribute: stdAttribute };
+    return attrElem;
   },
 );
 
@@ -377,18 +398,24 @@ export const collectModule = collectElem(
   },
 );
 
+export function directiveCollect(cc: CollectContext): DirectiveElem {
+  const { start, end } = cc;
+  const directive: DirectiveVariant = cc.tags.directive?.flat()[0];
+  const attributes: AttributeElem[] | undefined = cc.tags.attribute?.flat();
+  attributes; //?
+
+  const kind = "directive";
+  const elem: DirectiveElem = { kind, attributes, start, end, directive };
+  addToOpenElem(cc, elem);
+  return elem;
+}
+
 /** collect a scope start starts before and ends after a parser */
 export function scopeCollect(): CollectPair<Scope> {
   return {
     before: startScope,
     after: completeScope,
   };
-}
-
-export function collectSimpleElem<V extends AbstractElem & ContainerElem>(
-  kind: V["kind"],
-): CollectPair<V> {
-  return collectElem(kind, (cc, part) => withTextCover(part as V, cc) as V);
 }
 
 /** utility to collect an ElemWithContents

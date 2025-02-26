@@ -33,7 +33,9 @@ export type ContainerElem =
   | StructMemberElem
   | StuffElem
   | TypeRefElem
-  | VarElem;
+  | VarElem
+  | StatementElem
+  | SwitchClause;
 
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
 export type ExpressionElem =
@@ -196,9 +198,9 @@ export type Attribute =
   | IfAttribute;
 
 export interface StandardAttribute {
-  kind: "attribute";
+  kind: "@attribute";
   name: string;
-  params: UnknownExpressionElem[];
+  params?: UnknownExpressionElem[];
 }
 
 export interface InterpolateAttribute {
@@ -225,12 +227,14 @@ export interface IfAttribute {
 /** a const_assert statement */
 export interface ConstAssertElem extends ElemWithContentsBase {
   kind: "assert";
+  attributes: AttributeElem[];
 }
 
 /** a const declaration */
 export interface ConstElem extends ElemWithContentsBase {
   kind: "const";
   name: TypedDeclElem;
+  attributes: AttributeElem[];
 }
 
 export interface UnknownExpressionElem extends ElemWithContentsBase {
@@ -312,9 +316,15 @@ export interface BinaryOperator {
   span: Span;
 }
 
+export type DirectiveVariant =
+  | DiagnosticDirective
+  | EnableDirective
+  | RequiresDirective;
+
 export interface DirectiveElem extends AbstractElemBase {
   kind: "directive";
-  directive: DiagnosticDirective | EnableDirective | RequiresDirective;
+  attributes?: AttributeElem[];
+  directive: DirectiveVariant;
 }
 
 export interface DiagnosticDirective {
@@ -338,7 +348,7 @@ export interface FnElem extends ElemWithContentsBase {
   kind: "fn";
   name: DeclIdentElem;
   params: FnParamElem[];
-  fnAttributes?: AttributeElem[];
+  attributes?: AttributeElem[];
   returnType?: TypeRefElem;
 }
 
@@ -346,6 +356,7 @@ export interface FnElem extends ElemWithContentsBase {
 export interface GlobalVarElem extends ElemWithContentsBase {
   kind: "gvar";
   name: TypedDeclElem;
+  attributes?: AttributeElem[];
 }
 
 /** an entire file */
@@ -356,6 +367,7 @@ export interface ModuleElem extends ElemWithContentsBase {
 /** an override declaration */
 export interface OverrideElem extends ElemWithContentsBase {
   kind: "override";
+  attributes: AttributeElem[];
   name: TypedDeclElem;
 }
 
@@ -399,7 +411,7 @@ export interface BindingStructElem extends StructElem {
 export interface StructMemberElem extends ElemWithContentsBase {
   kind: "member";
   name: NameElem;
-  attributes?: AttributeElem[];
+  attributes: AttributeElem[];
   typeRef: TypeRefElem;
   mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
 }
@@ -416,10 +428,22 @@ export interface TypeRefElem extends ElemWithContentsBase {
 /** a variable declaration */
 export interface VarElem extends ElemWithContentsBase {
   kind: "var";
+  attributes: AttributeElem[];
   name: TypedDeclElem;
 }
 
 export interface LetElem extends ElemWithContentsBase {
   kind: "let";
+  attributes: AttributeElem[];
   name: TypedDeclElem;
+}
+
+export interface StatementElem extends ElemWithContentsBase {
+  kind: "statement";
+  attributes: AttributeElem[];
+}
+
+export interface SwitchClause extends ElemWithContentsBase {
+  kind: "switch-clause";
+  attributes: AttributeElem[];
 }

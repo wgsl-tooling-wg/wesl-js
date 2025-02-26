@@ -2,10 +2,9 @@ import { assertUnreachable } from "../../../mini-parse/src/Assertions.ts";
 import {
   AbstractElem,
   Attribute,
-  DiagnosticDirective,
-  EnableDirective,
+  AttributeElem,
+  DirectiveElem,
   FnElem,
-  RequiresDirective,
   StuffElem,
   TypedDeclElem,
   TypeRefElem,
@@ -38,6 +37,7 @@ export function astToString(elem: AbstractElem, indent = 0): string {
   return str.result;
 }
 
+// LATER rewrite to be shorter and easier to read
 function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   const { kind } = elem;
   if (kind === "text") {
@@ -51,15 +51,12 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     kind === "override"
   ) {
     addTypedDeclIdent(elem.name, str);
+    listAttributeElems(elem.attributes, str);
   } else if (kind === "struct") {
     str.add(" " + elem.name.ident.originalName);
   } else if (kind === "member") {
     const { name, typeRef, attributes } = elem;
-    if (attributes) {
-      for (const attribute of attributes) {
-        addAttribute(attribute.attribute, str);
-      }
-    }
+    listAttributeElems(attributes, str);
     str.add(" " + name.name);
     str.add(": " + typeRefElemToString(typeRef));
   } else if (kind === "name") {
@@ -77,7 +74,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     str.add(" " + prefix + name.ident.originalName);
     str.add("=" + typeRefElemToString(typeRef));
   } else if (kind === "attribute") {
-    addAttribute(elem.attribute, str);
+    addAttributeFields(elem.attribute, str);
   } else if (kind === "expression") {
     const contents = elem.contents
       .map(e => {
@@ -120,18 +117,22 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   } else if (kind === "stuff") {
     // Ignore
   } else if (kind === "directive") {
-    addDirective(elem.directive, str);
+    addDirective(elem, str);
+  } else if (kind === "statement") {
+    // Nothing to do for now
+  } else if (kind === "switch-clause") {
+    // Nothing to do for now
   } else {
     assertUnreachable(kind);
   }
 }
 
-function addAttribute(attr: Attribute, str: LineWrapper) {
+function addAttributeFields(attr: Attribute, str: LineWrapper) {
   const { kind } = attr;
-  if (kind === "attribute") {
+  if (kind === "@attribute") {
     const { name, params } = attr;
     str.add(" @" + name);
-    if (params.length > 0) {
+    if (params && params.length > 0) {
       str.add("(");
       str.add(params.map(unknownExpressionToString).join(", "));
       str.add(")");
@@ -157,7 +158,7 @@ function addAttribute(attr: Attribute, str: LineWrapper) {
 /** @return string representation of an attribute (for test/debug) */
 export function attributeToString(attr: Attribute): string {
   const str = new LineWrapper(0, maxLineLength);
-  addAttribute(attr, str);
+  addAttributeFields(attr, str);
   return str.result;
 }
 
@@ -170,7 +171,7 @@ function addTypedDeclIdent(elem: TypedDeclElem, str: LineWrapper) {
 }
 
 function addFnFields(elem: FnElem, str: LineWrapper) {
-  const { name, params, returnType, fnAttributes } = elem;
+  const { name, params, returnType, attributes } = elem;
 
   str.add(" " + name.ident.originalName);
 
@@ -190,29 +191,42 @@ function addFnFields(elem: FnElem, str: LineWrapper) {
   str.add(paramStrs);
   str.add(")");
 
-  fnAttributes?.forEach(a => addAttribute(a.attribute, str));
+  listAttributeElems(attributes, str);
 
   if (returnType) {
     str.add(" -> " + typeRefElemToString(returnType));
   }
 }
 
-function addDirective(
-  elem: DiagnosticDirective | EnableDirective | RequiresDirective,
+function listAttributeElems(
+  attributes: AttributeElem[] | undefined,
   str: LineWrapper,
 ) {
-  const { kind } = elem;
+  attributes?.forEach(a => str.add(" " + attributeName(a.attribute)));
+}
+
+function attributeName(attr: Attribute): string {
+  const { kind } = attr;
+  if (kind === "@attribute") {
+    return "@" + attr.name;
+  } else {
+    return kind;
+  }
+}
+
+function addDirective(elem: DirectiveElem, str: LineWrapper) {
+  const { directive, attributes } = elem;
+  const { kind } = directive;
   if (kind === "diagnostic") {
-    str.add(
-      ` diagnostic${diagnosticControlToString(elem.severity, elem.rule)}`,
-    );
-  } else if (kind === "enable") {
-    str.add(` enable ${elem.extensions.map(v => v.name).join(", ")}`);
-  } else if (kind === "requires") {
-    str.add(` requires${elem.extensions.map(v => v.name).join(", ")}`);
+    const { severity, rule } = directive;
+    const control = diagnosticControlToString(severity, rule);
+    str.add(` diagnostic${control}`);
+  } else if (kind === "enable" || kind === "requires") {
+    str.add(` ${kind} ${directive.extensions.map(v => v.name).join(", ")}`);
   } else {
     assertUnreachable(kind);
   }
+  listAttributeElems(attributes, str);
 }
 
 function unknownExpressionToString(elem: UnknownExpressionElem): string {

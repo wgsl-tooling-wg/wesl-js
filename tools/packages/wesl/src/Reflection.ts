@@ -119,24 +119,24 @@ function shaderVisiblity(struct: BindingStructElem): string {
   if (!entryFn) {
     identElemLog(struct.name, "missing entry function for binding struct");
   } else {
-    const { fnAttributes = [] } = entryFn;
+    const { attributes = [] } = entryFn;
     if (
-      fnAttributes.find(
-        ({ attribute: a }) => a.kind === "attribute" && a.name === "compute",
+      attributes.find(
+        ({ attribute: a }) => a.kind === "@attribute" && a.name === "compute",
       )
     ) {
       return "GPUShaderStage.COMPUTE";
     }
     if (
-      fnAttributes.find(
-        ({ attribute: a }) => a.kind === "attribute" && a.name === "vertex",
+      attributes.find(
+        ({ attribute: a }) => a.kind === "@attribute" && a.name === "vertex",
       )
     ) {
       return "GPUShaderStage.VERTEX";
     }
     if (
-      fnAttributes.find(
-        ({ attribute: a }) => a.kind === "attribute" && a.name === "fragment",
+      attributes.find(
+        ({ attribute: a }) => a.kind === "@attribute" && a.name === "fragment",
       )
     ) {
       return "GPUShaderStage.FRAGMENT";
@@ -155,7 +155,7 @@ function memberToLayoutEntry(
   visibility: string,
 ): string {
   const bindingParam = findMap(member.attributes ?? [], ({ attribute: a }) =>
-    a.kind === "attribute" && a.name === "binding" ? a : undefined,
+    a.kind === "@attribute" && a.name === "binding" ? a : undefined,
   )?.params?.[0];
   const binding = bindingParam ? paramText(bindingParam) : "?";
 

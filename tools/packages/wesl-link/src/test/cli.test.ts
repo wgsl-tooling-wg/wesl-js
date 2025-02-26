@@ -60,8 +60,10 @@ test("link --details", async () => {
         decl %main
         text '() {
       '
-        ref foo
-        text '();
+        statement
+          ref foo
+          text '();'
+        text '
     }'
       text '
 
