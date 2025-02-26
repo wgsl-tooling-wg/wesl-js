@@ -30,6 +30,7 @@ import {
   TypeRefElem,
   UnknownExpressionElem,
   VarElem,
+  StandardAttribute,
 } from "./AbstractElems.ts";
 import {
   StableState,
@@ -280,26 +281,24 @@ export const collectStructMember = collectElem(
   },
 );
 
+export const specialAttribute = collectElem(
+  "attribute",
+  (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
+    const attribute = cc.tags.attr_variant?.[0] as Attribute;
+    const attrElem: AttributeElem = { ...openElem, attribute };
+    return attrElem;
+  },
+);
+
 export const collectAttribute = collectElem(
   "attribute",
   (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
-    const attribute = cc.tags.variant?.[0] as Attribute | undefined;
-    if (attribute) {
-      const partElem: AttributeElem = { ...openElem, attribute };
-      return partElem;
-    } else {
-      const params = cc.tags.attrParam as UnknownExpressionElem[] | undefined;
-      const name = cc.tags.name?.[0]! as string;
-      const partElem: AttributeElem = {
-        ...openElem,
-        attribute: {
-          kind: "@attribute",
-          name,
-          params,
-        },
-      };
-      return partElem;
-    }
+    const params = cc.tags.attrParam as UnknownExpressionElem[] | undefined;
+    const name = cc.tags.name?.[0]! as string;
+    const kind = "@attribute";
+    const stdAttribute: StandardAttribute = { kind, name, params };
+    const attrElem: AttributeElem = { ...openElem, attribute: stdAttribute };
+    return attrElem;
   },
 );
 
@@ -381,7 +380,7 @@ export const collectModule = collectElem(
 export function directiveCollect(cc: CollectContext): DirectiveElem {
   const { start, end } = cc;
   const directive: DirectiveVariant = cc.tags.directive?.flat()[0];
-  const attributes: AttributeElem[] | undefined = cc.tags.attributes?.flat();
+  const attributes: AttributeElem[] | undefined = cc.tags.attribute?.flat();
   attributes; //?
 
   const kind = "directive";
