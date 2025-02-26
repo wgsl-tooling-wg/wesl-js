@@ -63,6 +63,7 @@ import {
   refIdent,
   scopeCollect,
   specialAttribute,
+  statementCollect,
   typedDecl,
 } from "../WESLCollect.ts";
 import { weslImports } from "./ImportGrammar.ts";
@@ -385,6 +386,7 @@ const switch_statement = seq("switch", expression, switch_body);
 
 const while_statement = seq("while", expression, compound_statement);
 
+// prettier-ignore
 const statement: Parser<Stream<WeslToken>, any> = or(
   compound_statement, // collects its own scope
   seq(
@@ -404,9 +406,10 @@ const statement: Parser<Stream<WeslToken>, any> = or(
       seq(fn_call, ";"),
       seq(() => variable_or_value_statement, ";"),
       seq(() => variable_updating_statement, ";"),
-    ), // TODO: Collect as AnyStatement
-  ),
+    ),
+  )                                        .collect(statementCollect),
 );
+
 // prettier-ignore
 const lhs_expression: Parser<Stream<WeslToken>,any> = or(
   simple_component_reference,

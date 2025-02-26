@@ -32,6 +32,7 @@ import {
   VarElem,
   StandardAttribute,
   ConstAssertElem,
+  StatementElem,
 } from "./AbstractElems.ts";
 import {
   StableState,
@@ -123,6 +124,7 @@ export const typedDecl = collectElem(
 );
 
 let identId = 0;
+
 /** add Ident to current open scope, add IdentElem to current open element */
 function saveIdent(
   cc: CollectContext,
@@ -298,8 +300,17 @@ export const constAssertCollect = collectElem(
     const attributes = cc.tags.attribute?.flat(3) as AttributeElem[];
     const partElem = { ...openElem, attributes };
     return withTextCover(partElem, cc);
-  });
+  },
+);
 
+export const statementCollect = collectElem(
+  "statement",
+  (cc: CollectContext, openElem: PartElem<StatementElem>) => {
+    const attributes = cc.tags.attribute?.flat(3) as AttributeElem[];
+    const partElem = { ...openElem, attributes };
+    return withTextCover(partElem, cc);
+  },
+);
 
 export const collectAttribute = collectElem(
   "attribute",

@@ -58,3 +58,25 @@ test("@if(true) var x = 7", () => {
       '"
   `);
 });
+
+test("conditional statement", () => {
+  const src = `
+    fn main() {
+      var x = 1;
+      @if(true) x = 2 ;
+    }
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem); //?
+  // expect(astString).toMatchInlineSnapshot('tbd');
+});
+
+
+
+// test("", () => {
+//   const src = `
+//   `;
+//   const ast = parseTest(src);
+//   const astString = astToString(ast.moduleElem);
+//   expect(astString).toMatchInlineSnapshot('tbd');
+// });

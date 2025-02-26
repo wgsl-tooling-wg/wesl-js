@@ -29,10 +29,14 @@ test("parse fn with calls", () => {
         text 'fn '
         decl %foo
         text '() { '
-        ref foo
-        text '(); '
-        ref bar
-        text '(); }'"
+        statement
+          ref foo
+          text '();'
+        text ' '
+        statement
+          ref bar
+          text '();'
+        text ' }'"
   `);
 });
 
@@ -425,14 +429,16 @@ test("fnDecl parses :type specifier in fn block", () => {
         decl %foo
         text '() { 
           '
-        var %b : MyType
-          text 'var '
-          typeDecl %b : MyType
-            decl %b
-            text ':'
-            type MyType
-              ref MyType
-        text ';
+        statement
+          var %b : MyType
+            text 'var '
+            typeDecl %b : MyType
+              decl %b
+              text ':'
+              type MyType
+                ref MyType
+          text ';'
+        text '
         }'
       text '
       '"
@@ -597,17 +603,20 @@ test("parse for(;;) {} not as a fn call", () => {
         text 'fn '
         decl %main
         text '() {
-          for ('
-        var %a
-          text 'var '
-          typeDecl %a
-            decl %a
-          text ' = 1'
-        text '; '
-        ref a
-        text ' < 10; '
-        ref a
-        text '++) {}
+          '
+        statement
+          text 'for ('
+          var %a
+            text 'var '
+            typeDecl %a
+              decl %a
+            text ' = 1'
+          text '; '
+          ref a
+          text ' < 10; '
+          ref a
+          text '++) {}'
+        text '
         }'
       text '
       '"
@@ -719,7 +728,10 @@ test("parse fn", () => {
         text ') -> '
         type f32
           ref f32
-        text ' { return 1.0; }'"
+        text ' { '
+        statement
+          text 'return 1.0;'
+        text ' }'"
   `);
 });
 
@@ -803,12 +815,21 @@ test("parse switch statement", () => {
             type i32
               ref i32
         text ') {
-          switch ('
-        ref x
-        text ') {
-            case 1: { break; }
-            default: { break; }
-          }
+          '
+        statement
+          text 'switch ('
+          ref x
+          text ') {
+            case 1: { '
+          statement
+            text 'break;'
+          text ' }
+            default: { '
+          statement
+            text 'break;'
+          text ' }
+          }'
+        text '
         }'
       text '
       '"
@@ -843,12 +864,21 @@ test("parse switch statement-2", () => {
             type u32
               ref u32
         text ') {
-          switch ( '
-        ref code
-        text ' ) {
-            case 5u: { if 1 > 0 { } }
-            default: { break; }
-          }
+          '
+        statement
+          text 'switch ( '
+          ref code
+          text ' ) {
+            case 5u: { '
+          statement
+            text 'if 1 > 0 { }'
+          text ' }
+            default: { '
+          statement
+            text 'break;'
+          text ' }
+          }'
+        text '
         }'
       text '
       '"
@@ -872,14 +902,16 @@ test("parse struct constructor in assignment", () => {
         decl %main
         text '() {
           '
-        var %x
-          text 'var '
-          typeDecl %x
-            decl %x
-          text ' = '
-          ref AStruct
-          text '(1u)'
-        text ';
+        statement
+          var %x
+            text 'var '
+            typeDecl %x
+              decl %x
+            text ' = '
+            ref AStruct
+            text '(1u)'
+          text ';'
+        text '
         }'
       text '
        '"
@@ -903,16 +935,18 @@ test("parse struct.member (component_or_swizzle)", () => {
         decl %main
         text '() {
             '
-        let %x
-          text 'let '
-          typeDecl %x
-            decl %x
-          text ' = '
-          memberRef u.frame
-            ref u
-            text '.'
-            name frame
-        text ';
+        statement
+          let %x
+            text 'let '
+            typeDecl %x
+              decl %x
+            text ' = '
+            memberRef u.frame
+              ref u
+              text '.'
+              name frame
+          text ';'
+        text '
         }'
       text '
       '"
@@ -953,7 +987,10 @@ test("fn f() { _ = 1; }", ctx => {
       fn f()
         text 'fn '
         decl %f
-        text '() { _ = 1; }'"
+        text '() { '
+        statement
+          text '_ = 1;'
+        text ' }'"
   `);
 });
 
@@ -988,24 +1025,26 @@ test("fn main() { var tmp: array<i32, 1 << 1>=array(1, 2); }", ctx => {
         text 'fn '
         decl %main
         text '() { '
-        var %tmp : array<i32, '1 << 1'>
-          text 'var '
-          typeDecl %tmp : array<i32, '1 << 1'>
-            decl %tmp
-            text ': '
-            type array<i32, '1 << 1'>
-              ref array
-              text '<'
-              type i32
-                ref i32
-              text ', '
-              expression '1 << 1'
-                text '1 << 1'
-              text '>'
-          text '='
-          ref array
-          text '(1, 2)'
-        text '; }'"
+        statement
+          var %tmp : array<i32, '1 << 1'>
+            text 'var '
+            typeDecl %tmp : array<i32, '1 << 1'>
+              decl %tmp
+              text ': '
+              type array<i32, '1 << 1'>
+                ref array
+                text '<'
+                type i32
+                  ref i32
+                text ', '
+                expression '1 << 1'
+                  text '1 << 1'
+                text '>'
+            text '='
+            ref array
+            text '(1, 2)'
+          text ';'
+        text ' }'"
   `);
 });
 
@@ -1200,18 +1239,20 @@ test(`parse struct reference`, () => {
         text 'fn '
         decl %f
         text '() { '
-        let %x
-          text 'let '
-          typeDecl %x
-            decl %x
-          text ' = '
-          memberRef a.b[0]
-            ref a
-            text '.'
-            name b
-            stuff
-              text '[0]'
-        text '; }'
+        statement
+          let %x
+            text 'let '
+            typeDecl %x
+              decl %x
+            text ' = '
+            memberRef a.b[0]
+              ref a
+              text '.'
+              name b
+              stuff
+                text '[0]'
+          text ';'
+        text ' }'
       text ';
       '"
   `);
@@ -1234,17 +1275,19 @@ test("member reference with extra components", () => {
         decl %foo
         text '() {
         '
-        ref output
-        text '[ '
-        ref out
-        text ' + 0u ] = '
-        memberRef c.p0.t0.x
-          ref c
-          text '.'
-          name p0
-          stuff
-            text '.t0.x'
-        text ';
+        statement
+          ref output
+          text '[ '
+          ref out
+          text ' + 0u ] = '
+          memberRef c.p0.t0.x
+            ref c
+            text '.'
+            name p0
+            stuff
+              text '.t0.x'
+          text ';'
+        text '
       }'
       text '
      '"
@@ -1268,20 +1311,22 @@ test("parse let declaration", () => {
         decl %vertexMain
         text '() {
           '
-        let %char
-          text 'let '
-          typeDecl %char
-            decl %char
-          text ' = '
-          ref array
-          text '<'
-          type u32
-            ref u32
-          text ', '
-          expression '2'
-            text '2'
-          text '>(0, 0)'
-        text ';
+        statement
+          let %char
+            text 'let '
+            typeDecl %char
+              decl %char
+            text ' = '
+            ref array
+            text '<'
+            type u32
+              ref u32
+            text ', '
+            expression '2'
+              text '2'
+            text '>(0, 0)'
+          text ';'
+        text '
         }'
       text '
       '"
@@ -1305,15 +1350,17 @@ test("parse let declaration with type", () => {
         decl %vertexMain
         text '() {
           '
-        let %char : u32
-          text 'let '
-          typeDecl %char : u32
-            decl %char
-            text ' : '
-            type u32
-              ref u32
-          text ' = 0'
-        text ';
+        statement
+          let %char : u32
+            text 'let '
+            typeDecl %char : u32
+              decl %char
+              text ' : '
+              type u32
+                ref u32
+            text ' = 0'
+          text ';'
+        text '
         }'
       text '
       '"
@@ -1337,13 +1384,15 @@ test("separator in let assignment", () => {
         decl %vertexMain
         text '() {
           '
-        let %a
-          text 'let '
-          typeDecl %a
-            decl %a
-          text ' = '
-          ref b::c
-        text ';
+        statement
+          let %a
+            text 'let '
+            typeDecl %a
+              decl %a
+            text ' = '
+            ref b::c
+          text ';'
+        text '
         }'
       text '
       '"
@@ -1367,8 +1416,10 @@ test("separator in fn call ", () => {
         decl %vertexMain
         text '() {
           '
-        ref b::c
-        text '();
+        statement
+          ref b::c
+          text '();'
+        text '
         }'
       text '
       '"
@@ -1502,20 +1553,22 @@ test("memberRefs with extra components", () => {
         decl %main
         text '() {
           '
-        memberRef b.particles[0]
-          ref b
-          text '.'
-          name particles
-          stuff
-            text '[0]'
-        text ' = '
-        memberRef b.uniforms.foo
-          ref b
-          text '.'
-          name uniforms
-          stuff
-            text '.foo'
-        text ';
+        statement
+          memberRef b.particles[0]
+            ref b
+            text '.'
+            name particles
+            stuff
+              text '[0]'
+          text ' = '
+          memberRef b.uniforms.foo
+            ref b
+            text '.'
+            name uniforms
+            stuff
+              text '.foo'
+          text ';'
+        text '
         }'
       text '
       '"
@@ -1539,15 +1592,17 @@ test("memberRef with ref in array", () => {
         decl %main
         text '() {
           '
-        memberRef vsOut.barycenticCoord[ vertNdx ]
-          ref vsOut
-          text '.'
-          name barycenticCoord
-          stuff
-            text '['
-            ref vertNdx
-            text ']'
-        text ' = 1.0;
+        statement
+          memberRef vsOut.barycenticCoord[ vertNdx ]
+            ref vsOut
+            text '.'
+            name barycenticCoord
+            stuff
+              text '['
+              ref vertNdx
+              text ']'
+          text ' = 1.0;'
+        text '
         }'
       text '
       '"
