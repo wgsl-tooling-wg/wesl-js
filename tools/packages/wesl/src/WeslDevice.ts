@@ -17,7 +17,7 @@ export interface WeslDevice extends GPUDevice {
 }
 
 /**
- * Wraps a {@link GPUDevice} for usage with WESL.
+ * Mutates a {@link GPUDevice} for usage with WESL. Does not impact your existing code, wherever a {@link GPUDevice} can be used, a {@link WeslDevice} is also valid.
  *
  * WESL uses this to display errors pointing at the WESL source instead of pointing at generated code.
  */

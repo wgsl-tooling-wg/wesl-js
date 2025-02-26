@@ -23,6 +23,11 @@ export class ExtendedGPUValidationError extends GPUValidationError {
   }
 }
 
+/**
+ * Multiple WESL files that have been linked together to produce WGSL code.
+ *
+ * Call {@link LinkedWesl.createShaderModule} on a {@link WeslDevice} to make the error reporting aware of the WESL code.
+ */
 export class LinkedWesl {
   constructor(public sourceMap: SrcMap) {}
 
