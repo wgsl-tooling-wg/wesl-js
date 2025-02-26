@@ -142,7 +142,7 @@ function bindingAttribute(attributes?: AttributeElem[]): boolean {
   if (!attributes) return false;
   return attributes.some(
     ({ attribute }) =>
-      attribute.kind === "attribute" &&
+      attribute.kind === "@attribute" &&
       (attribute.name === "binding" || attribute.name === "group"),
   );
 }

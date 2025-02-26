@@ -21,7 +21,7 @@ export function attributeToString(e: AttributeElem): string {
   const { kind } = e.attribute;
   // LATER emit more precise source map info by making use of all the spans
   // Like the first case does
-  if (kind === "attribute") {
+  if (kind === "@attribute") {
     const { params } = e.attribute;
     if (params === undefined || params.length === 0) {
       return "@" + e.attribute.name;

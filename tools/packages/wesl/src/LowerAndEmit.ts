@@ -139,7 +139,7 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
   const { kind } = e.attribute;
   // LATER emit more precise source map info by making use of all the spans
   // Like the first case does
-  if (kind === "attribute") {
+  if (kind === "@attribute") {
     const { params } = e.attribute;
     if (!params || params.length === 0) {
       ctx.srcBuilder.add("@" + e.attribute.name, e.start, e.end);

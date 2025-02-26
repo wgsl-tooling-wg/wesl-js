@@ -282,11 +282,8 @@ export const collectAttribute = collectElem(
   "attribute",
   (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
     const attribute = cc.tags.variant?.[0] as Attribute | undefined;
-    if (attribute !== undefined) {
-      const partElem: AttributeElem = {
-        ...openElem,
-        attribute,
-      };
+    if (attribute) {
+      const partElem: AttributeElem = { ...openElem, attribute };
       return partElem;
     } else {
       const params = cc.tags.attrParam as UnknownExpressionElem[] | undefined;
@@ -294,7 +291,7 @@ export const collectAttribute = collectElem(
       const partElem: AttributeElem = {
         ...openElem,
         attribute: {
-          kind: "attribute",
+          kind: "@attribute",
           name,
           params,
         },

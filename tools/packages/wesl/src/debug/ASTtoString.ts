@@ -132,7 +132,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
 
 function addAttribute(attr: Attribute, str: LineWrapper) {
   const { kind } = attr;
-  if (kind === "attribute") {
+  if (kind === "@attribute") {
     const { name, params } = attr;
     str.add(" @" + name);
     if (params && params.length > 0) {

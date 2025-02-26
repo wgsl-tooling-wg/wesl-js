@@ -557,7 +557,7 @@ function makeStandardAttribute([name, params]: [
   UnknownExpressionElem[],
 ]): StandardAttribute {
   return {
-    kind: "attribute",
+    kind: "@attribute",
     name,
     params,
   };

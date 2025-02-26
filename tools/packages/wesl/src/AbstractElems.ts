@@ -198,9 +198,9 @@ export type Attribute =
   | IfAttribute;
 
 export interface StandardAttribute {
-  kind: "attribute";
+  kind: "@attribute";
   name: string;
-  params: UnknownExpressionElem[];
+  params?: UnknownExpressionElem[];
 }
 
 export interface InterpolateAttribute {
