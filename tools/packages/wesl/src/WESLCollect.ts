@@ -193,7 +193,8 @@ export function collectVarLike<E extends VarLikeElem>(
   return collectElem(kind, (cc: CollectContext, openElem: PartElem<E>) => {
     const name = cc.tags.var_name?.[0] as TypedDeclElem;
     const decl_scope = cc.tags.decl_scope?.[0] as Scope;
-    const partElem = { ...openElem, name } as E;
+    const attributes = cc.tags.attribute as AttributeElem[] | undefined;
+    const partElem = { ...openElem, name, attributes } as E;
     const varElem = withTextCover(partElem, cc);
     (name.decl.ident as DeclIdent).declElem = varElem as DeclarationElem;
     name.decl.ident.scope = decl_scope;

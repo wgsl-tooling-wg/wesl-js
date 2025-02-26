@@ -51,6 +51,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     kind === "override"
   ) {
     addTypedDeclIdent(elem.name, str);
+    listAttributeElems(elem.attributes, str);
   } else if (kind === "struct") {
     str.add(" " + elem.name.ident.originalName);
   } else if (kind === "member") {

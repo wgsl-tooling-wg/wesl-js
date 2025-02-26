@@ -244,7 +244,7 @@ test("parse top level var", () => {
     "module
       text '
         '
-      gvar %u : Uniforms
+      gvar %u : Uniforms @group @binding
         attribute @group('0')
           expression '0'
             text '0'
