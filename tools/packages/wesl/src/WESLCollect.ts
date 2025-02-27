@@ -336,9 +336,6 @@ export const typeRefCollect = collectElem(
       name,
       templateParams: templateParamsTemp as any[],
     };
-    // dlog("typeRefCollect", { tags: [...Object.keys(cc.tags)] });
-    // collectLog(cc, "typeRefCollect", elemToString(partElem));
-    // dlog({ typeRefCollect: elemToString(partElem) });
     // @ts-ignore
     return withTextCover(partElem, cc);
   },
