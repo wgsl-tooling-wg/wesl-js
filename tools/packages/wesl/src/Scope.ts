@@ -44,8 +44,33 @@ export interface DeclIdent extends IdentBase {
   srcModule: SrcModule; // To figure out which module this declaration is from.
 }
 
-/** tree of ident references, organized by lexical scope. */
-export interface Scope {
+/** tree of ident references, organized by lexical scope and partialScope . */
+export type Scope = LexicalScope | PartialScope;
+
+/** A wgsl scope */
+export interface LexicalScope extends ScopeBase {
+  kind: "scope";
+
+  /** @if conditions for conditionally translating this scope */
+  ifAttributes?: IfAttribute[];
+
+  /**
+   * Efficient access to declarations in this scope.
+   * constructed on demand, for module root scopes only */ // LATER consider make a special kind for root scopes
+  scopeDecls?: Map<string, DeclIdent>;
+}
+
+/** A synthetic partial scope to contain @if conditioned idents.
+ * PartialScope idents are considered to be in the wgsl lexical scope of their parent.  */
+export interface PartialScope extends ScopeBase {
+  kind: "partial";
+
+  /** @if conditions for conditionally translating this scope */
+  ifAttributes: IfAttribute[];
+}
+
+/** common scope elements  */
+interface ScopeBase {
   /** id for debugging */
   id: number;
 
@@ -62,17 +87,13 @@ export interface Scope {
 
   /** @if conditions for conditionally translating this scope */
   ifAttributes?: IfAttribute[];
-
-  /**
-   * Efficient access to declarations in this scope.
-   * constructed on demand, for module root scopes only */
-  scopeDecls?: Map<string, DeclIdent>;
 }
 
 /** return the declarations in this scope */
 export function scopeDecls(scope: Scope): Map<string, DeclIdent> {
-  if (scope.parent) {
-    console.warn("Warning: scopeDecls called on non-root scope");
+  if (scope.parent || scope.kind !== "scope") {
+    console.warn("Warning: scopeDecls called on unexpected scope", scope);
+    return new Map();
   }
   if (scope.scopeDecls) {
     return scope.scopeDecls;
@@ -95,16 +116,13 @@ export function resetScopeIds() {
 let scopeId = 0; // for debugging
 
 /** make a new Scope object */
-export function makeScope(s: Omit<Scope, "id">): Scope {
-  return { ...s, id: scopeId++ };
-}
-
-export function emptyScope(parent: Scope | null): Scope {
-  return makeScope({
-    idents: [],
-    parent,
-    children: [],
-  });
+export function emptyScope(
+  parent: Scope | null,
+  kind: Scope["kind"] = "scope",
+): Scope {
+  const id = scopeId++;
+  const ifAttributes: IfAttribute[] = [];
+  return { id, kind, idents: [], parent, children: [], ifAttributes };
 }
 
 /** For debugging,

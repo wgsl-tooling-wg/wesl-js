@@ -4,7 +4,7 @@ import { LineWrapper } from "./LineWrapper.ts";
 
 /** A debugging print of the scope tree with identifiers in nested brackets */
 export function scopeToString(scope: Scope, indent = 0): string {
-  const { children, idents, ifAttributes = [] } = scope;
+  const { children, kind, idents, ifAttributes = [] } = scope;
   let childStrings: string[] = [];
   if (children.length)
     childStrings = children.map(c => scopeToString(c, indent + 2));
@@ -19,6 +19,7 @@ export function scopeToString(scope: Scope, indent = 0): string {
 
   const str = new LineWrapper(indent);
   if (attrStrings) str.add(attrStrings + " ");
+  if (kind === "partial") str.add("-");
   str.add("{ ");
 
   const last = identStrings.length - 1;
