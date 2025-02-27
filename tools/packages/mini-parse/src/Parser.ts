@@ -53,7 +53,11 @@ export interface ParserContext<C = any, S = any> {
   /** current parser stack or parent parsers that called this one */
   _debugNames: string[];
 
+  /** queued functions from .collect() to run after parsing completes */
   _collect: CollectFnEntry<any>[];
+
+  /** queued error reporting functions to run after parsing completes with an error */
+  _errors: (() => void)[];
 }
 
 /** Result from a parser */
@@ -234,13 +238,13 @@ export class Parser<I, T> {
     try {
       const { stream, appState: app = { context: {}, stable: [] } } = init;
       const _collect: CollectFnEntry<any>[] = [];
-      const result = this._run({
-        stream,
-        app,
-        _collect,
-        _debugNames: [],
-      });
+      const _errors: (() => void)[] = [];
+      const ctx = { stream, app, _collect, _errors, _debugNames: [] };
+      const result = this._run(ctx);
+
       if (result) runCollection(_collect, app, stream);
+      if (!result) _errors.slice(0, 1).forEach(fn => fn()); // LATER how many errors to report?
+
       return result;
     } catch (e) {
       if (e instanceof ParseError) {
@@ -423,5 +427,17 @@ export function trackChildren(p: AnyParser, ...args: CombinatorArg[]) {
     assertThat(p._traceInfo);
     const kids = args.map(parserArg);
     p._traceInfo.traceChildren = kids;
+  }
+}
+
+/** report dropped collections, for debug */
+function reportDroppedCollects(
+  context: ParserContext,
+  origCollectLength: number,
+) {
+  if (context._collect.length != origCollectLength) {
+    const dropped = context._collect.slice(origCollectLength);
+    const dropNames = dropped.map(d => [d.debugName, d.srcPosition]);
+    console.log("backtracking drops these collects:", dropNames);
   }
 }
