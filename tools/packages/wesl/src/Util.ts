@@ -139,3 +139,28 @@ export function mapValues<T, U>(
 ): Record<string, U> {
   return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, fn(v)]));
 }
+
+/**
+ * Maps an index to a 1-indexed line number, and 1-indexed column.
+ */
+export function offsetToLineNumber(
+  offset: number,
+  text: string,
+): [lineNum: number, linePos: number] {
+  offset = Math.min(text.length, Math.max(0, offset));
+  let lineStartOffset = 0;
+  let lineNum = 1;
+  while (true) {
+    // LATER: Does this "line break" actually match the spec? I think not
+    const lineEnd = text.indexOf("\n", lineStartOffset);
+    if (lineEnd === -1 || offset <= lineEnd) {
+      // Last relevant line
+      const linePos = 1 + (offset - lineStartOffset);
+      return [lineNum, linePos];
+    } else {
+      // Go to the next line
+      lineStartOffset = lineEnd + 1;
+      lineNum += 1;
+    }
+  }
+}
