@@ -191,7 +191,7 @@ function bindIdentsRecursive(
         } else if (stdWgsl(ident.originalName)) {
           ident.std = true;
         } else {
-          warnMissingIdent(ident);
+          failMissingIdent(ident);
         }
       }
     }
@@ -253,13 +253,14 @@ function globalDeclToRootLiveDecls(decl: DeclIdent): LiveDecls | undefined {
 }
 
 /** warn the user about a missing identifer */
-function warnMissingIdent(ident: RefIdent): void {
+function failMissingIdent(ident: RefIdent): void {
   const { refIdentElem } = ident;
   if (refIdentElem) {
     const { srcModule, start, end } = refIdentElem;
     const { debugFilePath: filePath } = srcModule;
-    const msg = `unresolved identifier in file: ${filePath}`; // TODO make error message clickable
+    const msg = `unresolved identifier '${ident.originalName}' in file: ${filePath}`; // TODO make error message clickable
     srcLog(srcModule.src, [start, end], msg);
+    throw new Error(msg);
   }
 }
 
