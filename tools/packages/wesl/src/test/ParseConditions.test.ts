@@ -76,14 +76,12 @@ test("conditional statement", () => {
         decl %main
         text '() {
           '
-        statement
-          var %x
-            text 'var '
-            typeDecl %x
-              decl %x
-            text ' = 1'
-          text ';'
-        text '
+        var %x
+          text 'var '
+          typeDecl %x
+            decl %x
+          text ' = 1'
+        text ';
           '
         statement
           attribute @if(true)
