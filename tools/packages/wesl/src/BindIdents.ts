@@ -322,20 +322,26 @@ function findDeclImport(
 ): FoundDecl | undefined {
   const flatImps = flatImports(refIdent.ast);
 
+  const identParts = refIdent.originalName.split("::");
+
   // find module path by combining identifer reference with import statement
-  const modulePathParts = matchingImport(refIdent, flatImps); // module path in array form
+  const modulePathParts = 
+    matchingImport(identParts, flatImps) ?? qualifiedImport(identParts);
 
   if (modulePathParts) {
     return findExport(modulePathParts, parsed, conditions, virtuals);
   }
 }
 
-/** using the flattened import array, find an import that matches a provided identifier */
+function qualifiedImport(identParts: string[]): string[] | undefined {
+  if (identParts.length > 1) return identParts;
+}
+
+/** combine and import using the flattened import array, find an import that matches a provided identi*/
 function matchingImport(
-  ident: RefIdent,
+  identParts: string[],
   flatImports: FlatImport[],
 ): string[] | undefined {
-  const identParts = ident.originalName.split("::");
   for (const flat of flatImports) {
     if (flat.importPath.at(-1) === identParts.at(0)) {
       return [...flat.modulePath, ...identParts.slice(1)];
@@ -356,7 +362,8 @@ function findExport(
   conditions: Conditions = {},
   virtuals?: VirtualLibrarySet,
 ): FoundDecl | undefined {
-  const modulePath = modulePathParts.slice(0, -1).join("::");
+  // TODO handle super::
+  const modulePath = modulePathParts.slice(0, -1).join("::"); 
   const module =
     parsed.modules[modulePath] ??
     virtualModule(modulePathParts[0], conditions, virtuals); // LATER consider virtual modules with submodules
@@ -369,7 +376,7 @@ function findExport(
     return undefined;
   }
 
-  const decl = exportDecl(module.rootScope, last(modulePathParts)!);
+  const decl = exportDecl(module.rootScope, last(modulePathParts)!); 
   if (decl) {
     return { decl };
   }
