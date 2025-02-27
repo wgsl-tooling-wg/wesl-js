@@ -119,11 +119,10 @@ const if_attribute = tagScope(
         seq(opt(","), ")"),
       ),
     )                               .map(makeTranslateTimeExpressionElem),
-  )                                 .map(makeIfAttribute).ptag("attr_variant")
-                                    .collect(specialAttribute)
+  )                                 .map(makeIfAttribute)
+                                      .ptag("attr_variant")
+                                      .collect(specialAttribute)
 );
-
-
 
 // prettier-ignore
 const normal_attribute = tagScope(
@@ -609,6 +608,7 @@ function makeDiagnosticAttribute([severity, rule]: readonly [
     rule,
   };
 }
+
 function makeIfAttribute(param: TranslateTimeExpressionElem): IfAttribute {
   return {
     kind: "@if",
