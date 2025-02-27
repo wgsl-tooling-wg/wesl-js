@@ -182,7 +182,7 @@ function bindIdentsRecursive(
       if (!ident.refersTo && !ident.std) {
         const foundDecl =
           findDeclInModule(ident, liveDecls) ??
-          findDeclImport(ident, registry, conditions, virtuals);
+          findQualifiedImport(ident, registry, conditions, virtuals);
 
         if (foundDecl) {
           ident.refersTo = foundDecl.decl;
@@ -313,8 +313,9 @@ function findDeclInModule(
 }
 
 /** Match a reference identifier to a declaration in
- * another module via an import statement */
-function findDeclImport(
+ * another module via an import statement
+ * or via an inline qualified ident e.g.  foo::bar() */
+function findQualifiedImport(
   refIdent: RefIdent,
   parsed: ParsedRegistry,
   conditions: Conditions,
@@ -325,11 +326,12 @@ function findDeclImport(
   const identParts = refIdent.originalName.split("::");
 
   // find module path by combining identifer reference with import statement
-  const modulePathParts = 
+  const modulePathParts =
     matchingImport(identParts, flatImps) ?? qualifiedImport(identParts);
 
   if (modulePathParts) {
-    return findExport(modulePathParts, parsed, conditions, virtuals);
+    const { srcModule } = refIdent.ast;
+    return findExport(modulePathParts, srcModule, parsed, conditions, virtuals);
   }
 }
 
@@ -358,12 +360,13 @@ interface FoundDecl {
 /** @return an exported root declIdent for the provided path */
 function findExport(
   modulePathParts: string[],
+  srcModule: SrcModule,
   parsed: ParsedRegistry,
   conditions: Conditions = {},
   virtuals?: VirtualLibrarySet,
 ): FoundDecl | undefined {
-  // TODO handle super::
-  const modulePath = modulePathParts.slice(0, -1).join("::"); 
+  const fqPathParts = absoluteModulePath(modulePathParts, srcModule);
+  const modulePath = fqPathParts.slice(0, -1).join("::");
   const module =
     parsed.modules[modulePath] ??
     virtualModule(modulePathParts[0], conditions, virtuals); // LATER consider virtual modules with submodules
@@ -371,15 +374,30 @@ function findExport(
   if (!module) {
     // TODO show error with source location
     console.log(
-      `ident ${modulePathParts.join("::")} in import statement, but module not found`,
+      `ident ${modulePathParts.join("::")}, but module not found`,
     );
     return undefined;
   }
 
-  const decl = exportDecl(module.rootScope, last(modulePathParts)!); 
+  const decl = exportDecl(module.rootScope, last(modulePathParts)!);
   if (decl) {
     return { decl };
   }
+}
+
+/** convert a module path with super:: elements to one with no super:: elements */
+function absoluteModulePath(
+  modulePathParts: string[],
+  srcModule: SrcModule,
+): string[] {
+  const lastSuper = modulePathParts.findLastIndex(p => p === "super");
+  if (lastSuper > -1) {
+    const srcModuleParts = srcModule.modulePath.split("::");
+    const base = srcModuleParts.slice(0, -(lastSuper + 1));
+    const noSupers = modulePathParts.slice(lastSuper + 1);
+    return [...base, ...noSupers];
+  }
+  return modulePathParts;
 }
 
 /** @return AST for a virtual module */
