@@ -1,5 +1,15 @@
 import { ExtendedGPUValidationError } from "./LinkedWesl";
 
+/**
+ * We want the WebGPU compilation errors to point at WESL code.
+ * The native facilities are `device.pushErrorScope`, `device.popErrorScope`
+ * and `device.addEventListener("uncapturederror", (ev) => {})`
+ *
+ * So we track the error scopes.
+ * Then, when creating a shader module from WESL code, we forcibly capture the errors.
+ * And then re-emit them to the nearest validation error scope.
+ * If there isn't one, we throw it as an uncapturederror
+ */
 type ErrorScope = {
   filter: GPUErrorFilter;
   errors: Promise<GPUError | null>[];
@@ -7,6 +17,7 @@ type ErrorScope = {
 
 /**
  * A {@link GPUDevice} with extensions for WESL. Created with {@link makeWeslDevice}.
+ * Used to make error reporting point at the orignal WESL sources.
  */
 export interface WeslDevice extends GPUDevice {
   /**
@@ -154,6 +165,6 @@ function throwError({
     btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
   generatedCode += "\n//# sourceURL=" + sourceMap.sources[0];
 
-  // Victory!
+  // Run the error-throwing file
   eval(generatedCode);
 }

@@ -3,19 +3,27 @@ import type { WeslDevice } from "./WeslDevice";
 import { offsetToLineNumber } from "./Util";
 import { assertThat } from "../../mini-parse/src/Assertions";
 
-/** Results of shader compilation. Has {@link WeslGPUCompilationMessage} which are aware of the WESL module that an error was thrown from. */
+/** Results of shader compilation. Has {@link WeslGPUCompilationMessage}
+ * which are aware of the WESL module that an error was thrown from. */
 export interface WeslGPUCompilationInfo extends GPUCompilationInfo {
   messages: WeslGPUCompilationMessage[];
 }
 
 export interface WeslGPUCompilationMessage extends GPUCompilationMessage {
   module: {
-    url: string; // LATER this should be a qualified module path. And something else should map it to a URL that is relative to the correct place.
-    text?: string; // LATER: I don't think that the text should be a part of the compilation message. Instead the module url should be usable as a key.
+    // LATER this should be a qualified module path.
+    // And something else should map it to a URL that is relative to the correct place.
+    url: string;
+    // LATER: I don't think that the text should be a part of the compilation message.
+    // Instead the module url should be usable as a key.
+    text?: string;
   };
 }
 
-/** A {@link GPUValidationError} with an inner error (for a stack trace). Can also point at a WESL source file. */
+/**
+ * A {@link GPUValidationError} with an inner error (for a stack trace).
+ * Can also point at a WESL source file.
+ */
 export class ExtendedGPUValidationError extends GPUValidationError {
   public cause?: Error;
   public compilationInfo?: WeslGPUCompilationInfo;
@@ -28,15 +36,18 @@ export class ExtendedGPUValidationError extends GPUValidationError {
 /**
  * Multiple WESL files that have been linked together to produce WGSL code.
  *
- * Call {@link LinkedWesl.createShaderModule} on a {@link WeslDevice} to make the error reporting aware of the WESL code.
+ * Call {@link LinkedWesl.createShaderModule} on a {@link WeslDevice}
+ * to make the error reporting aware of the WESL code.
  */
 export class LinkedWesl {
   constructor(public sourceMap: SrcMap) {}
 
   /**
    * Creates a {@link GPUShaderModule}.
+   * When errors occur, they will point at the original WESL source code.
    *
-   * The compilation info {@link GPUShaderModule.getCompilationInfo} can be remapped with {@link mapGPUCompilationInfo}
+   * The compilation info {@link GPUShaderModule.getCompilationInfo}
+   * can be remapped with {@link mapGPUCompilationInfo}
    * @param device GPUDevice. Preferably a {@link WeslDevice} for better error reporting.
    * @param descriptor - Description of the {@link GPUShaderModule} to create.
    */
@@ -52,7 +63,7 @@ export class LinkedWesl {
       });
     }
 
-    device.pushErrorScope("validation"); // Surpress the normal error
+    device.pushErrorScope("validation"); // Suppress the normal error
     const module = device.createShaderModule({
       ...descriptor,
       code: this.dest,
@@ -82,11 +93,16 @@ export class LinkedWesl {
     return module;
   }
 
-  /** Use {@link LinkedWesl.createShaderModule} for a more convenient error reporting experience. */
+  /**
+   * Use {@link LinkedWesl.createShaderModule} for a
+   * better error reporting experience.
+   */
   get dest() {
     return this.sourceMap.dest.text;
   }
 
+  /** Turns raw compilation info into compilation info
+   * that points at the WESL sources. */
   public mapGPUCompilationInfo(
     compilationInfo: GPUCompilationInfo,
   ): WeslGPUCompilationInfo {
@@ -142,7 +158,9 @@ function compilationInfoToErrorMessage(
 ): string | null {
   if (compilationInfo.messages.length === 0) return null;
 
-  let result = `Compilation log for [Invalid ShaderModule (${shaderModule.label || "unlabled"})]:\n`;
+  let result = `Compilation log for [Invalid ShaderModule (${
+    shaderModule.label || "unlabled"
+  })]:\n`;
   let errorCount = compilationInfo.messages.filter(
     v => v.type === "error",
   ).length;
@@ -163,8 +181,9 @@ function compilationInfoToErrorMessage(
       if (lineEndOffset === -1) {
         lineEndOffset = source.length;
       }
-      const line = source.slice(lineStartOffset, lineEndOffset);
-      result += `${line}\n${" ".repeat(linePos - 1)}${"^".repeat(Math.max(1, message.length))}\n`;
+      result += source.slice(lineStartOffset, lineEndOffset) + "\n";
+      const caretCount = Math.max(1, message.length);
+      result += " ".repeat(linePos - 1) + "^".repeat(caretCount);
     }
   }
   return result;
