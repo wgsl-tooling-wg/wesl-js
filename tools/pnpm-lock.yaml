@@ -169,6 +169,10 @@ importers:
         version: 3.1.9
 
   packages/random_wgsl:
+    dependencies:
+      wesl-bundle:
+        specifier: workspace:*
+        version: link:../wesl-bundle
     devDependencies:
       wesl:
         specifier: workspace:*
@@ -179,6 +183,9 @@ importers:
       mini-parse:
         specifier: workspace:*
         version: link:../mini-parse
+      wesl-bundle:
+        specifier: workspace:*
+        version: link:../wesl-bundle
     devDependencies:
       ncp:
         specifier: ^2.0.0
@@ -192,6 +199,12 @@ importers:
       terser:
         specifier: ^5.38.1
         version: 5.38.1
+      vite-plugin-dts:
+        specifier: ^4.5.0
+        version: 4.5.0(@types/node@22.10.10)(rollup@4.32.0)(typescript@5.7.3)(vite@6.1.0(@types/node@22.10.10)(jiti@2.4.2)(terser@5.38.1)(tsx@4.19.2))
+
+  packages/wesl-bundle:
+    devDependencies:
       vite-plugin-dts:
         specifier: ^4.5.0
         version: 4.5.0(@types/node@22.10.10)(rollup@4.32.0)(typescript@5.7.3)(vite@6.1.0(@types/node@22.10.10)(jiti@2.4.2)(terser@5.38.1)(tsx@4.19.2))
@@ -220,6 +233,9 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
+      wesl-bundle:
+        specifier: workspace:*
+        version: link:../wesl-bundle
 
   packages/wesl-plugin:
     dependencies:

@@ -16,8 +16,7 @@ export async function packageWgsl(args: CliArgs): Promise<void> {
 }
 
 async function writeTypeScriptDts(outDir: string): Promise<void> {
-  const declText = `
-import type { WeslBundle } from "wesl-bundle";
+  const declText = `import type { WeslBundle } from "wesl-bundle";
 export declare const wgslBundle: WeslBundle;
 export default wgslBundle;
 `;
@@ -32,8 +31,7 @@ async function writeJsBundle(
   await mkdir(outDir, { recursive: true });
 
   const bundleString = JSON.stringify(wgslBundle, null, 2);
-  const outString = `
-export const wgslBundle = ${bundleString}
+  const outString = `export const wgslBundle = ${bundleString}
 
 export default wgslBundle;
   `;
@@ -67,8 +65,9 @@ interface PkgFields {
 async function loadPackageFields(pkgJsonPath: string): Promise<PkgFields> {
   const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
   const pkgJson = JSON.parse(pkgJsonString);
-  const { name, exports } = pkgJson;
+  const { name, exports, dependencies } = pkgJson;
   verifyField("name", name);
+  verifyField("dependencies", dependencies);
 
   function verifyField(field: string, value: any): void {
     if (value === undefined) {
@@ -77,7 +76,13 @@ async function loadPackageFields(pkgJsonPath: string): Promise<PkgFields> {
     }
   }
 
-  // TODO: Verify that we have a `dependency` on wesl-bundle
+  if ("wesl-bundle" in dependencies) {
+    // Everything is fine
+  } else {
+    // LATER handle all the other package.json cases, like `"foo": "bar:@npm:wesl-bundle@7.2.2"`
+    // LATER also verify the version
+    console.warn(`wesl-bundle should be a dependency in ${pkgJsonPath}`);
+  }
 
   return { name, exports };
 }
