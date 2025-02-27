@@ -13,7 +13,7 @@ import {
 import { WeslAST } from "./ParseWESL.ts";
 import { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
 import { filterMap, mapValues } from "./Util.ts";
-import { WgslBundle } from "./WgslBundle.ts";
+import { WeslBundle } from "wesl-bundle";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 
@@ -59,7 +59,7 @@ export interface LinkParams {
   conditions?: Conditions;
 
   /** libraries available for the link */
-  libs?: WgslBundle[];
+  libs?: WeslBundle[];
 
   /** generate wesl from code at runtime */
   virtualLibs?: Record<string, VirtualLibraryFn>;

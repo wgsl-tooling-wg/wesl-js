@@ -19,10 +19,8 @@ test("package two wgsl files", async () => {
   );
   const result = await readFile(path.join(distDir, "wgslBundle.js"), "utf8");
   expect(result).toMatchInlineSnapshot(`
-    "
-    export const wgslBundle = {
+    "export const wgslBundle = {
       "name": "test-wesl-package",
-      "version": "0.1.1",
       "edition": "wesl_unstable_2024_1",
       "modules": {
         "util.wgsl": "fn foo() {}",

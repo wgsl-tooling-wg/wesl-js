@@ -1,0 +1,23 @@
+/// <reference types="vitest/config" />
+import { resolve } from "path";
+import { UserConfig } from "vite";
+import dts from "vite-plugin-dts";
+import tsconfigPaths from "vite-tsconfig-paths";
+
+export function baseViteConfig(): UserConfig {
+  return {
+    plugins: [
+      tsconfigPaths(),
+      dts(), // generate .d.ts files
+    ],
+    build: {
+      lib: {
+        name: "wesl-bundle",
+        entry: [resolve(__dirname, "src/index.ts")],
+        formats: ["es"],
+      },
+      minify: false,
+      sourcemap: true,
+    },
+  };
+}

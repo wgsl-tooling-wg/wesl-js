@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "echo": "echo",
-    "build": "tsx build.ts",
+    "build": "esbuild --bundle --platform=node --format=esm --outfile=bin/wesl-packager src/main.ts",
     "format": "prettier . --write",
     "lint": "eslint src",
     "organize": "organize-imports-cli tsconfig.json",
@@ -19,6 +19,7 @@
   "bin": "bin/wgsl-packager",
   "dependencies": {
     "glob": "^11.0.1",
-    "wesl": "workspace:*"
+    "wesl": "workspace:*",
+    "wesl-bundle": "workspace:*"
   }
 }

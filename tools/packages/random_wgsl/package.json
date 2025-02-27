@@ -16,6 +16,9 @@
       "import": "./dist/wgslBundle.js"
     }
   },
+  "dependencies": {
+    "wesl-bundle": "workspace:*"
+  },
   "devDependencies": {
     "wesl": "workspace:*"
   }
