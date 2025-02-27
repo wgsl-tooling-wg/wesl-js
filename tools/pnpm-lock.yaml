@@ -195,9 +195,6 @@ importers:
       vite-plugin-dts:
         specifier: ^4.5.0
         version: 4.5.0(@types/node@22.10.10)(rollup@4.32.0)(typescript@5.7.3)(vite@6.1.0(@types/node@22.10.10)(jiti@2.4.2)(terser@5.38.1)(tsx@4.19.2))
-      webgpu:
-        specifier: ^0.2.11
-        version: 0.2.11
 
   packages/wesl-link:
     dependencies:
