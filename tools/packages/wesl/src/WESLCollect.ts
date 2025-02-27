@@ -42,7 +42,6 @@ import {
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyScope, RefIdent, Scope } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
-import { dlog } from "berry-pretty";
 
 export function importElem(cc: CollectContext) {
   const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing
@@ -406,7 +405,6 @@ export function directiveCollect(cc: CollectContext): DirectiveElem {
   const { start, end } = cc;
   const directive: DirectiveVariant = cc.tags.directive?.flat()[0];
   const attributes: AttributeElem[] | undefined = cc.tags.attribute?.flat();
-  attributes; //?
 
   const kind = "directive";
   const elem: DirectiveElem = { kind, attributes, start, end, directive };
@@ -416,7 +414,7 @@ export function directiveCollect(cc: CollectContext): DirectiveElem {
 
 /**
  * Collect a LexicalScope.
- * 
+ *
  * The scope starts encloses all idents and subscopes inside the parser to which
  * .collect is attached
  */
@@ -429,7 +427,7 @@ export function scopeCollect(): CollectPair<Scope> {
 
 /**
  * Collect a PartialScope.
- * 
+ *
  * The scope starts encloses all idents and subscopes inside the parser to which
  * .collect is attached
  */

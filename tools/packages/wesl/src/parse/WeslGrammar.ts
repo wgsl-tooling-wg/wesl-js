@@ -440,7 +440,7 @@ const unconditional_statement = tagScope(
     opt_attributes_no_if, 
     regular_statement,
   )                                .collect(statementCollect) // TODO drop this? no need for to collect unconditional statements
-); 
+);
 
 // prettier-ignore
 const statement: Parser<Stream<WeslToken>, any> = or(

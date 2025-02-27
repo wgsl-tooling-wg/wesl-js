@@ -332,5 +332,4 @@ test("partial scope", () => {
 
 //   expect(scopeToString(rootScope)).toMatchInlineSnapshot('tbd');
 
-
 // });
