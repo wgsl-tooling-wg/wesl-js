@@ -1,3 +1,4 @@
+import { assertThat } from "../../mini-parse/src/Assertions";
 import { ExtendedGPUValidationError } from "./LinkedWesl";
 
 /**
@@ -56,10 +57,11 @@ export function makeWeslDevice(device: GPUDevice): WeslDevice {
       "uncapturederror",
       ev => {
         if (!ev.defaultPrevented) {
-          if (ev.error instanceof ExtendedGPUValidationError) {
+          if ("compilationInfo" in ev.error) {
+            const error = ev.error as ExtendedGPUValidationError;
             // A custom mode with clickable sources. Uses https://stackoverflow.com/a/79467192/3492994
-            if (ev.error.compilationInfo) {
-              for (const message of ev.error.compilationInfo.messages) {
+            if (error.compilationInfo) {
+              for (const message of error.compilationInfo.messages) {
                 throwError({
                   url: message.module.url,
                   text: message.module.text ?? null,

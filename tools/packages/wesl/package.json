@@ -41,6 +41,7 @@
     "random_wgsl": "workspace:*",
     "rollup-plugin-visualizer": "^5.14.0",
     "terser": "^5.38.1",
-    "vite-plugin-dts": "^4.5.0"
+    "vite-plugin-dts": "^4.5.0",
+    "webgpu": "^0.2.11"
   }
 }

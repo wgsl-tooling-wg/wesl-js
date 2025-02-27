@@ -24,13 +24,9 @@ export interface WeslGPUCompilationMessage extends GPUCompilationMessage {
  * A {@link GPUValidationError} with an inner error (for a stack trace).
  * Can also point at a WESL source file.
  */
-export class ExtendedGPUValidationError extends GPUValidationError {
-  public cause?: Error;
-  public compilationInfo?: WeslGPUCompilationInfo;
-  constructor(message: string, options?: { cause?: Error }) {
-    super(message);
-    this.cause = options?.cause;
-  }
+export interface ExtendedGPUValidationError extends GPUValidationError {
+  cause?: Error;
+  compilationInfo?: WeslGPUCompilationInfo;
 }
 
 /**
@@ -84,9 +80,10 @@ export class LinkedWesl {
       );
       // Error message cannot be null, since we're passing at least one message to it.
       assertThat(errorMessage !== null);
-      const error = new ExtendedGPUValidationError(errorMessage, {
-        cause: new Error("createShaderModule failed"),
-      });
+      const error: ExtendedGPUValidationError = new GPUValidationError(
+        errorMessage,
+      );
+      error.cause = new Error("createShaderModule failed");
       error.compilationInfo = mappedCompilationInfo;
       resolve(error);
     });
