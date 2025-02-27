@@ -42,6 +42,7 @@ import {
 } from "./ParseWESL.ts";
 import { DeclIdent, emptyScope, RefIdent, Scope } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
+import { dlog } from "berry-pretty";
 
 export function importElem(cc: CollectContext) {
   const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing
@@ -144,14 +145,20 @@ function startScope(cc: CollectContext) {
   // srcLog(cc.src, cc.start, "startScope", newScope.id);
 }
 
+function startPartialScope(cc: CollectContext) {
+  const { scope } = cc.app.context as WeslParseContext;
+  const newScope = emptyScope(scope, "partial");
+  scope.children.push(newScope);
+  cc.app.context.scope = newScope;
+  // srcLog(cc.src, cc.start, "startPartialScope", newScope.id);
+}
+
 /* close current Scope and set current scope to parent */
 function completeScope(cc: CollectContext): Scope {
   const weslContext = cc.app.context as WeslParseContext;
   const completedScope = weslContext.scope;
   const ifAttributes = collectIfAttributes(cc);
 
-  // srcLog(cc.src, cc.start, "completeScope", completedScope.id);
-  // console.log(scopeIdentTree(completedScope));
   const { parent } = completedScope;
   if (parent) {
     weslContext.scope = parent;
@@ -407,10 +414,28 @@ export function directiveCollect(cc: CollectContext): DirectiveElem {
   return elem;
 }
 
-/** collect a scope start starts before and ends after a parser */
+/**
+ * Collect a LexicalScope.
+ * 
+ * The scope starts encloses all idents and subscopes inside the parser to which
+ * .collect is attached
+ */
 export function scopeCollect(): CollectPair<Scope> {
   return {
     before: startScope,
+    after: completeScope,
+  };
+}
+
+/**
+ * Collect a PartialScope.
+ * 
+ * The scope starts encloses all idents and subscopes inside the parser to which
+ * .collect is attached
+ */
+export function partialScopeCollect(): CollectPair<Scope> {
+  return {
+    before: startPartialScope,
     after: completeScope,
   };
 }

@@ -305,3 +305,32 @@ test("scope with an attribute", () => {
   } #0"
 `);
 });
+
+test("partial scope", () => {
+  const src = `
+    fn main() {
+      var x = 1;
+
+      @if(false) y = 2;
+    }
+  `;
+  const { rootScope } = testParseWESL(src);
+
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %main
+      { %x
+         @if(false) -{ y } #2
+      } #1
+    } #0"
+  `);
+});
+
+// test("", () => {
+//   const src = `
+//   `;
+//   const { rootScope } = testParseWESL(src);
+
+//   expect(scopeToString(rootScope)).toMatchInlineSnapshot('tbd');
+
+
+// });

@@ -60,6 +60,7 @@ import {
   directiveCollect,
   expressionCollect,
   nameCollect,
+  partialScopeCollect,
   refIdent,
   scopeCollect,
   specialAttribute,
@@ -153,24 +154,33 @@ const normal_attribute = tagScope(
 );
 
 // prettier-ignore
-const attribute = or (
-  special_attribute,
-  if_attribute, 
-  normal_attribute
-)                                  .ctag("attribute");
-
-
-// prettier-ignore
 const attribute_argument_list = delimited(
   "(",
   withSep(
     ",",
-    span(fn(() => expression))               .collect(expressionCollect, "attrParam"), // TODO: These unknown expressions have decls inside of them, that's why they're tough to replace!
+    span(fn(() => expression))     .collect(expressionCollect, "attrParam"), // TODO: These unknown expressions have decls inside of them, that's why they're tough to replace!
   ),
   req(")"),
 );
 
-const opt_attributes = repeat(attribute);
+// separate statements with if from statements
+
+// prettier-ignore
+const attribute_no_if = or(
+  special_attribute, 
+  normal_attribute
+)                                   .ctag("attribute");
+
+// prettier-ignore
+const attribute_incl_if = or(
+  if_attribute,
+  special_attribute,
+  normal_attribute,
+)                                   .ctag("attribute");
+
+const opt_attributes = repeat(attribute_incl_if);
+
+const opt_attributes_no_if = repeat(attribute_no_if);
 
 /** parse an identifier into a TypeNameElem */
 // prettier-ignore
@@ -399,28 +409,44 @@ const switch_statement = seq("switch", expression, switch_body);
 
 const while_statement = seq("while", expression, compound_statement);
 
+const regular_statement = or(
+  for_statement,
+  if_statement,
+  loop_statement,
+  switch_statement,
+  while_statement,
+  seq("break", ";"),
+  seq("continue", ";"),
+  seq(";"), // LATER this one cannot have attributes in front of it
+  () => const_assert,
+  seq("discard", ";"),
+  seq("return", opt(expression), ";"),
+  seq(fn_call, ";"),
+  seq(() => variable_or_value_statement, ";"),
+  seq(() => variable_updating_statement, ";"),
+);
+
+// prettier-ignore
+const conditional_statement = tagScope(
+seq(
+  opt_attributes, 
+  regular_statement
+)                                  .collect(statementCollect)
+                                   .collect(partialScopeCollect()));
+
+// prettier-ignore
+const unconditional_statement = tagScope(
+    seq(
+    opt_attributes_no_if, 
+    regular_statement,
+  )                                .collect(statementCollect) // TODO drop this? no need for to collect unconditional statements
+); 
+
 // prettier-ignore
 const statement: Parser<Stream<WeslToken>, any> = or(
   compound_statement, // collects its own scope
-  seq(
-    opt_attributes, // TODO: collect and then attach
-    or(
-      for_statement,
-      if_statement,
-      loop_statement,
-      switch_statement,
-      while_statement,
-      seq("break", ";"),
-      seq("continue", ";"),
-      seq(";"), // LATER this one cannot have attributes in front of it
-      () => const_assert,
-      seq("discard", ";"),
-      seq("return", opt(expression), ";"),
-      seq(fn_call, ";"),
-      seq(() => variable_or_value_statement, ";"),
-      seq(() => variable_updating_statement, ";"),
-    ),
-  )                                        .collect(statementCollect),
+  unconditional_statement,
+  conditional_statement
 );
 
 // prettier-ignore
@@ -718,7 +744,6 @@ if (tracing) {
     qualified_ident,
     diagnostic_rule_name,
     diagnostic_control,
-    attribute,
     opt_attributes,
     typeNameDecl,
     fnNameDecl,
