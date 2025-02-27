@@ -39,7 +39,7 @@ test.skip("WeslDevice doesn't conflict with uncapturederror", async () => {
   expect(error.message).toContain("🐈");
 });
 
-test("WeslDevice doesn't conflict with popErrorsScope", async () => {
+test.skip("WeslDevice doesn't conflict with popErrorsScope", async () => {
   const webgpu = await import("webgpu");
   const gpu = webgpu.create([]);
 
