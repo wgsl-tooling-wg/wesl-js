@@ -19,7 +19,7 @@ import {
   withSepPlus,
   yes,
 } from "mini-parse";
-import { qualified_ident, name, WeslParser } from "./BaseGrammar";
+import { qualified_ident, name, WeslParser, PT } from "./BaseGrammar";
 import {
   templateClose,
   templateOpen,
@@ -58,7 +58,7 @@ const paren_expression = delimited(
   req(")"),
 ).map(makeParenthesizedExpression);
 
-const primary_expression: WeslParser<ExpressionElem> = or(
+const primary_expression: WeslParser<ExpressionElem<PT>> = or(
   literal,
   paren_expression,
   seq(
@@ -66,14 +66,15 @@ const primary_expression: WeslParser<ExpressionElem> = or(
     opt(fn(() => argument_expression_list)),
   ).map(tryMakeFunctionCall),
 );
-export const component_or_swizzle: WeslParser<(NameElem | ExpressionElem)[]> =
-  repeatPlus(
-    or(
-      preceded(".", name),
-      delimited("[", () => expression, req("]")),
-    ),
-  );
-const unary_expression: WeslParser<ExpressionElem> = or(
+export const component_or_swizzle: WeslParser<
+  (NameElem | ExpressionElem<PT>)[]
+> = repeatPlus(
+  or(
+    preceded(".", name),
+    delimited("[", () => expression, req("]")),
+  ),
+);
+const unary_expression: WeslParser<ExpressionElem<PT>> = or(
   seq(unaryOperator(["!", "&", "*", "-", "~"]), () => unary_expression).map(
     makeUnaryExpression,
   ),
@@ -136,7 +137,9 @@ const relational_post_unary = (
  * `true` is template-expression: Refuses to parse parse symbols like `&&` and `||`.
  * `false` is maybe-template-expression: Does the template disambiguation.
  */
-const expressionParser = (inTemplate: boolean): WeslParser<ExpressionElem> => {
+const expressionParser = (
+  inTemplate: boolean,
+): WeslParser<ExpressionElem<PT>> => {
   return seq(
     unary_expression,
     or(
@@ -175,7 +178,7 @@ export const expression = expressionParser(maybe_template);
 let is_template = true;
 const template_arg_expression = expressionParser(is_template);
 
-export const opt_template_list: WeslParser<ExpressionElem[] | null> = opt(
+export const opt_template_list: WeslParser<ExpressionElem<PT>[] | null> = opt(
   delimited(
     templateOpen,
     withSepPlus(",", template_arg_expression),
@@ -183,7 +186,7 @@ export const opt_template_list: WeslParser<ExpressionElem[] | null> = opt(
   ),
 );
 
-export const templated_ident: WeslParser<TemplatedIdentElem> = span(
+export const templated_ident: WeslParser<TemplatedIdentElem<PT>> = span(
   seq(qualified_ident, opt_template_list),
 ).map(makeTemplatedIdent);
 
@@ -195,7 +198,7 @@ export const argument_expression_list = delimited(
 
 //--------- Specialized parser for @if(expr) -----------//
 const attribute_if_primary_expression: WeslParser<
-  Literal | ParenthesizedExpression | NameElem
+  Literal | ParenthesizedExpression<PT> | NameElem
 > = or(
   tokenOf("keyword", ["true", "false"]).map(makeLiteral),
   delimited(
@@ -206,7 +209,7 @@ const attribute_if_primary_expression: WeslParser<
   name,
 );
 
-const attribute_if_unary_expression: WeslParser<ExpressionElem> = or(
+const attribute_if_unary_expression: WeslParser<ExpressionElem<PT>> = or(
   seq(
     unaryOperator("!"),
     fn(() => attribute_if_unary_expression),
@@ -214,7 +217,7 @@ const attribute_if_unary_expression: WeslParser<ExpressionElem> = or(
   attribute_if_primary_expression,
 );
 
-export const attribute_if_expression: WeslParser<ExpressionElem> =
+export const attribute_if_expression: WeslParser<ExpressionElem<PT>> =
   weslExtension(
     seq(
       attribute_if_unary_expression,
@@ -230,7 +233,7 @@ export const attribute_if_expression: WeslParser<ExpressionElem> =
     ).map(makeRepeatingBinaryExpression),
   );
 
-export const lhs_expression: WeslParser<LhsExpression> = or(
+export const lhs_expression: WeslParser<LhsExpression<PT>> = or(
   seq(qualified_ident.map(makeLhsIdentElem), opt(component_or_swizzle)).map(
     tryMakeLhsComponentOrSwizzle,
   ),
@@ -245,9 +248,9 @@ export const lhs_expression: WeslParser<LhsExpression> = or(
 );
 
 function tryMakeFunctionCall([ident, args]: [
-  TemplatedIdentElem,
-  ExpressionElem[] | null,
-]): TemplatedIdentElem | FunctionCallExpression {
+  TemplatedIdentElem<PT>,
+  ExpressionElem<PT>[] | null,
+]): TemplatedIdentElem<PT> | FunctionCallExpression<PT> {
   if (args !== null) {
     return {
       kind: "call-expression",
@@ -261,9 +264,9 @@ function tryMakeFunctionCall([ident, args]: [
 
 // LATER how do I combine the two?
 function tryMakeComponentOrSwizzle([expression, componentOrSwizzle]: [
-  ExpressionElem,
-  (NameElem | ExpressionElem)[] | null,
-]): ExpressionElem {
+  ExpressionElem<PT>,
+  (NameElem | ExpressionElem<PT>)[] | null,
+]): ExpressionElem<PT> {
   if (componentOrSwizzle === null || componentOrSwizzle.length === 0) {
     return expression;
   }
@@ -286,9 +289,9 @@ function tryMakeComponentOrSwizzle([expression, componentOrSwizzle]: [
   return result;
 }
 function tryMakeLhsComponentOrSwizzle([expression, componentOrSwizzle]: [
-  LhsExpression,
-  (NameElem | ExpressionElem)[] | null,
-]): LhsExpression {
+  LhsExpression<PT>,
+  (NameElem | ExpressionElem<PT>)[] | null,
+]): LhsExpression<PT> {
   if (componentOrSwizzle === null || componentOrSwizzle.length === 0) {
     return expression;
   }
@@ -315,9 +318,9 @@ function makeTemplatedIdent({
   value: [qualified_ident, template],
   span,
 }: {
-  value: [IdentElem[], ExpressionElem[] | null];
+  value: [IdentElem<PT>[], ExpressionElem<PT>[] | null];
   span: Span;
-}): TemplatedIdentElem {
+}): TemplatedIdentElem<PT> {
   return {
     kind: "templated-ident",
     span,
@@ -326,7 +329,7 @@ function makeTemplatedIdent({
     template: template ?? undefined,
   };
 }
-function makeLhsIdentElem(qualified_ident: IdentElem[]): LhsIdentElem {
+function makeLhsIdentElem(qualified_ident: IdentElem<PT>[]): LhsIdentElem<PT> {
   const name = qualified_ident[qualified_ident.length - 1];
   return {
     kind: "lhs-ident",
@@ -345,16 +348,16 @@ function makeLiteral(token: WeslToken<"keyword" | "number">): Literal {
 }
 
 function makeParenthesizedExpression(
-  expression: ExpressionElem,
-): ParenthesizedExpression {
+  expression: ExpressionElem<PT>,
+): ParenthesizedExpression<PT> {
   return {
     kind: "parenthesized-expression",
     expression,
   };
 }
 function makeLhsParenthesizedExpression(
-  expression: LhsExpression,
-): LhsParenthesizedExpression {
+  expression: LhsExpression<PT>,
+): LhsParenthesizedExpression<PT> {
   return {
     kind: "parenthesized-expression",
     expression,
@@ -397,8 +400,8 @@ function binaryOperator(
 }
 function makeUnaryExpression([operator, expression]: [
   UnaryOperator,
-  ExpressionElem,
-]): UnaryExpression {
+  ExpressionElem<PT>,
+]): UnaryExpression<PT> {
   return {
     kind: "unary-expression",
     operator,
@@ -407,8 +410,8 @@ function makeUnaryExpression([operator, expression]: [
 }
 function makeLhsUnaryExpression([operator, expression]: [
   LhsUnaryOperator,
-  LhsExpression,
-]): LhsUnaryExpression {
+  LhsExpression<PT>,
+]): LhsUnaryExpression<PT> {
   return {
     kind: "unary-expression",
     operator,
@@ -416,23 +419,23 @@ function makeLhsUnaryExpression([operator, expression]: [
   };
 }
 
-type PartialBinaryExpression = [BinaryOperator, ExpressionElem];
+type PartialBinaryExpression = [BinaryOperator, ExpressionElem<PT>];
 /** A list of left-to-right associative binary expressions */
 function makeRepeatingBinaryExpression([start, repeating]: [
-  ExpressionElem,
+  ExpressionElem<PT>,
   PartialBinaryExpression[],
-]): ExpressionElem {
-  let result: ExpressionElem = start;
+]): ExpressionElem<PT> {
+  let result: ExpressionElem<PT> = start;
   for (const [op, left] of repeating) {
     result = makeBinaryExpression([result, op, left]);
   }
   return result;
 }
 function makeBinaryExpression([left, operator, right]: [
-  ExpressionElem,
+  ExpressionElem<PT>,
   BinaryOperator,
-  ExpressionElem,
-]): BinaryExpression {
+  ExpressionElem<PT>,
+]): BinaryExpression<PT> {
   return {
     kind: "binary-expression",
     operator,

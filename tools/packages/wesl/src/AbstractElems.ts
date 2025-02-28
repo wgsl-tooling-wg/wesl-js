@@ -100,6 +100,17 @@ export interface TypeRefElem extends ElemWithContentsBase {
 
 // TODO: Remove the above ^^^^
 
+export interface Transform {
+  /**
+   * A symbol will be a string when it's returned by the parser.
+   * The scopes pass turns it into a number into a symbols array.
+   */
+  ident: string | number;
+}
+
+/** A name is either a string, or refers to an entry in the symbols table. */
+// export type SymbolReference = string | number;
+
 /** a name that doesn't need to be an Ident
  * e.g.
  * - a struct member name
@@ -115,15 +126,14 @@ export interface NameElem {
 }
 
 /** an identifier */
-export interface IdentElem {
+export interface IdentElem<T extends Transform> {
   kind: "ident";
-  name: string;
+  name: T["ident"];
   span: Span;
-  scopeIdent?: DeclIdent | RefIdent;
 }
 
 /** a wesl module */
-export interface ModuleElem {
+export interface ModuleElem<T extends Transform> {
   kind: "module";
 
   /** imports found in this module */
@@ -133,26 +143,26 @@ export interface ModuleElem {
   directives: DirectiveElem[];
 
   /** declarations found in this module */
-  declarations: GlobalDeclarationElem[];
+  declarations: GlobalDeclarationElem<T>[];
 }
 
-export type GlobalDeclarationElem =
-  | AliasElem
+export type GlobalDeclarationElem<T extends Transform> =
+  | AliasElem<T>
   | ConstAssertElem
-  | DeclarationElem
-  | FunctionDeclarationElem
-  | StructElem;
+  | DeclarationElem<T>
+  | FunctionDeclarationElem<T>
+  | StructElem<T>;
 
 interface GlobalDeclarationBase {
-  kind: GlobalDeclarationElem["kind"];
+  kind: GlobalDeclarationElem<any>["kind"];
   span: Span;
   attributes?: AttributeElem[];
 }
 
 /** an alias statement */
-export interface AliasElem extends GlobalDeclarationBase {
+export interface AliasElem<T extends Transform> extends GlobalDeclarationBase {
   kind: "alias";
-  name: IdentElem;
+  name: IdentElem<T>;
   type: TemplatedIdentElem;
 }
 
@@ -163,10 +173,11 @@ export interface ConstAssertElem extends GlobalDeclarationBase {
 }
 
 /** a var/let/const/override declaration */
-export interface DeclarationElem extends GlobalDeclarationBase {
+export interface DeclarationElem<T extends Transform>
+  extends GlobalDeclarationBase {
   kind: "declaration";
   variant: DeclarationVariant;
-  name: IdentElem;
+  name: IdentElem<T>;
   type?: TemplatedIdentElem;
   initializer?: ExpressionElem;
 }
@@ -178,24 +189,25 @@ export type DeclarationVariant =
   | { kind: "var"; template?: ExpressionElem[] };
 
 /** a function declaration */
-export interface FunctionDeclarationElem extends GlobalDeclarationBase {
+export interface FunctionDeclarationElem<T extends Transform>
+  extends GlobalDeclarationBase {
   kind: "function";
-  name: IdentElem;
-  params: FunctionParam[];
+  name: IdentElem<T>;
+  params: FunctionParam<T>[];
   returnAttributes?: AttributeElem[];
   returnType?: TemplatedIdentElem;
-  body: CompoundStatement;
+  body: CompoundStatement<T>;
 }
-export interface FunctionParam {
+export interface FunctionParam<T extends Transform> {
   attributes?: AttributeElem[];
-  name: IdentElem;
+  name: IdentElem<T>;
   type: TemplatedIdentElem;
 }
 
 /** a struct declaration */
-export interface StructElem extends GlobalDeclarationBase {
+export interface StructElem<T extends Transform> extends GlobalDeclarationBase {
   kind: "struct";
-  name: IdentElem;
+  name: IdentElem<T>;
   members: StructMemberElem[];
   span: Span;
   bindingStruct?: true; // used later during binding struct transformation
@@ -256,17 +268,17 @@ export interface TranslateTimeExpressionElem {
   span: Span;
 }
 
-export type Statement =
-  | ForStatement
-  | IfStatement
-  | LoopStatement
-  | SwitchStatement
-  | WhileStatement
-  | CompoundStatement
+export type Statement<T extends Transform> =
+  | ForStatement<T>
+  | IfStatement<T>
+  | LoopStatement<T>
+  | SwitchStatement<T>
+  | WhileStatement<T>
+  | CompoundStatement<T>
   | FunctionCallStatement
-  | DeclarationElem
-  | AssignmentStatement
-  | PostfixStatement
+  | DeclarationElem<T>
+  | AssignmentStatement<T>
+  | PostfixStatement<T>
   | BreakStatement
   | ContinueStatement
   | DiscardStatement
@@ -274,45 +286,45 @@ export type Statement =
   | ConstAssertElem;
 
 interface StatementBase {
-  kind: Statement["kind"];
+  kind: Statement<any>["kind"];
   attributes?: AttributeElem[];
   span: Span;
 }
 
 /** for(let i = 0; i < 10; i++) { } */
-export interface ForStatement extends StatementBase {
+export interface ForStatement<T extends Transform> extends StatementBase {
   kind: "for-statement";
-  initializer?: Statement;
+  initializer?: Statement<T>;
   condition?: ExpressionElem;
-  update?: Statement;
-  body: CompoundStatement;
+  update?: Statement<T>;
+  body: CompoundStatement<T>;
 }
 
 /** if(1 == 1) { } */
-export interface IfStatement extends StatementBase {
+export interface IfStatement<T extends Transform> extends StatementBase {
   kind: "if-else-statement";
-  main: IfClause;
+  main: IfClause<T>;
 }
 
 /** A clause in an if statement (`if`, `else if`, `else`), without attributes. */
-export interface IfClause {
+export interface IfClause<T extends Transform> {
   kind: "if-clause";
   condition: ExpressionElem;
-  accept: CompoundStatement;
-  reject?: IfClause | CompoundStatement;
+  accept: CompoundStatement<T>;
+  reject?: IfClause<T> | CompoundStatement<T>;
 }
 
-export interface LoopStatement extends StatementBase {
+export interface LoopStatement<T extends Transform> extends StatementBase {
   kind: "loop-statement";
-  body: CompoundStatement;
+  body: CompoundStatement<T>;
   /** Last element in the body */
-  continuing?: ContinuingStatement;
+  continuing?: ContinuingStatement<T>;
 }
 
-export interface ContinuingStatement {
+export interface ContinuingStatement<T extends Transform> {
   kind: "continuing-statement";
   attributes?: AttributeElem[];
-  body: CompoundStatement;
+  body: CompoundStatement<T>;
   /** Last element in the body */
   breakIf?: BreakIfStatement;
   span: Span;
@@ -325,20 +337,20 @@ export interface BreakIfStatement {
   span: Span;
 }
 
-export interface SwitchStatement extends StatementBase {
+export interface SwitchStatement<T extends Transform> extends StatementBase {
   kind: "switch-statement";
   selector: ExpressionElem;
   bodyAttributes?: AttributeElem[];
-  clauses: SwitchClause[];
+  clauses: SwitchClause<T>[];
 }
 /**
  * `case foo: {}` or `default: {}`.
  * A `default:` is modeled as a `case default:`
  */
-export interface SwitchClause {
+export interface SwitchClause<T extends Transform> {
   attributes?: AttributeElem[];
   cases: SwitchCaseSelector[];
-  body: CompoundStatement;
+  body: CompoundStatement<T>;
   span: Span;
 }
 export type SwitchCaseSelector = ExpressionCaseSelector | DefaultCaseSelector;
@@ -350,15 +362,15 @@ export interface DefaultCaseSelector {
   span: Span;
 }
 
-export interface WhileStatement extends StatementBase {
+export interface WhileStatement<T extends Transform> extends StatementBase {
   kind: "while-statement";
   condition: ExpressionElem;
-  body: CompoundStatement;
+  body: CompoundStatement<T>;
 }
 
-export interface CompoundStatement extends StatementBase {
+export interface CompoundStatement<T extends Transform> extends StatementBase {
   kind: "compound-statement";
-  body: Statement[];
+  body: Statement<T>[];
 }
 
 /** `foo(arg, arg);` */
@@ -368,9 +380,10 @@ export interface FunctionCallStatement extends StatementBase {
   arguments: ExpressionElem[];
 }
 
-export interface AssignmentStatement extends StatementBase {
+export interface AssignmentStatement<T extends Transform>
+  extends StatementBase {
   kind: "assignment-statement";
-  left: LhsExpression | LhsDiscard;
+  left: LhsExpression<T> | LhsDiscard;
   operator: AssignmentOperator;
   right: ExpressionElem;
 }
@@ -382,10 +395,10 @@ export interface AssignmentOperator {
   span: Span;
 }
 
-export interface PostfixStatement extends StatementBase {
+export interface PostfixStatement<T extends Transform> extends StatementBase {
   kind: "postfix-statement";
   operator: PostfixOperator;
-  expression: LhsExpression;
+  expression: LhsExpression<T>;
 }
 
 export interface PostfixOperator {
@@ -415,43 +428,43 @@ export interface LhsDiscard {
   span: Span;
 }
 
-export type LhsExpression =
-  | LhsUnaryExpression
-  | LhsComponentExpression
-  | LhsComponentMemberExpression
-  | LhsParenthesizedExpression
-  | LhsIdentElem;
+export type LhsExpression<T extends Transform> =
+  | LhsUnaryExpression<T>
+  | LhsComponentExpression<T>
+  | LhsComponentMemberExpression<T>
+  | LhsParenthesizedExpression<T>
+  | LhsIdentElem<T>;
 
 /** Analogous to the `TemplatedIdentElem` */
-export interface LhsIdentElem {
+export interface LhsIdentElem<T extends Transform> {
   kind: "lhs-ident";
-  name: IdentElem;
-  path?: IdentElem[];
+  name: IdentElem<T>;
+  path?: IdentElem<T>[];
   span: Span;
 }
 
 /** (expr) */
-export interface LhsParenthesizedExpression {
+export interface LhsParenthesizedExpression<T extends Transform> {
   kind: "parenthesized-expression";
-  expression: LhsExpression;
+  expression: LhsExpression<T>;
 }
 /** `foo[expr]` */
-export interface LhsComponentExpression {
+export interface LhsComponentExpression<T extends Transform> {
   kind: "component-expression";
-  base: LhsExpression;
+  base: LhsExpression<T>;
   access: ExpressionElem;
 }
 /** `foo.member` */
-export interface LhsComponentMemberExpression {
+export interface LhsComponentMemberExpression<T extends Transform> {
   kind: "component-member-expression";
-  base: LhsExpression;
+  base: LhsExpression<T>;
   access: NameElem;
 }
 /** `+foo` */
-export interface LhsUnaryExpression {
+export interface LhsUnaryExpression<T extends Transform> {
   kind: "unary-expression";
   operator: LhsUnaryOperator;
-  expression: LhsExpression;
+  expression: LhsExpression<T>;
 }
 export interface LhsUnaryOperator {
   value: "&" | "*";

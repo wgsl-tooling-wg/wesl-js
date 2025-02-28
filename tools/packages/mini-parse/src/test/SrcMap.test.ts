@@ -7,8 +7,8 @@ test("compact", () => {
 
   const srcMap = new SrcMap({ text: dest });
   srcMap.addEntries([
-    { src, srcSpan: [0, 2], destSpan: [1, 3] },
-    { src, srcSpan: [2, 3], destSpan: [3, 4] },
+    { src: { text: src }, srcSpan: [0, 2], destSpan: [1, 3] },
+    { src: { text: src }, srcSpan: [2, 3], destSpan: [3, 4] },
   ]);
   srcMap.compact();
   expect(srcMap.entries).toMatchInlineSnapshot(`
@@ -42,11 +42,13 @@ test("merge", () => {
       xx|a b d z
   */
 
-  const map1 = new SrcMap(mid, [{ src, srcSpan: [0, 3], destSpan: [1, 4] }]);
+  const map1 = new SrcMap({ text: mid }, [
+    { src: { text: src }, srcSpan: [0, 3], destSpan: [1, 4] },
+  ]);
 
-  const map2 = new SrcMap(dest, [
-    { src: mid, srcSpan: [1, 4], destSpan: [3, 6] },
-    { src: src2, srcSpan: [0, 1], destSpan: [8, 9] },
+  const map2 = new SrcMap({ text: dest }, [
+    { src: { text: mid }, srcSpan: [1, 4], destSpan: [3, 6] },
+    { src: { text: src2 }, srcSpan: [0, 1], destSpan: [8, 9] },
   ]);
 
   const merged = map1.merge(map2);

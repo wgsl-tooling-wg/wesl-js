@@ -1,6 +1,6 @@
 import { Parser, Stream, token, tokenKind, withSepPlus } from "mini-parse";
 import { WeslToken } from "./WeslStream";
-import { IdentElem, NameElem } from "../AbstractElems";
+import { IdentElem, NameElem, Transform } from "../AbstractElems";
 
 export const name = tokenKind("word").map(makeName);
 export const ident = tokenKind("word").map(makeIdent);
@@ -17,10 +17,14 @@ function makeName(token: WeslToken<"word">): NameElem {
   };
 }
 
-function makeIdent(token: WeslToken<"word">): IdentElem {
+function makeIdent(token: WeslToken<"word">): IdentElem<PT> {
   return {
     kind: "ident",
     name: token.text,
     span: token.span,
   };
+}
+
+export interface PT extends Transform {
+  ident: string;
 }

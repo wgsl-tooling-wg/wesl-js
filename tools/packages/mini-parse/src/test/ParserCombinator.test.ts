@@ -128,8 +128,8 @@ test("recurse with fn()", () => {
     "}",
   );
   const wrap = or(p).mapExtended(r => r.app.stable.push(r.value));
-  const { stable } = testParse(wrap, src);
-  expect(stable[0]).toEqual(["a", "b"]);
+  const { parsed } = testParse(wrap, src);
+  expect(parsed?.value).toEqual(["a", "b"]);
 });
 
 test("tracing", () => {

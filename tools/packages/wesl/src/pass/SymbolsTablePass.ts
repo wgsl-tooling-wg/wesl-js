@@ -1,9 +1,9 @@
-import { assertUnreachable } from "../../../mini-parse/src/Assertions";
 import type {
   GlobalDeclarationElem,
   IdentElem,
   ModuleElem,
   Statement,
+  Transform,
 } from "../AbstractElems";
 import {
   AstVisitor,
@@ -13,24 +13,42 @@ import {
   walkImport,
   walkStatementInner,
 } from "../AstVisitor";
+import { PT } from "../parse/BaseGrammar";
 import { ExpressionElem } from "../parse/ExpressionElem";
 import { ImportElem } from "../parse/ImportElems";
-import {
-  attachScope,
-  DeclIdent,
-  emptyScope,
-  RefIdent,
-  SrcModule,
-  type Scope,
-} from "../Scope";
 
-class GenerateScopesVisitor extends AstVisitor {
-  public rootScope: Scope;
-  currentScope: Scope;
-  constructor(public srcModule: SrcModule) {
+/** After we're done with the symbols table, we have idents that point at the symbols table. */
+export interface ST extends Transform {
+  ident: number;
+}
+
+export type SymbolsTable = {
+  /** The name is either a string, or refers to a different symbol */
+  name: SymbolReference;
+}[];
+
+/** decls currently visible in this scope */
+interface LiveDecls {
+  /** decls currently visible in this scope */
+  decls: Map<string, DeclIdent>;
+
+  /** live decls in the parent scope. null for the modue root scope */
+  parent?: LiveDecls | null;
+}
+
+/**
+ * Goals:
+ * - link references identifiers to their declaration identifiers
+ * - produce a list of symbols that can be mangled
+ *
+ * When iterating through the idents inside a scope, we maintain a parallel data structure of
+ * 'liveDecls', the declarations that are visible in the current scope at the currently
+ * processed ident, along with a link to parent liveDecls for their current decl visibility.
+ */
+class GenerateScopesVisitor extends AstVisitor<PT> {
+  public symbolsTable: SymbolsTable = [];
+  constructor() {
     super();
-    this.rootScope = emptyScope(null);
-    this.currentScope = this.rootScope;
   }
 
   import(importElem: ImportElem): void {
@@ -122,11 +140,14 @@ class GenerateScopesVisitor extends AstVisitor {
   }
 }
 
-export function generateScopes(
-  module: ModuleElem,
-  srcModule: SrcModule,
-): Scope {
-  const visitor = new GenerateScopesVisitor(srcModule);
+export function generateScopes(module: ModuleElem<PT>): {
+  module: ModuleElem<ST>;
+  symbols: SymbolsTable;
+} {
+  const visitor = new GenerateScopesVisitor(module);
   walkAst(module, visitor);
-  return visitor.rootScope;
+  return {
+    module: module as any as ModuleElem<ST>,
+    symbols: visitor.symbolsTable,
+  };
 }

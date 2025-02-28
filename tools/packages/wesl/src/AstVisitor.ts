@@ -7,13 +7,14 @@ import {
   ModuleElem,
   RefIdentElem,
   Statement,
+  Transform,
 } from "./AbstractElems.ts";
 import { ExpressionElem } from "./parse/ExpressionElem.ts";
 import { DirectiveElem } from "./parse/DirectiveElem.ts";
 import { ImportElem } from "./parse/ImportElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
 
-export abstract class AstVisitor {
+export abstract class AstVisitor<T extends Transform> {
   import(importElem: ImportElem) {
     walkImport(importElem, this);
   }
@@ -22,30 +23,33 @@ export abstract class AstVisitor {
   }
   attribute(_attribute: AttributeElem) {}
   /** A global declaration and its attributes */
-  globalDeclaration(declaration: GlobalDeclarationElem) {
+  globalDeclaration(declaration: GlobalDeclarationElem<T>) {
     walkGlobalDeclaration(declaration, this);
   }
   /** A global declaration after the attributes */
-  globalDeclarationInner(declaration: GlobalDeclarationElem) {
+  globalDeclarationInner(declaration: GlobalDeclarationElem<T>) {
     walkGlobalDeclarationInner(declaration, this);
   }
   /** A statement and its attributes */
-  statement(statement: Statement) {
+  statement(statement: Statement<T>) {
     walkStatement(statement, this);
   }
   /** A statement after the attributes */
-  statementInner(statement: Statement) {
+  statementInner(statement: Statement<T>) {
     walkStatementInner(statement, this);
   }
-  expression(expression: ExpressionElem): void {
+  expression(expression: ExpressionElem<T>): void {
     walkExpression(expression, this);
   }
-  lhsExpression(expression: LhsExpression): void {
+  lhsExpression(expression: LhsExpression<T>): void {
     walkLhsExpression(expression, this);
   }
 }
 
-export function walkAst(module: ModuleElem, visitor: AstVisitor) {
+export function walkAst<T extends Transform>(
+  module: ModuleElem<T>,
+  visitor: AstVisitor<T>,
+) {
   for (const importElem of module.imports) {
     visitor.import(importElem);
   }
@@ -57,32 +61,38 @@ export function walkAst(module: ModuleElem, visitor: AstVisitor) {
   }
 }
 
-export function walkImport(importElem: ImportElem, visitor: AstVisitor) {
+export function walkImport<T extends Transform>(
+  importElem: ImportElem,
+  visitor: AstVisitor<T>,
+) {
   walkAttributes(importElem.attributes, visitor);
 }
 
-export function walkDirective(directive: DirectiveElem, visitor: AstVisitor) {
+export function walkDirective<T extends Transform>(
+  directive: DirectiveElem,
+  visitor: AstVisitor<T>,
+) {
   walkAttributes(directive.attributes, visitor);
 }
 
-export function walkAttributes(
+export function walkAttributes<T extends Transform>(
   attributes: AttributeElem[] | undefined,
-  visitor: AstVisitor,
+  visitor: AstVisitor<T>,
 ) {
   attributes?.forEach(attribute => visitor.attribute(attribute));
 }
 
-export function walkGlobalDeclaration(
-  declaration: GlobalDeclarationElem,
-  visitor: AstVisitor,
+export function walkGlobalDeclaration<T extends Transform>(
+  declaration: GlobalDeclarationElem<T>,
+  visitor: AstVisitor<T>,
 ) {
   walkAttributes(declaration.attributes, visitor);
   visitor.globalDeclarationInner(declaration);
 }
 
-export function walkGlobalDeclarationInner(
-  declaration: GlobalDeclarationElem,
-  visitor: AstVisitor,
+export function walkGlobalDeclarationInner<T extends Transform>(
+  declaration: GlobalDeclarationElem<T>,
+  visitor: AstVisitor<T>,
 ) {
   const kind = declaration.kind;
   if (kind === "alias") {
@@ -121,9 +131,9 @@ export function walkGlobalDeclarationInner(
   }
 }
 
-export function walkExpression(
-  expression: ExpressionElem,
-  visitor: AstVisitor,
+export function walkExpression<T extends Transform>(
+  expression: ExpressionElem<T>,
+  visitor: AstVisitor<T>,
 ): void {
   const kind = expression.kind;
   if (kind === "binary-expression") {
@@ -150,9 +160,9 @@ export function walkExpression(
   }
 }
 
-export function walkLhsExpression(
-  expression: LhsExpression,
-  visitor: AstVisitor,
+export function walkLhsExpression<T extends Transform>(
+  expression: LhsExpression<T>,
+  visitor: AstVisitor<T>,
 ): void {
   const kind = expression.kind;
   if (kind === "component-expression") {
@@ -171,12 +181,18 @@ export function walkLhsExpression(
   }
 }
 
-export function walkStatement(statement: Statement, visitor: AstVisitor) {
+export function walkStatement<T extends Transform>(
+  statement: Statement<T>,
+  visitor: AstVisitor<T>,
+) {
   walkAttributes(statement.attributes, visitor);
   visitor.statementInner(statement);
 }
 
-export function walkStatementInner(statement: Statement, visitor: AstVisitor) {
+export function walkStatementInner<T extends Transform>(
+  statement: Statement<T>,
+  visitor: AstVisitor<T>,
+) {
   const kind = statement.kind;
   if (kind === "assert") {
     visitor.expression(statement.expression);
