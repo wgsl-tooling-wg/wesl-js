@@ -40,7 +40,7 @@ export interface ParserInit<C = any, S = any> {
   appState?: AppState<C, S>;
 }
 
-// TODO: Try merging this into the stream
+// LATER Try merging this into the stream
 /* Information passed to the parsers during parsing */
 export interface ParserContext<C = any, S = any> {
   stream: Stream<Token>;

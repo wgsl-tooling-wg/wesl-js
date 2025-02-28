@@ -56,7 +56,7 @@ export const component_or_swizzle = repeatPlus(
     collectArray(delimited("[", () => expression, req("]"))),
   ),
 );
-// TODO: Remove
+// LATER Remove
 // prettier-ignore
 /** parse simple struct.member style references specially, for binding struct lowering */
 export const simple_component_reference = tagScope(
@@ -74,7 +74,7 @@ const unary_expression: Parser<Stream<WeslToken>, any> = or(
   ),
 );
 const bitwise_post_unary = or(
-  // TODO: I can skip template list discovery in these cases, because a&b<c cannot be a comparison. Must be a template
+  // LATER I can skip template list discovery in these cases, because a&b<c cannot be a comparison. Must be a template
   repeatPlus(seq("&", unary_expression)),
   repeatPlus(seq("^", unary_expression)),
   repeatPlus(seq("|", unary_expression)),
@@ -107,7 +107,7 @@ const relational_post_unary = (inTemplate: boolean) => {
         inTemplate ?
           tokenOf("symbol", ["<", "<=", "!=", "=="])
         : tokenOf("symbol", [">", ">=", "<", "<=", "!=", "=="]),
-        // TODO: I can skip template list discovery in this cases, because a>=b<c cannot be a comparison. Must be a template
+        // LATER I can skip template list discovery in this cases, because a>=b<c cannot be a comparison. Must be a template
         unary_expression,
         shift_post_unary(inTemplate),
       ),
@@ -165,7 +165,7 @@ export const type_specifier: Parser<Stream<WeslToken>,any> = tagScope(
  * that are types like array<f32> vs. expressions like 1+2 */
 // prettier-ignore
 const template_parameter = or(
-  // TODO: Remove this, it's wrong
+  // LATER Remove this, it's wrong. This should instead be done by inspecting the syntax tree.
   type_specifier.ctag("templateParam"),
   template_arg_expression.collect(expressionCollect, "templateParam")
 );

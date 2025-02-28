@@ -345,7 +345,7 @@ export const typeRefCollect = collectElem(
   },
 );
 
-// TODO: This creates useless unknown-expression elements
+// LATER This creates useless unknown-expression elements
 export const expressionCollect = collectElem(
   "expression",
   (cc: CollectContext, openElem: PartElem<UnknownExpressionElem>) => {

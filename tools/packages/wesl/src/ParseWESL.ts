@@ -51,9 +51,8 @@ export interface WeslParseContext {
   openElems: OpenElem[]; // elems that are collecting their contents
 }
 
+/** Parse a WESL file. Throws on error. */
 export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
-  // TODO allow returning undefined for failure, or throw?
-
   const stream = new WeslStream(srcModule.src);
 
   const appState = blankWeslParseState(srcModule);
