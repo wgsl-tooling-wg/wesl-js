@@ -1,3 +1,4 @@
 
 weslFiles = [ "shaders/**/*.wesl" ]
 weslRoot = "shaders"
+dependencies = ["random_wgsl"]

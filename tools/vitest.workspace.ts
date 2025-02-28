@@ -1,3 +1,4 @@
 export default [
-  'packages/*'
+  'packages/*',
+  'packages/wesl-plugin/test/*'
 ]

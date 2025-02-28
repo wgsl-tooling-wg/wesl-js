@@ -1,24 +1,29 @@
-// TODO add file or path name to src
+/** A source map file, and a path for debug purposes. */
+export interface SrcWithPath {
+  /** User friendly path */
+  path?: string;
+  text: string;
+}
 
 import { Span } from "./Span";
 
 export interface SrcMapEntry {
-  src: string;
+  src: SrcWithPath;
   srcSpan: Span;
   destSpan: Span;
 }
 
 export interface SrcPosition {
-  src: string;
+  src: SrcWithPath;
   position: number;
 }
 
 /** map text ranges in multiple src texts to a single dest text */
 export class SrcMap {
   entries: SrcMapEntry[];
-  dest: string;
+  dest: SrcWithPath;
 
-  constructor(dest: string, entries: SrcMapEntry[] = []) {
+  constructor(dest: SrcWithPath, entries: SrcMapEntry[] = []) {
     this.dest = dest;
     this.entries = entries;
   }
@@ -45,7 +50,8 @@ export class SrcMap {
     for (let i = 1; i < this.entries.length; i++) {
       const e = this.entries[i];
       if (
-        e.src === prev.src &&
+        e.src.path === prev.src.path &&
+        e.src.text === prev.src.text &&
         prev.destSpan[1] === e.destSpan[0] &&
         prev.srcSpan[1] === e.srcSpan[0]
       ) {
@@ -71,7 +77,9 @@ export class SrcMap {
   merge(other: SrcMap): SrcMap {
     if (other === this) return this;
 
-    const mappedEntries = other.entries.filter(e => e.src === this.dest);
+    const mappedEntries = other.entries.filter(
+      e => e.src.path === this.dest.path && e.src.text === this.dest.text,
+    );
     if (mappedEntries.length === 0) {
       console.log("other source map does not link to this one");
       // dlog({ this: this });
@@ -92,7 +100,9 @@ export class SrcMap {
       return newEntry;
     });
 
-    const otherSources = other.entries.filter(e => e.src !== this.dest);
+    const otherSources = other.entries.filter(
+      e => e.src.path !== this.dest.path || e.src.text !== this.dest.text,
+    );
 
     const newMap = new SrcMap(other.dest, [...otherSources, ...newEntries]);
     newMap.sort();

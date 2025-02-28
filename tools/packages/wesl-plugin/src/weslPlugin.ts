@@ -24,22 +24,26 @@ import type { WeslPluginOptions } from "./weslPluginOptions.js";
 
 /** loaded (or synthesized) info from .toml */
 export interface WeslToml {
-  /** glob search strings to find .wesl/.wgsl files. Relative to the toml directory! */
+  /** glob search strings to find .wesl/.wgsl files. Relative to the toml directory. */
   weslFiles: string[];
 
-  /** base directory for wesl files. Relative to the toml directory! */
+  /** base directory for wesl files. Relative to the toml directory. */
   weslRoot: string;
+
+  /** names of directly referenced wesl shader packages (e.g. npm package names) */
+  dependencies?: string[];
 }
 
 export interface WeslTomlInfo {
   /** The path to the toml file, relative to the cwd */
   tomlFile: string;
-  /** The path to the directory that contains the toml. Relative to the cwd. Paths inside the toml are relative to this. */
+
+  /** The path to the directory that contains the toml.
+   * Relative to the cwd. Paths inside the toml are relative to this. */
   tomlDir: string;
 
-  /**
-   * The wesl root, relative to the cwd. This lets us correctly do `path.resolve(resolvedWeslRoot, someShaderFile)`
-   */
+  /** The wesl root, relative to the cwd.
+   * This lets us correctly do `path.resolve(resolvedWeslRoot, someShaderFile)` */
   resolvedWeslRoot: string;
 
   /** The underlying toml file */
@@ -242,9 +246,6 @@ async function getRegistry(
     path.resolve(resolvedWeslRoot, p),
   );
 
-  // trigger rebuild on shader file change
-  fullPaths.forEach(f => unpluginCtx.addWatchFile(f));
-
   // trigger clearing cache on shader file change
   if (context.meta.watchMode) {
     fullPaths.forEach(f => {
@@ -292,7 +293,10 @@ async function loadWesl(
     glob(g, { cwd: tomlDir, absolute: true }),
   );
   const files = (await Promise.all(futureFiles)).flat();
-  // dlog({ files, weslRoot, tomlDir, globs });
+
+  // trigger rebuild on shader file change
+  files.forEach(f => unpluginCtx.addWatchFile(f));
+
   return await loadFiles(files, resolvedWeslRoot);
 }
 

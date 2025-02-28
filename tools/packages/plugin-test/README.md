@@ -3,22 +3,22 @@
 Get live updating on most development changes by doing the following in separate shells:
 
 Run vite via nodemon, watching for local changes and also for
-changes to the `linker/dist` and `plugin/dist` directories:
+changes to the `wesl/dist` and `wesl-plugin/dist` directories:
 
 ```sh
 pnpm dev
 ```
 
-Build `linker/dist` on watch mode:
+Build `wesl/dist` on watch mode:
 
 ```sh
-cd ../linker
+cd ../wesl
 pnpm vite build --watch
 ```
 
-Build `plugin/dist/` on watch mode.
+Build `wesl-plugin/dist/` on watch mode.
 
 ```sh
-cd ../plugin
+cd ../wesl-plugin
 pnpm dev
 ```

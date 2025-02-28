@@ -5,7 +5,7 @@ test("compact", () => {
   const src = "a b";
   const dest = "|" + src + " d";
 
-  const srcMap = new SrcMap(dest);
+  const srcMap = new SrcMap({ text: dest });
   srcMap.addEntries([
     { src, srcSpan: [0, 2], destSpan: [1, 3] },
     { src, srcSpan: [2, 3], destSpan: [3, 4] },

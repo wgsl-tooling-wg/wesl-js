@@ -1,7 +1,7 @@
 import { ParserContext } from "./Parser.js";
 import { parserLog, tracePos, tracing } from "./ParserTracing.js";
 import { isSpan, Span } from "./Span.js";
-import { SrcMap, SrcPosition } from "./SrcMap.js";
+import { SrcMap, SrcPosition, SrcWithPath } from "./SrcMap.js";
 import { log } from "./WrappedLog.js";
 
 /** log an message along with the source line and a caret indicating the error position in the line
@@ -49,12 +49,12 @@ function logInternal(
   }
   const { src, positions } = mapSrcPositions(srcOrSrcMap, destPos);
 
-  logInternalSrc(log, src, positions, ...msgs);
+  logInternalSrc(log, src.text, positions, ...msgs);
 }
 
 interface SrcPositions {
   positions: number | Span;
-  src: string;
+  src: SrcWithPath;
 }
 
 function mapSrcPositions(srcMap: SrcMap, destPos: number | Span): SrcPositions {
@@ -65,7 +65,8 @@ function mapSrcPositions(srcMap: SrcMap, destPos: number | Span): SrcPositions {
     srcPos = [srcMap.destToSrc(destPos), null];
   }
   const { src } = srcPos[0];
-  if (srcPos[1]?.src === src) {
+
+  if (srcPos[1]?.src?.path === src.path && srcPos[1]?.src?.text === src.text) {
     return { src, positions: [srcPos[0].position, srcPos[1].position] };
   } else {
     return { src, positions: srcPos[0].position };

@@ -1,5 +1,5 @@
 import { Span } from "./Span.js";
-import { SrcMap, SrcMapEntry } from "./SrcMap.js";
+import { SrcMap, SrcMapEntry, SrcWithPath } from "./SrcMap.js";
 
 // TODO untested
 
@@ -14,7 +14,7 @@ export class SrcMapBuilder {
   #destLength = 0;
   #entries: SrcMapEntry[] = [];
 
-  constructor(public source: string) {}
+  constructor(public source: SrcWithPath) {}
 
   /** append a string fragment to the destination string */
   // TODO allow for src file name not just string (e.g. SrcModule)
@@ -40,7 +40,7 @@ export class SrcMapBuilder {
 
     this.#fragments.push(fragment);
     this.#entries.push({
-      src: syntheticSource,
+      src: { text: syntheticSource },
       srcSpan,
       destSpan: [destStart, destEnd],
     });
@@ -55,14 +55,14 @@ export class SrcMapBuilder {
 
   /** copy a string fragment from the src to the destination string */
   addCopy(srcSpan: Span): void {
-    const fragment = this.source.slice(srcSpan[0], srcSpan[1]);
+    const fragment = this.source.text.slice(srcSpan[0], srcSpan[1]);
     this.add(fragment, srcSpan);
   }
 
   /** return a SrcMap */
   static build(builders: SrcMapBuilder[]): SrcMap {
     const map = new SrcMap(
-      builders.map(b => b.#fragments.join("")).join(""),
+      { text: builders.map(b => b.#fragments.join("")).join("") },
       builders.flatMap(b => b.#entries),
     );
     map.compact();

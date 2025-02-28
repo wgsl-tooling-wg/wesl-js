@@ -15,11 +15,11 @@
   "dependencies": {
     "mini-parse": "workspace:*",
     "thimbleberry": "^0.2.9",
-    "webgpu": "^0.2.6",
+    "webgpu": "^0.2.11",
     "wesl-plugin": "workspace:*"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
   },
-  "version": "0.6.0-pre5"
+  "version": "0.6.0-pre6"
 }
