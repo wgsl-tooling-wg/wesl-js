@@ -132,25 +132,24 @@ function saveIdent(
   const { ident } = identElem;
   ident.id = identId++;
   const weslContext: WeslParseContext = cc.app.context;
-  weslContext.scope.idents.push(ident);
+  weslContext.scope.contents.push(ident);
 }
 
-/** start a new child Scope */
+/** start a new child lexical Scope */
 function startScope(cc: CollectContext) {
   const { scope } = cc.app.context as WeslParseContext;
   const newScope = emptyScope(scope);
-  scope.children.push(newScope);
+  scope.contents.push(newScope);
   cc.app.context.scope = newScope;
-  // srcLog(cc.src, cc.start, "startScope", newScope.id);
 }
 
+/** start a new child partial Scope */
 function startPartialScope(cc: CollectContext) {
   const { scope } = cc.app.context as WeslParseContext;
   const newScope = emptyScope(scope, "partial");
-  scope.children.push(newScope);
+  scope.contents.push(newScope);
   cc.app.context.scope = newScope;
-  // srcLog(cc.src, cc.start, "startPartialScope", newScope.id);
-}
+} // TODO DRY with startScope
 
 /* close current Scope and set current scope to parent */
 function completeScope(cc: CollectContext): Scope {
@@ -162,8 +161,7 @@ function completeScope(cc: CollectContext): Scope {
   if (parent) {
     weslContext.scope = parent;
   } else if (tracing) {
-    const { idents } = completedScope;
-    console.log("ERR: completeScope, no parent scope", { idents });
+    console.log("ERR: completeScope, no parent scope", completedScope.contents);
   }
   completedScope.ifAttributes = ifAttributes;
   return completedScope;

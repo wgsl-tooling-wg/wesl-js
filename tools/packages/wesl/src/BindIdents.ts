@@ -7,9 +7,11 @@ import { ManglerFn, minimalMangle } from "./Mangler.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, parseSrcModule, WeslAST } from "./ParseWESL.ts";
 import {
+  childIdent,
+  childScope,
   Conditions,
   DeclIdent,
-  exportDecl,
+  publicDecl,
   RefIdent,
   Scope,
   scopeDecls,
@@ -84,7 +86,8 @@ export function bindIdents(params: BindIdentsParams): BindResults {
 
   const globalNames = new Set<string>();
   const knownDecls = new Set<DeclIdent>();
-  rootScope.idents.forEach(ident => {
+  const rootIdents = rootScope.contents.filter(childIdent);
+  rootIdents.forEach(ident => {
     if (ident.kind === "decl") {
       ident.mangledName = ident.originalName;
       globalNames.add(ident.originalName);
@@ -101,7 +104,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     virtuals,
     mangler,
   };
-  const rootDecls = rootScope.idents.filter(i => i.kind === "decl");
+  const rootDecls = rootIdents.filter(i => i.kind === "decl");
 
   // initialize liveDecls with all module level declarations
   // (note that in wgsl module level declarations may appear in any order, incl after their references.)
@@ -174,11 +177,13 @@ function bindIdentsRecursive(
   const isRoot = !!parentOrRoot.root;
 
   // trace all identifiers in this scope
-  scope.idents.forEach(ident => {
-    const { kind: identKind } = ident;
-    if (identKind === "decl") {
+  scope.contents.forEach(child => {
+    const { kind } = child;
+    if (kind === "decl") {
+      const ident = child;
       !isRoot && liveDecls.decls.set(ident.originalName, ident);
-    } else {
+    } else if (kind === "ref") {
+      const ident = child;
       if (!ident.refersTo && !ident.std) {
         const foundDecl =
           findDeclInModule(ident, liveDecls) ??
@@ -198,7 +203,7 @@ function bindIdentsRecursive(
   });
 
   // follow references from child scopes
-  const newFromChildren = scope.children.flatMap(child => {
+  const newFromChildren = scope.contents.filter(childScope).flatMap(child => {
     return bindIdentsRecursive(child, bindContext, { parent: liveDecls });
   });
 
@@ -379,7 +384,7 @@ function findExport(
     return undefined;
   }
 
-  const decl = exportDecl(module.rootScope, last(modulePathParts)!);
+  const decl = publicDecl(module.rootScope, last(modulePathParts)!);
   if (decl) {
     return { decl };
   }

@@ -39,7 +39,7 @@ export interface RefIdent extends IdentBase {
 export interface DeclIdent extends IdentBase {
   kind: "decl";
   mangledName?: string; // name in the output code
-  declElem?: DeclarationElem; // link to AST so that we can traverse scopes and know what elems to emit // TODO make separate GlobalDecl kind with this required
+  declElem?: DeclarationElem; // link to AST so that we can traverse scopes and know what elems to emit // LATER make separate GlobalDecl kind with this required
   scope: Scope; // scope for the references within this declaration
   srcModule: SrcModule; // To figure out which module this declaration is from.
 }
@@ -74,16 +74,11 @@ interface ScopeBase {
   /** id for debugging */
   id: number;
 
-  /** idents found in lexical order in this scope */
-  idents: Ident[];
-
   /** null for root scope in a module */
   parent: Scope | null;
 
-  // TODO child scopes should be in lexical order intermixed with idents
-  // (declarations that are lexicaly after a child scope are not visible from that child scope)
-  /** null for root scope in a module */
-  children: Scope[];
+  /* Child scopes and idents in lexical order  */
+  contents: (Ident | Scope)[];
 
   /** @if conditions for conditionally translating this scope */
   ifAttributes?: IfAttribute[];
@@ -99,7 +94,7 @@ export function scopeDecls(scope: Scope): Map<string, DeclIdent> {
     return scope.scopeDecls;
   }
   const declMap = new Map<string, DeclIdent>();
-  for (const ident of scope.idents) {
+  for (const ident of scope.contents) {
     if (ident.kind === "decl") {
       declMap.set(ident.originalName, ident);
     }
@@ -122,7 +117,7 @@ export function emptyScope(
 ): Scope {
   const id = scopeId++;
   const ifAttributes: IfAttribute[] = [];
-  return { id, kind, idents: [], parent, children: [], ifAttributes };
+  return { id, kind, contents: [], parent, ifAttributes };
 }
 
 /** For debugging,
@@ -131,18 +126,32 @@ export function containsScope(rootScope: Scope, scope: Scope): boolean {
   if (scope === rootScope) {
     return true;
   }
-  for (const child of rootScope.children) {
-    if (containsScope(child, scope)) {
+  for (const child of rootScope.contents) {
+    if (childScope(child) && containsScope(child, scope)) {
       return true;
     }
   }
   return false;
 }
 
-export function exportDecl(scope: Scope, name: string): DeclIdent | undefined {
-  for (const ident of scope.idents) {
-    if (ident.originalName === name && ident.kind === "decl") {
-      return ident;
+/** @returns true if the provided element of a Scope
+ *    is itself a Scope (and not an Ident) */
+export function childScope(child: Scope | Ident): child is Scope {
+  const { kind } = child;
+  return kind === "partial" || kind === "scope";
+}
+
+/** @returns true if the provided element of a Scope
+ *    is an Ident (and not a child Scope) */
+export function childIdent(child: Scope | Ident): child is Ident {
+  return !childScope(child);
+}
+
+/** find a public declaration with the given original name */
+export function publicDecl(scope: Scope, name: string): DeclIdent | undefined {
+  for (const elem of scope.contents) {
+    if (elem.kind === "decl" && elem.originalName === name) {
+      return elem;
     }
   }
 }
