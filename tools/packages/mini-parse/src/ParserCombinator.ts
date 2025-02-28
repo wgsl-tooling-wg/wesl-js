@@ -563,7 +563,7 @@ export function eof(): Parser<ParserStream, true> {
   });
 }
 
-/** if parsing fails, report an error when parsing is complete */
+/** if parsing fails, log an error and abort parsing */
 export function req<A extends CombinatorArg>(
   arg: A,
   msg?: string,
@@ -572,10 +572,9 @@ export function req<A extends CombinatorArg>(
   const reqParser = parser("req", function _req(ctx: ParserContext) {
     const result = p._run(ctx);
     if (result === null) {
-      const deepName = ctx._debugNames.join(" > "); // LATER DRY
-      ctx._errors.push(() =>
-        ctxLog(ctx, msg ?? `expected ${p.debugName} ${deepName}`),
-      );
+      const deepName = ctx._debugNames.join(" > "); // TODO DRY this
+      ctxLog(ctx, msg ?? `expected ${p.debugName} ${deepName}`);
+      throw new ParseError();
     }
     return result;
   });
