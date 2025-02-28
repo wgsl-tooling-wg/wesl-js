@@ -113,7 +113,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   } else if (kind === "module") {
     // Ignore this kind of elem
   } else if (kind === "param") {
-    // TODO: This branch shouldn't exist
+    // LATER This branch shouldn't exist
   } else if (kind === "stuff") {
     // Ignore
   } else if (kind === "directive") {
@@ -179,7 +179,7 @@ function addFnFields(elem: FnElem, str: LineWrapper) {
   const paramStrs = params
     .map(
       (
-        p, // TODO DRY
+        p, // LATER DRY
       ) => {
         const { name } = p;
         const { originalName } = name.decl.ident;
@@ -230,7 +230,7 @@ function addDirective(elem: DirectiveElem, str: LineWrapper) {
 }
 
 function unknownExpressionToString(elem: UnknownExpressionElem): string {
-  // TODO: Temp hack while I clean up the expression parsing
+  // LATER Temp hack while I clean up the expression parsing
   if ("contents" in elem) {
     // @ts-ignore
     const contents = elem.contents

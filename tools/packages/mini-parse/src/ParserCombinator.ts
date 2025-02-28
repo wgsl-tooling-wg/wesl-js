@@ -508,7 +508,7 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
         ctx.stream.reset(before);
         return { value: values };
       }
-      // TODO: that's not a filter!
+      // LATER that's not a filter!
       if (!filterFn(result)) {
         return { value: values };
       }
