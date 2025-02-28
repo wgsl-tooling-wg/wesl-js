@@ -17,13 +17,13 @@ import {
   walkGlobalDeclaration,
   walkDirective,
   walkStatement,
-} from "../AstVisitor";
-import { PT } from "../parse/BaseGrammar";
-import { ExpressionElem } from "../parse/ExpressionElem";
-import { ImportElem } from "../parse/ImportElems";
-import { assertUnreachable } from "../../../mini-parse/src/Assertions";
-import { Conditions, evaluateConditions } from "../Conditions";
-import { DirectiveElem } from "../parse/DirectiveElem";
+} from "../AstVisitor.ts";
+import { PT } from "../parse/BaseGrammar.ts";
+import { ExpressionElem } from "../parse/ExpressionElem.ts";
+import { ImportElem } from "../parse/ImportElems.ts";
+import { Conditions, evaluateConditions } from "../Conditions.ts";
+import { DirectiveElem } from "../parse/DirectiveElem.ts";
+import { assertUnreachable } from "../Assertions.ts";
 
 /** After we're done with the symbols table, we have idents that point at the symbols table. */
 export interface ST extends Transform {
@@ -33,9 +33,12 @@ export interface ST extends Transform {
 /** An index into the symbol table */
 export type SymbolReference = number;
 
+/** An imported symbol. This will be path like `super::foo::bar` */
+export type SymbolImport = number;
+
 export type SymbolsTable = {
-  /** The name is either a string, or refers to a different symbol */
-  name: string | SymbolReference;
+  /** The name is either a string, or refers to a different symbol, or refers to an import */
+  name: string | SymbolReference | string[];
 }[];
 
 /** decls currently visible in this scope */
@@ -221,6 +224,7 @@ class BindSymbolsVisitor extends AstVisitor<PT> {
 
   expression(expression: ExpressionElem<PT>): void {
     if (expression.kind === "templated-ident") {
+      // TODO: Resolve
       expression.template?.forEach(v => this.expression(v));
     }
   }
