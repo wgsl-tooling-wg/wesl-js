@@ -1,27 +1,30 @@
 import { srcLog } from "mini-parse";
 import {
   AttributeElem,
-  DeclIdentElem,
   GlobalDeclarationElem,
   LhsExpression,
   ModuleElem,
-  RefIdentElem,
   Statement,
   Transform,
-} from "./AbstractElems.ts";
+} from "./parse/WeslElems.ts";
 import { ExpressionElem } from "./parse/ExpressionElem.ts";
 import { DirectiveElem } from "./parse/DirectiveElem.ts";
 import { ImportElem } from "./parse/ImportElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
 
 export abstract class AstVisitor<T extends Transform> {
-  import(importElem: ImportElem) {
+  module(module: ModuleElem<T>) {
+    walkModule(module, this);
+  }
+  import(importElem: ImportElem<T>) {
     walkImport(importElem, this);
   }
-  directive(directive: DirectiveElem) {
+  directive(directive: DirectiveElem<T>) {
     walkDirective(directive, this);
   }
-  attribute(_attribute: AttributeElem) {}
+  attribute(attribute: AttributeElem<T>) {
+    walkAttribute(attribute, this);
+  }
   /** A global declaration and its attributes */
   globalDeclaration(declaration: GlobalDeclarationElem<T>) {
     walkGlobalDeclaration(declaration, this);
@@ -46,7 +49,7 @@ export abstract class AstVisitor<T extends Transform> {
   }
 }
 
-export function walkAst<T extends Transform>(
+export function walkModule<T extends Transform>(
   module: ModuleElem<T>,
   visitor: AstVisitor<T>,
 ) {
@@ -62,31 +65,41 @@ export function walkAst<T extends Transform>(
 }
 
 export function walkImport<T extends Transform>(
-  importElem: ImportElem,
+  importElem: ImportElem<T>,
   visitor: AstVisitor<T>,
 ) {
-  walkAttributes(importElem.attributes, visitor);
+  visitAttributes(importElem.attributes, visitor);
 }
 
 export function walkDirective<T extends Transform>(
-  directive: DirectiveElem,
+  directive: DirectiveElem<T>,
   visitor: AstVisitor<T>,
 ) {
-  walkAttributes(directive.attributes, visitor);
+  visitAttributes(directive.attributes, visitor);
 }
 
-export function walkAttributes<T extends Transform>(
-  attributes: AttributeElem[] | undefined,
+/** Helper function so I don't have to write this out every time */
+function visitAttributes<T extends Transform>(
+  attributes: AttributeElem<T>[] | undefined,
   visitor: AstVisitor<T>,
 ) {
   attributes?.forEach(attribute => visitor.attribute(attribute));
+}
+
+function walkAttribute<T extends Transform>(
+  attribute: AttributeElem<T>,
+  visitor: AstVisitor<T>,
+) {
+  if (attribute.attribute.kind === "attribute") {
+    attribute.attribute.params.forEach(v => visitor.expression(v));
+  }
 }
 
 export function walkGlobalDeclaration<T extends Transform>(
   declaration: GlobalDeclarationElem<T>,
   visitor: AstVisitor<T>,
 ) {
-  walkAttributes(declaration.attributes, visitor);
+  visitAttributes(declaration.attributes, visitor);
   visitor.globalDeclarationInner(declaration);
 }
 
@@ -111,10 +124,10 @@ export function walkGlobalDeclarationInner<T extends Transform>(
     }
   } else if (kind === "function") {
     declaration.params.forEach(p => {
-      walkAttributes(p.attributes, visitor);
+      visitAttributes(p.attributes, visitor);
       visitor.expression(p.type);
     });
-    walkAttributes(declaration.returnAttributes, visitor);
+    visitAttributes(declaration.returnAttributes, visitor);
     if (declaration.returnType) {
       visitor.expression(declaration.returnType);
     }
@@ -147,7 +160,7 @@ export function walkExpression<T extends Transform>(
     visitor.expression(expression.access);
   } else if (kind === "component-member-expression") {
     visitor.expression(expression.base);
-  } else if (kind === "literal" || kind === "name") {
+  } else if (kind === "literal") {
     // Nothing to do
   } else if (kind === "parenthesized-expression") {
     visitor.expression(expression.expression);
@@ -185,7 +198,7 @@ export function walkStatement<T extends Transform>(
   statement: Statement<T>,
   visitor: AstVisitor<T>,
 ) {
-  walkAttributes(statement.attributes, visitor);
+  visitAttributes(statement.attributes, visitor);
   visitor.statementInner(statement);
 }
 
@@ -252,11 +265,11 @@ export function walkStatementInner<T extends Transform>(
   } else if (kind === "loop-statement") {
     visitor.statement(statement.body);
     if (statement.continuing !== undefined) {
-      walkAttributes(statement.continuing.attributes, visitor);
+      visitAttributes(statement.continuing.attributes, visitor);
       visitor.statement(statement.continuing.body);
       const breakIf = statement.continuing.breakIf;
       if (breakIf !== undefined) {
-        walkAttributes(breakIf.attributes, visitor);
+        visitAttributes(breakIf.attributes, visitor);
         visitor.expression(breakIf.expression);
       }
     }
@@ -266,9 +279,9 @@ export function walkStatementInner<T extends Transform>(
     }
   } else if (kind === "switch-statement") {
     visitor.expression(statement.selector);
-    walkAttributes(statement.bodyAttributes, visitor);
+    visitAttributes(statement.bodyAttributes, visitor);
     for (const clause of statement.clauses) {
-      walkAttributes(clause.attributes, visitor);
+      visitAttributes(clause.attributes, visitor);
       for (const switchCase of clause.cases) {
         if (switchCase.expression === "default") {
           // Nothing to do
@@ -284,11 +297,4 @@ export function walkStatementInner<T extends Transform>(
   } else {
     assertUnreachable(kind);
   }
-}
-
-export function identElemLog(
-  identElem: DeclIdentElem | RefIdentElem,
-  ...messages: any[]
-): void {
-  srcLog(identElem.srcModule.src, identElem.span, ...messages);
 }

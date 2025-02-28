@@ -9,7 +9,7 @@ import {
   NameElem,
   RefIdentElem,
   SyntheticElem,
-} from "./AbstractElems.ts";
+} from "./parse/WeslElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, RefIdent } from "./Scope.ts";

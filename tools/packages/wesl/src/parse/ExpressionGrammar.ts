@@ -10,7 +10,6 @@ import {
   seq,
   span,
   Span,
-  Stream,
   token,
   tokenKind,
   tokenOf,
@@ -19,13 +18,13 @@ import {
   withSepPlus,
   yes,
 } from "mini-parse";
-import { qualified_ident, name, WeslParser, PT } from "./BaseGrammar";
+import { full_ident, name, WeslParser, PT } from "./BaseGrammar.ts";
 import {
   templateClose,
   templateOpen,
   weslExtension,
   WeslToken,
-} from "./WeslStream";
+} from "./WeslStream.ts";
 import {
   BinaryExpression,
   BinaryOperator,
@@ -36,16 +35,16 @@ import {
   TemplatedIdentElem,
   UnaryExpression,
   UnaryOperator,
-} from "./ExpressionElem";
+} from "./ExpressionElem.ts";
 import {
-  IdentElem,
+  FullIdent,
   LhsExpression,
   LhsIdentElem,
   LhsParenthesizedExpression,
   LhsUnaryExpression,
   LhsUnaryOperator,
   NameElem,
-} from "../AbstractElems";
+} from "./WeslElems.ts";
 
 const literal = or(
   tokenOf("keyword", ["true", "false"]),
@@ -187,7 +186,7 @@ export const opt_template_list: WeslParser<ExpressionElem<PT>[] | null> = opt(
 );
 
 export const templated_ident: WeslParser<TemplatedIdentElem<PT>> = span(
-  seq(qualified_ident, opt_template_list),
+  seq(full_ident, opt_template_list),
 ).map(makeTemplatedIdent);
 
 export const argument_expression_list = delimited(
@@ -198,7 +197,7 @@ export const argument_expression_list = delimited(
 
 //--------- Specialized parser for @if(expr) -----------//
 const attribute_if_primary_expression: WeslParser<
-  Literal | ParenthesizedExpression<PT> | NameElem
+  Literal | ParenthesizedExpression<PT> | TemplatedIdentElem<PT>
 > = or(
   tokenOf("keyword", ["true", "false"]).map(makeLiteral),
   delimited(
@@ -206,7 +205,14 @@ const attribute_if_primary_expression: WeslParser<
     fn(() => attribute_if_expression),
     token("symbol", ")"),
   ).map(makeParenthesizedExpression),
-  name,
+  full_ident.map(
+    (v): TemplatedIdentElem<PT> => ({
+      kind: "templated-ident",
+      symbolRef: null,
+      ident: v,
+      span: v.span,
+    }),
+  ),
 );
 
 const attribute_if_unary_expression: WeslParser<ExpressionElem<PT>> = or(
@@ -234,7 +240,7 @@ export const attribute_if_expression: WeslParser<ExpressionElem<PT>> =
   );
 
 export const lhs_expression: WeslParser<LhsExpression<PT>> = or(
-  seq(qualified_ident.map(makeLhsIdentElem), opt(component_or_swizzle)).map(
+  seq(full_ident.map(makeLhsIdentElem), opt(component_or_swizzle)).map(
     tryMakeLhsComponentOrSwizzle,
   ),
   seq(
@@ -315,27 +321,25 @@ function tryMakeLhsComponentOrSwizzle([expression, componentOrSwizzle]: [
 }
 
 function makeTemplatedIdent({
-  value: [qualified_ident, template],
+  value: [full_ident, template],
   span,
 }: {
-  value: [IdentElem<PT>[], ExpressionElem<PT>[] | null];
+  value: [FullIdent, ExpressionElem<PT>[] | null];
   span: Span;
 }): TemplatedIdentElem<PT> {
   return {
     kind: "templated-ident",
     span,
-    path: qualified_ident.slice(0, -1),
-    ident: qualified_ident[qualified_ident.length - 1],
+    symbolRef: null,
+    ident: full_ident,
     template: template ?? undefined,
   };
 }
-function makeLhsIdentElem(qualified_ident: IdentElem<PT>[]): LhsIdentElem<PT> {
-  const name = qualified_ident[qualified_ident.length - 1];
+function makeLhsIdentElem(full_ident: FullIdent): LhsIdentElem<PT> {
   return {
     kind: "lhs-ident",
-    name,
-    path: qualified_ident.slice(0, -1),
-    span: [qualified_ident[0].span[0], name.span[1]],
+    symbolRef: null,
+    name: full_ident,
   };
 }
 

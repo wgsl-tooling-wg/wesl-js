@@ -7,7 +7,7 @@ import {
   TypedToken,
   withStreamAction,
 } from "mini-parse";
-import { keywords, reservedWords } from "./Keywords";
+import { keywords, reservedWords } from "./Keywords.ts";
 export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
 export type WeslToken<Kind extends WeslTokenKind = WeslTokenKind> =
   TypedToken<Kind>;

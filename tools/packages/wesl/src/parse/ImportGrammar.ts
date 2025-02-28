@@ -17,16 +17,16 @@ import {
   withSepPlus,
   yes,
 } from "mini-parse";
-
-import { assertUnreachable } from "../Assertions.js";
-import { WeslToken } from "./WeslStream.js";
+import { assertUnreachable } from "../Assertions.ts";
+import { WeslToken } from "./WeslStream.ts";
 import {
   ImportSegment,
   ImportCollection,
   ImportItem,
   ImportStatement,
   ImportElem,
-} from "./ImportElems.js";
+} from "./ImportElems.ts";
+import { PT } from "./BaseGrammar.ts";
 
 function makeStatement(
   segments: ImportSegment[],
@@ -99,7 +99,7 @@ const import_relative = or(
   repeatPlus(terminated("super", "::").map(makeSegment)),
 );
 
-export const import_statement: Parser<Stream<WeslToken>, ImportElem> = span(
+export const import_statement: Parser<Stream<WeslToken>, ImportElem<PT>> = span(
   delimited(
     "import",
     seqObj({
@@ -115,7 +115,7 @@ export const import_statement: Parser<Stream<WeslToken>, ImportElem> = span(
     req(";"),
   ),
 ).map(
-  (v): ImportElem => ({
+  (v): ImportElem<PT> => ({
     kind: "import",
     attributes: [], // TODO: Parse and fill in
     imports: v.value,

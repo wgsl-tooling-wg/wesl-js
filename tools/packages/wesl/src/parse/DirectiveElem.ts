@@ -1,9 +1,9 @@
 import { Span } from "mini-parse";
-import { AttributeElem, NameElem } from "../AbstractElems";
+import { AttributeElem, NameElem, Transform } from "./WeslElems.ts";
 
-export interface DirectiveElem {
+export interface DirectiveElem<T extends Transform> {
   kind: "directive";
-  attributes: AttributeElem[];
+  attributes: AttributeElem<T>[];
   directive: DiagnosticDirective | EnableDirective | RequiresDirective;
   span: Span;
 }

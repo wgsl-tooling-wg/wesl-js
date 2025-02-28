@@ -1,5 +1,5 @@
 import { ParserInit } from "mini-parse";
-import { ModuleElem } from "./AbstractElems.ts";
+import { ModuleElem } from "./parse/WeslElems.ts";
 import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";

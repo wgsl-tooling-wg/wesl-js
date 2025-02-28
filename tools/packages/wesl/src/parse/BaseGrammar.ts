@@ -1,11 +1,34 @@
-import { Parser, Stream, token, tokenKind, withSepPlus } from "mini-parse";
-import { WeslToken } from "./WeslStream";
-import { IdentElem, NameElem, Transform } from "../AbstractElems";
+import {
+  or,
+  Parser,
+  repeatPlus,
+  seq,
+  Stream,
+  terminated,
+  token,
+  tokenKind,
+  withSep,
+} from "mini-parse";
+import { WeslToken } from "./WeslStream.ts";
+import { FullIdent, NameElem, Transform } from "./WeslElems.ts";
 
 export const name = tokenKind("word").map(makeName);
-export const ident = tokenKind("word").map(makeIdent);
-export const qualified_ident = withSepPlus("::", ident);
 export const symbol = (symbol: string) => token("symbol", symbol);
+
+const full_ident_continue = withSep(symbol("::"), tokenKind("word"), {
+  requireOne: true,
+  trailing: false,
+});
+export const full_ident: WeslParser<FullIdent> = or(
+  seq(terminated(token("keyword", "package"), "::"), full_ident_continue).map(
+    ([a, b]) => [a, ...b],
+  ),
+  seq(
+    repeatPlus(terminated(token("keyword", "super"), "::")),
+    full_ident_continue,
+  ).map(([a, b]) => [...a, ...b]),
+  full_ident_continue,
+).map(makeFullIdent);
 
 export type WeslParser<T> = Parser<Stream<WeslToken>, T>;
 
@@ -17,14 +40,15 @@ function makeName(token: WeslToken<"word">): NameElem {
   };
 }
 
-function makeIdent(token: WeslToken<"word">): IdentElem<PT> {
+function makeFullIdent(
+  tokens: (WeslToken<"keyword"> | WeslToken<"word">)[],
+): FullIdent {
   return {
-    kind: "ident",
-    name: token.text,
-    span: token.span,
+    segments: tokens.map(v => v.text),
+    span: [tokens[0].span[0], tokens[tokens.length - 1].span[1]],
   };
 }
 
 export interface PT extends Transform {
-  ident: string;
+  symbolRef: null;
 }

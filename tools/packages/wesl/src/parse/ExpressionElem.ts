@@ -1,10 +1,9 @@
 import type { Span } from "mini-parse";
-import type { NameElem, IdentElem, Transform } from "../AbstractElems";
+import type { NameElem, Transform, FullIdent } from "./WeslElems.ts";
 
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
 export type ExpressionElem<T extends Transform> =
   | Literal
-  | NameElem
   | TemplatedIdentElem<T>
   | ParenthesizedExpression<T>
   | ComponentExpression<T>
@@ -23,8 +22,8 @@ export interface Literal {
 /** an identifier with template arguments */
 export interface TemplatedIdentElem<T extends Transform> {
   kind: "templated-ident";
-  path?: IdentElem<T>[];
-  ident: IdentElem<T>;
+  symbolRef: T["symbolRef"];
+  ident: FullIdent;
   template?: ExpressionElem<T>[];
   span: Span;
 }

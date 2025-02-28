@@ -4,9 +4,9 @@ import {
   NameElem,
   StructMemberElem,
   TextElem,
-  TranslateTimeExpressionElem,
+  ConditionalExpressionElem,
   TypeRefElem,
-} from "./AbstractElems.ts";
+} from "./parse/WeslElems.ts";
 import { assertThat } from "./Assertions.ts";
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { identElemLog } from "./LinkerUtil.ts";

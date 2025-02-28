@@ -1,4 +1,4 @@
-import { FunctionParam, GlobalDeclarationElem } from "./AbstractElems.ts";
+import { FunctionParam, GlobalDeclarationElem } from "./parse/WeslElems.ts";
 import { WeslAST } from "./ParseWESL.ts";
 
 export interface SrcModule {

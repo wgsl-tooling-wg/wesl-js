@@ -9,7 +9,7 @@ import {
   StructMemberElem,
   SyntheticElem,
   TypeTemplateParameter,
-} from "./AbstractElems.ts";
+} from "./parse/WeslElems.ts";
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { findDecl } from "./LowerAndEmit.ts";
 import { minimallyMangledName } from "./Mangler.ts";

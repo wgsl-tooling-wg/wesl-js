@@ -1,4 +1,4 @@
-import { AttributeElem, TypeTemplateParameter } from "./AbstractElems.ts";
+import { AttributeElem, TypeTemplateParameter } from "./parse/WeslElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
 import {
   diagnosticControlToString,

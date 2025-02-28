@@ -1,0 +1,62 @@
+import { assertThat, assertUnreachable } from "../../mini-parse/src/Assertions";
+import { ExpressionElem } from "./parse/ExpressionElem";
+import { ConditionalT, IfAttribute } from "./parse/WeslElems";
+
+/** LATER Change this to a Map, so that `toString` isn't accidentally a condition */
+export type Conditions = Record<string, boolean>;
+
+export function evaluateConditions(
+  conditions: Conditions,
+  ifAttribute: IfAttribute,
+): boolean {
+  return evaluateExpression(conditions, ifAttribute.param.expression);
+}
+
+function evaluateExpression(
+  conditions: Conditions,
+  expression: ExpressionElem<ConditionalT>,
+): boolean {
+  if (expression.kind == "binary-expression") {
+    const operator = expression.operator.value;
+    assertThat(operator === "||" || operator === "&&");
+    const left = evaluateExpression(conditions, expression.left);
+    if (left && operator === "||") {
+      return true;
+    } else if (!left && operator === "||") {
+      return evaluateExpression(conditions, expression.right);
+    } else if (left && operator === "&&") {
+      return evaluateExpression(conditions, expression.right);
+    } else if (!left && operator === "&&") {
+      return false;
+    } else {
+      assertUnreachable(operator as never);
+    }
+  } else if (expression.kind == "call-expression") {
+    throw new Error("Function calls are not supported in an @if()");
+  } else if (expression.kind == "component-expression") {
+    throw new Error("Component access is not supported in an @if()");
+  } else if (expression.kind == "component-member-expression") {
+    throw new Error("Component access is not supported in an @if()");
+  } else if (expression.kind == "literal") {
+    assertThat(expression.value === "true" || expression.value === "false");
+    return expression.value === "true" ? true : false;
+  } else if (expression.kind == "parenthesized-expression") {
+    return evaluateExpression(conditions, expression.expression);
+  } else if (expression.kind == "templated-ident") {
+    assertThat(expression.path === undefined || expression.path.length === 0);
+    assertThat(
+      expression.template === undefined || expression.template.length === 0,
+    );
+    const condition = conditions[expression.ident.name];
+    assertThat(
+      condition !== undefined,
+      `Condition ${expression.ident.name} has not been defined`,
+    );
+    return condition;
+  } else if (expression.kind == "unary-expression") {
+    assertThat(expression.operator.value === "!");
+    return !evaluateExpression(conditions, expression.expression);
+  } else {
+    assertUnreachable(expression);
+  }
+}

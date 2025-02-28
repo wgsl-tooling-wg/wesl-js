@@ -10,7 +10,7 @@ import {
   ModuleElem,
   Statement,
   SwitchCaseSelector,
-} from "../AbstractElems.ts";
+} from "../parse/WeslElems.ts";
 import { assertUnreachable } from "../Assertions.ts";
 import {
   diagnosticControlToString,
