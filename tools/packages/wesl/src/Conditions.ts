@@ -1,6 +1,6 @@
 import { assertThat, assertUnreachable } from "../../mini-parse/src/Assertions";
 import { ExpressionElem } from "./parse/ExpressionElem";
-import { ConditionalT, IfAttribute } from "./parse/WeslElems";
+import { IfAttribute } from "./parse/WeslElems";
 
 /** LATER Change this to a Map, so that `toString` isn't accidentally a condition */
 export type Conditions = Record<string, boolean>;
@@ -14,7 +14,7 @@ export function evaluateConditions(
 
 function evaluateExpression(
   conditions: Conditions,
-  expression: ExpressionElem<ConditionalT>,
+  expression: ExpressionElem,
 ): boolean {
   if (expression.kind == "binary-expression") {
     const operator = expression.operator.value;
@@ -43,15 +43,15 @@ function evaluateExpression(
   } else if (expression.kind == "parenthesized-expression") {
     return evaluateExpression(conditions, expression.expression);
   } else if (expression.kind == "templated-ident") {
-    assertThat(expression.path === undefined || expression.path.length === 0);
+    assertThat(expression.ident.segments.length === 1);
     assertThat(
       expression.template === undefined || expression.template.length === 0,
     );
-    const condition = conditions[expression.ident.name];
-    assertThat(
-      condition !== undefined,
-      `Condition ${expression.ident.name} has not been defined`,
-    );
+    const name = expression.ident.segments[0];
+    const condition = conditions[name];
+    if (condition === undefined) {
+      throw new Error(`Condition ${name} has not been defined`);
+    }
     return condition;
   } else if (expression.kind == "unary-expression") {
     assertThat(expression.operator.value === "!");

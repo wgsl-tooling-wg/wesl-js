@@ -81,7 +81,7 @@ const unary_expression: WeslParser<ExpressionElem> = or(
   ),
 );
 const bitwise_post_unary: WeslParser<PartialBinaryExpression[]> = or(
-  // TODO: I can skip template list discovery in these cases, because a&b<c cannot be a comparison. Must be a template
+  // LATER I can skip template list discovery in these cases, because a&b<c cannot be a comparison. Must be a template
   repeatPlus(seq(binaryOperator("&"), unary_expression)),
   repeatPlus(seq(binaryOperator("^"), unary_expression)),
   repeatPlus(seq(binaryOperator("|"), unary_expression)),
@@ -122,7 +122,7 @@ const relational_post_unary = (
         inTemplate ?
           binaryOperator(["<", "<=", "!=", "=="])
         : binaryOperator([">", ">=", "<", "<=", "!=", "=="]),
-        // TODO: I can skip template list discovery in this cases, because a>=b<c cannot be a comparison. Must be a template
+        // LATER I can skip template list discovery in this cases, because a>=b<c cannot be a comparison. Must be a template
         seq(unary_expression, shift_post_unary(inTemplate)).map(
           makeRepeatingBinaryExpression,
         ),

@@ -19,11 +19,7 @@ import {
   walkStatement,
 } from "../AstVisitor.ts";
 import { ExpressionElem, TemplatedIdentElem } from "../parse/ExpressionElem.ts";
-import {
-  ImportElem,
-  ImportSegment,
-  ImportStatement,
-} from "../parse/ImportElems.ts";
+import { ImportElem, ImportStatement } from "../parse/ImportElems.ts";
 import { Conditions, evaluateConditions } from "../Conditions.ts";
 import { DirectiveElem } from "../parse/DirectiveElem.ts";
 import { assertUnreachable } from "../Assertions.ts";
@@ -41,6 +37,17 @@ export type SymbolsTable = {
   name: string | SymbolReference | SymbolImport;
 }[];
 
+/** Binds the symbols and mutates the module to set the `symbolRef`s in {@link DeclIdent} and {@link TemplatedIdentElem} */
+export function bindSymbols(
+  module: ModuleElem,
+  conditions: Conditions,
+  packageNames: Set<String>,
+): SymbolsTable {
+  const visitor = new BindSymbolsVisitor(conditions, packageNames);
+  visitor.module(module);
+  return visitor.symbolsTable;
+}
+
 /** decls currently visible in this scope */
 interface LiveDecls {
   /** decls currently visible in this scope. Created lazily. */
@@ -49,6 +56,24 @@ interface LiveDecls {
   /** live decls in the parent scope. null for the modue root scope */
   parent: LiveDecls | null;
 }
+
+/** debug routine for logging LiveDecls */
+function liveDeclsToString(liveDecls: LiveDecls): string {
+  const { decls, parent } = liveDecls;
+  const declsStr =
+    decls == null ? "" : (
+      Array.from(decls.entries())
+        .map(([name, decl]) => `${name}:${decl}`)
+        .join(", ")
+    );
+  const parentStr = parent ? liveDeclsToString(parent) : "null";
+  return `decls: { ${declsStr} }, parent: ${parentStr}`;
+}
+
+/*
+LATER try not creating a map for small scopes. 
+Instead just track the current live index in the scope array.
+*/
 
 function findDecl(liveDecls: LiveDecls, ident: string): SymbolReference | null {
   if (liveDecls.decls === null) return null;
@@ -297,21 +322,6 @@ function fullIdentToString(ident: FullIdent) {
   return ident.segments.join("::");
 }
 
-export function bindSymbols(
-  module: ModuleElem,
-  conditions: Conditions,
-  packageNames: Set<String>,
-): {
-  symbols: SymbolsTable;
-  module: ModuleElem;
-} {
-  const visitor = new BindSymbolsVisitor(conditions, packageNames);
-  visitor.module(module);
-  return {
-    symbols: visitor.symbolsTable,
-    module: module as any as ModuleElem,
-  };
-}
 function walkFunctionParams(
   params: FunctionParam[],
   visitor: BindSymbolsVisitor,

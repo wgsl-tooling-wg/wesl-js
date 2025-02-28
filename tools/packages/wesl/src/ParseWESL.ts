@@ -1,9 +1,7 @@
 import { ParserInit } from "mini-parse";
 import { ModuleElem } from "./parse/WeslElems.ts";
-import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
-import { SrcModule } from "./Scope.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
@@ -22,10 +20,15 @@ export interface WeslAST {
   moduleElem: ModuleElem;
 }
 
-/** an extended version of the AST */
-export interface BindingAST extends WeslAST {
-  /* a flattened version of the import statements constructed on demand from import trees, and cached here */
-  _flatImports?: FlatImport[];
+export interface SrcModule {
+  /** module path "rand_pkg::sub::foo", or "package::main" */
+  modulePath: string;
+
+  /** file path to the module for user error reporting e.g "rand_pkg:sub/foo.wesl", or "./sub/foo.wesl" */
+  debugFilePath: string;
+
+  /** original src for module */
+  src: string;
 }
 
 /** Parse a WESL file. Throws on error. */
@@ -49,15 +52,4 @@ export function parseWESL(src: string): WeslAST {
   };
 
   return parseSrcModule(srcModule);
-}
-
-/** @return a flattened form of the import tree for convenience in binding idents. */
-export function flatImports(ast: BindingAST): FlatImport[] {
-  if (ast._flatImports) return ast._flatImports;
-
-  const flat = ast.moduleElem.imports.flatMap(t =>
-    flattenTreeImport(t.imports),
-  );
-  ast._flatImports = flat;
-  return flat;
 }

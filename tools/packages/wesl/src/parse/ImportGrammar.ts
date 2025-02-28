@@ -117,7 +117,7 @@ export const import_statement: WeslParser<ImportElem> = span(
 ).map(
   (v): ImportElem => ({
     kind: "import",
-    attributes: [], // TODO: Parse and fill in
+    attributes: [], // LATER Parse and fill in
     imports: v.value,
     span: v.span,
   }),

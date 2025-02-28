@@ -1,4 +1,3 @@
-import { DeclIdent, SrcModule } from "./Scope.ts";
 /**
  * A function for constructing a unique identifier name for a global declaration.
  * Global names must be unique in the linked wgsl.
@@ -10,10 +9,10 @@ import { DeclIdent, SrcModule } from "./Scope.ts";
  */
 export type ManglerFn = (
   /** global declaration that needs a name */
-  decl: DeclIdent,
+  decl: string,
 
   /** module that contains the declaration */
-  srcModule: SrcModule,
+  modulePath: string[],
 
   /** name at use site (possibly import as renamed from declaration) */
   proposedName: string,
@@ -27,12 +26,8 @@ export type ManglerFn = (
  * module path separated by underscores.
  * Corresponds to "Underscore-count mangling" from [NameMangling.md](https://github.com/wgsl-tooling-wg/wesl-spec/blob/main/NameMangling.md)
  */
-export function underscoreMangle(
-  decl: DeclIdent,
-  srcModule: SrcModule,
-): string {
-  const { modulePath } = srcModule;
-  return [...modulePath.split("::"), decl.originalName]
+export function underscoreMangle(decl: string, modulePath: string[]): string {
+  return [...modulePath, decl]
     .map(v => {
       const underscoreCount = (v.match(/_/g) ?? []).length;
       if (underscoreCount > 0) {
@@ -47,17 +42,11 @@ export function underscoreMangle(
 /**
  * Construct a globally unique name based on the declaration
  */
-export function lengthPrefixMangle(
-  decl: DeclIdent,
-  srcModule: SrcModule,
-): string {
+export function lengthPrefixMangle(decl: string, modulePath: string[]): string {
   function codepointCount(text: string): number {
     return [...text].length;
   }
-  const qualifiedIdent = [
-    ...srcModule.modulePath.split("::"),
-    decl.originalName,
-  ];
+  const qualifiedIdent = [...modulePath, decl];
   return "_" + qualifiedIdent.map(v => codepointCount(v) + v).join("");
 }
 
@@ -66,8 +55,8 @@ export function lengthPrefixMangle(
  * using the requested name plus a uniquing number suffix if necessary
  */
 export function minimalMangle(
-  _d: DeclIdent,
-  _s: SrcModule,
+  _decl: string,
+  _modulePath: string[],
   proposedName: string,
   globalNames: Set<string>,
 ): string {

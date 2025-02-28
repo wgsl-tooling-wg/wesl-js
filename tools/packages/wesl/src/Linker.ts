@@ -1,5 +1,5 @@
 import { SrcMap, SrcMapBuilder, tracing } from "mini-parse";
-import { AbstractElem, ModuleElem } from "./parse/WeslElems.ts";
+import { ModuleElem } from "./parse/WeslElems.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
 import { ManglerFn } from "./Mangler.ts";
 import {
@@ -10,15 +10,26 @@ import {
   selectModule,
 } from "./ParsedRegistry.ts";
 import { WeslAST } from "./ParseWESL.ts";
-import { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
 import { filterMap, mapValues } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
 import { LinkedWesl } from "./LinkedWesl.ts";
+import { Conditions } from "./Conditions.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 
 export interface WeslJsPlugin {
   transform?: LinkerTransform;
+}
+
+export interface SrcModule {
+  /** module path "rand_pkg::sub::foo", or "package::main" */
+  modulePath: string;
+
+  /** file path to the module for user error reporting e.g "rand_pkg:sub/foo.wesl", or "./sub/foo.wesl" */
+  debugFilePath: string;
+
+  /** original src for module */
+  src: string;
 }
 
 export interface TransformedAST
