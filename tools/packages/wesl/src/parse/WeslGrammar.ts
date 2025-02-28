@@ -146,7 +146,7 @@ const normal_attribute = tagScope(
 
       // Everything else is also a normal attribute, optional expression list
       seq(
-        req(word)                .ptag("name"),
+        (word)                  .ptag("name"),
         opt(() => attribute_argument_list),
       ),
     ),
