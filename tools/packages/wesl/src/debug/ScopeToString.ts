@@ -1,47 +1,51 @@
-import { Ident, Scope } from "../Scope.ts";
+import { childScope, Ident, Scope } from "../Scope.ts";
 import { attributeToString } from "./ASTtoString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 
 /** A debugging print of the scope tree with identifiers in nested brackets */
 export function scopeToString(scope: Scope, indent = 0): string {
-  const { children, kind, idents, ifAttributes = [] } = scope;
-  let childStrings: string[] = [];
-  if (children.length)
-    childStrings = children.map(c => scopeToString(c, indent + 2));
-
-  // list of identifiers, with decls prefixed with '%'
-  const identStrings = idents.map(({ kind, originalName }) => {
-    const prefix = kind === "decl" ? "%" : "";
-    return `${prefix}${originalName}`;
-  });
-
-  const attrStrings = ifAttributes.map(a => attributeToString(a)).join(" ");
+  const { contents, kind, ifAttributes = [] } = scope;
 
   const str = new LineWrapper(indent);
+  const attrStrings = ifAttributes.map(a => attributeToString(a)).join(" ");
   if (attrStrings) str.add(attrStrings + " ");
   if (kind === "partial") str.add("-");
   str.add("{ ");
 
-  const last = identStrings.length - 1;
-  identStrings.forEach((s, i) => {
-    const element = i < last ? s + ", " : s;
-    str.add(element);
+  const last = contents.length - 1;
+  let lastWasScope = false;
+  contents.forEach((elem, i) => {
+    if (childScope(elem)) {
+      const childScope: Scope = elem;
+      const childBlock = scopeToString(childScope, indent + 2);
+      !lastWasScope && str.nl();
+      str.addBlock(childBlock);
+      lastWasScope = true;
+    } else {
+      lastWasScope && str.add("  ");
+      lastWasScope = false;
+      const ident: Ident = elem;
+      str.add(identShortString(ident));
+      if (i < last) str.add(" ");
+    }
   });
-
-  if (childStrings.length) {
-    str.nl();
-    str.addBlock(childStrings.join("\n"));
-  }
 
   if (str.oneLine) {
     str.add(" }");
   } else {
-    if (!childStrings.length) str.nl();
     str.add("}");
   }
+
   str.add(` #${scope.id}`);
 
   return str.result;
+}
+
+/** name of an identifier, with decls prefixed with '%' */
+function identShortString(ident: Ident): string {
+  const { kind, originalName } = ident;
+  const prefix = kind === "decl" ? "%" : "";
+  return `${prefix}${originalName}`;
 }
 
 export function identToString(ident?: Ident): string {
