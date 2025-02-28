@@ -378,9 +378,7 @@ function findExport(
 
   if (!module) {
     // TODO show error with source location
-    console.log(
-      `ident ${modulePathParts.join("::")}, but module not found`,
-    );
+    console.log(`ident ${modulePathParts.join("::")}, but module not found`);
     return undefined;
   }
 

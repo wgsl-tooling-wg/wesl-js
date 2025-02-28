@@ -54,7 +54,7 @@ export async function linkWithLog(...rawWgsl: string[]): Promise<{
   return linkWithLogInternal(rawWgsl);
 }
 
-/** Link wesl for tests, and return the console log as well. 
+/** Link wesl for tests, and return the console log as well.
  * Quietly swallow any exceptions thrown */
 export async function linkWithLogQuietly(...rawWgsl: string[]): Promise<{
   log: string;
