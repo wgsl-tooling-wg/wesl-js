@@ -1,16 +1,16 @@
 import type { Span } from "mini-parse";
-import type { NameElem, Transform, FullIdent } from "./WeslElems.ts";
+import type { NameElem, FullIdent } from "./WeslElems.ts";
 
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
-export type ExpressionElem<T extends Transform> =
+export type ExpressionElem =
   | Literal
-  | TemplatedIdentElem<T>
-  | ParenthesizedExpression<T>
-  | ComponentExpression<T>
-  | ComponentMemberExpression<T>
-  | UnaryExpression<T>
-  | BinaryExpression<T>
-  | FunctionCallExpression<T>;
+  | TemplatedIdentElem
+  | ParenthesizedExpression
+  | ComponentExpression
+  | ComponentMemberExpression
+  | UnaryExpression
+  | BinaryExpression
+  | FunctionCallExpression;
 
 /** A literal value in WESL source. A boolean or a number. */
 export interface Literal {
@@ -20,49 +20,54 @@ export interface Literal {
 }
 
 /** an identifier with template arguments */
-export interface TemplatedIdentElem<T extends Transform> {
+export interface TemplatedIdentElem {
   kind: "templated-ident";
-  symbolRef: T["symbolRef"];
+  /**
+   * A symbol can either point at an entry in the symbol table, or
+   * - not be set yet (after parsing)
+   * - be a predeclared identifier
+   */
+  symbolRef: number | null;
   ident: FullIdent;
-  template?: ExpressionElem<T>[];
+  template?: ExpressionElem[];
   span: Span;
 }
 
 /** (expr) */
-export interface ParenthesizedExpression<T extends Transform> {
+export interface ParenthesizedExpression {
   kind: "parenthesized-expression";
-  expression: ExpressionElem<T>;
+  expression: ExpressionElem;
 }
 /** `foo[expr]` */
-export interface ComponentExpression<T extends Transform> {
+export interface ComponentExpression {
   kind: "component-expression";
-  base: ExpressionElem<T>;
-  access: ExpressionElem<T>;
+  base: ExpressionElem;
+  access: ExpressionElem;
 }
 /** `foo.member` */
-export interface ComponentMemberExpression<T extends Transform> {
+export interface ComponentMemberExpression {
   kind: "component-member-expression";
-  base: ExpressionElem<T>;
+  base: ExpressionElem;
   access: NameElem;
 }
 /** `+foo` */
-export interface UnaryExpression<T extends Transform> {
+export interface UnaryExpression {
   kind: "unary-expression";
   operator: UnaryOperator;
-  expression: ExpressionElem<T>;
+  expression: ExpressionElem;
 }
 /** `foo + bar` */
-export interface BinaryExpression<T extends Transform> {
+export interface BinaryExpression {
   kind: "binary-expression";
   operator: BinaryOperator;
-  left: ExpressionElem<T>;
-  right: ExpressionElem<T>;
+  left: ExpressionElem;
+  right: ExpressionElem;
 }
 /** `foo(arg, arg)` */
-export interface FunctionCallExpression<T extends Transform> {
+export interface FunctionCallExpression {
   kind: "call-expression";
-  function: TemplatedIdentElem<T>;
-  arguments: ExpressionElem<T>[];
+  function: TemplatedIdentElem;
+  arguments: ExpressionElem[];
 }
 export interface UnaryOperator {
   value: "!" | "&" | "*" | "-" | "~";

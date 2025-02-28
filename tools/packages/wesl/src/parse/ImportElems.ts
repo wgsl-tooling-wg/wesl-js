@@ -1,10 +1,10 @@
 import { Span } from "mini-parse";
-import { AttributeElem, Transform } from "./WeslElems.ts";
+import { AttributeElem } from "./WeslElems.ts";
 
 /** Holds an import statement, and has a span */
-export interface ImportElem<T extends Transform> {
+export interface ImportElem {
   kind: "import";
-  attributes: AttributeElem<T>[];
+  attributes: AttributeElem[];
   imports: ImportStatement;
   span: Span;
 }

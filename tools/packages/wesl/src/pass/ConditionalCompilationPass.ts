@@ -8,19 +8,20 @@ import type {
   IfClause,
   SwitchClause,
 } from "../parse/WeslElems";
-import { PT } from "../parse/BaseGrammar.ts";
 import { Conditions, evaluateConditions } from "../Conditions.ts";
 import { assertThat } from "../../../mini-parse/src/Assertions.ts";
 
 /**
+ * TODO: Purposefully unused, I want to see how bad *not* using this would be.
+ *
  * Mutates the AST to skip conditional compilation elements.
  * Done as a separate pass for now, since the alternative means more code duplication.
  * Can be merged when we merge passes.
  */
 export function applyConditionalCompilation(
-  module: ModuleElem<PT>,
+  module: ModuleElem,
   conditions: Conditions,
-): ModuleElem<PT> {
+): ModuleElem {
   // Filter with side effects
   module.directives = module.directives.filter(v =>
     condAttributedElement(conditions, v),
@@ -41,7 +42,7 @@ export function applyConditionalCompilation(
  * Filters out the conditional compilation attributes as well.
  * Mutates the element.
  */
-function condAttributedElement<T extends { attributes?: AttributeElem<PT>[] }>(
+function condAttributedElement<T extends { attributes?: AttributeElem[] }>(
   conditions: Conditions,
   attributedElem: T,
 ): boolean {
@@ -65,10 +66,7 @@ function condAttributedElement<T extends { attributes?: AttributeElem<PT>[] }>(
   }
 }
 
-function condFunction(
-  conditions: Conditions,
-  decl: FunctionDeclarationElem<PT>,
-) {
+function condFunction(conditions: Conditions, decl: FunctionDeclarationElem) {
   decl.params = decl.params.filter(v => condAttributedElement(conditions, v));
   decl.body.body = decl.body.body.filter(v =>
     condAttributedElement(conditions, v),
@@ -76,7 +74,7 @@ function condFunction(
   decl.body.body.forEach(v => condStatement(conditions, v));
 }
 
-function condStatement(conditions: Conditions, statement: Statement<PT>) {
+function condStatement(conditions: Conditions, statement: Statement) {
   if (statement.kind === "compound-statement") {
     condCompoundStatement(conditions, statement);
   } else if (statement.kind === "for-statement") {
@@ -109,14 +107,14 @@ function condStatement(conditions: Conditions, statement: Statement<PT>) {
 
 function condCompoundStatement(
   conditions: Conditions,
-  statement: CompoundStatement<PT>,
+  statement: CompoundStatement,
 ) {
   statement.body = statement.body.filter(v =>
     condAttributedElement(conditions, v),
   );
   statement.body.forEach(v => condStatement(conditions, v));
 }
-function condIfClause(conditions: Conditions, clause: IfClause<PT>) {
+function condIfClause(conditions: Conditions, clause: IfClause) {
   condStatement(conditions, clause.accept);
   if (clause.reject !== undefined) {
     if (clause.reject.kind === "compound-statement") {
@@ -127,9 +125,6 @@ function condIfClause(conditions: Conditions, clause: IfClause<PT>) {
   }
 }
 
-function condSwitchClause(
-  conditions: Conditions,
-  clause: SwitchClause<PT>,
-): void {
+function condSwitchClause(conditions: Conditions, clause: SwitchClause): void {
   condStatement(conditions, clause.body);
 }

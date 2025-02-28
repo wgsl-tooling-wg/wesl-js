@@ -10,7 +10,7 @@ import {
   withSep,
 } from "mini-parse";
 import { WeslToken } from "./WeslStream.ts";
-import { FullIdent, NameElem, Transform } from "./WeslElems.ts";
+import { FullIdent, NameElem } from "./WeslElems.ts";
 
 export const name = tokenKind("word").map(makeName);
 export const symbol = (symbol: string) => token("symbol", symbol);
@@ -47,8 +47,4 @@ function makeFullIdent(
     segments: tokens.map(v => v.text),
     span: [tokens[0].span[0], tokens[tokens.length - 1].span[1]],
   };
-}
-
-export interface PT extends Transform {
-  symbolRef: null;
 }

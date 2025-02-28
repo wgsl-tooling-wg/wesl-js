@@ -73,10 +73,9 @@ import {
   WhileStatement,
   ForInitStatement,
   ForUpdateStatement,
-  ConditionalT,
 } from "./WeslElems.ts";
 import { import_statement } from "./ImportGrammar.ts";
-import { name, WeslParser, symbol, PT } from "./BaseGrammar.ts";
+import { name, WeslParser, symbol } from "./BaseGrammar.ts";
 import {
   argument_expression_list,
   attribute_if_expression,
@@ -103,7 +102,7 @@ const diagnostic_control = delimited(
 );
 
 const decl_ident = tokenKind("word").map(
-  (v): DeclIdent<PT> => ({
+  (v): DeclIdent => ({
     symbolRef: null,
     name: v.text,
     span: v.span,
@@ -113,7 +112,7 @@ const decl_ident = tokenKind("word").map(
 /** list of words that aren't identifiers (e.g. for @interpolate) */
 const name_list = withSep(",", name, { requireOne: true });
 
-const attribute: WeslParser<AttributeElem<PT>> = preceded(
+const attribute: WeslParser<AttributeElem> = preceded(
   "@",
   or(
     // These attributes have no arguments
@@ -174,7 +173,7 @@ const lhs_discard: WeslParser<LhsDiscard> = symbol("_").map(v => ({
 }));
 
 const variable_updating_statement: WeslParser<
-  AssignmentStatement<PT> | PostfixStatement<PT>
+  AssignmentStatement | PostfixStatement
 > = or(
   seq(
     lhs_expression,
@@ -210,7 +209,7 @@ const struct_decl = preceded(
 ).mapSpanned(makeStruct);
 
 /** Also covers func_call_statement.post.ident */
-const fn_call: WeslParser<FunctionCallStatement<PT>> = seq(
+const fn_call: WeslParser<FunctionCallStatement> = seq(
   templated_ident,
   argument_expression_list,
 ).mapSpanned(makeFunctionCall);
@@ -219,7 +218,7 @@ const fn_call: WeslParser<FunctionCallStatement<PT>> = seq(
  * Covers variable_or_value_statement, variable_decl, global_variable_decl, global_value_decl.
  * Does not include a semicolon.
  */
-const declaration: WeslParser<DeclarationElem<PT>> = seqObj({
+const declaration: WeslParser<DeclarationElem> = seqObj({
   variant: tokenOf("keyword", ["const", "var", "override", "let"]),
   varTemplate: () => opt_template_list,
   typedIdent: req(seq(decl_ident, opt(preceded(":", templated_ident)))),
@@ -231,26 +230,26 @@ const const_assert = preceded(
   token("keyword", "const_assert"),
   req(expression),
 ).mapSpanned(
-  (expression, span): ConstAssertElem<PT> => ({
+  (expression, span): ConstAssertElem => ({
     kind: "assert",
     expression,
     span,
   }),
 );
 
-const compound_statement: WeslParser<CompoundStatement<PT>> = delimited(
+const compound_statement: WeslParser<CompoundStatement> = delimited(
   text("{"),
   fn(() => statements),
   req("}"),
 ).mapSpanned(makeCompoundStatement);
 
-const for_init: WeslParser<ForInitStatement<PT>> = or(
+const for_init: WeslParser<ForInitStatement> = or(
   fn_call,
   declaration,
   variable_updating_statement,
 );
 
-const for_update: WeslParser<ForUpdateStatement<PT>> = or(
+const for_update: WeslParser<ForUpdateStatement> = or(
   fn_call,
   variable_updating_statement,
 );
@@ -271,7 +270,7 @@ const for_statement = preceded(
   ),
 ).mapSpanned(makeForStatement);
 
-const if_statement: WeslParser<IfStatement<PT>> = preceded(
+const if_statement: WeslParser<IfStatement> = preceded(
   token("keyword", "if"),
   req(
     seqObj({
@@ -285,8 +284,8 @@ const if_statement: WeslParser<IfStatement<PT>> = preceded(
 ).mapSpanned(makeIfStatement);
 
 interface CustomCompoundStatement {
-  attributes: AttributeElem<PT>[];
-  body: (Statement<PT> | ContinuingStatement<PT> | BreakIfStatement<PT>)[];
+  attributes: AttributeElem[];
+  body: (Statement | ContinuingStatement | BreakIfStatement)[];
   span: Span;
 }
 
@@ -312,7 +311,7 @@ const loop_statement = preceded("loop", custom_compound_statement).mapSpanned(
   makeLoopStatement,
 );
 
-const case_selector: WeslParser<SwitchCaseSelector<PT>> = or(
+const case_selector: WeslParser<SwitchCaseSelector> = or(
   token("keyword", "default").map(makeDefaultCaseSelector),
   expression.map(makeExpressionCaseSelector),
 );
@@ -335,7 +334,7 @@ const switch_clause = seq(
   ),
 ).map(attachAttributes);
 
-const switch_statement: WeslParser<SwitchStatement<PT>> = preceded(
+const switch_statement: WeslParser<SwitchStatement> = preceded(
   "switch",
   seq(
     expression,
@@ -344,25 +343,25 @@ const switch_statement: WeslParser<SwitchStatement<PT>> = preceded(
   ),
 ).mapSpanned(makeSwitchStatement);
 
-const while_statement: WeslParser<WhileStatement<PT>> = preceded(
+const while_statement: WeslParser<WhileStatement> = preceded(
   "while",
   seq(expression, compound_statement),
 ).mapSpanned(makeWhileStatement);
 
 const break_statement = token("keyword", "break").map(
-  (v): BreakStatement<PT> => ({ kind: "break-statement", span: v.span }),
+  (v): BreakStatement => ({ kind: "break-statement", span: v.span }),
 );
 const continue_statement = token("keyword", "continue").map(
-  (v): ContinueStatement<PT> => ({ kind: "continue-statement", span: v.span }),
+  (v): ContinueStatement => ({ kind: "continue-statement", span: v.span }),
 );
 const discard_statement = token("keyword", "discard").map(
-  (v): DiscardStatement<PT> => ({ kind: "discard-statement", span: v.span }),
+  (v): DiscardStatement => ({ kind: "discard-statement", span: v.span }),
 );
 const return_statement = preceded(
   token("keyword", "return"),
   opt(expression),
 ).mapSpanned(
-  (expression, span): ReturnStatement<PT> => ({
+  (expression, span): ReturnStatement => ({
     kind: "return-statement",
     expression: expression ?? undefined,
     span,
@@ -370,7 +369,7 @@ const return_statement = preceded(
 );
 
 const statement: WeslParser<
-  Statement<PT> | ContinuingStatement<PT> | BreakIfStatement<PT>
+  Statement | ContinuingStatement | BreakIfStatement
 > = seq(
   opt_attributes,
   or(
@@ -401,10 +400,10 @@ const statement: WeslParser<
 ).map(attachAttributes);
 
 const statements: WeslParser<
-  (Statement<PT> | ContinuingStatement<PT> | BreakIfStatement<PT>)[]
+  (Statement | ContinuingStatement | BreakIfStatement)[]
 > = preceded(repeat(";"), repeat(terminated(statement, repeat(";"))));
 
-const function_param: WeslParser<FunctionParam<PT>> = seq(
+const function_param: WeslParser<FunctionParam> = seq(
   opt_attributes,
   decl_ident,
   preceded(":", req(templated_ident)),
@@ -414,13 +413,13 @@ const function_param: WeslParser<FunctionParam<PT>> = seq(
   type,
 }));
 
-const function_param_list: WeslParser<FunctionParam<PT>[]> = delimited(
+const function_param_list: WeslParser<FunctionParam[]> = delimited(
   "(",
   withSep(",", function_param),
   ")",
 );
 
-const function_decl: WeslParser<FunctionDeclarationElem<PT>> = preceded(
+const function_decl: WeslParser<FunctionDeclarationElem> = preceded(
   text("fn"),
   seq(
     req(decl_ident),
@@ -430,13 +429,13 @@ const function_decl: WeslParser<FunctionDeclarationElem<PT>> = preceded(
   ),
 ).mapSpanned(makeFunctionDeclarationElem);
 
-const global_alias: WeslParser<AliasElem<PT>> = terminated(
+const global_alias: WeslParser<AliasElem> = terminated(
   seqObj({
     _1: "alias",
     name: req(decl_ident),
     _2: req("="),
     type: req(templated_ident),
-  }).mapSpanned(({ name, type }, span): AliasElem<PT> => {
+  }).mapSpanned(({ name, type }, span): AliasElem => {
     return { kind: "alias", name, type, span };
   }),
   req(";"),
@@ -455,11 +454,11 @@ const global_directive = terminated(
     ),
   ),
   ";",
-).map(([attributes, { value: directive, span }]): DirectiveElem<PT> => {
+).map(([attributes, { value: directive, span }]): DirectiveElem => {
   return { kind: "directive", attributes, directive: directive, span };
 });
 
-const global_decl: WeslParser<GlobalDeclarationElem<PT>> = seq(
+const global_decl: WeslParser<GlobalDeclarationElem> = seq(
   opt_attributes,
   or(
     function_decl,
@@ -473,10 +472,10 @@ const global_decl: WeslParser<GlobalDeclarationElem<PT>> = seq(
     terminated(const_assert, ";"),
     struct_decl,
   ),
-).map(attachAttributes<GlobalDeclarationElem<PT>>);
+).map(attachAttributes<GlobalDeclarationElem>);
 
 /** The translation_unit rule allows for stray semicolons */
-const global_decls: WeslParser<GlobalDeclarationElem<PT>[]> = preceded(
+const global_decls: WeslParser<GlobalDeclarationElem[]> = preceded(
   repeat(";"),
   repeat(terminated(global_decl, repeat(";"))),
 );
@@ -491,13 +490,13 @@ export const weslRoot = seq(
 function makeDeclarationElem(
   value: {
     variant: WeslToken<"keyword">;
-    varTemplate: ExpressionElem<PT>[] | null;
-    typedIdent: [DeclIdent<PT>, TemplatedIdentElem<PT> | null];
-    initializer: ExpressionElem<PT> | null;
+    varTemplate: ExpressionElem[] | null;
+    typedIdent: [DeclIdent, TemplatedIdentElem | null];
+    initializer: ExpressionElem | null;
   },
   span: Span,
-): DeclarationElem<PT> {
-  let variant: DeclarationVariant<PT>;
+): DeclarationElem {
+  let variant: DeclarationVariant;
   if (value.variant.text === "const") {
     // LATER: We can actually report good errors here
     if (value.varTemplate !== null) {
@@ -541,13 +540,8 @@ function makeDeclarationElem(
 }
 
 function makeModule(
-  value: [
-    ImportElem<PT>[],
-    DirectiveElem<PT>[],
-    GlobalDeclarationElem<PT>[],
-    true,
-  ],
-): ModuleElem<PT> {
+  value: [ImportElem[], DirectiveElem[], GlobalDeclarationElem[], true],
+): ModuleElem {
   const [imports, directives, declarations] = value;
   return {
     kind: "module",
@@ -570,10 +564,7 @@ function makeRequiresDirective(extensions: NameElem[]): RequiresDirective {
   return { kind: "requires", extensions };
 }
 
-function makeAttributeElem(
-  value: Attribute<PT>,
-  span: Span,
-): AttributeElem<PT> {
+function makeAttributeElem(value: Attribute, span: Span): AttributeElem {
   return {
     kind: "attribute",
     attribute: value,
@@ -581,10 +572,10 @@ function makeAttributeElem(
   };
 }
 
-function attachAttributes<T extends { attributes?: AttributeElem<PT>[] }>([
+function attachAttributes<T extends { attributes?: AttributeElem[] }>([
   attributes,
   v,
-]: [AttributeElem<PT>[], T]): T {
+]: [AttributeElem[], T]): T {
   if (attributes !== undefined && attributes.length > 0) {
     v.attributes = attributes;
   }
@@ -593,13 +584,13 @@ function attachAttributes<T extends { attributes?: AttributeElem<PT>[] }>([
 
 function makeFunctionDeclarationElem(
   [name, params, ret, body]: [
-    DeclIdent<PT>,
-    FunctionParam<PT>[],
-    [AttributeElem<PT>[], TemplatedIdentElem<PT>] | null,
-    CompoundStatement<PT>,
+    DeclIdent,
+    FunctionParam[],
+    [AttributeElem[], TemplatedIdentElem] | null,
+    CompoundStatement,
   ],
   span: Span,
-): FunctionDeclarationElem<PT> {
+): FunctionDeclarationElem {
   return {
     kind: "function",
     name,
@@ -612,9 +603,9 @@ function makeFunctionDeclarationElem(
 }
 
 function makeStruct(
-  [name, members]: [DeclIdent<PT>, StructMemberElem<PT>[]],
+  [name, members]: [DeclIdent, StructMemberElem[]],
   span: Span,
-): StructElem<PT> {
+): StructElem {
   return {
     kind: "struct",
     name,
@@ -625,9 +616,9 @@ function makeStruct(
 
 function makeStructMember(obj: {
   name: NameElem;
-  typeRef: TemplatedIdentElem<PT>;
-  attributes: AttributeElem<PT>[] | null;
-}): StructMemberElem<PT> {
+  typeRef: TemplatedIdentElem;
+  attributes: AttributeElem[] | null;
+}): StructMemberElem {
   return {
     name: obj.name,
     type: obj.typeRef,
@@ -637,8 +628,8 @@ function makeStructMember(obj: {
 
 function makeStandardAttribute([name, params]: [
   string,
-  ExpressionElem<PT>[],
-]): StandardAttribute<PT> {
+  ExpressionElem[],
+]): StandardAttribute {
   return {
     kind: "attribute",
     name,
@@ -674,7 +665,7 @@ function makeIfAttribute(param: ConditionalExpressionElem): IfAttribute {
   };
 }
 function makeTranslateTimeExpressionElem(
-  expression: ExpressionElem<ConditionalT>,
+  expression: ExpressionElem,
   span: Span,
 ): ConditionalExpressionElem {
   return {
@@ -685,9 +676,9 @@ function makeTranslateTimeExpressionElem(
 }
 
 function makeFunctionCall(
-  [func, args]: [TemplatedIdentElem<PT>, ExpressionElem<PT>[]],
+  [func, args]: [TemplatedIdentElem, ExpressionElem[]],
   span: Span,
-): FunctionCallStatement<PT> {
+): FunctionCallStatement {
   return {
     kind: "call-statement",
     function: func,
@@ -696,9 +687,9 @@ function makeFunctionCall(
   };
 }
 function makeCompoundStatement(
-  value: (Statement<PT> | ContinuingStatement<PT> | BreakIfStatement<PT>)[],
+  value: (Statement | ContinuingStatement | BreakIfStatement)[],
   span: Span,
-): CompoundStatement<PT> {
+): CompoundStatement {
   for (const statement of value) {
     if (statement.kind === "continuing-statement") {
       throw new ParseError(
@@ -713,21 +704,17 @@ function makeCompoundStatement(
   }
   return {
     kind: "compound-statement",
-    body: value as Statement<PT>[],
+    body: value as Statement[],
     span,
   };
 }
 function makeForStatement(
   [[initializer, condition, update], body]: [
-    [
-      ForInitStatement<PT> | null,
-      ExpressionElem<PT> | null,
-      ForUpdateStatement<PT> | null,
-    ],
-    CompoundStatement<PT>,
+    [ForInitStatement | null, ExpressionElem | null, ForUpdateStatement | null],
+    CompoundStatement,
   ],
   span: Span,
-): ForStatement<PT> {
+): ForStatement {
   return {
     kind: "for-statement",
     span,
@@ -740,13 +727,13 @@ function makeForStatement(
 
 function makeIfStatement(
   value: {
-    ifBranch: [ExpressionElem<PT>, CompoundStatement<PT>];
-    elseIfBranch: [ExpressionElem<PT>, CompoundStatement<PT>][];
-    elseBranch: CompoundStatement<PT> | null;
+    ifBranch: [ExpressionElem, CompoundStatement];
+    elseIfBranch: [ExpressionElem, CompoundStatement][];
+    elseBranch: CompoundStatement | null;
   },
   span: Span,
-): IfStatement<PT> {
-  let main: IfClause<PT> = {
+): IfStatement {
+  let main: IfClause = {
     kind: "if-clause",
     condition: value.ifBranch[0],
     accept: value.ifBranch[1],
@@ -781,16 +768,16 @@ function makeDefaultCaseSelector(
 }
 
 function makeExpressionCaseSelector(
-  expression: ExpressionElem<PT>,
-): ExpressionCaseSelector<PT> {
+  expression: ExpressionElem,
+): ExpressionCaseSelector {
   return {
     expression,
   };
 }
 function makeSwitchClause(
-  [cases, body]: [SwitchCaseSelector<PT>[], CompoundStatement<PT>],
+  [cases, body]: [SwitchCaseSelector[], CompoundStatement],
   span: Span,
-): SwitchClause<PT> {
+): SwitchClause {
   return {
     cases,
     body,
@@ -798,9 +785,9 @@ function makeSwitchClause(
   };
 }
 function makeDefaultClause(
-  [defaultCase, body]: [DefaultCaseSelector, CompoundStatement<PT>],
+  [defaultCase, body]: [DefaultCaseSelector, CompoundStatement],
   span: Span,
-): SwitchClause<PT> {
+): SwitchClause {
   return {
     cases: [defaultCase],
     body,
@@ -809,12 +796,12 @@ function makeDefaultClause(
 }
 function makeSwitchStatement(
   [selector, bodyAttributes, clauses]: [
-    ExpressionElem<PT>,
-    AttributeElem<PT>[],
-    SwitchClause<PT>[],
+    ExpressionElem,
+    AttributeElem[],
+    SwitchClause[],
   ],
   span: Span,
-): SwitchStatement<PT> {
+): SwitchStatement {
   return {
     kind: "switch-statement",
     selector,
@@ -838,11 +825,11 @@ function assignmentOperator(
 
 function makeVariableUpdatingStatement(
   value: [
-    LhsExpression<PT>,
-    [AssignmentOperator, ExpressionElem<PT>] | PostfixOperator,
+    LhsExpression,
+    [AssignmentOperator, ExpressionElem] | PostfixOperator,
   ],
   span: Span,
-): AssignmentStatement<PT> | PostfixStatement<PT> {
+): AssignmentStatement | PostfixStatement {
   if (Array.isArray(value[1])) {
     return {
       kind: "assignment-statement",
@@ -873,9 +860,9 @@ function postfixOperator(
 }
 
 function makeVariableDiscardStatement(
-  [left, operator, right]: [LhsDiscard, AssignmentOperator, ExpressionElem<PT>],
+  [left, operator, right]: [LhsDiscard, AssignmentOperator, ExpressionElem],
   span: Span,
-): AssignmentStatement<PT> {
+): AssignmentStatement {
   return {
     kind: "assignment-statement",
     left,
@@ -888,10 +875,10 @@ function makeVariableDiscardStatement(
 function makeContinuingStatement(
   compound: CustomCompoundStatement,
   span: Span,
-): ContinuingStatement<PT> {
+): ContinuingStatement {
   const breakIf =
     compound.body.at(-1)?.kind === "break-if-statement" ?
-      (compound.body.pop() as BreakIfStatement<PT>)
+      (compound.body.pop() as BreakIfStatement)
     : undefined;
   const body = makeCompoundStatement(compound.body, compound.span);
   body.attributes = compound.attributes;
@@ -903,19 +890,19 @@ function makeContinuingStatement(
   };
 }
 function makeBreakIfStatement(
-  expression: ExpressionElem<PT>,
+  expression: ExpressionElem,
   span: Span,
-): BreakIfStatement<PT> {
+): BreakIfStatement {
   return { kind: "break-if-statement", expression, span };
 }
 
 function makeLoopStatement(
   compound: CustomCompoundStatement,
   span: Span,
-): LoopStatement<PT> {
+): LoopStatement {
   const continuing =
     compound.body.at(-1)?.kind === "continuing-statement" ?
-      (compound.body.pop() as ContinuingStatement<PT>)
+      (compound.body.pop() as ContinuingStatement)
     : undefined;
   const body = makeCompoundStatement(compound.body, compound.span);
   body.attributes = compound.attributes;
@@ -927,9 +914,9 @@ function makeLoopStatement(
   };
 }
 function makeWhileStatement(
-  [condition, body]: [ExpressionElem<PT>, CompoundStatement<PT>],
+  [condition, body]: [ExpressionElem, CompoundStatement],
   span: Span,
-): WhileStatement<PT> {
+): WhileStatement {
   return {
     kind: "while-statement",
     condition,

@@ -26,7 +26,7 @@ import {
   ImportStatement,
   ImportElem,
 } from "./ImportElems.ts";
-import { PT } from "./BaseGrammar.ts";
+import { WeslParser } from "./BaseGrammar.ts";
 
 function makeStatement(
   segments: ImportSegment[],
@@ -99,7 +99,7 @@ const import_relative = or(
   repeatPlus(terminated("super", "::").map(makeSegment)),
 );
 
-export const import_statement: Parser<Stream<WeslToken>, ImportElem<PT>> = span(
+export const import_statement: WeslParser<ImportElem> = span(
   delimited(
     "import",
     seqObj({
@@ -115,7 +115,7 @@ export const import_statement: Parser<Stream<WeslToken>, ImportElem<PT>> = span(
     req(";"),
   ),
 ).map(
-  (v): ImportElem<PT> => ({
+  (v): ImportElem => ({
     kind: "import",
     attributes: [], // TODO: Parse and fill in
     imports: v.value,

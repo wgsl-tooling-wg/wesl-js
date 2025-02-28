@@ -6,7 +6,7 @@ import type {
   IfAttribute,
   ModuleElem,
   Statement,
-  Transform,
+  FullIdent,
 } from "../parse/WeslElems";
 import {
   AstVisitor,
@@ -18,27 +18,27 @@ import {
   walkDirective,
   walkStatement,
 } from "../AstVisitor.ts";
-import { PT } from "../parse/BaseGrammar.ts";
-import { ExpressionElem } from "../parse/ExpressionElem.ts";
-import { ImportElem } from "../parse/ImportElems.ts";
+import { ExpressionElem, TemplatedIdentElem } from "../parse/ExpressionElem.ts";
+import {
+  ImportElem,
+  ImportSegment,
+  ImportStatement,
+} from "../parse/ImportElems.ts";
 import { Conditions, evaluateConditions } from "../Conditions.ts";
 import { DirectiveElem } from "../parse/DirectiveElem.ts";
 import { assertUnreachable } from "../Assertions.ts";
-
-/** After we're done with the symbols table, we have idents that point at the symbols table. */
-export interface ST extends Transform {
-  symbolRef: number;
-}
+import { stdEnumerant, stdFn, stdType } from "../StandardTypes.ts";
+import { assertThat } from "../../../mini-parse/src/Assertions.ts";
 
 /** An index into the symbol table */
 export type SymbolReference = number;
 
 /** An imported symbol. This will be path like `super::foo::bar` */
-export type SymbolImport = number;
+export type SymbolImport = string[];
 
 export type SymbolsTable = {
   /** The name is either a string, or refers to a different symbol, or refers to an import */
-  name: string | SymbolReference | string[];
+  name: string | SymbolReference | SymbolImport;
 }[];
 
 /** decls currently visible in this scope */
@@ -48,6 +48,24 @@ interface LiveDecls {
 
   /** live decls in the parent scope. null for the modue root scope */
   parent: LiveDecls | null;
+}
+
+function findDecl(liveDecls: LiveDecls, ident: string): SymbolReference | null {
+  if (liveDecls.decls === null) return null;
+  const found = liveDecls.decls.get(ident);
+  if (found !== undefined) {
+    return found;
+  }
+  // recurse to check all idents in parent scope
+  if (liveDecls.parent !== null) {
+    return findDecl(liveDecls.parent, ident);
+  } else {
+    return null;
+  }
+}
+
+function isPredeclared(name: string): boolean {
+  return stdType(name) || stdFn(name) || stdEnumerant(name); // LATER add tests for enumerants case (e.g. var x = read;)
 }
 
 /**
@@ -60,7 +78,7 @@ interface LiveDecls {
  * 'liveDecls', the declarations that are visible in the current scope at the currently
  * processed ident, along with a link to parent liveDecls for their current decl visibility.
  */
-class BindSymbolsVisitor extends AstVisitor<PT> {
+class BindSymbolsVisitor extends AstVisitor {
   public symbolsTable: SymbolsTable = [];
   rootDecls: LiveDecls = {
     decls: new Map(),
@@ -69,26 +87,75 @@ class BindSymbolsVisitor extends AstVisitor<PT> {
   liveDecls: LiveDecls;
   constructor(
     public conditions: Conditions,
-    public packageName: Set<String>,
+    public packageNames: Set<String>,
   ) {
     super();
     this.liveDecls = this.rootDecls;
   }
 
-  addDeclaration(ident: DeclIdent<PT>) {
+  addDeclIdent(ident: DeclIdent) {
+    ident.symbolRef = this.addDeclaration(ident.name, ident.name);
+  }
+
+  addDeclaration(
+    name: string,
+    value: string | SymbolReference | SymbolImport,
+  ): SymbolReference {
+    const symbolRef = this.symbolsTable.length;
     this.symbolsTable.push({
-      name: ident.name,
+      name: value,
     });
     if (this.liveDecls.decls === null) {
       this.liveDecls.decls = new Map();
     }
-    const symbolRef = this.symbolsTable.length;
-    this.liveDecls.decls.set(ident.name, symbolRef);
-    (ident as any as DeclIdent<ST>).symbolRef = symbolRef;
+    this.liveDecls.decls.set(name, symbolRef);
+    return symbolRef;
+  }
+
+  resolveDeclaration(ident: TemplatedIdentElem) {
+    const identStart = ident.ident.segments[0];
+    if (ident.ident.segments.length === 1) {
+      // simple ident
+      const decl = findDecl(this.liveDecls, identStart);
+      if (decl !== null) {
+        ident.symbolRef = decl;
+      } else {
+        if (isPredeclared(identStart)) {
+          // Okay, fine
+        } else if (this.packageNames.has(identStart)) {
+          throw new Error(
+            `Package not allowed here ${fullIdentToString(ident.ident)}`,
+          );
+        } else {
+          throw new Error(
+            `Unresolved identifier ${fullIdentToString(ident.ident)}`,
+          );
+        }
+      }
+    } else {
+      // package reference
+      if (
+        identStart === "package" ||
+        identStart === "super" ||
+        this.packageNames.has(identStart)
+      ) {
+        const symbolRef = this.symbolsTable.length;
+        // Only add the package reference
+        this.symbolsTable.push({
+          name: ident.ident.segments,
+        });
+        ident.symbolRef = symbolRef;
+      } else {
+        throw new Error(
+          `Unresolved identifier ${fullIdentToString(ident.ident)}`,
+        );
+      }
+    }
+    ident.template?.forEach(v => this.expression(v));
   }
 
   /** Does conditional compilation allow the next element to be included. */
-  evaluateIfAttribute(attributes: AttributeElem<PT>[] | undefined): boolean {
+  evaluateIfAttribute(attributes: AttributeElem[] | undefined): boolean {
     const condAttribute = attributes?.find(v => v.attribute.kind === "@if");
     if (condAttribute === undefined) return true;
     return evaluateConditions(
@@ -97,7 +164,7 @@ class BindSymbolsVisitor extends AstVisitor<PT> {
     );
   }
 
-  override module(module: ModuleElem<PT>): void {
+  override module(module: ModuleElem): void {
     // Add all the global decls
     for (const decl of module.declarations) {
       if (this.evaluateIfAttribute(decl.attributes) === false) {
@@ -109,7 +176,7 @@ class BindSymbolsVisitor extends AstVisitor<PT> {
         decl.kind === "function" ||
         decl.kind === "struct"
       ) {
-        this.addDeclaration(decl.name);
+        this.addDeclIdent(decl.name);
       } else if (decl.kind === "assert") {
         // no decl to add
       } else {
@@ -120,29 +187,26 @@ class BindSymbolsVisitor extends AstVisitor<PT> {
     walkModule(module, this);
   }
 
-  override directive(directive: DirectiveElem<PT>): void {
+  override directive(directive: DirectiveElem): void {
     if (this.evaluateIfAttribute(directive.attributes) === false) {
       return;
     }
     walkDirective(directive, this);
   }
 
-  override globalDeclaration(declaration: GlobalDeclarationElem<PT>): void {
+  override globalDeclaration(declaration: GlobalDeclarationElem): void {
     if (this.evaluateIfAttribute(declaration.attributes) === false) {
       return;
     }
     walkGlobalDeclaration(declaration, this);
   }
 
-  override import(importElem: ImportElem<PT>): void {
-    // importElem.imports.
-    // TODO: Emit all the imports
+  override import(importElem: ImportElem): void {
     walkImport(importElem, this);
+    walkImportStatement(importElem.imports, [], this);
   }
 
-  override globalDeclarationInner(
-    declaration: GlobalDeclarationElem<PT>,
-  ): void {
+  override globalDeclarationInner(declaration: GlobalDeclarationElem): void {
     const kind = declaration.kind;
     if (kind === "alias") {
       walkGlobalDeclarationInner(declaration, this);
@@ -171,14 +235,14 @@ class BindSymbolsVisitor extends AstVisitor<PT> {
     }
   }
 
-  override statement(statement: Statement<PT>): void {
+  override statement(statement: Statement): void {
     if (this.evaluateIfAttribute(statement.attributes) === false) {
       return;
     }
     walkStatement(statement, this);
   }
 
-  statementInner(statement: Statement<PT>): void {
+  override statementInner(statement: Statement): void {
     if (statement.kind === "for-statement") {
       const previousDecls = this.liveDecls;
       this.liveDecls = {
@@ -208,7 +272,7 @@ class BindSymbolsVisitor extends AstVisitor<PT> {
       // First evaluate the declaration
       walkStatementInner(statement, this);
       // And then add it
-      this.addDeclaration(statement.name);
+      this.addDeclIdent(statement.name);
     } else if (statement.kind === "compound-statement") {
       const previousDecls = this.liveDecls;
       this.liveDecls = {
@@ -222,37 +286,62 @@ class BindSymbolsVisitor extends AstVisitor<PT> {
     }
   }
 
-  expression(expression: ExpressionElem<PT>): void {
+  override expression(expression: ExpressionElem): void {
     if (expression.kind === "templated-ident") {
-      // TODO: Resolve
-      expression.template?.forEach(v => this.expression(v));
+      this.resolveDeclaration(expression);
     }
   }
 }
 
+function fullIdentToString(ident: FullIdent) {
+  return ident.segments.join("::");
+}
+
 export function bindSymbols(
-  module: ModuleElem<PT>,
+  module: ModuleElem,
   conditions: Conditions,
   packageNames: Set<String>,
 ): {
   symbols: SymbolsTable;
-  module: ModuleElem<ST>;
+  module: ModuleElem;
 } {
   const visitor = new BindSymbolsVisitor(conditions, packageNames);
   visitor.module(module);
   return {
     symbols: visitor.symbolsTable,
-    module: module as any as ModuleElem<ST>,
+    module: module as any as ModuleElem,
   };
 }
 function walkFunctionParams(
-  params: FunctionParam<PT>[],
+  params: FunctionParam[],
   visitor: BindSymbolsVisitor,
 ) {
   for (const param of params) {
     if (visitor.evaluateIfAttribute(param.attributes) === false) continue;
     param.attributes?.forEach(v => visitor.attribute(v));
     visitor.expression(param.type);
-    visitor.addDeclaration(param.name); // The name is added *after* the rest of the declaration
+    visitor.addDeclIdent(param.name); // The name is added *after* the rest of the declaration
+  }
+}
+
+function walkImportStatement(
+  statement: ImportStatement,
+  segments: string[],
+  visitor: BindSymbolsVisitor,
+) {
+  if (statement.finalSegment.kind === "import-collection") {
+    const childSegments = [...segments, ...statement.segments.map(v => v.name)];
+    statement.finalSegment.subtrees.forEach(v =>
+      walkImportStatement(v, childSegments, visitor),
+    );
+  } else {
+    const item = statement.finalSegment;
+    if (item.as !== undefined) {
+      assertThat(item.as.length > 0);
+      visitor.addDeclaration(item.as, [...segments, item.name]);
+    } else {
+      visitor.addDeclaration(item.name, [...segments, item.name]);
+    }
+    statement.finalSegment.as;
   }
 }
