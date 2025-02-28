@@ -1,17 +1,19 @@
 import type {
   AttributeElem,
-  GlobalDeclarationElem,
   IfAttribute,
   ModuleElem,
   FunctionDeclarationElem,
   Statement,
   CompoundStatement,
+  IfClause,
+  SwitchClause,
 } from "../parse/WeslElems";
 import { PT } from "../parse/BaseGrammar.ts";
 import { Conditions, evaluateConditions } from "../Conditions.ts";
-import { DirectiveElem } from "../parse/DirectiveElem.ts";
+import { assertThat } from "../../../mini-parse/src/Assertions.ts";
 
 /**
+ * Mutates the AST to skip conditional compilation elements.
  * Done as a separate pass for now, since the alternative means more code duplication.
  * Can be merged when we merge passes.
  */
@@ -19,175 +21,87 @@ export function applyConditionalCompilation(
   module: ModuleElem<PT>,
   conditions: Conditions,
 ): ModuleElem<PT> {
-  const directives = new LazyArray(module.directives);
-  for (const directive of module.directives) {
-    const condResult = condAttributedElement(conditions, directive);
-    if (condResult === null) {
-      directives.skip();
-    } else {
-      directives.push(condResult);
-    }
-  }
-  const declarations = new LazyArray(module.declarations);
-  for (const declaration of module.declarations) {
-    const condResult = condAttributedElement(conditions, declaration);
-    if (condResult === null) {
-      declarations.skip();
-    } else if (condResult.kind === "function") {
-      declarations.push(condFunction(conditions, condResult));
-    } else {
-      declarations.push(condResult);
-    }
-  }
-
-  return lazyUpdate(module, {
-    directives: directives.finish(),
-    declarations: declarations.finish(),
-  });
-}
-
-/** An array that skips doing work unless we actually deviate from the original result. */
-class LazyArray<T> {
-  private newArray: T[] | { length: number } = { length: 0 };
-  constructor(public original: T[]) {}
-  skip() {
-    // Okay, now we have a mutated array
-    this.newArray = this.original.slice(0, this.newArray.length);
-    this.skip = () => {};
-  }
-  push(elem: T) {
-    if (this.original[this.newArray.length] === elem) {
-      this.newArray.length += 1;
-    } else {
-      // Okay, now we have a mutated array
-      const newArray = this.original.slice(0, this.newArray.length);
-      newArray.push(elem);
-      this.newArray = newArray;
-      this.push = (elem: T) => {
-        newArray.push(elem);
-      };
-    }
-  }
-  finish(): T[] {
-    if (Array.isArray(this.newArray)) {
-      return this.newArray;
-    } else if (this.newArray.length === this.original.length) {
-      return this.original;
-    } else {
-      throw new Error(
-        "Not enough elements were inputted into the lazy array. Did you forget to call .skip()?",
-      );
-    }
-  }
-}
-
-/** Updates object properties if anything has changed. */
-function lazyUpdate<T>(obj: T, update: Partial<T>): T {
-  let anyChanges = Object.entries(update).some(
-    ([key, value]) => obj[key as keyof T] !== value,
+  // Filter with side effects
+  module.directives = module.directives.filter(v =>
+    condAttributedElement(conditions, v),
   );
-  if (anyChanges) {
-    return {
-      ...obj,
-      update,
-    };
-  } else {
-    return obj;
-  }
+  module.declarations = module.declarations.filter(v =>
+    condAttributedElement(conditions, v),
+  );
+  module.declarations.forEach(v => {
+    if (v.kind === "function") {
+      condFunction(conditions, v);
+    }
+  });
+  return module;
 }
 
 /**
  * Does conditional compilation allow the next element to be included.
  * Filters out the conditional compilation attributes as well.
+ * Mutates the element.
  */
 function condAttributedElement<T extends { attributes?: AttributeElem<PT>[] }>(
   conditions: Conditions,
   attributedElem: T,
-): T | null {
+): boolean {
   const attributes = attributedElem.attributes;
-  if (attributes === undefined) return attributedElem;
+  if (attributes === undefined) return true;
 
   const condAttribute = attributes.find(v => v.attribute.kind === "@if");
-  if (condAttribute === undefined) return attributedElem;
+  if (condAttribute === undefined) return true;
 
   if (evaluateConditions(conditions, condAttribute.attribute as IfAttribute)) {
-    return {
-      ...attributedElem,
-      attributes: attributes.filter(v => v.attribute.kind !== "@if"),
-    };
+    attributedElem.attributes = attributes.filter(
+      v => v.attribute.kind !== "@if",
+    );
+    assertThat(
+      attributedElem.attributes.length === attributes.length - 1,
+      "Multiple @ifs are not allowed",
+    );
+    return true;
   } else {
-    return null;
+    return false;
   }
 }
 
 function condFunction(
   conditions: Conditions,
   decl: FunctionDeclarationElem<PT>,
-): FunctionDeclarationElem<PT> {
-  const params = new LazyArray(decl.params);
-  for (const param of decl.params) {
-    const condResult = condAttributedElement(conditions, param);
-    if (condResult === null) {
-      params.skip();
-    } else {
-      params.push(condResult);
-    }
-  }
-
-  const bodyStatements = new LazyArray(decl.body.body);
-  for (const statement of decl.body.body) {
-    const condResult = condAttributedElement(conditions, statement);
-    if (condResult === null) {
-      bodyStatements.skip();
-    } else {
-      bodyStatements.push(condStatement(conditions, condResult));
-    }
-  }
-
-  return lazyUpdate(decl, {
-    params: params.finish(),
-    body: lazyUpdate(decl.body, {
-      body: bodyStatements.finish(),
-    }),
-  });
+) {
+  decl.params = decl.params.filter(v => condAttributedElement(conditions, v));
+  decl.body.body = decl.body.body.filter(v =>
+    condAttributedElement(conditions, v),
+  );
+  decl.body.body.forEach(v => condStatement(conditions, v));
 }
 
-function condStatement(
-  conditions: Conditions,
-  statement: Statement<PT>,
-): Statement<PT> {
+function condStatement(conditions: Conditions, statement: Statement<PT>) {
   if (statement.kind === "compound-statement") {
-    return condCompoundStatement(conditions, statement);
+    condCompoundStatement(conditions, statement);
   } else if (statement.kind === "for-statement") {
-    return lazyUpdate(statement, {
-      initializer:
-        statement.initializer !== undefined ?
-          (condStatement(
-            conditions,
-            statement.initializer,
-          ) satisfies Statement<PT> as any)
-        : undefined,
-      update:
-        statement.update !== undefined ?
-          (condStatement(
-            conditions,
-            statement.update,
-          ) satisfies Statement<PT> as any)
-        : undefined,
-      body: condCompoundStatement(conditions, statement.body),
-    });
+    if (statement.initializer !== undefined) {
+      if (condAttributedElement(conditions, statement.initializer) === false) {
+        statement.initializer = undefined;
+      }
+    }
+    if (statement.update !== undefined) {
+      if (condAttributedElement(conditions, statement.update) === false) {
+        statement.update = undefined;
+      }
+    }
+    condCompoundStatement(conditions, statement.body);
   } else if (statement.kind === "if-else-statement") {
-    // TODO: Hmm
+    condIfClause(conditions, statement.main);
   } else if (statement.kind === "loop-statement") {
-    return lazyUpdate(statement, {
-      body: condCompoundStatement(conditions, statement.body),
-    });
+    condCompoundStatement(conditions, statement.body);
   } else if (statement.kind === "switch-statement") {
-    // TODO: Hmm
+    statement.clauses = statement.clauses.filter(v =>
+      condAttributedElement(conditions, v),
+    );
+    statement.clauses.forEach(v => condSwitchClause(conditions, v));
   } else if (statement.kind === "while-statement") {
-    return lazyUpdate(statement, {
-      body: condCompoundStatement(conditions, statement.body),
-    });
+    condCompoundStatement(conditions, statement.body);
   } else {
     return statement;
   }
@@ -196,17 +110,26 @@ function condStatement(
 function condCompoundStatement(
   conditions: Conditions,
   statement: CompoundStatement<PT>,
-): CompoundStatement<PT> {
-  const bodyStatements = new LazyArray(statement.body);
-  for (const innerStatement of statement.body) {
-    const condResult = condAttributedElement(conditions, innerStatement);
-    if (condResult === null) {
-      bodyStatements.skip();
+) {
+  statement.body = statement.body.filter(v =>
+    condAttributedElement(conditions, v),
+  );
+  statement.body.forEach(v => condStatement(conditions, v));
+}
+function condIfClause(conditions: Conditions, clause: IfClause<PT>) {
+  condStatement(conditions, clause.accept);
+  if (clause.reject !== undefined) {
+    if (clause.reject.kind === "compound-statement") {
+      condStatement(conditions, clause.reject);
     } else {
-      bodyStatements.push(condStatement(conditions, condResult));
+      condIfClause(conditions, clause.reject);
     }
   }
-  return lazyUpdate(statement, {
-    body: bodyStatements.finish(),
-  });
+}
+
+function condSwitchClause(
+  conditions: Conditions,
+  clause: SwitchClause<PT>,
+): void {
+  condStatement(conditions, clause.body);
 }
