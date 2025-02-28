@@ -165,7 +165,7 @@ export const type_specifier: Parser<Stream<WeslToken>,any> = tagScope(
  * that are types like array<f32> vs. expressions like 1+2 */
 // prettier-ignore
 const template_parameter = or(
-  // LATER Remove this, it's wrong
+  // LATER Remove this, it's wrong. This should instead be done by inspecting the syntax tree.
   type_specifier.ctag("templateParam"),
   template_arg_expression.collect(expressionCollect, "templateParam")
 );
