@@ -66,8 +66,33 @@ test("conditional statement", () => {
     }
   `;
   const ast = parseTest(src);
-  const astString = astToString(ast.moduleElem); //?
-  // expect(astString).toMatchInlineSnapshot('tbd');
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn main()
+        text 'fn '
+        decl %main
+        text '() {
+          '
+        var %x
+          text 'var '
+          typeDecl %x
+            decl %x
+          text ' = 1'
+        text ';
+          '
+        statement
+          attribute @if(true)
+          text ' '
+          ref x
+          text ' = 2 ;'
+        text '
+        }'
+      text '
+      '"
+  `);
 });
 
 // test("", () => {

@@ -1,13 +1,8 @@
 import { Span } from "./Span.js";
 import { SrcMap, SrcMapEntry, SrcWithPath } from "./SrcMap.js";
 
-// TODO untested
-
 /**
  * Incrementally append to a string, tracking source references
- *
- * TODO: Offer a tree-like API, where I can pass in a large span, and then a bunch of child spans.
- * Like a large span that covers a whole attribute, and then smaller spans that only cover the attribute parameters.
  */
 export class SrcMapBuilder {
   #fragments: string[] = [];

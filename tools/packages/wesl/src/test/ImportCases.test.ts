@@ -45,6 +45,9 @@ test("import an alias", ctx => importCaseTest(ctx.task.name));
 test("alias f32", ctx => importCaseTest(ctx.task.name));
 test("fn f32()", ctx => importCaseTest(ctx.task.name));
 test("circular import", ctx => importCaseTest(ctx.task.name));
+test("inline package reference", ctx => importCaseTest(ctx.task.name));
+test("inline super:: reference", ctx => importCaseTest(ctx.task.name));
+test("import super::file1", ctx => importCaseTest(ctx.task.name));
 
 // test(, ctx =>
 //   linkTest2(ctx.task.name, {

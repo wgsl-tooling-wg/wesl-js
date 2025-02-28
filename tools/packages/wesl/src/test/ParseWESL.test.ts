@@ -850,3 +850,28 @@ test("memberRef with ref in array", () => {
     "
   `);
 });
+
+test("parse inline package reference", () => {
+  const src = `
+    fn main() {
+      package::foo::bar();
+    }
+  `;
+  const ast = parseTestRaw(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn main()
+        text 'fn '
+        decl %main
+        text '() {
+          '
+        ref package::foo::bar
+        text '();
+        }'
+      text '
+      '"
+  `);
+});

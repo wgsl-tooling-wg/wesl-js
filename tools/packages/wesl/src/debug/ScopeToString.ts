@@ -35,6 +35,7 @@ function scopeToStringInner(scope: Scope, str: LineWrapper): void {
   } else {
     str.add(" }");
   }
+
   str.add(` #${scope.id}`);
 
   return str.result;

@@ -16,8 +16,8 @@ test("scope from simple fn", () => {
   `;
   const { rootScope } = testParseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-    "{ %main
-      { %x, i32 } #1
+    "{ %main 
+      { %x i32 } #1
     } #0"
   `);
 });
@@ -30,12 +30,12 @@ test("scope from fn with reference", () => {
     }
   `;
   const { rootScope } = testParseWESL(src);
-  const scopeIdents = rootScope.idents.map(i => i.originalName);
-  expect(scopeIdents).toEqual(["main"]);
-  const firstChildIdents = rootScope.children[0].idents.map(
-    i => i.originalName,
-  );
-  expect(firstChildIdents).toEqual(["x", "i32", "x"]);
+
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %main 
+      { %x i32 x } #1
+    } #0"
+  `);
 });
 
 test("two fns", () => {
@@ -44,8 +44,13 @@ test("two fns", () => {
     fn bar() {}
   `;
   const { rootScope } = testParseWESL(src);
-  const scopeIdents = rootScope.idents.map(i => i.originalName);
-  expect(scopeIdents).toEqual(["foo", "bar"]);
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %foo 
+      {  } #1
+      %bar 
+      {  } #2
+    } #0"
+  `);
 });
 
 test("two fns, one with a decl", () => {
@@ -56,8 +61,13 @@ test("two fns, one with a decl", () => {
     fn bar() {}
   `;
   const { rootScope } = testParseWESL(src);
-  const scopeIdents = rootScope.idents.map(i => i.originalName);
-  expect(scopeIdents).toEqual(["foo", "bar"]);
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %foo 
+      { %a u32 } #1
+      %bar 
+      {  } #2
+    } #0"
+  `);
 });
 
 test("fn ref", () => {
@@ -67,11 +77,14 @@ test("fn ref", () => {
     }
     fn bar() {}
   `;
-  const result = testParseWESL(src);
-  const { children } = result.rootScope;
-  expect(children.length).toBe(2);
-  const firstChildIdents = children[0].idents.map(i => i.originalName);
-  expect(firstChildIdents).toEqual(["bar"]);
+  const { rootScope } = testParseWESL(src);
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %foo 
+      { bar } #1
+      %bar 
+      {  } #2
+    } #0"
+  `);
 });
 
 test("struct", () => {
@@ -81,13 +94,11 @@ test("struct", () => {
     }
   `;
   const { rootScope } = testParseWESL(src);
-  const scopeIdents = rootScope.idents.map(i => i.originalName);
-  expect(scopeIdents).toEqual(["A"]);
-
-  const { children } = rootScope;
-  expect(children.length).toBe(1);
-  const firstChildIdents = children[0].idents.map(i => i.originalName);
-  expect(firstChildIdents).toEqual(["B"]);
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %A 
+      { B } #1
+    } #0"
+  `);
 });
 
 test("alias", () => {
@@ -96,7 +107,7 @@ test("alias", () => {
   `;
   const { rootScope } = testParseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-    "{ %A
+    "{ %A 
       { B } #1
     } #0"
   `);
@@ -114,15 +125,15 @@ test("switch", () => {
   const { rootScope } = testParseWESL(src);
 
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-  "{ %main
-    { %code, code
-      { 
-        { %x } #3
-      } #2
-      {  } #4
-    } #1
-  } #0"
-`);
+    "{ %main 
+      { %code code 
+        { 
+          { %x } #3
+        } #2
+        {  } #4
+      } #1
+    } #0"
+  `);
 });
 
 test("for()", () => {
@@ -134,9 +145,9 @@ test("for()", () => {
   const { rootScope } = testParseWESL(src);
 
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-  "{ %main
-    { %i
-      { %i, i, i } #2
+  "{ %main 
+    { %i 
+      { %i i i } #2
     } #1
   } #0"
 `);
@@ -150,9 +161,9 @@ test("fn with param", () => {
     }`;
   const { rootScope } = testParseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-    "{ %main
-      { %i, i32, %x, i
-        { %i, i, x, i } #2
+    "{ %main 
+      { %i i32 %x i 
+        { %i i x i } #2
       } #1
     } #0"
   `);
@@ -164,9 +175,9 @@ test("fn decl scope", () => {
       var x = i;
     }`;
   const { rootScope } = testParseWESL(src);
-  const mainIdent = rootScope.idents[0] as DeclIdent;
+  const mainIdent = rootScope.contents[0] as DeclIdent;
   expect(scopeToString(mainIdent.scope)).toMatchInlineSnapshot(
-    `"{ %i, i32, %x, i } #1"`,
+    `"{ %i i32 %x i } #1"`,
   );
 });
 
@@ -174,8 +185,8 @@ test("builtin scope", () => {
   const src = `fn main( @builtin(vertex_index) a: u32) { }`;
   const { rootScope } = testParseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-    "{ %main
-      { %a, u32 } #1
+    "{ %main 
+      { %a u32 } #1
     } #0"
   `);
 });
@@ -184,9 +195,9 @@ test("builtin enums", () => {
   const src = `struct read { a: vec2f } var<storage, read_write> storage_buffer: read;`;
   const { rootScope } = testParseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-    "{ %read, storage, read_write, %storage_buffer, read
+    "{ %read 
       { vec2f } #1
-    } #0"
+      storage read_write %storage_buffer read} #0"
   `);
 });
 
@@ -196,7 +207,7 @@ test("texture_storage_2d", () => {
   `;
   const { rootScope } = testParseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(
-    `"{ %tex_out, texture_storage_2d, rgba8unorm, write } #0"`,
+    `"{ %tex_out texture_storage_2d rgba8unorm write } #0"`,
   );
 });
 
@@ -206,8 +217,8 @@ test("ptr 2 params", () => {
   `;
   const { rootScope } = testParseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-    "{ %foo
-      { %ptr, ptr, private, u32 } #1
+    "{ %foo 
+      { %ptr ptr private u32 } #1
     } #0"
   `);
 });
@@ -218,8 +229,8 @@ test("ptr 3 params", () => {
   `;
   const { rootScope } = testParseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-    "{ %foo
-      { %ptr, ptr, storage, array, u32, read } #1
+    "{ %foo 
+      { %ptr ptr storage array u32 read } #1
     } #0"
   `);
 });
@@ -265,25 +276,23 @@ test("larger example", () => {
 
   const { rootScope } = testParseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-    "{ %UBO, %Buffer, uniform, %ubo, UBO, storage, read, 
-      %buf_in, Buffer, storage, read_write, %buf_out, Buffer, 
-      %tex_in, texture_2d, f32, %tex_out, texture_storage_2d, 
-      rgba8unorm, write, %import_level, %export_level
+    "{ %UBO 
       { u32 } #1
-      { array, f32 } #2
-      { %coord, vec3u, buf_in, %offset, coord, coord, ubo, 
-        buf_out, offset, textureLoad, tex_in, vec2i, coord
-      } #3
-      { %coord, vec3u, all, coord, vec2u, textureDimensions, 
-        tex_out
-        { %dst_offset, coord, coord, ubo, %src_offset, coord, 
-          coord, ubo, %a, buf_in, src_offset, %b, buf_in, 
-          src_offset, %c, buf_in, src_offset, ubo, %d, buf_in, 
-          src_offset, ubo, %sum, dot, vec4f, a, b, c, d, vec4f, 
-          buf_out, dst_offset, sum, %probabilities, vec4f, a, a, 
-          b, a, b, c, sum, max, sum, textureStore, tex_out, 
-          vec2i, coord, probabilities
-        } #5
+      %Buffer 
+      { array f32 } #2
+      uniform %ubo UBO storage read %buf_in Buffer storage 
+      read_write %buf_out Buffer %tex_in texture_2d f32 %tex_out 
+      texture_storage_2d rgba8unorm write %import_level 
+      { %coord vec3u buf_in %offset coord coord ubo buf_out 
+        offset textureLoad tex_in vec2i coord} #3
+      %export_level 
+      { %coord vec3u all coord vec2u textureDimensions tex_out 
+        { %dst_offset coord coord ubo %src_offset coord coord 
+          ubo %a buf_in src_offset %b buf_in src_offset %c buf_in 
+          src_offset ubo %d buf_in src_offset ubo %sum dot vec4f a
+           b c d vec4f buf_out dst_offset sum %probabilities vec4f
+           a a b a b c sum max sum textureStore tex_out vec2i 
+          coord probabilities} #5
       } #4
     } #0"
   `);
@@ -298,10 +307,38 @@ test("scope with an attribute", () => {
   const { rootScope } = testParseWESL(src);
 
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-  "{ %main
+  "{ %main 
     { 
        @if(foo) {  } #2
     } #1
   } #0"
 `);
 });
+
+test("partial scope", () => {
+  const src = `
+    fn main() {
+      var x = 1;
+
+      @if(false) y = 2;
+    }
+  `;
+  const { rootScope } = testParseWESL(src);
+
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+  "{ %main 
+    { %x 
+       @if(false) -{ y } #2
+    } #1
+  } #0"
+`);
+});
+
+// test("", () => {
+//   const src = `
+//   `;
+//   const { rootScope } = testParseWESL(src);
+
+//   expect(scopeToString(rootScope)).toMatchInlineSnapshot('tbd');
+
+// });

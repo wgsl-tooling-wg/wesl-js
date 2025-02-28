@@ -133,6 +133,8 @@ export function findMap<T, U>(
   return undefined;
 }
 
+/** Run a function over the values in a Record
+ * @return a new Record with mapped values.  */
 export function mapValues<T, U>(
   obj: Record<string, T>,
   fn: (v: T) => U,

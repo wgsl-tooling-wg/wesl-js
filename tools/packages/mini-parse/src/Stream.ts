@@ -17,7 +17,7 @@ export interface Stream<T extends Token> {
 
   /** src text
    *
-   * TODO: Remove this (move it into an extended stream type)
+   * LATER Remove this (move it into an extended stream type)
    */
   src: string;
 }

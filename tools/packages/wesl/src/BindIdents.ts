@@ -7,9 +7,11 @@ import { ManglerFn, minimalMangle } from "./Mangler.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, parseSrcModule, WeslAST } from "./ParseWESL.ts";
 import {
+  childIdent,
+  childScope,
   Conditions,
   DeclIdent,
-  exportDecl,
+  publicDecl,
   RefIdent,
   Scope,
   scopeDecls,
@@ -84,7 +86,8 @@ export function bindIdents(params: BindIdentsParams): BindResults {
 
   const globalNames = new Set<string>();
   const knownDecls = new Set<DeclIdent>();
-  rootScope.idents.forEach(ident => {
+  const rootIdents = rootScope.contents.filter(childIdent);
+  rootIdents.forEach(ident => {
     if (ident.kind === "decl") {
       ident.mangledName = ident.originalName;
       globalNames.add(ident.originalName);
@@ -101,7 +104,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     virtuals,
     mangler,
   };
-  const rootDecls = rootScope.idents.filter(i => i.kind === "decl");
+  const rootDecls = rootIdents.filter(i => i.kind === "decl");
 
   // initialize liveDecls with all module level declarations
   // (note that in wgsl module level declarations may appear in any order, incl after their references.)
@@ -174,15 +177,17 @@ function bindIdentsRecursive(
   const isRoot = !!parentOrRoot.root;
 
   // trace all identifiers in this scope
-  scope.idents.forEach(ident => {
-    const { kind: identKind } = ident;
-    if (identKind === "decl") {
+  scope.contents.forEach(child => {
+    const { kind } = child;
+    if (kind === "decl") {
+      const ident = child;
       !isRoot && liveDecls.decls.set(ident.originalName, ident);
-    } else {
+    } else if (kind === "ref") {
+      const ident = child;
       if (!ident.refersTo && !ident.std) {
         const foundDecl =
           findDeclInModule(ident, liveDecls) ??
-          findDeclImport(ident, registry, conditions, virtuals);
+          findQualifiedImport(ident, registry, conditions, virtuals);
 
         if (foundDecl) {
           ident.refersTo = foundDecl.decl;
@@ -191,14 +196,14 @@ function bindIdentsRecursive(
         } else if (stdWgsl(ident.originalName)) {
           ident.std = true;
         } else {
-          warnMissingIdent(ident);
+          failMissingIdent(ident);
         }
       }
     }
   });
 
   // follow references from child scopes
-  const newFromChildren = scope.children.flatMap(child => {
+  const newFromChildren = scope.contents.filter(childScope).flatMap(child => {
     return bindIdentsRecursive(child, bindContext, { parent: liveDecls });
   });
 
@@ -253,13 +258,14 @@ function globalDeclToRootLiveDecls(decl: DeclIdent): LiveDecls | undefined {
 }
 
 /** warn the user about a missing identifer */
-function warnMissingIdent(ident: RefIdent): void {
+function failMissingIdent(ident: RefIdent): void {
   const { refIdentElem } = ident;
   if (refIdentElem) {
     const { srcModule, start, end } = refIdentElem;
     const { debugFilePath: filePath } = srcModule;
-    const msg = `unresolved identifier in file: ${filePath}`; // TODO make error message clickable
+    const msg = `unresolved identifier '${ident.originalName}' in file: ${filePath}`; // TODO make error message clickable
     srcLog(srcModule.src, [start, end], msg);
+    throw new Error(msg);
   }
 }
 
@@ -312,8 +318,9 @@ function findDeclInModule(
 }
 
 /** Match a reference identifier to a declaration in
- * another module via an import statement */
-function findDeclImport(
+ * another module via an import statement
+ * or via an inline qualified ident e.g.  foo::bar() */
+function findQualifiedImport(
   refIdent: RefIdent,
   parsed: ParsedRegistry,
   conditions: Conditions,
@@ -321,20 +328,27 @@ function findDeclImport(
 ): FoundDecl | undefined {
   const flatImps = flatImports(refIdent.ast);
 
+  const identParts = refIdent.originalName.split("::");
+
   // find module path by combining identifer reference with import statement
-  const modulePathParts = matchingImport(refIdent, flatImps); // module path in array form
+  const modulePathParts =
+    matchingImport(identParts, flatImps) ?? qualifiedImport(identParts);
 
   if (modulePathParts) {
-    return findExport(modulePathParts, parsed, conditions, virtuals);
+    const { srcModule } = refIdent.ast;
+    return findExport(modulePathParts, srcModule, parsed, conditions, virtuals);
   }
 }
 
-/** using the flattened import array, find an import that matches a provided identifier */
+function qualifiedImport(identParts: string[]): string[] | undefined {
+  if (identParts.length > 1) return identParts;
+}
+
+/** combine and import using the flattened import array, find an import that matches a provided identi*/
 function matchingImport(
-  ident: RefIdent,
+  identParts: string[],
   flatImports: FlatImport[],
 ): string[] | undefined {
-  const identParts = ident.originalName.split("::");
   for (const flat of flatImports) {
     if (flat.importPath.at(-1) === identParts.at(0)) {
       return [...flat.modulePath, ...identParts.slice(1)];
@@ -351,27 +365,42 @@ interface FoundDecl {
 /** @return an exported root declIdent for the provided path */
 function findExport(
   modulePathParts: string[],
+  srcModule: SrcModule,
   parsed: ParsedRegistry,
   conditions: Conditions = {},
   virtuals?: VirtualLibrarySet,
 ): FoundDecl | undefined {
-  const modulePath = modulePathParts.slice(0, -1).join("::");
+  const fqPathParts = absoluteModulePath(modulePathParts, srcModule);
+  const modulePath = fqPathParts.slice(0, -1).join("::");
   const module =
     parsed.modules[modulePath] ??
     virtualModule(modulePathParts[0], conditions, virtuals); // LATER consider virtual modules with submodules
 
   if (!module) {
     // TODO show error with source location
-    console.log(
-      `ident ${modulePathParts.join("::")} in import statement, but module not found`,
-    );
+    console.log(`ident ${modulePathParts.join("::")}, but module not found`);
     return undefined;
   }
 
-  const decl = exportDecl(module.rootScope, last(modulePathParts)!);
+  const decl = publicDecl(module.rootScope, last(modulePathParts)!);
   if (decl) {
     return { decl };
   }
+}
+
+/** convert a module path with super:: elements to one with no super:: elements */
+function absoluteModulePath(
+  modulePathParts: string[],
+  srcModule: SrcModule,
+): string[] {
+  const lastSuper = modulePathParts.findLastIndex(p => p === "super");
+  if (lastSuper > -1) {
+    const srcModuleParts = srcModule.modulePath.split("::");
+    const base = srcModuleParts.slice(0, -(lastSuper + 1));
+    const noSupers = modulePathParts.slice(lastSuper + 1);
+    return [...base, ...noSupers];
+  }
+  return modulePathParts;
 }
 
 /** @return AST for a virtual module */

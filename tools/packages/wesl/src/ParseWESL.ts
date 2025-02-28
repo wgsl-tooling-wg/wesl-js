@@ -28,9 +28,8 @@ export interface BindingAST extends WeslAST {
   _flatImports?: FlatImport[];
 }
 
+/** Parse a WESL file. Throws on error. */
 export function parseSrcModule(srcModule: SrcModule): WeslAST {
-  // TODO allow returning undefined for failure, or throw?
-
   const stream = new WeslStream(srcModule.src);
   const init: ParserInit = { stream };
   const parseResult = weslRoot.parse(init);
