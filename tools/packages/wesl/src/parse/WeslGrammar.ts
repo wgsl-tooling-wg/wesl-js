@@ -428,15 +428,15 @@ const regular_statement = or(
 
 // prettier-ignore
 const conditional_statement = tagScope(
-seq(
-  opt_attributes, 
-  regular_statement
-)                                  .collect(statementCollect)
+  seq(
+    opt_attributes, 
+    regular_statement
+  )                                .collect(statementCollect)
                                    .collect(partialScopeCollect()));
 
 // prettier-ignore
 const unconditional_statement = tagScope(
-    seq(
+  seq(
     opt_attributes_no_if, 
     regular_statement,
   )
