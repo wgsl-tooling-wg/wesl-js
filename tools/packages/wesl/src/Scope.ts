@@ -15,6 +15,7 @@ export interface SrcModule {
 /** a src declaration or reference to an ident */
 export type Ident = DeclIdent | RefIdent;
 
+/** LATER change this to a Map, so that `toString` isn't accidentally a condition */
 export type Conditions = Record<string, boolean>;
 
 interface IdentBase {
