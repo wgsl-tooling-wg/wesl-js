@@ -87,10 +87,7 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "assert":
     case "alias":
     case "gvar":
-      if (ctx.extracting) {
-        ctx.srcBuilder.addNl();
-        ctx.srcBuilder.addNl();
-      }
+      emitRootElemNl(ctx);
       return emitContents(e, ctx);
 
     case "attribute":
@@ -100,6 +97,14 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
 
     default:
       assertUnreachable(e);
+  }
+}
+
+/** emit root elems with a blank line inbetween */
+function emitRootElemNl(ctx: EmitContext): void {
+  if (ctx.extracting) {
+    ctx.srcBuilder.addNl();
+    ctx.srcBuilder.addNl();
   }
 }
 
