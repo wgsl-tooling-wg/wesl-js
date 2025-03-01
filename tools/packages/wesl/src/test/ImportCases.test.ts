@@ -48,6 +48,7 @@ test("circular import", ctx => importCaseTest(ctx.task.name));
 test("inline package reference", ctx => importCaseTest(ctx.task.name));
 test("inline super:: reference", ctx => importCaseTest(ctx.task.name));
 test("import super::file1", ctx => importCaseTest(ctx.task.name));
+test("declaration after subscope", ctx => importCaseTest(ctx.task.name));
 
 // test(, ctx =>
 //   linkTest2(ctx.task.name, {

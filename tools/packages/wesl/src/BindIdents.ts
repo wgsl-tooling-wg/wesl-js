@@ -19,6 +19,7 @@ import {
 } from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last } from "./Util.ts";
+import { assertUnreachable } from "./Assertions.ts";
 
 /**
   BindIdents pass
@@ -175,6 +176,7 @@ function bindIdentsRecursive(
   // active declarations in this scope
   const liveDecls = parentOrRoot.root ?? makeLiveDecls(parentOrRoot.parent);
   const isRoot = !!parentOrRoot.root;
+  const newFromChildren: DeclIdent[] = [];
 
   // trace all identifiers in this scope
   scope.contents.forEach(child => {
@@ -199,12 +201,15 @@ function bindIdentsRecursive(
           failMissingIdent(ident);
         }
       }
+    } else if (kind === "scope") {
+      const parent = { parent: liveDecls };
+      const newFromScope = bindIdentsRecursive(child, bindContext, parent);
+      newFromChildren.push(...newFromScope);
+    } else if (kind === "partial") {
+      // TODO
+    } else {
+      assertUnreachable(kind);
     }
-  });
-
-  // follow references from child scopes
-  const newFromChildren = scope.contents.filter(childScope).flatMap(child => {
-    return bindIdentsRecursive(child, bindContext, { parent: liveDecls });
   });
 
   // follow references from referenced declarations
