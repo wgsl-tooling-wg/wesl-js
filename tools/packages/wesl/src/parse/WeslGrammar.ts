@@ -146,7 +146,9 @@ const normal_attribute = tagScope(
 
       // Everything else is also a normal attribute, optional expression list
       seq(
-        (word)                  .ptag("name"),
+        // we don't want this to interfere with if_attribute, 
+        // but not("if") isn't necessary for now, since 'if' is a keyword, not a word
+        word                     .ptag("name"),
         opt(() => attribute_argument_list),
       ),
     ),
