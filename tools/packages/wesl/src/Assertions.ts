@@ -4,18 +4,15 @@ export function assertThat(condition: any, msg?: string): asserts condition {
     throw new Error(msg);
   }
 }
-export function assertUnreachable(value: never): never {
-  throw new ErrorWithData("Unreachable value", { data: value });
-}
 
-export interface ErrorWithDataOptions extends ErrorOptions {
-  data: any;
-}
-
-export class ErrorWithData extends Error {
-  data: any;
-  constructor(message?: string, options?: ErrorWithDataOptions) {
-    super(message, options);
-    this.data = options?.data;
-  }
+/**
+ * Useful to validate that all cases are handled,
+ * TypeScript should complain if this statement could possibly be executed.
+ *
+ * (It is not intended to execute at runtime.
+ * Instead, the purpose is to trigger type checking to confirm that
+ * we've handled every appropriate type.)
+ */
+export function assertUnreachable(_value: never): never {
+  throw new Error("should be unreachable");
 }
