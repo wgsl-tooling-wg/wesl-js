@@ -77,6 +77,10 @@ export interface ElemWithContentsBase extends AbstractElemBase {
   contents: AbstractElem[];
 }
 
+export interface HasAttributes {
+  attributes?: AttributeElem[];
+}
+
 /* ------   Terminal Elements  (don't contain other elements)  ------   */
 
 /**
@@ -177,11 +181,10 @@ export interface TypedDeclElem extends ElemWithContentsBase {
 }
 
 /** an alias statement */
-export interface AliasElem extends ElemWithContentsBase {
+export interface AliasElem extends ElemWithContentsBase, HasAttributes {
   kind: "alias";
   name: DeclIdentElem;
   typeRef: TypeRefElem;
-  attributes: AttributeElem[];
 }
 
 /** an attribute like '@compute' or '@binding(0)' */
@@ -225,22 +228,22 @@ export interface IfAttribute {
 }
 
 /** a const_assert statement */
-export interface ConstAssertElem extends ElemWithContentsBase {
+export interface ConstAssertElem extends ElemWithContentsBase, HasAttributes {
   kind: "assert";
-  attributes: AttributeElem[];
 }
 
 /** a const declaration */
-export interface ConstElem extends ElemWithContentsBase {
+export interface ConstElem extends ElemWithContentsBase, HasAttributes {
   kind: "const";
   name: TypedDeclElem;
-  attributes: AttributeElem[];
 }
 
+/** an expression w/o special handling, used inside attribute parameters */
 export interface UnknownExpressionElem extends ElemWithContentsBase {
   kind: "expression";
 }
 
+/** an expression that can be safely evaluated at compile time */
 export interface TranslateTimeExpressionElem {
   kind: "translate-time-expression";
   expression: ExpressionElem;
@@ -321,9 +324,8 @@ export type DirectiveVariant =
   | EnableDirective
   | RequiresDirective;
 
-export interface DirectiveElem extends AbstractElemBase {
+export interface DirectiveElem extends AbstractElemBase, HasAttributes {
   kind: "directive";
-  attributes?: AttributeElem[];
   directive: DirectiveVariant;
 }
 
@@ -344,19 +346,17 @@ export interface RequiresDirective {
 }
 
 /** a function declaration */
-export interface FnElem extends ElemWithContentsBase {
+export interface FnElem extends ElemWithContentsBase, HasAttributes {
   kind: "fn";
   name: DeclIdentElem;
   params: FnParamElem[];
-  attributes?: AttributeElem[];
   returnType?: TypeRefElem;
 }
 
 /** a global variable declaration (at the root level) */
-export interface GlobalVarElem extends ElemWithContentsBase {
+export interface GlobalVarElem extends ElemWithContentsBase, HasAttributes {
   kind: "gvar";
   name: TypedDeclElem;
-  attributes?: AttributeElem[];
 }
 
 /** an entire file */
@@ -365,17 +365,15 @@ export interface ModuleElem extends ElemWithContentsBase {
 }
 
 /** an override declaration */
-export interface OverrideElem extends ElemWithContentsBase {
+export interface OverrideElem extends ElemWithContentsBase, HasAttributes {
   kind: "override";
-  attributes: AttributeElem[];
   name: TypedDeclElem;
 }
 
 /** a parameter in a function declaration */
-export interface FnParamElem extends ElemWithContentsBase {
+export interface FnParamElem extends ElemWithContentsBase, HasAttributes {
   kind: "param";
   name: TypedDeclElem;
-  attributes: AttributeElem[];
 }
 
 /** simple references to structures, like myStruct.bar
@@ -388,12 +386,11 @@ export interface SimpleMemberRef extends ElemWithContentsBase {
 }
 
 /** a struct declaration */
-export interface StructElem extends ElemWithContentsBase {
+export interface StructElem extends ElemWithContentsBase, HasAttributes {
   kind: "struct";
   name: DeclIdentElem;
   members: StructMemberElem[];
   bindingStruct?: true; // used later during binding struct transformation
-  attributes: AttributeElem[];
 }
 
 /** generic container of other elements */
@@ -408,10 +405,9 @@ export interface BindingStructElem extends StructElem {
 }
 
 /** a member of a struct declaration */
-export interface StructMemberElem extends ElemWithContentsBase {
+export interface StructMemberElem extends ElemWithContentsBase, HasAttributes {
   kind: "member";
   name: NameElem;
-  attributes: AttributeElem[];
   typeRef: TypeRefElem;
   mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
 }
@@ -426,24 +422,20 @@ export interface TypeRefElem extends ElemWithContentsBase {
 }
 
 /** a variable declaration */
-export interface VarElem extends ElemWithContentsBase {
+export interface VarElem extends ElemWithContentsBase, HasAttributes {
   kind: "var";
-  attributes: AttributeElem[];
   name: TypedDeclElem;
 }
 
-export interface LetElem extends ElemWithContentsBase {
+export interface LetElem extends ElemWithContentsBase, HasAttributes {
   kind: "let";
-  attributes: AttributeElem[];
   name: TypedDeclElem;
 }
 
-export interface StatementElem extends ElemWithContentsBase {
+export interface StatementElem extends ElemWithContentsBase, HasAttributes {
   kind: "statement";
-  attributes: AttributeElem[];
 }
 
-export interface SwitchClause extends ElemWithContentsBase {
+export interface SwitchClause extends ElemWithContentsBase, HasAttributes {
   kind: "switch-clause";
-  attributes: AttributeElem[];
 }
