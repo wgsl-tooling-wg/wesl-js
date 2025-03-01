@@ -16,16 +16,23 @@ export function assertThatDebug(
 }
 
 /**
+ * Typescript will complain at compile time if it thinks this could be executed.
+ * Useful to validate that all cases are handled.
+ *
+ * Does nothing at runtime.
+ */
+export function assertUnreachableSilent(_value: never): void {}
+
+/**
  * Useful to validate that all cases are handled,
  * TypeScript should complain if this statement could possibly be executed.
  *
- * (It is not intended to execute at runtime.
- * Instead, the purpose is to trigger type checking to confirm that
- * we've handled every appropriate type.)
+ * If this is somehow executed at runtime, throw an exception.
  */
 export function assertUnreachable(value: never): never {
   throw new ErrorWithData("Unreachable value", { data: value }); // LATER optimize code size by reporting less in non debug builds
 }
+
 
 export interface ErrorWithDataOptions extends ErrorOptions {
   data: any;
