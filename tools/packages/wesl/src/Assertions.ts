@@ -15,8 +15,16 @@ export function assertThatDebug(
   tracing && assertThat(condition, msg);
 }
 
+/**
+ * Useful to validate that all cases are handled,
+ * TypeScript should complain if this statement could possibly be executed.
+ *
+ * (It is not intended to execute at runtime.
+ * Instead, the purpose is to trigger type checking to confirm that
+ * we've handled every appropriate type.)
+ */
 export function assertUnreachable(value: never): never {
-  throw new ErrorWithData("Unreachable value", { data: value });
+  throw new ErrorWithData("Unreachable value", { data: value }); // LATER optimize code size by reporting less in non debug builds
 }
 
 export interface ErrorWithDataOptions extends ErrorOptions {
