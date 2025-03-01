@@ -10,7 +10,7 @@ import {
   NameElem,
   RefIdentElem,
   SyntheticElem,
-  TextElem
+  TextElem,
 } from "./AbstractElems.ts";
 import { assertUnreachable, assertUnreachableSilent } from "./Assertions.ts";
 import { isGlobal } from "./BindIdents.ts";
@@ -33,17 +33,7 @@ export function lowerAndEmit(
   extracting = true,
 ): void {
   const emitContext: EmitContext = { conditions, srcBuilder, extracting };
-  lowerAndEmitRecursive(rootElems, emitContext);
-}
-
-function lowerAndEmitRecursive(
-  elems: AbstractElem[],
-  emitContext: EmitContext,
-): void {
-  const validElems = elems.filter(e =>
-    conditionsValid(e, emitContext.conditions),
-  );
-  validElems.forEach(e => lowerAndEmitElem(e, emitContext));
+  rootElems.forEach(e => lowerAndEmitElem(e, emitContext));
 }
 
 export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
@@ -66,6 +56,9 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "decl":
       return emitDeclIdent(e, ctx);
 
+    case "statement":
+      return emitConditionally(e, ctx);
+
     // container elements just emit their child elements
     case "param":
     case "var":
@@ -77,7 +70,6 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "expression":
     case "type":
     case "stuff":
-    case "statement":
     case "switch-clause":
       return emitContents(e, ctx);
 
@@ -125,6 +117,15 @@ export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
 
 export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
   elem.contents.forEach(e => lowerAndEmitElem(e, ctx));
+}
+
+export function emitConditionally(
+  elem: ContainerElem & ElemWithAttributes,
+  ctx: EmitContext,
+): void {
+  if (conditionsValid(elem, ctx.conditions)) {
+    emitContents(elem, ctx);
+  }
 }
 
 export function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {
