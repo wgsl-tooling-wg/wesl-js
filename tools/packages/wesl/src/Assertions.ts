@@ -14,5 +14,5 @@ export function assertThat(condition: any, msg?: string): asserts condition {
  * we've handled every appropriate type.)
  */
 export function assertUnreachable(_value: never): never {
-  throw new Error("should be unreachable");
+  throw new Error(`should be unreachable: ${_value}`);
 }
