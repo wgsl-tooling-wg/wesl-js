@@ -2,12 +2,12 @@ import { link } from "../Linker.js";
 import { ManglerFn } from "../Mangler.ts";
 import { expectTrimmedMatch } from "./shared/StringUtil.js";
 
-/** 
+/**
  * Link wesl sources and compare the linked wgsl vs expectations.
  * Ignores blank lines and initial blank columns.
- * 
- * (for tests) 
-*/
+ *
+ * (for tests)
+ */
 export async function testLink(
   weslSrc: Record<string, string>,
   rootModuleName: string,

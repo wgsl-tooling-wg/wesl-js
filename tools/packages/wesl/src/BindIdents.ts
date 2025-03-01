@@ -1,4 +1,5 @@
 import { debugNames, srcLog } from "mini-parse";
+import { assertUnreachable } from "./Assertions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
 import { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
@@ -8,7 +9,6 @@ import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, parseSrcModule, WeslAST } from "./ParseWESL.ts";
 import {
   childIdent,
-  childScope,
   Conditions,
   DeclIdent,
   publicDecl,
@@ -19,7 +19,6 @@ import {
 } from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last } from "./Util.ts";
-import { assertUnreachable } from "./Assertions.ts";
 
 /**
   BindIdents pass
