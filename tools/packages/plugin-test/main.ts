@@ -1,7 +1,13 @@
 /// <reference types="wesl-plugin/suffixes" />
 /// <reference types="vite/client" />
 import { copyBuffer } from "thimbleberry";
-import { bindingStructsPlugin, link, LinkConfig, LinkParams } from "wesl";
+import {
+  bindingStructsPlugin,
+  link,
+  LinkConfig,
+  LinkParams,
+  makeWeslDevice,
+} from "wesl";
 import { layoutFunctions } from "./shaders/app.wesl?bindingLayout";
 import linkParams from "./shaders/app.wesl?link";
 
@@ -9,7 +15,7 @@ main();
 
 async function main() {
   const adapter = await navigator.gpu.requestAdapter();
-  const device = await adapter?.requestDevice();
+  const device = await adapter?.requestDevice()?.then(makeWeslDevice);
   if (!device) {
     console.error("no GPU device available");
     return;
@@ -20,9 +26,9 @@ async function main() {
     plugins: [bindingStructsPlugin()],
   };
   const params: LinkParams = { ...linkParams, config };
-  const code = (await link(params)).dest;
+  const linkerOutput = await link(params);
 
-  const module = device.createShaderModule({ code });
+  const module = linkerOutput.createShaderModule(device, {});
 
   const pipelineLayout = device.createPipelineLayout({
     bindGroupLayouts: [bgLayout],
