@@ -33,7 +33,6 @@ export function assertUnreachable(value: never): never {
   throw new ErrorWithData("Unreachable value", { data: value }); // LATER optimize code size by reporting less in non debug builds
 }
 
-
 export interface ErrorWithDataOptions extends ErrorOptions {
   data: any;
 }
