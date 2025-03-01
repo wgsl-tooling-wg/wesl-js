@@ -3,14 +3,8 @@ import { ModuleElem } from "./parse/WeslElems.ts";
 import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
 
-/** result of a parse for one wesl module (e.g. one .wesl file)
- *
- * The parser constructs the AST constructed into three sections
- * for convenient access by the binding stage.
- *  - import statements
- *  - language elements (fn, struct, etc)
- *  - scopes
- *
+/**
+ * result of a parse for one wesl module (e.g. one .wesl file)
  */
 export interface WeslAST {
   /** source text for this module */

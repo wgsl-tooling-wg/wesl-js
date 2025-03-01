@@ -40,8 +40,8 @@ export async function linkTestOpts(
   );
   const weslSrc = { "./test.wesl": root, ...restWgsl };
 
-  const rootModuleName = "test";
-  const srcMap = await link({ weslSrc, rootModuleName, ...opts });
+  const rootModulePath = ["package", "test"];
+  const srcMap = await link({ weslSrc, rootModulePath, ...opts });
   return srcMap.dest;
 }
 

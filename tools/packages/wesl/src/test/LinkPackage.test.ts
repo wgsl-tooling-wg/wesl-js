@@ -19,7 +19,7 @@ test("import rand() from a package", async () => {
 
   const weslSrc = { "./main.wesl": src };
   const result = await expectNoLogAsync(async () =>
-    link({ weslSrc, rootModuleName: "./main.wesl", libs: [lib] }),
+    link({ weslSrc, rootModulePath: ["package", "main"], libs: [lib] }),
   );
   expect(result.dest).toContain("fn pcg_2u_3f");
   expect(result.dest).not.toContain("sinRand");

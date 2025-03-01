@@ -41,7 +41,7 @@ export type SymbolsTable = {
 export function bindSymbols(
   module: ModuleElem,
   conditions: Conditions,
-  packageNames: Set<String>,
+  packageNames: string[],
 ): SymbolsTable {
   const visitor = new BindSymbolsVisitor(conditions, packageNames);
   visitor.module(module);
@@ -105,6 +105,8 @@ function isPredeclared(name: string): boolean {
  */
 class BindSymbolsVisitor extends AstVisitor {
   public symbolsTable: SymbolsTable = [];
+
+  /** Order is user declarations and imports > libraries > predeclared */
   rootDecls: LiveDecls = {
     decls: new Map(),
     parent: null,
@@ -112,10 +114,13 @@ class BindSymbolsVisitor extends AstVisitor {
   liveDecls: LiveDecls;
   constructor(
     public conditions: Conditions,
-    public packageNames: Set<String>,
+    packageNames: string[],
   ) {
     super();
     this.liveDecls = this.rootDecls;
+    this.addDeclaration("package", ["package"]);
+    this.addDeclaration("super", ["super"]);
+    packageNames.forEach(v => this.addDeclaration(v, [v]));
   }
 
   addDeclIdent(ident: DeclIdent) {
@@ -139,33 +144,24 @@ class BindSymbolsVisitor extends AstVisitor {
 
   resolveDeclaration(ident: TemplatedIdentElem) {
     const identStart = ident.ident.segments[0];
+    const decl = findDecl(this.liveDecls, identStart);
+
     if (ident.ident.segments.length === 1) {
       // simple ident
-      const decl = findDecl(this.liveDecls, identStart);
       if (decl !== null) {
         ident.symbolRef = decl;
+      } else if (isPredeclared(identStart)) {
+        // Okay, fine
       } else {
-        if (isPredeclared(identStart)) {
-          // Okay, fine
-        } else if (this.packageNames.has(identStart)) {
-          throw new Error(
-            `Package not allowed here ${fullIdentToString(ident.ident)}`,
-          );
-        } else {
-          throw new Error(
-            `Unresolved identifier ${fullIdentToString(ident.ident)}`,
-          );
-        }
+        throw new Error(
+          `Unresolved identifier ${fullIdentToString(ident.ident)}`,
+        );
       }
     } else {
       // package reference
-      if (
-        identStart === "package" ||
-        identStart === "super" ||
-        this.packageNames.has(identStart)
-      ) {
+      if (decl !== null) {
         const symbolRef = this.symbolsTable.length;
-        // Only add the package reference
+        // Add the package reference (this could be deduplicated)
         this.symbolsTable.push({
           name: ident.ident.segments,
         });

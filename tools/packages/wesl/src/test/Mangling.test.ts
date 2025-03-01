@@ -35,6 +35,7 @@ fn main() { bar(); }
     mangler: underscoreMangle,
     weslSrc,
     debugWeslRoot: "main",
+    rootModulePath: ["package", "main"],
   });
 
   const expected = `

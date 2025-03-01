@@ -19,13 +19,13 @@ export async function testWgslFiles(namedPaths: NamedPath[]) {
   const config = { plugins: [bindingStructsPlugin()] };
 
   namedPaths.forEach(({ name, filePath }) => {
-    const shortPath = "./" + name;
     test(name, async () => {
       const text = await fs.readFile(filePath, { encoding: "utf8" });
       const result = await expectNoLogAsync(() => {
+        const shortPath = "./" + name;
         const weslSrc = { [shortPath]: text };
-        const rootModuleName = noSuffix(name);
-        return link({ weslSrc, rootModuleName, config });
+        const rootModulePath = ["package", ...noSuffix(name).split("/")];
+        return link({ weslSrc, rootModulePath, config });
       });
       expect(stripWesl(result.dest)).toBe(stripWesl(text));
     });

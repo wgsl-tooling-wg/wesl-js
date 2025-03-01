@@ -1,58 +1,68 @@
 import { WgslBundle } from "wesl";
-import { parseSrcModule, parseWESL, SrcModule, WeslAST } from "./ParseWESL.ts";
+import { parseSrcModule, SrcModule, WeslAST } from "./ParseWESL.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
 
-export interface ParsedRegistry {
-  modules: Record<string, WeslAST>; // key is module path, e.g. "rand_pkg::foo::bar"
+export class ParsedRegistry {
+  /** Key is module path, turned into a string */
+  private modules = new Map<string, WeslAST>();
+
+  constructor() {}
+
+  addModule(module: SrcModule): WeslAST {
+    const result = parseSrcModule(module);
+    this.modules.set(module.modulePath, result);
+    return result;
+  }
+
+  /* LATER
+  async addModules(rootModulePath: string[]) {
+    const seenModules = new Set<string>(this.modules.keys());
+    
+      // the logic to dispatch a free worker with "parse(moduleSrc)" would go here
+      // for now we're parsing it on the main thread
+    const addModule = async (module: SrcModule) => this.addModule(module);
+
+    // Maybe it shouldn't be "modulePath" but instead be a file path?
+    async function fetchAndParseModuleInner(modulePath: string[]) {
+      // Incremental compilation note: A module depends on
+      // - the source
+      // - the used conditions
+
+      // to do: Add the virtual filesystem to the parsed registry
+        const moduleSource = await this.virtualFilesystem.fetch(modulePath);
+        const ast = await addModule(moduleSource);
+    
+        const childPromises: Promise<void>[] = [];
+        // to do: imports are dependent on conditional compilation, and also include inline usages
+        for(const importElem of ast.moduleElem.imports) {
+            if(seenModules.has(importElem)) {
+                // skip
+            } else {
+                seenModules.add(importElem);
+                childPromises.push(fetchAndParseModule(import));
+            }
+        }
+        await Promise.all(childPromises);
+    }
+
+    await(fetchAndParseModuleInner(rootModulePath));
+  }*/
+
+  getModule(modulePath: string[]): WeslAST | null {
+    return this.modules.get(modulePath.join("::")) ?? null;
+  }
+
+  getModules(): WeslAST[] {
+    return [...this.modules.values()];
+  }
+
+  toDebugString(): string {
+    return `modules: ${[...Object.keys(this.modules)]}`;
+  }
 }
 
 export function parsedRegistry(): ParsedRegistry {
-  return { modules: {} };
-}
-
-/** for debug */
-export function registryToString(registry: ParsedRegistry): string {
-  return `modules: ${[...Object.keys(registry.modules)]}`;
-}
-
-/**
- * Parse WESL each src module (file) into AST elements and a Scope tree.
- * @param src keys are module paths, values are wesl src strings
- */
-export function parseWeslSrc(src: Record<string, string>): ParsedRegistry {
-  const parsedEntries = Object.entries(src).map(([path, src]) => {
-    const weslAST = parseWESL(src);
-    return [path, weslAST];
-  });
-  return { modules: Object.fromEntries(parsedEntries) };
-}
-
-/** Look up a module with a flexible selector.
- *    :: separated module path,   package::util
- *    / separated file path       ./util.wesl (or ./util)
- *          - note: a file path should not include a weslRoot prefix, e.g. not ./shaders/util.wesl
- *    simpleName                  util
- */
-export function selectModule(
-  parsed: ParsedRegistry,
-  selectPath: string,
-  packageName = "package",
-): WeslAST | undefined {
-  // dlog({reg: [...Object.keys(parsed.modules)]});
-  let modulePath: string;
-  if (selectPath.includes("::")) {
-    modulePath = selectPath;
-  } else if (
-    selectPath.includes("/") ||
-    selectPath.endsWith(".wesl") ||
-    selectPath.endsWith(".wgsl")
-  ) {
-    modulePath = fileToModulePath(selectPath, packageName);
-  } else {
-    modulePath = packageName + "::" + selectPath;
-  }
-
-  return parsed.modules[modulePath];
+  return new ParsedRegistry();
 }
 
 /**
@@ -73,46 +83,36 @@ export function parseIntoRegistry(
   } else if (!debugWeslRoot.endsWith("/")) {
     debugWeslRoot += "/";
   }
-  const srcModules: SrcModule[] = Object.entries(srcFiles).map(
-    ([filePath, src]) => {
-      const modulePath = fileToModulePath(filePath, packageName);
-      return { modulePath, debugFilePath: debugWeslRoot + filePath, src };
-    },
-  );
-  srcModules.forEach(mod => {
-    const parsed = parseSrcModule(mod);
-    if (registry.modules[mod.modulePath]) {
-      throw new Error(`duplicate module path: '${mod.modulePath}'`);
+  Object.entries(srcFiles).forEach(([filePath, src]) => {
+    const modulePath = fileToModulePath(filePath, packageName);
+    const debugFilePath = debugWeslRoot + filePath;
+    if (registry.getModule(modulePath)) {
+      throw new Error(`duplicate module path: '${modulePath.join("::")}'`);
     }
-    registry.modules[mod.modulePath] = parsed;
+    registry.addModule({
+      modulePath: modulePath.join("::"),
+      debugFilePath,
+      src,
+    });
   });
-}
-
-export function parseLibsIntoRegistry(
-  libs: WgslBundle[],
-  registry: ParsedRegistry,
-): void {
-  libs.forEach(({ modules, name }) =>
-    parseIntoRegistry(modules, registry, name),
-  );
 }
 
 const libRegex = /^lib\.w[eg]sl$/i;
 
 /** convert a file path (./foo/bar.wesl)
  *  to a module path (package::foo::bar) */
-function fileToModulePath(filePath: string, packageName: string): string {
+function fileToModulePath(filePath: string, packageName: string): string[] {
   if (filePath.includes("::")) {
     // already a module path
-    return filePath;
+    return filePath.split("::");
   }
   if (packageName !== "package" && libRegex.test(filePath)) {
     // special case for lib.wesl files in external packages
-    return packageName;
+    return [packageName];
   }
 
   const strippedPath = noSuffix(normalize(filePath));
-  const moduleSuffix = strippedPath.replaceAll("/", "::");
-  const modulePath = packageName + "::" + moduleSuffix;
+  const moduleSuffix = strippedPath.split("/");
+  const modulePath = [packageName, ...moduleSuffix];
   return modulePath;
 }

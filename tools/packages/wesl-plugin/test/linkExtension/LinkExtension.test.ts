@@ -7,9 +7,9 @@ import linkParams from "./shaders/app.wesl?link";
 test("verify ?link", async () => {
   expectTypeOf(linkParams).toMatchTypeOf<LinkParams>();
 
-  const { rootModuleName, debugWeslRoot, weslSrc, libs } =
+  const { rootModulePath, debugWeslRoot, weslSrc, libs } =
     linkParams as LinkParams;
-  expect(rootModuleName).toMatchInlineSnapshot(`"app"`);
+  expect(rootModulePath).toMatchInlineSnapshot(`"app"`);
 
   dlog("fixme", { debugWeslRoot });
   // TODO this result can't be right... weslRoot should be relative to the tomlDir probably.

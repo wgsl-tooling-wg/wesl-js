@@ -2,7 +2,7 @@ import { createTwoFilesPatch } from "diff";
 import fs from "fs";
 import { enableTracing, log } from "mini-parse";
 import path from "path";
-import { astToString, link, noSuffix, scopeToString } from "wesl";
+import { astToString, link, noSuffix } from "wesl";
 import yargs from "yargs";
 import {
   parsedRegistry,
@@ -63,13 +63,13 @@ async function linkNormally(paths: string[]): Promise<void> {
     const relativePath = path.relative(weslRoot, f);
     return [toUnixPath(relativePath), text];
   });
-  const rootModuleName = noSuffix(path.relative(weslRoot, paths[0]));
+  const rootModulePath = ["package", ...noSuffix(pathAndTexts[0][0])];
   const weslSrc = Object.fromEntries(pathAndTexts);
 
   // TODO conditions
   // TODO external defines
   if (argv.emit) {
-    const linked = await link({ weslSrc, rootModuleName });
+    const linked = await link({ weslSrc, rootModulePath });
     if (argv.emit) log(linked.dest);
   }
   if (argv.details) {
@@ -79,12 +79,10 @@ async function linkNormally(paths: string[]): Promise<void> {
     } catch (e) {
       console.error(e);
     }
-    Object.entries(registry.modules).forEach(([modulePath, ast]) => {
-      log(`---\n${modulePath}`);
+    registry.getModules().forEach(module => {
+      log(`---\n${module.srcModule.modulePath}`);
       log(`\n->ast`);
-      log(astToString(ast.moduleElem));
-      log(`\n->scope`);
-      log(scopeToString(ast.rootScope));
+      log(astToString(module.moduleElem));
       log();
     });
   }

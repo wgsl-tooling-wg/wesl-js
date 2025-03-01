@@ -1,7 +1,7 @@
 import { WGSLLinker } from "@use-gpu/shader";
 import fs from "fs/promises";
 import path from "node:path";
-import { link, parseWESL } from "wesl";
+import { link, ModulePath, parseWESL } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
 
@@ -105,7 +105,7 @@ function runNTimes(n: number, variant: ParserVariant, file: BenchTest): void {
 interface BenchTest {
   name: string;
   /** Path to the main file */
-  mainFile: string;
+  rootModule: ModulePath;
   /** All relevant files (file paths and their contents) */
   files: Map<string, string>;
 }
@@ -115,34 +115,44 @@ async function loadAllFiles(): Promise<BenchTest[]> {
   const reduceBuffer = await loadBench(
     "reduceBuffer",
     examplesDir,
-    "./reduceBuffer.wgsl",
+    ["./reduceBuffer.wgsl"],
+    ["package", "reduceBuffer"],
   );
-  const particle = await loadBench("particle", examplesDir, "./particle.wgsl");
+  const particle = await loadBench(
+    "particle",
+    examplesDir,
+    ["./particle.wgsl"],
+    ["package", "particle"],
+  );
   const rasterize = await loadBench(
     "rasterize",
     examplesDir,
-    "./rasterize_05_fine.wgsl",
+    ["./rasterize_05_fine.wgsl"],
+    ["package", "rasterize_05_fine"],
   );
   const boat = await loadBench(
     "unity_webgpu_0000026E5689B260",
     examplesDir,
-    "./unity_webgpu_000002B8376A5020.fs.wgsl",
+    ["./unity_webgpu_000002B8376A5020.fs.wgsl"],
+    ["package", "unity_webgpu_000002B8376A5020"],
   );
   const imports_only = await loadBench(
     "imports_only",
     examplesDir,
-    "./imports_only.wgsl",
+    ["./imports_only.wgsl"],
+    ["package", "imports_only"],
   );
   const bevy_deferred_lighting = await loadBench(
     "bevy_deferred_lighting",
     "./src/examples/bevy",
-    "./bevy_generated_deferred_lighting.wgsl",
+    ["./bevy_generated_deferred_lighting.wgsl"],
+    ["package", "bevy_generated_deferred_lighting"],
   );
   const bevy_linking = await loadBench(
     "bevy_linking",
     "./src/examples/naga_oil_example",
-    "./pbr.wgsl",
     [
+      "./pbr.wgsl",
       "./clustered_forward.wgsl",
       "./mesh_bindings.wgsl",
       "./mesh_types.wgsl",
@@ -156,6 +166,7 @@ async function loadAllFiles(): Promise<BenchTest[]> {
       "./shadows.wgsl",
       "./utils.wgsl",
     ],
+    ["package", "pbr"],
   );
   return [
     reduceBuffer,
@@ -171,18 +182,17 @@ async function loadAllFiles(): Promise<BenchTest[]> {
 async function loadBench(
   name: string,
   cwd: string,
-  mainFile: string,
-  extraFiles: string[] = [],
+  filePaths: string[] = [],
+  rootModule: ModulePath,
 ): Promise<BenchTest> {
   const files = new Map<string, string>();
   const addFile = async (p: string) =>
     files.set(p, await fs.readFile(path.join(cwd, p), { encoding: "utf8" }));
 
-  await addFile(mainFile);
-  for (const path of extraFiles) {
+  for (const path of filePaths) {
     await addFile(path);
   }
-  return { name, mainFile, files };
+  return { name, rootModule, files };
 }
 
 function runOnce(parserVariant: ParserVariant, test: BenchTest): void {
@@ -193,7 +203,7 @@ function runOnce(parserVariant: ParserVariant, test: BenchTest): void {
   } else if (parserVariant === "wesl-link") {
     link({
       weslSrc: Object.fromEntries(test.files.entries()),
-      rootModuleName: test.mainFile,
+      rootModulePath: test.rootModule,
     });
   } else if (parserVariant === "wgsl_reflect") {
     for (const [path, text] of test.files) {

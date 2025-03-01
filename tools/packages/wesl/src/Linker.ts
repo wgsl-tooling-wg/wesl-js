@@ -6,14 +6,13 @@ import {
   parsedRegistry,
   ParsedRegistry,
   parseIntoRegistry,
-  parseLibsIntoRegistry,
-  selectModule,
 } from "./ParsedRegistry.ts";
 import { WeslAST } from "./ParseWESL.ts";
 import { filterMap, mapValues } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
 import { LinkedWesl } from "./LinkedWesl.ts";
 import { Conditions } from "./Conditions.ts";
+import { assertThat } from "./Assertions.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 
@@ -21,19 +20,7 @@ export interface WeslJsPlugin {
   transform?: LinkerTransform;
 }
 
-export interface SrcModule {
-  /** module path "rand_pkg::sub::foo", or "package::main" */
-  modulePath: string;
-
-  /** file path to the module for user error reporting e.g "rand_pkg:sub/foo.wesl", or "./sub/foo.wesl" */
-  debugFilePath: string;
-
-  /** original src for module */
-  src: string;
-}
-
-export interface TransformedAST
-  extends Pick<WeslAST, "srcModule" | "moduleElem"> {
+export interface TransformedAST extends WeslAST {
   globalNames: Set<string>;
   notableElems: Record<string, AbstractElem[]>;
 }
@@ -41,6 +28,9 @@ export interface TransformedAST
 export interface LinkConfig {
   plugins?: WeslJsPlugin[];
 }
+
+/** a module path like ["package", "main"] */
+export type ModulePath = string[];
 
 export interface LinkParams {
   /** record of file paths and wesl text for modules.
@@ -59,9 +49,9 @@ export interface LinkParams {
   /** name of root wesl module
    *    for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
    *    for a library, the root module defines the public api fo the library
-   *  can be specified as file path (./main.wesl), a module path (package::main), or just a module name (main)
+   *  is a module path like ["package", "main"]
    */
-  rootModuleName?: string;
+  rootModulePath: ModulePath;
 
   /** For debug logging. Will be prepended to file paths. */
   debugWeslRoot?: string;
@@ -103,22 +93,19 @@ export async function link(params: LinkParams): Promise<LinkedWesl> {
   const { weslSrc, debugWeslRoot, libs = [] } = params;
   const registry = parsedRegistry();
   parseIntoRegistry(weslSrc, registry, "package", debugWeslRoot);
-  parseLibsIntoRegistry(libs, registry);
-  return new LinkedWesl(linkRegistry({ registry, ...params }));
+  libs.forEach(lib => parseIntoRegistry(lib.modules, registry, lib.name));
+  return new LinkedWesl(linkRegistry(params, registry));
 }
 
-export interface LinkRegistryParams
-  extends Pick<
-    LinkParams,
-    | "rootModuleName"
-    | "conditions"
-    | "virtualLibs"
-    | "config"
-    | "constants"
-    | "mangler"
-  > {
-  registry: ParsedRegistry;
-}
+type LinkRegistryParams = Pick<
+  LinkParams,
+  | "rootModulePath"
+  | "conditions"
+  | "virtualLibs"
+  | "config"
+  | "constants"
+  | "mangler"
+>;
 
 /** Link wesl from a registry of already parsed modules.
  *
@@ -127,8 +114,11 @@ export interface LinkRegistryParams
  * each time, or perhaps to produce multiple wgsl shaders
  * that share some sources.)
  */
-export function linkRegistry(params: LinkRegistryParams): SrcMap {
-  const bound = bindAndTransform(params);
+export function linkRegistry(
+  params: LinkRegistryParams,
+  registry: ParsedRegistry,
+): SrcMap {
+  const bound = bindAndTransform(params, registry);
   const { transformedAst, newDecls } = bound;
 
   return SrcMapBuilder.build(
@@ -149,10 +139,16 @@ interface BoundAndTransformed {
 /** bind identifers and apply any transform plugins */
 export function bindAndTransform(
   params: LinkRegistryParams,
+  registry: ParsedRegistry,
 ): BoundAndTransformed {
-  const { registry, mangler } = params;
-  const { rootModuleName = "main", conditions = {} } = params;
-  const rootAst = getRootModule(registry, rootModuleName);
+  const { mangler } = params;
+  const { rootModulePath, conditions = {} } = params;
+  assertThat(
+    rootModulePath[0] === "package",
+    "Root module must be inside the package",
+  );
+  assertThat(rootModulePath.length >= 2, "Root module must point at a module");
+  const rootAst = registry.getModule(rootModulePath);
 
   // setup virtual modules from code generation or host constants provided by the user
   const { constants, config } = params;
@@ -179,22 +175,6 @@ function constantsGenerator(
     Object.entries(constants)
       .map(([name, value]) => `const ${name} = ${value};`)
       .join("\n");
-}
-
-/** get a reference to the root module, selecting by module name */
-function getRootModule(
-  parsed: ParsedRegistry,
-  rootModuleName: string,
-): WeslAST {
-  const rootModule = selectModule(parsed, rootModuleName);
-  if (!rootModule) {
-    if (tracing) {
-      console.log(`parsed modules: ${Object.keys(parsed.modules)}`);
-      console.log(`root module not found: ${rootModuleName}`);
-    }
-    throw new Error(`Root module not found: ${rootModuleName}`);
-  }
-  return rootModule;
 }
 
 /** run any plugins that transform the AST */

@@ -1,6 +1,6 @@
 import { afterAll, expect, test } from "vitest";
 import { importCases } from "wesl-testsuite";
-import { link } from "../Linker.js";
+import { link, ModulePath } from "../Linker.js";
 import { ManglerFn, underscoreMangle } from "../Mangler.js";
 import { expectTrimmedMatch, trimSrc } from "./shared/StringUtil.js";
 
@@ -89,21 +89,21 @@ async function importCaseTest(name: string): Promise<void> {
 
   const trimmedWesl = Object.fromEntries(srcEntries);
 
-  const rootName = srcEntries[0][0];
+  const rootName = ["package", ...srcEntries[0][0].split("/")];
   await testLink(trimmedWesl, rootName, expectedWgsl);
   await testLink(trimmedWesl, rootName, underscoreWgsl, underscoreMangle);
 }
 
 async function testLink(
   weslSrc: Record<string, string>,
-  rootModuleName: string,
+  rootModulePath: ModulePath,
   expectedWgsl: string,
   mangler?: ManglerFn,
 ): Promise<void> {
   /* -- link -- */
   const stdResultMap = await link({
     weslSrc,
-    rootModuleName,
+    rootModulePath,
     mangler,
   });
   const stdResult = stdResultMap.dest;
