@@ -71,6 +71,7 @@ export class LinkedWesl {
     module.getCompilationInfo().then(compilationInfo => {
       if (compilationInfo.messages.length === 0) {
         resolve(null);
+        return;
       }
 
       const mappedCompilationInfo = this.mapGPUCompilationInfo(compilationInfo);
