@@ -3,7 +3,7 @@ import { AnyParser, ParserContext, ParserTraceInfo } from "./Parser.js";
 import { log } from "./WrappedLog.js";
 
 /** true if parser tracing is enabled */
-export let tracing = false;
+export let tracing = false; // LATER use as generic debug build signal (perhaps rename to debug or DEBUG)
 
 /** true if tracing/logging messages should show character positions */
 export let tracePos = false;
