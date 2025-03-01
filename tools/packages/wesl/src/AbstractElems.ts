@@ -67,6 +67,8 @@ export type GlobalDeclarationElem =
 
 export type DeclarationElem = GlobalDeclarationElem | FnParamElem | VarElem;
 
+export type ElemWithAttributes = Extract<AbstractElem, HasAttributes>;
+
 export interface AbstractElemBase {
   kind: AbstractElem["kind"];
   start: number;

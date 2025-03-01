@@ -5,14 +5,16 @@ import {
   ContainerElem,
   DeclIdentElem,
   DirectiveElem,
+  ElemWithAttributes,
   ExpressionElem,
   NameElem,
   RefIdentElem,
   SyntheticElem,
-  TextElem,
+  TextElem
 } from "./AbstractElems.ts";
-import { assertUnreachable } from "./Assertions.ts";
+import { assertUnreachable, assertUnreachableSilent } from "./Assertions.ts";
 import { isGlobal } from "./BindIdents.ts";
+import { elementValid } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, Ident } from "./Scope.ts";
 
@@ -288,6 +290,28 @@ export function findDecl(ident: Ident): DeclIdent {
 export function conditionsValid(
   elem: AbstractElem,
   conditions: Conditions,
-): boolean {
+): true | false | undefined {
+  const attrElem = elem as ElemWithAttributes;
+  const { kind } = attrElem;
+
+  switch (kind) {
+    case "alias":
+    case "assert":
+    case "const":
+    case "directive":
+    case "member":
+    case "var":
+    case "let":
+    case "statement":
+    case "switch-clause":
+    case "override":
+    case "gvar":
+    case "fn":
+    case "struct":
+    case "param":
+      return elementValid(attrElem, conditions);
+    default:
+      assertUnreachableSilent(kind);
+  }
   return true;
 }
