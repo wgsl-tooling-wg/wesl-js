@@ -1,6 +1,6 @@
 {
   "name": "wesl-link",
-  "version": "0.6.0-pre6",
+  "version": "0.6.0-pre7",
   "type": "module",
   "scripts": {
     "echo": "echo",
