@@ -1,7 +1,6 @@
 import { LinkedWesl } from "./LinkedWesl.ts";
 import { CompilationOptions, compileToWgsl } from "./lower/CompileToWgsl.ts";
 import { parseSrcModule, SrcModule, WeslAST } from "./ParseWESL.ts";
-import { bindSymbols } from "./pass/SymbolsTablePass.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
 
 export class ParsedRegistry {
@@ -25,7 +24,7 @@ export class ParsedRegistry {
   }
 
   /* LATER
-  async addModules(rootModulePath: string[]) {
+  async prebundleModules(rootModulePath: string[]) {
     const seenModules = new Set<string>(this.modules.keys());
     
       // the logic to dispatch a free worker with "parse(moduleSrc)" would go here
@@ -34,16 +33,13 @@ export class ParsedRegistry {
 
     // Maybe it shouldn't be "modulePath" but instead be a file path?
     async function fetchAndParseModuleInner(modulePath: string[]) {
-      // Incremental compilation note: A module depends on
-      // - the source
-      // - the used conditions
-
       // to do: Add the virtual filesystem to the parsed registry
         const moduleSource = await this.virtualFilesystem.fetch(modulePath);
         const ast = await addModule(moduleSource);
     
         const childPromises: Promise<void>[] = [];
         // to do: imports are dependent on conditional compilation, and also include inline usages
+        // of course we're just skipping the conditional compilation here
         for(const importElem of ast.moduleElem.imports) {
             if(seenModules.has(importElem)) {
                 // skip
