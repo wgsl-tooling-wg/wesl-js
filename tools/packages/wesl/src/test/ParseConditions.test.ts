@@ -96,11 +96,48 @@ test("conditional statement", () => {
           text ' = 1'
         text ';
           '
-        statement
+        statement @if
           attribute @if(true)
           text ' '
           ref x
           text ' = 2 ;'
+        text '
+        }'
+      text '
+      '"
+  `);
+});
+
+test("compound statement", () => {
+  const src = `
+    fn main() {
+      @if(false) {
+        let x = 1;
+      }
+    }
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn main()
+        text 'fn '
+        decl %main
+        text '() {
+          '
+        statement @if
+          attribute @if(false)
+          text ' {
+            '
+          let %x
+            text 'let '
+            typeDecl %x
+              decl %x
+            text ' = 1'
+          text ';
+          }'
         text '
         }'
       text '

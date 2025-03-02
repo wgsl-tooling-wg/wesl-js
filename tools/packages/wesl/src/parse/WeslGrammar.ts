@@ -331,7 +331,7 @@ const compound_statement = tagScope(
       repeat(() => statement),
       req("}"),
     )                                 .collect(scopeCollect()),
-  )
+  )                                   .collect(statementCollect)
 );
 
 const for_init = seq(
