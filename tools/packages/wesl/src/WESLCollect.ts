@@ -1,3 +1,4 @@
+import { dlog } from "berry-pretty";
 import { CollectContext, CollectPair, srcLog, tracing } from "mini-parse";
 import {
   AbstractElem,
@@ -263,7 +264,6 @@ export const collectFnParam = collectElem(
 export const collectStruct = collectElem(
   "struct",
   (cc: CollectContext, openElem: PartElem<StructElem>) => {
-    // dlog({ attributes: cc.tags.attributes?.flat(8).map(e => e && elemToString(e)) });
     const name = cc.tags.type_name?.[0] as DeclIdentElem;
     const members = cc.tags.members as StructMemberElem[];
     const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
@@ -279,7 +279,6 @@ export const collectStruct = collectElem(
 export const collectStructMember = collectElem(
   "member",
   (cc: CollectContext, openElem: PartElem<StructMemberElem>) => {
-    // dlog("structMember", { tags: [...Object.keys(cc.tags)] });
     const name = cc.tags.nameElem?.[0]!;
     const typeRef = cc.tags.typeRefElem?.[0];
     const attributes = cc.tags.attribute?.flat(3) as AttributeElem[];
@@ -305,6 +304,13 @@ export const constAssertCollect = collectElem(
     return withTextCover(partElem, cc);
   },
 );
+
+/** debug routine to log tags at collect() */
+export function logCollect(msg?: string): (cc: CollectContext) => void {
+  return function _log(cc: CollectContext) {
+    dlog(msg ?? "log", { tags: [...Object.keys(cc.tags)] });
+  };
+}
 
 export const statementCollect = collectElem(
   "statement",
