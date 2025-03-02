@@ -119,7 +119,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   } else if (kind === "directive") {
     addDirective(elem, str);
   } else if (kind === "statement") {
-    // Nothing to do for now
+    listAttributeElems(elem.attributes, str);
   } else if (kind === "switch-clause") {
     // Nothing to do for now
   } else {
@@ -198,6 +198,7 @@ function addFnFields(elem: FnElem, str: LineWrapper) {
   }
 }
 
+/** show attribute names in short form to verify collection */
 function listAttributeElems(
   attributes: AttributeElem[] | undefined,
   str: LineWrapper,
