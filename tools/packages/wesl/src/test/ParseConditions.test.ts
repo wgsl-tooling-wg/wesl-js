@@ -145,6 +145,39 @@ test("compound statement", () => {
   `);
 });
 
+test("conditional local var", () => {
+  const src = `
+    fn main() {
+      @if(true) var x = 1;
+    }
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn main()
+        text 'fn '
+        decl %main
+        text '() {
+          '
+        statement @if
+          attribute @if(true)
+          text ' '
+          var %x
+            text 'var '
+            typeDecl %x
+              decl %x
+            text ' = 1'
+          text ';'
+        text '
+        }'
+      text '
+      '"
+  `);
+});
+
 // test("", () => {
 //   const src = `
 //   `;
