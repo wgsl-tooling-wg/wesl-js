@@ -7,12 +7,12 @@ import {
   ParsedRegistry,
   parseIntoRegistry,
 } from "./ParsedRegistry.ts";
-import { WeslAST } from "./ParseWESL.ts";
 import { filterMap, mapValues } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
 import { LinkedWesl } from "./LinkedWesl.ts";
 import { Conditions } from "./Conditions.ts";
 import { assertThat } from "./Assertions.ts";
+import { WeslAST } from "./Module.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 
@@ -28,9 +28,6 @@ export interface TransformedAST extends WeslAST {
 export interface LinkConfig {
   plugins?: WeslJsPlugin[];
 }
-
-/** a module path like ["package", "main"] */
-export type ModulePath = string[];
 
 export interface LinkParams {
   /** record of file paths and wesl text for modules.
@@ -51,7 +48,7 @@ export interface LinkParams {
    *    for a library, the root module defines the public api fo the library
    *  is a module path like ["package", "main"]
    */
-  rootModulePath: ModulePath;
+  rootModulePath: string[];
 
   /** For debug logging. Will be prepended to file paths. */
   debugWeslRoot?: string;

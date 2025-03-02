@@ -9,13 +9,16 @@ import type {
   SwitchClause,
 } from "../parse/WeslElems";
 import { Conditions, evaluateConditions } from "../Conditions.ts";
-import { assertThat } from "../../../mini-parse/src/Assertions.ts";
+import { assertThat } from "../Assertions.ts";
 
 /**
  * TODO: Purposefully unused, I want to see how bad *not* using this would be.
  *
  * Mutates the AST to skip conditional compilation elements.
  * Done as a separate pass for now, since the alternative means more code duplication.
+ * - The symbols table needs it
+ * - The binding structs need it
+ * - The emitting needs it
  * Can be merged when we merge passes.
  */
 export function applyConditionalCompilation(

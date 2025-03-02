@@ -7,7 +7,7 @@ import type {
   ModuleElem,
   Statement,
   FullIdent,
-} from "../parse/WeslElems";
+} from "../parse/WeslElems.ts";
 import {
   AstVisitor,
   walkModule,
@@ -17,21 +17,27 @@ import {
   walkGlobalDeclaration,
   walkDirective,
   walkStatement,
+  walkExpression,
 } from "../AstVisitor.ts";
 import { ExpressionElem, TemplatedIdentElem } from "../parse/ExpressionElem.ts";
 import { ImportElem, ImportStatement } from "../parse/ImportElems.ts";
 import { Conditions, evaluateConditions } from "../Conditions.ts";
 import { DirectiveElem } from "../parse/DirectiveElem.ts";
-import { assertUnreachable } from "../Assertions.ts";
+import { assertThat, assertUnreachable } from "../Assertions.ts";
 import { stdEnumerant, stdFn, stdType } from "../StandardTypes.ts";
-import { assertThat } from "../../../mini-parse/src/Assertions.ts";
 
 /** An index into the symbol table */
 export type SymbolReference = number;
 
 /** An imported symbol. This will be path like `super::foo::bar` */
 export type SymbolImport = string[];
+export function isSymbolImport(
+  symbol: string | SymbolReference | SymbolImport,
+): symbol is SymbolImport {
+  return Array.isArray(symbol);
+}
 
+/** For mangling the symbols */
 export type SymbolsTable = {
   /** The name is either a string, or refers to a different symbol, or refers to an import */
   name: string | SymbolReference | SymbolImport;
@@ -50,15 +56,26 @@ export function getSymbol(
   return result.name;
 }
 
+export type Visibility = "public";
+
+export interface BindSymbolsResult {
+  symbolsTable: SymbolsTable;
+  /** Which declarations can be imported from this module. Depends on conditional compilation flags. */
+  importableDecls: Map<string, Visibility>;
+}
+
 /** Binds the symbols and mutates the module to set the `symbolRef`s in {@link DeclIdent} and {@link TemplatedIdentElem} */
 export function bindSymbols(
   module: ModuleElem,
   conditions: Conditions,
   packageNames: string[],
-): SymbolsTable {
+): BindSymbolsResult {
   const visitor = new BindSymbolsVisitor(conditions, packageNames);
   visitor.module(module);
-  return visitor.symbolsTable;
+  return {
+    symbolsTable: visitor.symbolsTable,
+    importableDecls: visitor.importableDecls,
+  };
 }
 
 /** decls currently visible in this scope */
@@ -119,6 +136,7 @@ function isPredeclared(name: string): boolean {
 class BindSymbolsVisitor extends AstVisitor {
   public symbolsTable: SymbolsTable = [];
 
+  importableDecls = new Map<string, Visibility>();
   /** Order is user declarations and imports > libraries > predeclared */
   rootDecls: LiveDecls = {
     decls: new Map(),
@@ -136,8 +154,10 @@ class BindSymbolsVisitor extends AstVisitor {
     packageNames.forEach(v => this.addDeclaration(v, [v]));
   }
 
-  addDeclIdent(ident: DeclIdent) {
-    ident.symbolRef = this.addDeclaration(ident.name, ident.name);
+  addDeclIdent(ident: DeclIdent): SymbolReference {
+    const result = this.addDeclaration(ident.name, ident.name);
+    ident.symbolRef = result;
+    return result;
   }
 
   addDeclaration(
@@ -155,7 +175,7 @@ class BindSymbolsVisitor extends AstVisitor {
     return symbolRef;
   }
 
-  resolveDeclaration(ident: TemplatedIdentElem) {
+  resolveDeclaration(ident: TemplatedIdentElem): SymbolReference | null {
     const identStart = ident.ident.segments[0];
     const decl = findDecl(this.liveDecls, identStart);
 
@@ -163,8 +183,9 @@ class BindSymbolsVisitor extends AstVisitor {
       // simple ident
       if (decl !== null) {
         ident.symbolRef = decl;
+        return decl;
       } else if (isPredeclared(identStart)) {
-        // Okay, fine
+        return null;
       } else {
         throw new Error(
           `Unresolved identifier ${fullIdentToString(ident.ident)}`,
@@ -185,13 +206,13 @@ class BindSymbolsVisitor extends AstVisitor {
           name: [...firstPart, ...ident.ident.segments.slice(1)],
         });
         ident.symbolRef = symbolRef;
+        return symbolRef;
       } else {
         throw new Error(
           `Unresolved identifier ${fullIdentToString(ident.ident)}`,
         );
       }
     }
-    ident.template?.forEach(v => this.expression(v));
   }
 
   /** Does conditional compilation allow the next element to be included. */
@@ -217,6 +238,7 @@ class BindSymbolsVisitor extends AstVisitor {
         decl.kind === "struct"
       ) {
         this.addDeclIdent(decl.name);
+        this.importableDecls.set(decl.name.name, "public");
       } else if (decl.kind === "assert") {
         // no decl to add
       } else {
@@ -329,6 +351,9 @@ class BindSymbolsVisitor extends AstVisitor {
   override expression(expression: ExpressionElem): void {
     if (expression.kind === "templated-ident") {
       this.resolveDeclaration(expression);
+      expression.template?.forEach(v => this.expression(v));
+    } else {
+      walkExpression(expression, this);
     }
   }
 }

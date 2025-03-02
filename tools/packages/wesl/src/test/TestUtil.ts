@@ -7,7 +7,8 @@ import {
 } from "mini-parse/test-util";
 import { link, LinkParams } from "../Linker.js";
 import { WeslStream, WeslToken } from "../parse/WeslStream.js";
-import { parseWESL, WeslAST } from "../ParseWESL.js";
+import { SrcModule, WeslAST } from "../Module.js";
+import { parseSrcModule } from "../ParsedRegistry.js";
 
 export function testAppParse<T>(
   parser: Parser<Stream<WeslToken>, T>,
@@ -78,6 +79,16 @@ async function linkWithLogInternal(
     if (!quiet) console.error(e);
   }
   return { result, log: logged() };
+}
+
+export function parseWESL(src: string): WeslAST {
+  const srcModule: SrcModule = {
+    modulePath: "package::test",
+    debugFilePath: "./test.wesl",
+    src,
+  };
+
+  return parseSrcModule(srcModule);
 }
 
 /** parse wesl for testing, and return the AST */

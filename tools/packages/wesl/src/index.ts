@@ -1,12 +1,11 @@
-export * from "./debug/ASTtoString.js";
-export * from "./debug/ScopeToString.js";
-export * from "./Linker.js";
-export { WeslStream } from "./parse/WeslStream.js";
-export * from "./ParsedRegistry.js";
-export * from "./ParseWESL.js";
-export * from "./PathUtil.js";
-export * from "./TransformBindingStructs.js";
-export * from "./Util.js"; // TODO: I don't think we should be exporting those functions
-export * from "./WgslBundle.js";
-export * from "./WeslDevice.js";
-export * from "./LinkedWesl.js";
+export * from "./debug/ASTtoString.ts";
+export { WeslStream } from "./parse/WeslStream.ts";
+export * from "./Linker.ts";
+export * from "./LinkedWesl.ts";
+export type { Conditions } from "./Conditions.ts";
+export * from "./Mangler.ts";
+export * from "./Module.ts";
+export * from "./ParsedRegistry.ts";
+export * from "./TransformBindingStructs.ts";
+export * from "./WeslDevice.ts";
+export * from "./WgslBundle.ts";

@@ -1,5 +1,5 @@
-import { WeslStream } from "../parse/WeslStream";
-import { WeslAST } from "../ParseWESL";
+import { WeslAST } from "../Module.ts";
+import { WeslStream } from "../parse/WeslStream.ts";
 
 /**
  * Does a pass over the AST and attaches trivia tokens to it.

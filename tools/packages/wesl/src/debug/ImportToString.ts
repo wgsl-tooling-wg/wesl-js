@@ -1,9 +1,9 @@
-import { assertUnreachable } from "../../../mini-parse/src/Assertions";
+import { assertUnreachable } from "../Assertions.ts";
 import {
   ImportCollection,
   ImportItem,
   ImportStatement,
-} from "../parse/ImportElems";
+} from "../parse/ImportElems.ts";
 
 export function importToString(tree: ImportStatement): string {
   return "import " + importToStringImpl(tree) + ";";

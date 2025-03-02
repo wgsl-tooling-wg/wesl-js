@@ -11,27 +11,30 @@ import {
   SyntheticElem,
 } from "./parse/WeslElems.ts";
 import { assertUnreachable } from "./Assertions.ts";
-import { identToString } from "./debug/ScopeToString.ts";
-import { Conditions, DeclIdent, RefIdent } from "./Scope.ts";
 import { DirectiveElem } from "./parse/DirectiveElem.ts";
 import { ExpressionElem, TemplatedIdentElem } from "./parse/ExpressionElem.ts";
+import { SrcModule, WeslAST } from "./ParseWESL.ts";
+import { Conditions } from "./Conditions.ts";
 
 /** passed to the emitters */
 interface EmitContext {
   srcBuilder: SrcMapBuilder; // constructing the linked output
   conditions: Conditions; // settings for conditional compilation
-  extracting: boolean; // are we extracting or copying the root module
 }
 
 /** traverse the AST, starting from root elements, emitting wgsl for each */
 export function lowerAndEmit(
-  srcBuilder: SrcMapBuilder,
-  rootElems: AbstractElem[],
+  module: WeslAST,
   conditions: Conditions,
-  extracting = true,
-): void {
-  const emitContext: EmitContext = { conditions, srcBuilder, extracting };
-  lowerAndEmitRecursive(rootElems, emitContext);
+): SrcMapBuilder {
+  const srcBuilder = new SrcMapBuilder({
+    text: module.srcModule.src,
+    path: module.srcModule.debugFilePath,
+  });
+
+  const emitContext: EmitContext = { conditions, srcBuilder };
+  lowerAndEmitRecursive(module.moduleElem, emitContext);
+  return srcBuilder;
 }
 
 function lowerAndEmitRecursive(

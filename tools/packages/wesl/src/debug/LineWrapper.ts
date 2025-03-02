@@ -1,3 +1,5 @@
+import { FmtDisplay, str } from "../Util.ts";
+
 type IndentedBlock = {
   indent: number;
   text: (string | IndentedBlock)[];
@@ -25,8 +27,8 @@ export class LineWrapper {
   }
 
   /** add a string, wrapping to the next line if necessary */
-  add(s: string) {
-    this.block.text.push(s);
+  add(template: TemplateStringsArray, ...params: FmtDisplay[]) {
+    this.block.text.push(str(template, ...params));
   }
 
   /** @return the constructed string */

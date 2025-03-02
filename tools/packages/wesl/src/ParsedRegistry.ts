@@ -1,11 +1,15 @@
+import { ParserInit } from "mini-parse";
 import { LinkedWesl } from "./LinkedWesl.ts";
 import { CompilationOptions, compileToWgsl } from "./lower/CompileToWgsl.ts";
-import { parseSrcModule, SrcModule, WeslAST } from "./ParseWESL.ts";
+import { ModulePath, ModulePathString, SrcModule, WeslAST } from "./Module.ts";
+import { WeslStream } from "./parse/WeslStream.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
+import { str } from "./Util.ts";
+import { weslRoot } from "./parse/WeslGrammar.ts";
 
 export class ParsedRegistry {
   /** Key is module path, turned into a string */
-  private modules = new Map<string, WeslAST>();
+  private modules = new Map<ModulePathString, WeslAST>();
 
   constructor() {
     // We ignore @if blocks during the "fetch => parse => find all imports (including inline usages) => kick off more fetches" operation
@@ -19,7 +23,7 @@ export class ParsedRegistry {
 
   addModule(module: SrcModule): WeslAST {
     const result = parseSrcModule(module);
-    this.modules.set(module.modulePath, result);
+    this.modules.set(module.modulePath.toString(), result);
     return result;
   }
 
@@ -54,12 +58,12 @@ export class ParsedRegistry {
     await(fetchAndParseModuleInner(rootModulePath));
   }*/
 
-  compile(opts: CompilationOptions): LinkedWesl {
-    return compileToWgsl(this.modules, opts);
+  compile(rootModulePath: ModulePath, opts: CompilationOptions): LinkedWesl {
+    return compileToWgsl(rootModulePath, this.modules, opts);
   }
 
-  getModule(modulePath: string[]): WeslAST | null {
-    return this.modules.get(modulePath.join("::")) ?? null;
+  getModule(modulePath: ModulePath): WeslAST | null {
+    return this.modules.get(modulePath.toString()) ?? null;
   }
 
   getModules(): WeslAST[] {
@@ -97,10 +101,10 @@ export function parseIntoRegistry(
     const modulePath = fileToModulePath(filePath, packageName);
     const debugFilePath = debugWeslRoot + filePath;
     if (registry.getModule(modulePath)) {
-      throw new Error(`duplicate module path: '${modulePath.join("::")}'`);
+      throw new Error(str`duplicate module path: '${modulePath}'`);
     }
     registry.addModule({
-      modulePath: modulePath.join("::"),
+      modulePath,
       debugFilePath,
       src,
     });
@@ -111,18 +115,28 @@ const libRegex = /^lib\.w[eg]sl$/i;
 
 /** convert a file path (./foo/bar.wesl)
  *  to a module path (package::foo::bar) */
-function fileToModulePath(filePath: string, packageName: string): string[] {
+function fileToModulePath(filePath: string, packageName: string): ModulePath {
   if (filePath.includes("::")) {
     // already a module path
-    return filePath.split("::");
+    return new ModulePath(filePath.split("::"));
   }
   if (packageName !== "package" && libRegex.test(filePath)) {
     // special case for lib.wesl files in external packages
-    return [packageName];
+    return new ModulePath([packageName]);
   }
 
   const strippedPath = noSuffix(normalize(filePath));
   const moduleSuffix = strippedPath.split("/");
-  const modulePath = [packageName, ...moduleSuffix];
-  return modulePath;
+  return new ModulePath([packageName, ...moduleSuffix]);
+}
+
+export function parseSrcModule(srcModule: SrcModule): WeslAST {
+  const stream = new WeslStream(srcModule.src);
+  const init: ParserInit = { stream };
+  const parseResult = weslRoot.parse(init);
+  if (parseResult === null) {
+    throw new Error("parseWESL failed");
+  }
+
+  return { srcModule, moduleElem: parseResult.value };
 }

@@ -1,4 +1,4 @@
-import { ExtendedGPUValidationError } from "./LinkedWesl";
+import { ExtendedGPUValidationError } from "./LinkedWesl.ts";
 
 /**
  * We want the WebGPU compilation errors to point at WESL code.

@@ -5,7 +5,7 @@ import {
   expressionToString,
 } from "./LowerAndEmit.ts";
 
-// LATER DRY emitting elements like this with LowerAndEmit?
+// TODO: Completely remove this
 
 export function attributeToString(e: AttributeElem): string {
   const { kind } = e.attribute;

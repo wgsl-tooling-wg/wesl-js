@@ -1,3 +1,6 @@
+import { assertThat } from "./Assertions.ts";
+import { ModulePath } from "./Module.ts";
+
 export function multiKeySet<A, B, V>(
   m: Map<A, Map<B, V>>,
   a: A,
@@ -165,4 +168,27 @@ export function offsetToLineNumber(
       lineNum += 1;
     }
   }
+}
+
+/** Types that can be turned into a human-readable string */
+export type FmtDisplay = string | number | ModulePath;
+
+/**
+ * It is really easy to accidentally pass something that does not have a sensible toString function to a tagged template.
+ * This guards against that.
+ *
+ * Example
+ * ```ts
+ * let name = "cat";
+ * let foo = str`hello ${name}`;
+ * ```
+ */
+export function str(template: TemplateStringsArray, ...params: FmtDisplay[]) {
+  assertThat(template.length === params.length - 1);
+  let result = template[0];
+  for (let i = 0; i < params.length; i++) {
+    result += params[i];
+    result += template[i + 1];
+  }
+  return result;
 }
