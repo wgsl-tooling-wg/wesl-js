@@ -1,8 +1,6 @@
 import { afterAll, expect, test } from "vitest";
 import { importCases } from "wesl-testsuite";
-import { underscoreMangle } from "../Mangler.js";
-import { trimSrc } from "./shared/StringUtil.js";
-import { testLink } from "./TestLink.js";
+import { testFromCase } from "./TestLink.js";
 
 // wgsl example src, indexed by name
 const examplesByName = new Map(importCases.map(t => [t.name, t]));
@@ -71,26 +69,5 @@ afterAll(c => {
 });
 
 async function importCaseTest(name: string): Promise<void> {
-  /* -- find and trim source texts -- */
-  const caseFound = examplesByName.get(name);
-  if (!caseFound) {
-    throw new Error(`Skipping test "${name}"\nNo example found.`);
-  }
-
-  const {
-    weslSrc,
-    expectedWgsl = "",
-    underscoreWgsl = expectedWgsl,
-  } = caseFound;
-
-  const srcEntries = Object.entries(weslSrc).map(([name, wgsl]) => {
-    const trimmedSrc = trimSrc(wgsl);
-    return [name, trimmedSrc] as [string, string];
-  });
-
-  const trimmedWesl = Object.fromEntries(srcEntries);
-
-  const rootName = srcEntries[0][0];
-  await testLink(trimmedWesl, rootName, expectedWgsl);
-  await testLink(trimmedWesl, rootName, underscoreWgsl, underscoreMangle);
+  return testFromCase(name, examplesByName);
 }
