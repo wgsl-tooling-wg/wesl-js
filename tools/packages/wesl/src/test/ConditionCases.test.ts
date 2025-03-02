@@ -64,3 +64,28 @@ test("conditional binding ", async () => {
   `;
   await testLink({ app: app }, "app", expectWgsl);
 });
+
+test("conditional binding references", async () => {
+  const app = `
+    import package::file1::b;
+
+    fn main() {
+      @if(true) var x = b;
+      @if(false) var x = 2;
+      x += 1;
+    }
+  `;
+
+  const file1 = `
+    const b = 9;
+  `;
+
+  const expectWgsl = `
+    fn main() {
+       var x = b;
+      x += 1;
+    }
+const b = 9;
+  `;
+  await testLink({ app, file1 }, "app", expectWgsl);
+});
