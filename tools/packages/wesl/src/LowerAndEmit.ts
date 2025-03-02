@@ -56,6 +56,7 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "decl":
       return emitDeclIdent(e, ctx);
 
+    // TODO more types should emit conditionally (waiting for tests to verify)
     case "statement":
       return emitConditionally(e, ctx);
 
