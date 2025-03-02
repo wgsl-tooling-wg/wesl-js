@@ -1,6 +1,6 @@
 import { afterAll, expect, test } from "vitest";
 import { importCases } from "wesl-testsuite";
-import { testFromCase } from "./TestLink.js";
+import { testFromCase, verifyCaseCoverage } from "./TestLink.js";
 
 // wgsl example src, indexed by name
 const examplesByName = new Map(importCases.map(t => [t.name, t]));
@@ -58,15 +58,7 @@ test("declaration after subscope", ctx => importCaseTest(ctx.task.name));
 // TODO add case for const_assert in non root module
 // TODO add case for diagnostic in non-root module (should fail?)
 
-afterAll(c => {
-  const testNameSet = new Set(c.tasks.map(t => t.name));
-  const cases = importCases.map(c => c.name);
-  const missing = cases.filter(name => !testNameSet.has(name));
-  if (missing.length) {
-    console.error("Missing tests for cases:", missing);
-    expect("missing test: " + missing.toString()).toBe("");
-  }
-});
+afterAll(verifyCaseCoverage(importCases));
 
 async function importCaseTest(name: string): Promise<void> {
   return testFromCase(name, examplesByName);

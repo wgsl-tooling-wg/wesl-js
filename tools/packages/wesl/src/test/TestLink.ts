@@ -1,3 +1,4 @@
+import { expect, RunnerTestSuite } from "vitest";
 import { WgslTestSrc } from "wesl-testsuite";
 import { link } from "../Linker.js";
 import { ManglerFn, underscoreMangle } from "../Mangler.ts";
@@ -59,4 +60,21 @@ export async function testFromCase(
   const rootName = srcEntries[0][0];
   await testLink(trimmedWesl, rootName, expectedWgsl);
   await testLink(trimmedWesl, rootName, underscoreWgsl, underscoreMangle);
+}
+
+/**
+ * for afterAll(), to verify that all cases are covered from one of the shared test suites
+ */
+export function verifyCaseCoverage(
+  caseList: WgslTestSrc[],
+): (suite: RunnerTestSuite) => void {
+  return function verifyCases(suite: RunnerTestSuite) {
+    const testNameSet = new Set(suite.tasks.map(t => t.name));
+    const caseNames = caseList.map(c => c.name);
+    const missing = caseNames.filter(name => !testNameSet.has(name));
+    if (missing.length) {
+      console.error("Missing tests for cases:", missing);
+      expect("missing test: " + missing.toString()).toBe("");
+    }
+  };
 }
