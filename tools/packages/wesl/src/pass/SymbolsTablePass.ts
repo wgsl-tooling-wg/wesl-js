@@ -37,6 +37,19 @@ export type SymbolsTable = {
   name: string | SymbolReference | SymbolImport;
 }[];
 
+export function getSymbol(
+  table: SymbolsTable,
+  reference: SymbolReference,
+): string | SymbolImport {
+  let result = table.at(reference);
+  assertThat(result !== undefined);
+  while (typeof result.name === "number") {
+    result = table.at(result.name);
+    assertThat(result !== undefined);
+  }
+  return result.name;
+}
+
 /** Binds the symbols and mutates the module to set the `symbolRef`s in {@link DeclIdent} and {@link TemplatedIdentElem} */
 export function bindSymbols(
   module: ModuleElem,
@@ -161,9 +174,15 @@ class BindSymbolsVisitor extends AstVisitor {
       // package reference
       if (decl !== null) {
         const symbolRef = this.symbolsTable.length;
+        let firstPart = getSymbol(this.symbolsTable, decl);
+        if (typeof firstPart === "string") {
+          throw new Error(
+            `Qualified imports must refer to a package or an imported item ${fullIdentToString(ident.ident)}`,
+          );
+        }
         // Add the package reference (this could be deduplicated)
         this.symbolsTable.push({
-          name: ident.ident.segments,
+          name: [...firstPart, ...ident.ident.segments.slice(1)],
         });
         ident.symbolRef = symbolRef;
       } else {

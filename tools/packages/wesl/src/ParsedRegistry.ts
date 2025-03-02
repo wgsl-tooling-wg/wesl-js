@@ -1,12 +1,22 @@
-import { WgslBundle } from "wesl";
+import { LinkedWesl } from "./LinkedWesl.ts";
+import { CompilationOptions, compileToWgsl } from "./lower/CompileToWgsl.ts";
 import { parseSrcModule, SrcModule, WeslAST } from "./ParseWESL.ts";
+import { bindSymbols } from "./pass/SymbolsTablePass.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
 
 export class ParsedRegistry {
   /** Key is module path, turned into a string */
   private modules = new Map<string, WeslAST>();
 
-  constructor() {}
+  constructor() {
+    // We ignore @if blocks during the "fetch => parse => find all imports (including inline usages) => kick off more fetches" operation
+    // Inline usages can be dependent on conditions, but pre-bundling gets to ignore that.
+    // I had a cool partial condition evaluator on a branch, but long term,
+    // I really don't want to maintain a complex conditional compilation infrastructure
+    // ...
+    // Also, libraries do not need to be added up front
+    // It's entirely possible to switch out a library on the fly, just like one would switch out a single module on the fly.
+  }
 
   addModule(module: SrcModule): WeslAST {
     const result = parseSrcModule(module);
@@ -47,6 +57,10 @@ export class ParsedRegistry {
 
     await(fetchAndParseModuleInner(rootModulePath));
   }*/
+
+  compile(opts: CompilationOptions): LinkedWesl {
+    return compileToWgsl(this.modules, opts);
+  }
 
   getModule(modulePath: string[]): WeslAST | null {
     return this.modules.get(modulePath.join("::")) ?? null;
