@@ -46,3 +46,21 @@ test("conditional local variables", async () => {
   `;
   await testLink({ app: app }, "app", expectWgsl);
 });
+
+test("conditional binding ", async () => {
+  const app = `
+    fn main() {
+      @if(true) var x = 1;
+      @if(false) var x = 2;
+      x += 1;
+    }
+  `;
+
+  const expectWgsl = `
+    fn main() {
+       var x = 1;
+      x += 1;
+    }
+  `;
+  await testLink({ app: app }, "app", expectWgsl);
+});

@@ -199,9 +199,10 @@ function bindIdentsRecursive(
       const newFromScope = bindIdentsRecursive(child, bindContext, newLive);
       newFromChildren.push(...newFromScope);
     } else if (kind === "partial") {
-      // TODO
+      const newFromScope = bindIdentsRecursive(child, bindContext, liveDecls);
+      newFromChildren.push(...newFromScope);
     } else {
-      assertUnreachable(kind);
+      assertUnreachableSilent(kind);
     }
   });
 
