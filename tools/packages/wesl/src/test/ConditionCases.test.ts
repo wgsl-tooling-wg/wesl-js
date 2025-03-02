@@ -30,3 +30,19 @@ test("conditional compound statement", async () => {
   `;
   await testLink({ app: app }, "app", expectWgsl);
 });
+
+test("conditional local variables", async () => {
+  const app = `
+    fn main() {
+      @if(true) var x = 1;
+      @if(false) var x = 2 ;
+    }
+  `;
+
+  const expectWgsl = `
+    fn main() {
+       var x = 1;
+    }
+  `;
+  await testLink({ app: app }, "app", expectWgsl);
+});
