@@ -179,11 +179,7 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
       e.end,
     );
   } else if (kind === "@if") {
-    ctx.srcBuilder.add(
-      `@if(${expressionToString(e.attribute.param.expression)})`,
-      e.start,
-      e.end,
-    );
+    // (@if is wesl only, dropped from wgsl)
   } else if (kind === "@interpolate") {
     ctx.srcBuilder.add(
       `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`,
