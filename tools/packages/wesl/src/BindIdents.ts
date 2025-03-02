@@ -1,5 +1,5 @@
 import { debugNames, srcLog } from "mini-parse";
-import { assertUnreachable } from "./Assertions.ts";
+import { assertUnreachableSilent } from "./Assertions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
 import { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
@@ -110,9 +110,13 @@ export function bindIdents(params: BindIdentsParams): BindResults {
   // (note that in wgsl module level declarations may appear in any order, incl after their references.)
   const declEntries = rootDecls.map(d => [d.originalName, d] as const);
   const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
-  const rootLive: RootLiveDecls = { root: liveDecls };
 
-  const foundDecls = bindIdentsRecursive(rootScope, bindContext, rootLive);
+  const foundDecls = bindIdentsRecursive(
+    rootScope,
+    bindContext,
+    liveDecls,
+    true,
+  );
   const decls = foundDecls.filter(d => isGlobal(d));
   return { decls, globalNames };
 }
@@ -139,29 +143,21 @@ interface BindContext {
   /** virtual libraries provided by the user (e.g. for code generators or constants) */
   virtuals?: VirtualLibrarySet;
 }
-
-/** during recursion, the root module is handled differently because its declarations may appear in any order */
-type ParentOrRootDecls = ParentLiveDecls | RootLiveDecls;
-
-interface ParentLiveDecls {
-  parent: LiveDecls;
-  root?: null;
-}
-interface RootLiveDecls {
-  root: LiveDecls;
-}
-
 /**
  * Recursively bind references to declarations in this scope and
  * any child scopes referenced by these declarations.
  * Uses a hash set of found declarations to avoid duplication
  * @return any new declarations found
- * @param parentOrRoot - parent liveDecls or root module liveDecls
+ * @param liveDecls current set of live declaration in this scope
+ *  (empty when traversing to a new scope, possibly non-empty for a partial scope)
+ * @param isRoot liveDecls refers to a prepopulated root scope
+ *  (root scoope declarations may appear in any order)
  */
 function bindIdentsRecursive(
   scope: Scope,
   bindContext: BindContext,
-  parentOrRoot: ParentOrRootDecls,
+  liveDecls: LiveDecls,
+  isRoot = false,
 ): DeclIdent[] {
   // early exit if we've processed this scope before
   const { foundScopes } = bindContext;
@@ -173,8 +169,6 @@ function bindIdentsRecursive(
   const newGlobals: DeclIdent[] = []; // new decl idents to process for binding (and return for emitting)
 
   // active declarations in this scope
-  const liveDecls = parentOrRoot.root ?? makeLiveDecls(parentOrRoot.parent);
-  const isRoot = !!parentOrRoot.root;
   const newFromChildren: DeclIdent[] = [];
 
   // trace all identifiers in this scope
@@ -182,7 +176,7 @@ function bindIdentsRecursive(
     const { kind } = child;
     if (kind === "decl") {
       const ident = child;
-      !isRoot && liveDecls.decls.set(ident.originalName, ident);
+      if (!isRoot) liveDecls.decls.set(ident.originalName, ident);
     } else if (kind === "ref") {
       const ident = child;
       if (!ident.refersTo && !ident.std) {
@@ -201,8 +195,8 @@ function bindIdentsRecursive(
         }
       }
     } else if (kind === "scope") {
-      const parent = { parent: liveDecls };
-      const newFromScope = bindIdentsRecursive(child, bindContext, parent);
+      const newLive = makeLiveDecls(liveDecls);
+      const newFromScope = bindIdentsRecursive(child, bindContext, newLive);
       newFromChildren.push(...newFromScope);
     } else if (kind === "partial") {
       // TODO
@@ -214,9 +208,10 @@ function bindIdentsRecursive(
   // follow references from referenced declarations
   const newFromRefs = newGlobals.flatMap(decl => {
     const foundsScope = decl.scope;
-    const decls = globalDeclToRootLiveDecls(decl);
-    if (decls) {
-      return bindIdentsRecursive(foundsScope, bindContext, { parent: decls });
+    const rootDecls = globalDeclToRootLiveDecls(decl);
+    if (rootDecls) {
+      const rootLive = makeLiveDecls(rootDecls);
+      return bindIdentsRecursive(foundsScope, bindContext, rootLive);
     }
     // (for debug) shouldn't happen. newGlobals should be globals (their scope parents should be the module scope)
     if (debugNames)
