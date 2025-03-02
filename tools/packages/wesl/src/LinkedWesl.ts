@@ -1,7 +1,7 @@
 import { SrcMap } from "mini-parse";
-import type { WeslDevice } from "./WeslDevice";
-import { offsetToLineNumber } from "./Util";
 import { assertThat } from "../../mini-parse/src/Assertions";
+import { offsetToLineNumber } from "./Util";
+import type { WeslDevice } from "./WeslDevice";
 
 /** Results of shader compilation. Has {@link WeslGPUCompilationMessage}
  * which are aware of the WESL module that an error was thrown from. */

@@ -1,6 +1,7 @@
 import { SrcMap, SrcMapBuilder, tracing } from "mini-parse";
 import { AbstractElem, ModuleElem } from "./AbstractElems.ts";
 import { bindIdents } from "./BindIdents.ts";
+import { LinkedWesl } from "./LinkedWesl.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
 import { ManglerFn } from "./Mangler.ts";
 import {
@@ -14,7 +15,6 @@ import { WeslAST } from "./ParseWESL.ts";
 import { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
 import { filterMap, mapValues } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
-import { LinkedWesl } from "./LinkedWesl.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 

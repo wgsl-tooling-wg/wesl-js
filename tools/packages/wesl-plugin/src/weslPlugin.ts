@@ -3,13 +3,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import toml from "toml";
 import type {
-  ExternalIdResult,
-  Thenable,
-  TransformResult,
-  UnpluginBuildContext,
-  UnpluginContext,
-  UnpluginContextMeta,
-  UnpluginOptions,
+    ExternalIdResult,
+    Thenable,
+    TransformResult,
+    UnpluginBuildContext,
+    UnpluginContext,
+    UnpluginContextMeta,
+    UnpluginOptions
 } from "unplugin";
 import { createUnplugin } from "unplugin";
 import { parsedRegistry, ParsedRegistry, parseIntoRegistry } from "wesl";

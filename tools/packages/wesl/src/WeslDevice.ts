@@ -1,4 +1,3 @@
-import { assertThat } from "../../mini-parse/src/Assertions";
 import { ExtendedGPUValidationError } from "./LinkedWesl";
 
 /**
