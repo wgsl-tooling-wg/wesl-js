@@ -1,16 +1,15 @@
-/** A source map file, and a path for debug purposes. */
+import { Span } from "./Span.ts";
+
 export interface SrcWithPath {
   /** User friendly path */
   path?: string;
   text: string;
 }
 
-import { Span } from "./Span";
-
-export interface SrcMapEntry {
-  src: SrcWithPath;
-  srcSpan: Span;
-  destSpan: Span;
+export interface SrcMapBuilder {
+  add(fragment: string, srcSpan: Span): void;
+  addName(fragment: string, srcSpan: Span): void;
+  addSynthetic(fragment: string): void;
 }
 
 export interface SrcPosition {
@@ -18,125 +17,241 @@ export interface SrcPosition {
   position: number;
 }
 
-/** map text ranges in multiple src texts to a single dest text */
+/** A source span. It's possible that the end of the generated span doesn't map to a sensible source. */
+export interface SrcSpan {
+  src: SrcWithPath;
+  span: [number, number | null];
+}
+
 export class SrcMap {
-  entries: SrcMapEntry[];
-  dest: SrcWithPath;
-
-  constructor(dest: SrcWithPath, entries: SrcMapEntry[] = []) {
-    this.dest = dest;
-    this.entries = entries;
+  private sources: SrcWithPath[] = [];
+  private dest: string = "";
+  private entries: MinSrcMapEntry[] = [];
+  constructor() {}
+  builderFor(source: SrcWithPath): SrcMapBuilder {
+    const sourceId = this.addSource(source);
+    const self = this;
+    return {
+      add(fragment, srcSpan: Span) {
+        const isRange = source.text.slice(srcSpan[0], srcSpan[1]) === fragment;
+        self.add({
+          fragment,
+          srcSpan,
+          source: sourceId,
+          isName: false,
+          isRange,
+        });
+      },
+      addName(fragment, srcSpan: Span) {
+        const isRange = source.text.slice(srcSpan[0], srcSpan[1]) === fragment;
+        self.add({
+          fragment,
+          srcSpan,
+          source: sourceId,
+          isName: true,
+          isRange,
+        });
+      },
+      addSynthetic(fragment) {
+        self.add({
+          fragment,
+          srcSpan: null,
+          source: sourceId,
+          isName: false,
+          isRange: false,
+        });
+      },
+    };
   }
-
-  /** add a new mapping from src to dest ranges.
-   * entries must be non-overlapping in the destination
-   */
-  addEntries(newEntries: SrcMapEntry[]): void {
-    this.entries.push(...newEntries);
+  addSource(source: SrcWithPath): number {
+    const srcId = this.sources.length;
+    this.sources.push(source);
+    return srcId;
   }
+  add(opts: {
+    fragment: string;
+    srcSpan: Span | null;
+    source: number;
+    isName: boolean;
+    isRange: boolean;
+  }) {
+    let flags = 0;
+    if (opts.isName) {
+      flags |= IsNameFlag;
+    }
+    if (opts.isRange) {
+      flags |= IsRangeFlag;
+    }
+    if (opts.srcSpan === null) {
+      flags |= IsSyntheticFlag;
+    }
+    const srcSpan = opts.srcSpan ?? [0, 0];
 
-  /** given positions in the dest string,
-   * @return corresponding positions in the src strings */
-  mapPositions(positions: number[]): SrcPosition[] {
-    return positions.map(p => this.destToSrc(p));
-  }
-
-  /** internally compress adjacent entries where possible */
-  compact(): void {
-    if (!this.entries.length) return;
-    let prev = this.entries[0];
-    const newEntries: SrcMapEntry[] = [prev];
-
-    for (let i = 1; i < this.entries.length; i++) {
-      const e = this.entries[i];
-      if (
-        e.src.path === prev.src.path &&
-        e.src.text === prev.src.text &&
-        prev.destSpan[1] === e.destSpan[0] &&
-        prev.srcSpan[1] === e.srcSpan[0]
-      ) {
-        // combine adjacent range entries into one
-        prev.destSpan = [prev.destSpan[0], e.destSpan[1]];
-        prev.srcSpan = [prev.srcSpan[0], e.srcSpan[1]];
-      } else {
-        newEntries.push(e);
-        prev = e;
+    // We do not merge normal source map entries, since that'd lose information
+    // When remapping, we map destination locations to clamped source locations
+    // We can, however, losslessly merge range entries, and synthetic entries.
+    if ((opts.isRange || opts.srcSpan === null) && this.entries.length > 0) {
+      const lastEntry = this.entries[this.entries.length - 1];
+      const canBeMerged =
+        (lastEntry.flags === flags && lastEntry.srcId === opts.source,
+        lastEntry.srcEnd === srcSpan[0]);
+      if (canBeMerged) {
+        lastEntry.srcEnd = srcSpan[1];
+        this.dest += opts.fragment;
+        return;
       }
     }
-    this.entries = newEntries;
-  }
 
-  /** sort in destination order */
-  sort(): void {
-    this.entries.sort((a, b) => a.destSpan[0] - b.destSpan[0]);
-  }
-
-  /** This SrcMap's destination is a src for the other srcmap,
-   * so combine the two and return the result.
-   */
-  merge(other: SrcMap): SrcMap {
-    if (other === this) return this;
-
-    const mappedEntries = other.entries.filter(
-      e => e.src.path === this.dest.path && e.src.text === this.dest.text,
-    );
-    if (mappedEntries.length === 0) {
-      console.log("other source map does not link to this one");
-      // dlog({ this: this });
-      // dlog({ other });
-      return other;
-    }
-    sortSrc(mappedEntries);
-    const newEntries = mappedEntries.map(e => {
-      const { src, position: srcStart } = this.destToSrc(e.srcSpan[0]);
-      const { src: endSrc, position: srcEnd } = this.destToSrc(e.srcSpan[1]);
-      if (endSrc !== src) throw new Error("NYI, need to split");
-      const newEntry: SrcMapEntry = {
-        src,
-        srcSpan: [srcStart, srcEnd],
-        destSpan: e.destSpan,
-      };
-      // dlog({ newEntry });
-      return newEntry;
+    this.entries.push({
+      srcId: opts.source,
+      srcStart: srcSpan[0],
+      srcEnd: srcSpan[1],
+      destStart: this.dest.length,
+      flags,
     });
+    this.dest += opts.fragment;
+  }
 
-    const otherSources = other.entries.filter(
-      e => e.src.path !== this.dest.path || e.src.text !== this.dest.text,
-    );
+  /** Gets a source map entry. Filters out synthetic entries. */
+  private getEntry(destPos: number): SrcMapEntry | null {
+    if (this.entries.length === 0) {
+      return null;
+    }
+    // LATER use correct binary search
+    // e.g. https://github.com/stefnotch/typestef/blob/a705b8a37ced3757ce0c613f75b0ea66fe71e932/src/array-utils.ts#L7
+    let nextEntryIndex = this.entries.findIndex(e => destPos < e.destStart);
+    if (nextEntryIndex === 0) {
+      // The first entry already rejects us
+      return null;
+    }
+    const entryIndex =
+      nextEntryIndex === -1 ? this.entries.length - 1 : nextEntryIndex - 1;
+    const entry = this.entries[entryIndex];
 
-    const newMap = new SrcMap(other.dest, [...otherSources, ...newEntries]);
-    newMap.sort();
-    return newMap;
+    if ((entry.flags & IsSyntheticFlag) !== 0) {
+      // Attempt to fall back to the nearest non-synthetic entry
+      return null;
+    }
+
+    const nextEntryStart =
+      this.entries.at(entryIndex + 1)?.destStart ?? this.dest.length;
+
+    return {
+      index: entryIndex,
+      src: this.sources[entry.srcId],
+      srcSpan: [entry.srcStart, entry.srcEnd],
+      destSpan: [entry.destStart, nextEntryStart],
+      flags: entry.flags,
+    };
   }
 
   /**
-   * @param entries should be sorted in destSpan[0] order
    * @return the source position corresponding to a provided destination position
-   *
    */
-  destToSrc(destPos: number): SrcPosition {
-    const entry = this.entries.find(
-      e => e.destSpan[0] <= destPos && e.destSpan[1] >= destPos,
-    );
-    if (!entry) {
-      /* TODO this console.log triggers during debugging, now that preprocessing doesn't produce a real srcMap. 
-        remove the warning or fix the reason for the warning?
-       */
-
-      // console.log(`no SrcMapEntry for dest position: ${destPos}`);
-      return {
-        src: this.dest,
-        position: destPos,
-      };
+  destToSrc(destPos: number): SrcPosition | null {
+    const entry = this.getEntry(destPos);
+    if (entry === null) {
+      return null;
+    }
+    const position = mapPosition(entry, destPos, true);
+    if (position === null) {
+      return null;
     }
     return {
+      position,
       src: entry.src,
-      position: entry.srcSpan[0] + destPos - entry.destSpan[0],
+    };
+  }
+
+  /** @return a source span corresponding to the provided destination span */
+  destSpanToSrc(destSpan: Span): SrcSpan | null {
+    const startEntry = this.getEntry(destSpan[0]);
+    if (startEntry === null) {
+      return null;
+    }
+    const startPosition = mapPosition(startEntry, destSpan[0], true);
+    if (startPosition === null) {
+      return null;
+    }
+
+    let endPosition: number | null;
+    // destSpan[1] is an exclusive range.
+    // also, account for the possibility of it being mapped to a wildly different place
+    if (destSpan[1] === destSpan[0]) {
+      endPosition = startPosition;
+    } else if (destSpan[1] <= startEntry.destSpan[1]) {
+      endPosition = mapPosition(startEntry, destSpan[1], false);
+    } else {
+      const endEntry = this.getEntry(destSpan[1]);
+      if (endEntry === null) {
+        endPosition = null;
+      } else {
+        if (endEntry.src !== startEntry.src) {
+          return null;
+        } else {
+          endPosition = mapPosition(endEntry, destSpan[1], false);
+          if (endPosition! < startPosition) {
+            // Nonsensical end position
+            endPosition = null;
+          }
+        }
+      }
+    }
+
+    return {
+      src: startEntry.src,
+      span: [startPosition, endPosition],
     };
   }
 }
 
-/** sort entries in place by src start position */
-function sortSrc(entries: SrcMapEntry[]): void {
-  entries.sort((a, b) => a.srcSpan[0] - b.srcSpan[0]);
+type SrcMapEntryFlag = number;
+/** Used for identifiers that have a meaning in the original source. */
+const IsNameFlag: SrcMapEntryFlag = 1 << 0;
+/** Guarantees that every character in the dest can be mapped to the corresponding character in src. */
+const IsRangeFlag: SrcMapEntryFlag = 1 << 1;
+/** A generated source that cannot be mapped back to the original source. */
+const IsSyntheticFlag: SrcMapEntryFlag = 2 << 1;
+
+/** Based more closely off of the src map specification */
+interface MinSrcMapEntry {
+  srcId: number;
+  /** Synthetic entries are mapped to [0,0], and get a special flag. */
+  srcStart: number;
+  /** Extra field compared to the spec */
+  srcEnd: number;
+  /**
+   * Dest *end* is the dest start of the next entry.
+   * If it's a range, then the src length and the dest length will be equal.
+   */
+  destStart: number;
+  flags: SrcMapEntryFlag;
+}
+
+/** A decompressed source map entry */
+interface SrcMapEntry {
+  index: number;
+  src: SrcWithPath;
+  srcSpan: Span;
+  destSpan: Span;
+  flags: SrcMapEntryFlag;
+}
+
+function mapPosition(
+  entry: SrcMapEntry | null,
+  destPos: number,
+  clampStart: boolean,
+): number | null {
+  if (entry === null) {
+    return null;
+  }
+
+  if ((entry.flags & IsRangeFlag) !== 0) {
+    // Ranges get mapped to exact positions
+    return entry.srcSpan[0] + Math.max(0, destPos - entry.destSpan[0]);
+  } else if (clampStart) {
+    return entry.srcSpan[0];
+  } else {
+    return entry.srcSpan[1];
+  }
 }
