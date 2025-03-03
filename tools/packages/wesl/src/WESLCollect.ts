@@ -138,19 +138,22 @@ function saveIdent(
 
 /** start a new child lexical Scope */
 function startScope(cc: CollectContext) {
-  const { scope } = cc.app.context as WeslParseContext;
-  const newScope = emptyScope(scope);
-  scope.contents.push(newScope);
-  cc.app.context.scope = newScope;
+  startSomeScope("scope", cc);
 }
 
 /** start a new child partial Scope */
 function startPartialScope(cc: CollectContext) {
+  startSomeScope("partial", cc);
+}
+
+/** start a new lexical or partial scope */
+function startSomeScope(kind: Scope["kind"], cc: CollectContext): void {
   const { scope } = cc.app.context as WeslParseContext;
-  const newScope = emptyScope(scope, "partial");
+  const newScope = emptyScope(scope, kind);
+
   scope.contents.push(newScope);
   cc.app.context.scope = newScope;
-} // TODO DRY with startScope
+}
 
 /* close current Scope and set current scope to parent */
 function completeScope(cc: CollectContext): Scope {
@@ -164,7 +167,7 @@ function completeScope(cc: CollectContext): Scope {
   } else if (tracing) {
     console.log("ERR: completeScope, no parent scope", completedScope.contents);
   }
-  completedScope.ifAttributes = ifAttributes;
+  completedScope.ifAttribute = ifAttributes?.[0];
   return completedScope;
 }
 

@@ -52,8 +52,8 @@ export type Scope = LexicalScope | PartialScope;
 export interface LexicalScope extends ScopeBase {
   kind: "scope";
 
-  /** @if conditions for conditionally translating this scope */
-  ifAttributes?: IfAttribute[];
+  /** @if condition for conditionally translating this scope */
+  ifAttribute?: IfAttribute;
 
   /**
    * Efficient access to declarations in this scope.
@@ -66,8 +66,8 @@ export interface LexicalScope extends ScopeBase {
 export interface PartialScope extends ScopeBase {
   kind: "partial";
 
-  /** @if conditions for conditionally translating this scope */
-  ifAttributes: IfAttribute[];
+  /** @if condition for conditionally translating this scope */
+  ifAttribute?: IfAttribute; // LATER this is required, consider changing type to reflect that
 }
 
 /** common scope elements  */
@@ -82,7 +82,7 @@ interface ScopeBase {
   contents: (Ident | Scope)[];
 
   /** @if conditions for conditionally translating this scope */
-  ifAttributes?: IfAttribute[];
+  ifAttribute?: IfAttribute;
 }
 
 /** return the declarations in this scope */
@@ -115,10 +115,9 @@ let scopeId = 0; // for debugging
 export function emptyScope(
   parent: Scope | null,
   kind: Scope["kind"] = "scope",
-): Scope {
+): Omit<Scope, "ifAttribute"> {
   const id = scopeId++;
-  const ifAttributes: IfAttribute[] = [];
-  return { id, kind, contents: [], parent, ifAttributes };
+  return { id, kind, parent, contents: [] };
 }
 
 /** For debugging,
