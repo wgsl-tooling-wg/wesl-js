@@ -1,5 +1,6 @@
 import { debugNames, srcLog } from "mini-parse";
 import { assertUnreachableSilent } from "./Assertions.ts";
+import { scopeValid } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
 import { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
@@ -194,15 +195,24 @@ function bindIdentsRecursive(
           failMissingIdent(ident);
         }
       }
-    } else if (kind === "scope") {
-      const newLive = makeLiveDecls(liveDecls);
-      const newFromScope = bindIdentsRecursive(child, bindContext, newLive);
-      newFromChildren.push(...newFromScope);
-    } else if (kind === "partial") {
-      const newFromScope = bindIdentsRecursive(child, bindContext, liveDecls);
-      newFromChildren.push(...newFromScope);
     } else {
-      assertUnreachableSilent(kind);
+      const childScope: Scope = child;
+      if (scopeValid(childScope, conditions)) {
+        if (kind === "scope") {
+          const newLive = makeLiveDecls(liveDecls);
+          const newFromScope = bindIdentsRecursive(child, bindContext, newLive);
+          newFromChildren.push(...newFromScope);
+        } else if (kind === "partial") {
+          const newFromScope = bindIdentsRecursive(
+            child,
+            bindContext,
+            liveDecls,
+          );
+          newFromChildren.push(...newFromScope);
+        } else {
+          assertUnreachableSilent(kind);
+        }
+      }
     }
   });
 

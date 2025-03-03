@@ -5,7 +5,7 @@ import {
   IfAttribute,
 } from "./AbstractElems.ts";
 import { assertThatDebug, assertUnreachable } from "./Assertions.ts";
-import { Conditions } from "./Scope.ts";
+import { Conditions, Scope } from "./Scope.ts";
 import { findMap } from "./Util.ts";
 
 /** @return true if the element is valid under current Conditions */
@@ -17,6 +17,14 @@ export function elementValid(
   if (!attributes) return true;
   const ifAttr = findMap(attributes, extractIfAttribute);
   return !ifAttr || evaluateIfAttribute(ifAttr, conditions);
+}
+
+/** @return true if the scope is valid under current conditions */
+export function scopeValid(scope: Scope, conditions: Conditions): boolean {
+  const { ifAttribute } = scope;
+  if (!ifAttribute) return true;
+  const result = evaluateIfAttribute(ifAttribute, conditions);
+  return result;
 }
 
 /** @return return IfAttribute if AttributeElem contains an IfAttribute */
