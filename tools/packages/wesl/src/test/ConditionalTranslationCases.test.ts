@@ -11,8 +11,7 @@ async function caseTest(ctx: TestContext): Promise<void> {
 }
 
 test("@if on diagnostic directive", ctx => caseTest(ctx));
-test.skip("@if on enable directive", ctx => caseTest(ctx));
-test.skip("@if on requires directive", ctx => caseTest(ctx));
+test("@if on enable directive", ctx => caseTest(ctx));
 test("@if on global const declaration", ctx => caseTest(ctx));
 test("@if on global override declaration", ctx => caseTest(ctx));
 test("@if on global variable declaration", ctx => caseTest(ctx));

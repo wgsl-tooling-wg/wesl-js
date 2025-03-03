@@ -34,7 +34,7 @@ export function lowerAndEmit(
   extracting = true,
 ): void {
   const emitContext: EmitContext = { conditions, srcBuilder, extracting };
-  // rootElems.forEach(r => console.log(astToString(r) + "\n"));
+  rootElems.forEach(r => console.log(astToString(r) + "\n"));
   rootElems.forEach(e => lowerAndEmitElem(e, emitContext));
 }
 
@@ -228,13 +228,13 @@ function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
     );
   } else if (kind === "enable") {
     ctx.srcBuilder.add(
-      `enable${directive.extensions.map(v => v.name).join(", ")};`,
+      `enable ${directive.extensions.map(v => v.name).join(", ")};`,
       e.start,
       e.end,
     );
   } else if (kind === "requires") {
     ctx.srcBuilder.add(
-      `requires${directive.extensions.map(v => v.name).join(", ")};`,
+      `requires ${directive.extensions.map(v => v.name).join(", ")};`,
       e.start,
       e.end,
     );
