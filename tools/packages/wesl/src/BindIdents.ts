@@ -165,54 +165,23 @@ function bindIdentsRecursive(
   if (foundScopes.has(scope)) return [];
   foundScopes.add(scope);
 
-  const { registry, conditions } = bindContext;
-  const { virtuals } = bindContext;
   const newGlobals: DeclIdent[] = []; // new decl idents to process for binding (and return for emitting)
 
   // active declarations in this scope
   const newFromChildren: DeclIdent[] = [];
 
-  // trace all identifiers in this scope
+  // process all identifiers and subscopes in this scope
   scope.contents.forEach(child => {
     const { kind } = child;
     if (kind === "decl") {
       const ident = child;
       if (!isRoot) liveDecls.decls.set(ident.originalName, ident);
     } else if (kind === "ref") {
-      const ident = child;
-      if (!ident.refersTo && !ident.std) {
-        const foundDecl =
-          findDeclInModule(ident, liveDecls) ??
-          findQualifiedImport(ident, registry, conditions, virtuals);
-
-        if (foundDecl) {
-          ident.refersTo = foundDecl.decl;
-          const foundGlobal = handleNewDecl(ident, foundDecl.decl, bindContext);
-          foundGlobal && newGlobals.push(foundGlobal);
-        } else if (stdWgsl(ident.originalName)) {
-          ident.std = true;
-        } else {
-          failMissingIdent(ident);
-        }
-      }
+      const newDecls = handleRef(child, liveDecls, bindContext);
+      newDecls && newGlobals.push(newDecls);
     } else {
-      const childScope: Scope = child;
-      if (scopeValid(childScope, conditions)) {
-        if (kind === "scope") {
-          const newLive = makeLiveDecls(liveDecls);
-          const newFromScope = bindIdentsRecursive(child, bindContext, newLive);
-          newFromChildren.push(...newFromScope);
-        } else if (kind === "partial") {
-          const newFromScope = bindIdentsRecursive(
-            child,
-            bindContext,
-            liveDecls,
-          );
-          newFromChildren.push(...newFromScope);
-        } else {
-          assertUnreachableSilent(kind);
-        }
-      }
+      const newDecls = handleScope(child, liveDecls, bindContext);
+      newDecls && newFromChildren.push(...newDecls);
     }
   });
 
@@ -231,6 +200,64 @@ function bindIdentsRecursive(
   });
 
   return [newGlobals, newFromChildren, newFromRefs].flat();
+}
+
+/**
+ * Trace references to their declarations
+ * mutates to:
+ *  mangle declarations
+ *  mark references as 'std' if they match a wgsl std function or type
+ *
+ * @return the found declaration, or undefined if this ref has already been processed
+ */
+function handleRef(
+  ident: RefIdent,
+  liveDecls: LiveDecls,
+  bindContext: BindContext,
+): DeclIdent | undefined {
+  const { registry, conditions } = bindContext;
+  const { virtuals } = bindContext;
+  if (!ident.refersTo && !ident.std) {
+    const foundDecl =
+      findDeclInModule(ident, liveDecls) ??
+      findQualifiedImport(ident, registry, conditions, virtuals);
+
+    if (foundDecl) {
+      ident.refersTo = foundDecl.decl;
+      const foundGlobal = handleNewDecl(ident, foundDecl.decl, bindContext);
+      return foundGlobal;
+    } else if (stdWgsl(ident.originalName)) {
+      ident.std = true;
+    } else {
+      failMissingIdent(ident);
+    }
+  }
+}
+
+/**
+ * If the child scope is conditionally valid,
+ * update liveDecls tree and recurse to process the elements in it.
+ *
+ * @return any new global declarations found
+ */
+function handleScope(
+  childScope: Scope,
+  liveDecls: LiveDecls,
+  bindContext: BindContext,
+): DeclIdent[] | undefined {
+  const { conditions } = bindContext;
+  if (!scopeValid(childScope, conditions)) {
+    return undefined;
+  }
+  const { kind } = childScope;
+  if (kind === "scope") {
+    const newLive = makeLiveDecls(liveDecls);
+    return bindIdentsRecursive(childScope, bindContext, newLive);
+  } else if (kind === "partial") {
+    return bindIdentsRecursive(childScope, bindContext, liveDecls);
+  } else {
+    assertUnreachableSilent(kind);
+  }
 }
 
 /**
