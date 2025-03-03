@@ -1,4 +1,4 @@
-import { afterAll, expect, test } from "vitest";
+import { afterAll, test } from "vitest";
 import { importCases } from "wesl-testsuite";
 import { testFromCase, verifyCaseCoverage } from "./TestLink.js";
 

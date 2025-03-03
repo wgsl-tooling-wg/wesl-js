@@ -1,5 +1,5 @@
-import { test } from "vitest";
 import { expectTrimmedMatch } from "mini-parse/vitest-util";
+import { test } from "vitest";
 import { linkTest } from "./TestUtil.js";
 
 test("link global var", async () => {

@@ -1,4 +1,5 @@
 import { SrcMapBuilder } from "mini-parse";
+import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
 import { astToString } from "../debug/ASTtoString.ts";
@@ -12,7 +13,6 @@ import {
   transformBindingReference,
   transformBindingStruct,
 } from "../TransformBindingStructs.ts";
-import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { linkTestOpts, parseTest } from "./TestUtil.ts";
 
 test("markBindingStructs true", () => {

@@ -1,5 +1,5 @@
-import { test } from "vitest";
 import { expectTrimmedMatch } from "mini-parse/vitest-util";
+import { test } from "vitest";
 import { linkTestOpts } from "./TestUtil.ts";
 
 test("simple virtual module", async () => {

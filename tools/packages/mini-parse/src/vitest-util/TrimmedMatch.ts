@@ -6,9 +6,9 @@ import { expect } from "vitest";
  */
 export function trimSrc(src: string): string {
   const rawLines = src.split("\n");
-  const trimmed = rawLines.map(l => l.trim())
+  const trimmed = rawLines.map(l => l.trim());
   const nonBlank = trimmed.filter(l => l !== "");
-  
+
   return nonBlank.join("\n");
 }
 
