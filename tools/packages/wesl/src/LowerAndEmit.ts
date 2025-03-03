@@ -17,6 +17,7 @@ import { isGlobal } from "./BindIdents.ts";
 import { elementValid } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, Ident } from "./Scope.ts";
+import { astToString } from "./debug/ASTtoString.ts";
 
 /** passed to the emitters */
 interface EmitContext {
@@ -33,10 +34,13 @@ export function lowerAndEmit(
   extracting = true,
 ): void {
   const emitContext: EmitContext = { conditions, srcBuilder, extracting };
+  // rootElems.forEach(r => console.log(astToString(r) + "\n"));
   rootElems.forEach(e => lowerAndEmitElem(e, emitContext));
 }
 
 export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
+  if (!conditionsValid(e, ctx.conditions)) return;
+
   switch (e.kind) {
     // import statements are dropped from from emitted text
     case "import":
@@ -56,10 +60,6 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "decl":
       return emitDeclIdent(e, ctx);
 
-    // TODO more types should emit conditionally (waiting for tests to verify)
-    case "statement":
-      return emitConditionally(e, ctx);
-
     // container elements just emit their child elements
     case "param":
     case "var":
@@ -70,6 +70,7 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "memberRef":
     case "expression":
     case "type":
+    case "statement":
     case "stuff":
     case "switch-clause":
       return emitContents(e, ctx);
@@ -118,15 +119,6 @@ export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
 
 export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
   elem.contents.forEach(e => lowerAndEmitElem(e, ctx));
-}
-
-export function emitConditionally(
-  elem: ContainerElem & ElemWithAttributes,
-  ctx: EmitContext,
-): void {
-  if (conditionsValid(elem, ctx.conditions)) {
-    emitContents(elem, ctx);
-  }
 }
 
 export function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {
