@@ -21,13 +21,13 @@ export async function testWgslFiles(namedPaths: NamedPath[]) {
   namedPaths.forEach(({ name, filePath }) => {
     const shortPath = "./" + name;
     test(name, async () => {
-      const text = await fs.readFile(filePath, { encoding: "utf8" });
+      const orig = await fs.readFile(filePath, { encoding: "utf8" });
       const result = await expectNoLogAsync(() => {
-        const weslSrc = { [shortPath]: text };
+        const weslSrc = { [shortPath]: orig };
         const rootModuleName = noSuffix(name);
         return link({ weslSrc, rootModuleName, config });
       });
-      expect(stripWesl(result.dest)).toBe(stripWesl(text));
+      expect(stripWesl(result.dest)).toBe(stripWesl(orig));
     });
   });
 }
