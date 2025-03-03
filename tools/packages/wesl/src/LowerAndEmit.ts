@@ -1,4 +1,4 @@
-import { SrcMapBuilder, tracing } from "mini-parse";
+import { srcLog, SrcMapBuilder, tracing } from "mini-parse";
 import {
   AbstractElem,
   AttributeElem,
@@ -19,6 +19,7 @@ import { elementValid } from "./Conditions.ts";
 import { astToString } from "./debug/ASTtoString.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, Ident } from "./Scope.ts";
+import { identElemLog } from "./LinkerUtil.ts";
 
 /** passed to the emitters */
 interface EmitContext {
@@ -127,6 +128,16 @@ export function emitStruct(e: StructElem, ctx: EmitContext): void {
 
   const validMembers = members.filter(m => conditionsValid(m, ctx.conditions));
   const validLength = validMembers.length;
+  if (validLength === 0) {
+    const condStr = members.length ? "(with current conditions)" : "";
+    const { debugFilePath: filePath } = name.srcModule;
+    srcLog(
+      name.srcModule.src,
+      e.start,
+      `struct ${name.ident.originalName} in ${filePath} has no members ${condStr}`,
+    );
+    return;
+  }
   validMembers.forEach((m, i) => {
     srcBuilder.add("  ", m.start - 1, m.start);
     lowerAndEmitElem(m, ctx);
