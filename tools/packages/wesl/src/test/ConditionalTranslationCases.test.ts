@@ -41,7 +41,12 @@ test("@if short-circuiting OR", ctx => caseTest(ctx));
 test("@if short-circuiting AND", ctx => caseTest(ctx));
 test("@if logical NOT", ctx => caseTest(ctx));
 test("@if parentheses", ctx => caseTest(ctx));
+
+test("declaration shadowing", ctx => caseTest(ctx));
+
+// requires disabled code stripping mode, which wesl-js doesn't support
 test.skip("contitional declaration shadowing", ctx => caseTest(ctx));
+
 test.skip("contitional import of const_assert", ctx => caseTest(ctx));
 
 afterAll(verifyCaseCoverage(conditionalTranslationCases));
