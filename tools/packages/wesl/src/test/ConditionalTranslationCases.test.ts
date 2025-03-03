@@ -12,6 +12,7 @@ async function caseTest(ctx: TestContext): Promise<void> {
 
 test("@if on diagnostic directive", ctx => caseTest(ctx));
 test("@if on enable directive", ctx => caseTest(ctx));
+test("@if on requires directive", ctx => caseTest(ctx));
 test("@if on global const declaration", ctx => caseTest(ctx));
 test("@if on global override declaration", ctx => caseTest(ctx));
 test("@if on global variable declaration", ctx => caseTest(ctx));
@@ -21,7 +22,7 @@ test("@if on function declaration", ctx => caseTest(ctx));
 test.skip("@if on function formal parameter", ctx => caseTest(ctx));
 test("@if on structure declaration", ctx => caseTest(ctx));
 test.skip("@if on structure member", ctx => caseTest(ctx));
-test.skip("@if on compound statement", ctx => caseTest(ctx));
+test("@if on compound statement", ctx => caseTest(ctx));
 test.skip("@if on if statement", ctx => caseTest(ctx));
 test.skip("@if on switch statement", ctx => caseTest(ctx));
 test.skip("@if on switch clause", ctx => caseTest(ctx));
@@ -32,7 +33,7 @@ test.skip("@if on break statement", ctx => caseTest(ctx));
 test.skip("@if on break-if statement", ctx => caseTest(ctx));
 test.skip("@if on continue statement", ctx => caseTest(ctx));
 test.skip("@if on continuing statement", ctx => caseTest(ctx));
-test.skip("@if on return statement", ctx => caseTest(ctx));
+test("@if on return statement", ctx => caseTest(ctx));
 test.skip("@if on discard statement", ctx => caseTest(ctx));
 test.skip("@if on call statement", ctx => caseTest(ctx));
 test.skip("@if on function-scope const_assert", ctx => caseTest(ctx));
