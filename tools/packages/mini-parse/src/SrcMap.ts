@@ -114,7 +114,11 @@ export class SrcMap {
 
   /** Gets a source map entry. Filters out synthetic entries. */
   private getEntry(destPos: number): SrcMapEntry | null {
-    if (this.entries.length === 0) {
+    if (
+      this.entries.length === 0 ||
+      destPos < 0 ||
+      destPos > this.dest.length
+    ) {
       return null;
     }
     // LATER use correct binary search
@@ -124,13 +128,23 @@ export class SrcMap {
       // The first entry already rejects us
       return null;
     }
-    const entryIndex =
+    let entryIndex =
       nextEntryIndex === -1 ? this.entries.length - 1 : nextEntryIndex - 1;
-    const entry = this.entries[entryIndex];
+    let entry = this.entries[entryIndex];
 
     if ((entry.flags & IsSyntheticFlag) !== 0) {
       // Attempt to fall back to the nearest non-synthetic entry
-      return null;
+      const previousEntry = this.entries.at(entryIndex - 1);
+      if (
+        destPos === entry.destStart &&
+        previousEntry !== undefined &&
+        (previousEntry.flags & IsSyntheticFlag) === 0
+      ) {
+        entryIndex = entryIndex - 1;
+        entry = previousEntry;
+      } else {
+        return null;
+      }
     }
 
     const nextEntryStart =
@@ -203,6 +217,11 @@ export class SrcMap {
       span: [startPosition, endPosition],
     };
   }
+
+  /** @returns the destination text */
+  get code(): string {
+    return this.dest;
+  }
 }
 
 type SrcMapEntryFlag = number;
@@ -249,6 +268,10 @@ function mapPosition(
   if ((entry.flags & IsRangeFlag) !== 0) {
     // Ranges get mapped to exact positions
     return entry.srcSpan[0] + Math.max(0, destPos - entry.destSpan[0]);
+  } else if (destPos === entry.destSpan[0]) {
+    return entry.srcSpan[0];
+  } else if (destPos === entry.destSpan[1]) {
+    return entry.srcSpan[1];
   } else if (clampStart) {
     return entry.srcSpan[0];
   } else {

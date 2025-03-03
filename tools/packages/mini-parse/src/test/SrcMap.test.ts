@@ -1,81 +1,46 @@
 import { expect, test } from "vitest";
 import { SrcMap } from "../SrcMap.js";
 
-test("compact", () => {
-  const src = "a b";
-  const dest = "|" + src + " d";
+test("map 1:1 correspondence", () => {
+  const source = { text: "let foo;" };
+  const srcMap = new SrcMap();
+  const builder = srcMap.builderFor(source);
+  builder.add("let", [0, 3]);
+  builder.addSynthetic(" ");
+  builder.addName("foo", [4, 7]);
 
-  const srcMap = new SrcMap({ text: dest });
-  srcMap.addEntries([
-    { src: { text: src }, srcSpan: [0, 2], destSpan: [1, 3] },
-    { src: { text: src }, srcSpan: [2, 3], destSpan: [3, 4] },
-  ]);
-  srcMap.compact();
-  expect(srcMap.entries).toMatchInlineSnapshot(`
-    [
-      {
-        "destSpan": [
-          1,
-          4,
-        ],
-        "src": "a b",
-        "srcSpan": [
-          0,
-          3,
-        ],
-      },
-    ]
-  `);
+  expect(srcMap.destToSrc(0)).toEqual({
+    src: source,
+    position: 0,
+  });
+  expect(srcMap.destToSrc(1)).toEqual({
+    src: source,
+    position: 1,
+  });
+  expect(srcMap.destToSrc(3)?.position).toBe(3);
+  expect(srcMap.destToSrc(4)?.position).toBe(4);
+  expect(srcMap.destToSrc(5)?.position).toBe(5);
+  expect(srcMap.destToSrc(7)?.position).toBe(7);
+  expect(srcMap.destToSrc(8)).toBe(null);
 });
 
-test("merge", () => {
-  const src = "a b";
-  const src2 = "d";
-  const mid = "|" + src + " " + src2;
-  const dest = "xx" + mid + " z";
-  /*
-    mid:
-      01234567890
-      |a b d
-    dest:
-      01234567890
-      xx|a b d z
-  */
+test("map shifted and renamed", () => {
+  const source = { text: "let foo;" };
+  const srcMap = new SrcMap();
+  const builder = srcMap.builderFor(source);
+  builder.add("const", [0, 3]);
+  builder.addSynthetic(" ");
+  builder.addName("nya", [4, 7]);
+  builder.addSynthetic(";");
 
-  const map1 = new SrcMap({ text: mid }, [
-    { src: { text: src }, srcSpan: [0, 3], destSpan: [1, 4] },
-  ]);
+  expect(srcMap.code).toBe("const nya;");
 
-  const map2 = new SrcMap({ text: dest }, [
-    { src: { text: mid }, srcSpan: [1, 4], destSpan: [3, 6] },
-    { src: { text: src2 }, srcSpan: [0, 1], destSpan: [8, 9] },
-  ]);
-
-  const merged = map1.merge(map2);
-  expect(merged.entries).toMatchInlineSnapshot(`
-    [
-      {
-        "destSpan": [
-          3,
-          6,
-        ],
-        "src": "a b",
-        "srcSpan": [
-          0,
-          3,
-        ],
-      },
-      {
-        "destSpan": [
-          8,
-          9,
-        ],
-        "src": "d",
-        "srcSpan": [
-          0,
-          1,
-        ],
-      },
-    ]
-  `);
+  expect(srcMap.destToSrc(0)?.position).toBe(0);
+  expect(srcMap.destToSrc(1)?.position).toBe(0);
+  expect(srcMap.destToSrc(3)?.position).toBe(0);
+  expect(srcMap.destToSrc(5)?.position).toBe(3);
+  expect(srcMap.destToSrc(6)?.position).toBe(4);
+  expect(srcMap.destToSrc(7)?.position).toBe(4);
+  expect(srcMap.destToSrc(9)?.position).toBe(7);
+  expect(srcMap.destToSrc(10)).toBe(null);
 });
