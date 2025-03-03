@@ -3,7 +3,7 @@ import { assertUnreachable } from "./Assertions.ts";
 import {
   diagnosticControlToString,
   expressionToString,
-} from "./LowerAndEmit.ts";
+} from "./lower/LowerAndEmit.ts";
 
 // TODO: Completely remove this
 

@@ -62,6 +62,7 @@ export class ParsedRegistry {
     return compileToWgsl(rootModulePath, this.modules, opts);
   }
 
+  /** Gets a module via its absolute path */
   getModule(modulePath: ModulePath): WeslAST | null {
     return this.modules.get(modulePath.toString()) ?? null;
   }

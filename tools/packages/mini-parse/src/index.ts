@@ -6,7 +6,6 @@ export * from "./ParserToString.js";
 export * from "./ParserTracing.js";
 export * from "./Span.js";
 export * from "./SrcMap.js";
-export * from "./SrcMapBuilder.js";
 export * from "./Stream.js";
 export { CachingStream } from "./stream/CachingStream.ts";
 export { FilterStream } from "./stream/FilterStream.ts";

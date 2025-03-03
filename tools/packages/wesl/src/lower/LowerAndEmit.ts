@@ -1,50 +1,102 @@
-import { SrcMapBuilder, tracing } from "mini-parse";
+import { SrcMapBuilder } from "mini-parse";
+import { Conditions, evaluateIfAttribute } from "../Conditions";
+import { WeslAST } from "../Module";
 import {
-  AbstractElem,
+  AliasElem,
   AttributeElem,
-  ContainerElem,
-  DeclIdentElem,
-  LhsExpression,
+  ConstAssertElem,
+  DeclarationElem,
+  DeclIdent,
+  FunctionDeclarationElem,
+  GlobalDeclarationElem,
   ModuleElem,
-  NameElem,
-  RefIdentElem,
-  SyntheticElem,
-} from "./parse/WeslElems.ts";
-import { assertUnreachable } from "./Assertions.ts";
-import { DirectiveElem } from "./parse/DirectiveElem.ts";
-import { ExpressionElem, TemplatedIdentElem } from "./parse/ExpressionElem.ts";
-import { SrcModule, WeslAST } from "./ParseWESL.ts";
-import { Conditions } from "./Conditions.ts";
+  StructElem,
+} from "../parse/WeslElems";
+import { ManglerFn } from "../Mangler";
+import { DirectiveElem } from "../parse/DirectiveElem";
+import { assertUnreachable } from "../Assertions";
+import { getSymbol, SymbolTable } from "../pass/SymbolsTablePass";
+import { assertThat } from "../../../mini-parse/src/Assertions";
+import { str } from "../Util";
 
 /** passed to the emitters */
 interface EmitContext {
-  srcBuilder: SrcMapBuilder; // constructing the linked output
-  conditions: Conditions; // settings for conditional compilation
+  /** constructing the linked output */
+  srcBuilder: SrcMapBuilder;
+  opts: EmitOptions;
+}
+
+export interface EmitOptions {
+  conditions: Conditions;
+  isRoot: boolean;
+  tables: SymbolTable[];
+  tableId: number;
 }
 
 /** traverse the AST, starting from root elements, emitting wgsl for each */
 export function lowerAndEmit(
-  module: WeslAST,
-  conditions: Conditions,
-): SrcMapBuilder {
-  const srcBuilder = new SrcMapBuilder({
-    text: module.srcModule.src,
-    path: module.srcModule.debugFilePath,
-  });
-
-  const emitContext: EmitContext = { conditions, srcBuilder };
-  lowerAndEmitRecursive(module.moduleElem, emitContext);
-  return srcBuilder;
+  module: ModuleElem,
+  srcBuilder: SrcMapBuilder,
+  opts: EmitOptions,
+) {
+  emitModule(module, { srcBuilder, opts });
 }
 
-function lowerAndEmitRecursive(
-  elems: AbstractElem[],
-  emitContext: EmitContext,
-): void {
-  const validElems = elems.filter(e =>
-    conditionsValid(e, emitContext.conditions),
-  );
-  validElems.forEach(e => lowerAndEmitElem(e, emitContext));
+function emitModule(module: ModuleElem, ctx: EmitContext): void {
+  if (ctx.opts.isRoot) {
+    for (const directive of module.directives) {
+      emitDirective(directive, ctx);
+    }
+  }
+  for (const decl of module.declarations) {
+    emitDecl(decl, ctx);
+  }
+}
+
+function emitDecl(e: GlobalDeclarationElem, ctx: EmitContext): void {
+  if (!evaluateIfAttribute(ctx.opts.conditions, e.attributes)) {
+    return;
+  }
+
+  emitAttributes(e.attributes, ctx);
+  if (e.kind === "alias") {
+    emitAlias(e, ctx);
+  } else if (e.kind === "assert") {
+    emitAssert(e, ctx);
+  } else if (e.kind === "declaration") {
+    emitDeclaration(e, ctx);
+  } else if (e.kind === "function") {
+    emitFunction(e, ctx);
+  } else if (e.kind === "struct") {
+    emitStruct(e, ctx);
+  } else {
+    assertUnreachable(e);
+  }
+}
+function emitAlias(e: AliasElem, ctx: EmitContext) {
+  ctx.srcBuilder.addRange("alias", e.span[0]);
+  ctx.srcBuilder.addSynthetic(" ");
+  emitDeclIdent(e.name, ctx);
+  ctx.srcBuilder.addSynthetic(" = ");
+  emitTemplatedIdentElem(e.type, ctx);
+  ctx.srcBuilder.addRange(";", e.span[1] - 1);
+  ctx.srcBuilder.addSynthetic("\n");
+}
+
+function emitAssert(e: ConstAssertElem, ctx: EmitContext) {
+  throw new Error("Function not implemented.");
+}
+
+function emitDeclaration(e: DeclarationElem, ctx: EmitContext) {
+  throw new Error("Function not implemented.");
+}
+
+function emitFunction(e: FunctionDeclarationElem, ctx: EmitContext) {
+  throw new Error("Function not implemented.");
+}
+
+function emitStruct(e: StructElem, ctx: EmitContext) {
+  throw new Error("Function not implemented.");
 }
 
 function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
@@ -134,20 +186,34 @@ export function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {
   }
 }
 
-export function emitDeclIdent(e: DeclIdentElem, ctx: EmitContext): void {
-  const mangledName = displayName(e.ident);
-  ctx.srcBuilder.add(mangledName!, e.span);
+function emitDeclIdent(e: DeclIdent, ctx: EmitContext): void {
+  if (e.symbolRef === null) {
+    ctx.srcBuilder.add(e.name, e.span, true);
+  } else {
+    const symbol = getSymbol(ctx.opts.tables, ctx.opts.tableId, e.symbolRef);
+    assertThat(
+      symbol.kind === "name",
+      "Compilation step should have resolved this import",
+    );
+    ctx.srcBuilder.add(symbol.value, e.span, true);
+  }
+}
+
+function emitAttributes(
+  e: AttributeElem[] | undefined,
+  ctx: EmitContext,
+): void {
+  e?.forEach(v => emitAttribute(v, ctx));
 }
 
 function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
   const { kind } = e.attribute;
-  // LATER emit more precise source map info by making use of all the spans
-  // Like the first case does
   if (kind === "attribute") {
     const { params } = e.attribute;
     if (params.length === 0) {
-      ctx.srcBuilder.add("@" + e.attribute.name, e.span);
+      ctx.srcBuilder.add(str`@${e.attribute.name}`, e.span);
     } else {
+      ctx.srcBuilder.add(str`@${e.attribute.name}(`, [e.span[0], params[0]);
       ctx.srcBuilder.add(
         "@" +
           e.attribute.name +
@@ -156,6 +222,7 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
           ")",
         e.span,
       );
+      ctx.srcBuilder.addRange(")", e.span[1] - 1);
     }
   } else if (kind === "@builtin") {
     ctx.srcBuilder.add("@builtin(" + e.attribute.param.name + ")", e.span);
@@ -289,27 +356,14 @@ function displayName(declIdent: DeclIdent): string {
   return declIdent.mangledName || declIdent.originalName;
 }
 
-/** trace through refersTo links in reference Idents until we find the declaration
- * expects that bindIdents has filled in all refersTo: links
- */
-export function findDecl(ident: DeclIdent | RefIdent): DeclIdent {
-  let i: DeclIdent | RefIdent | undefined = ident;
-  do {
-    if (i.kind === "decl") {
-      return i;
-    }
-    i = i.refersTo;
-  } while (i);
-
-  throw new Error(
-    `unresolved ident: ${ident.originalName} (bug in bindIdents?)`,
-  );
+function findDecl(ident: any) {
+  throw new Error("Function not implemented.");
 }
 
-/** check if the element is visible with the current current conditional compilation settings */
-export function conditionsValid(
-  elem: AbstractElem,
-  conditions: Conditions,
-): boolean {
-  return true;
+function isGlobal(declIdent: DeclIdent) {
+  throw new Error("Function not implemented.");
+}
+
+function identToString(declIdent: DeclIdent): any {
+  throw new Error("Function not implemented.");
 }

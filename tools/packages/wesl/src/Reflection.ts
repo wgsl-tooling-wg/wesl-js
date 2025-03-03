@@ -17,7 +17,7 @@ import {
   textureStorageTypes,
 } from "./StandardTypes.ts";
 import { findMap } from "./Util.ts";
-import { expressionToString } from "./LowerAndEmit.ts";
+import { expressionToString } from "./lower/LowerAndEmit.ts";
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
 export const textureStorage = matchOneOf(textureStorageTypes);

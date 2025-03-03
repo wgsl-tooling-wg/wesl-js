@@ -1,18 +1,13 @@
 import { ParserContext } from "./Parser.js";
 import { parserLog, tracePos, tracing } from "./ParserTracing.js";
-import { isSpan, Span } from "./Span.js";
-import { SrcMap, SrcPosition, SrcWithPath } from "./SrcMap.js";
+import { Span } from "./Span.js";
 import { log } from "./WrappedLog.js";
 
 /** log an message along with the source line and a caret indicating the error position in the line
  * @param pos is the position the source string, or if src is a SrcMap, then
  *  pos is the position in the dest (e.g. preprocessed) text
  */
-export function srcLog(
-  src: string | SrcMap,
-  pos: number | Span,
-  ...msgs: any[]
-): void {
+export function srcLog(src: string, pos: number | Span, ...msgs: any[]): void {
   logInternal(log, src, pos, ...msgs);
 }
 
@@ -22,7 +17,7 @@ export function quotedText(text?: string): string {
 
 /** log a message along with src line, but only if tracing is active in the current parser */
 export function srcTrace(
-  src: string | SrcMap,
+  src: string,
   pos: number | [number, number],
   ...msgs: any[]
 ): void {
@@ -39,38 +34,11 @@ export function ctxLog(ctx: ParserContext, ...msgs: any[]): void {
  */
 function logInternal(
   log: typeof console.log,
-  srcOrSrcMap: string | SrcMap,
+  src: string,
   destPos: number | Span,
   ...msgs: any[]
 ): void {
-  if (typeof srcOrSrcMap === "string") {
-    logInternalSrc(log, srcOrSrcMap, destPos, ...msgs);
-    return;
-  }
-  const { src, positions } = mapSrcPositions(srcOrSrcMap, destPos);
-
-  logInternalSrc(log, src.text, positions, ...msgs);
-}
-
-interface SrcPositions {
-  positions: number | Span;
-  src: SrcWithPath;
-}
-
-function mapSrcPositions(srcMap: SrcMap, destPos: number | Span): SrcPositions {
-  let srcPos: [SrcPosition, SrcPosition | null];
-  if (isSpan(destPos)) {
-    srcPos = [srcMap.destToSrc(destPos[0]), srcMap.destToSrc(destPos[1])];
-  } else {
-    srcPos = [srcMap.destToSrc(destPos), null];
-  }
-  const { src } = srcPos[0];
-
-  if (srcPos[1]?.src?.path === src.path && srcPos[1]?.src?.text === src.text) {
-    return { src, positions: [srcPos[0].position, srcPos[1].position] };
-  } else {
-    return { src, positions: srcPos[0].position };
-  }
+  logInternalSrc(log, src, destPos, ...msgs);
 }
 
 function logInternalSrc(

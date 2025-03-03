@@ -7,8 +7,8 @@ export interface SrcWithPath {
 }
 
 export interface SrcMapBuilder {
-  add(fragment: string, srcSpan: Span): void;
-  addName(fragment: string, srcSpan: Span): void;
+  add(fragment: string, srcSpan: Span, isName?: boolean): void;
+  addRange(fragment: string, srcStart: number, isName?: boolean): void;
   addSynthetic(fragment: string): void;
 }
 
@@ -32,23 +32,29 @@ export class SrcMap {
     const sourceId = this.addSource(source);
     const self = this;
     return {
-      add(fragment, srcSpan: Span) {
+      add(fragment, srcSpan, isName = false) {
         const isRange = source.text.slice(srcSpan[0], srcSpan[1]) === fragment;
         self.add({
           fragment,
           srcSpan,
           source: sourceId,
-          isName: false,
+          isName,
           isRange,
         });
       },
-      addName(fragment, srcSpan: Span) {
-        const isRange = source.text.slice(srcSpan[0], srcSpan[1]) === fragment;
+      addRange(fragment, srcStart, isName = false) {
+        const srcText = source.text.slice(srcStart, srcStart + fragment.length);
+        const isRange = srcText === fragment;
+        if (!isRange) {
+          throw new Error(
+            `${fragment} is not a range, the underlying text is ${srcText}`,
+          );
+        }
         self.add({
           fragment,
-          srcSpan,
+          srcSpan: [srcStart, srcStart + fragment.length],
           source: sourceId,
-          isName: true,
+          isName,
           isRange,
         });
       },

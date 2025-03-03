@@ -127,7 +127,10 @@ test("recurse with fn()", () => {
     repeat(or(kind(m.word), () => p)).map(v => v.flat()),
     "}",
   );
-  const wrap = or(p).mapExtended(r => r.app.stable.push(r.value));
+  const wrap = or(p).mapExtended(r => {
+    r.app.stable.push(r.value);
+    return r.value;
+  });
   const { parsed } = testParse(wrap, src);
   expect(parsed?.value).toEqual(["a", "b"]);
 });

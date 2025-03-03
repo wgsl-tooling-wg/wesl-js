@@ -1,9 +1,18 @@
 import { assertThat, assertUnreachable } from "../../mini-parse/src/Assertions";
 import { ExpressionElem } from "./parse/ExpressionElem";
-import { IfAttribute } from "./parse/WeslElems";
+import { AttributeElem, IfAttribute } from "./parse/WeslElems";
 
 /** Maps every condition to a value. A condition being missing is an error. */
 export type Conditions = Map<string, boolean>;
+
+export function evaluateIfAttribute(
+  conditions: Conditions,
+  attributes: AttributeElem[] | undefined,
+): boolean {
+  const condAttribute = attributes?.find(v => v.attribute.kind === "@if");
+  if (condAttribute === undefined) return true;
+  return evaluateConditions(conditions, condAttribute.attribute as IfAttribute);
+}
 
 export function evaluateConditions(
   conditions: Conditions,

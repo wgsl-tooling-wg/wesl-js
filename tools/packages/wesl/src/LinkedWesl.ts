@@ -1,12 +1,12 @@
 import { SrcMap } from "mini-parse";
 import type { WeslDevice } from "./WeslDevice.ts";
-import { offsetToLineNumber } from "./Util.ts";
+import { offsetToLineNumber, str } from "./Util.ts";
 import { assertThat } from "./Assertions.ts";
 
 /** Results of shader compilation. Has {@link WeslGPUCompilationMessage}
  * which are aware of the WESL module that an error was thrown from. */
 export interface WeslGPUCompilationInfo extends GPUCompilationInfo {
-  messages: WeslGPUCompilationMessage[];
+  messages: (WeslGPUCompilationMessage | GPUCompilationMessage)[];
 }
 
 export interface WeslGPUCompilationMessage extends GPUCompilationMessage {
@@ -95,7 +95,7 @@ export class LinkedWesl {
    * better error reporting experience.
    */
   get dest() {
-    return this.sourceMap.dest.text;
+    return this.sourceMap.code;
   }
 
   /** Turns raw compilation info into compilation info
@@ -113,32 +113,34 @@ export class LinkedWesl {
 
   private mapGPUCompilationMessage(
     message: GPUCompilationMessage,
-  ): WeslGPUCompilationMessage {
+  ): WeslGPUCompilationMessage | GPUCompilationMessage {
     const srcMap = this.sourceMap;
-    const srcPosition = srcMap.destToSrc(message.offset);
-    // LATER what if this gets mapped to a completely different place?
-    const srcEndPosition =
-      message.length > 0 ?
-        srcMap.destToSrc(message.offset + message.length)
-      : srcPosition;
-    const length = srcEndPosition.position - srcPosition.position;
+    const srcSpan = srcMap.destSpanToSrc([
+      message.offset,
+      message.offset + message.length,
+    ]);
+    if (srcSpan === null) {
+      return message;
+    }
+    const length =
+      srcSpan.span[1] !== null ? srcSpan.span[1] - srcSpan.span[0] : 0;
 
     let [lineNum, linePos] = offsetToLineNumber(
-      srcPosition.position,
-      srcPosition.src.text,
+      srcSpan.span[0],
+      srcSpan.src.text,
     );
 
     return {
       __brand: message.__brand,
       type: message.type,
       message: message.message,
-      offset: srcPosition.position,
+      offset: srcSpan.span[0],
       length,
       lineNum,
       linePos,
       module: {
-        url: srcPosition.src.path ?? "",
-        text: srcPosition.src.text,
+        url: srcSpan.src.path ?? "",
+        text: srcSpan.src.text,
       },
     };
   }
@@ -166,18 +168,19 @@ function compilationInfoToErrorMessage(
   }
   for (const message of compilationInfo.messages) {
     const { lineNum, linePos } = message;
-
-    result += `${message.module.url}:${lineNum}:${linePos}`;
-    result += ` ${message.type}: ${message.message}\n`;
+    const module = "module" in message ? message.module : null;
+    result += str`${module?.url ?? ""}:${lineNum}:${linePos}`;
+    result += str` ${message.type}: ${message.message}\n`;
     // LATER unmangle code snippets in the message
 
     const lineStartOffset = message.offset - Math.max(0, message.linePos - 1);
-    const source = message.module.text;
+    const source = module?.text;
     if (source) {
       let lineEndOffset = source.indexOf("\n", lineStartOffset);
       if (lineEndOffset === -1) {
         lineEndOffset = source.length;
       }
+      // LATER handle errors that span multiple lines
       result += source.slice(lineStartOffset, lineEndOffset) + "\n";
       const caretCount = Math.max(1, message.length);
       result += " ".repeat(linePos - 1) + "^".repeat(caretCount);

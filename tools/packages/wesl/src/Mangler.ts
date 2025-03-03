@@ -14,9 +14,6 @@ export type ManglerFn = (
   /** module that contains the declaration */
   modulePath: string[],
 
-  /** name at use site (possibly import as renamed from declaration) */
-  proposedName: string,
-
   /** current set of mangled root level names for the linked result (read only) */
   globalNames: Set<string>,
 ) => string;
@@ -55,12 +52,11 @@ export function lengthPrefixMangle(decl: string, modulePath: string[]): string {
  * using the requested name plus a uniquing number suffix if necessary
  */
 export function minimalMangle(
-  _decl: string,
+  decl: string,
   _modulePath: string[],
-  proposedName: string,
   globalNames: Set<string>,
 ): string {
-  return minimallyMangledName(proposedName, globalNames);
+  return minimallyMangledName(decl, globalNames);
 }
 
 /**
@@ -68,15 +64,15 @@ export function minimalMangle(
  * and appending a number suffix necessary
  */
 export function minimallyMangledName(
-  proposedName: string,
+  name: string,
   globalNames: Set<string>,
 ): string {
-  let renamed = proposedName;
+  let renamed = name;
   let conflicts = 0;
 
   // create a unique name
   while (globalNames.has(renamed)) {
-    renamed = proposedName + conflicts++;
+    renamed = name + conflicts++;
   }
 
   return renamed;

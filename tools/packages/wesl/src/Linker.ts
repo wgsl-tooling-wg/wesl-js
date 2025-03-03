@@ -1,6 +1,6 @@
 import { SrcMap, SrcMapBuilder, tracing } from "mini-parse";
 import { ModuleElem } from "./parse/WeslElems.ts";
-import { lowerAndEmit } from "./LowerAndEmit.ts";
+import { lowerAndEmit } from "./lower/LowerAndEmit.ts";
 import { ManglerFn } from "./Mangler.ts";
 import {
   parsedRegistry,

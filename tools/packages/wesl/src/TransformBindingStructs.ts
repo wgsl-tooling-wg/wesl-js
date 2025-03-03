@@ -11,12 +11,28 @@ import {
   TypeTemplateParameter,
 } from "./parse/WeslElems.ts";
 import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
-import { findDecl } from "./LowerAndEmit.ts";
 import { minimallyMangledName } from "./Mangler.ts";
 import { attributeToString, typeListToString } from "./RawEmit.ts";
 import { textureStorage } from "./Reflection.ts";
 import { DeclIdent, RefIdent } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
+
+/** trace through refersTo links in reference Idents until we find the declaration
+ * expects that bindIdents has filled in all refersTo: links
+ */
+function findDecl(ident: DeclIdent | RefIdent): DeclIdent {
+  let i: DeclIdent | RefIdent | undefined = ident;
+  do {
+    if (i.kind === "decl") {
+      return i;
+    }
+    i = i.refersTo;
+  } while (i);
+
+  throw new Error(
+    `unresolved ident: ${ident.originalName} (bug in bindIdents?)`,
+  );
+}
 
 export function bindingStructsPlugin(): WeslJsPlugin {
   return {

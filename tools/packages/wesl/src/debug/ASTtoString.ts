@@ -16,7 +16,7 @@ import {
   expressionToString,
   lhsExpressionToString,
   templatedIdentToString,
-} from "../LowerAndEmit.ts";
+} from "../lower/LowerAndEmit.ts";
 import {
   DiagnosticDirective,
   DirectiveElem,
