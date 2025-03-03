@@ -548,7 +548,7 @@ const const_assert =
   )                                   .collect(constAssertCollect);
 
 // prettier-ignore
-const global_directive = span(
+const global_directive = tagScope(
   seq(
     opt_attributes,
     terminated(
@@ -559,8 +559,8 @@ const global_directive = span(
       )                                                   .ptag("directive"),
       ";",
     ),
-  ),
-)                                                         .collect(directiveCollect);
+  )                                                        .collect(directiveCollect)
+);
 
 // prettier-ignore
 const global_decl = tagScope(
