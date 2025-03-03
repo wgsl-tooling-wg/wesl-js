@@ -32,7 +32,7 @@ test("link a struct", async () => {
   const src = `
     struct Point {
       x: i32,
-      y: i32,
+      y: i32
     }
   `;
   const result = await linkTest(src);
@@ -63,7 +63,7 @@ test("struct after var", async () => {
     var config: TwoPassConfig;
 
     struct TwoPassConfig {
-      x: u32,
+      x: u32
     }
   `;
   const result = await linkTest(src);
@@ -101,10 +101,10 @@ test("struct self reference", async () => {
   const src = `
     struct A {
       a: A,
-      b: B,
+      b: B
     }
     struct B {
-      f: f32,
+      f: f32
     }
   `;
 
@@ -120,8 +120,12 @@ test("parse texture_storage_2d with texture format in typical type position", as
 
 test("struct member ref with extra component_or_swizzle", async () => {
   const src = `
-    struct C { p: P }
-    struct P { x: u32 }
+    struct C { 
+      p: P 
+    }
+    struct P { 
+      x: u32 
+    }
     fn foo(c: C) {
       let a = c.p.x;
     }

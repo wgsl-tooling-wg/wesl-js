@@ -9,6 +9,7 @@ import {
   ExpressionElem,
   NameElem,
   RefIdentElem,
+  StructElem,
   SyntheticElem,
   TextElem,
 } from "./AbstractElems.ts";
@@ -34,7 +35,7 @@ export function lowerAndEmit(
   extracting = true,
 ): void {
   const emitContext: EmitContext = { conditions, srcBuilder, extracting };
-  rootElems.forEach(r => console.log(astToString(r) + "\n"));
+  // rootElems.forEach(r => console.log(astToString(r) + "\n"));
   rootElems.forEach(e => lowerAndEmitElem(e, emitContext));
 }
 
@@ -77,7 +78,6 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
 
     // root level container elements get some extra newlines to make the output prettier
     case "fn":
-    case "struct":
     case "override":
     case "const":
     case "assert":
@@ -85,6 +85,10 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "gvar":
       emitRootElemNl(ctx);
       return emitContents(e, ctx);
+
+    case "struct":
+      emitRootElemNl(ctx);
+      return emitStruct(e, ctx);
 
     case "attribute":
       return emitAttribute(e, ctx);
@@ -110,6 +114,29 @@ export function emitText(e: TextElem, ctx: EmitContext): void {
 
 export function emitName(e: NameElem, ctx: EmitContext): void {
   ctx.srcBuilder.add(e.name, e.start, e.end);
+}
+
+/** emit structs explicitly so we can control commas between conditional members */
+export function emitStruct(e: StructElem, ctx: EmitContext): void {
+  const { name, members, start, end } = e;
+  const { srcBuilder } = ctx;
+
+  srcBuilder.add("struct ", start, name.start);
+  emitDeclIdent(name, ctx);
+  srcBuilder.add(" {\n", name.end, members[0].start);
+
+  const validMembers = members.filter(m => conditionsValid(m, ctx.conditions));
+  const validLength = validMembers.length;
+  validMembers.forEach((m, i) => {
+    srcBuilder.add("  ", m.start - 1, m.start);
+    lowerAndEmitElem(m, ctx);
+    if (i < validLength - 1) {
+      srcBuilder.add(",", m.end, m.end + 1);
+    }
+    srcBuilder.addNl();
+  });
+
+  srcBuilder.add("}\n", end - 1, end);
 }
 
 export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
