@@ -2,7 +2,7 @@ import { expect, RunnerTestSuite } from "vitest";
 import { WgslTestSrc } from "wesl-testsuite";
 import { link } from "../Linker.js";
 import { ManglerFn, underscoreMangle } from "../Mangler.ts";
-import { expectTrimmedMatch, trimSrc } from "./shared/StringUtil.js";
+import { expectTrimmedMatch, trimSrc } from "mini-parse/vitest-util";
 
 /**
  * Link wesl sources and compare the linked wgsl vs expectations.

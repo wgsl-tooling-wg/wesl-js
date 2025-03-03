@@ -12,7 +12,7 @@ import {
   transformBindingReference,
   transformBindingStruct,
 } from "../TransformBindingStructs.ts";
-import { expectTrimmedMatch } from "./shared/StringUtil.ts";
+import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { linkTestOpts, parseTest } from "./TestUtil.ts";
 
 test("markBindingStructs true", () => {
