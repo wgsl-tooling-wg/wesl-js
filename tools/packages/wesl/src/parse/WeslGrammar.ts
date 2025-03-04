@@ -379,6 +379,8 @@ const loop_statement = seq(
       "{",
       repeat(() => statement),
       opt(
+            opt_attributes,
+            "continuing",
             opt_attributes_no_if,
             "{",
         ),
