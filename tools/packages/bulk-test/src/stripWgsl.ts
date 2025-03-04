@@ -1,6 +1,12 @@
 import { WeslStream } from "wesl";
 
-/** Removes extra whitespace, comments, and trailing commas in structs from WGSL */
+/** Remove extra bits from WGSL for test comparisons.
+ * 
+ * removes:
+ *  . extra whitespace, 
+ *  . comments,
+ *  . trailing commas in brackets, paren, and array containers
+ */
 export function stripWesl(text: string): string {
   const stream = new WeslStream(text);
   const firstToken = stream.nextToken();
@@ -13,9 +19,11 @@ export function stripWesl(text: string): string {
 
     if (token.text === ",") {
       const nextToken = stream.nextToken();
-      if (nextToken?.text === "}") {
-        // Ignore trailing comma before closing brace
-        result += " }";
+      const nextText = nextToken?.text;
+      if (nextText === "}" || nextText === "]" || nextText === ")") {
+        // Ignore trailing comma
+        result += " ";
+        result += nextText;
       } else {
         result += ", " + (nextToken?.text ?? "");
       }
