@@ -2,6 +2,18 @@ import { expect, test } from "vitest";
 import { astToString } from "../debug/ASTtoString.ts";
 import { parseTest } from "./TestUtil.ts";
 
+test("parse complex condition", () => {
+  const ast = parseTest("@if(true || (!foo&&!!false) )\nfn a() {}");
+  expect(astToString(ast.moduleElem)).toMatchInlineSnapshot(`
+    "module
+      fn a() @if
+        attribute @if(true || (!foo && !!false))
+        decl %a
+        statement
+          text '{}'"
+  `);
+});
+
 test("@if(false) enable f16", () => {
   const src = `
     @if(false) enable f16;
@@ -72,23 +84,93 @@ test("conditional statement", () => {
       text '
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
-          '
-        var %x
-          text 'var '
-          typeDecl %x
-            decl %x
-          text ' = 1'
-        text ';
-          '
         statement
-          attribute @if(true)
-          text ' '
-          ref x
-          text ' = 2 ;'
-        text '
+          text '{
+          '
+          var %x
+            text 'var '
+            typeDecl %x
+              decl %x
+            text ' = 1'
+          text ';
+          '
+          statement @if
+            attribute @if(true)
+            text ' '
+            ref x
+            text ' = 2 ;'
+          text '
+        }'
+      text '
+      '"
+  `);
+});
+
+test("compound statement", () => {
+  const src = `
+    fn main() {
+      @if(false) {
+        let x = 1;
+      }
+    }
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn main()
+        decl %main
+        statement
+          text '{
+          '
+          statement @if
+            attribute @if(false)
+            text ' {
+            '
+            let %x
+              text 'let '
+              typeDecl %x
+                decl %x
+              text ' = 1'
+            text ';
+          }'
+          text '
+        }'
+      text '
+      '"
+  `);
+});
+
+test("conditional local var", () => {
+  const src = `
+    fn main() {
+      @if(true) var x = 1;
+    }
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn main()
+        decl %main
+        statement
+          text '{
+          '
+          statement @if
+            attribute @if(true)
+            text ' '
+            var %x
+              text 'var '
+              typeDecl %x
+                decl %x
+              text ' = 1'
+            text ';'
+          text '
         }'
       text '
       '"

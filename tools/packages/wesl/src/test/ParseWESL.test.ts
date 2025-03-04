@@ -864,12 +864,12 @@ test("parse inline package reference", () => {
       text '
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
+        statement
+          text '{
           '
-        ref package::foo::bar
-        text '();
+          ref package::foo::bar
+          text '();
         }'
       text '
       '"

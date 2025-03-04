@@ -2,20 +2,14 @@ import { expect } from "vitest";
 
 /** trim source for test comparisons
  * rm blank lines
- * rm leading indent consistently across remaining lines
- * rm trailing spaces from each line */
+ * rm leading and trailing white space
+ */
 export function trimSrc(src: string): string {
   const rawLines = src.split("\n");
-  const nonBlankLines = rawLines.filter(l => l.trim() !== "");
-  const indents = nonBlankLines.map(l => l.match(/^[ \t]*/)?.[0].length ?? 0);
-  if (indents.length === 0) return src;
+  const trimmed = rawLines.map(l => l.trim());
+  const nonBlank = trimmed.filter(l => l !== "");
 
-  const minIndent = indents.reduce((min, i) => Math.min(min, i));
-
-  const indentTrimmed = nonBlankLines.map(l => l.slice(minIndent));
-  const noTrailingSpaces = indentTrimmed.map(l => l.trimEnd());
-
-  return noTrailingSpaces.join("\n");
+  return nonBlank.join("\n");
 }
 
 export function dropWhile<T>(a: T[], fn: (el: T) => boolean): T[] {

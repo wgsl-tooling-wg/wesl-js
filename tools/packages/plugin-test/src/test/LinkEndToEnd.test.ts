@@ -1,5 +1,5 @@
 /// <reference types="wesl-plugin/suffixes" />
-import { expectTrimmedMatch } from "mini-parse/vitest-util";
+import { trimSrc } from "mini-parse/vitest-util";
 import { beforeAll, expect, test } from "vitest";
 import { link } from "wesl";
 
@@ -31,15 +31,9 @@ test("gpu execution w/?link", async () => {
   device.createShaderModule({ code }); // verify works for webgpu
 
   // verify matches expected text
-  const expectedCode = ` 
-    @group(0) @binding(0) var <uniform> u: Uniforms;
-
-    @compute @workgroup_size(1)
-    fn main() { }
-
-    struct Uniforms {
-      foo: u32
-    }
-  `;
-  expectTrimmedMatch(code, expectedCode);
+  expect(trimSrc(code)).toMatchInlineSnapshot(`
+    "@group(0) @binding(0) var <uniform> u: Uniforms;
+    @compute @workgroup_size(1) fn main() { }
+    struct Uniforms { foo: u32 }"
+  `);
 });

@@ -1,5 +1,4 @@
 import { withLogSpyAsync } from "mini-parse/test-util";
-import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
@@ -43,25 +42,23 @@ test("link --details", async () => {
   const logged = await cliLine(line);
   // Remove the directory specific path before the logs
   const noPackagePaths = logged.replace(packagePath, "package::$1");
-  expectTrimmedMatch(
-    noPackagePaths,
-    `
-    ---
+  expect(noPackagePaths).toMatchInlineSnapshot(`
+    "---
     package::main
 
     ->ast
     module
       import package::util::foo;
-    
       text '
+
     '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
+        statement
+          text '{
       '
-        ref foo
-        text '();
+          ref foo
+          text '();
     }'
       text '
 
@@ -71,7 +68,7 @@ test("link --details", async () => {
     '
 
     ->scope
-    { %main
+    { %main 
       { foo } #1
     } #0
 
@@ -81,18 +78,18 @@ test("link --details", async () => {
     ->ast
     module
       fn foo()
-        text 'fn '
         decl %foo
-        text '() {
+        statement
+          text '{
       // fooImpl
     }'
 
     ->scope
-    { %foo
+    { %foo 
       {  } #3
     } #2
-  `,
-  );
+    "
+  `);
 });
 
 test.skip("link with definition", async () => {

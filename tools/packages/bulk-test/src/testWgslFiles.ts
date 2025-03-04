@@ -20,14 +20,14 @@ export async function testWgslFiles(namedPaths: NamedPath[]) {
 
   namedPaths.forEach(({ name, filePath }) => {
     test(name, async () => {
-      const text = await fs.readFile(filePath, { encoding: "utf8" });
+      const orig = await fs.readFile(filePath, { encoding: "utf8" });
       const result = await expectNoLogAsync(() => {
         const shortPath = "./" + name;
         const weslSrc = { [shortPath]: text };
         const rootModulePath = ["package", ...noSuffix(name).split("/")];
         return link({ weslSrc, rootModulePath, config });
       });
-      expect(stripWesl(result.dest)).toBe(stripWesl(text));
+      expect(stripWesl(result.dest)).toBe(stripWesl(orig));
     });
   });
 }

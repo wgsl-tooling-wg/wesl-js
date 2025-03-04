@@ -1,5 +1,5 @@
+import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { test } from "vitest";
-import { expectTrimmedMatch } from "./shared/StringUtil.ts";
 import { linkTestOpts } from "./TestUtil.ts";
 
 test("simple virtual module", async () => {
@@ -12,26 +12,26 @@ test("simple virtual module", async () => {
     src,
   );
   const expected = `
-      @binding(0) @group(0) var<uniform> u: Uniforms;
-  struct Uniforms { foo: u32 }
+    @binding(0) @group(0) var<uniform> u: Uniforms;
+    struct Uniforms { foo: u32 }
   `;
   expectTrimmedMatch(result, expected);
 });
 
 test("virtual constants", async () => {
   const src = `
-import constants::num_lights;
-fn main() {
-  for (var i = 0; i < num_lights; i++) { }
-}
+    import constants::num_lights;
+    fn main() {
+      for (var i = 0; i < num_lights; i++) { }
+    }
   `;
   const result = await linkTestOpts({ constants: { num_lights: 4 } }, src);
   const expected = `
-fn main() {
-  for (var i = 0; i < num_lights; i++) { }
-}
+    fn main() {
+      for (var i = 0; i < num_lights; i++) { }
+    }
 
-const num_lights = 4;
+    const num_lights = 4;
   `;
   expectTrimmedMatch(result, expected);
 });

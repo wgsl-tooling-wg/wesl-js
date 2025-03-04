@@ -1,5 +1,5 @@
+import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { test } from "vitest";
-import { expectTrimmedMatch } from "./shared/StringUtil.js";
 import { linkTest } from "./TestUtil.js";
 
 test("link global var", async () => {
@@ -50,9 +50,7 @@ test("link a fn", async () => {
 
 test("handle a ptr type", async () => {
   const src = `
-    fn uint_bitfieldExtract_u1_i1_i1_(
-      value: ptr<function, u32>, 
-      bits: ptr<function, i32>) -> u32 { }
+    fn uint_bitfieldExtract_u1_i1_i1_(value: ptr<function, u32>, bits: ptr<function, i32>) -> u32 { }
   `;
   const result = await linkTest(src);
   expectTrimmedMatch(result, src);
@@ -62,9 +60,7 @@ test("struct after var", async () => {
   const src = `
     var config: TwoPassConfig;
 
-    struct TwoPassConfig {
-      x: u32,
-    }
+    struct TwoPassConfig { x: u32 }
   `;
   const result = await linkTest(src);
   expectTrimmedMatch(result, src);
@@ -103,9 +99,7 @@ test("struct self reference", async () => {
       a: A,
       b: B,
     }
-    struct B {
-      f: f32,
-    }
+    struct B { f: f32 }
   `;
 
   const result = await linkTest(src);

@@ -1,4 +1,5 @@
 import { SrcMapBuilder } from "mini-parse";
+import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
 import { astToString, globalDeclToString } from "../debug/ASTtoString.ts";
@@ -12,7 +13,6 @@ import {
   transformBindingReference,
   transformBindingStruct,
 } from "../TransformBindingStructs.ts";
-import { expectTrimmedMatch } from "./shared/StringUtil.ts";
 import { linkTestOpts, parseTest } from "./TestUtil.ts";
 
 test("markBindingStructs true", () => {
@@ -145,20 +145,19 @@ test("lower binding structs", () => {
       text '
         '
       fn main(b: Bindings)
-        text 'fn '
         decl %main
-        text '('
         param
-        text ') {
+        statement
+          text '{
           '
-        let %x
-          text 'let '
-          typeDecl %x
-            decl %x
-          text ' = '
-          memberRef b.particles
-            synthetic 'particles'
-        text ';
+          let %x
+            text 'let '
+            typeDecl %x
+              decl %x
+            text ' = '
+            memberRef b.particles
+              synthetic 'particles'
+          text ';
         }'
       text '
       '"
@@ -221,9 +220,7 @@ test("lower 5 bindings", async () => {
 @group(0) @binding(3) var samp : sampler;
 @group(0) @binding(4) var stTex : texture_storage_2d<rgba8unorm, read>;
 
-    struct Uniforms {
-      foo: u32
-    }
+    struct Uniforms { foo: u32 }
     @compute fn main() {
       particles[0] = uniforms.foo;
     }

@@ -1,7 +1,7 @@
 {
   "name": "wesl-plugin",
   "type": "module",
-  "version": "0.6.0-pre6",
+  "version": "0.6.0-pre7",
   "scripts": {
     "echo": "echo",
     "build": "tsup",
@@ -12,7 +12,6 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "chokidar": "^4.0.3",
     "toml": "^3.0.0",
     "unplugin": "^2.1.2",
     "wesl": "workspace:*"

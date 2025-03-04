@@ -12,3 +12,19 @@ test("unresolved identifier", async () => {
                     ^^"
   `);
 });
+
+test("conditionally empty struct", async () => {
+  const src = `
+    struct Empty {
+      @if(false) u: u32,
+    }
+    `;
+  const { log } = await linkWithLogQuietly(src);
+  expect(log).toMatchInlineSnapshot(
+    `
+    "struct Empty in ./test.wesl has no members (with current conditions)
+        struct Empty {   Ln 2
+        ^"
+  `,
+  );
+});
