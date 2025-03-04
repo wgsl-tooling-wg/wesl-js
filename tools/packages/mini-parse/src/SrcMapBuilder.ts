@@ -27,10 +27,10 @@ export class SrcMapBuilder {
     });
   }
 
-  /** 
+  /**
    * Append a fragment to the destination string,
-   * mapping source to the pervious, 
-   * and guessing that the source fragment is just as long as the the dest fragment. 
+   * mapping source to the pervious,
+   * and guessing that the source fragment is just as long as the the dest fragment.
    * (LATER we plan to drop or make optional src end positions)
    */
   appendNext(fragment: string): void {

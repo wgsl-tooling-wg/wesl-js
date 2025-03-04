@@ -348,7 +348,8 @@ export interface RequiresDirective {
 }
 
 /** a function declaration */
-export interface FnElem extends ElemWithContentsBase, HasAttributes { // LATER doesn't need contents
+export interface FnElem extends ElemWithContentsBase, HasAttributes {
+  // LATER doesn't need contents
   kind: "fn";
   name: DeclIdentElem;
   params: FnParamElem[];

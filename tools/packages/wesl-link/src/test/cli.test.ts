@@ -1,5 +1,4 @@
 import { withLogSpyAsync } from "mini-parse/test-util";
-import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";

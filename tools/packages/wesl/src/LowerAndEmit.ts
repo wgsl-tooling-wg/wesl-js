@@ -17,10 +17,8 @@ import {
 import { assertUnreachable, assertUnreachableSilent } from "./Assertions.ts";
 import { isGlobal } from "./BindIdents.ts";
 import { elementValid } from "./Conditions.ts";
-import { astToString } from "./debug/ASTtoString.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, Ident } from "./Scope.ts";
-import { identElemLog } from "./LinkerUtil.ts";
 
 /** passed to the emitters */
 interface EmitContext {

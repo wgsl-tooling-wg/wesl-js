@@ -1,9 +1,9 @@
 import { WeslStream } from "wesl";
 
 /** Remove extra bits from WGSL for test comparisons.
- * 
+ *
  * removes:
- *  . extra whitespace, 
+ *  . extra whitespace,
  *  . comments,
  *  . trailing commas in brackets, paren, and array containers
  */
