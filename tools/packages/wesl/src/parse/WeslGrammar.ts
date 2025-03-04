@@ -379,20 +379,8 @@ const loop_statement = seq(
       "{",
       repeat(() => statement),
       opt(
-        seq(
-          "continuing",
-          opt_attributes, // TODO: collect and attach to scope 2
-          "{",
-          repeat(() => statement),
-                                      tagScope(
-            opt(
-              seq(
-                opt_attributes, 
-                seq("break", "if", expression, ";")
-              )                         .collect(statementCollect) 
-            )
-          ),
-          "}", // TODO: Scope 2 collect
+            opt_attributes_no_if,
+            "{",
         ),
       ),
       "}", // TODO: Scope 1 collect
