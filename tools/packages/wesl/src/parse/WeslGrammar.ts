@@ -371,6 +371,7 @@ const if_statement = seq(
   opt(seq("else", req(compound_statement))),
 );
 
+// prettier-ignore
 const loop_statement = seq(
   "loop",
   opt_attributes, // TODO: collect and attach to scope 1
@@ -379,10 +380,23 @@ const loop_statement = seq(
       "{",
       repeat(() => statement),
       opt(
+                                      tagScope(
+          seq(
             opt_attributes,
             "continuing",
             opt_attributes_no_if,
             "{",
+            repeat(() => statement),
+                                        tagScope(
+              opt(
+                seq(
+                  opt_attributes, 
+                  seq("break", "if", expression, ";")
+                )                         .collect(statementCollect) 
+              )
+            ),
+            "}", // TODO: Scope 2 collect
+          )                             .collect(statementCollect),
         ),
       ),
       "}", // TODO: Scope 1 collect
