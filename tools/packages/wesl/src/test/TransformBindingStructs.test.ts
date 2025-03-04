@@ -221,9 +221,7 @@ test("lower 5 bindings", async () => {
 @group(0) @binding(3) var samp : sampler;
 @group(0) @binding(4) var stTex : texture_storage_2d<rgba8unorm, read>;
 
-    struct Uniforms {
-      foo: u32
-    }
+    struct Uniforms { foo: u32 }
     @compute fn main() {
       particles[0] = uniforms.foo;
     }

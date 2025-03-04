@@ -129,15 +129,28 @@ export function emitStruct(e: StructElem, ctx: EmitContext): void {
     warnEmptyStruct(e);
     return;
   }
-  validMembers.forEach((m, i) => {
-    srcBuilder.add("  ", m.start - 1, m.start);
-    lowerAndEmitElem(m, ctx);
-    if (i < validLength - 1) {
-      srcBuilder.add(",", m.end, m.end + 1);
-    }
-    srcBuilder.addNl();
-  });
+  srcBuilder.add("struct ", start, name.start);
+  emitDeclIdent(name, ctx);
 
+  if (validLength === 1) {
+    srcBuilder.add(" { ", name.end, members[0].start);
+    emitContentsNoWs(validMembers[0], ctx);
+    srcBuilder.add(" }\n", end - 1, end);
+  } else {
+    srcBuilder.add(" {\n", name.end, members[0].start);
+
+    validMembers.forEach((m, i) => {
+      srcBuilder.add("  ", m.start - 1, m.start);
+      emitContentsNoWs(m, ctx);
+      if (i < validLength - 1) {
+        srcBuilder.add(",", m.end, m.end + 1);
+      }
+      srcBuilder.addNl();
+    });
+
+    srcBuilder.add("}\n", end - 1, end);
+  }
+}
 
 function warnEmptyStruct(e: StructElem): void {
   const { name, members } = e;
@@ -157,6 +170,20 @@ export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
 
 export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
   elem.contents.forEach(e => lowerAndEmitElem(e, ctx));
+}
+
+/** emit contents w/o white space */
+function emitContentsNoWs(elem: ContainerElem, ctx: EmitContext): void {
+  elem.contents.forEach(e => {
+    if (e.kind === "text") {
+      const { srcModule, start, end } = e;
+      const text = srcModule.src.slice(start, end);
+      if (text.trim() === "") {
+        return;
+      }
+    }
+    lowerAndEmitElem(e, ctx);
+  });
 }
 
 export function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {

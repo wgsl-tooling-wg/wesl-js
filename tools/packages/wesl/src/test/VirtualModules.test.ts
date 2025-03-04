@@ -13,9 +13,7 @@ test("simple virtual module", async () => {
   );
   const expected = `
     @binding(0) @group(0) var<uniform> u: Uniforms;
-    struct Uniforms { 
-      foo: u32 
-    }
+    struct Uniforms { foo: u32 }
   `;
   expectTrimmedMatch(result, expected);
 });
