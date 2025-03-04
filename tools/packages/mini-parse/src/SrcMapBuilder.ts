@@ -27,6 +27,17 @@ export class SrcMapBuilder {
     });
   }
 
+  /** 
+   * Append a fragment to the destination string,
+   * mapping source to the pervious, 
+   * and guessing that the source fragment is just as long as the the dest fragment. 
+   * (LATER we plan to drop or make optional src end positions)
+   */
+  appendNext(fragment: string): void {
+    const lastEnd = this.#entries.at(-1)?.destEnd ?? 0;
+    this.add(fragment, lastEnd, lastEnd + fragment.length);
+  }
+
   addSynthetic(
     fragment: string,
     syntheticSource: string,
