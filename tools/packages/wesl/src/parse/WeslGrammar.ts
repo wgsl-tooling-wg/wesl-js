@@ -407,7 +407,7 @@ const switch_clause =                   tagScope(
         compound_statement,
       ),
       seq("default", opt(":"), compound_statement),
-    ).                                    collect(switchClauseCollect), // TODO: collect as SwitchClause
+    ).                                    collect(switchClauseCollect),
   )
 );
 const switch_body = seq(opt_attributes, "{", repeatPlus(switch_clause), "}");
@@ -518,14 +518,14 @@ const fn_decl = seq(
 // prettier-ignore
 const global_value_decl = or(
   seq(
-    opt_attributes                    .collect((cc) => cc.tags.attribute, "attributes"), // TODO: attach to override
+    opt_attributes,
     "override",
     optionally_typed_ident,
     seq(opt(seq("=", expression       .collect(scopeCollect(), "decl_scope")))),
     ";",
   )                                   .collect(collectVarLike("override")),
   seq(
-    opt_attributes                    .collect((cc) => cc.tags.attribute, "attributes"), // TODO: attach to const
+    opt_attributes,
     "const",
     optionally_typed_ident,
     "=",
