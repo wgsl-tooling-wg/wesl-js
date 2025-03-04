@@ -122,20 +122,11 @@ export function emitStruct(e: StructElem, ctx: EmitContext): void {
   const { name, members, start, end } = e;
   const { srcBuilder } = ctx;
 
-  srcBuilder.add("struct ", start, name.start);
-  emitDeclIdent(name, ctx);
-  srcBuilder.add(" {\n", name.end, members[0].start);
-
   const validMembers = members.filter(m => conditionsValid(m, ctx.conditions));
   const validLength = validMembers.length;
+
   if (validLength === 0) {
-    const condStr = members.length ? "(with current conditions)" : "";
-    const { debugFilePath: filePath } = name.srcModule;
-    srcLog(
-      name.srcModule.src,
-      e.start,
-      `struct ${name.ident.originalName} in ${filePath} has no members ${condStr}`,
-    );
+    warnEmptyStruct(e);
     return;
   }
   validMembers.forEach((m, i) => {
@@ -147,7 +138,16 @@ export function emitStruct(e: StructElem, ctx: EmitContext): void {
     srcBuilder.addNl();
   });
 
-  srcBuilder.add("}\n", end - 1, end);
+
+function warnEmptyStruct(e: StructElem): void {
+  const { name, members } = e;
+  const condStr = members.length ? "(with current conditions)" : "";
+  const { debugFilePath: filePath } = name.srcModule;
+  srcLog(
+    name.srcModule.src,
+    e.start,
+    `struct ${name.ident.originalName} in ${filePath} has no members ${condStr}`,
+  );
 }
 
 export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
