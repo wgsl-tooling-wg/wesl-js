@@ -26,7 +26,6 @@ import { DirectiveElem } from "../parse/DirectiveElem.ts";
 import { assertThat, assertUnreachable } from "../Assertions.ts";
 import { stdEnumerant, stdFn, stdType } from "../StandardTypes.ts";
 import { str } from "../Util.ts";
-import { ModulePath } from "../Module.ts";
 
 export type SymbolTableEntry =
   | {
@@ -51,7 +50,8 @@ export type SymbolTableEntry =
   | {
       /** An imported item */
       kind: "import";
-      module: ModulePath;
+      /** Not yet a proper module path, still needs to be resolved. */
+      module: string[];
       value: string;
     };
 
@@ -237,12 +237,12 @@ class BindSymbolsVisitor extends AstVisitor {
       return decl;
     } else if (decl !== null) {
       // Symbol import (we concat the paths)
-      const modulePath = new ModulePath([
+      const modulePath = [
         // Cut off the duplicated part
         ...decl.slice(0, -1),
         // And separately store the item name
         ...ident.ident.segments.slice(0, -1),
-      ]);
+      ];
       const moduleItem = ident.ident.segments.at(-1)!;
 
       const symbolRef = this.symbolsTable.length;

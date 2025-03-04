@@ -4,9 +4,9 @@ import { lowerAndEmit } from "./lower/LowerAndEmit.ts";
 import { ManglerFn } from "./Mangler.ts";
 import {
   parsedRegistry,
-  ParsedRegistry,
+  TranslationUnit,
   parseIntoRegistry,
-} from "./ParsedRegistry.ts";
+} from "./lower/TranslationUnit.ts";
 import { filterMap, mapValues } from "./Util.ts";
 import { WgslBundle } from "./WgslBundle.ts";
 import { LinkedWesl } from "./LinkedWesl.ts";
@@ -113,7 +113,7 @@ type LinkRegistryParams = Pick<
  */
 export function linkRegistry(
   params: LinkRegistryParams,
-  registry: ParsedRegistry,
+  registry: TranslationUnit,
 ): SrcMap {
   const bound = bindAndTransform(params, registry);
   const { transformedAst, newDecls } = bound;
@@ -136,7 +136,7 @@ interface BoundAndTransformed {
 /** bind identifers and apply any transform plugins */
 export function bindAndTransform(
   params: LinkRegistryParams,
-  registry: ParsedRegistry,
+  registry: TranslationUnit,
 ): BoundAndTransformed {
   const { mangler } = params;
   const { rootModulePath, conditions = {} } = params;

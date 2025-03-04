@@ -1,11 +1,12 @@
 export * from "./debug/ASTtoString.ts";
+export * from "./lower/TranslationUnit.ts";
 export { WeslStream } from "./parse/WeslStream.ts";
 export * from "./Linker.ts";
 export * from "./LinkedWesl.ts";
 export type { Conditions } from "./Conditions.ts";
 export * from "./Mangler.ts";
 export * from "./Module.ts";
-export * from "./ParsedRegistry.ts";
 export * from "./TransformBindingStructs.ts";
+export * from "./VirtualFilesystem.ts";
 export * from "./WeslDevice.ts";
 export * from "./WgslBundle.ts";

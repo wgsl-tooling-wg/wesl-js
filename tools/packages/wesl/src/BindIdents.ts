@@ -4,7 +4,7 @@ import { FlatImport } from "./FlattenTreeImport.ts";
 import { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
 import { LiveDecls, makeLiveDecls } from "./LiveDeclarations.ts";
 import { ManglerFn, minimalMangle } from "./Mangler.ts";
-import { ParsedRegistry } from "./ParsedRegistry.ts";
+import { TranslationUnit } from "./lower/TranslationUnit.ts";
 import { flatImports, parseSrcModule, WeslAST } from "./ParseWESL.ts";
 import {
   childIdent,
@@ -119,7 +119,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
 
 /** state used during the recursive scope tree walk to bind references to declarations */
 interface BindContext {
-  registry: ParsedRegistry;
+  registry: TranslationUnit;
 
   /** live runtime conditions currently defined by the user */
   conditions: Record<string, any>;
@@ -322,7 +322,7 @@ function findDeclInModule(
  * or via an inline qualified ident e.g.  foo::bar() */
 function findQualifiedImport(
   refIdent: RefIdent,
-  parsed: ParsedRegistry,
+  parsed: TranslationUnit,
   conditions: Conditions,
   virtuals?: VirtualLibrarySet,
 ): FoundDecl | undefined {
@@ -366,7 +366,7 @@ interface FoundDecl {
 function findExport(
   modulePathParts: string[],
   srcModule: SrcModule,
-  parsed: ParsedRegistry,
+  parsed: TranslationUnit,
   conditions: Conditions = {},
   virtuals?: VirtualLibrarySet,
 ): FoundDecl | undefined {

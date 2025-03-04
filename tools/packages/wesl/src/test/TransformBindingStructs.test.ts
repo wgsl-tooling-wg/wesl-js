@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
 import { astToString, globalDeclToString } from "../debug/ASTtoString.ts";
 import { lowerAndEmit } from "../lower/LowerAndEmit.ts";
-import { parsedRegistry } from "../ParsedRegistry.ts";
+import { parsedRegistry } from "../lower/TranslationUnit.ts";
 import {
   bindingStructsPlugin,
   findRefsToBindingStructs,

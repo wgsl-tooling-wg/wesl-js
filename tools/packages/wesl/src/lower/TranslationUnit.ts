@@ -1,17 +1,18 @@
 import { ParserInit } from "mini-parse";
-import { LinkedWesl } from "./LinkedWesl.ts";
-import { CompilationOptions, compileToWgsl } from "./lower/CompileToWgsl.ts";
-import { ModulePath, ModulePathString, SrcModule, WeslAST } from "./Module.ts";
-import { WeslStream } from "./parse/WeslStream.ts";
-import { normalize, noSuffix } from "./PathUtil.ts";
-import { str } from "./Util.ts";
-import { weslRoot } from "./parse/WeslGrammar.ts";
+import { LinkedWesl } from "../LinkedWesl.ts";
+import { CompilationOptions, compileToWgsl } from "./CompileToWgsl.ts";
+import { ModulePath, ModulePathString, SrcModule, WeslAST } from "../Module.ts";
+import { WeslStream } from "../parse/WeslStream.ts";
+import { normalize, noSuffix } from "../PathUtil.ts";
+import { str } from "../Util.ts";
+import { weslRoot } from "../parse/WeslGrammar.ts";
+import { VirtualFilesystem } from "../VirtualFilesystem.ts";
 
-export class ParsedRegistry {
+export class TranslationUnit {
   /** Key is module path, turned into a string */
   private modules = new Map<ModulePathString, WeslAST>();
 
-  constructor() {
+  constructor(filesystem: VirtualFilesystem) {
     // We ignore @if blocks during the "fetch => parse => find all imports (including inline usages) => kick off more fetches" operation
     // Inline usages can be dependent on conditions, but pre-bundling gets to ignore that.
     // I had a cool partial condition evaluator on a branch, but long term,
@@ -76,8 +77,8 @@ export class ParsedRegistry {
   }
 }
 
-export function parsedRegistry(): ParsedRegistry {
-  return new ParsedRegistry();
+export function parsedRegistry(): TranslationUnit {
+  return new TranslationUnit();
 }
 
 /**
@@ -89,7 +90,7 @@ export function parsedRegistry(): ParsedRegistry {
  */
 export function parseIntoRegistry(
   srcFiles: Record<string, string>,
-  registry: ParsedRegistry,
+  registry: TranslationUnit,
   packageName: string = "package",
   debugWeslRoot?: string,
 ): void {
@@ -110,25 +111,6 @@ export function parseIntoRegistry(
       src,
     });
   });
-}
-
-const libRegex = /^lib\.w[eg]sl$/i;
-
-/** convert a file path (./foo/bar.wesl)
- *  to a module path (package::foo::bar) */
-function fileToModulePath(filePath: string, packageName: string): ModulePath {
-  if (filePath.includes("::")) {
-    // already a module path
-    return new ModulePath(filePath.split("::"));
-  }
-  if (packageName !== "package" && libRegex.test(filePath)) {
-    // special case for lib.wesl files in external packages
-    return new ModulePath([packageName]);
-  }
-
-  const strippedPath = noSuffix(normalize(filePath));
-  const moduleSuffix = strippedPath.split("/");
-  return new ModulePath([packageName, ...moduleSuffix]);
 }
 
 export function parseSrcModule(srcModule: SrcModule): WeslAST {

@@ -3,7 +3,7 @@ import { ModuleElem } from "./parse/WeslElems.ts";
 
 export type ModulePathString = string & { __modulePath: never };
 
-/** A path to a module or an item inside a module */
+/** An absolute path to a module. Is unique. */
 export class ModulePath {
   constructor(public path: string[]) {
     assertThat(path.length > 0);

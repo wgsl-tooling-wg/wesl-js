@@ -8,7 +8,7 @@ import {
 import { link, LinkParams } from "../Linker.js";
 import { WeslStream, WeslToken } from "../parse/WeslStream.js";
 import { SrcModule, WeslAST } from "../Module.js";
-import { parseSrcModule } from "../ParsedRegistry.js";
+import { parseSrcModule } from "../lower/TranslationUnit.js";
 
 export function testAppParse<T>(
   parser: Parser<Stream<WeslToken>, T>,

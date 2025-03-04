@@ -112,25 +112,28 @@ function compileModules(
   const compiledModules = new Map<ModulePathString, CompiledModule>();
 
   const resolveCache = new Map<string, ItemInModule>();
-  function resolveAndCompile(
-    modulePath: ModulePath,
-    item: string,
-  ): ItemInModule {
+  function resolveAndCompile(modulePath: string[], item: string): ItemInModule {
     let cacheKey = modulePath.toString() + "::" + item;
     let cachedValue = resolveCache.get(cacheKey);
     if (cachedValue !== undefined) {
       return cachedValue;
     }
 
-    for (let i = 1; i < modulePath.path.length; i++) {
-      let partPath = new ModulePath(modulePath.path.slice(0, i));
-      let partModule = compileModule(partPath.toString());
+    for (let i = 1; i < modulePath.length; i++) {
+      // query if it's a valid module, starting with the root
+      let partPath = modulePath
+        .slice(0, i)
+        .join("::") satisfies string as ModulePathString;
+      if (!modules.has(partPath)) {
+        continue;
+      }
+      let partModule = compileModule(partPath);
       let exportedDecl = partModule.exportedDeclarations.get(item);
       if (exportedDecl !== undefined) {
         // We don't have re-exports yet, so we can just check whether we are at the end
-        if (i === modulePath.path.length - 1) {
-          const result = {
-            modulePath,
+        if (i === modulePath.length - 1) {
+          const result: ItemInModule = {
+            modulePath: partModule.result.srcModule.modulePath,
             item,
             symbolTableId: partModule.symbolTableId,
             symbolRef: exportedDecl.symbol,
@@ -139,12 +142,12 @@ function compileModules(
           return result;
         } else {
           throw new Error(
-            str`Item ${item} already found in ${partPath}, but ${modulePath} was requested.`,
+            str`Item ${item} already found in ${partPath}, but ${modulePath.join("::")} was requested.`,
           );
         }
       }
     }
-    throw new Error(str`Item ${item} not found in ${modulePath}`);
+    throw new Error(str`Item ${item} not found in ${modulePath.join("::")}`);
   }
 
   const symbolTables: SymbolTable[] = [];
