@@ -547,7 +547,7 @@ const global_alias = seq(
 // prettier-ignore
 const const_assert = 
   seq(
-    opt_attributes, // TODO: collect and attach
+    opt_attributes,
     "const_assert", 
     req(expression), 
     ";"
