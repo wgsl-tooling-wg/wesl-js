@@ -45,8 +45,8 @@ test("@if parentheses", ctx => caseTest(ctx));
 test("declaration shadowing", ctx => caseTest(ctx));
 
 // requires disabled code stripping mode, which wesl-js doesn't support
-test.skip("contitional declaration shadowing", ctx => caseTest(ctx));
+test.skip("conditional declaration shadowing", ctx => caseTest(ctx));
 
-test.skip("contitional import of const_assert", ctx => caseTest(ctx));
+test.skip("conditional import of const_assert", ctx => caseTest(ctx));
 
 afterAll(verifyCaseCoverage(conditionalTranslationCases));
