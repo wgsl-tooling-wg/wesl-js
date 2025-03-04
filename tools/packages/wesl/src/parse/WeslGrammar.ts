@@ -65,6 +65,7 @@ import {
   scopeCollect,
   specialAttribute,
   statementCollect,
+  switchClauseCollect,
   typedDecl,
 } from "../WESLCollect.ts";
 import { weslImports } from "./ImportGrammar.ts";
@@ -393,19 +394,22 @@ const loop_statement = seq(
 );
 
 const case_selector = or("default", expression);
-const switch_clause = seq(
-  opt_attributes, // TODO: collect and then attach
-  or(
-    seq(
-      "case",
-      withSep(",", case_selector, { requireOne: true }),
-      opt(":"),
-      compound_statement,
-    ),
-    seq("default", opt(":"), compound_statement),
-  ), // TODO: collect as SwitchClause
-);
 
+// prettier-ignore
+const switch_clause =                   tagScope(
+  seq(
+    opt_attributes,
+    or(
+      seq(
+        "case",
+        withSep(",", case_selector, { requireOne: true }),
+        opt(":"),
+        compound_statement,
+      ),
+      seq("default", opt(":"), compound_statement),
+    ).                                    collect(switchClauseCollect), // TODO: collect as SwitchClause
+  )
+);
 const switch_body = seq(opt_attributes, "{", repeatPlus(switch_clause), "}");
 const switch_statement = seq("switch", expression, switch_body);
 

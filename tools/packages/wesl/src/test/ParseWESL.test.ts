@@ -788,13 +788,17 @@ test("parse switch statement", () => {
           switch ('
           ref x
           text ') {
-            case 1: '
-          statement
-            text '{ break; }'
+            '
+          switch-clause
+            text 'case 1: '
+            statement
+              text '{ break; }'
           text '
-            default: '
-          statement
-            text '{ break; }'
+            '
+          switch-clause
+            text 'default: '
+            statement
+              text '{ break; }'
           text '
           }
         }'
@@ -833,16 +837,20 @@ test("parse switch statement-2", () => {
           switch ( '
           ref code
           text ' ) {
-            case 5u: '
-          statement
-            text '{ if 1 > 0 '
+            '
+          switch-clause
+            text 'case 5u: '
             statement
-              text '{ }'
-            text ' }'
+              text '{ if 1 > 0 '
+              statement
+                text '{ }'
+              text ' }'
           text '
-            default: '
-          statement
-            text '{ break; }'
+            '
+          switch-clause
+            text 'default: '
+            statement
+              text '{ break; }'
           text '
           }
         }'

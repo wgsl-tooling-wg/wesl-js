@@ -35,7 +35,7 @@ export type ContainerElem =
   | TypeRefElem
   | VarElem
   | StatementElem
-  | SwitchClause;
+  | SwitchClauseElem;
 
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
 export type ExpressionElem =
@@ -441,6 +441,6 @@ export interface StatementElem extends ElemWithContentsBase, HasAttributes {
   kind: "statement";
 }
 
-export interface SwitchClause extends ElemWithContentsBase, HasAttributes {
+export interface SwitchClauseElem extends ElemWithContentsBase, HasAttributes {
   kind: "switch-clause";
 }

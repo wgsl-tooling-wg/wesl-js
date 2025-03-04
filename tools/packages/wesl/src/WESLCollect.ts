@@ -16,6 +16,7 @@ import {
   FnParamElem,
   GlobalVarElem,
   GrammarElem,
+  HasAttributes,
   IfAttribute,
   ImportElem,
   LetElem,
@@ -29,6 +30,7 @@ import {
   StructElem,
   StructMemberElem,
   StuffElem,
+  SwitchClauseElem,
   TextElem,
   TypedDeclElem,
   TypeRefElem,
@@ -235,7 +237,6 @@ export const collectFn = collectElem(
     const params: FnParamElem[] = cc.tags.fnParam?.flat(3) ?? [];
     const attributes: AttributeElem[] | undefined =
       cc.tags.fn_attributes?.flat(2);
-    attributes; //?
     const returnAttributes: AttributeElem[] | undefined =
       cc.tags.return_attributes?.flat();
     const returnType: TypeRefElem | undefined = cc.tags.returnType?.flat(3)[0];
@@ -304,15 +305,6 @@ export const specialAttribute = collectElem(
   },
 );
 
-export const constAssertCollect = collectElem(
-  "assert",
-  (cc: CollectContext, openElem: PartElem<ConstAssertElem>) => {
-    const attributes = cc.tags.attribute?.flat(3) as AttributeElem[];
-    const partElem = { ...openElem, attributes };
-    return withTextCover(partElem, cc);
-  },
-);
-
 /** debug routine to log tags at collect() */
 export function logCollect(msg?: string): (cc: CollectContext) => void {
   return function _log(cc: CollectContext) {
@@ -320,14 +312,21 @@ export function logCollect(msg?: string): (cc: CollectContext) => void {
   };
 }
 
-export const statementCollect = collectElem(
-  "statement",
-  (cc: CollectContext, openElem: PartElem<StatementElem>) => {
+export const constAssertCollect = attrElemCollect<ConstAssertElem>("assert");
+export const statementCollect = attrElemCollect<StatementElem>("statement");
+export const switchClauseCollect =
+  attrElemCollect<SwitchClauseElem>("switch-clause");
+
+/** @return a collector for container elem types that have only an attributes field */
+function attrElemCollect<T extends ContainerElem & HasAttributes>(
+  kind: T["kind"],
+): CollectPair<T> {
+  return collectElem(kind, (cc: CollectContext, openElem: PartElem<T>) => {
     const attributes = cc.tags.attribute?.flat(3) as AttributeElem[];
     const partElem = { ...openElem, attributes };
-    return withTextCover(partElem, cc);
-  },
-);
+    return withTextCover(partElem as any, cc);
+  });
+}
 
 export const collectAttribute = collectElem(
   "attribute",
