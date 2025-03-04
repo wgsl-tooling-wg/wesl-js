@@ -37,9 +37,7 @@ test("gpu execution w/?link", async () => {
     @compute @workgroup_size(1)
     fn main() { }
 
-    struct Uniforms {
-      foo: u32
-    }
+    struct Uniforms { foo: u32 }
   `;
   expectTrimmedMatch(code, expectedCode);
 });

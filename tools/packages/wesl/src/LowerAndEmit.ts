@@ -129,6 +129,7 @@ export function emitStruct(e: StructElem, ctx: EmitContext): void {
     warnEmptyStruct(e);
     return;
   }
+
   srcBuilder.add("struct ", start, name.start);
   emitDeclIdent(name, ctx);
 
@@ -139,12 +140,10 @@ export function emitStruct(e: StructElem, ctx: EmitContext): void {
   } else {
     srcBuilder.add(" {\n", name.end, members[0].start);
 
-    validMembers.forEach((m, i) => {
+    validMembers.forEach(m => {
       srcBuilder.add("  ", m.start - 1, m.start);
       emitContentsNoWs(m, ctx);
-      if (i < validLength - 1) {
-        srcBuilder.add(",", m.end, m.end + 1);
-      }
+      srcBuilder.add(",", m.end, m.end + 1);
       srcBuilder.addNl();
     });
 

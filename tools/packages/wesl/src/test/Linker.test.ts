@@ -32,7 +32,7 @@ test("link a struct", async () => {
   const src = `
     struct Point {
       x: i32,
-      y: i32
+      y: i32,
     }
   `;
   const result = await linkTest(src);
@@ -99,7 +99,7 @@ test("struct self reference", async () => {
   const src = `
     struct A {
       a: A,
-      b: B
+      b: B,
     }
     struct B { f: f32 }
   `;
