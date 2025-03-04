@@ -231,19 +231,24 @@ export const collectFn = collectElem(
   (cc: CollectContext, openElem: PartElem<FnElem>) => {
     const name = cc.tags.fn_name?.[0] as DeclIdentElem;
     const body_scope = cc.tags.body_scope?.[0] as Scope;
+    const body = cc.tags.body?.[0] as StatementElem;
     const params: FnParamElem[] = cc.tags.fnParam?.flat(3) ?? [];
     const attributes: AttributeElem[] | undefined =
-      cc.tags.fn_attributes?.flat();
+      cc.tags.fn_attributes?.flat(2);
+    attributes; //?
+    const returnAttributes: AttributeElem[] | undefined =
+      cc.tags.return_attributes?.flat();
     const returnType: TypeRefElem | undefined = cc.tags.returnType?.flat(3)[0];
-    const partElem: FnElem = {
+    const fnElem: FnElem = {
       ...openElem,
       name,
       attributes,
       params,
+      returnAttributes,
+      body,
       returnType,
     };
 
-    const fnElem = withTextCover(partElem, cc);
     (name.ident as DeclIdent).declElem = fnElem;
     name.ident.scope = body_scope;
 

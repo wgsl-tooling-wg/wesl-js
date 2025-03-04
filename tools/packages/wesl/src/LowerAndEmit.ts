@@ -78,7 +78,6 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
       return emitContents(e, ctx);
 
     // root level container elements get some extra newlines to make the output prettier
-    case "fn":
     case "override":
     case "const":
     case "assert":
@@ -86,6 +85,10 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "gvar":
       emitRootElemNl(ctx);
       return emitContents(e, ctx);
+
+    case "fn":
+      emitRootElemNl(ctx);
+      return emitFn(e, ctx);
 
     case "struct":
       emitRootElemNl(ctx);
@@ -115,6 +118,46 @@ export function emitText(e: TextElem, ctx: EmitContext): void {
 
 export function emitName(e: NameElem, ctx: EmitContext): void {
   ctx.srcBuilder.add(e.name, e.start, e.end);
+}
+
+/** emit function explicitly so we can control commas between conditional parameters */
+export function emitFn(e: FnElem, ctx: EmitContext): void {
+  const { attributes, name, params, returnAttributes, returnType, body } = e;
+  const { conditions, srcBuilder: builder } = ctx;
+
+  emitAttributes(attributes, ctx);
+
+  builder.add("fn ", name.start - 3, name.start);
+  emitDeclIdent(name, ctx);
+
+  builder.appendNext("(");
+  const validParams = params.filter(p => conditionsValid(p, conditions));
+  validParams.forEach((p, i) => {
+    emitContentsNoWs(p, ctx);
+    if (i < validParams.length - 1) {
+      builder.appendNext(", ");
+    }
+  });
+  builder.appendNext(") ");
+
+  if (returnType) {
+    builder.appendNext("-> ");
+    emitAttributes(returnAttributes, ctx);
+    emitContents(returnType, ctx);
+    builder.appendNext(" ");
+  }
+
+  emitContents(body, ctx);
+}
+
+function emitAttributes(
+  attributes: AttributeElem[] | undefined,
+  ctx: EmitContext,
+): void {
+  attributes?.forEach(a => {
+    emitAttribute(a, ctx);
+    ctx.srcBuilder.add(" ", a.start, a.end);
+  });
 }
 
 /** emit structs explicitly so we can control commas between conditional members */

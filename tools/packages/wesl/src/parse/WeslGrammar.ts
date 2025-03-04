@@ -320,7 +320,7 @@ const unscoped_compound_statement = seq(
   text("{"),
   repeat(() => statement),
   req("}"),
-);
+).collect(statementCollect);
 
 // prettier-ignore
 const compound_statement = tagScope(
@@ -496,16 +496,18 @@ const variable_updating_statement = or(
 
 // prettier-ignore
 const fn_decl = seq(
-  opt_attributes                      .collect((cc) => cc.tags.attribute, "fn_attributes"), // filter out empties
+                                      tagScope(
+    opt_attributes                      .collect((cc) => cc.tags.attribute || []),
+  )                                     .ctag("fn_attributes"),
   text("fn"),
   req(fnNameDecl),
   seq(
     req(fnParamList),
     opt(seq(
       "->", 
-      opt_attributes, 
+      opt_attributes                  .collect((cc) => cc.tags.attribute, "return_attributes"),
       type_specifier                  .ctag("returnType"))),
-    req(unscoped_compound_statement),
+    req(unscoped_compound_statement)  .ctag("body"),
   )                                   .collect(scopeCollect(), "body_scope"),
 )                                     .collect(collectFn);
 
