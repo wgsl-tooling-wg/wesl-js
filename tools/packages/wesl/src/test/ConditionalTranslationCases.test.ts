@@ -23,20 +23,20 @@ test.skip("@if on function formal parameter", ctx => caseTest(ctx));
 test("@if on structure declaration", ctx => caseTest(ctx));
 test("@if on structure member", ctx => caseTest(ctx));
 test("@if on compound statement", ctx => caseTest(ctx));
-test.skip("@if on if statement", ctx => caseTest(ctx));
-test.skip("@if on switch statement", ctx => caseTest(ctx));
+test("@if on if statement", ctx => caseTest(ctx));
+test("@if on switch statement", ctx => caseTest(ctx));
 test.skip("@if on switch clause", ctx => caseTest(ctx));
-test.skip("@if on loop statement", ctx => caseTest(ctx));
-test.skip("@if on for statement", ctx => caseTest(ctx));
-test.skip("@if on while statement", ctx => caseTest(ctx));
+test("@if on loop statement", ctx => caseTest(ctx));
+test("@if on for statement", ctx => caseTest(ctx));
+test("@if on while statement", ctx => caseTest(ctx));
 test.skip("@if on break statement", ctx => caseTest(ctx));
 test.skip("@if on break-if statement", ctx => caseTest(ctx));
 test.skip("@if on continue statement", ctx => caseTest(ctx));
 test.skip("@if on continuing statement", ctx => caseTest(ctx));
 test("@if on return statement", ctx => caseTest(ctx));
 test.skip("@if on discard statement", ctx => caseTest(ctx));
-test.skip("@if on call statement", ctx => caseTest(ctx));
-test.skip("@if on function-scope const_assert", ctx => caseTest(ctx));
+test("@if on call statement", ctx => caseTest(ctx));
+test("@if on function-scope const_assert", ctx => caseTest(ctx));
 test("@if short-circuiting OR", ctx => caseTest(ctx));
 test("@if short-circuiting AND", ctx => caseTest(ctx));
 test("@if logical NOT", ctx => caseTest(ctx));
@@ -44,9 +44,12 @@ test("@if parentheses", ctx => caseTest(ctx));
 
 test("declaration shadowing", ctx => caseTest(ctx));
 
-// requires disabled code stripping mode, which wesl-js doesn't support
-test.skip("conditional declaration shadowing", ctx => caseTest(ctx));
-
 test.skip("conditional import of const_assert", ctx => caseTest(ctx));
 
-afterAll(verifyCaseCoverage(conditionalTranslationCases));
+afterAll(() => {
+  // requires code stripping to be disabled (which wesl-js doesn't support)
+  const weslJsTests = conditionalTranslationCases.filter(
+    c => c.name !== "conditional declaration shadowing",
+  );
+  verifyCaseCoverage(weslJsTests);
+});
