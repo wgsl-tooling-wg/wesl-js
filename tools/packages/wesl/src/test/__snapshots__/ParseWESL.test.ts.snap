@@ -57,63 +57,63 @@ exports[`parse unicode ident 1`] = `
   text '
   '
   fn Δέλτα()
-    text 'fn '
     decl %Δέλτα
-    text '(){}'
+    statement
+      text '{}'
   text ' 
   '
   fn réflexion()
-    text 'fn '
     decl %réflexion
-    text '(){}'
+    statement
+      text '{}'
   text ' 
   '
   fn Кызыл()
-    text 'fn '
     decl %Кызыл
-    text '(){}'
+    statement
+      text '{}'
   text ' 
   '
   fn 𐰓𐰏𐰇()
-    text 'fn '
     decl %𐰓𐰏𐰇
-    text '(){}'
+    statement
+      text '{}'
   text ' 
   '
   fn 朝焼け()
-    text 'fn '
     decl %朝焼け
-    text '(){}'
+    statement
+      text '{}'
   text '
   '
   fn سلام()
-    text 'fn '
     decl %سلام
-    text '(){}'
+    statement
+      text '{}'
   text ' 
   '
   fn 검정()
-    text 'fn '
     decl %검정
-    text '(){}'
+    statement
+      text '{}'
   text ' 
   '
   fn שָׁלוֹם()
-    text 'fn '
     decl %שָׁלוֹם
-    text '(){}'
+    statement
+      text '{}'
   text '
   '
   fn गुलाबी()
-    text 'fn '
     decl %गुलाबी
-    text '(){}'
+    statement
+      text '{}'
   text '
   '
   fn փիրուզ()
-    text 'fn '
     decl %փիրուզ
-    text '(){}'
+    statement
+      text '{}'
   text '
   '"
 `;

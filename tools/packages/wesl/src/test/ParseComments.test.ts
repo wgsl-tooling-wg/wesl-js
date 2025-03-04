@@ -14,9 +14,9 @@ test("parse fn with line comment", () => {
       text '
         '
       fn binaryOp()
-        text 'fn '
         decl %binaryOp
-        text '() { // binOpImpl
+        statement
+          text '{ // binOpImpl
         }'"
   `);
 });

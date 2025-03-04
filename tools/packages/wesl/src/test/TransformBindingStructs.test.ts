@@ -145,20 +145,19 @@ test("lower binding structs", () => {
       text '
         '
       fn main(b: Bindings)
-        text 'fn '
         decl %main
-        text '('
         param
-        text ') {
+        statement
+          text '{
           '
-        let %x
-          text 'let '
-          typeDecl %x
-            decl %x
-          text ' = '
-          memberRef b.particles
-            synthetic 'particles'
-        text ';
+          let %x
+            text 'let '
+            typeDecl %x
+              decl %x
+            text ' = '
+            memberRef b.particles
+              synthetic 'particles'
+          text ';
         }'
       text '
       '"

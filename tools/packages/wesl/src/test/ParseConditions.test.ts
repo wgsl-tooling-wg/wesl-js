@@ -8,10 +8,9 @@ test("parse complex condition", () => {
     "module
       fn a() @if
         attribute @if(true || (!foo && !!false))
-        text '
-    fn '
         decl %a
-        text '() {}'"
+        statement
+          text '{}'"
   `);
 });
 
@@ -85,23 +84,23 @@ test("conditional statement", () => {
       text '
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
+        statement
+          text '{
           '
-        var %x
-          text 'var '
-          typeDecl %x
-            decl %x
-          text ' = 1'
-        text ';
+          var %x
+            text 'var '
+            typeDecl %x
+              decl %x
+            text ' = 1'
+          text ';
           '
-        statement @if
-          attribute @if(true)
-          text ' '
-          ref x
-          text ' = 2 ;'
-        text '
+          statement @if
+            attribute @if(true)
+            text ' '
+            ref x
+            text ' = 2 ;'
+          text '
         }'
       text '
       '"
@@ -123,22 +122,22 @@ test("compound statement", () => {
       text '
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
+        statement
+          text '{
           '
-        statement @if
-          attribute @if(false)
-          text ' {
+          statement @if
+            attribute @if(false)
+            text ' {
             '
-          let %x
-            text 'let '
-            typeDecl %x
-              decl %x
-            text ' = 1'
-          text ';
+            let %x
+              text 'let '
+              typeDecl %x
+                decl %x
+              text ' = 1'
+            text ';
           }'
-        text '
+          text '
         }'
       text '
       '"
@@ -158,20 +157,20 @@ test("conditional local var", () => {
       text '
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
+        statement
+          text '{
           '
-        statement @if
-          attribute @if(true)
-          text ' '
-          var %x
-            text 'var '
-            typeDecl %x
-              decl %x
-            text ' = 1'
-          text ';'
-        text '
+          statement @if
+            attribute @if(true)
+            text ' '
+            var %x
+              text 'var '
+              typeDecl %x
+                decl %x
+              text ' = 1'
+            text ';'
+          text '
         }'
       text '
       '"

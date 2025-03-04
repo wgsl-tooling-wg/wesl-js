@@ -50,9 +50,7 @@ test("link a fn", async () => {
 
 test("handle a ptr type", async () => {
   const src = `
-    fn uint_bitfieldExtract_u1_i1_i1_(
-      value: ptr<function, u32>, 
-      bits: ptr<function, i32>) -> u32 { }
+    fn uint_bitfieldExtract_u1_i1_i1_(value: ptr<function, u32>, bits: ptr<function, i32>) -> u32 { }
   `;
   const result = await linkTest(src);
   expectTrimmedMatch(result, src);

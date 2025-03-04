@@ -14,9 +14,9 @@ test("parse fn foo() { }", () => {
   expect(astToString(ast.moduleElem)).toMatchInlineSnapshot(`
     "module
       fn foo()
-        text 'fn '
         decl %foo
-        text '() { }'"
+        statement
+          text '{ }'"
   `);
 });
 
@@ -26,13 +26,13 @@ test("parse fn with calls", () => {
   expect(astToString(ast.moduleElem)).toMatchInlineSnapshot(`
     "module
       fn foo()
-        text 'fn '
         decl %foo
-        text '() { '
-        ref foo
-        text '(); '
-        ref bar
-        text '(); }'"
+        statement
+          text '{ '
+          ref foo
+          text '(); '
+          ref bar
+          text '(); }'"
   `);
 });
 
@@ -177,9 +177,9 @@ test("parse global diagnostic", () => {
 
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {}'
+        statement
+          text '{}'
       text '
         '"
   `);
@@ -193,9 +193,9 @@ test("parse @attribute before fn", () => {
     "module
       fn main() @compute
         attribute @compute
-        text ' fn '
         decl %main
-        text '() {}'
+        statement
+          text '{}'
       text ' '"
   `);
 });
@@ -214,8 +214,6 @@ test("parse @compute @workgroup_size(a, b, 1) before fn", () => {
         '
       fn main() @compute @workgroup_size
         attribute @compute
-        text ' 
-        '
         attribute @workgroup_size(ref a, ref b, '1')
           expression ref a
             ref a
@@ -223,10 +221,9 @@ test("parse @compute @workgroup_size(a, b, 1) before fn", () => {
             ref b
           expression '1'
             text '1'
-        text ' 
-        fn '
         decl %main
-        text '() {}'
+        statement
+          text '{}'
       text '
         '"
   `);
@@ -266,9 +263,9 @@ test("parse top level var", () => {
 
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {}'
+        statement
+          text '{}'
       text '
       '"
   `);
@@ -303,9 +300,9 @@ test("parse top level override and const", () => {
 
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {}'
+        statement
+          text '{}'
       text '
       '"
   `);
@@ -373,12 +370,11 @@ test("fnDecl parses fn with return type", () => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       fn foo() -> MyType
-        text 'fn '
         decl %foo
-        text '() -> '
         type MyType
           ref MyType
-        text ' { }'"
+        statement
+          text '{ }'"
   `);
 });
 
@@ -393,16 +389,15 @@ test("fnDecl parses :type specifier in fn args", () => {
       text '
         '
       fn foo(a: MyType)
-        text 'fn '
         decl %foo
-        text '('
         param
           decl %a
           typeDecl %a : MyType
             text ': '
             type MyType
               ref MyType
-        text ') { }'
+        statement
+          text '{ }'
       text '
       '"
   `);
@@ -421,18 +416,18 @@ test("fnDecl parses :type specifier in fn block", () => {
       text '
         '
       fn foo()
-        text 'fn '
         decl %foo
-        text '() { 
+        statement
+          text '{ 
           '
-        var %b : MyType
-          text 'var '
-          typeDecl %b : MyType
-            decl %b
-            text ':'
-            type MyType
-              ref MyType
-        text ';
+          var %b : MyType
+            text 'var '
+            typeDecl %b : MyType
+              decl %b
+              text ':'
+              type MyType
+                ref MyType
+          text ';
         }'
       text '
       '"
@@ -449,9 +444,7 @@ test("parse type in <template> in fn args", () => {
       text '
         '
       fn foo(a: vec2<MyStruct>)
-        text 'fn '
         decl %foo
-        text '('
         param
           decl %a
           typeDecl %a : vec2<MyStruct>
@@ -462,7 +455,8 @@ test("parse type in <template> in fn args", () => {
               type MyStruct
                 ref MyStruct
               text '>'
-        text ') { }'
+        statement
+          text '{ }'
       text ';'"
   `);
 });
@@ -475,9 +469,7 @@ test("parse simple templated type", () => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       fn main(a: array<MyStruct, '4'>)
-        text 'fn '
         decl %main
-        text '('
         param
           decl %a
           typeDecl %a : array<MyStruct, '4'>
@@ -491,7 +483,8 @@ test("parse simple templated type", () => {
               expression '4'
                 text '4'
               text '>'
-        text ') { }'"
+        statement
+          text '{ }'"
   `);
 });
 
@@ -502,9 +495,7 @@ test("parse with space before template", () => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       fn main(a: array<MyStruct, '4'>)
-        text 'fn '
         decl %main
-        text '('
         param
           decl %a
           typeDecl %a : array<MyStruct, '4'>
@@ -518,7 +509,8 @@ test("parse with space before template", () => {
               expression '4'
                 text '4'
               text '>'
-        text ') { }'"
+        statement
+          text '{ }'"
   `);
 });
 
@@ -529,9 +521,7 @@ test("parse nested template that ends with >> ", () => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       fn main(a: vec2<array<MyStruct, '4'>>)
-        text 'fn '
         decl %main
-        text '('
         param
           decl %a
           typeDecl %a : vec2<array<MyStruct, '4'>>
@@ -549,7 +539,8 @@ test("parse nested template that ends with >> ", () => {
                   text '4'
                 text '>'
               text '>'
-        text ') { }'"
+        statement
+          text '{ }'"
   `);
 });
 
@@ -594,20 +585,23 @@ test("parse for(;;) {} not as a fn call", () => {
       text '
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
+        statement
+          text '{
           for ('
-        var %a
-          text 'var '
-          typeDecl %a
-            decl %a
-          text ' = 1'
-        text '; '
-        ref a
-        text ' < 10; '
-        ref a
-        text '++) {}
+          var %a
+            text 'var '
+            typeDecl %a
+              decl %a
+            text ' = 1'
+          text '; '
+          ref a
+          text ' < 10; '
+          ref a
+          text '++) '
+          statement
+            text '{}'
+          text '
         }'
       text '
       '"
@@ -625,9 +619,9 @@ test("eolf followed by blank line", () => {
       text '
         '
       fn foo()
-        text 'fn '
         decl %foo
-        text '() { }'
+        statement
+          text '{ }'
       text '
       '"
   `);
@@ -650,8 +644,6 @@ test("parse fn with attributes and suffix comma", () => {
       '
       fn main(grid: vec3<u32>, localIndex: u32) @compute @workgroup_size
         attribute @compute
-        text '
-      '
         attribute @workgroup_size(ref workgroupThreads, '1', '1')
           expression ref workgroupThreads
             ref workgroupThreads
@@ -659,11 +651,7 @@ test("parse fn with attributes and suffix comma", () => {
             text '1'
           expression '1'
             text '1'
-        text ' 
-      fn '
         decl %main
-        text '(
-          '
         param
           attribute @builtin(global_invocation_id)
           text ' '
@@ -676,8 +664,6 @@ test("parse fn with attributes and suffix comma", () => {
               type u32
                 ref u32
               text '>'
-        text ',
-          '
         param
           attribute @builtin(local_invocation_index)
           text ' '
@@ -686,8 +672,8 @@ test("parse fn with attributes and suffix comma", () => {
             text ': '
             type u32
               ref u32
-        text ',  
-      ) { }'
+        statement
+          text '{ }'
       text '
       '"
   `);
@@ -700,26 +686,23 @@ test("parse fn", () => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       fn foo(x: i32, y: u32) -> f32
-        text 'fn '
         decl %foo
-        text '('
         param
           decl %x
           typeDecl %x : i32
             text ': '
             type i32
               ref i32
-        text ', '
         param
           decl %y
           typeDecl %y : u32
             text ': '
             type u32
               ref u32
-        text ') -> '
         type f32
           ref f32
-        text ' { return 1.0; }'"
+        statement
+          text '{ return 1.0; }'"
   `);
 });
 
@@ -731,9 +714,9 @@ test("parse @attribute before fn", () => {
     "module
       fn main() @compute
         attribute @compute
-        text ' fn '
         decl %main
-        text '() {}'
+        statement
+          text '{}'
       text ' '"
   `);
 });
@@ -793,27 +776,26 @@ test("parse switch statement", () => {
       text '
         '
       fn main(x: i32)
-        text 'fn '
         decl %main
-        text '('
         param
           decl %x
           typeDecl %x : i32
             text ': '
             type i32
               ref i32
-        text ') {
+        statement
+          text '{
           switch ('
-        ref x
-        text ') {
+          ref x
+          text ') {
             case 1: '
-        statement
-          text '{ break; }'
-        text '
+          statement
+            text '{ break; }'
+          text '
             default: '
-        statement
-          text '{ break; }'
-        text '
+          statement
+            text '{ break; }'
+          text '
           }
         }'
       text '
@@ -839,30 +821,29 @@ test("parse switch statement-2", () => {
 
         '
       fn main(x: u32)
-        text 'fn '
         decl %main
-        text '('
         param
           decl %x
           typeDecl %x : u32
             text ': '
             type u32
               ref u32
-        text ') {
+        statement
+          text '{
           switch ( '
-        ref code
-        text ' ) {
+          ref code
+          text ' ) {
             case 5u: '
-        statement
-          text '{ if 1 > 0 '
           statement
-            text '{ }'
-          text ' }'
-        text '
+            text '{ if 1 > 0 '
+            statement
+              text '{ }'
+            text ' }'
+          text '
             default: '
-        statement
-          text '{ break; }'
-        text '
+          statement
+            text '{ break; }'
+          text '
           }
         }'
       text '
@@ -883,18 +864,18 @@ test("parse struct constructor in assignment", () => {
       text '
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
+        statement
+          text '{
           '
-        var %x
-          text 'var '
-          typeDecl %x
-            decl %x
-          text ' = '
-          ref AStruct
-          text '(1u)'
-        text ';
+          var %x
+            text 'var '
+            typeDecl %x
+              decl %x
+            text ' = '
+            ref AStruct
+            text '(1u)'
+          text ';
         }'
       text '
        '"
@@ -914,20 +895,20 @@ test("parse struct.member (component_or_swizzle)", () => {
       text '
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
+        statement
+          text '{
             '
-        let %x
-          text 'let '
-          typeDecl %x
-            decl %x
-          text ' = '
-          memberRef u.frame
-            ref u
-            text '.'
-            name frame
-        text ';
+          let %x
+            text 'let '
+            typeDecl %x
+              decl %x
+            text ' = '
+            memberRef u.frame
+              ref u
+              text '.'
+              name frame
+          text ';
         }'
       text '
       '"
@@ -966,9 +947,9 @@ test("fn f() { _ = 1; }", ctx => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       fn f()
-        text 'fn '
         decl %f
-        text '() { _ = 1; }'"
+        statement
+          text '{ _ = 1; }'"
   `);
 });
 
@@ -1000,27 +981,27 @@ test("fn main() { var tmp: array<i32, 1 << 1>=array(1, 2); }", ctx => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       fn main()
-        text 'fn '
         decl %main
-        text '() { '
-        var %tmp : array<i32, '1 << 1'>
-          text 'var '
-          typeDecl %tmp : array<i32, '1 << 1'>
-            decl %tmp
-            text ': '
-            type array<i32, '1 << 1'>
-              ref array
-              text '<'
-              type i32
-                ref i32
-              text ', '
-              expression '1 << 1'
-                text '1 << 1'
-              text '>'
-          text '='
-          ref array
-          text '(1, 2)'
-        text '; }'"
+        statement
+          text '{ '
+          var %tmp : array<i32, '1 << 1'>
+            text 'var '
+            typeDecl %tmp : array<i32, '1 << 1'>
+              decl %tmp
+              text ': '
+              type array<i32, '1 << 1'>
+                ref array
+                text '<'
+                type i32
+                  ref i32
+                text ', '
+                expression '1 << 1'
+                  text '1 << 1'
+                text '>'
+            text '='
+            ref array
+            text '(1, 2)'
+          text '; }'"
   `);
 });
 
@@ -1212,21 +1193,21 @@ test(`parse struct reference`, () => {
       text '
         '
       fn f()
-        text 'fn '
         decl %f
-        text '() { '
-        let %x
-          text 'let '
-          typeDecl %x
-            decl %x
-          text ' = '
-          memberRef a.b[0]
-            ref a
-            text '.'
-            name b
-            stuff
-              text '[0]'
-        text '; }'
+        statement
+          text '{ '
+          let %x
+            text 'let '
+            typeDecl %x
+              decl %x
+            text ' = '
+            memberRef a.b[0]
+              ref a
+              text '.'
+              name b
+              stuff
+                text '[0]'
+          text '; }'
       text ';
       '"
   `);
@@ -1245,21 +1226,21 @@ test("member reference with extra components", () => {
       text '
       '
       fn foo()
-        text 'fn '
         decl %foo
-        text '() {
+        statement
+          text '{
         '
-        ref output
-        text '[ '
-        ref out
-        text ' + 0u ] = '
-        memberRef c.p0.t0.x
-          ref c
-          text '.'
-          name p0
-          stuff
-            text '.t0.x'
-        text ';
+          ref output
+          text '[ '
+          ref out
+          text ' + 0u ] = '
+          memberRef c.p0.t0.x
+            ref c
+            text '.'
+            name p0
+            stuff
+              text '.t0.x'
+          text ';
       }'
       text '
      '"
@@ -1279,24 +1260,24 @@ test("parse let declaration", () => {
       text '
         '
       fn vertexMain()
-        text 'fn '
         decl %vertexMain
-        text '() {
+        statement
+          text '{
           '
-        let %char
-          text 'let '
-          typeDecl %char
-            decl %char
-          text ' = '
-          ref array
-          text '<'
-          type u32
-            ref u32
-          text ', '
-          expression '2'
-            text '2'
-          text '>(0, 0)'
-        text ';
+          let %char
+            text 'let '
+            typeDecl %char
+              decl %char
+            text ' = '
+            ref array
+            text '<'
+            type u32
+              ref u32
+            text ', '
+            expression '2'
+              text '2'
+            text '>(0, 0)'
+          text ';
         }'
       text '
       '"
@@ -1316,19 +1297,19 @@ test("parse let declaration with type", () => {
       text '
         '
       fn vertexMain()
-        text 'fn '
         decl %vertexMain
-        text '() {
+        statement
+          text '{
           '
-        let %char : u32
-          text 'let '
-          typeDecl %char : u32
-            decl %char
-            text ' : '
-            type u32
-              ref u32
-          text ' = 0'
-        text ';
+          let %char : u32
+            text 'let '
+            typeDecl %char : u32
+              decl %char
+              text ' : '
+              type u32
+                ref u32
+            text ' = 0'
+          text ';
         }'
       text '
       '"
@@ -1348,17 +1329,17 @@ test("separator in let assignment", () => {
       text '
         '
       fn vertexMain()
-        text 'fn '
         decl %vertexMain
-        text '() {
+        statement
+          text '{
           '
-        let %a
-          text 'let '
-          typeDecl %a
-            decl %a
-          text ' = '
-          ref b::c
-        text ';
+          let %a
+            text 'let '
+            typeDecl %a
+              decl %a
+            text ' = '
+            ref b::c
+          text ';
         }'
       text '
       '"
@@ -1378,12 +1359,12 @@ test("separator in fn call ", () => {
       text '
         '
       fn vertexMain()
-        text 'fn '
         decl %vertexMain
-        text '() {
+        statement
+          text '{
           '
-        ref b::c
-        text '();
+          ref b::c
+          text '();
         }'
       text '
       '"
@@ -1513,24 +1494,24 @@ test("memberRefs with extra components", () => {
       text '
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
+        statement
+          text '{
           '
-        memberRef b.particles[0]
-          ref b
-          text '.'
-          name particles
-          stuff
-            text '[0]'
-        text ' = '
-        memberRef b.uniforms.foo
-          ref b
-          text '.'
-          name uniforms
-          stuff
-            text '.foo'
-        text ';
+          memberRef b.particles[0]
+            ref b
+            text '.'
+            name particles
+            stuff
+              text '[0]'
+          text ' = '
+          memberRef b.uniforms.foo
+            ref b
+            text '.'
+            name uniforms
+            stuff
+              text '.foo'
+          text ';
         }'
       text '
       '"
@@ -1550,19 +1531,19 @@ test("memberRef with ref in array", () => {
       text '
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
+        statement
+          text '{
           '
-        memberRef vsOut.barycenticCoord[ vertNdx ]
-          ref vsOut
-          text '.'
-          name barycenticCoord
-          stuff
-            text '['
-            ref vertNdx
-            text ']'
-        text ' = 1.0;
+          memberRef vsOut.barycenticCoord[ vertNdx ]
+            ref vsOut
+            text '.'
+            name barycenticCoord
+            stuff
+              text '['
+              ref vertNdx
+              text ']'
+          text ' = 1.0;
         }'
       text '
       '"
@@ -1582,12 +1563,12 @@ test("parse inline package reference", () => {
       text '
         '
       fn main()
-        text 'fn '
         decl %main
-        text '() {
+        statement
+          text '{
           '
-        ref package::foo::bar
-        text '();
+          ref package::foo::bar
+          text '();
         }'
       text '
       '"
