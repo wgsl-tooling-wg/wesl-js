@@ -312,7 +312,7 @@ export function logCollect(msg?: string): (cc: CollectContext) => void {
   };
 }
 
-export const constAssertCollect = attrElemCollect<ConstAssertElem>("assert");
+export const assertCollect = attrElemCollect<ConstAssertElem>("assert");
 export const statementCollect = attrElemCollect<StatementElem>("statement");
 export const switchClauseCollect =
   attrElemCollect<SwitchClauseElem>("switch-clause");
@@ -324,7 +324,7 @@ function attrElemCollect<T extends ContainerElem & HasAttributes>(
   return collectElem(kind, (cc: CollectContext, openElem: PartElem<T>) => {
     const attributes = cc.tags.attribute?.flat(3) as AttributeElem[];
     const partElem = { ...openElem, attributes };
-    return withTextCover(partElem as any, cc);
+    return withTextCover(partElem as T, cc);
   });
 }
 
@@ -366,6 +366,13 @@ export const expressionCollect = collectElem(
     return withTextCover(partElem, cc);
   },
 );
+
+export function globalAssertCollect(cc: CollectContext): void {
+  const globalAssert = cc.tags.const_assert?.flat()[0];
+  const ast = cc.app.stable as WeslAST;
+  if (!ast.moduleAsserts) ast.moduleAsserts = [];
+  ast.moduleAsserts.push(globalAssert);
+}
 
 export const stuffCollect = collectElem(
   "stuff",

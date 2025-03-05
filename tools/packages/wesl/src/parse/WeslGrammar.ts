@@ -48,6 +48,7 @@ import {
 } from "../AbstractElems.ts";
 import {
   aliasCollect,
+  assertCollect,
   collectAttribute,
   collectFn,
   collectFnParam,
@@ -55,10 +56,10 @@ import {
   collectStruct,
   collectStructMember,
   collectVarLike,
-  constAssertCollect,
   declCollect,
   directiveCollect,
   expressionCollect,
+  globalAssertCollect,
   nameCollect,
   partialScopeCollect,
   refIdent,
@@ -556,13 +557,14 @@ const global_alias = seq(
 )                                     .collect(aliasCollect);
 
 // prettier-ignore
-const const_assert = 
+const const_assert =                 tagScope(
   seq(
     opt_attributes,
     "const_assert", 
     req(expression), 
     ";"
-  )                                   .collect(constAssertCollect);
+  )                                   .collect(assertCollect)
+)                                       .ctag("const_assert");
 
 // prettier-ignore
 const global_directive = tagScope(
@@ -590,7 +592,7 @@ const global_decl = tagScope(
     global_value_decl,
     ";",
     global_alias,
-    const_assert,
+    const_assert                    .collect(globalAssertCollect),
     struct_decl,
   ),
 );

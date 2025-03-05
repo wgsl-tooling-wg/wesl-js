@@ -1,5 +1,9 @@
 import { AppState, ParserInit, SrcMap } from "mini-parse";
-import { ImportStatement, ModuleElem } from "./AbstractElems.ts";
+import {
+  ConstAssertElem,
+  ImportStatement,
+  ModuleElem,
+} from "./AbstractElems.ts";
 import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
@@ -27,6 +31,9 @@ export interface WeslAST {
 
   /** imports found in this module */
   imports: ImportStatement[];
+
+  /** module level const_assert statements */
+  moduleAsserts?: ConstAssertElem[];
 }
 
 /** an extended version of the AST */
