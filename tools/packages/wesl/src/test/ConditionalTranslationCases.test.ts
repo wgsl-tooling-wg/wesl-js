@@ -44,7 +44,7 @@ test("@if parentheses", ctx => caseTest(ctx));
 
 test("declaration shadowing", ctx => caseTest(ctx));
 
-test.skip("conditional import of const_assert", ctx => caseTest(ctx));
+test("conditional import of const_assert", ctx => caseTest(ctx));
 
 afterAll(() => {
   // requires code stripping to be disabled (which wesl-js doesn't support)
