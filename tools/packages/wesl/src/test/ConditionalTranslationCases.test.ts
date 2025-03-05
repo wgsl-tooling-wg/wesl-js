@@ -51,3 +51,4 @@ test("@if parentheses", ctx => caseTest(ctx));
 test("declaration shadowing", ctx => caseTest(ctx));
 
 test("conditional import of const_assert", ctx => caseTest(ctx));
+test("double conditional import of const_assert", ctx => caseTest(ctx));
