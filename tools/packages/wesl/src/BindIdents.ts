@@ -46,19 +46,16 @@ import { last } from "./Util.ts";
 */
 
 /** results returned from binding pass */
-export interface BindResults extends BindPartialResults {
+export interface BindResults {
   /** root level names (including names mangled due to conflict with earlier names) */
   globalNames: Set<string>;
-}
 
-interface BindPartialResults {
   /** global declarations that were referenced (these will need to be emitted in the link) */
   decls: DeclIdent[];
 
   /** additional global statements to include in linked results
-   * (e.g. for adding module level const_assert statements)
-   */
-  globalStatements?: EmittableElem[];
+   * (e.g. for adding module level const_assert statements) */
+  newStatements: EmittableElem[];
 }
 
 /** an element that can be directly emitted into the linked result */
@@ -110,12 +107,14 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     }
   });
 
+  const globalStatements = new Map<AbstractElem, EmittableElem>();
   const bindContext = {
     registry,
     conditions,
     knownDecls,
     foundScopes: new Set<Scope>(),
     globalNames,
+    globalStatements,
     virtuals,
     mangler,
   };
@@ -126,15 +125,10 @@ export function bindIdents(params: BindIdentsParams): BindResults {
   const declEntries = rootDecls.map(d => [d.originalName, d] as const);
   const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
 
-  const partialResults = bindIdentsRecursive(
-    rootScope,
-    bindContext,
-    liveDecls,
-    true,
-  );
-  const { decls, globalStatements } = partialResults;
+  const decls = bindIdentsRecursive(rootScope, bindContext, liveDecls, true);
   const filteredDecls = decls.filter(isGlobal); // TODO is this needed?
-  return { decls: filteredDecls, globalNames, globalStatements };
+  const newStatements = [...globalStatements.values()];
+  return { decls: filteredDecls, globalNames, newStatements };
 }
 
 /** state used during the recursive scope tree walk to bind references to declarations */
@@ -153,12 +147,18 @@ interface BindContext {
   /** root level names used so far (so that manglers or ast rewriting plugins can pick unique names) */
   globalNames: Set<string>;
 
+  /** additional global statements to include in linked results
+   * (e.g. for adding module level const_assert statements)
+   * (indexed by elem for uniqueness) */
+  globalStatements: Map<AbstractElem, EmittableElem>;
+
   /** construct unique identifer names for global declarations */
   mangler: ManglerFn;
 
   /** virtual libraries provided by the user (e.g. for code generators or constants) */
   virtuals?: VirtualLibrarySet;
 }
+
 /**
  * Recursively bind references to declarations in this scope and
  * any child scopes referenced by these declarations.
@@ -174,14 +174,13 @@ function bindIdentsRecursive(
   bindContext: BindContext,
   liveDecls: LiveDecls,
   isRoot = false,
-): BindPartialResults {
+): DeclIdent[] {
   // early exit if we've processed this scope before
   const { foundScopes } = bindContext;
-  if (foundScopes.has(scope)) return { decls: [], globalStatements: [] };
+  if (foundScopes.has(scope)) return [];
   foundScopes.add(scope);
 
   const newGlobals: DeclIdent[] = []; // new decl idents to process for binding (and return for emitting)
-  const globalStatements: EmittableElem[] = []; // new const_assert statements to be emmitted
 
   // active declarations in this scope
   const newFromChildren: DeclIdent[] = [];
@@ -194,17 +193,11 @@ function bindIdentsRecursive(
       if (!isRoot) liveDecls.decls.set(ident.originalName, ident);
     } else if (kind === "ref") {
       const newDecl = handleRef(child, liveDecls, bindContext);
-      if (newDecl) {
-        const { decl, moduleEmit } = newDecl;
-        newGlobals.push(decl);
-        moduleEmit && globalStatements.push(...moduleEmit);
-      }
+      newDecl && newGlobals.push(newDecl);
     } else {
       const fromScope = handleScope(child, liveDecls, bindContext);
       if (fromScope) {
-        const { decls, globalStatements: newStatements } = fromScope;
-        newFromChildren.push(...decls);
-        pushIfDefined(newStatements, globalStatements);
+        newFromChildren.push(...fromScope);
       }
     }
   });
@@ -223,17 +216,9 @@ function bindIdentsRecursive(
     return [];
   });
 
-  const declsFromRefs = newFromRefs.flatMap(d => d.decls);
-
-  const decls = [newGlobals, newFromChildren, declsFromRefs].flat();
-  return { decls, globalStatements };
+  return [newGlobals, newFromChildren, newFromRefs].flat();
 }
 
-function pushIfDefined<T>(newElems: T[] | undefined, arr: T[]): void {
-  if (newElems) {
-    arr.push(...newElems);
-  }
-}
 /**
  * Trace references to their declarations
  * mutates to:
@@ -246,7 +231,7 @@ function handleRef(
   ident: RefIdent,
   liveDecls: LiveDecls,
   bindContext: BindContext,
-): NewfoundDecl | undefined {
+): DeclIdent | undefined {
   const { registry, conditions } = bindContext;
   const { virtuals } = bindContext;
   if (!ident.refersTo && !ident.std) {
@@ -275,7 +260,7 @@ function handleScope(
   childScope: Scope,
   liveDecls: LiveDecls,
   bindContext: BindContext,
-): BindPartialResults | undefined {
+): DeclIdent[] | undefined {
   const { conditions } = bindContext;
   if (!scopeValid(childScope, conditions)) return;
   const { kind } = childScope;
@@ -289,15 +274,6 @@ function handleScope(
   }
 }
 
-/** a new global declaration (and any associated module emits) */
-interface NewfoundDecl {
-  /** new global Declaration found */
-  decl: DeclIdent;
-
-  /** elements to emit (const_assert) because this module is involved */
-  moduleEmit?: EmittableElem[];
-}
-
 /**
  * If the found declaration is new, mangle its name and update the
  * knownDecls and globalNames sets.
@@ -308,9 +284,9 @@ function handleNewDecl(
   refIdent: RefIdent,
   foundDecl: FoundDecl,
   bindContext: BindContext,
-): NewfoundDecl | undefined {
+): DeclIdent | undefined {
   const { decl, moduleAst } = foundDecl;
-  const { knownDecls, globalNames, mangler } = bindContext;
+  const { knownDecls, globalNames, mangler, globalStatements } = bindContext;
   if (!knownDecls.has(decl)) {
     knownDecls.add(decl);
 
@@ -321,7 +297,9 @@ function handleNewDecl(
     if (isGlobal(decl)) {
       const { moduleAsserts } = moduleAst;
       const moduleEmit = moduleAsserts?.map(elem => ({ srcModule, elem }));
-      return { decl, moduleEmit };
+      moduleEmit?.forEach(e => globalStatements.set(e.elem, e));
+
+      return decl;
     }
   }
 }
@@ -437,7 +415,7 @@ function matchingImport(
 /** discovered declaration found during binding */
 interface FoundDecl {
   decl: DeclIdent;
-  // LATER leave room for returning the ast from new modules, to avoid having to store ast with refident
+  /** module containing the decl */
   moduleAst: WeslAST;
 }
 

@@ -135,7 +135,7 @@ export function linkRegistry(params: LinkRegistryParams): SrcMap {
 interface BoundAndTransformed {
   transformedAst: TransformedAST;
   newDecls: DeclIdent[];
-  newStatements?: EmittableElem[];
+  newStatements: EmittableElem[];
 }
 
 /** bind identifers and apply any transform plugins */
@@ -158,10 +158,10 @@ export function bindAndTransform(
   // link active Ident references to declarations, and uniquify global declarations
   const bindParams = { rootAst, registry, conditions, virtuals, mangler };
   const bindResults = bindIdents(bindParams);
-  const { globalNames, decls: newDecls, globalStatements } = bindResults;
+  const { globalNames, decls: newDecls, newStatements } = bindResults;
 
   const transformedAst = applyTransformPlugins(rootAst, globalNames, config);
-  return { transformedAst, newDecls, newStatements: globalStatements };
+  return { transformedAst, newDecls, newStatements };
 }
 
 function constantsGenerator(
@@ -214,7 +214,7 @@ function emitWgsl(
   rootModuleElem: ModuleElem,
   srcModule: SrcModule,
   newDecls: DeclIdent[],
-  newStatements: EmittableElem[] = [],
+  newStatements: EmittableElem[],
   conditions: Conditions = {},
 ): SrcMapBuilder[] {
   /* --- Step #3   Writing WGSL --- */ // note doesn't require the scope tree anymore
