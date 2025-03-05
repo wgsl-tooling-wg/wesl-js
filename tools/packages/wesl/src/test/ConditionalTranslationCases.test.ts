@@ -10,6 +10,14 @@ async function caseTest(ctx: TestContext): Promise<void> {
   return testFromCase(ctx.task.name, examplesByName);
 }
 
+afterAll(() => {
+  // requires code stripping to be disabled (which wesl-js doesn't support)
+  const weslJsTests = conditionalTranslationCases.filter(
+    c => c.name !== "conditional declaration shadowing",
+  );
+  verifyCaseCoverage(weslJsTests);
+});
+
 test("@if on diagnostic directive", ctx => caseTest(ctx));
 test("@if on enable directive", ctx => caseTest(ctx));
 test("@if on requires directive", ctx => caseTest(ctx));
@@ -45,11 +53,3 @@ test("@if parentheses", ctx => caseTest(ctx));
 test("declaration shadowing", ctx => caseTest(ctx));
 
 test("conditional import of const_assert", ctx => caseTest(ctx));
-
-afterAll(() => {
-  // requires code stripping to be disabled (which wesl-js doesn't support)
-  const weslJsTests = conditionalTranslationCases.filter(
-    c => c.name !== "conditional declaration shadowing",
-  );
-  verifyCaseCoverage(weslJsTests);
-});

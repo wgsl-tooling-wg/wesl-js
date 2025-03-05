@@ -9,6 +9,8 @@ async function caseTest(ctx: TestContext): Promise<void> {
   return testFromCase(ctx.task.name, examplesByName);
 }
 
+afterAll(verifyCaseCoverage(importCases));
+
 test("import package::bar::foo;", ctx => caseTest(ctx));
 test("main has other root elements", ctx => caseTest(ctx));
 test("import foo as bar", ctx => caseTest(ctx));
@@ -52,5 +54,3 @@ test("declaration after subscope", ctx => caseTest(ctx));
 // });
 
 // TODO add case for diagnostic in non-root module (should fail?)
-
-afterAll(verifyCaseCoverage(importCases));
