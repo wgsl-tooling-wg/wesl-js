@@ -132,7 +132,7 @@ export function linkRegistry(params: LinkRegistryParams): SrcMap {
   );
 }
 
-interface BoundAndTransformed {
+export interface BoundAndTransformed {
   transformedAst: TransformedAST;
   newDecls: DeclIdent[];
   newStatements: EmittableElem[];
