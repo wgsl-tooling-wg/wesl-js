@@ -98,7 +98,7 @@ interface BindTestResult {
   registry: ParsedRegistry;
 }
 
-/** 
+/**
  * Test parsing and binding some wesl src.
  * @return both the bound result and the internal registry.
  * (since binding mutates the AST, it's useful for tests to review)

@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { bindTest } from "./TestUtil.ts";
 import { scopeToString } from "../debug/ScopeToString.ts";
+import { bindTest } from "./TestUtil.ts";
 
 test("nested scopes binding", async () => {
   const src = `

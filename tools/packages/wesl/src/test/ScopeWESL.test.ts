@@ -360,7 +360,6 @@ test("loop scope", () => {
 `);
 });
 
-
 test("nested scope test", () => {
   const src = `
     fn main() {

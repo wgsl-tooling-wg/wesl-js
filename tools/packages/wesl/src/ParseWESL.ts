@@ -74,8 +74,8 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
 }
 
 export function parseWESL(src: string, srcMap?: SrcMap): WeslAST {
-  const srcModule: SrcModule = {  
-    modulePath: "package::test",      // TODO this ought not be used outside of tests
+  const srcModule: SrcModule = {
+    modulePath: "package::test", // TODO this ought not be used outside of tests
     debugFilePath: "./test.wesl",
     src,
   };
