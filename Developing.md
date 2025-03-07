@@ -10,18 +10,18 @@ to make working with Git submodules easier.
 
 ## 
 
-The main wesl tools are in the /linker directory.
+The main wesl tools are in the /tools directory.
 
 ### Install packages:
 
 ```sh
-cd wesl-js/linker
+cd wesl-js
 pnpm install
 ```
 
 ### Scripts
 
-See `wesl-js/linker/package.json` for scripts you can run. 
+See `wesl-js/tools/package.json` for scripts you can run. 
 
 This is the most common one:
 
@@ -31,7 +31,7 @@ pnpm test
 
 If it fails with a `Error [ERR_MODULE_NOT_FOUND]:`, try doing `pnpm run build:all` first.
 
-Wallaby is also available for most tests, use the configuration in `wesl-js/linker/wallaby.js`
+Wallaby is also available for most tests, use the configuration in `wesl-js/wallaby.js`
 
 ### wesl tool packages
 
