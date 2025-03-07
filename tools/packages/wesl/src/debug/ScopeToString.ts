@@ -14,6 +14,7 @@ export function scopeToString(scope: Scope, indent = 0): string {
 
   const last = contents.length - 1;
   let lastWasScope = false;
+  let hasBlock = false;
   contents.forEach((elem, i) => {
     if (childScope(elem)) {
       const childScope: Scope = elem;
@@ -21,6 +22,7 @@ export function scopeToString(scope: Scope, indent = 0): string {
       !lastWasScope && str.nl();
       str.addBlock(childBlock);
       lastWasScope = true;
+      hasBlock = true;
     } else {
       lastWasScope && str.add("  ");
       lastWasScope = false;
@@ -30,9 +32,10 @@ export function scopeToString(scope: Scope, indent = 0): string {
     }
   });
 
-  if (str.oneLine) {
+  if (!hasBlock && str.oneLine) {
     str.add(" }");
   } else {
+    if (hasBlock && !lastWasScope) str.nl();
     str.add("}");
   }
 

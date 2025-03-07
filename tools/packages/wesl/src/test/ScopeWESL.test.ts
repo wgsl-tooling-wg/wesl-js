@@ -197,7 +197,8 @@ test("builtin enums", () => {
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
     "{ %read 
       { vec2f } #1
-      storage read_write %storage_buffer read} #0"
+      storage read_write %storage_buffer read
+    } #0"
   `);
 });
 
