@@ -3,9 +3,9 @@
 ## Git Submodules
 
 This is a meta repository with several related projects
-included as git submodules. 
+included as git submodules.
 
-We recommend seting `git config --global submodule.recurse true` for this project,
+We recommend setting `git config submodule.recurse true` for this project,
 to make working with Git submodules easier.
 
 ## 
