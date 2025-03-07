@@ -359,6 +359,20 @@ test("loop scope", () => {
 `);
 });
 
+
+test.skip("const in fn", () => {
+  const src = `
+    fn main() {
+      const a = 7;
+    }
+  `;
+  const { rootScope } = testParseWESL(src);
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot('tbd');
+
+  
+
+})
+
 // test("", () => {
 //   const src = `
 //   `;

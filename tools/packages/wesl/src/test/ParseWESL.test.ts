@@ -906,16 +906,14 @@ test("parse struct.member (component_or_swizzle)", () => {
         decl %main
         statement
           text '{
-            '
-          let %x
-            text 'let '
-            typeDecl %x
-              decl %x
-            text ' = '
-            memberRef u.frame
-              ref u
-              text '.'
-              name frame
+            let '
+          typeDecl %x
+            decl %x
+          text ' = '
+          memberRef u.frame
+            ref u
+            text '.'
+            name frame
           text ';
         }'
       text '
@@ -1203,18 +1201,16 @@ test(`parse struct reference`, () => {
       fn f()
         decl %f
         statement
-          text '{ '
-          let %x
-            text 'let '
-            typeDecl %x
-              decl %x
-            text ' = '
-            memberRef a.b[0]
-              ref a
-              text '.'
-              name b
-              stuff
-                text '[0]'
+          text '{ let '
+          typeDecl %x
+            decl %x
+          text ' = '
+          memberRef a.b[0]
+            ref a
+            text '.'
+            name b
+            stuff
+              text '[0]'
           text '; }'
       text ';
       '"
@@ -1271,21 +1267,18 @@ test("parse let declaration", () => {
         decl %vertexMain
         statement
           text '{
-          '
-          let %char
-            text 'let '
-            typeDecl %char
-              decl %char
-            text ' = '
-            ref array
-            text '<'
-            type u32
-              ref u32
-            text ', '
-            expression '2'
-              text '2'
-            text '>(0, 0)'
-          text ';
+          let '
+          typeDecl %char
+            decl %char
+          text ' = '
+          ref array
+          text '<'
+          type u32
+            ref u32
+          text ', '
+          expression '2'
+            text '2'
+          text '>(0, 0);
         }'
       text '
       '"
@@ -1308,16 +1301,13 @@ test("parse let declaration with type", () => {
         decl %vertexMain
         statement
           text '{
-          '
-          let %char : u32
-            text 'let '
-            typeDecl %char : u32
-              decl %char
-              text ' : '
-              type u32
-                ref u32
-            text ' = 0'
-          text ';
+          let '
+          typeDecl %char : u32
+            decl %char
+            text ' : '
+            type u32
+              ref u32
+          text ' = 0;
         }'
       text '
       '"
@@ -1340,13 +1330,11 @@ test("separator in let assignment", () => {
         decl %vertexMain
         statement
           text '{
-          '
-          let %a
-            text 'let '
-            typeDecl %a
-              decl %a
-            text ' = '
-            ref b::c
+          let '
+          typeDecl %a
+            decl %a
+          text ' = '
+          ref b::c
           text ';
         }'
       text '

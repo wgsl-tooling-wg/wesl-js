@@ -149,14 +149,12 @@ test("lower binding structs", () => {
         param
         statement
           text '{
-          '
-          let %x
-            text 'let '
-            typeDecl %x
-              decl %x
-            text ' = '
-            memberRef b.particles
-              synthetic 'particles'
+          let '
+          typeDecl %x
+            decl %x
+          text ' = '
+          memberRef b.particles
+            synthetic 'particles'
           text ';
         }'
       text '

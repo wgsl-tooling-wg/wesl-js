@@ -486,18 +486,17 @@ const lhs_expression: Parser<Stream<WeslToken>,any> = or(
 );
 
 // prettier-ignore
-const variable_or_value_statement = tagScope(
-    or(
+const variable_or_value_statement = tagScope( // LATER consider collecting these as var elems and scopes
+  or(
     // Also covers the = expression case
     local_variable_decl,
-    seq("const", req_optionally_typed_ident, req("="), expression), // TODO collect
+    seq("const", req_optionally_typed_ident, req("="), expression),
     seq(
       "let", 
-      req_optionally_typed_ident          .ctag("var_name"), // TODO scope??
+      req_optionally_typed_ident,
       req("="),
       expression
-      )                                   .collect(collectVarLike("let"),
-    ),
+    )
   )
 );
 

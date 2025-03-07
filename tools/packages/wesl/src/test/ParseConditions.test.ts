@@ -129,13 +129,10 @@ test("compound statement", () => {
           statement @if
             attribute @if(false)
             text ' {
-            '
-            let %x
-              text 'let '
-              typeDecl %x
-                decl %x
-              text ' = 1'
-            text ';
+            let '
+            typeDecl %x
+              decl %x
+            text ' = 1;
           }'
           text '
         }'
