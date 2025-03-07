@@ -334,6 +334,31 @@ test("partial scope", () => {
 `);
 });
 
+test("loop scope", () => {
+  const src = `
+    fn main() {
+      let a = 7;
+      loop {
+        let a = 1;
+        continuing {
+          let a = 2;
+        }
+      }
+    }
+  `;
+  const { rootScope } = testParseWESL(src);
+
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+  "{ %main 
+    { %a 
+      { %a 
+        { %a } #3
+      } #2
+    } #1
+  } #0"
+`);
+});
+
 // test("", () => {
 //   const src = `
 //   `;

@@ -375,7 +375,7 @@ const if_statement = seq(
 // prettier-ignore
 const loop_statement = seq(
   "loop",
-  opt_attributes, // TODO: collect and attach to scope 1
+  opt_attributes_no_if,
   req(
     seq(
       "{",
@@ -396,14 +396,15 @@ const loop_statement = seq(
                 )                         .collect(statementCollect) 
               )
             ),
-            "}", // TODO: Scope 2 collect
-          )                             .collect(statementCollect),
+            "}",
+          )                             .collect(statementCollect)
+                                        .collect(scopeCollect())
         ),
       ),
-      "}", // TODO: Scope 1 collect
+      "}",
     ),
   ),
-);
+)                                     .collect(scopeCollect());
 
 const case_selector = or("default", expression);
 
