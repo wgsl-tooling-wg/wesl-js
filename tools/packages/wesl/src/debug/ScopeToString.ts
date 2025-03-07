@@ -3,7 +3,11 @@ import { attributeToString } from "./ASTtoString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 
 /** A debugging print of the scope tree with identifiers in nested brackets */
-export function scopeToString(scope: Scope, indent = 0): string {
+export function scopeToString(
+  scope: Scope,
+  indent = 0,
+  shortIdents = true,
+): string {
   const { contents, kind, ifAttribute } = scope;
 
   const str = new LineWrapper(indent);
@@ -18,7 +22,7 @@ export function scopeToString(scope: Scope, indent = 0): string {
   contents.forEach((elem, i) => {
     if (childScope(elem)) {
       const childScope: Scope = elem;
-      const childBlock = scopeToString(childScope, indent + 2);
+      const childBlock = scopeToString(childScope, indent + 2, shortIdents);
       !lastWasScope && str.nl();
       str.addBlock(childBlock);
       lastWasScope = true;
@@ -27,7 +31,11 @@ export function scopeToString(scope: Scope, indent = 0): string {
       lastWasScope && str.add("  ");
       lastWasScope = false;
       const ident: Ident = elem;
-      str.add(identShortString(ident));
+      if (shortIdents) {
+        str.add(identShortString(ident));
+      } else {
+        str.add(identToString(ident));
+      }
       if (i < last) str.add(" ");
     }
   });
