@@ -361,18 +361,30 @@ test("loop scope", () => {
 });
 
 
-test.skip("const in fn", () => {
+test("nested scope test", () => {
   const src = `
     fn main() {
-      const a = 7;
+      let bar = 72;
+      if (true) {
+        if (true) {
+          let new_bar = bar; // Should be 72!
+        }
+        let bar = 5;
+      }
     }
   `;
   const { rootScope } = testParseWESL(src);
-  expect(scopeToString(rootScope)).toMatchInlineSnapshot('tbd');
-
-  
-
-})
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %main 
+      { %bar 
+        { 
+          { %new_bar bar } #3
+          %bar
+        } #2
+      } #1
+    } #0"
+  `);
+});
 
 // test("", () => {
 //   const src = `
