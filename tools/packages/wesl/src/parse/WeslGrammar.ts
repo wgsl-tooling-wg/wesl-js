@@ -337,21 +337,21 @@ const compound_statement = tagScope(
 );
 
 const for_init = seq(
-  opt_attributes, // TODO: Collect
+  opt_attributes,
   or(
     fn_call,
     () => variable_or_value_statement,
     () => variable_updating_statement,
-  ), // TODO: collect as AnyStatement and add the attributes
+  ),
 );
 
 const for_update = seq(
-  opt_attributes, // TODO: Collect and attach
+  opt_attributes,
   or(fn_call, () => variable_updating_statement),
 );
 
 // prettier-ignore
-const for_statement = seq(
+const for_statement = seq( // LATER consider allowing @if on for_init, expression and for_update
   "for",
   seq(
     req("("),
