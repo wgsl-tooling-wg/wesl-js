@@ -11,6 +11,7 @@ import { emptyScope, Scope, SrcModule } from "./Scope.ts";
 import { OpenElem } from "./WESLCollect.ts";
 import { ParseError } from "mini-parse";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
+import { throwClickableError } from "./WeslDevice.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
@@ -94,7 +95,19 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
     }
   } catch (e) {
     if (e instanceof ParseError) {
-      throw new WeslParseError({ cause: e, src: srcModule });
+      const [lineNumber, lineColumn] = offsetToLineNumber(
+        e.position,
+        srcModule.src,
+      );
+      const error = new WeslParseError({ cause: e, src: srcModule });
+      throwClickableError({
+        url: srcModule.debugFilePath,
+        text: srcModule.src,
+        error,
+        lineNumber,
+        lineColumn,
+        length: 1,
+      });
     } else {
       throw e;
     }

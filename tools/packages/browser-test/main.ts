@@ -1,19 +1,15 @@
 /// <reference types="vite/client" />
 import { copyBuffer } from "thimbleberry";
 import { link, LinkParams, makeWeslDevice } from "wesl";
+// Convince vite to also watch these files
+import "./public/shaders/main.wesl?raw";
+import "./public/shaders/uniforms.wesl?raw";
 
 main();
 
 const app = document.getElementById("app")!;
 
 async function main() {
-  const adapter = await navigator.gpu.requestAdapter();
-  const device = await adapter?.requestDevice()?.then(makeWeslDevice);
-  if (!device) {
-    console.error("no GPU device available");
-    return;
-  }
-
   const params: LinkParams = {
     weslSrc: {
       "main.wesl": await fetch("./shaders/main.wesl").then(v => v.text()),
@@ -23,6 +19,13 @@ async function main() {
     },
   };
   const linkerOutput = await link(params);
+
+  const adapter = await navigator.gpu.requestAdapter();
+  const device = await adapter?.requestDevice()?.then(makeWeslDevice);
+  if (!device) {
+    console.error("no GPU device available");
+    return;
+  }
 
   const module = linkerOutput.createShaderModule(device, {});
 
