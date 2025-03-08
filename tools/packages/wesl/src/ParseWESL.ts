@@ -9,6 +9,7 @@ import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
 import { emptyScope, Scope, SrcModule } from "./Scope.ts";
 import { OpenElem } from "./WESLCollect.ts";
+import { ParseError } from "mini-parse";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
@@ -65,9 +66,16 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   const appState = blankWeslParseState(srcModule);
 
   const init: ParserInit = { stream, appState };
-  const parseResult = weslRoot.parse(init);
-  if (parseResult === null) {
-    throw new Error("parseWESL failed");
+  try {
+    const parseResult = weslRoot.parse(init);
+    if (parseResult === null) {
+      throw new Error("parseWESL failed");
+    }
+  } catch (e) {
+    if (e instanceof ParseError) {
+      // TODO: Attach the file name here
+      throw e;
+    }
   }
 
   return appState.stable as WeslAST;

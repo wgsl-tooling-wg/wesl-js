@@ -33,7 +33,7 @@ export const opt_template_list = opt(
   seq(
     templateOpen,
     withSepPlus(",", () => template_parameter),
-    req(templateClose),
+    req(templateClose, "invalid template, expected >"),
   ),
 );
 
@@ -43,7 +43,11 @@ const template_elaborated_ident = seq(
   opt_template_list
 );
 const literal = or("true", "false", number);
-const paren_expression = seq("(", () => expression, req(")"));
+const paren_expression = seq(
+  "(",
+  () => expression,
+  req(")", "invalid expression, expected )"),
+);
 
 const primary_expression = or(
   literal,
@@ -53,7 +57,13 @@ const primary_expression = or(
 export const component_or_swizzle = repeatPlus(
   or(
     preceded(".", word),
-    collectArray(delimited("[", () => expression, req("]"))),
+    collectArray(
+      delimited(
+        "[",
+        () => expression,
+        req("]", "invalid expression, expected ]"),
+      ),
+    ),
   ),
 );
 // LATER Remove
@@ -173,7 +183,7 @@ const template_parameter = or(
 export const argument_expression_list = seq(
   "(",
   withSep(",", expression),
-  req(")"),
+  req(")", "invalid fn arguments, expected )"),
 );
 
 if (tracing) {

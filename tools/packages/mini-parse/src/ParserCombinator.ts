@@ -22,7 +22,7 @@ import {
   trackChildren,
 } from "./Parser.js";
 import { closeArray, pushOpenArray } from "./ParserCollect.js";
-import { ctxLog, quotedText, srcTrace } from "./ParserLogging.js";
+import { quotedText, srcTrace } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
 import { Span } from "./Span.js";
 import { peekToken, Stream, Token, TypedToken } from "./Stream.js";
@@ -516,11 +516,10 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
       if (tracing) {
         const after = ctx.stream.checkpoint();
         if (before === after) {
-          ctxLog(
-            ctx,
-            `infinite loop, parser passed to repeat must always make progress`,
+          throw new ParseError(
+            "infinite loop, parser passed to repeat must always make progress",
+            ctx.stream.checkpoint(),
           );
-          throw new ParseError();
         }
       }
 
@@ -563,18 +562,21 @@ export function eof(): Parser<ParserStream, true> {
   });
 }
 
-/** if parsing fails, log an error and abort parsing */
+/**
+ * if parsing fails, throw an error and abort parsing
+ * @param arg inner parser
+ * @param msg a message in the style of `invalid ___, expected ___`, like `invalid number, expected 0-9`
+ * @returns
+ */
 export function req<A extends CombinatorArg>(
   arg: A,
-  msg?: string,
+  msg: string,
 ): ParserFromArg<A> {
   const p = parserArg(arg);
   const reqParser = parser("req", function _req(ctx: ParserContext) {
     const result = p._run(ctx);
     if (result === null) {
-      const deepName = ctx._debugNames.join(" > "); // TODO DRY this
-      ctxLog(ctx, msg ?? `expected ${p.debugName} ${deepName}`);
-      throw new ParseError();
+      throw new ParseError(msg, ctx.stream.checkpoint());
     }
     return result;
   });
@@ -690,8 +692,10 @@ export function fn<I, T>(fn: () => Parser<I, T>): Parser<I, T> {
     "fn()",
     function _fn(state: ParserContext): OptParserResult<T> {
       if (!fn) {
-        const deepName = state._debugNames.join(".");
-        throw new Error(`fn parser called before definition: ${deepName}`);
+        throw new ParseError(
+          `fn parser called before definition`,
+          state.stream.checkpoint(),
+        );
       }
       const stage = fn();
       return stage._run(state);

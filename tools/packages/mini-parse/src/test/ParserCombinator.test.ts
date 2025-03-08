@@ -146,13 +146,9 @@ test("tracing", () => {
 
 test("infinite loop detection", () => {
   const p = repeat(not("x"));
-  const { log, logged } = logCatch();
-
-  withLogger(log, () => {
+  expect(() => {
     testParse(p, "y");
-  });
-
-  expect(logged()).toContain("infinite");
+  }).toThrow("infinite loop");
 });
 
 test("token start is after ignored ws", () => {
@@ -164,17 +160,10 @@ test("token start is after ignored ws", () => {
 
 test("req logs a message on failure", () => {
   const src = "a 1;";
-  const p = seq("a", req("b"));
-  const { log, logged } = logCatch();
-
-  withLogger(log, () => {
+  const p = seq("a", req("b", "expected b"));
+  expect(() => {
     testParse(p, src);
-  });
-  expect(logged()).toMatchInlineSnapshot(`
-    "expected 'b' seq > req
-    a 1;   Ln 1
-     ^"
-  `);
+  }).toThrow("expected b");
 });
 
 test("repeatWhile", () => {
