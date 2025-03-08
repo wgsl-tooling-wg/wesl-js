@@ -145,10 +145,17 @@ export function childIdent(child: Scope | Ident): child is Ident {
 }
 
 /** find a public declaration with the given original name */
-export function publicDecl(scope: Scope, name: string): DeclIdent | undefined {
+export function publicDecl(
+  scope: Scope,
+  name: string,
+  conditions: Conditions,
+): DeclIdent | undefined {
   for (const elem of scope.contents) {
     if (elem.kind === "decl" && elem.originalName === name) {
       return elem;
+    } else if (elem.kind === "partial" && scopeValid(elem, conditions)) {
+      const found = publicDecl(elem, name, conditions);
+      if (found) return found;
     }
   }
 }

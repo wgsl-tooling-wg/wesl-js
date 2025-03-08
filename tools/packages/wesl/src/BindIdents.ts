@@ -1,7 +1,7 @@
 import { debugNames, srcLog } from "mini-parse";
 import { AbstractElem } from "./AbstractElems.ts";
-import { assertUnreachableSilent } from "./Assertions.ts";
-import { scopeValid } from "./Conditions.ts";
+import { assertThatDebug, assertUnreachableSilent } from "./Assertions.ts";
+import { elementValid, scopeValid } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
 import { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
@@ -10,13 +10,11 @@ import { ManglerFn, minimalMangle } from "./Mangler.ts";
 import { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, parseSrcModule, WeslAST } from "./ParseWESL.ts";
 import {
-  childIdent,
   Conditions,
   DeclIdent,
   publicDecl,
   RefIdent,
   Scope,
-  scopeDecls,
   SrcModule,
 } from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
@@ -98,13 +96,12 @@ export function bindIdents(params: BindIdentsParams): BindResults {
 
   const globalNames = new Set<string>();
   const knownDecls = new Set<DeclIdent>();
-  const rootIdents = rootScope.contents.filter(childIdent);
-  rootIdents.forEach(ident => {
-    if (ident.kind === "decl") {
-      ident.mangledName = ident.originalName;
-      globalNames.add(ident.originalName);
-      knownDecls.add(ident);
-    }
+  const validRootDecls = findValidRootDecls(rootScope, conditions);
+
+  validRootDecls.forEach(decl => {
+    decl.mangledName = decl.originalName;
+    globalNames.add(decl.originalName);
+    knownDecls.add(decl);
   });
 
   const globalStatements = new Map<AbstractElem, EmittableElem>();
@@ -118,17 +115,38 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     virtuals,
     mangler,
   };
-  const rootDecls = rootIdents.filter(i => i.kind === "decl");
 
   // initialize liveDecls with all module level declarations
   // (note that in wgsl module level declarations may appear in any order, incl after their references.)
-  const declEntries = rootDecls.map(d => [d.originalName, d] as const);
+  const declEntries = validRootDecls.map(d => [d.originalName, d] as const);
   const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
 
   const decls = bindIdentsRecursive(rootScope, bindContext, liveDecls, true);
   const filteredDecls = decls.filter(isGlobal); // TODO is this needed?
   const newStatements = [...globalStatements.values()];
   return { decls: filteredDecls, globalNames, newStatements };
+}
+
+/** 
+ * @return the list of conditional valid declarations at the root level
+ * decls are either in the root scope or in a conditionally valid partial scope
+ */
+function findValidRootDecls(
+  rootScope: Scope,
+  conditions: Conditions,
+): DeclIdent[] {
+  const found: DeclIdent[] = [];
+  for (const e of rootScope.contents) {
+    if (e.kind === "decl") {
+      assertThatDebug(e.declElem);
+      if (elementValid(e.declElem!, conditions)) {
+        found.push(e);
+      }
+    } else if (e.kind === "partial") {
+      found.push(...findValidRootDecls(e, conditions));
+    }
+  }
+  return found;
 }
 
 /** state used during the recursive scope tree walk to bind references to declarations */
@@ -176,7 +194,7 @@ function bindIdentsRecursive(
   isRoot = false,
 ): DeclIdent[] {
   // early exit if we've processed this scope before
-  const { foundScopes } = bindContext;
+  const { conditions, foundScopes } = bindContext;
   if (foundScopes.has(scope)) return [];
   foundScopes.add(scope);
 
@@ -205,7 +223,7 @@ function bindIdentsRecursive(
   // follow references from referenced declarations
   const newFromRefs = newGlobals.flatMap(decl => {
     const foundsScope = decl.scope;
-    const rootDecls = globalDeclToRootLiveDecls(decl);
+    const rootDecls = globalDeclToRootLiveDecls(decl, conditions);
     if (rootDecls) {
       const rootLive = makeLiveDecls(rootDecls);
       return bindIdentsRecursive(foundsScope, bindContext, rootLive);
@@ -305,11 +323,17 @@ function handleNewDecl(
 }
 
 /** given a global declIdent, return the liveDecls for its root scope */
-function globalDeclToRootLiveDecls(decl: DeclIdent): LiveDecls | undefined {
+function globalDeclToRootLiveDecls(
+  decl: DeclIdent,
+  conditions: Conditions,
+): LiveDecls | undefined {
   const foundsScope = decl.scope;
   const foundsScopeParent = foundsScope.parent;
   if (foundsScopeParent?.parent === null) {
-    return { decls: scopeDecls(foundsScopeParent) };
+    const rootDecls = findValidRootDecls(foundsScopeParent, conditions);
+    const entires = rootDecls.map(d => [d.originalName, d] as const);
+    const decls = new Map(entires);
+    return { decls };
   }
 }
 
@@ -439,7 +463,8 @@ function findExport(
     return undefined;
   }
 
-  const decl = publicDecl(moduleAst.rootScope, last(modulePathParts)!);
+  const name = last(modulePathParts)!;
+  const decl = publicDecl(moduleAst.rootScope, name, conditions);
   if (decl) {
     return { decl, moduleAst };
   }
