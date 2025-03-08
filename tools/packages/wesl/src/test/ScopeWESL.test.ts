@@ -385,6 +385,27 @@ test("nested scope test", () => {
   `);
 });
 
+test("@if fn", () => {
+  const src = `
+    const loc = 0;
+
+    @if(true) @fragment
+    fn fragmentMain(@location(0) p: vec3f) -> @location(loc) vec4f { 
+      let x = p;
+    }
+  `;
+  const { rootScope } = testParseWESL(src);
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %loc 
+      {  } #1
+       @if(true) -{ %fragmentMain loc 
+        { %p vec3f vec4f %x p } #3
+      } #2
+    } #0"
+  `);
+});
+
+
 // test("", () => {
 //   const src = `
 //   `;

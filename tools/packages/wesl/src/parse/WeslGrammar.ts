@@ -50,7 +50,7 @@ import {
   aliasCollect,
   assertCollect,
   collectAttribute,
-  collectFn,
+  fnCollect,
   collectFnParam,
   collectModule,
   collectStruct,
@@ -248,7 +248,7 @@ const fnParam = tagScope(
     word                              .collect(declCollect, "decl_elem"),
     opt(seq(":", req(type_specifier))).collect(typedDecl, "param_name"),
   )                                   .collect(collectFnParam),
-)                                     .ctag("fnParam");
+)                                     .ctag("fn_param");
 
 const fnParamList = seq("(", withSep(",", fnParam), ")");
 
@@ -518,14 +518,18 @@ const fn_decl = seq(
   text("fn"),
   req(fnNameDecl),
   seq(
-    req(fnParamList),
+    req(fnParamList)                  .collect(scopeCollect(), "header_scope"),
     opt(seq(
       "->", 
-      opt_attributes                  .collect((cc) => cc.tags.attribute, "return_attributes"),
-      type_specifier                  .ctag("returnType"))),
-    req(unscoped_compound_statement)  .ctag("body"),
-  )                                   .collect(scopeCollect(), "body_scope"),
-)                                     .collect(collectFn);
+      opt_attributes                  .collect((cc) => cc.tags.attribute, "return_attributes"), 
+      type_specifier                  .ctag("return_type")
+                                      .collect(scopeCollect(), "return_scope")   
+    )),
+    req(unscoped_compound_statement)  .ctag("body_statement")
+                                      .collect(scopeCollect(), "body_scope"),
+  )                                   
+)                                     .collect(partialScopeCollect(), "fn_partial_scope")
+                                      .collect(fnCollect);
 
 // prettier-ignore
 const global_value_decl = or(
@@ -533,7 +537,7 @@ const global_value_decl = or(
     opt_attributes,
     "override",
     optionally_typed_ident,
-    seq(opt(seq("=", expression       .collect(scopeCollect(), "decl_scope")))),
+    seq(opt(seq("=", expression       .collect(scopeCollect(), "decl_scope")))), // TODO partial scopes for decl_scopes?
     ";",
   )                                   .collect(collectVarLike("override")),
   seq(

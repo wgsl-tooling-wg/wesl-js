@@ -1,4 +1,6 @@
 import { DeclarationElem, IfAttribute, RefIdentElem } from "./AbstractElems.ts";
+import { assertThatDebug } from "./Assertions.ts";
+import { scopeValid } from "./Conditions.ts";
 import { WeslAST } from "./ParseWESL.ts";
 
 export interface SrcModule {
@@ -82,6 +84,15 @@ interface ScopeBase {
 
   /** @if conditions for conditionally translating this scope */
   ifAttribute?: IfAttribute;
+}
+
+/** Combine two scope siblings.
+ * The first scope is mutated to append the contents of the second.  */
+export function mergeScope(a: Scope, b: Scope): void {
+  assertThatDebug(a.kind === b.kind);
+  assertThatDebug(a.parent === b.parent);
+  assertThatDebug(!b.ifAttribute);
+  a.contents = a.contents.concat(b.contents);
 }
 
 /** reset scope and ident debugging ids */
