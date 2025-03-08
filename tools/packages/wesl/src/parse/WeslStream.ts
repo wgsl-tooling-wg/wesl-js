@@ -142,8 +142,7 @@ export class WeslStream implements Stream<WeslToken> {
       this.blockCommentPattern.lastIndex = position;
       const result = this.blockCommentPattern.exec(this.src);
       if (result === null) {
-        // TODO: Proper error reporting?
-        throw new Error("Unclosed block comment!");
+        throw new ParseError("Unclosed block comment!", position);
       } else if (result[0] === "*/") {
         // Close block
         return this.blockCommentPattern.lastIndex;
@@ -256,8 +255,8 @@ export class WeslStream implements Stream<WeslToken> {
   skipBracketsTo(closingBracket: string) {
     while (true) {
       const nextToken = this.stream.nextToken();
-      // TODO: Proper error reporting?
-      if (nextToken === null) throw new Error("Unclosed bracket!");
+      if (nextToken === null)
+        throw new ParseError("Unclosed bracket!", this.stream.checkpoint());
 
       if (nextToken.kind !== "symbol") continue;
       if (nextToken.text === "(") {
