@@ -188,19 +188,20 @@ export function throwClickableError({
     btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
   generatedCode += "\n//# sourceURL=" + sourceMap.sources[0];
 
+  let oldLimit = 0;
+  // Supported on Chrome https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/stackTraceLimit
+  if ("stackTraceLimit" in Error) {
+    oldLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 1;
+  }
+
   // Run the error-throwing file
   try {
-    let oldLimit = 0;
-    // Supported on Chrome https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/stackTraceLimit
-    if ("stackTraceLimit" in Error) {
-      oldLimit = Error.stackTraceLimit;
-      Error.stackTraceLimit = 1;
-    }
     (0, eval)(generatedCode);
+  } catch (e: any) {
     if ("stackTraceLimit" in Error) {
       Error.stackTraceLimit = oldLimit;
     }
-  } catch (e: any) {
     error.message = "";
     e.cause = error;
     throw e;
