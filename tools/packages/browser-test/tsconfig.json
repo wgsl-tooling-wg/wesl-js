@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM"],
+    "types": ["node", "@webgpu/types"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "allowJs": false,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "importsNotUsedAsValues": "remove",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "paths": {
+      "wesl": ["../wesl/src"],
+      "wesl-plugin": ["../wesl-plugin"],
+      "mini-parse/vitest-util": ["../mini-parse/src/vitest-util"]
+    }
+  },
+  "include": ["main.ts", "vite.config.ts", "src/**/*"],
+  "exclude": ["node_modules"]
+}
