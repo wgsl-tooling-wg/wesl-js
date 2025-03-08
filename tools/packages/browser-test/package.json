@@ -1,5 +1,5 @@
 {
-  "name": "plugin-test",
+  "name": "browser-test",
   "private": true,
   "type": "module",
   "scripts": {
