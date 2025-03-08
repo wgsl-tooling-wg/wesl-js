@@ -10,6 +10,7 @@ import { WeslStream } from "./parse/WeslStream.ts";
 import { emptyScope, Scope, SrcModule } from "./Scope.ts";
 import { OpenElem } from "./WESLCollect.ts";
 import { ParseError } from "mini-parse";
+import { errorHighlight, offsetToLineNumber } from "./Util.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
@@ -59,6 +60,26 @@ export interface WeslParseContext {
   openElems: OpenElem[]; // elems that are collecting their contents
 }
 
+export class WeslParseError extends Error {
+  position: number;
+  src: SrcModule;
+  constructor(opts: { cause: ParseError; src: SrcModule }) {
+    const source = opts.src.src;
+    const [lineNum, linePos] = offsetToLineNumber(opts.cause.position, source);
+    let message = `${opts.src.debugFilePath}:${lineNum}:${linePos}`;
+    message += ` error: ${opts.cause.message}\n`;
+    message += errorHighlight(source, [
+      opts.cause.position,
+      opts.cause.position + 1,
+    ]).join("\n");
+    super(message, {
+      cause: opts.cause,
+    });
+    this.position = opts.cause.position;
+    this.src = opts.src;
+  }
+}
+
 /** Parse a WESL file. Throws on error. */
 export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   const stream = new WeslStream(srcModule.src);
@@ -74,6 +95,8 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   } catch (e) {
     if (e instanceof ParseError) {
       // TODO: Attach the file name here
+      throw new WeslParseError({ cause: e, src: srcModule });
+    } else {
       throw e;
     }
   }

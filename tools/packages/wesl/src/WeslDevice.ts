@@ -61,11 +61,11 @@ export function makeWeslDevice(device: GPUDevice): WeslDevice {
             // A custom mode with clickable sources. Uses https://stackoverflow.com/a/79467192/3492994
             if (error.compilationInfo) {
               for (const message of error.compilationInfo.messages) {
-                throwError({
+                throwCodeError({
                   url: message.module.url,
                   text: message.module.text ?? null,
                   lineNumber: message.lineNum,
-                  error: message.type + ": " + message.message,
+                  errorMessage: message.type + ": " + message.message,
                 });
               }
             } else {
@@ -128,16 +128,16 @@ export function makeWeslDevice(device: GPUDevice): WeslDevice {
 }
 
 // Based on https://stackoverflow.com/questions/65274147/sourceurl-for-css
-function throwError({
+function throwCodeError({
   url,
   text,
   lineNumber,
-  error,
+  errorMessage,
 }: {
   url: string;
   text: string | null;
   lineNumber: number;
-  error: any;
+  errorMessage: any;
 }) {
   // We need a source map mapping for each line, otherwise Firefox is unhappy.
   // First line is AAAA
@@ -158,7 +158,7 @@ function throwError({
   let generatedCode =
     "\n".repeat(lineNumber - 1) +
     "throw new Error(" +
-    JSON.stringify(error + "") +
+    JSON.stringify(errorMessage + "") +
     ")";
   // And redirect it to WESL
   generatedCode +=

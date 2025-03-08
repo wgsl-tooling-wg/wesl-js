@@ -8,6 +8,7 @@ import {
   withStreamAction,
 } from "mini-parse";
 import { keywords, reservedWords } from "./Keywords";
+import { ParseError } from "mini-parse";
 export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
 
 export type WeslToken<Kind extends WeslTokenKind = WeslTokenKind> =
@@ -114,7 +115,10 @@ export class WeslStream implements Stream<WeslToken> {
         }
         return returnToken;
       } else if (kind === "invalid") {
-        throw new Error("Invalid token " + token);
+        throw new ParseError(
+          "Invalid token " + token.text,
+          this.stream.checkpoint(),
+        );
       } else {
         return token as TypedToken<typeof kind>;
       }

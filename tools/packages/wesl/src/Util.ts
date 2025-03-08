@@ -1,3 +1,5 @@
+import { Span } from "mini-parse";
+
 export function multiKeySet<A, B, V>(
   m: Map<A, Map<B, V>>,
   a: A,
@@ -165,4 +167,28 @@ export function offsetToLineNumber(
       lineNum += 1;
     }
   }
+}
+
+/** Highlights an error.
+ *
+ * Returns a string with the line, and a string with the ^^^^ carets
+ */
+export function errorHighlight(source: string, span: Span): [string, string] {
+  let lineStartOffset = source.lastIndexOf("\n", span[0]);
+  if (lineStartOffset === -1) {
+    lineStartOffset = 0;
+  }
+  let lineEndOffset = source.indexOf("\n", span[0]);
+  if (lineEndOffset === -1) {
+    lineEndOffset = source.length;
+  }
+
+  // TODO: Handle multiline spans
+  const errorLength = span[1] - span[0];
+  const caretCount = Math.max(1, errorLength);
+  const linePos = span[0] - lineStartOffset;
+  return [
+    source.slice(lineStartOffset, lineEndOffset),
+    " ".repeat(linePos) + "^".repeat(caretCount),
+  ];
 }

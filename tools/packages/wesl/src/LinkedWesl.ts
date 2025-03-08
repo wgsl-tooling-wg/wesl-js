@@ -1,6 +1,6 @@
 import { SrcMap } from "mini-parse";
 import { assertThat } from "../../mini-parse/src/Assertions";
-import { offsetToLineNumber } from "./Util";
+import { errorHighlight, offsetToLineNumber } from "./Util";
 import type { WeslDevice } from "./WeslDevice";
 
 /** Results of shader compilation. Has {@link WeslGPUCompilationMessage}
@@ -172,16 +172,12 @@ function compilationInfoToErrorMessage(
     result += ` ${message.type}: ${message.message}\n`;
     // LATER unmangle code snippets in the message
 
-    const lineStartOffset = message.offset - Math.max(0, message.linePos - 1);
     const source = message.module.text;
     if (source) {
-      let lineEndOffset = source.indexOf("\n", lineStartOffset);
-      if (lineEndOffset === -1) {
-        lineEndOffset = source.length;
-      }
-      result += source.slice(lineStartOffset, lineEndOffset) + "\n";
-      const caretCount = Math.max(1, message.length);
-      result += " ".repeat(linePos - 1) + "^".repeat(caretCount);
+      result += errorHighlight(source, [
+        message.offset,
+        message.offset + message.length,
+      ]).join("\n");
     }
   }
   return result;
