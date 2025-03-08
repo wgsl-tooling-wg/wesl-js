@@ -167,5 +167,6 @@ function throwError({
   generatedCode += "\n//# sourceURL=" + sourceMap.sources[0];
 
   // Run the error-throwing file
-  eval(generatedCode);
+  // Use indirect eval https://esbuild.github.io/content-types/#direct-eval
+  (0, eval)(generatedCode);
 }
