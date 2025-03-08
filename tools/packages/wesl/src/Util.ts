@@ -183,7 +183,7 @@ export function errorHighlight(source: string, span: Span): [string, string] {
     lineEndOffset = source.length;
   }
 
-  // TODO: Handle multiline spans
+  // LATER Handle multiline spans
   const errorLength = span[1] - span[0];
   const caretCount = Math.max(1, errorLength);
   const linePos = span[0] - lineStartOffset;

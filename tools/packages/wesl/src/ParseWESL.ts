@@ -94,7 +94,6 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
     }
   } catch (e) {
     if (e instanceof ParseError) {
-      // TODO: Attach the file name here
       throw new WeslParseError({ cause: e, src: srcModule });
     } else {
       throw e;

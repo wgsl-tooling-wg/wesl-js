@@ -121,7 +121,9 @@ export class SrcMap {
       e => e.destStart <= destPos && e.destEnd >= destPos,
     );
     if (!entry) {
-      /* TODO this console.log triggers during debugging, now that preprocessing doesn't produce a real srcMap. 
+      /* LATER: @stefnotch will replace with the reworked version
+      Original error:
+       this console.log triggers during debugging, now that preprocessing doesn't produce a real srcMap. 
         remove the warning or fix the reason for the warning?
        */
 
