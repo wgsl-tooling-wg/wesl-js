@@ -20,7 +20,6 @@ export type Conditions = Record<string, boolean>;
 
 interface IdentBase {
   originalName: string; // name in the source code for ident matching (may be mangled in the output)
-  conditions?: Conditions; // conditions under which this ident is valid (combined from all containing elems)
   id?: number; // for debugging
 }
 
