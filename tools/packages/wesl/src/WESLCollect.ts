@@ -76,7 +76,7 @@ export function refIdent(cc: CollectContext): RefIdentElem {
     kind,
     originalName,
     ast: cc.app.stable,
-    id: identId++,
+    id: nextIdentId(),
     refIdentElem: null as any, // set below
   };
   const identElem: RefIdentElem = { kind, start, end, srcModule, ident };
@@ -102,7 +102,7 @@ export function declCollect(cc: CollectContext): DeclIdentElem {
     kind,
     originalName,
     scope,
-    id: identId++,
+    id: nextIdentId(),
     srcModule,
   };
   const identElem: DeclIdentElem = { kind, start, end, srcModule, ident };
@@ -125,15 +125,13 @@ export const typedDecl = collectElem(
   },
 );
 
-let identId = 0;
-
 /** add Ident to current open scope, add IdentElem to current open element */
 function saveIdent(
   cc: CollectContext,
   identElem: RefIdentElem | DeclIdentElem,
 ) {
   const { ident } = identElem;
-  ident.id = identId++;
+  ident.id = nextIdentId();
   const weslContext: WeslParseContext = cc.app.context;
   weslContext.scope.contents.push(ident);
 }

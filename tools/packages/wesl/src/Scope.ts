@@ -84,31 +84,18 @@ interface ScopeBase {
   ifAttribute?: IfAttribute;
 }
 
-/** return the declarations in this scope */
-export function scopeDecls(scope: Scope): Map<string, DeclIdent> {
-  if (scope.parent || scope.kind !== "scope") {
-    console.warn("Warning: scopeDecls called on unexpected scope", scope);
-    return new Map();
-  }
-  if (scope.scopeDecls) {
-    return scope.scopeDecls;
-  }
-  const declMap = new Map<string, DeclIdent>();
-  for (const ident of scope.contents) {
-    if (ident.kind === "decl") {
-      declMap.set(ident.originalName, ident);
-    }
-  }
-  scope.scopeDecls = declMap;
-  return declMap;
-}
-
+/** reset scope and ident debugging ids */
 export function resetScopeIds() {
-  // for debugging
   scopeId = 0;
+  identId = 0;
 }
 
-let scopeId = 0; // for debugging
+let scopeId = 0;
+let identId = 0;
+
+export function nextIdentId(): number {
+  return identId++;
+}
 
 /** make a new Scope object */
 export function emptyScope(
