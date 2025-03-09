@@ -50,7 +50,6 @@ import {
   aliasCollect,
   assertCollect,
   collectAttribute,
-  fnCollect,
   collectFnParam,
   collectModule,
   collectStruct,
@@ -59,7 +58,9 @@ import {
   declCollect,
   directiveCollect,
   expressionCollect,
+  fnCollect,
   globalAssertCollect,
+  globalDeclCollect,
   nameCollect,
   partialScopeCollect,
   refIdent,
@@ -68,7 +69,6 @@ import {
   statementCollect,
   switchClauseCollect,
   typedDecl,
-  globalDeclCollect,
 } from "../WESLCollect.ts";
 import { weslImports } from "./ImportGrammar.ts";
 import { qualified_ident, word } from "./WeslBaseGrammar.ts";

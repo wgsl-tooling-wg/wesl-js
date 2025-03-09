@@ -1,4 +1,4 @@
-import { srcLog, SrcMapBuilder, tracing } from "mini-parse";
+import { srcLog, SrcMapBuilder } from "mini-parse";
 import {
   AbstractElem,
   AttributeElem,

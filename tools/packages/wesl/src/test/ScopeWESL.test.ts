@@ -197,7 +197,9 @@ test("fn decl scope", () => {
   const { rootScope } = testParseWESL(src);
   const decls = findValidRootDecls(rootScope, {});
   const mainIdent = decls[0];
-  expect(scopeToString(mainIdent.scope)).toMatchInlineSnapshot(`"{ %i i32 %x i } #2"`);
+  expect(scopeToString(mainIdent.scope)).toMatchInlineSnapshot(
+    `"{ %i i32 %x i } #2"`,
+  );
 });
 
 test("builtin scope", () => {
@@ -447,7 +449,7 @@ test.skip("@if const", () => {
     @if(true) const a = 0;
   `;
   const { rootScope } = testParseWESL(src);
-  expect(scopeToString(rootScope)).toMatchInlineSnapshot('tbd');
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot("tbd");
 });
 
 // test("", () => {
