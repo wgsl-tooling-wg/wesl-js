@@ -1,6 +1,10 @@
-import { debugNames, srcLog } from "mini-parse";
+import { srcLog } from "mini-parse";
 import { AbstractElem } from "./AbstractElems.ts";
-import { assertThatDebug, assertUnreachableSilent } from "./Assertions.ts";
+import {
+  assertThatDebug,
+  assertUnreachableSilent,
+  failDebug,
+} from "./Assertions.ts";
 import { elementValid, scopeValid } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
@@ -127,11 +131,11 @@ export function bindIdents(params: BindIdentsParams): BindResults {
   return { decls: filteredDecls, globalNames, newStatements };
 }
 
-/** 
+/**
  * @return the list of conditional valid declarations at the root level
  * decls are either in the root scope or in a conditionally valid partial scope
  */
-function findValidRootDecls(
+export function findValidRootDecls(
   rootScope: Scope,
   conditions: Conditions,
 ): DeclIdent[] {
@@ -228,9 +232,7 @@ function bindIdentsRecursive(
       const rootLive = makeLiveDecls(rootDecls);
       return bindIdentsRecursive(foundsScope, bindContext, rootLive);
     }
-    // (for debug) shouldn't happen. newGlobals should be globals (their scope parents should be the module scope)
-    if (debugNames)
-      console.log("WARNING decl not from root", identToString(decl));
+    failDebug(`WARNING decl not from root ${identToString(decl)}`);
     return [];
   });
 
