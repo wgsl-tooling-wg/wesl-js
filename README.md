@@ -1,10 +1,40 @@
 # WESL
 
-**[WESL]** enriches the WGSL shader language with extensions like `import`, `@if`.
+[![NPM Version](https://img.shields.io/npm/v/wesl)](https://www.npmjs.com/package/wesl)
+[![Static Badge](https://img.shields.io/badge/Read%20the%20-Docs-blue)](https://wesl-lang.dev/)
+
+
+> **[WESL]** enriches the WGSL shader language with extensions like `import`, `@if`.
 
 **wesl-js** has tools and libraries for JavaScript / TypeScript projects to use [WESL].
 
-## Using WESL in your JavaScript / TypeScript projects
+## Install
+
+```
+npm install wesl
+```
+
+<details>
+<summary> Other installation methods
+</summary>
+
+
+###### Deno
+
+```
+deno install npm:wesl
+```
+
+###### CDN
+
+- [jsdelivr](https://cdn.jsdelivr.net/npm/wesl/+esm)
+- [unpkg](https://unpkg.com/wesl)
+- [esm.sh](https://esm.sh/wesl)
+
+
+</details>
+
+
 
 Linking .wesl and .wgsl files for WebGPU
 
