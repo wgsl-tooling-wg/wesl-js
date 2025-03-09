@@ -93,7 +93,7 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   const init: ParserInit = { stream, appState };
   try {
     const parseResult = weslRoot.parse(init);
-    if (parseResult === null) {
+    if ("error" in parseResult) {
       throw new Error("parseWESL failed");
     }
   } catch (e) {

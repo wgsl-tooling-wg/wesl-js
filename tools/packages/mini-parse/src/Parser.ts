@@ -59,12 +59,26 @@ export interface ParserResult<T> {
   value: T;
 }
 
-export interface ExtendedResult<T, C = any, S = any> extends ParserResult<T> {
-  app: AppState<C, S>;
+/** A parser error with some context */
+export interface ContextError {
+  /** Set to true if this is a hard error that we shouldn't recover from */
+  fail?: true;
+  /** Description of what is being parsed */
+  label?: string;
+  /** Item that was expected */
+  expected?: string;
 }
 
 /** parsers return null if they don't match */
-export type OptParserResult<T> = ParserResult<T> | null;
+export type OptParserResult<T> =
+  | {
+      /** result from this stage */
+      value: T;
+    }
+  | {
+      /** error that happened. Check with `"error" in result`. Looks like V8 optimizes `in` property checks. */
+      error: ContextError;
+    };
 
 /** Internal parsing functions return a value and also a set of tagged results from contained parser  */
 type ParseFn<T> = (context: ParserContext) => OptParserResult<T>;
@@ -164,7 +178,7 @@ export class Parser<I, T> {
       const origAppContext = context.app.context;
       const origCollectLength = context._collect.length;
       const result = this.fn(context);
-      if (result === null) {
+      if ("error" in result) {
         context.app.context = origAppContext;
         context._collect.length = origCollectLength;
       }
@@ -199,14 +213,6 @@ export class Parser<I, T> {
       this._traceInfo.traceEnabled = opts;
     }
     return this;
-  }
-
-  /** map results to a new value, or add to app state as a side effect.
-   * Return null to cause the parser to fail.
-   * SAFETY: Side-effects should not be done if backtracking could occur!
-   */
-  mapExtended<U>(fn: ParserMapFn<T, U>): Parser<I, U> {
-    return mapExtended(this, fn);
   }
 
   /** map results to a new value.
@@ -305,7 +311,7 @@ function runParserWithTracing<I, T>(
     // run the parser function for this stage
     let result = fn(ctx);
 
-    if (result === null) {
+    if ("error" in result) {
       // parser failed
       if (tracing) {
         const traceSuccessOnly = ctx._trace?.successOnly;
@@ -324,37 +330,13 @@ function runParserWithTracing<I, T>(
   }
 }
 
-type ParserMapFn<T, U> = (results: ExtendedResult<T>) => U | null;
-
-/** return a parser that maps the current results */
-function mapExtended<I, T, U>(
-  p: Parser<I, T>,
-  fn: ParserMapFn<T, U>,
-): Parser<I, U> {
-  const mapParser = parser(
-    `mapExtended`,
-    function _mapExtended(ctx: ParserContext): OptParserResult<U> {
-      const extended = runExtended(ctx, p);
-      if (!extended) return null;
-
-      const mappedValue = fn(extended);
-      if (mappedValue === null) return null;
-
-      return { value: mappedValue };
-    },
-  );
-
-  trackChildren(mapParser, p);
-  return mapParser;
-}
-
 /** return a parser that maps the current results */
 function map<I, T, U>(p: Parser<I, T>, fn: (value: T) => U): Parser<I, U> {
   const mapParser = parser(
     `map`,
     function _map(ctx: ParserContext): OptParserResult<U> {
       const result = p._run(ctx);
-      if (result === null) return null;
+      if ("error" in result) return result;
       return { value: fn(result.value) };
     },
   );
@@ -373,7 +355,7 @@ function toParser<I, T, O>(
     "toParser",
     function _toParser(ctx: ParserContext): OptParserResult<T | O> {
       const result = p._run(ctx);
-      if (result === null) return null;
+      if ("error" in result) return result;
 
       // run the supplied function to get a parser
       const newParser = toParserFn(result);
@@ -389,22 +371,6 @@ function toParser<I, T, O>(
   );
   trackChildren(newParser, p);
   return newParser;
-}
-
-/** run parser, return enriched results (to support map(), toParser()) */
-export function runExtended<I, T>(
-  ctx: ParserContext,
-  p: Parser<I, T>,
-): ExtendedResult<T> | null {
-  const origStart = ctx.stream.checkpoint();
-
-  const origResults = p._run(ctx);
-  if (origResults === null) {
-    ctx.stream.reset(origStart);
-    return null;
-  }
-  const { app } = ctx;
-  return { ...origResults, app };
 }
 
 /** for pretty printing, track subsidiary parsers */

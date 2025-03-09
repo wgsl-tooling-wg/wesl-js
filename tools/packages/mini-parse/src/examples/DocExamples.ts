@@ -49,13 +49,12 @@ interface BinOpElem {
   op: "+" | "-";
 }
 
-export const sumElem = seq(int, or("+", "-"), int).mapExtended(r => {
-  const [a, op, b] = r.value;
+export const sumElem = seq(int, or("+", "-"), int).map(([a, op, b]) => {
   const binOpElem: BinOpElem = {
     kind: "binOp",
     left: a,
     right: b,
     op: op as "+" | "-",
   };
-  r.app.stable.push(binOpElem);
+  return binOpElem;
 });

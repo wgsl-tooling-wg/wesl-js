@@ -17,7 +17,6 @@ import {
   ParserContext,
   ParserResult,
   ParserStream,
-  runExtended,
   simpleParser,
   trackChildren,
 } from "./Parser.js";
@@ -46,6 +45,10 @@ import { peekToken, Stream, Token, TypedToken } from "./Stream.js";
  * all user constructed parsers.
  */
 
+function quotedValues(text: string[]): string {
+  return text.map(quotedText).join(", ");
+}
+
 /** Parse for a particular kind of token,
  * @return the matching text */
 export function token<const Kind extends string>(
@@ -54,19 +57,27 @@ export function token<const Kind extends string>(
 ): Parser<Stream<TypedToken<Kind>>, TypedToken<Kind>> {
   return simpleParser(
     `token '${kindStr}' ${quotedText(value)}`,
-    function _token(
-      state: ParserContext,
-    ): ParserResult<TypedToken<Kind>> | null {
+    function _token(state: ParserContext): OptParserResult<TypedToken<Kind>> {
       const start = state.stream.checkpoint();
       const next = state.stream.nextToken();
-      if (next === null) return null;
+      if (next === null) {
+        return {
+          error: {
+            expected: quotedText(value),
+          },
+        };
+      }
       if (tracing) {
         const text = quotedText(next.text);
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
       }
       if (next.kind !== kindStr || next.text !== value) {
         state.stream.reset(start);
-        return null;
+        return {
+          error: {
+            expected: quotedText(value),
+          },
+        };
       }
       return { value: next as TypedToken<Kind> };
     },
@@ -81,19 +92,27 @@ export function tokenOf<const Kind extends string>(
 ): Parser<Stream<TypedToken<Kind>>, TypedToken<Kind>> {
   return simpleParser(
     `tokenOf '${kindStr}'`,
-    function _tokenOf(
-      state: ParserContext,
-    ): ParserResult<TypedToken<Kind>> | null {
+    function _tokenOf(state: ParserContext): OptParserResult<TypedToken<Kind>> {
       const start = state.stream.checkpoint();
       const next = state.stream.nextToken();
-      if (next === null) return null;
+      if (next === null) {
+        return {
+          error: {
+            expected: quotedValues(values),
+          },
+        };
+      }
       if (tracing) {
         const text = quotedText(next.text);
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
       }
       if (next.kind !== kindStr || !values.includes(next.text)) {
         state.stream.reset(start);
-        return null;
+        return {
+          error: {
+            expected: quotedValues(values),
+          },
+        };
       }
       return { value: next as TypedToken<Kind> };
     },
@@ -109,17 +128,27 @@ export function tokenKind<const Kind extends string>(
     `tokenKind '${kindStr}'`,
     function _tokenKind(
       state: ParserContext,
-    ): ParserResult<TypedToken<Kind>> | null {
+    ): OptParserResult<TypedToken<Kind>> {
       const start = state.stream.checkpoint();
       const next = state.stream.nextToken();
-      if (next === null) return null;
+      if (next === null) {
+        return {
+          error: {
+            expected: kindStr,
+          },
+        };
+      }
       if (tracing) {
         const text = quotedText(next.text);
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
       }
       if (next.kind !== kindStr) {
         state.stream.reset(start);
-        return null;
+        return {
+          error: {
+            expected: kindStr,
+          },
+        };
       }
       return { value: next as TypedToken<Kind> };
     },
@@ -131,23 +160,7 @@ export function tokenKind<const Kind extends string>(
 export function kind<const Kind extends string>(
   kindStr: Kind,
 ): Parser<Stream<TypedToken<Kind>>, string> {
-  return simpleParser(
-    `kind '${kindStr}'`,
-    function _kind(state: ParserContext): ParserResult<string> | null {
-      const start = state.stream.checkpoint();
-      const next = state.stream.nextToken();
-      if (next === null) return null;
-      if (tracing) {
-        const text = quotedText(next.text);
-        srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
-      }
-      if (next.kind !== kindStr) {
-        state.stream.reset(start);
-        return null;
-      }
-      return { value: next.text };
-    },
-  );
+  return tokenKind(kindStr).map(v => v.text);
 }
 
 // export class KindParser<I, const Kind extends string> extends Parser<
@@ -160,17 +173,27 @@ export function kind<const Kind extends string>(
 export function text(value: string): Parser<ParserStream, string> {
   return simpleParser(
     `${quotedText(value)}`,
-    function _text(state: ParserContext): ParserResult<string> | null {
+    function _text(state: ParserContext): OptParserResult<string> {
       const start = state.stream.checkpoint();
       const next = state.stream.nextToken();
-      if (next === null) return null;
+      if (next === null) {
+        return {
+          error: {
+            expected: value,
+          },
+        };
+      }
       if (tracing) {
         const text = quotedText(next.text);
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
       }
       if (next.text !== value) {
         state.stream.reset(start);
-        return null;
+        return {
+          error: {
+            expected: value,
+          },
+        };
       }
       return { value: next.text };
     },
@@ -185,8 +208,8 @@ export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
     const values = [];
     for (const p of parsers) {
       const result = p._run(ctx);
-      if (result === null) {
-        return null;
+      if ("error" in result) {
+        return result;
       }
       values.push(result.value);
     }
@@ -210,8 +233,8 @@ export function seqObj<P extends { [key: string]: CombinatorArg }>(
     const values: Partial<Record<keyof P, any>> = {};
     for (const [name, p] of parsers) {
       const result = p._run(ctx);
-      if (result === null) {
-        return null;
+      if ("error" in result) {
+        return result;
       }
 
       values[name] = result.value;
@@ -243,7 +266,9 @@ export function preceded<
     "preceded",
     function _preceded(ctx: ParserContext) {
       const ignoredResult = ignored._run(ctx);
-      if (ignoredResult === null) return null;
+      if ("error" in ignoredResult) {
+        return ignoredResult;
+      }
       const result = p._run(ctx);
       return result;
     },
@@ -269,9 +294,13 @@ export function terminated<
     "terminated",
     function _terminated(ctx: ParserContext) {
       const result = p._run(ctx);
-      if (result === null) return null;
+      if ("error" in result) {
+        return result;
+      }
       const ignoredResult = ignored._run(ctx);
-      if (ignoredResult === null) return null;
+      if ("error" in ignoredResult) {
+        return ignoredResult;
+      }
       return result;
     },
   );
@@ -302,11 +331,17 @@ export function delimited<
     "delimited",
     function _delimited(ctx: ParserContext) {
       const ignoredResult1 = ignored1._run(ctx);
-      if (ignoredResult1 === null) return null;
+      if ("error" in ignoredResult1) {
+        return ignoredResult1;
+      }
       const result = p._run(ctx);
-      if (result === null) return null;
+      if ("error" in result) {
+        return result;
+      }
       const ignoredResult2 = ignored2._run(ctx);
-      if (ignoredResult2 === null) return null;
+      if ("error" in ignoredResult2) {
+        return ignoredResult2;
+      }
       return result;
     },
   );
@@ -339,11 +374,17 @@ export function separated_pair<
       ctx: ParserContext,
     ): OptParserResult<[ResultFromArg<P1>, ResultFromArg<P2>]> {
       const result1 = p1._run(ctx);
-      if (result1 === null) return null;
+      if ("error" in result1) {
+        return result1;
+      }
       const ignoredResult = ignored._run(ctx);
-      if (ignoredResult === null) return null;
+      if ("error" in ignoredResult) {
+        return ignoredResult;
+      }
       const result2 = p2._run(ctx);
-      if (result2 === null) return null;
+      if ("error" in result2) {
+        return result2;
+      }
       return { value: [result1.value, result2.value] };
     },
   );
@@ -362,11 +403,19 @@ export function or<P extends CombinatorArg[]>(...args: P): OrParser<P> {
     for (const p of parsers) {
       state.stream.reset(start);
       const result = p._run(state);
-      if (result !== null) {
+      if ("error" in result) {
+        if (result.error.fail) {
+          return result;
+        } else {
+          // We recover and try out the next branch
+        }
+      } else {
         return result;
       }
     }
-    return null;
+    return {
+      error: {},
+    };
   });
 
   trackChildren(orParser, ...parsers);
@@ -389,9 +438,14 @@ export function opt<P extends CombinatorArg>(
     function _opt(state: ParserContext): ParserResult<ResultFromArg<P> | null> {
       const start = state.stream.checkpoint();
       const result = p._run(state);
-      if (result === null) {
-        state.stream.reset(start);
-        return { value: null };
+      if ("error" in result) {
+        if (result.error.fail) {
+          return result;
+        } else {
+          // Recover
+          state.stream.reset(start);
+          return { value: null };
+        }
       } else {
         return result;
       }
@@ -412,8 +466,12 @@ export function not<P extends CombinatorArg>(
     function _not(state: ParserContext) {
       const pos = state.stream.checkpoint();
       const result = p._run(state);
-      if (result === null) {
-        return { value: true };
+      if ("error" in result) {
+        if (result.error.fail) {
+          return result;
+        } else {
+          return { value: true };
+        }
       }
       state.stream.reset(pos);
       return null;
@@ -428,9 +486,14 @@ export function not<P extends CombinatorArg>(
 export function any(): Parser<ParserStream, Token> {
   return simpleParser(
     "any",
-    function _any(state: ParserContext): ParserResult<Token> | null {
+    function _any(state: ParserContext): OptParserResult<Token> {
       const value = state.stream.nextToken();
-      if (value === null) return null;
+      if (value === null)
+        return {
+          error: {
+            expected: "any token",
+          },
+        };
       return { value };
     },
   );
@@ -503,8 +566,8 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
     const values: ResultFromArg<A>[] = [];
     for (;;) {
       const before = ctx.stream.checkpoint();
-      const result = runExtended<InputFromArg<A>, ResultFromArg<A>>(ctx, p);
-      if (result === null) {
+      const result = p._run(ctx);
+      if ("error" in result) {
         ctx.stream.reset(before);
         return { value: values };
       }
@@ -536,7 +599,7 @@ export function span<A extends CombinatorArg>(
   const result = parser("span", function _span(ctx: ParserContext) {
     const start = peekToken(ctx.stream)?.span?.[0] ?? null;
     const result = p._run(ctx);
-    if (result === null) return null;
+    if ("error" in result) return result;
     const end = ctx.stream.checkpoint();
     return {
       value: {
@@ -551,15 +614,22 @@ export function span<A extends CombinatorArg>(
 
 /** yields true if parsing has reached the end of input */
 export function eof(): Parser<ParserStream, true> {
-  return simpleParser("eof", function _eof(state: ParserContext) {
-    const start = state.stream.checkpoint();
-    const result = state.stream.nextToken();
-    if (result !== null) {
-      state.stream.reset(start);
-      return null;
-    }
-    return { value: true };
-  });
+  return simpleParser(
+    "eof",
+    function _eof(state: ParserContext): OptParserResult<true> {
+      const start = state.stream.checkpoint();
+      const result = state.stream.nextToken();
+      if (result !== null) {
+        state.stream.reset(start);
+        return {
+          error: {
+            expected: "EOF",
+          },
+        };
+      }
+      return { value: true };
+    },
+  );
 }
 
 /**
@@ -575,8 +645,9 @@ export function req<A extends CombinatorArg>(
   const p = parserArg(arg);
   const reqParser = parser("req", function _req(ctx: ParserContext) {
     const result = p._run(ctx);
-    if (result === null) {
-      throw new ParseError(msg, ctx.stream.checkpoint());
+    if ("error" in result) {
+      result.error.fail = true;
+      result.error.label = msg;
     }
     return result;
   });
@@ -593,8 +664,8 @@ export function yes(): Parser<ParserStream, null> {
 
 /** always fails, does not consume any tokens */
 export function no(): Parser<ParserStream, null> {
-  return simpleParser("no", function _no() {
-    return null;
+  return simpleParser("no", function _no(): OptParserResult<null> {
+    return { error: {} };
   });
 }
 
@@ -614,44 +685,61 @@ export function withSep<Sep extends CombinatorArg, P extends CombinatorArg>(
   const { trailing = true, requireOne = false } = opts;
   const elementParser = parserArg(p);
   const sepParser = parserArg(sep);
-  return parser("withSep", function _withSep(ctx: ParserContext) {
-    const results: ResultFromArg<P>[] = [];
-    const startPosition = ctx.stream.checkpoint();
-    const result = elementParser._run(ctx);
-    if (result === null) {
-      ctx.stream.reset(startPosition);
-      if (requireOne) {
-        return null;
-      } else {
-        return {
-          value: results,
-        };
-      }
-    }
-    results.push(result.value);
-    while (true) {
-      const beforeSeparator = ctx.stream.checkpoint();
-      const resultSeparator = sepParser._run(ctx);
-      if (resultSeparator === null) {
-        ctx.stream.reset(beforeSeparator);
-        break;
-      }
-      const beforeElement = ctx.stream.checkpoint();
-      const resultElement = elementParser._run(ctx);
-      if (resultElement === null) {
-        if (trailing) {
-          ctx.stream.reset(beforeElement);
+  return parser(
+    "withSep",
+    function _withSep(ctx: ParserContext): OptParserResult<ResultFromArg<P>[]> {
+      const results: ResultFromArg<P>[] = [];
+      const startPosition = ctx.stream.checkpoint();
+      const result = elementParser._run(ctx);
+      if ("error" in result) {
+        if (result.error.fail) {
+          return result;
         } else {
-          ctx.stream.reset(beforeSeparator);
+          ctx.stream.reset(startPosition);
+          if (requireOne) {
+            return {
+              error: {},
+            };
+          } else {
+            return {
+              value: results,
+            };
+          }
         }
-        break;
       }
-      results.push(resultElement.value);
-    }
-    return {
-      value: results,
-    };
-  });
+      results.push(result.value);
+      while (true) {
+        const beforeSeparator = ctx.stream.checkpoint();
+        const resultSeparator = sepParser._run(ctx);
+        if ("error" in resultSeparator) {
+          if (resultSeparator.error.fail) {
+            return resultSeparator;
+          } else {
+            ctx.stream.reset(beforeSeparator);
+            break;
+          }
+        }
+        const beforeElement = ctx.stream.checkpoint();
+        const resultElement = elementParser._run(ctx);
+        if ("error" in resultElement) {
+          if (resultElement.error.fail) {
+            return resultElement;
+          } else {
+            if (trailing) {
+              ctx.stream.reset(beforeElement);
+            } else {
+              ctx.stream.reset(beforeSeparator);
+            }
+            break;
+          }
+        }
+        results.push(resultElement.value);
+      }
+      return {
+        value: results,
+      };
+    },
+  );
 }
 
 /** match an series of one or more elements separated by a delimiter (e.g. a comma) */
@@ -668,9 +756,12 @@ export function withStreamAction<U>(
 ): Parser<ParserStream, U> {
   return simpleParser(
     `withStreamAction`,
-    function _withStreamAction(state: ParserContext) {
+    function _withStreamAction(state: ParserContext): OptParserResult<U> {
       const result = action(state.stream);
-      if (result === null) return null;
+      if (result === null)
+        return {
+          error: {},
+        };
       return { value: result };
     },
   );

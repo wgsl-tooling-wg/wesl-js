@@ -15,7 +15,7 @@ export function srcLog(
   logInternal(log, src, pos, ...msgs);
 }
 
-export function quotedText(text?: string): string {
+export function quotedText(text: string): string {
   return text ? `'${text.replace(/\n/g, "\\n")}'` : "";
 }
 
