@@ -163,7 +163,7 @@ test("req logs a message on failure", () => {
   const p = seq("a", req("b", "expected 'b'"));
   expect(() => {
     testParse(p, src);
-  }).toThrow("expected b");
+  }).toThrow("expected 'b'");
 });
 
 test("repeatWhile", () => {
