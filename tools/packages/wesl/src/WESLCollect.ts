@@ -123,6 +123,7 @@ function declCollectInternal(
     kind,
     originalName,
     scope,
+    isGlobal,
     id: nextIdentId(),
     srcModule,
   };
@@ -285,8 +286,6 @@ export const fnCollect = collectElem(
       ...{ name, attributes, params, returnAttributes, body, returnType },
     };
 
-    (name.ident as DeclIdent).declElem = fnElem;
-
     // --- setup the various scopes --
 
     // attach ifAttributes to outermost partial scope
@@ -309,6 +308,9 @@ export const fnCollect = collectElem(
       }
     }
     fnScope.contents = filtered;
+
+    name.ident.declElem = fnElem;
+    name.ident.scope = mergedScope;
 
     return fnElem;
   },
