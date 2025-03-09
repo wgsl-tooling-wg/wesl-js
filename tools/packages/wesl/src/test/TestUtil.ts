@@ -14,6 +14,7 @@ import {
 import { bindAndTransform, link, LinkParams } from "../Linker.js";
 import { WeslStream, WeslToken } from "../parse/WeslStream.js";
 import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
+import { resetScopeIds } from "../Scope.js";
 
 export function testAppParse<T>(
   parser: Parser<Stream<WeslToken>, T>,
@@ -104,6 +105,7 @@ interface BindTestResult {
  * (since binding mutates the AST, it's useful for tests to review)
  */
 export function bindTest(...rawWesl: string[]): BindTestResult {
+  resetScopeIds();
   const weslSrc = makeTestBundle(rawWesl);
 
   const registry = parsedRegistry();

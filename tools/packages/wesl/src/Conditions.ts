@@ -23,7 +23,7 @@ export function elementValid(
 export function scopeValid(scope: Scope, conditions: Conditions): boolean {
   const { ifAttribute } = scope;
   if (!ifAttribute) return true;
-  const result = evaluateIfAttribute(ifAttribute, conditions);
+  const result = evaluateIfAttribute(ifAttribute, conditions); // LATER cache?
   return result;
 }
 

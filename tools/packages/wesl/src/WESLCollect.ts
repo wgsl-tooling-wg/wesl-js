@@ -43,7 +43,16 @@ import {
   WeslParseContext,
   WeslParseState,
 } from "./ParseWESL.ts";
-import { DeclIdent, emptyScope, RefIdent, Scope } from "./Scope.ts";
+import {
+  DeclIdent,
+  emptyScope,
+  Ident,
+  mergeScope,
+  nextIdentId,
+  PartialScope,
+  RefIdent,
+  Scope,
+} from "./Scope.ts";
 import { filterMap } from "./Util.ts";
 
 export function importElem(cc: CollectContext) {
@@ -76,7 +85,7 @@ export function refIdent(cc: CollectContext): RefIdentElem {
     kind,
     originalName,
     ast: cc.app.stable,
-    id: identId++,
+    id: nextIdentId(),
     refIdentElem: null as any, // set below
   };
   const identElem: RefIdentElem = { kind, start, end, srcModule, ident };
@@ -89,6 +98,18 @@ export function refIdent(cc: CollectContext): RefIdentElem {
 
 /** create declaration Ident and add to context */
 export function declCollect(cc: CollectContext): DeclIdentElem {
+  return declCollectInternal(cc, false);
+}
+
+/** create global declaration Ident and add to context */
+export function globalDeclCollect(cc: CollectContext): DeclIdentElem {
+  return declCollectInternal(cc, true);
+}
+
+function declCollectInternal(
+  cc: CollectContext,
+  isGlobal: boolean,
+): DeclIdentElem {
   const { src, start, end } = cc;
   const app = cc.app as WeslParseState;
   const { scope } = app.context;
@@ -102,7 +123,8 @@ export function declCollect(cc: CollectContext): DeclIdentElem {
     kind,
     originalName,
     scope,
-    id: identId++,
+    isGlobal,
+    id: nextIdentId(),
     srcModule,
   };
   const identElem: DeclIdentElem = { kind, start, end, srcModule, ident };
@@ -119,13 +141,10 @@ export const typedDecl = collectElem(
     const typeRef = cc.tags.typeRefElem?.[0] as TypeRefElem | undefined;
     const partial: TypedDeclElem = { ...openElem, decl, typeRef };
     const elem = withTextCover(partial, cc);
-    //    elemToString(elem); //?
 
     return elem;
   },
 );
-
-let identId = 0;
 
 /** add Ident to current open scope, add IdentElem to current open element */
 function saveIdent(
@@ -133,7 +152,7 @@ function saveIdent(
   identElem: RefIdentElem | DeclIdentElem,
 ) {
   const { ident } = identElem;
-  ident.id = identId++;
+  ident.id = nextIdentId();
   const weslContext: WeslParseContext = cc.app.context;
   weslContext.scope.contents.push(ident);
 }
@@ -176,6 +195,12 @@ function completeScope(cc: CollectContext): Scope {
 /** return @if attributes from the 'attribute' tag */
 function collectIfAttributes(cc: CollectContext): IfAttribute[] | undefined {
   const attributes = cc.tags.attribute as AttributeElem[] | undefined;
+  return filterIfAttributes(attributes);
+}
+
+function filterIfAttributes(
+  attributes?: AttributeElem[],
+): IfAttribute[] | undefined {
   if (!attributes) return;
   return filterMap(attributes, a =>
     a.attribute.kind === "@if" ? a.attribute : undefined,
@@ -228,34 +253,93 @@ export const aliasCollect = collectElem(
   },
 );
 
-export const collectFn = collectElem(
+/**
+ * Collect a FnElem and associated scopes.
+ *
+ * Scope definition is a bit complicated in wgsl and wesl for fns.
+ * Here's what we collect for scopes for this example function:
+ *    @if(true) fn foo(a: u32) -> @location(x) R { let y = a; }
+ *
+ * -{ // partial scope in case the whole shebang is prefixed by an `@if`
+ *   %foo
+ *
+ *   {<=%foo // foo decl references this header+returnType+body scope (for tracing dependencies from decls)
+ *      x  // for @location(x) (contains no decls, so ok to merge for tracing)
+ *      %a u32 // merged from header scope
+ *      R // merged from return type (contains no decls, so ok to merge for tracing)
+ *      %y a // merged body scope
+ *   }
+ * }
+ */
+export const fnCollect = collectElem(
   "fn",
   (cc: CollectContext, openElem: PartElem<FnElem>) => {
-    const name = cc.tags.fn_name?.[0] as DeclIdentElem;
-    const body_scope = cc.tags.body_scope?.[0] as Scope;
-    const body = cc.tags.body?.[0] as StatementElem;
-    const params: FnParamElem[] = cc.tags.fnParam?.flat(3) ?? [];
-    const attributes: AttributeElem[] | undefined =
-      cc.tags.fn_attributes?.flat(2);
-    const returnAttributes: AttributeElem[] | undefined =
-      cc.tags.return_attributes?.flat();
-    const returnType: TypeRefElem | undefined = cc.tags.returnType?.flat(3)[0];
+    // extract tags we care about
+    const ourTags = fnTags(cc);
+    const { name, headerScope, returnScope, bodyScope, body, params } = ourTags;
+    const { attributes, returnAttributes, returnType, fnScope } = ourTags;
+
+    // create the fn element
     const fnElem: FnElem = {
       ...openElem,
-      name,
-      attributes,
-      params,
-      returnAttributes,
-      body,
-      returnType,
+      ...{ name, attributes, params, returnAttributes, body, returnType },
     };
 
-    (name.ident as DeclIdent).declElem = fnElem;
-    name.ident.scope = body_scope;
+    // --- setup the various scopes --
+
+    // attach ifAttributes to outermost partial scope
+    fnScope.ifAttribute = filterIfAttributes(attributes)?.[0];
+
+    // merge the header, return and body scopes into the one scope
+    const mergedScope = headerScope;
+    returnScope && mergeScope(mergedScope, returnScope);
+    mergeScope(mergedScope, bodyScope);
+
+    // rewrite scope contents to remove old scopes and add merged scope
+    const filtered: (Ident | Scope)[] = [];
+    for (const e of fnScope.contents) {
+      if (e === headerScope || e == returnScope) {
+        continue;
+      } else if (e === bodyScope) {
+        filtered.push(mergedScope);
+      } else {
+        filtered.push(e);
+      }
+    }
+    fnScope.contents = filtered;
+
+    name.ident.declElem = fnElem;
+    name.ident.scope = mergedScope;
 
     return fnElem;
   },
 );
+
+/** Fetch and cast the collection tags for fnCollect
+ * LATER typechecking for collect! */
+function fnTags(cc: CollectContext) {
+  const { fn_attributes, fn_name, fn_param, return_attributes } = cc.tags;
+  const { return_type } = cc.tags;
+  const { header_scope, return_scope, body_scope, body_statement } = cc.tags;
+  const { fn_partial_scope } = cc.tags;
+
+  const name = fn_name?.[0] as DeclIdentElem;
+  const headerScope = header_scope?.[0] as Scope;
+  const returnScope = return_scope?.[0] as Scope | undefined;
+  const bodyScope = body_scope?.[0] as Scope;
+  const body = body_statement?.[0] as StatementElem;
+  const params: FnParamElem[] = fn_param?.flat(3) ?? [];
+  const attributes: AttributeElem[] | undefined = fn_attributes?.flat();
+  const returnAttributes: AttributeElem[] | undefined =
+    return_attributes?.flat();
+  const returnType: TypeRefElem | undefined = return_type?.flat(3)[0];
+  const fnScope = fn_partial_scope?.[0] as PartialScope;
+
+  return {
+    ...{ name, headerScope, returnScope, bodyScope, body, params },
+    ...{ attributes, returnAttributes, returnType, fnScope },
+  };
+}
 
 export const collectFnParam = collectElem(
   "param",
@@ -436,12 +520,10 @@ export function directiveCollect(cc: CollectContext): DirectiveElem {
  * The scope starts encloses all idents and subscopes inside the parser to which
  * .collect is attached
  */
-export function scopeCollect(): CollectPair<Scope> {
-  return {
-    before: startScope,
-    after: completeScope,
-  };
-}
+export const scopeCollect: CollectPair<Scope> = {
+  before: startScope,
+  after: completeScope,
+};
 
 /**
  * Collect a PartialScope.
@@ -449,12 +531,10 @@ export function scopeCollect(): CollectPair<Scope> {
  * The scope starts encloses all idents and subscopes inside the parser to which
  * .collect is attached
  */
-export function partialScopeCollect(): CollectPair<Scope> {
-  return {
-    before: startPartialScope,
-    after: completeScope,
-  };
-}
+export const partialScopeCollect: CollectPair<Scope> = {
+  before: startPartialScope,
+  after: completeScope,
+};
 
 /** utility to collect an ElemWithContents
  * starts the new element as the collection point corresponding

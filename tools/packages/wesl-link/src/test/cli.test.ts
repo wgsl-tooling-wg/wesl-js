@@ -68,8 +68,10 @@ test("link --details", async () => {
     '
 
     ->scope
-    { %main 
-      { foo } #1
+    { 
+      -{ %main 
+        { foo } #2
+      } #1
     } #0
 
     ---
@@ -85,9 +87,11 @@ test("link --details", async () => {
     }'
 
     ->scope
-    { %foo 
-      {  } #3
-    } #2
+    { 
+      -{ %foo 
+        {  } #6
+      } #5
+    } #4
     "
   `);
 });

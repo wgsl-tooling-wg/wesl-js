@@ -52,6 +52,11 @@ export function scopeToString(
   return str.result;
 }
 
+/** A debug print of the scope tree with identifiers in long form in nested brackets */
+export function scopeToStringLong(scope: Scope): string {
+  return scopeToString(scope, 0, false);
+}
+
 /** name of an identifier, with decls prefixed with '%' */
 function identShortString(ident: Ident): string {
   const { kind, originalName } = ident;
