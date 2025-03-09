@@ -55,15 +55,16 @@ export function token<const Kind extends string>(
   kindStr: Kind,
   value: string,
 ): Parser<Stream<TypedToken<Kind>>, TypedToken<Kind>> {
+  const expected = quotedText(value);
   return simpleParser(
-    `token '${kindStr}' ${quotedText(value)}`,
+    `token '${kindStr}' ${expected}`,
     function _token(state: ParserContext): OptParserResult<TypedToken<Kind>> {
       const start = state.stream.checkpoint();
       const next = state.stream.nextToken();
       if (next === null) {
         return {
           error: {
-            expected: quotedText(value),
+            expected,
           },
         };
       }
@@ -75,7 +76,7 @@ export function token<const Kind extends string>(
         state.stream.reset(start);
         return {
           error: {
-            expected: quotedText(value),
+            expected,
           },
         };
       }
@@ -90,6 +91,7 @@ export function tokenOf<const Kind extends string>(
   kindStr: Kind,
   values: string[],
 ): Parser<Stream<TypedToken<Kind>>, TypedToken<Kind>> {
+  const expected = quotedValues(values);
   return simpleParser(
     `tokenOf '${kindStr}'`,
     function _tokenOf(state: ParserContext): OptParserResult<TypedToken<Kind>> {
@@ -98,7 +100,7 @@ export function tokenOf<const Kind extends string>(
       if (next === null) {
         return {
           error: {
-            expected: quotedValues(values),
+            expected,
           },
         };
       }
@@ -110,7 +112,7 @@ export function tokenOf<const Kind extends string>(
         state.stream.reset(start);
         return {
           error: {
-            expected: quotedValues(values),
+            expected,
           },
         };
       }
@@ -160,7 +162,33 @@ export function tokenKind<const Kind extends string>(
 export function kind<const Kind extends string>(
   kindStr: Kind,
 ): Parser<Stream<TypedToken<Kind>>, string> {
-  return tokenKind(kindStr).map(v => v.text);
+  return simpleParser(
+    `kind '${kindStr}'`,
+    function _tokenKind(state: ParserContext): OptParserResult<string> {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) {
+        return {
+          error: {
+            expected: kindStr,
+          },
+        };
+      }
+      if (tracing) {
+        const text = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
+      }
+      if (next.kind !== kindStr) {
+        state.stream.reset(start);
+        return {
+          error: {
+            expected: kindStr,
+          },
+        };
+      }
+      return { value: next.text };
+    },
+  );
 }
 
 // export class KindParser<I, const Kind extends string> extends Parser<
