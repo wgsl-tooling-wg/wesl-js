@@ -61,6 +61,9 @@ export interface WeslParseContext {
   openElems: OpenElem[]; // elems that are collecting their contents
 }
 
+/**
+ * An error when parsing WESL fails. Designed to be human-readable.
+ */
 export class WeslParseError extends Error {
   position: number;
   src: SrcModule;

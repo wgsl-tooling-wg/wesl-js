@@ -160,7 +160,7 @@ test("token start is after ignored ws", () => {
 
 test("req logs a message on failure", () => {
   const src = "a 1;";
-  const p = seq("a", req("b", "expected b"));
+  const p = seq("a", req("b", "expected 'b'"));
   expect(() => {
     testParse(p, src);
   }).toThrow("expected b");

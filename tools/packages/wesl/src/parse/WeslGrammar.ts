@@ -93,7 +93,7 @@ const diagnostic_control = delimited(
     separated_pair(name, ",", diagnostic_rule_name),
     "invalid diagnostic control, expected rule name",
   ),
-  seq(opt(","), req(")", "invalid diagnostic control, expected )")),
+  seq(opt(","), req(")", "invalid diagnostic control, expected ')'")),
 );
 
 /** list of words that aren't identifiers (e.g. for @interpolate) */
@@ -111,11 +111,11 @@ const special_attribute = tagScope(
                                         .map(name => makeStandardAttribute([name, []])),
 
       // These attributes have arguments, but the argument doesn't have any identifiers
-      preceded("interpolate", req(delimited("(", name_list, ")"), "invalid @interpolate, expected ("))
+      preceded("interpolate", req(delimited("(", name_list, ")"), "invalid @interpolate, expected '('"))
                                         .map(makeInterpolateAttribute),
-      preceded("builtin", req(delimited("(", name, ")"), "invalid @builtin, expected ("))
+      preceded("builtin", req(delimited("(", name, ")"), "invalid @builtin, expected '('"))
                                         .map(makeBuiltinAttribute),
-      preceded("diagnostic", req(diagnostic_control, "invalid @diagnostic, expected ("))
+      preceded("diagnostic", req(diagnostic_control, "invalid @diagnostic, expected '('"))
                                         .map(makeDiagnosticAttribute),
     )                                     .ptag("attr_variant")  
   )                                       .collect(specialAttribute)
@@ -152,7 +152,7 @@ const normal_attribute = tagScope(
           "location",
           "size",
         )                        .ptag("name"),
-        req(() => attribute_argument_list, "invalid attribute, expected ("),
+        req(() => attribute_argument_list, "invalid attribute, expected '('"),
       ),
 
       // Everything else is also a normal attribute, optional expression list
@@ -173,7 +173,7 @@ const attribute_argument_list = delimited(
     ",",
     span(fn(() => expression))     .collect(expressionCollect, "attrParam"), // LATER These unknown expressions have decls inside of them, that's why they're tough to replace!
   ),
-  req(")", "invalid attribute arguments, expected )"),
+  req(")", "invalid attribute arguments, expected ')'"),
 );
 
 // separate statements with if from statements
@@ -226,7 +226,7 @@ const struct_member = tagScope(
   seq(
     opt_attributes,
     word                              .collect(nameCollect, "nameElem"),
-    req(":", "invalid struct member, expected :"),
+    req(":", "invalid struct member, expected ':'"),
     req(type_specifier, "invalid struct member, expected type specifier"),
   )                                   .collect(collectStructMember)
 )                                     .ctag("members");
@@ -237,9 +237,9 @@ const struct_decl = seq(
   "struct",
   req(typeNameDecl, "invalid struct, expected name"),
   seq(
-    req("{", "invalid struct, expected {"),
+    req("{", "invalid struct, expected '{'"),
     withSepPlus(",", struct_member),
-    req("}", "invalid struct, expected }"),
+    req("}", "invalid struct, expected '}'"),
   )                                   .collect(scopeCollect(), "struct_scope"),
 )                                     .collect(collectStruct);
 
@@ -347,7 +347,7 @@ const compound_statement = tagScope(
     seq(
       text("{"),
       repeat(() => statement),
-      req("}", "invalid block, expected }"),
+      req("}", "invalid block, expected '}'"),
     )                                 .collect(scopeCollect()),
   )                                   .collect(statementCollect)
 );
@@ -370,13 +370,13 @@ const for_update = seq(
 const for_statement = seq( // LATER consider allowing @if on for_init, expression and for_update
   "for",
   seq(
-    req("(", "invalid for loop, expected ("),
+    req("(", "invalid for loop, expected '('"),
     opt(for_init),
-    req(";", "invalid for loop, expected ;"),
+    req(";", "invalid for loop, expected ';'"),
     opt(expression),
-    req(";", "invalid for loop, expected ;"),
+    req(";", "invalid for loop, expected ';'"),
     opt(for_update),
-    req(")", "invalid for loop, expected )"),
+    req(")", "invalid for loop, expected ')'"),
     unscoped_compound_statement,
   )                                 .collect(scopeCollect()),
 );
@@ -391,7 +391,9 @@ const if_statement = seq(
       req(seq(expression, compound_statement), "invalid else if branch"),
     ),
   ),
-  opt(seq("else", req(compound_statement, "invalid else branch, expected {"))),
+  opt(
+    seq("else", req(compound_statement, "invalid else branch, expected '{'")),
+  ),
 );
 
 // prettier-ignore
@@ -458,19 +460,19 @@ const regular_statement = or(
   switch_statement,
   while_statement,
   seq("break", ";"), // ambiguous with break if
-  seq("continue", req(";", "invalid statement, expected ;")),
+  seq("continue", req(";", "invalid statement, expected ';'")),
   seq(";"), // LATER this one cannot have attributes in front of it
   () => const_assert,
-  seq("discard", req(";", "invalid statement, expected ;")),
-  seq("return", opt(expression), req(";", "invalid statement, expected ;")),
-  seq(fn_call, req(";", "invalid statement, expected ;")),
+  seq("discard", req(";", "invalid statement, expected ';'")),
+  seq("return", opt(expression), req(";", "invalid statement, expected ';'")),
+  seq(fn_call, req(";", "invalid statement, expected ';'")),
   seq(
     () => variable_or_value_statement,
-    req(";", "invalid statement, expected ;"),
+    req(";", "invalid statement, expected ';'"),
   ),
   seq(
     () => variable_updating_statement,
-    req(";", "invalid statement, expected ;"),
+    req(";", "invalid statement, expected ';'"),
   ),
 );
 
@@ -519,11 +521,11 @@ const variable_or_value_statement = tagScope( // LATER consider collecting these
   or(
     // Also covers the = expression case
     local_variable_decl,
-    seq("const", req_optionally_typed_ident, req("=", "invalid const declaration, expected ="), expression),
+    seq("const", req_optionally_typed_ident, req("=", "invalid const declaration, expected '='"), expression),
     seq(
       "let", 
       req_optionally_typed_ident,
-      req("=", "invalid let declaration, expected ="),
+      req("=", "invalid let declaration, expected '='"),
       expression
     )
   )
@@ -583,9 +585,9 @@ const global_alias = seq(
   weslExtension(opt_attributes)                        .collect((cc) => cc.tags.attribute, "attributes"),
   "alias",
   req(word, "invalid alias, expected name")            .collect(declCollect, "alias_name"),
-  req("=", "invalid alias, expected ="),
+  req("=", "invalid alias, expected '='"),
   req(type_specifier, "invalid alias, expected type")  .collect(scopeCollect(), "alias_scope"),
-  req(";", "invalid alias, expected ;"),
+  req(";", "invalid alias, expected ';'"),
 )                                                      .collect(aliasCollect);
 
 // prettier-ignore
@@ -594,7 +596,7 @@ const const_assert =                 tagScope(
     opt_attributes,
     "const_assert", 
     req(expression, "invalid const_assert, expected expression"), 
-    req(";", "invalid statement, expected ;")
+    req(";", "invalid statement, expected ';'")
   )                                   .collect(assertCollect)
 )                                       .ctag("const_assert");
 
