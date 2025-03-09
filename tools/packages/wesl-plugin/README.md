@@ -18,6 +18,7 @@ Each plugin features is enabled by its own wesl-plugin [extension](#extensions).
 ## Install
 
 ```
+npm install wesl
 npm install wesl-plugin
 ```
 
