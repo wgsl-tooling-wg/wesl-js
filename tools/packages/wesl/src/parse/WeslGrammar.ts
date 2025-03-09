@@ -265,7 +265,8 @@ const fnParam = tagScope(
   seq(
     opt_attributes                    .collect((cc) => cc.tags.attribute, "attributes"),
     word                              .collect(declCollect, "decl_elem"),
-    opt(seq(":", req(type_specifier, "invalid fn parameter, expected type specifier"))).collect(typedDecl, "param_name"),
+    opt(seq(":", req(type_specifier, "invalid fn parameter, expected type specifier")))
+                                      .collect(typedDecl, "param_name"),
   )                                   .collect(collectFnParam),
 )                                     .ctag("fn_param");
 
@@ -563,15 +564,17 @@ const fn_decl = seq(
     opt(seq(
       "->", 
       opt_attributes                  .collect((cc) => cc.tags.attribute, "return_attributes"),
-      type_specifier                  .ctag("returnType")
+      type_specifier                  .ctag("return_type")
                                       .collect(scopeCollect, "return_scope")
     )),
     req(
       unscoped_compound_statement, 
       "invalid fn, expected function body"
-    )                                 .ctag("body_statement"),
-  )                                   .collect(partialScopeCollect, "fn_partial_scope")
-)                                     .collect(fnCollect);
+    )                                 .ctag("body_statement")  
+                                      .collect(scopeCollect, "body_scope"),
+  )                                   
+)                                     .collect(partialScopeCollect, "fn_partial_scope")
+                                      .collect(fnCollect);
 
 // prettier-ignore
 const global_value_decl = or(
