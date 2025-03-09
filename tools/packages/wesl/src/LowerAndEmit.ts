@@ -14,7 +14,11 @@ import {
   SyntheticElem,
   TextElem,
 } from "./AbstractElems.ts";
-import { assertUnreachable, assertUnreachableSilent } from "./Assertions.ts";
+import {
+  assertThatDebug,
+  assertUnreachable,
+  assertUnreachableSilent,
+} from "./Assertions.ts";
 import { isGlobal } from "./BindIdents.ts";
 import { elementValid } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
@@ -351,15 +355,12 @@ function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
 
 function displayName(declIdent: DeclIdent): string {
   if (isGlobal(declIdent)) {
+    assertThatDebug(
+      declIdent.mangledName,
+      `ERR: mangled name not found for decl ident ${identToString(declIdent)}`,
+    );
     // mangled name was set in binding step
-    const mangledName = declIdent.mangledName;
-    if (tracing && !mangledName) {
-      console.log(
-        "ERR: mangled name not found for decl ident",
-        identToString(declIdent),
-      );
-    }
-    return mangledName!;
+    return declIdent.mangledName!;
   }
 
   return declIdent.mangledName || declIdent.originalName;
