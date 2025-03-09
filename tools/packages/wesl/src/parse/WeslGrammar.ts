@@ -50,7 +50,6 @@ import {
   aliasCollect,
   assertCollect,
   collectAttribute,
-  collectFn,
   collectFnParam,
   collectModule,
   collectStruct,
@@ -59,7 +58,9 @@ import {
   declCollect,
   directiveCollect,
   expressionCollect,
+  fnCollect,
   globalAssertCollect,
+  globalDeclCollect,
   nameCollect,
   partialScopeCollect,
   refIdent,
@@ -195,19 +196,17 @@ const opt_attributes = repeat(attribute_incl_if);
 
 const opt_attributes_no_if = repeat(attribute_no_if);
 
-/** parse an identifier into a TypeNameElem */
 // prettier-ignore
-const typeNameDecl = 
+const globalTypeNameDecl = 
   req(
-    word                            .collect(declCollect, "type_name"),
+    word                            .collect(globalDeclCollect, "type_name"),
     "invalid type name, expected a name"
   );
 
-/** parse an identifier into a TypeNameElem */
 // prettier-ignore
 const fnNameDecl = 
   req(
-    word                            .collect(declCollect, "fn_name"),
+    word                            .collect(globalDeclCollect, "fn_name"),
     "missing fn name",
   );
 
@@ -220,6 +219,16 @@ const optionally_typed_ident = tagScope(
 )                                     .ctag("var_name");
 
 const req_optionally_typed_ident = req(optionally_typed_ident, "invalid ident");
+
+// prettier-ignore
+const global_ident = tagScope(
+  req(
+    seq(
+      word                            .collect(globalDeclCollect, "decl_elem"),
+      opt(seq(":", type_specifier)),
+    )                                 .collect(typedDecl)
+  )
+)                                     .ctag("var_name");
 
 // prettier-ignore
 const struct_member = tagScope(
@@ -235,12 +244,12 @@ const struct_member = tagScope(
 const struct_decl = seq(
   weslExtension(opt_attributes)       .collect((cc) => cc.tags.attribute, "attributes"),
   "struct",
-  req(typeNameDecl, "invalid struct, expected name"),
+  req(globalTypeNameDecl, "invalid struct, expected name"),
   seq(
     req("{", "invalid struct, expected '{'"),
     withSepPlus(",", struct_member),
     req("}", "invalid struct, expected '}'"),
-  )                                   .collect(scopeCollect(), "struct_scope"),
+  )                                   .collect(scopeCollect, "struct_scope"),
 )                                     .collect(collectStruct);
 
 /** Also covers func_call_statement.post.ident */
@@ -258,7 +267,7 @@ const fnParam = tagScope(
     word                              .collect(declCollect, "decl_elem"),
     opt(seq(":", req(type_specifier, "invalid fn parameter, expected type specifier"))).collect(typedDecl, "param_name"),
   )                                   .collect(collectFnParam),
-)                                     .ctag("fnParam");
+)                                     .ctag("fn_param");
 
 const fnParamList = seq("(", withSep(",", fnParam), ")");
 
@@ -274,9 +283,9 @@ const local_variable_decl = seq(
 const global_variable_decl = seq(
   "var",
   () => opt_template_list,
-  req_optionally_typed_ident,
+  global_ident, 
                                       // TODO shouldn't decl_scope include the ident type?
-  opt(seq("=", () => expression       .collect(scopeCollect(), "decl_scope"))),
+  opt(seq("=", () => expression       .collect(scopeCollect, "decl_scope"))),
 );
 
 const attribute_if_primary_expression: Parser<
@@ -348,7 +357,7 @@ const compound_statement = tagScope(
       text("{"),
       repeat(() => statement),
       req("}", "invalid block, expected '}'"),
-    )                                 .collect(scopeCollect()),
+    )                                 .collect(scopeCollect),
   )                                   .collect(statementCollect)
 );
 
@@ -378,7 +387,7 @@ const for_statement = seq( // LATER consider allowing @if on for_init, expressio
     opt(for_update),
     req(")", "invalid for loop, expected ')'"),
     unscoped_compound_statement,
-  )                                 .collect(scopeCollect()),
+  )                                 .collect(scopeCollect),
 );
 
 const if_statement = seq(
@@ -422,14 +431,14 @@ const loop_statement = seq(
             ),
             "}",
           )                             .collect(statementCollect)
-                                        .collect(scopeCollect())
+                                        .collect(scopeCollect)
         ),
       ),
       "}",
     ),
     "invalid loop statement"
   ),
-)                                     .collect(scopeCollect());
+)                                     .collect(scopeCollect);
 
 const case_selector = or("default", expression);
 
@@ -482,7 +491,7 @@ const conditional_statement = tagScope(
     opt_attributes, 
     regular_statement
   )                                .collect(statementCollect)
-                                   .collect(partialScopeCollect()));
+                                   .collect(partialScopeCollect));
 
 // prettier-ignore
 const unconditional_statement = tagScope(
@@ -549,33 +558,36 @@ const fn_decl = seq(
   text("fn"),
   req(fnNameDecl, "invalid fn, expected function name"),
   seq(
-    req(fnParamList, "invalid fn, expected function parameters"),
+    req(fnParamList, "invalid fn, expected function parameters")
+                                      .collect(scopeCollect, "header_scope"),
     opt(seq(
       "->", 
       opt_attributes                  .collect((cc) => cc.tags.attribute, "return_attributes"),
-      type_specifier                  .ctag("returnType"))),
+      type_specifier                  .ctag("returnType")
+                                      .collect(scopeCollect, "return_scope")
+    )),
     req(
       unscoped_compound_statement, 
       "invalid fn, expected function body"
-    )                                 .ctag("body"),
-  )                                   .collect(scopeCollect(), "body_scope"),
-)                                     .collect(collectFn);
+    )                                 .ctag("body_statement"),
+  )                                   .collect(partialScopeCollect, "fn_partial_scope")
+)                                     .collect(fnCollect);
 
 // prettier-ignore
 const global_value_decl = or(
   seq(
     opt_attributes,
     "override",
-    optionally_typed_ident,
-    seq(opt(seq("=", expression       .collect(scopeCollect(), "decl_scope")))),
+    global_ident,
+    seq(opt(seq("=", expression       .collect(scopeCollect, "decl_scope")))), // TODO partial scopes for decl_scopes?
     ";",
   )                                   .collect(collectVarLike("override")),
   seq(
     opt_attributes,
     "const",
-    optionally_typed_ident,
+    global_ident,
     "=",
-    seq(expression)                   .collect(scopeCollect(), "decl_scope"),
+    seq(expression)                   .collect(scopeCollect, "decl_scope"),
     ";",
   )                                   .collect(collectVarLike("const")),
 );
@@ -584,9 +596,9 @@ const global_value_decl = or(
 const global_alias = seq(
   weslExtension(opt_attributes)                        .collect((cc) => cc.tags.attribute, "attributes"),
   "alias",
-  req(word, "invalid alias, expected name")            .collect(declCollect, "alias_name"),
+  req(word, "invalid alias, expected name")            .collect(globalDeclCollect, "alias_name"),
   req("=", "invalid alias, expected '='"),
-  req(type_specifier, "invalid alias, expected type")  .collect(scopeCollect(), "alias_scope"),
+  req(type_specifier, "invalid alias, expected type")  .collect(scopeCollect, "alias_scope"),
   req(";", "invalid alias, expected ';'"),
 )                                                      .collect(aliasCollect);
 
@@ -800,7 +812,7 @@ if (tracing) {
     diagnostic_rule_name,
     diagnostic_control,
     opt_attributes,
-    typeNameDecl,
+    globalTypeNameDecl,
     fnNameDecl,
     optionally_typed_ident,
     struct_member,

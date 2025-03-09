@@ -3,6 +3,7 @@ import { expect, RunnerTestSuite } from "vitest";
 import { WgslTestSrc } from "wesl-testsuite";
 import { link } from "../Linker.js";
 import { ManglerFn, underscoreMangle } from "../Mangler.ts";
+import { resetScopeIds } from "../Scope.ts";
 
 /**
  * Link wesl sources and compare the linked wgsl vs expectations.
@@ -16,6 +17,7 @@ export async function testLink(
   expectedWgsl: string,
   mangler?: ManglerFn,
 ): Promise<void> {
+  resetScopeIds();
   /* -- link -- */
   const stdResultMap = await link({
     weslSrc,

@@ -1,4 +1,6 @@
 import { DeclarationElem, IfAttribute, RefIdentElem } from "./AbstractElems.ts";
+import { assertThatDebug } from "./Assertions.ts";
+import { scopeValid } from "./Conditions.ts";
 import { WeslAST } from "./ParseWESL.ts";
 
 export interface SrcModule {
@@ -20,7 +22,6 @@ export type Conditions = Record<string, boolean>;
 
 interface IdentBase {
   originalName: string; // name in the source code for ident matching (may be mangled in the output)
-  conditions?: Conditions; // conditions under which this ident is valid (combined from all containing elems)
   id?: number; // for debugging
 }
 
@@ -42,6 +43,7 @@ export interface DeclIdent extends IdentBase {
   mangledName?: string; // name in the output code
   declElem?: DeclarationElem; // link to AST so that we can traverse scopes and know what elems to emit // LATER make separate GlobalDecl kind with this required
   scope: Scope; // scope for the references within this declaration
+  isGlobal: boolean; // true if this is a global declaration (e.g. not a local variable)
   srcModule: SrcModule; // To figure out which module this declaration is from.
 }
 
@@ -85,31 +87,27 @@ interface ScopeBase {
   ifAttribute?: IfAttribute;
 }
 
-/** return the declarations in this scope */
-export function scopeDecls(scope: Scope): Map<string, DeclIdent> {
-  if (scope.parent || scope.kind !== "scope") {
-    console.warn("Warning: scopeDecls called on unexpected scope", scope);
-    return new Map();
-  }
-  if (scope.scopeDecls) {
-    return scope.scopeDecls;
-  }
-  const declMap = new Map<string, DeclIdent>();
-  for (const ident of scope.contents) {
-    if (ident.kind === "decl") {
-      declMap.set(ident.originalName, ident);
-    }
-  }
-  scope.scopeDecls = declMap;
-  return declMap;
+/** Combine two scope siblings.
+ * The first scope is mutated to append the contents of the second.  */
+export function mergeScope(a: Scope, b: Scope): void {
+  assertThatDebug(a.kind === b.kind);
+  assertThatDebug(a.parent === b.parent);
+  assertThatDebug(!b.ifAttribute);
+  a.contents = a.contents.concat(b.contents);
 }
 
+/** reset scope and ident debugging ids */
 export function resetScopeIds() {
-  // for debugging
   scopeId = 0;
+  identId = 0;
 }
 
-let scopeId = 0; // for debugging
+let scopeId = 0;
+let identId = 0;
+
+export function nextIdentId(): number {
+  return identId++;
+}
 
 /** make a new Scope object */
 export function emptyScope(
@@ -148,10 +146,17 @@ export function childIdent(child: Scope | Ident): child is Ident {
 }
 
 /** find a public declaration with the given original name */
-export function publicDecl(scope: Scope, name: string): DeclIdent | undefined {
+export function publicDecl(
+  scope: Scope,
+  name: string,
+  conditions: Conditions,
+): DeclIdent | undefined {
   for (const elem of scope.contents) {
     if (elem.kind === "decl" && elem.originalName === name) {
       return elem;
+    } else if (elem.kind === "partial" && scopeValid(elem, conditions)) {
+      const found = publicDecl(elem, name, conditions);
+      if (found) return found;
     }
   }
 }
