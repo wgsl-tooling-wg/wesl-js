@@ -5,9 +5,9 @@ import { errorHighlight } from "../Util.ts";
 test("parse fn foo() { invalid }", () => {
   const src = "fn foo() { let }";
   expect(() => parseTest(src)).toThrowErrorMatchingInlineSnapshot(`
-    [Error: ./test.wesl:1:15 error: invalid ident
+    [Error: ./test.wesl:1:17 error: invalid ident
     fn foo() { let }
-                  ^]
+                    ^]
   `);
 });
 

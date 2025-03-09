@@ -80,9 +80,6 @@ export interface ParserArgs {
   /** true for elements without children like kind(), and text(),
    * (to avoid intro log statement while tracing) */
   terminal?: boolean;
-
-  /** set if the collection results are tagged */
-  _children?: AnyParser[];
 }
 
 interface ConstructArgs<T> extends ParserArgs {
@@ -132,11 +129,7 @@ export class Parser<I, T> {
   constructor(args: ConstructArgs<T>) {
     this.fn = args.fn;
     if (tracing) {
-      this._traceInfo = new ParserTraceInfo(
-        args.traceName,
-        args._children,
-        args.trace,
-      );
+      this._traceInfo = new ParserTraceInfo(args.traceName, args.trace);
       if (args.terminal) {
         this._traceInfo.traceIsTerminal = true;
       }

@@ -320,11 +320,11 @@ export function or<P extends CombinatorArg[]>(...args: P): OrParser<P> {
   return parser("or", function _or(state: ParserContext) {
     const start = state.stream.checkpoint();
     for (const p of parsers) {
-      state.stream.reset(start);
       const result = p._run(state);
       if (result !== null) {
         return result;
       }
+      state.stream.reset(start);
     }
     return null;
   });
@@ -365,9 +365,9 @@ export function not<P extends CombinatorArg>(
     const pos = state.stream.checkpoint();
     const result = p._run(state);
     if (result === null) {
+      state.stream.reset(pos);
       return { value: true };
     }
-    state.stream.reset(pos);
     return null;
   });
 }

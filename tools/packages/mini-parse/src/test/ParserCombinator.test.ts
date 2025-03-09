@@ -129,7 +129,7 @@ test("recurse with fn()", () => {
   );
   const wrap = or(p);
   const { parsed } = testParse(wrap, src);
-  expect(parsed).toEqual(["a", "b"]);
+  expect(parsed?.value).toEqual(["a", "b"]);
 });
 
 test("tracing", () => {
