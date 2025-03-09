@@ -15,6 +15,11 @@ export function assertThatDebug(
   tracing && assertThat(condition, msg);
 }
 
+/** when debug testing is enabled throw an error */
+export function failDebug(msg = "FAIL"): void {
+  if (tracing) throw new Error(msg);
+}
+
 /**
  * Typescript will complain at compile time if it thinks this could be executed.
  * Useful to validate that all cases are handled.
