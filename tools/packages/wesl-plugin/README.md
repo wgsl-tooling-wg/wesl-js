@@ -1,7 +1,12 @@
-# wesl plugin
+# WESL Plugin
 
-The wesl-plugin handles `.wesl` and `.wgsl` files
+
+[![NPM Version](https://img.shields.io/npm/v/wesl-plugin)](https://www.npmjs.com/package/wesl-plugin) 
+[![Static Badge](https://img.shields.io/badge/Read%20the%20-Docs-blue)](https://wesl-lang.dev/)
+
+> The wesl-plugin handles `.wesl` and `.wgsl` files
 in JavaScript bundlers to make using webgpu shaders more convenient.
+
 Plugin features are accessed from JavaScript and TypeScript with `import` statements:
 
 ```ts
@@ -10,9 +15,13 @@ import linkConfig from "./shaders/app.wesl?link";
 
 Each plugin features is enabled by its own wesl-plugin [extension](#extensions).
 
-## Getting started
+## Install
 
-### Vite
+```
+npm install wesl-plugin
+```
+
+### Vite Configuration
 
 Add the wesl-plugin along with any selected extensions to `vite.config.ts`:
 
