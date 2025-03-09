@@ -636,7 +636,7 @@ export const weslRoot = seq(
     weslExtension(weslImports),
     repeat(global_directive),
     repeat(global_decl),
-    req(eof(), "invalid WGSL, expected EOF"),
+    req(eof(), "invalid WESL, expected EOF"),
   )                                 .collect(collectModule, "collectModule");
 
 function makeDiagnosticDirective([severity, rule]: readonly [
