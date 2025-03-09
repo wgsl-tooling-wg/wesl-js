@@ -2,8 +2,8 @@
 import { copyBuffer } from "thimbleberry";
 import { link, LinkParams, makeWeslDevice } from "wesl";
 // Convince vite to also watch these files
-import "./public/shaders/main.wesl?raw";
-import "./public/shaders/uniforms.wesl?raw";
+import mainWesl from "./src/shaders/main.wesl?raw";
+import uniformsWesl from "./src/shaders/uniforms.wesl?raw";
 
 main();
 
@@ -12,10 +12,8 @@ const app = document.getElementById("app")!;
 async function main() {
   const params: LinkParams = {
     weslSrc: {
-      "main.wesl": await fetch("./shaders/main.wesl").then(v => v.text()),
-      "uniforms.wesl": await fetch("./shaders/uniforms.wesl").then(v =>
-        v.text(),
-      ),
+      "main.wesl": mainWesl,
+      "uniforms.wesl": uniformsWesl,
     },
   };
   const linkerOutput = await link(params);
