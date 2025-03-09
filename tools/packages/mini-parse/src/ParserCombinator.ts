@@ -17,9 +17,7 @@ import {
   ParserContext,
   ParserResult,
   ParserStream,
-  runExtended,
-  simpleParser,
-  trackChildren,
+  terminalParser,
 } from "./Parser.js";
 import { closeArray, pushOpenArray } from "./ParserCollect.js";
 import { quotedText, srcTrace } from "./ParserLogging.js";
@@ -52,7 +50,7 @@ export function token<const Kind extends string>(
   kindStr: Kind,
   value: string,
 ): Parser<Stream<TypedToken<Kind>>, TypedToken<Kind>> {
-  return simpleParser(
+  return terminalParser(
     `token '${kindStr}' ${quotedText(value)}`,
     function _token(
       state: ParserContext,
@@ -65,7 +63,6 @@ export function token<const Kind extends string>(
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
       }
       if (next.kind !== kindStr || next.text !== value) {
-        state.stream.reset(start);
         return null;
       }
       return { value: next as TypedToken<Kind> };
@@ -79,7 +76,7 @@ export function tokenOf<const Kind extends string>(
   kindStr: Kind,
   values: string[],
 ): Parser<Stream<TypedToken<Kind>>, TypedToken<Kind>> {
-  return simpleParser(
+  return terminalParser(
     `tokenOf '${kindStr}'`,
     function _tokenOf(
       state: ParserContext,
@@ -92,7 +89,6 @@ export function tokenOf<const Kind extends string>(
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
       }
       if (next.kind !== kindStr || !values.includes(next.text)) {
-        state.stream.reset(start);
         return null;
       }
       return { value: next as TypedToken<Kind> };
@@ -105,7 +101,7 @@ export function tokenOf<const Kind extends string>(
 export function tokenKind<const Kind extends string>(
   kindStr: Kind,
 ): Parser<Stream<TypedToken<Kind>>, TypedToken<Kind>> {
-  return simpleParser(
+  return terminalParser(
     `tokenKind '${kindStr}'`,
     function _tokenKind(
       state: ParserContext,
@@ -118,7 +114,6 @@ export function tokenKind<const Kind extends string>(
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
       }
       if (next.kind !== kindStr) {
-        state.stream.reset(start);
         return null;
       }
       return { value: next as TypedToken<Kind> };
@@ -131,7 +126,7 @@ export function tokenKind<const Kind extends string>(
 export function kind<const Kind extends string>(
   kindStr: Kind,
 ): Parser<Stream<TypedToken<Kind>>, string> {
-  return simpleParser(
+  return terminalParser(
     `kind '${kindStr}'`,
     function _kind(state: ParserContext): ParserResult<string> | null {
       const start = state.stream.checkpoint();
@@ -142,7 +137,6 @@ export function kind<const Kind extends string>(
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
       }
       if (next.kind !== kindStr) {
-        state.stream.reset(start);
         return null;
       }
       return { value: next.text };
@@ -158,7 +152,7 @@ export function kind<const Kind extends string>(
 /** Parse for a token containing a text value
  * @return the kind of token that matched */
 export function text(value: string): Parser<ParserStream, string> {
-  return simpleParser(
+  return terminalParser(
     `${quotedText(value)}`,
     function _text(state: ParserContext): ParserResult<string> | null {
       const start = state.stream.checkpoint();
@@ -169,7 +163,6 @@ export function text(value: string): Parser<ParserStream, string> {
         srcTrace(state.stream.src, start, `: ${text} (${next.kind})`);
       }
       if (next.text !== value) {
-        state.stream.reset(start);
         return null;
       }
       return { value: next.text };
@@ -181,7 +174,7 @@ export function text(value: string): Parser<ParserStream, string> {
  * @return an array of all parsed results, or null if any parser fails */
 export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
   const parsers = args.map(parserArg);
-  const seqParser = parser("seq", function _seq(ctx: ParserContext) {
+  return parser("seq", function _seq(ctx: ParserContext) {
     const values = [];
     for (const p of parsers) {
       const result = p._run(ctx);
@@ -191,11 +184,7 @@ export function seq<P extends CombinatorArg[]>(...args: P): SeqParser<P> {
       values.push(result.value);
     }
     return { value: values };
-  });
-
-  trackChildren(seqParser, ...parsers);
-
-  return seqParser as SeqParser<P>;
+  }) as SeqParser<P>;
 }
 
 /** Parse a sequence of parsers. Each named parser will be executed, and place its result in an equally named output.
@@ -206,7 +195,7 @@ export function seqObj<P extends { [key: string]: CombinatorArg }>(
   const parsers = Object.entries(args).map(
     ([name, arg]) => [name as keyof P, parserArg(arg)] as const,
   );
-  const seqObjParser = parser("seqObj", function _seqObj(ctx: ParserContext) {
+  return parser("seqObj", function _seqObj(ctx: ParserContext) {
     const values: Partial<Record<keyof P, any>> = {};
     for (const [name, p] of parsers) {
       const result = p._run(ctx);
@@ -217,11 +206,7 @@ export function seqObj<P extends { [key: string]: CombinatorArg }>(
       values[name] = result.value;
     }
     return { value: values };
-  });
-
-  trackChildren(seqObjParser, ...parsers.map(v => v[1]));
-
-  return seqObjParser as SeqObjParser<P>;
+  }) as SeqObjParser<P>;
 }
 
 export function collectArray<I, O>(p: Parser<I, O>): Parser<I, O> {
@@ -239,19 +224,12 @@ export function preceded<
 ): Parser<InputFromArg<Ignored> | InputFromArg<P>, ResultFromArg<P>> {
   const ignored = parserArg(ignoredArg);
   const p = parserArg(arg);
-  const precededParser: ParserFromArg<P> = parser(
-    "preceded",
-    function _preceded(ctx: ParserContext) {
-      const ignoredResult = ignored._run(ctx);
-      if (ignoredResult === null) return null;
-      const result = p._run(ctx);
-      return result;
-    },
-  );
-
-  trackChildren(precededParser, ignored, p);
-
-  return precededParser;
+  return parser("preceded", function _preceded(ctx: ParserContext) {
+    const ignoredResult = ignored._run(ctx);
+    if (ignoredResult === null) return null;
+    const result = p._run(ctx);
+    return result;
+  });
 }
 
 /** Parse two values, and discard the second value
@@ -265,20 +243,13 @@ export function terminated<
 ): Parser<InputFromArg<P> | InputFromArg<Ignored>, ResultFromArg<P>> {
   const p = parserArg(arg);
   const ignored = parserArg(ignoredArg);
-  const terminatedParser: ParserFromArg<P> = parser(
-    "terminated",
-    function _terminated(ctx: ParserContext) {
-      const result = p._run(ctx);
-      if (result === null) return null;
-      const ignoredResult = ignored._run(ctx);
-      if (ignoredResult === null) return null;
-      return result;
-    },
-  );
-
-  trackChildren(terminatedParser, ignored, p);
-
-  return terminatedParser;
+  return parser("terminated", function _terminated(ctx: ParserContext) {
+    const result = p._run(ctx);
+    if (result === null) return null;
+    const ignoredResult = ignored._run(ctx);
+    if (ignoredResult === null) return null;
+    return result;
+  });
 }
 
 /** Parse three values, and only keep the middle value
@@ -298,22 +269,15 @@ export function delimited<
   const ignored1 = parserArg(ignoredArg1);
   const p = parserArg(arg);
   const ignored2 = parserArg(ignoredArg2);
-  const delimitedParser: ParserFromArg<P> = parser(
-    "delimited",
-    function _delimited(ctx: ParserContext) {
-      const ignoredResult1 = ignored1._run(ctx);
-      if (ignoredResult1 === null) return null;
-      const result = p._run(ctx);
-      if (result === null) return null;
-      const ignoredResult2 = ignored2._run(ctx);
-      if (ignoredResult2 === null) return null;
-      return result;
-    },
-  );
-
-  trackChildren(delimitedParser, ignored1, p, ignored2);
-
-  return delimitedParser;
+  return parser("delimited", function _delimited(ctx: ParserContext) {
+    const ignoredResult1 = ignored1._run(ctx);
+    if (ignoredResult1 === null) return null;
+    const result = p._run(ctx);
+    if (result === null) return null;
+    const ignoredResult2 = ignored2._run(ctx);
+    if (ignoredResult2 === null) return null;
+    return result;
+  });
 }
 
 /** Parse two values, and discard the second value
@@ -333,7 +297,7 @@ export function separated_pair<
   const p1 = parserArg(arg1);
   const ignored = parserArg(ignoredArg);
   const p2 = parserArg(arg2);
-  const terminatedParser = parser(
+  return parser(
     "terminated",
     function _terminated(
       ctx: ParserContext,
@@ -347,17 +311,13 @@ export function separated_pair<
       return { value: [result1.value, result2.value] };
     },
   );
-
-  trackChildren(terminatedParser, p1, ignored, p2);
-
-  return terminatedParser;
 }
 
 /** Try parsing with one or more parsers,
  *  @return the first successful parse */
 export function or<P extends CombinatorArg[]>(...args: P): OrParser<P> {
   const parsers = args.map(parserArg);
-  const orParser = parser("or", function _or(state: ParserContext) {
+  return parser("or", function _or(state: ParserContext) {
     const start = state.stream.checkpoint();
     for (const p of parsers) {
       state.stream.reset(start);
@@ -368,10 +328,6 @@ export function or<P extends CombinatorArg[]>(...args: P): OrParser<P> {
     }
     return null;
   });
-
-  trackChildren(orParser, ...parsers);
-
-  return orParser as OrParser<P>;
 }
 
 /** Try a parser.
@@ -384,7 +340,7 @@ export function opt<P extends CombinatorArg>(
   arg: P,
 ): Parser<InputFromArg<P>, ResultFromArg<P> | null> {
   const p = parserArg(arg);
-  const optParser = parser(
+  return parser(
     "opt",
     function _opt(state: ParserContext): ParserResult<ResultFromArg<P> | null> {
       const start = state.stream.checkpoint();
@@ -397,8 +353,6 @@ export function opt<P extends CombinatorArg>(
       }
     },
   );
-  trackChildren(optParser, p);
-  return optParser;
 }
 
 /** return true if the provided parser _doesn't_ match
@@ -407,26 +361,20 @@ export function not<P extends CombinatorArg>(
   arg: P,
 ): Parser<InputFromArg<P>, true> {
   const p = parserArg(arg);
-  const notParser: Parser<InputFromArg<P>, true> = parser(
-    "not",
-    function _not(state: ParserContext) {
-      const pos = state.stream.checkpoint();
-      const result = p._run(state);
-      if (result === null) {
-        return { value: true };
-      }
-      state.stream.reset(pos);
-      return null;
-    },
-  );
-  trackChildren(notParser, p);
-
-  return notParser;
+  return parser("not", function _not(state: ParserContext) {
+    const pos = state.stream.checkpoint();
+    const result = p._run(state);
+    if (result === null) {
+      return { value: true };
+    }
+    state.stream.reset(pos);
+    return null;
+  });
 }
 
 /** yield next token, any token */
 export function any(): Parser<ParserStream, Token> {
-  return simpleParser(
+  return terminalParser(
     "any",
     function _any(state: ParserContext): ParserResult<Token> | null {
       const value = state.stream.nextToken();
@@ -450,11 +398,7 @@ export function anyThrough<A extends CombinatorArg>(
   arg: A,
 ): Parser<InputFromArg<A>, [Token[], ResultFromArg<A>]> {
   const p = parserArg<A>(arg);
-  const anyParser = seq(repeat(anyNot(p)), p).setTraceName(
-    `anyThrough ${p.debugName}`,
-  );
-  trackChildren(anyParser, p);
-  return anyParser;
+  return seq(repeat(anyNot(p)), p).setTraceName(`anyThrough ${p.debugName}`);
 }
 
 /** match zero or more instances of a parser */
@@ -462,9 +406,7 @@ export function repeat<A extends CombinatorArg>(
   arg: A,
 ): ParserFromRepeatArg<A> {
   const p = parserArg(arg);
-  const repeatParser = parser("repeat", repeatWhileFilter(p));
-  trackChildren(repeatParser, p);
-  return repeatParser;
+  return parser("repeat", repeatWhileFilter(p));
 }
 
 /** match one or more instances of a parser */
@@ -472,11 +414,9 @@ export function repeatPlus<A extends CombinatorArg>(
   arg: A,
 ): ParserFromRepeatArg<A> {
   const p = parserArg(arg);
-  const repeatParser = seq(p, repeat(p))
+  return seq(p, repeat(p))
     .map(r => [r[0], ...r[1]])
     .setTraceName("repeatPlus");
-  trackChildren(repeatParser, p);
-  return repeatParser;
 }
 
 type ResultFilterFn<T> = (result: ParserResult<T>) => boolean;
@@ -486,9 +426,7 @@ export function repeatWhile<A extends CombinatorArg>(
   filterFn: ResultFilterFn<ResultFromArg<A>>,
 ): ParserFromRepeatArg<A> {
   const p = parserArg(arg);
-  const result = parser("repeatWhile", repeatWhileFilter(p, filterFn));
-  trackChildren(result, p);
-  return result;
+  return parser("repeatWhile", repeatWhileFilter(p, filterFn));
 }
 
 type RepeatWhileResult<A extends CombinatorArg> = OptParserResult<
@@ -503,7 +441,7 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
     const values: ResultFromArg<A>[] = [];
     for (;;) {
       const before = ctx.stream.checkpoint();
-      const result = runExtended<InputFromArg<A>, ResultFromArg<A>>(ctx, p);
+      const result = p._run(ctx);
       if (result === null) {
         ctx.stream.reset(before);
         return { value: values };
@@ -533,7 +471,7 @@ export function span<A extends CombinatorArg>(
   arg: A,
 ): Parser<InputFromArg<A>, { value: ResultFromArg<A>; span: Span }> {
   const p = parserArg(arg);
-  const result = parser("span", function _span(ctx: ParserContext) {
+  return parser("span", function _span(ctx: ParserContext) {
     const start = peekToken(ctx.stream)?.span?.[0] ?? null;
     const result = p._run(ctx);
     if (result === null) return null;
@@ -545,17 +483,13 @@ export function span<A extends CombinatorArg>(
       },
     };
   });
-  trackChildren(result, arg);
-  return result;
 }
 
 /** yields true if parsing has reached the end of input */
 export function eof(): Parser<ParserStream, true> {
-  return simpleParser("eof", function _eof(state: ParserContext) {
-    const start = state.stream.checkpoint();
+  return terminalParser("eof", function _eof(state: ParserContext) {
     const result = state.stream.nextToken();
     if (result !== null) {
-      state.stream.reset(start);
       return null;
     }
     return { value: true };
@@ -573,27 +507,25 @@ export function req<A extends CombinatorArg>(
   msg: string,
 ): ParserFromArg<A> {
   const p = parserArg(arg);
-  const reqParser = parser("req", function _req(ctx: ParserContext) {
+  return parser("req", function _req(ctx: ParserContext) {
     const result = p._run(ctx);
     if (result === null) {
       throw new ParseError(msg, ctx.stream.checkpoint());
     }
     return result;
   });
-  trackChildren(reqParser, p);
-  return reqParser;
 }
 
 /** always succeeds, does not consume any tokens */
 export function yes(): Parser<ParserStream, null> {
-  return simpleParser("yes", function _yes() {
+  return terminalParser("yes", function _yes() {
     return { value: null };
   });
 }
 
 /** always fails, does not consume any tokens */
 export function no(): Parser<ParserStream, null> {
-  return simpleParser("no", function _no() {
+  return terminalParser("no", function _no() {
     return null;
   });
 }
@@ -666,7 +598,7 @@ export function withSepPlus<Sep extends CombinatorArg, P extends CombinatorArg>(
 export function withStreamAction<U>(
   action: (stream: Stream<Token>) => U | null,
 ): Parser<ParserStream, U> {
-  return simpleParser(
+  return terminalParser(
     `withStreamAction`,
     function _withStreamAction(state: ParserContext) {
       const result = action(state.stream);

@@ -2,7 +2,6 @@ export * from "./Parser.js";
 export * from "./ParserCollect.js";
 export * from "./ParserCombinator.js";
 export * from "./ParserLogging.js";
-export * from "./ParserToString.js";
 export * from "./ParserTracing.js";
 export * from "./Span.js";
 export * from "./SrcMap.js";
