@@ -226,7 +226,8 @@ const global_ident = tagScope(
     seq(
       word                            .collect(globalDeclCollect, "decl_elem"),
       opt(seq(":", type_specifier)),
-    )                                 .collect(typedDecl)
+    )                                 .collect(typedDecl),
+    "expected identifier"
   )
 )                                     .ctag("var_name");
 
