@@ -174,17 +174,12 @@ function compilationInfoToErrorMessage(
     result += str` ${message.type}: ${message.message}\n`;
     // LATER unmangle code snippets in the message
 
-    const lineStartOffset = message.offset - Math.max(0, message.linePos - 1);
-    const source = module?.text;
+    const source = message.module.text;
     if (source) {
-      let lineEndOffset = source.indexOf("\n", lineStartOffset);
-      if (lineEndOffset === -1) {
-        lineEndOffset = source.length;
-      }
-      // LATER handle errors that span multiple lines
-      result += source.slice(lineStartOffset, lineEndOffset) + "\n";
-      const caretCount = Math.max(1, message.length);
-      result += " ".repeat(linePos - 1) + "^".repeat(caretCount);
+      result += errorHighlight(source, [
+        message.offset,
+        message.offset + message.length,
+      ]).join("\n");
     }
   }
   return result;

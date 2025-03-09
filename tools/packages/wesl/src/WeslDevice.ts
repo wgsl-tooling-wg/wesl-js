@@ -1,4 +1,5 @@
 import { ExtendedGPUValidationError } from "./LinkedWesl.ts";
+import { encodeVlq } from "./vlq/vlq";
 
 /**
  * We want the WebGPU compilation errors to point at WESL code.
@@ -61,11 +62,13 @@ export function makeWeslDevice(device: GPUDevice): WeslDevice {
             // A custom mode with clickable sources. Uses https://stackoverflow.com/a/79467192/3492994
             if (error.compilationInfo) {
               for (const message of error.compilationInfo.messages) {
-                throwError({
+                throwClickableError({
                   url: message.module.url,
                   text: message.module.text ?? null,
                   lineNumber: message.lineNum,
-                  error: message.type + ": " + message.message,
+                  lineColumn: message.linePos,
+                  length: message.length,
+                  error: new Error(message.type + ": " + message.message),
                 });
               }
             } else {
@@ -128,22 +131,46 @@ export function makeWeslDevice(device: GPUDevice): WeslDevice {
 }
 
 // Based on https://stackoverflow.com/questions/65274147/sourceurl-for-css
-function throwError({
+export function throwClickableError({
   url,
   text,
   lineNumber,
+  lineColumn,
+  length,
   error,
 }: {
   url: string;
   text: string | null;
   lineNumber: number;
-  error: any;
+  lineColumn: number;
+  length: number;
+  error: Error;
 }) {
-  // We need a source map mapping for each line, otherwise Firefox is unhappy.
-  // First line is AAAA
-  // Conveniently source map mappings are *relative* to the previous one.
-  // So adding more lines is trivial
-  let mappings = "AAAA" + ";AACA".repeat(lineNumber);
+  // We remap an error directly to where we need it to be
+  // The fields are
+  // 1. Generated column (aka 0)
+  // 2. Index into sources list (aka 0)
+  // 3. Original line number (zero based)
+  // 4. Original column number (zero based)
+
+  // So we need 2 mappings. One to map to the correct spot,
+  // and another one to be the "length" (terminate the first mapping)
+  let mappings =
+    encodeVlq([
+      0,
+      0,
+      Math.max(0, lineNumber - 1),
+      Math.max(0, lineColumn - 1),
+    ]) +
+    "," +
+    // Sadly no browser makes use of this info to map the error properly
+    encodeVlq([
+      18, // Arbitrary number that is high enough
+      0,
+      Math.max(0, lineNumber - 1),
+      Math.max(0, lineColumn - 1) + length,
+    ]);
+
   // And this is what our source map looks like
   const sourceMap = {
     version: 3,
@@ -151,21 +178,32 @@ function throwError({
     sources: [url],
     sourcesContent: [text ?? null],
     names: [],
-    mappings: mappings,
+    mappings,
   };
 
-  // So we make up some Javascript code with a proper line number and error throwing
-  let generatedCode =
-    "\n".repeat(lineNumber - 1) +
-    "throw new Error(" +
-    JSON.stringify(error + "") +
-    ")";
+  let generatedCode = `throw new Error(${JSON.stringify(error.message + "")})`;
   // And redirect it to WESL
   generatedCode +=
     "\n//# sourceMappingURL=data:application/json;base64," +
     btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
   generatedCode += "\n//# sourceURL=" + sourceMap.sources[0];
 
+  let oldLimit = 0;
+  // Supported on Chrome https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/stackTraceLimit
+  if ("stackTraceLimit" in Error) {
+    oldLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 1;
+  }
+
   // Run the error-throwing file
-  eval(generatedCode);
+  try {
+    (0, eval)(generatedCode);
+  } catch (e: any) {
+    if ("stackTraceLimit" in Error) {
+      Error.stackTraceLimit = oldLimit;
+    }
+    error.message = "";
+    e.cause = error;
+    throw e;
+  }
 }

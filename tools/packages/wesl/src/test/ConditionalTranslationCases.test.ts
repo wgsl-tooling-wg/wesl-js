@@ -10,6 +10,12 @@ async function caseTest(ctx: TestContext): Promise<void> {
   return testFromCase(ctx.task.name, examplesByName);
 }
 
+// requires code stripping to be disabled (which wesl-js doesn't support)
+const weslJsTests = conditionalTranslationCases.filter(
+  c => c.name !== "conditional declaration shadowing",
+);
+afterAll(verifyCaseCoverage(weslJsTests));
+
 test("@if on diagnostic directive", ctx => caseTest(ctx));
 test("@if on enable directive", ctx => caseTest(ctx));
 test("@if on requires directive", ctx => caseTest(ctx));
@@ -30,9 +36,9 @@ test("@if on loop statement", ctx => caseTest(ctx));
 test("@if on for statement", ctx => caseTest(ctx));
 test("@if on while statement", ctx => caseTest(ctx));
 test("@if on break statement", ctx => caseTest(ctx));
-test.skip("@if on break-if statement", ctx => caseTest(ctx));
+test("@if on break-if statement", ctx => caseTest(ctx));
 test("@if on continue statement", ctx => caseTest(ctx));
-test.skip("@if on continuing statement", ctx => caseTest(ctx));
+test("@if on continuing statement", ctx => caseTest(ctx));
 test("@if on return statement", ctx => caseTest(ctx));
 test("@if on discard statement", ctx => caseTest(ctx));
 test("@if on call statement", ctx => caseTest(ctx));
@@ -44,12 +50,7 @@ test("@if parentheses", ctx => caseTest(ctx));
 
 test("declaration shadowing", ctx => caseTest(ctx));
 
-test.skip("conditional import of const_assert", ctx => caseTest(ctx));
-
-afterAll(() => {
-  // requires code stripping to be disabled (which wesl-js doesn't support)
-  const weslJsTests = conditionalTranslationCases.filter(
-    c => c.name !== "conditional declaration shadowing",
-  );
-  verifyCaseCoverage(weslJsTests);
-});
+test("conditional import of const_assert", ctx => caseTest(ctx));
+test("double conditional import of const_assert", ctx => caseTest(ctx));
+test("conditional transitive const", ctx => caseTest(ctx));
+test("conditional transitive fn", ctx => caseTest(ctx));

@@ -67,12 +67,17 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
   or(
     preceded(
       "::",
-      or(
-        fn(() => import_collection),
-        fn(() => import_path_or_item),
+      req(
+        or(
+          fn(() => import_collection),
+          fn(() => import_path_or_item),
+        ),
+        "invalid import, expected '{' or name",
       ),
     ),
-    preceded("as", word).map(v => makeItem("", v)),
+    preceded("as", req(word, "invalid alias, expected name")).map(v =>
+      makeItem("", v),
+    ),
     yes().map(() => makeItem("")), // Optional
   ),
 ).map(([name, next]): ImportStatement => {
@@ -91,12 +96,18 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
 import_collection = delimited(
   "{",
   withSepPlus(",", () => import_path_or_item).map(makeCollection),
-  "}",
+  req("}", "invalid import collection, expected }"),
 );
 
 const import_relative = or(
-  terminated("package", "::").map(v => [makeSegment(v)]),
-  repeatPlus(terminated("super", "::").map(makeSegment)),
+  terminated("package", req("::", "invalid import, expected '::'")).map(v => [
+    makeSegment(v),
+  ]),
+  repeatPlus(
+    terminated("super", req("::", "invalid import, expected '::'")).map(
+      makeSegment,
+    ),
+  ),
 );
 
 export const import_statement: WeslParser<ImportElem> = span(
@@ -104,7 +115,10 @@ export const import_statement: WeslParser<ImportElem> = span(
     "import",
     seqObj({
       relative: opt(import_relative),
-      collection_or_statement: req(or(import_collection, import_path_or_item)),
+      collection_or_statement: req(
+        or(import_collection, import_path_or_item),
+        "invalid import, expected { or name",
+      ),
     }).map(({ relative, collection_or_statement }): ImportStatement => {
       if (collection_or_statement.kind === "import-statement") {
         return prependSegments(relative ?? [], collection_or_statement);
@@ -112,7 +126,7 @@ export const import_statement: WeslParser<ImportElem> = span(
         return makeStatement(relative ?? [], collection_or_statement);
       }
     }),
-    req(";"),
+    req(";", "invalid import, expected ';'"),
   ),
 ).map(
   (v): ImportElem => ({

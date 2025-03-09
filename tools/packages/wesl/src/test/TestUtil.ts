@@ -5,7 +5,13 @@ import {
   TestParseResult,
   testParseWithStream,
 } from "mini-parse/test-util";
-import { link, LinkParams } from "../Linker.js";
+import {
+  BoundAndTransformed,
+  ParsedRegistry,
+  parsedRegistry,
+  parseIntoRegistry,
+} from "wesl";
+import { bindAndTransform, link, LinkParams } from "../Linker.js";
 import { WeslStream, WeslToken } from "../parse/WeslStream.js";
 import { SrcModule, WeslAST } from "../Module.js";
 import { parseSrcModule } from "../lower/TranslationUnit.js";
@@ -35,11 +41,7 @@ export async function linkTestOpts(
   opts: LinkTestOpts,
   ...rawWgsl: string[]
 ): Promise<string> {
-  const [root, ...rest] = rawWgsl;
-  const restWgsl = Object.fromEntries(
-    rest.map((src, i) => [`./file${i + 1}.wesl`, src]),
-  );
-  const weslSrc = { "./test.wesl": root, ...restWgsl };
+  const weslSrc = makeTestBundle(rawWgsl);
 
   const rootModulePath = ["package", "test"];
   const srcMap = await link({ weslSrc, rootModulePath, ...opts });
@@ -99,4 +101,35 @@ export function parseTest(src: string): WeslAST {
 /** test w/o any log collection, to not confuse debugging */
 export function parseTestRaw(src: string) {
   return parseWESL(src);
+}
+
+interface BindTestResult {
+  bound: BoundAndTransformed;
+  registry: ParsedRegistry;
+}
+
+/**
+ * Test parsing and binding some wesl src.
+ * @return both the bound result and the internal registry.
+ * (since binding mutates the AST, it's useful for tests to review)
+ */
+export function bindTest(...rawWesl: string[]): BindTestResult {
+  resetScopeIds();
+  const weslSrc = makeTestBundle(rawWesl);
+
+  const registry = parsedRegistry();
+  parseIntoRegistry(weslSrc, registry, "package", "test");
+  const bound = bindAndTransform({ rootModuleName: "test", registry });
+  return { bound, registry };
+}
+
+/** @return a weslSrc record for tests by synthesizing file names
+ * The root module is named ./test.wesl
+ */
+function makeTestBundle(rawWgsl: string[]): Record<string, string> {
+  const [root, ...rest] = rawWgsl;
+  const restWgsl = Object.fromEntries(
+    rest.map((src, i) => [`./file${i + 1}.wesl`, src]),
+  );
+  return { "./test.wesl": root, ...restWgsl };
 }

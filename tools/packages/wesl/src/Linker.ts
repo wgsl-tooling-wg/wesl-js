@@ -123,14 +123,16 @@ export function linkRegistry(
       transformedAst.moduleElem,
       transformedAst.srcModule,
       newDecls,
+      newStatements,
       params.conditions,
     ),
   );
 }
 
-interface BoundAndTransformed {
+export interface BoundAndTransformed {
   transformedAst: TransformedAST;
   newDecls: DeclIdent[];
+  newStatements: EmittableElem[];
 }
 
 /** bind identifers and apply any transform plugins */
@@ -159,10 +161,10 @@ export function bindAndTransform(
   // link active Ident references to declarations, and uniquify global declarations
   const bindParams = { rootAst, registry, conditions, virtuals, mangler };
   const bindResults = bindIdents(bindParams);
-  const { globalNames, decls: newDecls } = bindResults;
+  const { globalNames, decls: newDecls, newStatements } = bindResults;
 
   const transformedAst = applyTransformPlugins(rootAst, globalNames, config);
-  return { transformedAst, newDecls };
+  return { transformedAst, newDecls, newStatements };
 }
 
 function constantsGenerator(
@@ -204,24 +206,37 @@ function emitWgsl(
   rootModuleElem: ModuleElem,
   srcModule: SrcModule,
   newDecls: DeclIdent[],
+  newStatements: EmittableElem[],
   conditions: Conditions = {},
 ): SrcMapBuilder[] {
   /* --- Step #3   Writing WGSL --- */ // note doesn't require the scope tree anymore
-  const srcBuilder = new SrcMapBuilder({
+
+  // emit any new statements (module level const asserts)
+  const prologueBuilders = newStatements.map(s => {
+    const { elem, srcModule } = s;
+    const { src: text, debugFilePath: path } = srcModule;
+    const builder = new SrcMapBuilder({ text, path });
+    lowerAndEmit(builder, [elem], conditions);
+    builder.addNl();
+    return builder;
+  });
+
+  const rootBuilder = new SrcMapBuilder({
     text: srcModule.src,
     path: srcModule.debugFilePath,
   });
-  lowerAndEmit(srcBuilder, [rootModuleElem], conditions, false); // emit the entire root module
-  return [srcBuilder].concat(
-    newDecls.map(decl => {
-      const builder = new SrcMapBuilder({
-        text: decl.srcModule.src,
-        path: decl.srcModule.debugFilePath,
-      });
-      lowerAndEmit(builder, [decl.declElem!], conditions); // emit referenced declarations from other modules
-      return builder;
-    }),
-  );
+  lowerAndEmit(rootBuilder, [rootModuleElem], conditions, false); // emit the entire root module
+
+  const declBuilders = newDecls.map(decl => {
+    const builder = new SrcMapBuilder({
+      text: decl.srcModule.src,
+      path: decl.srcModule.debugFilePath,
+    });
+    lowerAndEmit(builder, [decl.declElem!], conditions); // emit referenced declarations from other modules
+    return builder;
+  });
+
+  return [...prologueBuilders, rootBuilder, ...declBuilders];
 }
 
 /* ---- Commentary on present and future features ---- */

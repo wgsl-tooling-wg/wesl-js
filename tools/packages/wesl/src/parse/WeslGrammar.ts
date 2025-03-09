@@ -97,8 +97,11 @@ import { ImportElem } from "./ImportElems.ts";
 const diagnostic_rule_name = seq(name, opt(preceded(".", req(name))));
 const diagnostic_control = delimited(
   "(",
-  separated_pair(name, ",", diagnostic_rule_name),
-  seq(opt(","), ")"),
+  req(
+    separated_pair(name, ",", diagnostic_rule_name),
+    "invalid diagnostic control, expected rule name",
+  ),
+  seq(opt(","), req(")", "invalid diagnostic control, expected ')'")),
 );
 
 const decl_ident = tokenKind("word").map(

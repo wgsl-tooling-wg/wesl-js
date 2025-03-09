@@ -1,5 +1,5 @@
 {
-  "name": "wesl-build-reflect",
+  "name": "browser-test",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,16 +9,15 @@
     "lint": "eslint src",
     "organize": "organize-imports-cli tsconfig.json",
     "prepublishOnly": "run-s build",
-    "build": "echo NYI",
-    "test": "nodemon --config nodemon-vitest.json"
+    "dev": "vite dev",
+    "test": "vitest"
   },
   "dependencies": {
-    "wesl-plugin": "workspace:*"
+    "wesl": "workspace:*",
+    "thimbleberry": "^0.2.9"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9",
-    "wesl": "workspace:*",
-    "wesl-plugin": "workspace:*"
+    "nodemon": "^3.1.9"
   },
   "version": "0.6.0-pre8"
 }
