@@ -239,7 +239,7 @@ const struct_decl = seq(
     req("{"),
     withSepPlus(",", struct_member),
     req("}"),
-  )                                   .collect(scopeCollect(), "struct_scope"),
+  )                                   .collect(scopeCollect, "struct_scope"),
 )                                     .collect(collectStruct);
 
 /** Also covers func_call_statement.post.ident */
@@ -275,7 +275,7 @@ const global_variable_decl = seq(
   () => opt_template_list,
   global_ident, 
                                       // TODO shouldn't decl_scope include the ident type?
-  opt(seq("=", () => expression       .collect(scopeCollect(), "decl_scope"))),
+  opt(seq("=", () => expression       .collect(scopeCollect, "decl_scope"))),
 );
 
 const attribute_if_primary_expression: Parser<
@@ -341,7 +341,7 @@ const compound_statement = tagScope(
       text("{"),
       repeat(() => statement),
       req("}"),
-    )                                 .collect(scopeCollect()),
+    )                                 .collect(scopeCollect),
   )                                   .collect(statementCollect)
 );
 
@@ -371,7 +371,7 @@ const for_statement = seq( // LATER consider allowing @if on for_init, expressio
     opt(for_update),
     req(")"),
     unscoped_compound_statement,
-  )                                 .collect(scopeCollect()),
+  )                                 .collect(scopeCollect),
 );
 
 const if_statement = seq(
@@ -407,13 +407,13 @@ const loop_statement = seq(
             ),
             "}",
           )                             .collect(statementCollect)
-                                        .collect(scopeCollect())
+                                        .collect(scopeCollect)
         ),
       ),
       "}",
     ),
   ),
-)                                     .collect(scopeCollect());
+)                                     .collect(scopeCollect);
 
 const case_selector = or("default", expression);
 
@@ -460,7 +460,7 @@ const conditional_statement = tagScope(
     opt_attributes, 
     regular_statement
   )                                .collect(statementCollect)
-                                   .collect(partialScopeCollect()));
+                                   .collect(partialScopeCollect));
 
 // prettier-ignore
 const unconditional_statement = tagScope(
@@ -527,17 +527,17 @@ const fn_decl = seq(
   text("fn"),
   req(fnNameDecl),
   seq(
-    req(fnParamList)                  .collect(scopeCollect(), "header_scope"),
+    req(fnParamList)                  .collect(scopeCollect, "header_scope"),
     opt(seq(
       "->", 
       opt_attributes                  .collect((cc) => cc.tags.attribute, "return_attributes"), 
       type_specifier                  .ctag("return_type")
-                                      .collect(scopeCollect(), "return_scope")   
+                                      .collect(scopeCollect, "return_scope")   
     )),
     req(unscoped_compound_statement)  .ctag("body_statement")
-                                      .collect(scopeCollect(), "body_scope"),
+                                      .collect(scopeCollect, "body_scope"),
   )                                   
-)                                     .collect(partialScopeCollect(), "fn_partial_scope")
+)                                     .collect(partialScopeCollect, "fn_partial_scope")
                                       .collect(fnCollect);
 
 // prettier-ignore
@@ -546,7 +546,7 @@ const global_value_decl = or(
     opt_attributes,
     "override",
     global_ident,
-    seq(opt(seq("=", expression       .collect(scopeCollect(), "decl_scope")))), // TODO partial scopes for decl_scopes?
+    seq(opt(seq("=", expression       .collect(scopeCollect, "decl_scope")))), // TODO partial scopes for decl_scopes?
     ";",
   )                                   .collect(collectVarLike("override")),
   seq(
@@ -554,7 +554,7 @@ const global_value_decl = or(
     "const",
     global_ident,
     "=",
-    seq(expression)                   .collect(scopeCollect(), "decl_scope"),
+    seq(expression)                   .collect(scopeCollect, "decl_scope"),
     ";",
   )                                   .collect(collectVarLike("const")),
 );
@@ -565,7 +565,7 @@ const global_alias = seq(
   "alias",
   req(word)                           .collect(globalDeclCollect, "alias_name"),
   req("="),
-  req(type_specifier)                 .collect(scopeCollect(), "alias_scope"),
+  req(type_specifier)                 .collect(scopeCollect, "alias_scope"),
   req(";"),
 )                                     .collect(aliasCollect);
 

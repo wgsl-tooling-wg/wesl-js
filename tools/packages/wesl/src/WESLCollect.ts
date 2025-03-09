@@ -141,7 +141,6 @@ export const typedDecl = collectElem(
     const typeRef = cc.tags.typeRefElem?.[0] as TypeRefElem | undefined;
     const partial: TypedDeclElem = { ...openElem, decl, typeRef };
     const elem = withTextCover(partial, cc);
-    //    elemToString(elem); //?
 
     return elem;
   },
@@ -521,13 +520,10 @@ export function directiveCollect(cc: CollectContext): DirectiveElem {
  * The scope starts encloses all idents and subscopes inside the parser to which
  * .collect is attached
  */
-export function scopeCollect(): CollectPair<Scope> {
-  // TODO make a const
-  return {
-    before: startScope,
-    after: completeScope,
-  };
-}
+export const scopeCollect: CollectPair<Scope> = {
+  before: startScope,
+  after: completeScope,
+};
 
 /**
  * Collect a PartialScope.
@@ -535,13 +531,10 @@ export function scopeCollect(): CollectPair<Scope> {
  * The scope starts encloses all idents and subscopes inside the parser to which
  * .collect is attached
  */
-export function partialScopeCollect(): CollectPair<Scope> {
-  // TODO make a const
-  return {
-    before: startPartialScope,
-    after: completeScope,
-  };
-}
+export const partialScopeCollect: CollectPair<Scope> = {
+  before: startPartialScope,
+  after: completeScope,
+};
 
 /** utility to collect an ElemWithContents
  * starts the new element as the collection point corresponding
