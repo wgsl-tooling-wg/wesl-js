@@ -327,14 +327,16 @@ function globalDeclToRootLiveDecls(
   decl: DeclIdent,
   conditions: Conditions,
 ): LiveDecls | undefined {
-  const foundsScope = decl.scope;
-  const foundsScopeParent = foundsScope.parent;
-  if (foundsScopeParent?.parent === null) {
-    const rootDecls = findValidRootDecls(foundsScopeParent, conditions);
-    const entires = rootDecls.map(d => [d.originalName, d] as const);
-    const decls = new Map(entires);
-    return { decls };
+  assertThatDebug(decl.isGlobal, identToString(decl));
+  let rootScope = decl.scope;
+  while (rootScope.parent) {
+    rootScope = rootScope.parent;
   }
+
+  const rootDecls = findValidRootDecls(rootScope, conditions);
+  const entires = rootDecls.map(d => [d.originalName, d] as const);
+  const decls = new Map(entires);
+  return { decls };
 }
 
 /** warn the user about a missing identifer */
