@@ -50,9 +50,6 @@ export interface ParserContext<C = any, S = any> {
   /** during execution, debug trace logging */
   _trace?: TraceContext;
 
-  /** current parser stack or parent parsers that called this one */
-  _debugNames: string[];
-
   _collect: CollectFnEntry<any>[];
 }
 
@@ -110,8 +107,10 @@ export class ParserTraceInfo {
 export type ParserStream = Stream<TypedToken<never>>;
 
 export class ParseError extends Error {
-  constructor(msg?: string) {
+  position: number;
+  constructor(msg: string, position: number) {
     super(msg);
+    this.position = position;
   }
 }
 
@@ -229,25 +228,21 @@ export class Parser<I, T> {
     return toParser(this, fn);
   }
 
-  /** start parsing */
+  /**
+   * start parsing
+   *
+   * @throws {ParseError} when a combinator like `req` fails
+   */
   parse(init: ParserInit): OptParserResult<T> {
-    try {
-      const { stream, appState: app = { context: {}, stable: [] } } = init;
-      const _collect: CollectFnEntry<any>[] = [];
-      const result = this._run({
-        stream,
-        app,
-        _collect,
-        _debugNames: [],
-      });
-      if (result) runCollection(_collect, app, stream);
-      return result;
-    } catch (e) {
-      if (e instanceof ParseError) {
-        return null;
-      }
-      throw e;
-    }
+    const { stream, appState: app = { context: {}, stable: [] } } = init;
+    const _collect: CollectFnEntry<any>[] = [];
+    const result = this._run({
+      stream,
+      app,
+      _collect,
+    });
+    if (result) runCollection(_collect, app, stream);
+    return result;
   }
 
   /** name of this parser for debugging/tracing */
@@ -286,8 +281,6 @@ function runParserWithTracing<I, T>(
   traceInfo: ParserTraceInfo | undefined,
 ): OptParserResult<T> {
   assertThat(tracing);
-  const { stream } = context;
-
   const origAppContext = context.app.context;
 
   // setup trace logging if enabled and active for this parser
@@ -302,7 +295,6 @@ function runParserWithTracing<I, T>(
   function runInContext(ctx: ParserContext): OptParserResult<T> {
     const origCollectLength = ctx._collect.length;
 
-    if (debugNames) ctx._debugNames.push(debugName);
     if (tracing) {
       const traceSuccessOnly = ctx._trace?.successOnly;
       if (!traceInfo?.traceIsTerminal && !traceSuccessOnly) {
@@ -312,8 +304,6 @@ function runParserWithTracing<I, T>(
 
     // run the parser function for this stage
     let result = fn(ctx);
-
-    if (debugNames) ctx._debugNames.pop();
 
     if (result === null) {
       // parser failed

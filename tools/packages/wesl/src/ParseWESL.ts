@@ -9,6 +9,9 @@ import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
 import { emptyScope, Scope, SrcModule } from "./Scope.ts";
 import { OpenElem } from "./WESLCollect.ts";
+import { ParseError } from "mini-parse";
+import { errorHighlight, offsetToLineNumber } from "./Util.ts";
+import { throwClickableError } from "./WeslDevice.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
@@ -58,6 +61,29 @@ export interface WeslParseContext {
   openElems: OpenElem[]; // elems that are collecting their contents
 }
 
+/**
+ * An error when parsing WESL fails. Designed to be human-readable.
+ */
+export class WeslParseError extends Error {
+  position: number;
+  src: SrcModule;
+  constructor(opts: { cause: ParseError; src: SrcModule }) {
+    const source = opts.src.src;
+    const [lineNum, linePos] = offsetToLineNumber(opts.cause.position, source);
+    let message = `${opts.src.debugFilePath}:${lineNum}:${linePos}`;
+    message += ` error: ${opts.cause.message}\n`;
+    message += errorHighlight(source, [
+      opts.cause.position,
+      opts.cause.position + 1,
+    ]).join("\n");
+    super(message, {
+      cause: opts.cause,
+    });
+    this.position = opts.cause.position;
+    this.src = opts.src;
+  }
+}
+
 /** Parse a WESL file. Throws on error. */
 export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   const stream = new WeslStream(srcModule.src);
@@ -65,9 +91,29 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   const appState = blankWeslParseState(srcModule);
 
   const init: ParserInit = { stream, appState };
-  const parseResult = weslRoot.parse(init);
-  if (parseResult === null) {
-    throw new Error("parseWESL failed");
+  try {
+    const parseResult = weslRoot.parse(init);
+    if (parseResult === null) {
+      throw new Error("parseWESL failed");
+    }
+  } catch (e) {
+    if (e instanceof ParseError) {
+      const [lineNumber, lineColumn] = offsetToLineNumber(
+        e.position,
+        srcModule.src,
+      );
+      const error = new WeslParseError({ cause: e, src: srcModule });
+      throwClickableError({
+        url: srcModule.debugFilePath,
+        text: srcModule.src,
+        error,
+        lineNumber,
+        lineColumn,
+        length: 1,
+      });
+    } else {
+      throw e;
+    }
   }
 
   return appState.stable as WeslAST;
