@@ -8,62 +8,24 @@
 
 **wesl-js** has tools and libraries for JavaScript / TypeScript projects to use [WESL].
 
-## Install
+
+## With a Bundler
+
+Using WESL with a bundler is the recommended experience. 
+[Get started with wesl-plugin](/tools/packages/wesl-plugin#wesl-plugin).
 
 ```
 npm install wesl
+npm install -D wesl-plugin
 ```
 
-<details>
-<summary> Other installation methods
-</summary>
+## Vanilla
 
+If you are using vite, esbuild, rollup, webpack, or any other bundler, then we recommend [wesl-plugin](/tools/packages/wesl-plugin#wesl-plugin) instead.
 
-###### Deno
+[Get started with vanilla WESL](/tools/packages/wesl#wesl).
 
-```
-deno install npm:wesl
-```
-
-###### CDN
-
-- [jsdelivr](https://cdn.jsdelivr.net/npm/wesl/+esm)
-- [unpkg](https://unpkg.com/wesl)
-- [esm.sh](https://esm.sh/wesl)
-
-
-</details>
-
-
-
-Linking .wesl and .wgsl files for WebGPU
-
-### Using a Bundler
-
-```ts
-TBD
-
-```
-
-Add the vite wesl plugin to your bundler's configuration:
-
-```ts
-/// vite.config.ts
-import type { UserConfig } from 'vite'
-import viteWesl from "wesl-plugin/vite"; // plugins are avalable for esbuild, rollup, webpack, etc.
-
-export default = {
-  plugins: [ viteWesl() ], // <- add wesl plugin 
-} satisfies UserConfig;
-```
-
-## Experimental Linker Plugins
-
-how to add plugin
-
-lowering binding structs
-
-reflection
+<!-- TODO: Finish up the rest of the readme -->
 
 ### Linking Features
 
@@ -112,8 +74,8 @@ See [Developing](/Developing.md) for working on wesl-js itself
 
 [wesl-rs]: https://github.com/wgsl-tooling-wg/wesl-rs
 [wesl-js]: https://github.com/wgsl-tooling-wg/wesl-js
-[WESL]: https://github.com/wgsl-tooling-wg/wesl-spec
-[cli]: /linker/packages/cli/README.md
+[WESL]: https://wesl-lang.dev/
+[cli]: /tools/packages/cli/README.md
 
 ## License
 
