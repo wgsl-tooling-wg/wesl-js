@@ -68,6 +68,7 @@ import {
   statementCollect,
   switchClauseCollect,
   typedDecl,
+  globalDeclCollect,
 } from "../WESLCollect.ts";
 import { weslImports } from "./ImportGrammar.ts";
 import { qualified_ident, word } from "./WeslBaseGrammar.ts";
@@ -186,18 +187,16 @@ const opt_attributes = repeat(attribute_incl_if);
 
 const opt_attributes_no_if = repeat(attribute_no_if);
 
-/** parse an identifier into a TypeNameElem */
 // prettier-ignore
-const typeNameDecl = 
+const globalTypeNameDecl = 
   req(
-    word                            .collect(declCollect, "type_name")
+    word                            .collect(globalDeclCollect, "type_name")
   );
 
-/** parse an identifier into a TypeNameElem */
 // prettier-ignore
 const fnNameDecl = 
   req(
-    word                            .collect(declCollect, "fn_name"),
+    word                            .collect(globalDeclCollect, "fn_name"),
     "missing fn name",
   );
 
@@ -210,6 +209,16 @@ const optionally_typed_ident = tagScope(
 )                                     .ctag("var_name");
 
 const req_optionally_typed_ident = req(optionally_typed_ident);
+
+// prettier-ignore
+const global_ident = tagScope(
+  req(
+    seq(
+      word                            .collect(globalDeclCollect, "decl_elem"),
+      opt(seq(":", type_specifier)),
+    )                                 .collect(typedDecl)
+  )
+)                                     .ctag("var_name");
 
 // prettier-ignore
 const struct_member = tagScope(
@@ -225,7 +234,7 @@ const struct_member = tagScope(
 const struct_decl = seq(
   weslExtension(opt_attributes)       .collect((cc) => cc.tags.attribute, "attributes"),
   "struct",
-  req(typeNameDecl),
+  req(globalTypeNameDecl),
   seq(
     req("{"),
     withSepPlus(",", struct_member),
@@ -264,7 +273,7 @@ const local_variable_decl = seq(
 const global_variable_decl = seq(
   "var",
   () => opt_template_list,
-  req_optionally_typed_ident,
+  global_ident, 
                                       // TODO shouldn't decl_scope include the ident type?
   opt(seq("=", () => expression       .collect(scopeCollect(), "decl_scope"))),
 );
@@ -536,14 +545,14 @@ const global_value_decl = or(
   seq(
     opt_attributes,
     "override",
-    optionally_typed_ident,
+    global_ident,
     seq(opt(seq("=", expression       .collect(scopeCollect(), "decl_scope")))), // TODO partial scopes for decl_scopes?
     ";",
   )                                   .collect(collectVarLike("override")),
   seq(
     opt_attributes,
     "const",
-    optionally_typed_ident,
+    global_ident,
     "=",
     seq(expression)                   .collect(scopeCollect(), "decl_scope"),
     ";",
@@ -554,7 +563,7 @@ const global_value_decl = or(
 const global_alias = seq(
   weslExtension(opt_attributes)       .collect((cc) => cc.tags.attribute, "attributes"),
   "alias",
-  req(word)                           .collect(declCollect, "alias_name"),
+  req(word)                           .collect(globalDeclCollect, "alias_name"),
   req("="),
   req(type_specifier)                 .collect(scopeCollect(), "alias_scope"),
   req(";"),
@@ -770,7 +779,7 @@ if (tracing) {
     diagnostic_rule_name,
     diagnostic_control,
     opt_attributes,
-    typeNameDecl,
+    globalTypeNameDecl,
     fnNameDecl,
     optionally_typed_ident,
     struct_member,

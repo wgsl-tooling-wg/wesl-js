@@ -43,6 +43,7 @@ export interface DeclIdent extends IdentBase {
   mangledName?: string; // name in the output code
   declElem?: DeclarationElem; // link to AST so that we can traverse scopes and know what elems to emit // LATER make separate GlobalDecl kind with this required
   scope: Scope; // scope for the references within this declaration
+  isGlobal: boolean; // true if this is a global declaration (e.g. not a local variable)
   srcModule: SrcModule; // To figure out which module this declaration is from.
 }
 

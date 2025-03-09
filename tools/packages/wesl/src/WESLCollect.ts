@@ -98,6 +98,18 @@ export function refIdent(cc: CollectContext): RefIdentElem {
 
 /** create declaration Ident and add to context */
 export function declCollect(cc: CollectContext): DeclIdentElem {
+  return declCollectInternal(cc, false);
+}
+
+/** create global declaration Ident and add to context */
+export function globalDeclCollect(cc: CollectContext): DeclIdentElem {
+  return declCollectInternal(cc, true);
+}
+
+function declCollectInternal(
+  cc: CollectContext,
+  isGlobal: boolean,
+): DeclIdentElem {
   const { src, start, end } = cc;
   const app = cc.app as WeslParseState;
   const { scope } = app.context;
