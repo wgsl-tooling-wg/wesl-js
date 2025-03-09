@@ -52,3 +52,5 @@ test("declaration shadowing", ctx => caseTest(ctx));
 
 test("conditional import of const_assert", ctx => caseTest(ctx));
 test("double conditional import of const_assert", ctx => caseTest(ctx));
+test("conditional transitive const", ctx => caseTest(ctx));
+test("conditional transitive fn", ctx => caseTest(ctx));
