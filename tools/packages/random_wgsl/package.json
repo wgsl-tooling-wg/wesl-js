@@ -12,8 +12,8 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/wgslBundle.d.ts",
-      "import": "./dist/wgslBundle.js"
+      "types": "./dist/weslBundle.d.ts",
+      "import": "./dist/weslBundle.js"
     }
   },
   "devDependencies": {
