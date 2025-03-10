@@ -1,4 +1,4 @@
-import { AppState, ParserInit, SrcMap } from "mini-parse";
+import { AppState, ParserInit, Span, SrcMap } from "mini-parse";
 import {
   ConstAssertElem,
   ImportStatement,
@@ -65,21 +65,18 @@ export interface WeslParseContext {
  * An error when parsing WESL fails. Designed to be human-readable.
  */
 export class WeslParseError extends Error {
-  position: number;
+  span: Span;
   src: SrcModule;
   constructor(opts: { cause: ParseError; src: SrcModule }) {
     const source = opts.src.src;
-    const [lineNum, linePos] = offsetToLineNumber(opts.cause.position, source);
+    const [lineNum, linePos] = offsetToLineNumber(opts.cause.span[0], source);
     let message = `${opts.src.debugFilePath}:${lineNum}:${linePos}`;
     message += ` error: ${opts.cause.message}\n`;
-    message += errorHighlight(source, [
-      opts.cause.position,
-      opts.cause.position + 1,
-    ]).join("\n");
+    message += errorHighlight(source, opts.cause.span).join("\n");
     super(message, {
       cause: opts.cause,
     });
-    this.position = opts.cause.position;
+    this.span = opts.cause.span;
     this.src = opts.src;
   }
 }
@@ -99,7 +96,7 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   } catch (e) {
     if (e instanceof ParseError) {
       const [lineNumber, lineColumn] = offsetToLineNumber(
-        e.position,
+        e.span[0],
         srcModule.src,
       );
       const error = new WeslParseError({ cause: e, src: srcModule });
@@ -109,7 +106,7 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
         error,
         lineNumber,
         lineColumn,
-        length: 1,
+        length: e.span[1] - e.span[0],
       });
     } else {
       throw e;

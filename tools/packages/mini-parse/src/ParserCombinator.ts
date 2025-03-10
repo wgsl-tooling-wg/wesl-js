@@ -456,7 +456,7 @@ function repeatWhileFilter<T, A extends CombinatorArg>(
         if (before === after) {
           throw new ParseError(
             "infinite loop, parser passed to repeat must always make progress",
-            ctx.stream.checkpoint(),
+            [before, after],
           );
         }
       }
@@ -508,9 +508,10 @@ export function req<A extends CombinatorArg>(
 ): ParserFromArg<A> {
   const p = parserArg(arg);
   return parser("req", function _req(ctx: ParserContext) {
+    const before = ctx.stream.checkpoint();
     const result = p._run(ctx);
     if (result === null) {
-      throw new ParseError(msg, ctx.stream.checkpoint());
+      throw new ParseError(msg, [before, ctx.stream.checkpoint()]);
     }
     return result;
   });

@@ -1,5 +1,4 @@
 import { assertThat } from "./Assertions.js";
-import { CombinatorArg } from "./CombinatorTypes.js";
 import {
   collect,
   CollectFn,
@@ -9,15 +8,14 @@ import {
   ptag,
   runCollection,
 } from "./ParserCollect.js";
-import { parserArg } from "./ParserCombinator.js";
 import {
-  debugNames,
   parserLog,
   TraceContext,
   TraceOptions,
   tracing,
   withTraceLogging,
 } from "./ParserTracing.js";
+import { Span } from "./Span.js";
 import { Stream, Token, TypedToken } from "./Stream.js";
 
 export interface AppState<C, S> {
@@ -103,10 +101,10 @@ export class ParserTraceInfo {
 export type ParserStream = Stream<TypedToken<never>>;
 
 export class ParseError extends Error {
-  position: number;
-  constructor(msg: string, position: number) {
+  span: Span;
+  constructor(msg: string, span: Span) {
     super(msg);
-    this.position = position;
+    this.span = span;
   }
 }
 
