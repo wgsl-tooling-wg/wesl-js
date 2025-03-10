@@ -5,6 +5,7 @@ import { WeslBundle } from "wesl";
 import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
 import { CliArgs } from "./packagerCli.js";
 
+/** write weslBundle .js and .d.ts files for this shader */
 export async function packageWgsl(args: CliArgs): Promise<void> {
   const { projectDir, outDir } = args;
   const modules = await loadModules(args);
@@ -16,6 +17,7 @@ export async function packageWgsl(args: CliArgs): Promise<void> {
   await writeTypeScriptDts(outDir);
 }
 
+/** Write weslBundle.d.ts containing the type definitions for a WeslBundle */
 async function writeTypeScriptDts(outDir: string): Promise<void> {
   const constDecl = `
 export declare const weslBundle: WeslBundle;
@@ -26,6 +28,7 @@ export default weslBundle;
   await fs.writeFile(outPath, declText);
 }
 
+/** Write weslBundle.js containing the bundled shader sources */
 async function writeJsBundle(
   weslBundle: WeslBundle,
   outDir: string,
@@ -42,6 +45,7 @@ export default weslBundle;
   await fs.writeFile(outPath, outString);
 }
 
+/** load the wesl/wgsl shader sources */
 async function loadModules(args: CliArgs): Promise<Record<string, string>> {
   const { rootDir } = args;
   const shaderFiles = await glob(`${rootDir}/*.w[ge]sl`, {
@@ -64,6 +68,8 @@ interface PkgFields {
   name: string;
 }
 
+/** parse and extract fields from package.json that we care about
+ * (the name of the package) */
 async function loadPackageFields(pkgJsonPath: string): Promise<PkgFields> {
   const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
   const pkgJson = JSON.parse(pkgJsonString);
