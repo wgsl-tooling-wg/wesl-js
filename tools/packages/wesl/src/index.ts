@@ -8,4 +8,4 @@ export * from "./ParseWESL.js";
 export * from "./PathUtil.js";
 export * from "./TransformBindingStructs.js";
 export * from "./WeslDevice.js";
-export * from "./WgslBundle.js";
+export * from "./WeslBundle.js";

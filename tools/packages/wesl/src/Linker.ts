@@ -14,7 +14,7 @@ import {
 import { WeslAST } from "./ParseWESL.ts";
 import { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
 import { filterMap, mapValues } from "./Util.ts";
-import { WeslBundle } from "./WgslBundle.ts";
+import { WeslBundle } from "./WeslBundle.ts";
 
 type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 

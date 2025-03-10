@@ -2,7 +2,7 @@ import { glob } from "glob";
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { WeslBundle } from "wesl";
-import weslBundleDecl from "../../wesl/src/WgslBundle.ts?raw";
+import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
 import { CliArgs } from "./packagerCli.js";
 
 export async function packageWgsl(args: CliArgs): Promise<void> {

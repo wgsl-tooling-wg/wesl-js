@@ -1,7 +1,7 @@
 export interface WeslBundle {
   /** name of the package, e.g. random_wgsl */
   name: string;
-  
+
   /** wesl edition of the code e.g. wesl_unstable_2024_1 */
   edition: string;
 
