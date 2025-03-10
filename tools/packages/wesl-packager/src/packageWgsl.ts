@@ -62,15 +62,12 @@ function zip<A, B>(as: A[], bs: B[]): [A, B][] {
 
 interface PkgFields {
   name: string;
-  version: string;
-  exports?: Record<string, any>;
 }
 
 async function loadPackageFields(pkgJsonPath: string): Promise<PkgFields> {
   const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
   const pkgJson = JSON.parse(pkgJsonString);
-  const { version, name, exports } = pkgJson;
-  verifyField("version", version);
+  const { name } = pkgJson;
   verifyField("name", name);
 
   function verifyField(field: string, value: any): void {
@@ -79,5 +76,5 @@ async function loadPackageFields(pkgJsonPath: string): Promise<PkgFields> {
       throw new Error("package.json incomplete");
     }
   }
-  return { name, version, exports };
+  return { name };
 }
