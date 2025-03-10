@@ -621,19 +621,24 @@ export function parserArg<A extends CombinatorArg>(arg: A): ParserFromArg<A> {
 
 /** A delayed parser definition, for making recursive parser definitions.  */
 export function fn<I, T>(fn: () => Parser<I, T>): Parser<I, T> {
-  const fp = parser(
-    "fn()",
-    function _fn(state: ParserContext): OptParserResult<T> {
+  const parser = new Parser<I, T>({
+    fn: function _fn(state: ParserContext): OptParserResult<T> {
+      let generatedParser = fn();
       if (!fn) {
-        throw new ParseError(
-          `fn parser called before definition`,
-          state.stream.checkpoint(),
-        );
+        const before = state.stream.checkpoint();
+        throw new ParseError(`fn parser called before definition`, [
+          before,
+          before,
+        ]);
       }
-      const stage = fn();
-      return stage._run(state);
+      // Replace this function
+      parser.fn = generatedParser.fn;
+      // And run the parser manually this time
+      return parser._run(state);
     },
-  );
-  if (tracing) (fp as any)._fn = fn; // tricksy hack for pretty printing contained fns
-  return fp;
+    traceName: "fn()",
+    terminal: false,
+  });
+
+  return parser;
 }
