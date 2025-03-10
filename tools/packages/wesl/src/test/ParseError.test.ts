@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { parseTest } from "./TestUtil.ts";
 import { errorHighlight } from "../Util.ts";
+import { parseTest } from "./TestUtil.ts";
 
 test("parse fn foo() { invalid }", () => {
   const src = "fn foo() { let }";

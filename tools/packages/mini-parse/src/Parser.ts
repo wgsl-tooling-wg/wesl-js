@@ -11,7 +11,6 @@ import {
 } from "./ParserCollect.js";
 import { parserArg } from "./ParserCombinator.js";
 import {
-  debugNames,
   parserLog,
   TraceContext,
   TraceOptions,
