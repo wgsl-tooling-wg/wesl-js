@@ -1,44 +1,44 @@
 import { glob } from "glob";
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
-import { WgslBundle } from "wesl";
-import wgslBundleDecl from "../../wesl/src/WgslBundle.ts?raw";
+import { WeslBundle } from "wesl";
+import weslBundleDecl from "../../wesl/src/WgslBundle.ts?raw";
 import { CliArgs } from "./packagerCli.js";
 
 export async function packageWgsl(args: CliArgs): Promise<void> {
   const { projectDir, outDir } = args;
   const modules = await loadModules(args);
   const pkgJsonPath = path.join(projectDir, "package.json");
-  const { name, version } = await loadPackageFields(pkgJsonPath);
+  const { name } = await loadPackageFields(pkgJsonPath);
   const edition = "wesl_unstable_2024_1";
 
-  await writeJsBundle({ name, version, edition, modules }, outDir);
+  await writeJsBundle({ name, edition, modules }, outDir);
   await writeTypeScriptDts(outDir);
 }
 
 async function writeTypeScriptDts(outDir: string): Promise<void> {
   const constDecl = `
-export declare const wgslBundle: WgslBundle;
-export default wgslBundle;
+export declare const weslBundle: WeslBundle;
+export default weslBundle;
 `;
-  const declText = wgslBundleDecl + constDecl;
-  const outPath = path.join(outDir, "wgslBundle.d.ts");
+  const declText = weslBundleDecl + constDecl;
+  const outPath = path.join(outDir, "weslBundle.d.ts");
   await fs.writeFile(outPath, declText);
 }
 
 async function writeJsBundle(
-  wgslBundle: WgslBundle,
+  weslBundle: WeslBundle,
   outDir: string,
 ): Promise<void> {
   await mkdir(outDir, { recursive: true });
 
-  const bundleString = JSON.stringify(wgslBundle, null, 2);
+  const bundleString = JSON.stringify(weslBundle, null, 2);
   const outString = `
-export const wgslBundle = ${bundleString}
+export const weslBundle = ${bundleString}
 
-export default wgslBundle;
+export default weslBundle;
   `;
-  const outPath = path.join(outDir, "wgslBundle.js");
+  const outPath = path.join(outDir, "weslBundle.js");
   await fs.writeFile(outPath, outString);
 }
 

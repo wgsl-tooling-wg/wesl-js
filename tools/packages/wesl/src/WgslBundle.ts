@@ -1,4 +1,4 @@
-export interface WgslBundle {
+export interface WeslBundle {
   /** name of the package, e.g. random_wgsl */
   name: string;
   
@@ -12,5 +12,5 @@ export interface WgslBundle {
   modules: Record<string, string>;
 
   /** packages referenced by this package */
-  dependencies?: WgslBundle[];
+  dependencies?: WeslBundle[];
 }
