@@ -25,6 +25,12 @@ If you are using vite, esbuild, rollup, webpack, or any other bundler, then we r
 
 [Get started with vanilla WESL](/tools/packages/wesl#wesl).
 
+## Examples
+
+- [Using WESL with a bundler](https://github.com/wgsl-tooling-wg/examples/tree/main/wesl-sample-vite)
+- [Vanilla WESL](https://github.com/wgsl-tooling-wg/examples/tree/main/wesl-sample-vanilla)
+- [More examples](https://github.com/wgsl-tooling-wg/examples)
+
 <!-- TODO: Finish up the rest of the readme -->
 
 ### Linking Features
