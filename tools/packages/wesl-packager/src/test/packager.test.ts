@@ -22,7 +22,7 @@ test("package two wgsl files", async () => {
     "
     export const weslBundle = {
       "name": "test-wesl-package",
-      "edition": "wesl_unstable_2024_1",
+      "edition": "unstable_2025_1",
       "modules": {
         "util.wgsl": "fn foo() {}",
         "lib.wesl": "import package::util;\\n"

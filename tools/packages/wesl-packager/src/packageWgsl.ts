@@ -11,7 +11,7 @@ export async function packageWgsl(args: CliArgs): Promise<void> {
   const modules = await loadModules(args);
   const pkgJsonPath = path.join(projectDir, "package.json");
   const { name } = await loadPackageFields(pkgJsonPath);
-  const edition = "wesl_unstable_2024_1";
+  const edition = "unstable_2025_1";
 
   await writeJsBundle({ name, edition, modules }, outDir);
   await writeTypeScriptDts(outDir);
