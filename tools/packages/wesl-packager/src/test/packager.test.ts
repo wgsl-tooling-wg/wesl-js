@@ -17,20 +17,19 @@ test("package two wgsl files", async () => {
   await packageCli(
     `--projectDir ${projectDir} --rootDir ${srcDir} --outDir ${distDir}`,
   );
-  const result = await readFile(path.join(distDir, "wgslBundle.js"), "utf8");
+  const result = await readFile(path.join(distDir, "weslBundle.js"), "utf8");
   expect(result).toMatchInlineSnapshot(`
     "
-    export const wgslBundle = {
+    export const weslBundle = {
       "name": "test-wesl-package",
-      "version": "0.1.1",
-      "edition": "wesl_unstable_2024_1",
+      "edition": "unstable_2025_1",
       "modules": {
         "util.wgsl": "fn foo() {}",
         "lib.wesl": "import package::util;\\n"
       }
     }
 
-    export default wgslBundle;
+    export default weslBundle;
       "
   `);
 });

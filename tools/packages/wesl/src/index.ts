@@ -7,5 +7,5 @@ export * from "./ParsedRegistry.js";
 export * from "./ParseWESL.js";
 export * from "./PathUtil.js";
 export * from "./TransformBindingStructs.js";
+export * from "./WeslBundle.js";
 export * from "./WeslDevice.js";
-export * from "./WgslBundle.js";

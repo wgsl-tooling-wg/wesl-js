@@ -1,39 +1,37 @@
 # WESL
 
-**[WESL]** enriches the WGSL shader language with extensions like `import`, `@if`.
+[![NPM Version](https://img.shields.io/npm/v/wesl)](https://www.npmjs.com/package/wesl)
+[![Static Badge](https://img.shields.io/badge/Read%20the%20-Docs-blue)](https://wesl-lang.dev/)
+
+
+> **[WESL]** enriches the WGSL shader language with extensions like `import`, `@if`.
 
 **wesl-js** has tools and libraries for JavaScript / TypeScript projects to use [WESL].
 
-## Using WESL in your JavaScript / TypeScript projects
 
-Linking .wesl and .wgsl files for WebGPU
+## With a Bundler
 
-### Using a Bundler
-
-```ts
-TBD
+Using WESL with a bundler is the recommended experience. 
+[Get started with wesl-plugin](/tools/packages/wesl-plugin#wesl-plugin).
 
 ```
-
-Add the vite wesl plugin to your bundler's configuration:
-
-```ts
-/// vite.config.ts
-import type { UserConfig } from 'vite'
-import viteWesl from "wesl-plugin/vite"; // plugins are avalable for esbuild, rollup, webpack, etc.
-
-export default = {
-  plugins: [ viteWesl() ], // <- add wesl plugin 
-} satisfies UserConfig;
+npm install wesl
+npm install -D wesl-plugin
 ```
 
-## Experimental Linker Plugins
+## Vanilla
 
-how to add plugin
+If you are using vite, esbuild, rollup, webpack, or any other bundler, then we recommend [wesl-plugin](/tools/packages/wesl-plugin#wesl-plugin) instead.
 
-lowering binding structs
+[Get started with vanilla WESL](/tools/packages/wesl#wesl).
 
-reflection
+## Examples
+
+- [Using WESL with a bundler](https://github.com/wgsl-tooling-wg/examples/tree/main/wesl-sample-vite)
+- [Vanilla WESL](https://github.com/wgsl-tooling-wg/examples/tree/main/wesl-sample-vanilla)
+- [More examples](https://github.com/wgsl-tooling-wg/examples)
+
+<!-- TODO: Finish up the rest of the readme -->
 
 ### Linking Features
 
@@ -82,8 +80,8 @@ See [Developing](/Developing.md) for working on wesl-js itself
 
 [wesl-rs]: https://github.com/wgsl-tooling-wg/wesl-rs
 [wesl-js]: https://github.com/wgsl-tooling-wg/wesl-js
-[WESL]: https://github.com/wgsl-tooling-wg/wesl-spec
-[cli]: /linker/packages/cli/README.md
+[WESL]: https://wesl-lang.dev/
+[cli]: /tools/packages/cli/README.md
 
 ## License
 

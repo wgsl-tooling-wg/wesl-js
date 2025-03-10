@@ -1,4 +1,4 @@
-import { AppState, ParserInit, Span, SrcMap } from "mini-parse";
+import { AppState, ParseError, ParserInit, Span, SrcMap } from "mini-parse";
 import {
   ConstAssertElem,
   ImportStatement,
@@ -8,9 +8,8 @@ import { FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
 import { emptyScope, Scope, SrcModule } from "./Scope.ts";
-import { OpenElem } from "./WESLCollect.ts";
-import { ParseError } from "mini-parse";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
+import { OpenElem } from "./WESLCollect.ts";
 import { throwClickableError } from "./WeslDevice.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)

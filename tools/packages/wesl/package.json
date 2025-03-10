@@ -23,6 +23,7 @@
   },
   "type": "module",
   "repository": "github:wgsl-tooling-wg/wesl-js",
+  "main": "dist/index.js",
   "exports": {
     ".": {
       "types": "./dist/tools/packages/wesl/src/index.d.ts",

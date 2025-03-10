@@ -1,4 +1,4 @@
-import { WgslBundle } from "wesl";
+import { WeslBundle } from "wesl";
 import { parseSrcModule, parseWESL, WeslAST } from "./ParseWESL.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
 import { resetScopeIds, SrcModule } from "./Scope.ts";
@@ -91,7 +91,7 @@ export function parseIntoRegistry(
 }
 
 export function parseLibsIntoRegistry(
-  libs: WgslBundle[],
+  libs: WeslBundle[],
   registry: ParsedRegistry,
 ): void {
   libs.forEach(({ modules, name }) =>

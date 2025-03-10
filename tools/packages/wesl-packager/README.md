@@ -8,5 +8,5 @@ Create a bundled package in the `dist` directory
 from sources in the `src/shaders` directory.
 
 ```sh
-npx wgsl-packager --rootDir src/shaders --outDir dist
+npx wesl-packager --rootDir src/shaders --outDir dist
 ```

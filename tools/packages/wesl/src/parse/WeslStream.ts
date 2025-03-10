@@ -2,13 +2,13 @@ import {
   CachingStream,
   MatchersStream,
   matchOneOf,
+  ParseError,
   RegexMatchers,
   Stream,
   TypedToken,
   withStreamAction,
 } from "mini-parse";
 import { keywords, reservedWords } from "./Keywords";
-import { ParseError } from "mini-parse";
 export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
 
 export type WeslToken<Kind extends WeslTokenKind = WeslTokenKind> =
