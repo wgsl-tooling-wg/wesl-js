@@ -12,18 +12,22 @@ async function emitLinkJs(
   baseId: string,
   api: PluginExtensionApi,
 ): Promise<string> {
-  const { resolvedWeslRoot, toml } = await api.weslToml();
+  const { resolvedWeslRoot, toml, tomlDir } = await api.weslToml();
   const { dependencies = [] } = toml;
-  const debugWeslRoot = resolvedWeslRoot.replaceAll(path.sep, "/");
+
   const weslSrc = await api.weslSrc();
+
   const rootModule = await api.weslMain(baseId);
   const rootModuleName = noSuffix(rootModule);
-  const rootName = path.basename(rootModuleName);
+
+  const tomlRelative = path.relative(tomlDir, resolvedWeslRoot);
+  const debugWeslRoot = tomlRelative.replaceAll(path.sep, "/");
 
   const bundleImports = dependencies
     .map(p => `import ${p} from "${p}";`)
     .join("\n");
 
+  const rootName = path.basename(rootModuleName);
   const paramsName = `link${rootName}Config`;
 
   const linkParams: LinkParams = {
