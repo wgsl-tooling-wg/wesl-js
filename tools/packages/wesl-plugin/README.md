@@ -1,7 +1,6 @@
 # WESL Plugin
 
-
-[![NPM Version](https://img.shields.io/npm/v/wesl-plugin)](https://www.npmjs.com/package/wesl-plugin) 
+[![NPM Version](https://img.shields.io/npm/v/wesl-plugin)](https://www.npmjs.com/package/wesl-plugin)
 [![Static Badge](https://img.shields.io/badge/Read%20the%20-Docs-blue)](https://wesl-lang.dev/)
 
 > The wesl-plugin handles `.wesl` and `.wgsl` files
@@ -29,10 +28,10 @@ Add the wesl-plugin along with any selected extensions to `vite.config.ts`:
 ```ts
 import { UserConfig } from "vite";
 import weslPlugin from "wesl-plugin/vite";
-import { linkBuildPlugin } from "wesl-plugin";
+import { linkBuildExtension } from "wesl-plugin";
 
 const config: UserConfig = {
-  plugins: [ weslPlugin({ extensions: [linkBuildPlugin] }) ],
+  plugins: [ weslPlugin({ extensions: [linkBuildExtension] }) ],
 };
 
 export default config;

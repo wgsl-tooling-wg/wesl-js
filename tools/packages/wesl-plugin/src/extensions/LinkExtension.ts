@@ -2,7 +2,7 @@ import path from "node:path";
 import { LinkParams, noSuffix } from "wesl";
 import { PluginExtension, PluginExtensionApi } from "../PluginExtension.ts";
 
-export const linkBuildPlugin: PluginExtension = {
+export const linkBuildExtension: PluginExtension = {
   extensionName: "link",
   emitFn: emitLinkJs,
 };
