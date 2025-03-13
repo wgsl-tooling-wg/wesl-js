@@ -12,6 +12,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "import-meta-resolve": "^4.1.0",
     "toml": "^3.0.0",
     "unplugin": "^2.1.2",
     "wesl": "workspace:*"
