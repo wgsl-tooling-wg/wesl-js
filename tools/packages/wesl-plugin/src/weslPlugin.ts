@@ -253,11 +253,11 @@ function makeGetWeslMain(
    */
   async function getWeslMain(baseId: string): Promise<string> {
     const { resolvedWeslRoot } = await getWeslToml(context, unpluginContext);
-    await fs.access(baseId); // if file doesn't exist, error now when it's clear.
-    const absRoot = path.join(process.cwd(), resolvedWeslRoot);
-    const main = path.relative(absRoot, baseId);
+    await fs.access(baseId); // if file doesn't exist, report now when the user problem is clear.
 
-    return toUnixPath(main);
+    const absRoot = path.join(process.cwd(), resolvedWeslRoot);
+    const weslRootToMain = path.relative(absRoot, baseId);
+    return toUnixPath(weslRootToMain);
   }
 }
 
