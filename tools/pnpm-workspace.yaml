@@ -2,3 +2,4 @@ packages:
 - 'packages/*'
 - 'packages/wesl-plugin/test/linkExtension'
 - 'packages/wesl-plugin/test/linkExtensionNoToml'
+- 'packages/wesl-plugin/test/staticExtension'
