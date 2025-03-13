@@ -1,9 +1,10 @@
 {
-  "exec": "vitest LinkExtensionNoToml",
+  "exec": "vitest LinkExtension",
   "delay": "500ms",
   "watch": [
     "packages/wesl-plugin/test/linkExtension/wesl.toml",
     "packages/wesl-plugin/test/linkExtension/shaders/**",
+    "packages/wesl-plugin/test/linkExtensionNoToml/shaders/**",
     "packages/wesl-plugin/dist/**/*.js"
   ],
   "ext": "cjs,ts,js,wgsl,wesl,toml"
