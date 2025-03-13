@@ -1,2 +1,2 @@
-export * from "./LinkExtension.js";
+export * from "./extensions/LinkExtension.js";
 export * from "./PluginExtension.js";
