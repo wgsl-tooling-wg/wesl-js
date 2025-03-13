@@ -4,6 +4,11 @@ declare module "*?link" {
   export default linkParams;
 }
 
+declare module "*?static" {
+  const wgsl: string;
+  export default wgsl;
+}
+
 /** @hidden */ // TODO move to separate package
 declare module "*?bindingLayout" {
   export const layoutEntries: Record<string, GPUBindGroupLayoutEntry[]>;
