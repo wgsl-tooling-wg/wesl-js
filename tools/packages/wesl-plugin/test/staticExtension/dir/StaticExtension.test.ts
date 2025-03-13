@@ -7,8 +7,9 @@ test("verify ?static", async () => {
   expect(wgsl).toMatchInlineSnapshot(`
     "
 
+
     fn main() {
-       let a = pcg_2u_3f(vec2u(1, 2)); 
+       let a = pcg_2u_3f(twoVec); 
     }
 
     fn pcg_2u_3f(pos: vec2u) -> vec3f {
@@ -17,6 +18,8 @@ test("verify ?static", async () => {
         let normalized = ldexp(vec3f(random), vec3(-32));
         return vec3f(normalized);
     }
+
+    const twoVec = vec2u(1, 2);
 
     fn mix2to3(p: vec2u) -> vec3u {
         let seed = vec3u(
