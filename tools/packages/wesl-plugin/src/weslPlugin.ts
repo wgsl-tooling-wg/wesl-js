@@ -251,9 +251,13 @@ function makeGetWeslMain(
 ): (baseId: string) => Promise<string> {
   return getWeslMain;
 
+  /**
+   * @param baseId is the absolute path to the shader file
+   * @return the / separated path to the shader file, relative to the weslRoot
+   */
   async function getWeslMain(baseId: string): Promise<string> {
     const { resolvedWeslRoot } = await getWeslToml(context, unpluginContext);
-    const main = path.relative(resolvedWeslRoot, baseId);
+    await fs.access(baseId); // if file doesn't exist, error now when it's clear.
     return toUnixPath(main);
   }
 }
