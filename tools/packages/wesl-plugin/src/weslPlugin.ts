@@ -29,8 +29,8 @@ export interface WeslToml {
 }
 
 export interface WeslTomlInfo {
-  /** The path to the toml file, relative to the cwd */
-  tomlFile: string;
+  /** The path to the toml file, relative to the cwd, undefined if no toml file */
+  tomlFile: string | undefined;
 
   /** The path to the directory that contains the toml.
    * Relative to the cwd. Paths inside the toml are relative to this. */
@@ -181,6 +181,7 @@ function buildLoader(context: PluginContext): Loader {
     return null;
   }
 }
+export const defaultTomlMessage = `no wesl.toml found: assuming .wesl files are in ./shaders`;
 
 /** load the wesl.toml  */
 async function getWeslToml(
@@ -190,21 +191,36 @@ async function getWeslToml(
   const { cache } = context;
   if (cache.weslToml) return cache.weslToml;
 
-  const tomlFile = context.options.weslToml ?? "wesl.toml";
-  unpluginCtx.addWatchFile(tomlFile); // The cache gets cleared by the watchChange hook
+  // find the wesl.toml file if it exists
+  const specifiedToml = context.options.weslToml;
+  let tomlFile: string | undefined;
+  if (specifiedToml) {
+    fs.access(specifiedToml);
+    tomlFile = specifiedToml;
+  } else {
+    tomlFile = await fs
+      .access("wesl.toml")
+      .then(() => "wesl.toml")
+      .catch(() => {
+        return undefined;
+      });
+  }
 
+  // load the toml contents
   let parsedToml: WeslToml;
   let tomlDir: string;
-  try {
+  if (tomlFile) {
+    unpluginCtx.addWatchFile(tomlFile); // The cache gets cleared by the watchChange hook
     const tomlString = await fs.readFile(tomlFile, "utf-8");
     parsedToml = toml.parse(tomlString) as WeslToml;
     const tomlDirAbsolute = path.dirname(tomlFile);
     tomlDir = path.relative(process.cwd(), tomlDirAbsolute);
-  } catch {
-    console.log(`using defaults: no wesl.toml found at ${tomlFile}`);
+  } else {
+    console.log(defaultTomlMessage);
     parsedToml = { weslFiles: ["shaders/**/*.w[eg]sl"], weslRoot: "shaders" };
     tomlDir = ".";
   }
+
   const tomlToWeslRoot = path.resolve(tomlDir, parsedToml.weslRoot);
   const resolvedWeslRoot = path.relative(process.cwd(), tomlToWeslRoot);
   cache.weslToml = { tomlFile, tomlDir, resolvedWeslRoot, toml: parsedToml };
