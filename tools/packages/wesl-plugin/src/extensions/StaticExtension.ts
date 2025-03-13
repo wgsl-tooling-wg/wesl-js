@@ -4,6 +4,13 @@ import url from "node:url";
 import { link, noSuffix } from "wesl";
 import { PluginExtension, PluginExtensionApi } from "../PluginExtension.ts";
 
+/**
+ * a wesl-js ?static build extension that statically links from the root file
+ * and emits a JavaScript file containing the linked wgsl string.
+ *
+ * use it like this:
+ *   import wgsl from "./shaders/app.wesl?static";
+ */
 export const staticBuildExtension: PluginExtension = {
   extensionName: "static",
   emitFn: emitStaticJs,
@@ -42,7 +49,6 @@ async function emitStaticJs(
     export const wgsl = \`${wgsl}\`;
     export default wgsl;
   `;
-
 
   return src;
 }
