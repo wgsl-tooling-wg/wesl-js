@@ -194,24 +194,20 @@ async function getWeslToml(
   unpluginCtx.addWatchFile(tomlFile); // The cache gets cleared by the watchChange hook
 
   let parsedToml: WeslToml;
+  let tomlDir: string;
   try {
     const tomlString = await fs.readFile(tomlFile, "utf-8");
     parsedToml = toml.parse(tomlString) as WeslToml;
+    const tomlDirAbsolute = path.dirname(tomlFile);
+    tomlDir = path.relative(process.cwd(), tomlDirAbsolute);
   } catch {
     console.log(`using defaults: no wesl.toml found at ${tomlFile}`);
     parsedToml = { weslFiles: ["shaders/**/*.w[eg]sl"], weslRoot: "shaders" };
+    tomlDir = ".";
   }
-  const tomlDirAbsolute = path.dirname(tomlFile);
-  const tomlDir = path.relative(process.cwd(), tomlDirAbsolute);
-  cache.weslToml = {
-    tomlFile,
-    tomlDir,
-    resolvedWeslRoot: path.relative(
-      ".",
-      path.resolve(path.dirname(tomlFile), parsedToml.weslRoot),
-    ),
-    toml: parsedToml,
-  };
+  const tomlToWeslRoot = path.resolve(tomlDir, parsedToml.weslRoot);
+  const resolvedWeslRoot = path.relative(process.cwd(), tomlToWeslRoot);
+  cache.weslToml = { tomlFile, tomlDir, resolvedWeslRoot, toml: parsedToml };
   return cache.weslToml;
 }
 
