@@ -3,13 +3,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import toml from "toml";
 import type {
-    ExternalIdResult,
-    Thenable,
-    TransformResult,
-    UnpluginBuildContext,
-    UnpluginContext,
-    UnpluginContextMeta,
-    UnpluginOptions
+  ExternalIdResult,
+  Thenable,
+  TransformResult,
+  UnpluginBuildContext,
+  UnpluginContext,
+  UnpluginContextMeta,
+  UnpluginOptions,
 } from "unplugin";
 import { createUnplugin } from "unplugin";
 import { parsedRegistry, ParsedRegistry, parseIntoRegistry } from "wesl";
@@ -292,7 +292,7 @@ async function loadWesl(
   return await loadFiles(files, resolvedWeslRoot);
 }
 
-/** load a set of files, converting to paths relative to the  wesl root directory */
+/** load a set of shader files, converting to paths relative to the weslRoot directory */
 async function loadFiles(
   files: string[],
   weslRoot: string,
