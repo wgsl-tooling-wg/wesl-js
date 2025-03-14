@@ -284,12 +284,15 @@ const local_variable_decl = seq(
 
 // prettier-ignore
 const global_variable_decl = seq(
+  opt_attributes,
   "var",
   () => opt_template_list,
   global_ident, 
                                       // TODO shouldn't decl_scope include the ident type?
   opt(seq("=", () => expression       .collect(scopeCollect, "decl_scope"))),
-);
+  ";"
+)                                     .collect(collectVarLike("gvar"))
+                                      .collect(partialScopeCollect);
 
 const attribute_if_primary_expression: Parser<
   Stream<WeslToken>,
@@ -636,12 +639,7 @@ const global_directive = tagScope(
 const global_decl = tagScope(
   or(
     fn_decl,
-    seq(
-      opt_attributes,
-      global_variable_decl, 
-      ";"
-    )                               .collect(collectVarLike("gvar"))
-                                    .collect(partialScopeCollect),
+    global_variable_decl, 
     global_value_decl,
     ";",
     global_alias,
