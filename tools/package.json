@@ -61,7 +61,6 @@
       "esbuild"
     ],
     "overrides": {
-      "vite": "^6.1.0"
     }
   }
 }
