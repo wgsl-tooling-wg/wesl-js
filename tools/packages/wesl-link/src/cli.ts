@@ -5,8 +5,8 @@ import path from "path";
 import { astToString, link, noSuffix, scopeToString } from "wesl";
 import yargs from "yargs";
 import {
-  parsedRegistry,
-  parseIntoRegistry,
+    parsedRegistry,
+    parseIntoRegistry
 } from "../../wesl/src/ParsedRegistry.js"; // TODO fix import
 
 type CliArgs = ReturnType<typeof parseArgs>;
