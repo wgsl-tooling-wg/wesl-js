@@ -1,4 +1,4 @@
 import { createWebpackPlugin } from "unplugin";
-import { weslPlugin } from "../weslPlugin.js";
+import { weslPlugin } from "../WeslPlugin.js";
 
 export default createWebpackPlugin(weslPlugin);

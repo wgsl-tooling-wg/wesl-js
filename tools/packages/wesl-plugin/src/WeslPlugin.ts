@@ -19,7 +19,7 @@ import {
     parseIntoRegistry
 } from "wesl";
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
-import type { WeslPluginOptions } from "./weslPluginOptions.js";
+import type { WeslPluginOptions } from "./WeslPluginOptions.js";
 
 /** loaded (or synthesized) info from .toml */
 export interface WeslToml {

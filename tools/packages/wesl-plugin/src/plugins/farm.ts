@@ -1,4 +1,4 @@
-import { createFarmPlugin } from 'unplugin'
-import { weslPlugin } from '../weslPlugin'
+import { createFarmPlugin } from "unplugin";
+import { weslPlugin } from "../WeslPlugin";
 
-export default createFarmPlugin(weslPlugin)
+export default createFarmPlugin(weslPlugin);

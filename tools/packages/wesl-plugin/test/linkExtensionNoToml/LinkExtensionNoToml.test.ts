@@ -3,7 +3,7 @@ import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import util from "node:util";
 import { expect, test } from "vitest";
-import { defaultTomlMessage } from "../../../wesl-plugin/src/weslPlugin.js";
+import { defaultTomlMessage } from "../../../wesl-plugin/src/WeslPlugin.js";
 const exec = util.promisify((process as any).exec); // not sure why @types/node for child_process.exec is wrong (nodeExec vs exec)
 
 const testDir = dirname(fileURLToPath(import.meta.url));
