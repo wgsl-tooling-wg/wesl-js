@@ -435,21 +435,29 @@ test("@if fn", () => {
   `;
   const { rootScope } = testParseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
-    "{ %loc 
-      {  } #1
+    "{ 
+      -{ %loc 
+        {  } #2
+      } #1
        @if(true) -{ %fragmentMain loc 
-        { %p vec3f vec4f %x p } #3
-      } #2
+        { %p vec3f vec4f %x p } #4
+      } #3
     } #0"
   `);
 });
 
-test.skip("@if const", () => {
+test("@if const", () => {
   const src = `
     @if(true) const a = 0;
   `;
   const { rootScope } = testParseWESL(src);
-  expect(scopeToString(rootScope)).toMatchInlineSnapshot("tbd");
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+       @if(true) -{ %a 
+        {  } #2
+      } #1
+    } #0"
+  `);
 });
 
 // test("", () => {

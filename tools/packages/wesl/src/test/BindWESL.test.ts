@@ -44,14 +44,16 @@ test("@location attribute const", () => {
   const { registry } = bindTest(src);
   const ast = registry.modules["package::test"];
   expect(scopeToStringLong(ast.rootScope)).toMatchInlineSnapshot(`
-    "{ %pos(pos) #1  
-      {  } #1
+    "{ 
+      -{ %pos(pos) #1  
+        {  } #2
+      } #1
       -{ %fragmentMain(fragmentMain) #3  pos #9 -> %pos(pos) #1 
          
         { %pos(pos) #5  vec3f #7 -> undefined 
           vec4f #11 -> undefined %x #13  pos #15 -> %pos(pos) #5 }
-           #3
-      } #2
+           #4
+      } #3
     } #0"
   `);
 });
