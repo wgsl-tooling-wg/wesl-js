@@ -1,57 +1,5 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parse foo::bar();  1`] = `
-[
-  {
-    "calls": [
-      {
-        "end": 20,
-        "kind": "call",
-        "name": "foo::bar",
-        "start": 12,
-      },
-    ],
-    "end": 25,
-    "kind": "fn",
-    "name": "main",
-    "nameElem": {
-      "end": 7,
-      "kind": "fnName",
-      "name": "main",
-      "start": 3,
-    },
-    "start": 0,
-    "typeRefs": [],
-  },
-]
-`;
-
-exports[`parse let x: foo::bar;  1`] = `
-[
-  {
-    "calls": [],
-    "end": 34,
-    "kind": "fn",
-    "name": "main",
-    "nameElem": {
-      "end": 7,
-      "kind": "fnName",
-      "name": "main",
-      "start": 3,
-    },
-    "start": 0,
-    "typeRefs": [
-      {
-        "end": 27,
-        "kind": "typeRef",
-        "name": "foo::bar",
-        "start": 19,
-      },
-    ],
-  },
-]
-`;
-
 exports[`parse unicode ident 1`] = `
 "module
   text '
