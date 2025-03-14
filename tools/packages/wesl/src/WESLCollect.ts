@@ -540,7 +540,7 @@ export const scopeCollect: CollectPair<Scope> = {
  *
  * The scope starts encloses all idents and subscopes inside the parser to which
  * .collect is attached
- * 
+ *
  * '@if' attributes are not attached to the scope.
  */
 export const scopeCollectNoIf: CollectPair<Scope> = {
