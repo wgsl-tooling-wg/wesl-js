@@ -178,9 +178,16 @@ function startSomeScope(kind: Scope["kind"], cc: CollectContext): void {
 
 /* close current Scope and set current scope to parent */
 function completeScope(cc: CollectContext): Scope {
+  return completeScopeInternal(cc, true);
+}
+
+function completeScopeNoIf(cc: CollectContext): Scope {
+  return completeScopeInternal(cc, false);
+}
+
+function completeScopeInternal(cc: CollectContext, attachIfs: boolean): Scope {
   const weslContext = cc.app.context as WeslParseContext;
   const completedScope = weslContext.scope;
-  const ifAttributes = collectIfAttributes(cc);
 
   const { parent } = completedScope;
   if (parent) {
@@ -188,7 +195,10 @@ function completeScope(cc: CollectContext): Scope {
   } else if (tracing) {
     console.log("ERR: completeScope, no parent scope", completedScope.contents);
   }
-  completedScope.ifAttribute = ifAttributes?.[0];
+  if (attachIfs) {
+    const ifAttributes = collectIfAttributes(cc);
+    completedScope.ifAttribute = ifAttributes?.[0];
+  }
   return completedScope;
 }
 
@@ -523,6 +533,19 @@ export function directiveCollect(cc: CollectContext): DirectiveElem {
 export const scopeCollect: CollectPair<Scope> = {
   before: startScope,
   after: completeScope,
+};
+
+/**
+ * Collect a LexicalScope.
+ *
+ * The scope starts encloses all idents and subscopes inside the parser to which
+ * .collect is attached
+ * 
+ * '@if' attributes are not attached to the scope.
+ */
+export const scopeCollectNoIf: CollectPair<Scope> = {
+  before: startScope,
+  after: completeScopeNoIf,
 };
 
 /**
