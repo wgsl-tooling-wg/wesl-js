@@ -731,33 +731,72 @@ test("import package::foo::bar;", ctx => {
   `);
 });
 
-// TODO
-test.skip("parse foo::bar(); ", () => {
+test("parse foo::bar(); ", () => {
   const src = "fn main() { foo::bar(); }";
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
-  expect(astString).toMatchInlineSnapshot();
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      fn main()
+        decl %main
+        statement
+          text '{ '
+          ref foo::bar
+          text '(); }'"
+  `);
 });
 
-// TODO
-test.skip("parse let x: foo::bar; ", () => {
+test("parse let x: foo::bar; ", () => {
   const src = "fn main() { let x: foo::bar = 1; }";
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
-  expect(astString).toMatchInlineSnapshot();
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      fn main()
+        decl %main
+        statement
+          text '{ let '
+          typeDecl %x : foo::bar
+            decl %x
+            text ': '
+            type foo::bar
+              ref foo::bar
+          text ' = 1; }'"
+  `);
 });
 
-// TODO (consdier should this be legal?)
-test.skip("parse var x: foo.bar;", () => {
+test("parse var x: foo::bar;", () => {
   const src = `
-     import foo::bar;
      var<private> x: foo::bar;
      fn main() { }
   `;
 
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
-  expect(astString).toMatchInlineSnapshot();
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+         '
+      gvar %x : foo::bar
+        text 'var<'
+        type private
+          ref private
+        text '> '
+        typeDecl %x : foo::bar
+          decl %x
+          text ': '
+          type foo::bar
+            ref foo::bar
+        text ';'
+      text '
+         '
+      fn main()
+        decl %main
+        statement
+          text '{ }'
+      text '
+      '"
+  `);
 });
 
 test("parse switch statement", () => {

@@ -9,7 +9,7 @@ declare module "*?static" {
   export default wgsl;
 }
 
-/** @hidden */ // TODO move to separate package
+/** @hidden */ // LATER move to separate package
 declare module "*?bindingLayout" {
   export const layoutEntries: Record<string, GPUBindGroupLayoutEntry[]>;
   export const layoutFunctions: Record<

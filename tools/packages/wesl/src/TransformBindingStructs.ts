@@ -154,7 +154,7 @@ export function transformBindingStruct(
 ): SyntheticElem[] {
   return s.members.map(member => {
     const { typeRef, name: memberName } = member;
-    const { name: typeName } = typeRef!; // members should always have a typeRef.. TODO fix typing to show this
+    const { name: typeName } = typeRef!; // members should always have a typeRef.. LATER fix typing to show this
     const typeParameters = typeRef?.templateParams;
 
     const varName = minimallyMangledName(memberName.name, globalNames);

@@ -2,7 +2,7 @@ import { bindAndTransform, bindingStructsPlugin, LinkConfig } from "wesl";
 import {
     bindingGroupLayoutTs,
     reportBindingStructsPlugin
-} from "../../wesl/src/Reflection.ts"; // TODO fix import
+} from "../../wesl/src/Reflection.ts"; // LATER fix import
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.ts";
 
 export const bindingLayoutExtension: PluginExtension = {
