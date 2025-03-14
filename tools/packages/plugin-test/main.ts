@@ -2,11 +2,11 @@
 /// <reference types="vite/client" />
 import { copyBuffer } from "thimbleberry";
 import {
-    bindingStructsPlugin,
-    link,
-    LinkConfig,
-    LinkParams,
-    makeWeslDevice
+  bindingStructsPlugin,
+  link,
+  LinkConfig,
+  LinkParams,
+  makeWeslDevice,
 } from "wesl";
 import { layoutFunctions } from "./shaders/app.wesl?bindingLayout";
 import linkParams from "./shaders/app.wesl?link";
