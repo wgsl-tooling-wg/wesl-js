@@ -174,6 +174,27 @@ test("conditional local var", () => {
   `);
 });
 
+test("@if(MOBILE) const x = 1", () => {
+  const src = `
+    @if(MOBILE) const x = 1;
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      const %x @if
+        attribute @if(MOBILE)
+        text ' const '
+        typeDecl %x
+          decl %x
+        text ' = 1;'
+      text '
+      '"
+  `);
+});
+
 // test("", () => {
 //   const src = `
 //   `;

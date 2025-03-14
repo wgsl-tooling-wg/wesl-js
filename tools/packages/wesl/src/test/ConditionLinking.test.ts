@@ -1,6 +1,8 @@
 import { test } from "vitest";
 import { testLink } from "./TestLink.ts";
 
+// LATER move these to cond cases? (or drop if duplicative)
+
 test("conditional statement", async () => {
   const app = `
     fn main() {
@@ -88,4 +90,20 @@ test("conditional binding references", async () => {
 const b = 9;
   `;
   await testLink({ app, file1 }, "app", expectWgsl);
+});
+
+test("@if(MOBILE) statement", async () => {
+  const app = `
+    fn main() {
+      @if(MOBILE) let x = 1;
+      @if(!MOBILE) let x = 7;
+    }
+  `;
+
+  const expectWgsl = `
+    fn main() {
+      let x = 7;
+    }
+  `;
+  await testLink({ app: app }, "app", expectWgsl);
 });

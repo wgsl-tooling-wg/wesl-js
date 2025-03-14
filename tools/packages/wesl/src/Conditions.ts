@@ -68,7 +68,9 @@ function evaluateIfExpression(
     return value === "true";
   } else if (kind == "parenthesized-expression") {
     return evaluateIfExpression(expression.expression, conditions);
+  } else if (kind === "translate-time-feature") {
+    return conditions[expression.name];
   } else {
-    throw new Error("unexpected @if expression ${expression}");
+    throw new Error(`unexpected @if expression ${JSON.stringify(expression)}`);
   }
 }
