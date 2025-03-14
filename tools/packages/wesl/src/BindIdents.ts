@@ -126,9 +126,8 @@ export function bindIdents(params: BindIdentsParams): BindResults {
   const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
 
   const decls = bindIdentsRecursive(rootScope, bindContext, liveDecls, true);
-  const filteredDecls = decls.filter(isGlobal); // TODO is this needed?
   const newStatements = [...globalStatements.values()];
-  return { decls: filteredDecls, globalNames, newStatements };
+  return { decls, globalNames, newStatements };
 }
 
 /**
