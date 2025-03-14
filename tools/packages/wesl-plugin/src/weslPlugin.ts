@@ -32,8 +32,8 @@ export interface WeslTomlInfo {
   /** The path to the toml file, relative to the cwd, undefined if no toml file */
   tomlFile: string | undefined;
 
-  /** The path to the directory that contains the toml.
-   * Relative to the cwd. Paths inside the toml are relative to this. */
+  /** The absolute path to the directory that contains the toml.
+   * Paths inside the toml are relative to this. */
   tomlDir: string;
 
   /** The wesl root, relative to the cwd.
@@ -212,12 +212,11 @@ async function getWeslToml(
   if (tomlFile) {
     unpluginCtx.addWatchFile(tomlFile); // The cache gets cleared by the watchChange hook
     parsedToml = await loadWeslToml(tomlFile);
-    const tomlDirAbsolute = path.dirname(tomlFile);
-    tomlDir = path.relative(process.cwd(), tomlDirAbsolute);
+    tomlDir = path.dirname(tomlFile);
   } else {
     console.log(defaultTomlMessage);
     parsedToml = defaultWeslToml;
-    tomlDir = ".";
+    tomlDir = process.cwd();
   }
 
   const tomlToWeslRoot = path.resolve(tomlDir, parsedToml.weslRoot);
