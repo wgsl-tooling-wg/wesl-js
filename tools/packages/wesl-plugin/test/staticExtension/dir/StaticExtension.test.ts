@@ -1,6 +1,6 @@
 /// <reference types="wesl-plugin/suffixes" />
 import { expect, expectTypeOf, test } from "vitest";
-import wgsl from "../shaders/foo/app.wesl?static";
+import wgsl from "../shaders/foo/app.wesl MOBILE=true FUN SAFE=false ?static";
 
 test("verify ?static", async () => {
   expectTypeOf(wgsl).toMatchTypeOf<string>();
@@ -8,9 +8,14 @@ test("verify ?static", async () => {
     "
 
 
+     const start = mobileStart;
+
+
     fn main() {
-       let a = pcg_2u_3f(twoVec); 
+       let a = pcg_2u_3f(start);
     }
+
+    const mobileStart = vec2u(1, 2);
 
     fn pcg_2u_3f(pos: vec2u) -> vec3f {
         let seed = mix2to3(pos);
@@ -18,8 +23,6 @@ test("verify ?static", async () => {
         let normalized = ldexp(vec3f(random), vec3(-32));
         return vec3f(normalized);
     }
-
-    const twoVec = vec2u(1, 2);
 
     fn mix2to3(p: vec2u) -> vec3u {
         let seed = vec3u(

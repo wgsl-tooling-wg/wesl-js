@@ -1,1 +1,1 @@
-const twoVec = vec2u(1, 2);
+const mobileStart = vec2u(1, 2);

@@ -1,7 +1,7 @@
 import { resolve } from "import-meta-resolve";
 import path from "node:path";
 import url from "node:url";
-import { link, noSuffix } from "wesl";
+import { Conditions, link, noSuffix } from "wesl";
 import { PluginExtension, PluginExtensionApi } from "../PluginExtension.ts";
 
 /**
@@ -10,6 +10,9 @@ import { PluginExtension, PluginExtensionApi } from "../PluginExtension.ts";
  *
  * use it like this:
  *   import wgsl from "./shaders/app.wesl?static";
+ *
+ * or with conditions, like this:
+ *   import wgsl from "../shaders/foo/app.wesl MOBILE=true FUN SAFE=false ?static";
  */
 export const staticBuildExtension: PluginExtension = {
   extensionName: "static",
@@ -20,6 +23,7 @@ export const staticBuildExtension: PluginExtension = {
 async function emitStaticJs(
   baseId: string,
   api: PluginExtensionApi,
+  conditions?: Conditions,
 ): Promise<string> {
   const { resolvedWeslRoot, toml, tomlDir } = await api.weslToml();
   const { dependencies = [] } = toml;
@@ -44,7 +48,13 @@ async function emitStaticJs(
   const tomlRelative = path.relative(tomlDir, resolvedWeslRoot);
   const debugWeslRoot = tomlRelative.replaceAll(path.sep, "/");
 
-  const result = await link({ weslSrc, rootModuleName, debugWeslRoot, libs });
+  const result = await link({
+    weslSrc,
+    rootModuleName,
+    debugWeslRoot,
+    libs,
+    conditions,
+  });
   const wgsl = result.dest;
 
   const src = `

@@ -12,7 +12,12 @@ import type {
   UnpluginOptions,
 } from "unplugin";
 import { createUnplugin } from "unplugin";
-import { parsedRegistry, ParsedRegistry, parseIntoRegistry } from "wesl";
+import {
+  Conditions,
+  parsedRegistry,
+  ParsedRegistry,
+  parseIntoRegistry,
+} from "wesl";
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
 import type { WeslPluginOptions } from "./weslPluginOptions.js";
 
@@ -119,32 +124,76 @@ function pluginsByName(
   return Object.fromEntries(entries);
 }
 
-const pluginSuffix = /(?<baseId>.*\.w[eg]sl)\?(?<pluginName>[\w_-]+)/;
+/** wesl plugins match import statements of the form:
+ *
+ *   foo/bar.wesl?link
+ * or
+ *   foo/bar.wesl COND=false ?static
+ *
+ * someday it'd be nice to support import attributes like:
+ *    import "foo.bar.wesl?static" with { COND: false};
+ * (but that doesn't seem supported to be supported in the the bundler plugins yet)
+ */
+const pluginMatch =
+  /(^^)?(?<baseId>.*\.w[eg]sl)(?<cond>(\s*\w+(=\w+)?\s*)*)\?(?<pluginName>[\w_-]+)$/;
+
+const resolvedPrefix = "^^";
 
 /** build plugin entry for 'resolverId'
- * to validate our virtual import modules (with ?reflect or ?link suffixes) */
+ * to validate our javascript virtual module imports (with e.g. ?static or ?link suffixes) */
 function buildResolver(options: WeslPluginOptions): Resolver {
   const suffixes = pluginNames(options);
   return resolver;
 
+  // vite calls resolver only for odd import paths.
+  //   this doesn't call resolver: import wgsl from "../shaders/foo/app.wesl?static";
+  //   but this does call resolver: import wgsl from "../shaders/foo/app.wesl MOBILE=true FUN SAFE=false ?static";
+
+  /**
+   * For imports with conditions, vite won't resolve the module-path part of the js import
+   * so we do it here.
+   *
+   * To avoid recirculating on resolve(), we rewrite the resolution id to start with ^^
+   * The loader will drop the prefix.
+   */
   function resolver(
     this: UnpluginBuildContext & UnpluginContext,
     id: string,
+    importer: string | undefined,
   ): string | null {
+    if (id.startsWith(resolvedPrefix)) {
+      return id;
+    }
     const matched = pluginSuffixMatch(id, suffixes);
-    return matched ? id : null;
+    if (matched) {
+      const { importParams, baseId, pluginName } = matched;
+
+      // resolve the path to the shader file
+      const importerDir = path.dirname(importer!);
+      const pathToShader = path.join(importerDir, baseId);
+      const result =
+        resolvedPrefix + pathToShader + importParams + "?" + pluginName;
+      return result;
+    }
+    return matched ? id : null; // this case doesn't happen AFAIK
   }
 }
+
 interface PluginMatch {
   baseId: string;
+  importParams?: string;
   pluginName: string;
 }
 
 function pluginSuffixMatch(id: string, suffixes: string[]): PluginMatch | null {
-  const suffixMatch = id.match(pluginSuffix);
+  const suffixMatch = id.match(pluginMatch);
   const pluginName = suffixMatch?.groups?.pluginName;
   if (!pluginName || !suffixes.includes(pluginName)) return null;
-  return { pluginName, baseId: suffixMatch.groups!.baseId };
+  return {
+    pluginName,
+    baseId: suffixMatch.groups!.baseId,
+    importParams: suffixMatch.groups?.cond,
+  };
 }
 
 function buildApi(
@@ -175,12 +224,45 @@ function buildLoader(context: PluginContext): Loader {
     if (matched) {
       const buildPluginApi = buildApi(context, this);
       const plugin = pluginsMap[matched.pluginName];
-      return await plugin.emitFn(matched.baseId, buildPluginApi);
+      const { baseId, importParams } = matched;
+      const conditions = importParamsToConditions(importParams);
+      const shaderPath =
+        baseId.startsWith(resolvedPrefix) ?
+          baseId.slice(resolvedPrefix.length)
+        : baseId;
+
+      return await plugin.emitFn(shaderPath, buildPluginApi, conditions);
     }
 
     return null;
   }
 }
+
+/**
+ * Convert an import parameters string to a Conditions record.
+ *
+ * Import parameters are key=value pairs separated by spaces.
+ * Values may be "true" or "false" or missing (default to true)
+ * e.g. ' MOBILE=true FUN SAFE=false '
+ */
+function importParamsToConditions(
+  importParams: string | undefined,
+): Conditions | undefined {
+  if (!importParams) return undefined;
+  const params = importParams.trim().split(/\s+/);
+  const condEntries = params.map(p => {
+    const text = p.trim();
+    const [cond, value] = text.split("=");
+    if (value === undefined || value === "true") {
+      return [cond, true] as const;
+    } else {
+      return [cond, false] as const;
+    }
+  });
+  const conditions = Object.fromEntries(condEntries);
+  return conditions;
+}
+
 export const defaultTomlMessage = `no wesl.toml found: assuming .wesl files are in ./shaders`;
 
 /** load the wesl.toml  */

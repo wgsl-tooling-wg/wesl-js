@@ -12,7 +12,11 @@ Plugin features are accessed from JavaScript and TypeScript with `import` statem
 import linkConfig from "./shaders/app.wesl?link";
 ```
 
-Each plugin features is enabled by its own wesl-plugin [extension](#extensions).
+```ts
+import linkConfig from "./shaders/app.wesl?static";
+```
+
+Each plugin ?feature is enabled by its own wesl-plugin [extension](#extensions).
 
 ## Install
 
@@ -75,9 +79,13 @@ import weslPlugin from "wesl-plugin/rpack";
 ## Extensions
 
 - **LinkExtension** - import `?link` in JavaScript/TypeScript programs to conveniently assemble shader files and libraries for linking at runtime.
-Reads the `wesl.toml` file to find local shader files, partially parses the local
-shader files to find shader libraries, and returns a `LinkParams` object
-ready to use for runtime linking.
+Reads the `wesl.toml` file to find local shader files and libraries,
+Returns a `LinkParams` object ready to use for runtime linking.
+
+- **StaticExtension** - import `?static` in JavaScript/TypeScript programs to
+link shader files at build time.
+Reads the `wesl.toml` file to find local shader files and libraries,
+Returns a wgsl string ready to use for `createShaderModule`.
 
 ### Prototype Extensions
 

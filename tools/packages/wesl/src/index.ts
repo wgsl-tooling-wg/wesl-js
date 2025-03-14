@@ -6,6 +6,7 @@ export { WeslStream } from "./parse/WeslStream.js";
 export * from "./ParsedRegistry.js";
 export * from "./ParseWESL.js";
 export * from "./PathUtil.js";
+export * from "./Scope.js";
 export * from "./TransformBindingStructs.js";
 export * from "./WeslBundle.js";
 export * from "./WeslDevice.js";

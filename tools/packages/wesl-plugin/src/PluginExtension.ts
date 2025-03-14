@@ -5,7 +5,12 @@ import { WeslTomlInfo } from "./weslPlugin.ts";
 export type ExtensionEmitFn = (
   /** absolute path to the shader to which the extension is attached */
   shaderPath: string,
+
+  /** support functions available to plugin extensions */
   pluginApi: PluginExtensionApi,
+
+  /** static conditions specified on the js import */ // (currently used for ?static)
+  conditions?: Record<string, boolean>,
 ) => Promise<string>;
 
 /** an extension that runs inside the wesl-js build plugin */
