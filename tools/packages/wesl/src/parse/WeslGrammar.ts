@@ -639,7 +639,9 @@ const global_decl = tagScope(
     seq(
       opt_attributes,
       global_variable_decl, 
-      ";")                          .collect(collectVarLike("gvar")),
+      ";"
+    )                               .collect(collectVarLike("gvar"))
+                                    .collect(partialScopeCollect),
     global_value_decl,
     ";",
     global_alias,

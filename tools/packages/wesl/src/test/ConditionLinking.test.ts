@@ -147,3 +147,23 @@ test("@if(MOBILE) override", async () => {
   `;
   await testLink({ app, util }, "app", expectWgsl);
 });
+
+test("@if(MOBILE) global var", async () => {
+  const app = `
+    fn main() {
+      let y = package::util::x;
+    }
+  `;
+  const util = `
+    @if(MOBILE) var x = 1;
+    @if(!MOBILE) var x = 7;
+  `;
+
+  const expectWgsl = `
+    fn main() {
+      let y = x;
+    }
+    var x = 7;
+  `;
+  await testLink({ app, util }, "app", expectWgsl);
+});

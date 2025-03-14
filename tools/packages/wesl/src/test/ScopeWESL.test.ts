@@ -220,7 +220,7 @@ test("builtin enums", () => {
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
     "{ %read 
       { vec2f } #1
-      storage read_write %storage_buffer read
+      -{ storage read_write %storage_buffer read } #2
     } #0"
   `);
 });
@@ -231,7 +231,11 @@ test("texture_storage_2d", () => {
   `;
   const { rootScope } = testParseWESL(src);
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(
-    `"{ %tex_out texture_storage_2d rgba8unorm write } #0"`,
+    `
+    "{ 
+      -{ %tex_out texture_storage_2d rgba8unorm write } #1
+    } #0"
+  `,
   );
 });
 
@@ -308,13 +312,15 @@ test("larger example", () => {
       { u32 } #1
       %Buffer 
       { array f32 } #2
-      uniform %ubo UBO storage read %buf_in Buffer storage 
-      read_write %buf_out Buffer %tex_in texture_2d f32 %tex_out 
-      texture_storage_2d rgba8unorm write 
+      -{ uniform %ubo UBO } #3
+      -{ storage read %buf_in Buffer } #4
+      -{ storage read_write %buf_out Buffer } #5
+      -{ %tex_in texture_2d f32 } #6
+      -{ %tex_out texture_storage_2d rgba8unorm write } #7
       -{ %import_level 
         { %coord vec3u buf_in %offset coord coord ubo buf_out 
-          offset textureLoad tex_in vec2i coord} #4
-      } #3
+          offset textureLoad tex_in vec2i coord} #9
+      } #8
       -{ %export_level 
         { %coord vec3u all coord vec2u textureDimensions tex_out
            
@@ -323,9 +329,9 @@ test("larger example", () => {
             buf_in src_offset ubo %d buf_in src_offset ubo %sum 
             dot vec4f a b c d vec4f buf_out dst_offset sum 
             %probabilities vec4f a a b a b c sum max sum 
-            textureStore tex_out vec2i coord probabilities} #9
-        } #7
-      } #6
+            textureStore tex_out vec2i coord probabilities} #14
+        } #12
+      } #11
     } #0"
   `);
 });
