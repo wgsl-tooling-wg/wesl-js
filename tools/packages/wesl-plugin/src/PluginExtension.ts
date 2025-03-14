@@ -3,7 +3,8 @@ import { WeslTomlInfo } from "./weslPlugin.ts";
 
 /** function type required for for emit extensions */
 export type ExtensionEmitFn = (
-  id: string,
+  /** absolute path to the shader to which the extension is attached */
+  shaderPath: string,
   pluginApi: PluginExtensionApi,
 ) => Promise<string>;
 
