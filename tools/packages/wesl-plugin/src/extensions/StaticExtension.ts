@@ -24,8 +24,10 @@ async function emitStaticJs(
   const { resolvedWeslRoot, toml, tomlDir } = await api.weslToml();
   const { dependencies = [] } = toml;
 
-  // resolve relative to the file with the import statement
-  const parentModule = url.pathToFileURL(baseId).toString();
+  // resolve import module relative to the root of the shader project
+  const parentModule = url
+    .pathToFileURL(path.join(tomlDir, "wesl.toml"))
+    .toString();
   const libFileUrls = dependencies.map(d => resolve(d, parentModule));
 
   // load the lib modules
