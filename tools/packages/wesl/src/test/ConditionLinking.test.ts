@@ -107,3 +107,43 @@ test("@if(MOBILE) statement", async () => {
   `;
   await testLink({ app: app }, "app", expectWgsl);
 });
+
+test("@if(MOBILE) const", async () => {
+  const app = `
+    fn main() {
+      let y = package::util::x;
+    }
+  `;
+  const util = `
+    @if(MOBILE) const x = 1;
+    @if(!MOBILE) const x = 7;
+  `;
+
+  const expectWgsl = `
+    fn main() {
+      let y = x;
+    }
+    const x = 7;
+  `;
+  await testLink({ app, util }, "app", expectWgsl);
+});
+
+test("@if(MOBILE) override", async () => {
+  const app = `
+    fn main() {
+      let y = package::util::x;
+    }
+  `;
+  const util = `
+    @if(MOBILE) override x = 1;
+    @if(!MOBILE) override x = 7;
+  `;
+
+  const expectWgsl = `
+    fn main() {
+      let y = x;
+    }
+    override x = 7;
+  `;
+  await testLink({ app, util }, "app", expectWgsl);
+});

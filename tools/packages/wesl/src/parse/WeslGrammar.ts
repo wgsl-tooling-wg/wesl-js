@@ -65,6 +65,7 @@ import {
   partialScopeCollect,
   refIdent,
   scopeCollect,
+  scopeCollectNoIf,
   specialAttribute,
   statementCollect,
   switchClauseCollect,
@@ -583,7 +584,7 @@ const global_value_decl = or(
     opt_attributes,
     "override",
     global_ident,
-    seq(opt(seq("=", expression       .collect(scopeCollect, "decl_scope")))), // TODO partial scopes for decl_scopes?
+    seq(opt(seq("=", expression       .collect(scopeCollectNoIf, "decl_scope")))),
     ";",
   )                                   .collect(collectVarLike("override")),
   seq(
@@ -591,10 +592,10 @@ const global_value_decl = or(
     "const",
     global_ident,
     "=",
-    seq(expression)                   .collect(scopeCollect, "decl_scope"),
+    seq(expression)                   .collect(scopeCollectNoIf, "decl_scope"),
     ";",
-  )                                   .collect(collectVarLike("const")),
-);
+  )                                   .collect(collectVarLike("const"))
+)                                     .collect(partialScopeCollect);
 
 // prettier-ignore
 const global_alias = seq(
