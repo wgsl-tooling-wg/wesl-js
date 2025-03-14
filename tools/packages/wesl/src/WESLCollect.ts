@@ -580,7 +580,7 @@ function collectElem<V extends ContainerElem>(
       weslContext.openElems.push(partialElem);
     },
     after: (cc: CollectContext) => {
-      // TODO refine start?
+      // LATER refine start?
       const weslContext: WeslParseContext = cc.app.context;
       const partialElem = weslContext.openElems.pop()!;
       console.assert(partialElem && partialElem.kind === kind);

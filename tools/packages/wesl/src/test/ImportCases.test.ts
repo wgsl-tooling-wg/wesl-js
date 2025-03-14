@@ -53,4 +53,4 @@ test("declaration after subscope", ctx => caseTest(ctx));
 //   });
 // });
 
-// TODO add case for diagnostic in non-root module (should fail?)
+// LATER add case for diagnostic in non-root module (should fail?)

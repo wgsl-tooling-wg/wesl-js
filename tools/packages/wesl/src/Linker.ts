@@ -250,7 +250,7 @@ function emitWgsl(
 /* ---- Commentary on present and future features ---- */
 /*
 
-TODO 
+LATER
 - distinguish between global and local declaration idents (only global ones need be uniquified)
 
 Conditions
