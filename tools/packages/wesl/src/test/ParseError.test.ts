@@ -7,7 +7,7 @@ test("parse fn foo() { invalid }", () => {
   expect(() => parseTest(src)).toThrowErrorMatchingInlineSnapshot(`
     [Error: ./test.wesl:1:15 error: invalid ident
     fn foo() { let }
-                  ^]
+                  ^^]
   `);
 });
 
@@ -17,10 +17,19 @@ test("parse invalid if", () => {
   if(1<1) { 🐈‍⬛ } else {  }
   }`;
   expect(() => parseTest(src)).toThrowErrorMatchingInlineSnapshot(`
-    [Error: ./test.wesl:3:15 error: Invalid token 🐈
+    [Error: ./test.wesl:3:13 error: Invalid token 🐈
 
       if(1<1) { 🐈‍⬛ } else {  }
-                   ^]
+                 ^^]
+  `);
+});
+
+test("parse invalid name", () => {
+  const src = "var package = 3;";
+  expect(() => parseTest(src)).toThrowErrorMatchingInlineSnapshot(`
+    [Error: ./test.wesl:1:4 error: expected identifier
+    var package = 3;
+       ^^^^^^^^]
   `);
 });
 
