@@ -8,7 +8,7 @@ struct MyBindings {
   @group(0) @binding(4) stTex: texture_storage_2d<rgba8unorm, read>,
 }
 
-@workgroup_size(1, 1, 1)
+@workgroup_size(1)
 @compute fn main(b: MyBindings) {
   b.particles[0] = b.uniforms.foo;
 }
