@@ -1,5 +1,4 @@
 import { assertThat } from "./Assertions.js";
-import { CombinatorArg } from "./CombinatorTypes.js";
 import {
   collect,
   CollectFn,
@@ -9,7 +8,6 @@ import {
   ptag,
   runCollection,
 } from "./ParserCollect.js";
-import { parserArg } from "./ParserCombinator.js";
 import {
   parserLog,
   TraceContext,
@@ -17,6 +15,7 @@ import {
   tracing,
   withTraceLogging,
 } from "./ParserTracing.js";
+import { Span } from "./Span.js";
 import { Stream, Token, TypedToken } from "./Stream.js";
 
 export interface AppState<C, S> {
@@ -79,9 +78,6 @@ export interface ParserArgs {
   /** true for elements without children like kind(), and text(),
    * (to avoid intro log statement while tracing) */
   terminal?: boolean;
-
-  /** set if the collection results are tagged */
-  _children?: AnyParser[];
 }
 
 interface ConstructArgs<T> extends ParserArgs {
@@ -94,7 +90,6 @@ export class ParserTraceInfo {
   constructor(
     /** name to use for trace logging */
     public traceName: string | undefined = undefined,
-    public traceChildren: AnyParser[] = [],
     public traceEnabled: TraceOptions | undefined = undefined,
   ) {}
   /** true for elements without children like kind(), and text(),
@@ -106,10 +101,10 @@ export class ParserTraceInfo {
 export type ParserStream = Stream<TypedToken<never>>;
 
 export class ParseError extends Error {
-  position: number;
-  constructor(msg: string, position: number) {
+  span: Span;
+  constructor(msg: string, span: Span) {
     super(msg);
-    this.position = position;
+    this.span = span;
   }
 }
 
@@ -132,11 +127,7 @@ export class Parser<I, T> {
   constructor(args: ConstructArgs<T>) {
     this.fn = args.fn;
     if (tracing) {
-      this._traceInfo = new ParserTraceInfo(
-        args.traceName,
-        args._children,
-        args.trace,
-      );
+      this._traceInfo = new ParserTraceInfo(args.traceName, args.trace);
       if (args.terminal) {
         this._traceInfo.traceIsTerminal = true;
       }
@@ -200,14 +191,6 @@ export class Parser<I, T> {
     return this;
   }
 
-  /** map results to a new value, or add to app state as a side effect.
-   * Return null to cause the parser to fail.
-   * SAFETY: Side-effects should not be done if backtracking could occur!
-   */
-  mapExtended<U>(fn: ParserMapFn<T, U>): Parser<I, U> {
-    return mapExtended(this, fn);
-  }
-
   /** map results to a new value.
    */
   map<U>(fn: (value: T) => U): Parser<I, U> {
@@ -266,7 +249,7 @@ export function parser<I, T>(
 }
 
 /** Create a Parser from a function that parses and returns a value (w/no child parsers) */
-export function simpleParser<T>(
+export function terminalParser<T>(
   traceName: string,
   parserFn: ParseFn<T>,
 ): Parser<ParserStream, T> {
@@ -326,40 +309,12 @@ function runParserWithTracing<I, T>(
 type ParserMapFn<T, U> = (results: ExtendedResult<T>) => U | null;
 
 /** return a parser that maps the current results */
-function mapExtended<I, T, U>(
-  p: Parser<I, T>,
-  fn: ParserMapFn<T, U>,
-): Parser<I, U> {
-  const mapParser = parser(
-    `mapExtended`,
-    function _mapExtended(ctx: ParserContext): OptParserResult<U> {
-      const extended = runExtended(ctx, p);
-      if (!extended) return null;
-
-      const mappedValue = fn(extended);
-      if (mappedValue === null) return null;
-
-      return { value: mappedValue };
-    },
-  );
-
-  trackChildren(mapParser, p);
-  return mapParser;
-}
-
-/** return a parser that maps the current results */
 function map<I, T, U>(p: Parser<I, T>, fn: (value: T) => U): Parser<I, U> {
-  const mapParser = parser(
-    `map`,
-    function _map(ctx: ParserContext): OptParserResult<U> {
-      const result = p._run(ctx);
-      if (result === null) return null;
-      return { value: fn(result.value) };
-    },
-  );
-
-  trackChildren(mapParser, p);
-  return mapParser;
+  return parser(`map`, function _map(ctx: ParserContext): OptParserResult<U> {
+    const result = p._run(ctx);
+    if (result === null) return null;
+    return { value: fn(result.value) };
+  });
 }
 
 type ToParserFn<I, T, X> = (results: ParserResult<T>) => Parser<I, X> | null;
@@ -368,7 +323,7 @@ function toParser<I, T, O>(
   p: Parser<I, T>,
   toParserFn: ToParserFn<I, T, O>,
 ): Parser<I, T | O> {
-  const newParser: Parser<I, T | O> = parser(
+  return parser(
     "toParser",
     function _toParser(ctx: ParserContext): OptParserResult<T | O> {
       const result = p._run(ctx);
@@ -386,31 +341,4 @@ function toParser<I, T, O>(
       return nextResult;
     },
   );
-  trackChildren(newParser, p);
-  return newParser;
-}
-
-/** run parser, return enriched results (to support map(), toParser()) */
-export function runExtended<I, T>(
-  ctx: ParserContext,
-  p: Parser<I, T>,
-): ExtendedResult<T> | null {
-  const origStart = ctx.stream.checkpoint();
-
-  const origResults = p._run(ctx);
-  if (origResults === null) {
-    ctx.stream.reset(origStart);
-    return null;
-  }
-  const { app } = ctx;
-  return { ...origResults, app };
-}
-
-/** for pretty printing, track subsidiary parsers */
-export function trackChildren(p: AnyParser, ...args: CombinatorArg[]) {
-  if (tracing) {
-    assertThat(p._traceInfo);
-    const kids = args.map(parserArg);
-    p._traceInfo.traceChildren = kids;
-  }
 }

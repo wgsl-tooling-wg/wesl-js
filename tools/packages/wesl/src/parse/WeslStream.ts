@@ -115,10 +115,7 @@ export class WeslStream implements Stream<WeslToken> {
         }
         return returnToken;
       } else if (kind === "invalid") {
-        throw new ParseError(
-          "Invalid token " + token.text,
-          this.stream.checkpoint(),
-        );
+        throw new ParseError("Invalid token " + token.text, token.span);
       } else {
         return token as TypedToken<typeof kind>;
       }
@@ -142,7 +139,7 @@ export class WeslStream implements Stream<WeslToken> {
       this.blockCommentPattern.lastIndex = position;
       const result = this.blockCommentPattern.exec(this.src);
       if (result === null) {
-        throw new ParseError("Unclosed block comment!", position);
+        throw new ParseError("Unclosed block comment!", [position, position]);
       } else if (result[0] === "*/") {
         // Close block
         return this.blockCommentPattern.lastIndex;
@@ -255,9 +252,10 @@ export class WeslStream implements Stream<WeslToken> {
   skipBracketsTo(closingBracket: string) {
     while (true) {
       const nextToken = this.stream.nextToken();
-      if (nextToken === null)
-        throw new ParseError("Unclosed bracket!", this.stream.checkpoint());
-
+      if (nextToken === null) {
+        const after = this.stream.checkpoint();
+        throw new ParseError("Unclosed bracket!", [after, after]);
+      }
       if (nextToken.kind !== "symbol") continue;
       if (nextToken.text === "(") {
         this.skipBracketsTo(")");
