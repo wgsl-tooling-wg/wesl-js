@@ -103,7 +103,7 @@ function ${fnName}${fnParams} {
 }
 
 export const layoutFunctions = { ${fnName} };
-export const layoutEntries = { ${entriesName} };
+export const layouts = { ${entriesName} };
   `;
   return src;
 }

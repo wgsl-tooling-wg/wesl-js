@@ -166,7 +166,7 @@ test("binding struct to ts", () => {
     }
 
     export const layoutFunctions = { myBindingsLayout };
-    export const layoutEntries = { myBindingsEntries };
+    export const layouts = { myBindingsEntries };
       "
   `);
 });

@@ -14,5 +14,5 @@ async function run() {
   // (a static import statement might be hoisted above Object.assign)
   const reflected = await import("../../shaders/layoutTest.wesl?bindingLayout");
 
-  console.log(JSON.stringify(reflected.layoutEntries, null, 2));
+  console.log(JSON.stringify(reflected.layouts, null, 2));
 }

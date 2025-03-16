@@ -11,7 +11,7 @@ declare module "*?static" {
 
 /** @hidden */ // LATER move to separate package
 declare module "*?bindingLayout" {
-  export const layoutEntries: Record<string, GPUBindGroupLayoutEntry[]>;
+  export const layouts: Record<string, GPUBindGroupLayoutEntry[]>;
   export const layoutFunctions: Record<
     string,
     (device: GPUDevice) => GPUBindGroupLayout
