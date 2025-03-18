@@ -32,7 +32,7 @@ export interface RefIdent extends IdentBase {
   refersTo?: Ident; // import or decl ident in scope to which this ident refers. undefined before binding
   std?: true; // true if this is a standard wgsl identifier (like sin, or u32)
 
-  // LATEr consider tracking the current ast in BindIdents so that this field is unnecessary
+  // LATER consider tracking the current ast in BindIdents so that this field is unnecessary
   ast: WeslAST; // AST from module that contains this ident (to find imports during decl binding)
 
   refIdentElem: RefIdentElem; // for error reporting and mangling
@@ -40,20 +40,26 @@ export interface RefIdent extends IdentBase {
 
 export interface DeclIdent extends IdentBase {
   kind: "decl";
-  mangledName?: string; // name in the output code
-  declElem?: DeclarationElem; // link to AST so that we can traverse scopes and know what elems to emit // LATER make separate GlobalDecl kind with this required
+
+  /** name in the output code */
+  mangledName?: string;
+
+  /** link to AST so that we can traverse scopes and know what elems to emit */
+  declElem?: DeclarationElem; // LATER make separate GlobalDecl kind with this required
 
   /** scope in which this declaration is found */
-  containingScope: Scope; 
+  containingScope: Scope;
 
   /** scope for the references within this declaration
    * (only needed for global decls.)
-   * if this decl is included in the link, dependentScope holds other refIdents that should be included too
-   */
+   * if this decl is included in the link, dependentScope holds other refIdents that should be included too */
   dependentScope?: Scope;
 
-  isGlobal: boolean; // true if this is a global declaration (e.g. not a local variable)
-  srcModule: SrcModule; // To figure out which module this declaration is from.
+  /** true if this is a global declaration (e.g. not a local variable) */
+  isGlobal: boolean;
+
+  /** To figure out which module this declaration is from. */
+  srcModule: SrcModule;
 }
 
 /** tree of ident references, organized by lexical scope and partialScope . */
