@@ -60,7 +60,7 @@ export interface LexicalScope extends ScopeBase {
   /**
    * Efficient access to declarations in this scope.
    * constructed on demand, for module root scopes only */ // LATER consider make a special kind for root scopes
-  scopeDecls?: Map<string, DeclIdent>;
+  _scopeDecls?: Map<string, DeclIdent>;
 }
 
 /** A synthetic partial scope to contain @if conditioned idents.
