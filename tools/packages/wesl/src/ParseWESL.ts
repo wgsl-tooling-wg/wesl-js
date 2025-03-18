@@ -115,16 +115,6 @@ export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
   return appState.stable as WeslAST;
 }
 
-export function parseWESL(src: string, srcMap?: SrcMap): WeslAST {
-  const srcModule: SrcModule = {
-    modulePath: "package::test", // TODO this ought not be used outside of tests
-    debugFilePath: "./test.wesl",
-    src,
-  };
-
-  return parseSrcModule(srcModule, srcMap);
-}
-
 export function blankWeslParseState(srcModule: SrcModule): WeslParseState {
   const rootScope = emptyScope(null);
   const moduleElem = null as any; // we'll fill this in later

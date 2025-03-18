@@ -1,4 +1,4 @@
-import { Parser, Stream, withLoggerAsync } from "mini-parse";
+import { Parser, SrcMap, Stream, withLoggerAsync } from "mini-parse";
 import {
   expectNoLog,
   logCatch,
@@ -10,12 +10,29 @@ import {
   ParsedRegistry,
   parsedRegistry,
   parseIntoRegistry,
+  SrcModule,
 } from "wesl";
 import { bindAndTransform, link, LinkParams } from "../Linker.js";
 import { WeslStream, WeslToken } from "../parse/WeslStream.js";
-import { parseWESL, syntheticWeslParseState, WeslAST } from "../ParseWESL.js";
+import {
+  parseSrcModule,
+  syntheticWeslParseState,
+  WeslAST,
+} from "../ParseWESL.js";
 import { resetScopeIds } from "../Scope.js";
 
+/** parse a single wesl file */
+export function parseWESL(src: string): WeslAST {
+  const srcModule: SrcModule = {
+    modulePath: "package::test", // TODO this ought not be used outside of tests
+    debugFilePath: "./test.wesl",
+    src,
+  };
+
+  return parseSrcModule(srcModule, undefined);
+}
+
+/** parse a single wesl file, returning the parse state as well as the WeslAST */ // LATER get rid of this
 export function testAppParse<T>(
   parser: Parser<Stream<WeslToken>, T>,
   src: string,
@@ -91,7 +108,7 @@ export function parseTest(src: string): WeslAST {
 
 /** test w/o any log collection, to not confuse debugging */
 export function parseTestRaw(src: string) {
-  return parseWESL(src, undefined);
+  return parseWESL(src);
 }
 
 interface BindTestResult {

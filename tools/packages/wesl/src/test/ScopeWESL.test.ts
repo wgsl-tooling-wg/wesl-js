@@ -1,8 +1,9 @@
 import { expect, test } from "vitest";
 import { findValidRootDecls } from "../BindIdents.ts";
 import { scopeToString } from "../debug/ScopeToString.ts";
-import { parseWESL, WeslAST } from "../ParseWESL.ts";
+import { WeslAST } from "../ParseWESL.ts";
 import { resetScopeIds } from "../Scope.ts";
+import { parseWESL } from "./TestUtil.ts";
 
 function testParseWESL(src: string): WeslAST {
   resetScopeIds();
