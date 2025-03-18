@@ -1,6 +1,6 @@
 {
   "name": "wesl-packager",
-  "version": "0.6.0-rc1",
+  "version": "0.6.0-rc2",
   "type": "module",
   "scripts": {
     "echo": "echo",
