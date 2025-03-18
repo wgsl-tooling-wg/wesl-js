@@ -7,7 +7,7 @@ import yargs from "yargs";
 import {
   parsedRegistry,
   parseIntoRegistry,
-} from "../../wesl/src/ParsedRegistry.js"; // TODO fix import
+} from "../../wesl/src/ParsedRegistry.js"; // LATER fix import
 
 type CliArgs = ReturnType<typeof parseArgs>;
 let argv: CliArgs;
@@ -66,8 +66,8 @@ async function linkNormally(paths: string[]): Promise<void> {
   const rootModuleName = noSuffix(path.relative(weslRoot, paths[0]));
   const weslSrc = Object.fromEntries(pathAndTexts);
 
-  // TODO conditions
-  // TODO external defines
+  // LATER conditions
+  // LATER external defines
   if (argv.emit) {
     const linked = await link({ weslSrc, rootModuleName });
     if (argv.emit) log(linked.dest);
@@ -89,7 +89,7 @@ async function linkNormally(paths: string[]): Promise<void> {
     });
   }
 
-  // TODO diff
+  // LATER diff
   // if (argv.diff) printDiff(srcPath, origWgsl, linked);
 }
 
