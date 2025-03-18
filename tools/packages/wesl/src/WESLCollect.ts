@@ -139,7 +139,9 @@ export const typedDecl = collectElem(
   (cc: CollectContext, openElem: PartElem<TypedDeclElem>) => {
     const decl = cc.tags.decl_elem?.[0] as DeclIdentElem;
     const typeRef = cc.tags.typeRefElem?.[0] as TypeRefElem | undefined;
-    const partial: TypedDeclElem = { ...openElem, decl, typeRef };
+    const typeScope = cc.tags.decl_type?.[0] as PartialScope | undefined;
+
+    const partial: TypedDeclElem = { ...openElem, decl, typeScope, typeRef };
     const elem = withTextCover(partial, cc);
 
     return elem;
@@ -244,7 +246,14 @@ export function collectVarLike<E extends VarLikeElem>(
     const varElem = withTextCover(partElem, cc);
     const declIdent = name.decl.ident;
     declIdent.declElem = varElem as DeclarationElem;
+
+    if (name.typeScope) {
+      mergeScope(name.typeScope, decl_scope);
+      declIdent.dependentScope = name.typeScope;
+    } else {
       declIdent.dependentScope = decl_scope;
+    }
+
     return varElem;
   });
 }

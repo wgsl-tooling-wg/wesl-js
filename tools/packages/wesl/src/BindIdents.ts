@@ -225,13 +225,14 @@ function bindIdentsRecursive(
 
   // follow references from referenced declarations
   const newFromRefs = newGlobals.flatMap(decl => {
-    const foundsScope = decl.scope;
-    const rootDecls = globalDeclToRootLiveDecls(decl, conditions);
-    if (rootDecls) {
-      const rootLive = makeLiveDecls(rootDecls);
-      return bindIdentsRecursive(foundsScope, bindContext, rootLive);
+    const foundsScope = decl.dependentScope; // not all decls have dependent scopes (e.g. var with no initializer)
+    if (foundsScope) {
+      const rootDecls = globalDeclToRootLiveDecls(decl, conditions);
+      if (rootDecls) {
+        const rootLive = makeLiveDecls(rootDecls);
+        return bindIdentsRecursive(foundsScope, bindContext, rootLive);
+      }
     }
-    failDebug(`WARNING decl not from root ${identToString(decl)}`);
     return [];
   });
 
@@ -323,13 +324,15 @@ function handleNewDecl(
   }
 }
 
+// TODO fix cache of rootScope
+
 /** given a global declIdent, return the liveDecls for its root scope */
 function globalDeclToRootLiveDecls(
   decl: DeclIdent,
   conditions: Conditions,
 ): LiveDecls | undefined {
   assertThatDebug(decl.isGlobal, identToString(decl));
-  let rootScope = decl.scope;
+  let rootScope = decl.containingScope;
   while (rootScope.parent) {
     rootScope = rootScope.parent;
   }

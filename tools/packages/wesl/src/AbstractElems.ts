@@ -1,5 +1,5 @@
 import { Span } from "mini-parse";
-import { DeclIdent, RefIdent, SrcModule } from "./Scope.ts";
+import { DeclIdent, RefIdent, Scope, SrcModule } from "./Scope.ts";
 
 /**
  * Structures to describe the 'interesting' parts of a WESL source file.
@@ -180,6 +180,7 @@ export interface TypedDeclElem extends ElemWithContentsBase {
   kind: "typeDecl";
   decl: DeclIdentElem;
   typeRef?: TypeRefElem; // LATER Consider a variant for fn params and alias where typeRef is required
+  typeScope?: Scope;
 }
 
 /** an alias statement */

@@ -98,7 +98,8 @@ interface ScopeBase {
 
 /** Combine two scope siblings.
  * The first scope is mutated to append the contents of the second.  */
-export function mergeScope(a: Scope, b: Scope): void {
+export function mergeScope(a: Scope, b: Scope | undefined): void {
+  if (!b) return;
   assertThatDebug(a.kind === b.kind);
   assertThatDebug(a.parent === b.parent);
   assertThatDebug(!b.ifAttribute);

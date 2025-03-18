@@ -226,7 +226,7 @@ const global_ident = tagScope(
   req(
     seq(
       word                            .collect(globalDeclCollect, "decl_elem"),
-      opt(seq(":", type_specifier)),
+      opt(seq(":", type_specifier     .collect(scopeCollect, "decl_type"))),
     )                                 .collect(typedDecl),
     "expected identifier"
   )
@@ -288,7 +288,6 @@ const global_variable_decl = seq(
   "var",
   () => opt_template_list,
   global_ident, 
-                                      // TODO shouldn't decl_scope include the ident type?
   opt(seq("=", () => expression       .collect(scopeCollect, "decl_scope"))),
   ";"
 )                                     .collect(collectVarLike("gvar"))

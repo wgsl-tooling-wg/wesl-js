@@ -45,6 +45,8 @@ test("inline package reference", ctx => caseTest(ctx));
 test("inline super:: reference", ctx => caseTest(ctx));
 test("import super::file1", ctx => caseTest(ctx));
 test("declaration after subscope", ctx => caseTest(ctx));
+test.skip("uninitialized global var", ctx => caseTest(ctx));
+test("import var with struct type", ctx => caseTest(ctx));
 
 // test(, ctx =>
 //   linkTest2(ctx.task.name, {
