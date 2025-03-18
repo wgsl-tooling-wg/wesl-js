@@ -1,6 +1,7 @@
 import { DeclarationElem, IfAttribute, RefIdentElem } from "./AbstractElems.ts";
 import { assertThatDebug } from "./Assertions.ts";
 import { scopeValid } from "./Conditions.ts";
+import { LiveDecls } from "./LiveDeclarations.ts";
 import { WeslAST } from "./ParseWESL.ts";
 
 export interface SrcModule {
@@ -75,7 +76,7 @@ export interface LexicalScope extends ScopeBase {
   /**
    * Efficient access to declarations in this scope.
    * constructed on demand, for module root scopes only */ // LATER consider make a special kind for root scopes
-  _scopeDecls?: Map<string, DeclIdent>;
+  _scopeDecls?: LiveDecls;
 }
 
 /** A synthetic partial scope to contain @if conditioned idents.

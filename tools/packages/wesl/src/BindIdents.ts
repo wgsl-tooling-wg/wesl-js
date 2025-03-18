@@ -6,7 +6,7 @@ import {
   failDebug,
 } from "./Assertions.ts";
 import { elementValid, scopeValid } from "./Conditions.ts";
-import { identToString } from "./debug/ScopeToString.ts";
+import { identToString, scopeToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
 import { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
 import { LiveDecls, makeLiveDecls } from "./LiveDeclarations.ts";
@@ -16,6 +16,7 @@ import { flatImports, parseSrcModule, WeslAST } from "./ParseWESL.ts";
 import {
   Conditions,
   DeclIdent,
+  LexicalScope,
   publicDecl,
   RefIdent,
   Scope,
@@ -23,6 +24,7 @@ import {
 } from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last } from "./Util.ts";
+import { dlog } from "berry-pretty";
 
 /**
   BindIdents pass
@@ -324,8 +326,6 @@ function handleNewDecl(
   }
 }
 
-// TODO fix cache of rootScope
-
 /** given a global declIdent, return the liveDecls for its root scope */
 function globalDeclToRootLiveDecls(
   decl: DeclIdent,
@@ -336,11 +336,16 @@ function globalDeclToRootLiveDecls(
   while (rootScope.parent) {
     rootScope = rootScope.parent;
   }
+  assertThatDebug(rootScope.kind === "scope");
+  const root = rootScope as LexicalScope;
+  if (root._scopeDecls) return root._scopeDecls;
 
   const rootDecls = findValidRootDecls(rootScope, conditions);
   const entires = rootDecls.map(d => [d.originalName, d] as const);
   const decls = new Map(entires);
-  return { decls };
+  const liveDecls = { decls };
+  root._scopeDecls = liveDecls;
+  return liveDecls;
 }
 
 /** warn the user about a missing identifer */
