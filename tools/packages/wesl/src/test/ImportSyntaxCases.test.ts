@@ -6,7 +6,7 @@ import { testAppParse } from "./TestUtil.js";
 
 function expectParseFail(src: string): void {
   withLogSpy(() => {
-    expect(() => testAppParse(weslImports, src)).toThrow();
+    expect(() => testAppParse(weslImports, src)).toThrow(); // LATER catch specific error only
   });
 }
 
