@@ -1,4 +1,4 @@
-# WESL
+# **WESL**
 
 [![NPM Version](https://img.shields.io/npm/v/wesl)](https://www.npmjs.com/package/wesl)
 [![Static Badge](https://img.shields.io/badge/Read%20the%20-Docs-blue)](https://wesl-lang.dev/)
@@ -11,19 +11,24 @@
 
 ## With a Bundler
 
-Using WESL with a bundler is the recommended experience. 
+Using WESL with a bundler plugin is **the recommended experience**. 
+
 [Get started with wesl-plugin](/tools/packages/wesl-plugin#wesl-plugin).
 
-```
+```sh
 npm install wesl
 npm install -D wesl-plugin
 ```
 
 ## Vanilla
 
-If you are using vite, esbuild, rollup, webpack, or any other bundler, then we recommend [wesl-plugin](/tools/packages/wesl-plugin#wesl-plugin) instead.
+To use WESL as a library, use the `link` API.
 
 [Get started with vanilla WESL](/tools/packages/wesl#wesl).
+
+```sh
+npm install wesl
+```
 
 ## Examples
 
@@ -31,42 +36,19 @@ If you are using vite, esbuild, rollup, webpack, or any other bundler, then we r
 - [Vanilla WESL](https://github.com/wgsl-tooling-wg/examples/tree/main/wesl-sample-vanilla)
 - [More examples](https://github.com/wgsl-tooling-wg/examples)
 
-<!-- TODO: Finish up the rest of the readme -->
 
-### Linking Features
+## Linking from the command line
 
-Linking `.wesl` and `.wgsl` files.
-analogous to esbuild for `.js` and `.ts`.
+Do you only want to link a few .wgsl files together, and do not need libraries?
 
-As with other programming languages,
-module linking becomes useful when your WGSL code grows
-large enough to be split into separate reusable files.
-Linking integrates the code modules together while solving for:
+[Check out the CLI](/tools/packages/wesl-link/)
 
-* renaming - Two functions with the same name?
-The linker will rename one of them, and rewrite all the calls to the renamed function.
-* deduplication - Two modules import the same function? You get only one copy.
-* recursion - Importing a function that references another import? You get all references, recursively.
-* dead code - Importing a function from a big module?
-You get only that function and its references, not the whole file.
 
 ## Packaging your own
 
-## Other ways to dynamically link WESL
+Want to publish your WESL library?
 
-### other bundler plugins
-
-esbuild, rollup, etc.
-
-### no bundler required
-
-provide your own list of shader strings.
-
-## static linking WESL
-
-### linking from the command line
-
-[cli]
+[Use our packaging tool](/tools/packages/wesl-packager/)
 
 ## wesl-rs
 
@@ -81,7 +63,6 @@ See [Developing](/Developing.md) for working on wesl-js itself
 [wesl-rs]: https://github.com/wgsl-tooling-wg/wesl-rs
 [wesl-js]: https://github.com/wgsl-tooling-wg/wesl-js
 [WESL]: https://wesl-lang.dev/
-[cli]: /tools/packages/cli/README.md
 
 ## License
 

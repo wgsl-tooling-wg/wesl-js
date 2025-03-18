@@ -35,12 +35,12 @@ Wallaby is also available for most tests, use the configuration in `wesl-js/wall
 
 ### wesl tool packages
 
-- *linker* The main library in the suite,
+- *wesl* The main library in the suite,
+- *wesl-plugin* wesl build plugins for vite, webpack, etc.
 parses WESL sources and links to WGSL.
-- *cli* a command line tool to link statically at build time.
-- *packager* a command line tool to contruct
+- *wesl-link* a command line tool to link multiple WESL files into one WGSL file.
+- *wesl-packager* a command line tool to contruct
 WESL npm packages.
-- *plugin* wesl build plugins for vite, webpack, etc.
 
 - *bench* benchmark tests of linker performance.
 - *mini-parse* a PEG parser combinator library used by the linker.

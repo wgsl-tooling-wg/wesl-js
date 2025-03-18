@@ -1,4 +1,4 @@
-# WESL Plugin
+# **WESL Plugin**
 
 [![NPM Version](https://img.shields.io/npm/v/wesl-plugin)](https://www.npmjs.com/package/wesl-plugin)
 [![Static Badge](https://img.shields.io/badge/Read%20the%20-Docs-blue)](https://wesl-lang.dev/)

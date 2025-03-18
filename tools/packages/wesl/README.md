@@ -29,3 +29,48 @@ deno install npm:wesl
 
 
 </details>
+
+> [!TIP]
+> If you are using a bundler, [try the wesl plugin](../wesl-plugin#wesl-plugin).
+
+## Usage
+
+```ts
+import { link } from "wesl";
+
+const shaderCode = await link({
+  weslSrc: {
+    "main.wesl": mainWeslString,
+    "fullscreen_quad.wesl": fullscreenQuadWeslString,
+    "mandelbrot.wesl": mandelbrotWeslString,
+  },
+});
+
+const shader = shaderCode.createShaderModule(device, {});
+```
+
+## Example
+
+Check out the [vanilla example](https://github.com/wgsl-tooling-wg/examples/tree/main/wesl-sample-vanilla)
+
+.
+
+The wesl libray can b
+
+Wesl works with most bundlers, including but not limited to vite, webpack, esbuild and rollup!
+
+```ts
+import viteWesl from "wesl-plugin/vite";
+import { linkBuildExtension } from "wesl-plugin";
+
+export default {
+    plugins: [
+        viteWesl({ extensions: [linkBuildExtension] })
+    ],
+}
+```
+
+
+## Run-time Linking
+
+## Build-time Linking
