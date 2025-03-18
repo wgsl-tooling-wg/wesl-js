@@ -220,7 +220,7 @@ test("builtin enums", () => {
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
     "{ %read 
       { vec2f } #1
-      -{ storage read_write %storage_buffer 
+      -{ %storage_buffer 
         { read } #3
       } #2
     } #0"
@@ -316,13 +316,13 @@ test("larger example", () => {
       { u32 } #1
       %Buffer 
       { array f32 } #2
-      -{ uniform %ubo 
+      -{ %ubo 
         { UBO } #4
       } #3
-      -{ storage read %buf_in 
+      -{ %buf_in 
         { Buffer } #6
       } #5
-      -{ storage read_write %buf_out 
+      -{ %buf_out 
         { Buffer } #8
       } #7
       -{ %tex_in 
@@ -488,7 +488,7 @@ test("var<private> a: i32;", () => {
 
   expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
     "{ 
-      -{ private %a 
+      -{ %a 
         { i32 } #2
         {  } #3
       } #1

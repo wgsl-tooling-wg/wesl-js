@@ -249,10 +249,7 @@ test("parse top level var", () => {
         attribute @binding('0')
           expression '0'
             text '0'
-        text ' var<'
-        type uniform
-          ref uniform
-        text '> '
+        text ' var<uniform> '
         typeDecl %u : Uniforms
           decl %u
           text ': '
@@ -552,10 +549,7 @@ test("parse type in <template> in global var", () => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       gvar %x : array<MyStruct, '8'>
-        text 'var<'
-        type private
-          ref private
-        text '> '
+        text 'var<private> '
         typeDecl %x : array<MyStruct, '8'>
           decl %x
           text ':'
@@ -778,10 +772,7 @@ test("parse var x: foo::bar;", () => {
       text '
          '
       gvar %x : foo::bar
-        text 'var<'
-        type private
-          ref private
-        text '> '
+        text 'var<private> '
         typeDecl %x : foo::bar
           decl %x
           text ': '
@@ -966,10 +957,7 @@ test("var<workgroup> work: array<u32, 128>;", ctx => {
   expect(astString).toMatchInlineSnapshot(`
     "module
       gvar %work : array<u32, '128'>
-        text 'var<'
-        type workgroup
-          ref workgroup
-        text '> '
+        text 'var<workgroup> '
         typeDecl %work : array<u32, '128'>
           decl %work
           text ': '
