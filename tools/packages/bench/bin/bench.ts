@@ -1,7 +1,7 @@
 import { WGSLLinker } from "@use-gpu/shader";
 import fs from "fs/promises";
 import path from "node:path";
-import { link, parseWESL } from "wesl";
+import { link, parseSrcModule, SrcModule, WeslAST } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
 
@@ -221,4 +221,15 @@ function getCodeLines(benchTest: BenchTest) {
     .values()
     .map(text => text.split("\n").length)
     .reduce((sum, v) => sum + v, 0);
+}
+
+/** parse a single wesl file */ // DRY with TestUtil
+export function parseWESL(src: string): WeslAST {
+  const srcModule: SrcModule = {
+    modulePath: "package::test", // TODO this ought not be used outside of tests
+    debugFilePath: "./test.wesl",
+    src,
+  };
+
+  return parseSrcModule(srcModule, undefined);
 }
