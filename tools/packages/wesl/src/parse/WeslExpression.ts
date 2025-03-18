@@ -37,6 +37,21 @@ export const opt_template_list = opt(
   ),
 );
 
+const other_address_space = or("private", "workgroup", "uniform", "function");
+
+const storage_address_space = seq(
+  "storage",
+  opt(seq(",", or("read", "read_write"))),
+);
+
+export const var_template_list = opt(
+  seq(
+    templateOpen,
+    or(storage_address_space, other_address_space),
+    req(templateClose, "invalid template, expected '>'"),
+  ),
+);
+
 // prettier-ignore
 const template_elaborated_ident = seq(
   qualified_ident.collect(refIdent),

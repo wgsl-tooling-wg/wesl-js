@@ -77,6 +77,7 @@ import {
   argument_expression_list,
   component_or_swizzle,
   expression,
+  var_template_list,
   opt_template_list,
   simple_component_reference,
   type_specifier,
@@ -286,7 +287,7 @@ const local_variable_decl = seq(
 const global_variable_decl = seq(
   opt_attributes,
   "var",
-  () => opt_template_list,
+  () => var_template_list,
   global_ident, 
   opt(seq("=", () => expression       .collect(scopeCollect, "decl_scope"))),
   ";"
