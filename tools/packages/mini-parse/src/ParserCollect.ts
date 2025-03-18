@@ -61,8 +61,8 @@ export function collect<I, T, V>(
   ctag?: string,
 ): Parser<I, T> {
   const origAfter: CollectFn<V> =
-    (collectFn as CollectPair<V>).after ?? collectFn;
-  const beforeFn = (collectFn as Partial<CollectPair<V>>).before;
+    (collectFn as CollectPair<V>)?.after ?? collectFn;
+  const beforeFn = (collectFn as Partial<CollectPair<V>>)?.before;
 
   let afterFn = origAfter;
   if (ctag) {
