@@ -90,6 +90,7 @@ const diagnostic_rule_name = seq(
   name,
   opt(preceded(".", req(name, "invalid diagnostic rule name, expected name"))),
 );
+
 const diagnostic_control = delimited(
   "(",
   req(
@@ -813,13 +814,23 @@ function makeBinaryExpression([left, operator, right]: [
 
 if (tracing) {
   const names: Record<string, Parser<Stream<WeslToken>, unknown>> = {
-    qualified_ident,
+    name,
     diagnostic_rule_name,
     diagnostic_control,
+    name_list,
+    special_attribute,
+    if_attribute,
+    normal_attribute,
+    attribute_argument_list,
+    attribute_no_if,
+    attribute_incl_if,
     opt_attributes,
+    opt_attributes_no_if,
     globalTypeNameDecl,
     fnNameDecl,
     optionally_typed_ident,
+    req_optionally_typed_ident,
+    global_ident,
     struct_member,
     struct_decl,
     fn_call,
@@ -827,6 +838,10 @@ if (tracing) {
     fnParamList,
     local_variable_decl,
     global_variable_decl,
+    attribute_if_primary_expression,
+    attribute_if_unary_expression,
+    attribute_if_expression,
+    unscoped_compound_statement,
     compound_statement,
     for_init,
     for_update,
@@ -838,6 +853,8 @@ if (tracing) {
     switch_body,
     switch_statement,
     while_statement,
+    regular_statement,
+    conditional_statement,
     statement,
     lhs_expression,
     variable_or_value_statement,
@@ -849,6 +866,8 @@ if (tracing) {
     global_directive,
     global_decl,
     weslRoot,
+    qualified_ident, // from WeslBaseGrammar
+    word, // from WeslBaseGrammar
   };
 
   Object.entries(names).forEach(([name, parser]) => {

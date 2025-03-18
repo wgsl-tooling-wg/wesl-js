@@ -203,17 +203,26 @@ export const argument_expression_list = seq(
 
 if (tracing) {
   const names: Record<string, Parser<Stream<WeslToken>, unknown>> = {
-    argument_expression_list,
-    type_specifier,
     opt_template_list,
+    other_address_space,
+    storage_address_space,
+    var_template_list,
     template_elaborated_ident,
+    primary_expression,
     literal,
     paren_expression,
-    primary_expression,
     component_or_swizzle,
+    simple_component_reference,
     unary_expression,
+    bitwise_post_unary,
+    multiplicative_operator,
+    additive_operator,
     expression,
     template_arg_expression,
+    std_type_specifier,
+    type_specifier,
+    template_parameter,
+    argument_expression_list,
   };
 
   Object.entries(names).forEach(([name, parser]) => {
