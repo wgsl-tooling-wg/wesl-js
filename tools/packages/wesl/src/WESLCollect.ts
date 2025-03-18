@@ -112,7 +112,7 @@ function declCollectInternal(
 ): DeclIdentElem {
   const { src, start, end } = cc;
   const app = cc.app as WeslParseState;
-  const { scope } = app.context;
+  const { scope: containingScope } = app.context;
   const { srcModule } = app.stable;
   const originalName = src.slice(start, end);
 
@@ -122,7 +122,7 @@ function declCollectInternal(
     declElem,
     kind,
     originalName,
-    scope,
+    containingScope,
     isGlobal,
     id: nextIdentId(),
     srcModule,
@@ -242,8 +242,9 @@ export function collectVarLike<E extends VarLikeElem>(
     const attributes = cc.tags.attribute as AttributeElem[] | undefined;
     const partElem = { ...openElem, name, attributes } as E;
     const varElem = withTextCover(partElem, cc);
-    (name.decl.ident as DeclIdent).declElem = varElem as DeclarationElem;
-    name.decl.ident.scope = decl_scope;
+    const declIdent = name.decl.ident;
+    declIdent.declElem = varElem as DeclarationElem;
+      declIdent.dependentScope = decl_scope;
     return varElem;
   });
 }
@@ -257,7 +258,7 @@ export const aliasCollect = collectElem(
     const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
     const partElem: AliasElem = { ...openElem, name, attributes, typeRef };
     const aliasElem = withTextCover(partElem, cc);
-    name.ident.scope = alias_scope;
+    name.ident.dependentScope = alias_scope;
     name.ident.declElem = aliasElem;
     return aliasElem;
   },
@@ -319,7 +320,7 @@ export const fnCollect = collectElem(
     fnScope.contents = filtered;
 
     name.ident.declElem = fnElem;
-    name.ident.scope = mergedScope;
+    name.ident.dependentScope = mergedScope;
 
     return fnElem;
   },
@@ -370,7 +371,7 @@ export const collectStruct = collectElem(
     const name = cc.tags.type_name?.[0] as DeclIdentElem;
     const members = cc.tags.members as StructMemberElem[];
     const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
-    name.ident.scope = cc.tags.struct_scope?.[0] as Scope;
+    name.ident.dependentScope = cc.tags.struct_scope?.[0] as Scope;
     const structElem = { ...openElem, name, attributes, members };
     const elem = withTextCover(structElem, cc);
     (name.ident as DeclIdent).declElem = elem as DeclarationElem;

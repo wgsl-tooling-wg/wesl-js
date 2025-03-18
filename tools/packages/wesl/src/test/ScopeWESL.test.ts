@@ -197,7 +197,7 @@ test("fn decl scope", () => {
   const { rootScope } = testParseWESL(src);
   const decls = findValidRootDecls(rootScope, {});
   const mainIdent = decls[0];
-  expect(scopeToString(mainIdent.scope)).toMatchInlineSnapshot(
+  expect(scopeToString(mainIdent.dependentScope!)).toMatchInlineSnapshot(
     `"{ %i i32 %x i } #2"`,
   );
 });
