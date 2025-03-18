@@ -278,7 +278,7 @@ const fnParamList = seq("(", withSep(",", fnParam), ")");
 // prettier-ignore
 const local_variable_decl = seq(
   "var",
-  () => opt_template_list,
+  () => var_template_list,
   req_optionally_typed_ident,
   opt(seq("=", () => expression)),    // no decl_scope, but I think that's ok
 )                                     .collect(collectVarLike("var"));
