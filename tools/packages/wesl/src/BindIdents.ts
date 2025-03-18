@@ -1,12 +1,8 @@
 import { srcLog } from "mini-parse";
 import { AbstractElem } from "./AbstractElems.ts";
-import {
-  assertThatDebug,
-  assertUnreachableSilent,
-  failDebug,
-} from "./Assertions.ts";
+import { assertThatDebug, assertUnreachableSilent } from "./Assertions.ts";
 import { elementValid, scopeValid } from "./Conditions.ts";
-import { identToString, scopeToString } from "./debug/ScopeToString.ts";
+import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
 import { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
 import { LiveDecls, makeLiveDecls } from "./LiveDeclarations.ts";
@@ -24,7 +20,6 @@ import {
 } from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last } from "./Util.ts";
-import { dlog } from "berry-pretty";
 
 /**
   BindIdents pass

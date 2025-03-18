@@ -77,10 +77,10 @@ import {
   argument_expression_list,
   component_or_swizzle,
   expression,
-  var_template_list,
   opt_template_list,
   simple_component_reference,
   type_specifier,
+  var_template_list,
 } from "./WeslExpression.ts";
 import { weslExtension, WeslToken } from "./WeslStream.ts";
 
