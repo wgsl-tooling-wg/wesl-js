@@ -368,7 +368,7 @@ export const collectFnParam = collectElem(
     const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
     const elem: FnParamElem = { ...openElem, name, attributes };
     const paramElem = withTextCover(elem, cc);
-    name.decl.ident.declElem = paramElem; // TODO is this right?
+    name.decl.ident.declElem = paramElem;
 
     return paramElem;
   },
@@ -383,7 +383,7 @@ export const collectStruct = collectElem(
     name.ident.dependentScope = cc.tags.struct_scope?.[0] as Scope;
     const structElem = { ...openElem, name, attributes, members };
     const elem = withTextCover(structElem, cc);
-    (name.ident as DeclIdent).declElem = elem as DeclarationElem;
+    name.ident.declElem = elem as DeclarationElem;
 
     return elem;
   },
