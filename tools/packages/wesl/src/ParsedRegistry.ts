@@ -1,5 +1,5 @@
 import { WeslBundle } from "wesl";
-import { parseSrcModule, parseWESL, WeslAST } from "./ParseWESL.ts";
+import { parseSrcModule, WeslAST } from "./ParseWESL.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
 import { resetScopeIds, SrcModule } from "./Scope.ts";
 
@@ -15,18 +15,6 @@ export function parsedRegistry(): ParsedRegistry {
 /** for debug */
 export function registryToString(registry: ParsedRegistry): string {
   return `modules: ${[...Object.keys(registry.modules)]}`;
-}
-
-/**
- * Parse WESL each src module (file) into AST elements and a Scope tree.
- * @param src keys are module paths, values are wesl src strings
- */
-export function parseWeslSrc(src: Record<string, string>): ParsedRegistry {
-  const parsedEntries = Object.entries(src).map(([path, src]) => {
-    const weslAST = parseWESL(src);
-    return [path, weslAST];
-  });
-  return { modules: Object.fromEntries(parsedEntries) };
 }
 
 /** Look up a module with a flexible selector.
