@@ -46,6 +46,7 @@ test("inline super:: reference", ctx => caseTest(ctx));
 test("import super::file1", ctx => caseTest(ctx));
 test("declaration after subscope", ctx => caseTest(ctx));
 test("uninitialized global var", ctx => caseTest(ctx));
+test("uninitialized override", ctx => caseTest(ctx));
 test("import var with struct type", ctx => caseTest(ctx));
 test("import var<private> with struct type", ctx => caseTest(ctx));
 
