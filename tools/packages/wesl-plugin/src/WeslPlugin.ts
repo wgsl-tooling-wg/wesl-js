@@ -3,20 +3,20 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import toml from "toml";
 import type {
-    ExternalIdResult,
-    Thenable,
-    TransformResult,
-    UnpluginBuildContext,
-    UnpluginContext,
-    UnpluginContextMeta,
-    UnpluginOptions
+  ExternalIdResult,
+  Thenable,
+  TransformResult,
+  UnpluginBuildContext,
+  UnpluginContext,
+  UnpluginContextMeta,
+  UnpluginOptions,
 } from "unplugin";
 import { createUnplugin } from "unplugin";
 import {
-    Conditions,
-    parsedRegistry,
-    ParsedRegistry,
-    parseIntoRegistry
+  Conditions,
+  parsedRegistry,
+  ParsedRegistry,
+  parseIntoRegistry,
 } from "wesl";
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
 import type { WeslPluginOptions } from "./WeslPluginOptions.js";
@@ -78,6 +78,8 @@ interface PluginContext {
   cache: PluginCache;
   options: WeslPluginOptions;
   meta: UnpluginContextMeta;
+  /** path to wesl.toml file (relative to cwd) */
+  weslToml?: string;
 }
 
 /**
@@ -99,7 +101,7 @@ export function weslPlugin(
 
   return {
     name: "wesl-plugin",
-    resolveId: buildResolver(options),
+    resolveId: buildResolver(options, context),
     load: buildLoader(context),
     watchChange(id, change) {
       if (id.endsWith("wesl.toml")) {
@@ -141,7 +143,10 @@ const resolvedPrefix = "^^";
 
 /** build plugin entry for 'resolverId'
  * to validate our javascript virtual module imports (with e.g. ?static or ?link suffixes) */
-function buildResolver(options: WeslPluginOptions): Resolver {
+function buildResolver(
+  options: WeslPluginOptions,
+  context: PluginContext,
+): Resolver {
   const suffixes = pluginNames(options);
   return resolver;
 
@@ -162,6 +167,9 @@ function buildResolver(options: WeslPluginOptions): Resolver {
     importer: string | undefined,
   ): string | null {
     if (id.startsWith(resolvedPrefix)) {
+      return id;
+    }
+    if (id === context.weslToml) {
       return id;
     }
     const matched = pluginSuffixMatch(id, suffixes);
@@ -295,6 +303,7 @@ async function getWeslToml(
     unpluginCtx.addWatchFile(tomlFile); // The cache gets cleared by the watchChange hook
     parsedToml = await loadWeslToml(tomlFile);
     tomlDir = path.dirname(tomlFile);
+    context.weslToml = tomlFile;
   } else {
     console.log(defaultTomlMessage);
     parsedToml = defaultWeslToml;
