@@ -1,3 +1,4 @@
+export * from "./AbstractElems.js";
 export * from "./debug/ASTtoString.js";
 export * from "./debug/ScopeToString.js";
 export * from "./LinkedWesl.js";
