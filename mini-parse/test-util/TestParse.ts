@@ -12,7 +12,7 @@ import {
   withLogger,
   withLoggerAsync,
 } from "../mod.ts";
-import { expect } from "vitest";
+import { expect } from "@std/expect";
 import { FilterStream } from "../stream/FilterStream.ts";
 import { logCatch } from "./LogCatcher.ts";
 

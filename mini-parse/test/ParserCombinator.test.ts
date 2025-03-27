@@ -3,7 +3,7 @@ import {
   type TestMatcherKind,
   testParse,
 } from "../test-util/index.ts";
-import { expect } from "vitest";
+import { expect } from "@std/expect";
 import type { Parser } from "../Parser.ts";
 import {
   any,

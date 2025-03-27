@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect } from "@std/expect";
 import { RegexMatchers } from "../stream/MatchersStream.ts";
 
 Deno.test("token matcher", () => {

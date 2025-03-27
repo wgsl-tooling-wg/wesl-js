@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { testParse } from "../test-util/index.ts";
-import { expect } from "vitest";
+import { expect } from "@std/expect";
 import { tagScope } from "../ParserCollect.ts";
 import { collectArray, or, seq, text } from "../ParserCombinator.ts";
 import { assertSnapshot } from "@std/testing/snapshot";

@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect } from "@std/expect";
 import { srcLine, srcLog } from "../ParserLogging.ts";
 import { logCatch } from "../test-util/LogCatcher.ts";
 import { withLogger } from "../WrappedLog.ts";

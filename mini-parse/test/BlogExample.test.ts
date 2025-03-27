@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect } from "@std/expect";
 import {
   kind,
   opt,

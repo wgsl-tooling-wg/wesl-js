@@ -1,5 +1,5 @@
 import { testParse } from "../test-util/index.ts";
-import { expect } from "vitest";
+import { expect } from "@std/expect";
 import { calcMatcher } from "../examples/CalculatorExample.ts";
 import {
   power,
