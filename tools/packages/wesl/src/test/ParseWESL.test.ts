@@ -1579,7 +1579,7 @@ test("parse inline package reference", () => {
       package::foo::bar();
     }
   `;
-  const ast = parseTestRaw(src);
+  const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
@@ -1593,6 +1593,47 @@ test("parse inline package reference", () => {
           ref package::foo::bar
           text '();
         }'
+      text '
+      '"
+  `);
+});
+
+test("parse @location", () => {
+  const src = `
+      @fragment
+      fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f { 
+        return pos;
+      }
+  `;
+  const ast = parseTest(src);
+  ast; //?
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+          '
+      fn fragmentMain(pos: vec4f) @fragment -> vec4f
+        attribute @fragment
+        decl %fragmentMain
+        param
+          attribute @builtin(position)
+          text ' '
+          decl %pos
+          typeDecl %pos : vec4f
+            text ': '
+            type vec4f
+              ref vec4f
+        attribute @location('0')
+          expression '0'
+            text '0'
+        type vec4f
+          ref vec4f
+        statement @location
+          text '{ 
+            return '
+          ref pos
+          text ';
+          }'
       text '
       '"
   `);
