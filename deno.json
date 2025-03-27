@@ -1,0 +1,31 @@
+{
+  "tasks": {
+    "dev": "deno test --watch --allow-read"
+  },
+  "license": "MIT OR Apache-2.0",
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1",
+    "@std/expect": "jsr:@std/expect@1",
+    "@std/testing": "jsr:@std/testing@1",
+    "vitest": "./testlib/mod.ts"
+  },
+  "workspace": [
+    "./mini-parse",
+    "./testlib"
+  ],
+  "compilerOptions": {
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "dom.asynciterable",
+      "deno.ns"
+    ]
+  },
+  "exclude": [
+    "./community-wgsl",
+    "./cts",
+    "./tools",
+    "./wesl-testsuite"
+  ]
+}

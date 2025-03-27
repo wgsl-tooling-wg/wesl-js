@@ -1,0 +1,17 @@
+{
+  "name": "@wesl/mini-parse",
+  "version": "0.7.0",
+  "exports": {
+    ".": "./mod.ts",
+    "./test-util": "./test-util/index.ts",
+    "./vitest-util": "./vitest-util/index.ts"
+  },
+  "tasks": {
+    "dev": "deno test --allow-read --watch"
+  },
+  "lint": {
+    "plugins": [
+      "./expect-snapshot-rule.ts"
+    ]
+  }
+}

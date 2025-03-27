@@ -1,0 +1,8 @@
+export const snapshot = {};
+
+snapshot[`tagScope clears tags 1`] = `
+[
+  "inTagScope: a",
+  "outsideTagScope: undefined",
+]
+`;
