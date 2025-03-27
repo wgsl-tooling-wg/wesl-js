@@ -1,12 +1,12 @@
-import { expect, test } from "vitest";
+import { expect } from "@std/expect";
 import { WeslStream, type WeslToken } from "../parse/WeslStream.ts";
 
-test("tokenize empty string", () => {
+Deno.test("tokenize empty string", () => {
   const tokenizer = new WeslStream("");
   expect(tokenizer.nextToken()).toEqual(null);
 });
 
-test("parse fn foo() { }", () => {
+Deno.test("parse fn foo() { }", () => {
   const src = "fn foo() { }";
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(
@@ -39,7 +39,7 @@ test("parse fn foo() { }", () => {
   );
 });
 
-test("parse var<storage> lights : vec3<f32>", () => {
+Deno.test("parse var<storage> lights : vec3<f32>", () => {
   const src = "var<storage> lights : vec3<f32>";
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(
@@ -84,7 +84,7 @@ test("parse var<storage> lights : vec3<f32>", () => {
   expect(tokenizer.nextToken()?.text).toEqual(">");
 });
 
-test("parse >>", () => {
+Deno.test("parse >>", () => {
   const src = ">>";
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(
@@ -96,7 +96,7 @@ test("parse >>", () => {
   );
 });
 
-test("parse >> as template", () => {
+Deno.test("parse >> as template", () => {
   const src = "array<foo >>";
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(
@@ -137,7 +137,7 @@ test("parse >> as template", () => {
   expect(tokenizer.nextToken()).toBe(null);
 });
 
-test("parse skip block comment", () => {
+Deno.test("parse skip block comment", () => {
   const src = "/* /* // */ */vec3<f32>";
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(
@@ -149,7 +149,7 @@ test("parse skip block comment", () => {
   );
 });
 
-test("parse skip line comment", () => {
+Deno.test("parse skip line comment", () => {
   const src = "// vec3<f32> */ a\nvec3";
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toEqual(
@@ -161,7 +161,7 @@ test("parse skip line comment", () => {
   );
 });
 
-test("parse skip line without newline", () => {
+Deno.test("parse skip line without newline", () => {
   const src = "// foo bar";
   const tokenizer = new WeslStream(src);
   expect(tokenizer.nextToken()).toBe(null);

@@ -1,8 +1,7 @@
-import { type expect, test } from "vitest";
 import { linkWithLogQuietly } from "./TestUtil.ts";
 import { assertSnapshot } from "@std/testing/snapshot";
 
-test("unresolved identifier", async (t) => {
+Deno.test("unresolved identifier", async (t) => {
   const src = `
     fn main() { x = 7; }
     `;
@@ -10,7 +9,7 @@ test("unresolved identifier", async (t) => {
   await assertSnapshot(t, log);
 });
 
-test("conditionally empty struct", async (t) => {
+Deno.test("conditionally empty struct", async (t) => {
   const src = `
     struct Empty {
       @if(false) u: u32,

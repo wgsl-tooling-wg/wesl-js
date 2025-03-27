@@ -1,4 +1,3 @@
-import { expect, test } from "vitest";
 import { findValidRootDecls } from "../BindIdents.ts";
 import { scopeToString } from "../debug/ScopeToString.ts";
 import type { WeslAST } from "../ParseWESL.ts";
@@ -11,7 +10,7 @@ function testParseWESL(src: string): WeslAST {
   return parseWESL(src);
 }
 
-test("scope from simple fn", async (t) => {
+Deno.test("scope from simple fn", async (t) => {
   const src = `
     fn main() {
       var x: i32 = 1;
@@ -21,7 +20,7 @@ test("scope from simple fn", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("scope from fn with reference", async (t) => {
+Deno.test("scope from fn with reference", async (t) => {
   const src = `
     fn main() {
       var x: i32 = 1;
@@ -33,7 +32,7 @@ test("scope from fn with reference", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("two fns", async (t) => {
+Deno.test("two fns", async (t) => {
   const src = `
     fn foo() {}
     fn bar() {}
@@ -42,7 +41,7 @@ test("two fns", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("two fns, one with a decl", async (t) => {
+Deno.test("two fns, one with a decl", async (t) => {
   const src = `
     fn foo() {
       var a:u32;
@@ -53,7 +52,7 @@ test("two fns, one with a decl", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("fn ref", async (t) => {
+Deno.test("fn ref", async (t) => {
   const src = `
     fn foo() {
       bar();
@@ -64,7 +63,7 @@ test("fn ref", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("struct", async (t) => {
+Deno.test("struct", async (t) => {
   const src = `
     struct A {
       a: B,
@@ -74,7 +73,7 @@ test("struct", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("alias", async (t) => {
+Deno.test("alias", async (t) => {
   const src = `
     alias A = B;
   `;
@@ -82,7 +81,7 @@ test("alias", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("switch", async (t) => {
+Deno.test("switch", async (t) => {
   const src = `
     fn main() {
       var code = 1u;
@@ -96,7 +95,7 @@ test("switch", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("for()", async (t) => {
+Deno.test("for()", async (t) => {
   const src = `
     fn main() {
       var i = 1.0;
@@ -107,7 +106,7 @@ test("for()", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("fn with param", async (t) => {
+Deno.test("fn with param", async (t) => {
   const src = `
     fn main(i: i32) {
       var x = 10 + i;
@@ -117,7 +116,7 @@ test("fn with param", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("fn decl scope", async (t) => {
+Deno.test("fn decl scope", async (t) => {
   const src = `
     fn main(i: i32) {
       var x = i;
@@ -128,20 +127,20 @@ test("fn decl scope", async (t) => {
   await assertSnapshot(t, scopeToString(mainIdent.dependentScope!));
 });
 
-test("builtin scope", async (t) => {
+Deno.test("builtin scope", async (t) => {
   const src = `fn main( @builtin(vertex_index) a: u32) { }`;
   const { rootScope } = testParseWESL(src);
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("builtin enums", async (t) => {
+Deno.test("builtin enums", async (t) => {
   const src =
     `struct read { a: vec2f } var<storage, read_write> storage_buffer: read;`;
   const { rootScope } = testParseWESL(src);
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("texture_storage_2d", async (t) => {
+Deno.test("texture_storage_2d", async (t) => {
   const src = `
     @binding(3) @group(0) var tex_out : texture_storage_2d<rgba8unorm, write>;
   `;
@@ -149,7 +148,7 @@ test("texture_storage_2d", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("ptr 2 params", async (t) => {
+Deno.test("ptr 2 params", async (t) => {
   const src = `
     fn foo(ptr: ptr<private, u32>) { }
   `;
@@ -157,7 +156,7 @@ test("ptr 2 params", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("ptr 3 params", async (t) => {
+Deno.test("ptr 3 params", async (t) => {
   const src = `
     fn foo(ptr: ptr<storage, array<u32, 128>, read>) { }
   `;
@@ -165,7 +164,7 @@ test("ptr 3 params", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("larger example", async (t) => {
+Deno.test("larger example", async (t) => {
   const src = `
     struct UBO { width : u32, }
 
@@ -208,7 +207,7 @@ test("larger example", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("scope with an attribute", async (t) => {
+Deno.test("scope with an attribute", async (t) => {
   const src = `
     fn main() {
       @if(foo){ }
@@ -219,7 +218,7 @@ test("scope with an attribute", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("partial scope", async (t) => {
+Deno.test("partial scope", async (t) => {
   const src = `
     fn main() {
       var x = 1;
@@ -232,7 +231,7 @@ test("partial scope", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("loop scope", async (t) => {
+Deno.test("loop scope", async (t) => {
   const src = `
     fn main() {
       let a = 7;
@@ -249,7 +248,7 @@ test("loop scope", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("nested scope test", async (t) => {
+Deno.test("nested scope test", async (t) => {
   const src = `
     fn main() {
       let bar = 72;
@@ -265,7 +264,7 @@ test("nested scope test", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("@if fn", async (t) => {
+Deno.test("@if fn", async (t) => {
   const src = `
     const loc = 0;
 
@@ -278,7 +277,7 @@ test("@if fn", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("@if const", async (t) => {
+Deno.test("@if const", async (t) => {
   const src = `
     @if(true) const a = 0;
   `;
@@ -286,7 +285,7 @@ test("@if const", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-test("var<private> a: i32;", async (t) => {
+Deno.test("var<private> a: i32;", async (t) => {
   const src = `
     var<private> a: i32 = 0;
   `;
@@ -295,7 +294,7 @@ test("var<private> a: i32;", async (t) => {
   await assertSnapshot(t, scopeToString(rootScope));
 });
 
-// test("", () => {
+// Deno.test("", () => {
 //   const src = `
 //   `;
 //   const { rootScope } = testParseWESL(src);

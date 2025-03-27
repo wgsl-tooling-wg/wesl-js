@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { SrcMap } from "@wesl/mini-parse";
-import { expect, test } from "vitest";
+import { expect } from "@std/expect";
 import { assertSpyCalls, spy } from "@std/testing/mock";
 import { LinkedWesl } from "../LinkedWesl.ts";
 import { makeWeslDevice } from "../WeslDevice.ts";
@@ -13,7 +13,7 @@ class MockedGPUDevice {
   }
 }
 
-test("WeslDevice doesn't conflict with uncapturederror", async () => {
+Deno.test("WeslDevice doesn't conflict with uncapturederror", async () => {
   let errorListener: EventListener;
   const device = makeWeslDevice(
     new MockedGPUDevice({
@@ -52,7 +52,7 @@ test("WeslDevice doesn't conflict with uncapturederror", async () => {
   expect(error.message).toBe("shader compilation failed");
 });
 
-test("WeslDevice doesn't conflict with popErrorsScope", async () => {
+Deno.test("WeslDevice doesn't conflict with popErrorsScope", async () => {
   const device = makeWeslDevice(
     new MockedGPUDevice({
       createShaderModule: () => {
@@ -89,7 +89,7 @@ test("WeslDevice doesn't conflict with popErrorsScope", async () => {
   assertSpyCalls(createShaderModuleSpy, 1);
 });
 
-test("LinkedWesl createShaderModule skips if it's not a WeslDevice", () => {
+Deno.test("LinkedWesl createShaderModule skips if it's not a WeslDevice", () => {
   const device: GPUDevice = new MockedGPUDevice({
     createShaderModule: () => {
       return {} as any;
@@ -114,7 +114,7 @@ test("LinkedWesl createShaderModule skips if it's not a WeslDevice", () => {
   assertSpyCalls(createShaderModuleSpy, 1);
 });
 
-test("Point at WESL code", async () => {
+Deno.test("Point at WESL code", async () => {
   const GPUDeviceMock = spy(function (this: GPUDevice) {
     this.createShaderModule = () => {
       return {
@@ -180,7 +180,7 @@ test("Point at WESL code", async () => {
   expect(result?.message).toContain("shader compilation failed");
 });
 
-test("Invokes error throwing", async () => {
+Deno.test("Invokes error throwing", async () => {
   const dispatchEventPromise = Promise.withResolvers();
   const dispatchEventTimer = setTimeout(() => {
     dispatchEventPromise.reject();

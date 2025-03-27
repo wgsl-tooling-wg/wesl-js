@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect } from "@std/expect";
 import { errorHighlight } from "../Util.ts";
 import { parseTest } from "./TestUtil.ts";
 import { assertSnapshot } from "@std/testing/snapshot";
@@ -11,12 +11,12 @@ function getError(fn: () => void) {
   }
 }
 
-test("parse fn foo() { invalid }", async (t) => {
+Deno.test("parse fn foo() { invalid }", async (t) => {
   const src = "fn foo() { let }";
   await assertSnapshot(t, getError(() => parseTest(src)));
 });
 
-test("parse invalid if", async (t) => {
+Deno.test("parse invalid if", async (t) => {
   const src = `fn foo() { 
   let a = 3;
   if(1<1) { 🐈‍⬛ } else {  }
@@ -24,12 +24,12 @@ test("parse invalid if", async (t) => {
   await assertSnapshot(t, getError(() => parseTest(src)));
 });
 
-test("parse invalid name", async (t) => {
+Deno.test("parse invalid name", async (t) => {
   const src = "var package = 3;";
   await assertSnapshot(t, getError(() => parseTest(src)));
 });
 
-test("error highlight", () => {
+Deno.test("error highlight", () => {
   expect(errorHighlight("foo", [0, 2]).join("\n")).toBe(`foo
 ^^`);
   expect(errorHighlight("foo", [0, 1]).join("\n")).toBe(`foo

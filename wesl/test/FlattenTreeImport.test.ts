@@ -1,9 +1,8 @@
-import { test } from "vitest";
 import type { ImportCollection, ImportStatement } from "../AbstractElems.ts";
 import { flattenTreeImport } from "../FlattenTreeImport.ts";
 import { assertSnapshot } from "@std/testing/snapshot";
 
-test("complex tree import", async (t) => {
+Deno.test("complex tree import", async (t) => {
   const list: ImportCollection = {
     kind: "import-collection",
     subtrees: [

@@ -1,34 +1,34 @@
-import { expect, test } from "vitest";
+import { expect } from "@std/expect";
 import { normalize } from "../PathUtil.ts";
 
 // ../../../lib/webgpu-samples/src/anim/anim.wgsl
 
-test("normalize ./foo", () => {
+Deno.test("normalize ./foo", () => {
   const n = normalize("./foo");
   expect(n).toBe("foo");
 });
 
-test("normalize ./foo/./", () => {
+Deno.test("normalize ./foo/./", () => {
   const n = normalize("./foo/./");
   expect(n).toBe("foo");
 });
 
-test("normalize foo/bar/..", () => {
+Deno.test("normalize foo/bar/..", () => {
   const n = normalize("foo/bar/..");
   expect(n).toBe("foo");
 });
 
-test("normalize ./foo/bar/../.", () => {
+Deno.test("normalize ./foo/bar/../.", () => {
   const n = normalize("./foo/bar/../.");
   expect(n).toBe("foo");
 });
 
-test("normalize ../foo", () => {
+Deno.test("normalize ../foo", () => {
   const n = normalize("../foo");
   expect(n).toBe("../foo");
 });
 
-test("normalize ../../foo", () => {
+Deno.test("normalize ../../foo", () => {
   const n = normalize("../../foo");
   expect(n).toBe("../../foo");
 });

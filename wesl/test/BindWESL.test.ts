@@ -1,9 +1,8 @@
-import { test } from "vitest";
 import { scopeToStringLong } from "../debug/ScopeToString.ts";
 import { bindTest } from "./TestUtil.ts";
 import { assertSnapshot } from "@std/testing/snapshot";
 
-test("nested scopes binding", async (t) => {
+Deno.test("nested scopes binding", async (t) => {
   const src = `
     fn main() {
       let bar = 72;
@@ -22,7 +21,7 @@ test("nested scopes binding", async (t) => {
   await assertSnapshot(t, scopeToStringLong(ast.rootScope));
 });
 
-test("@location attribute const", async (t) => {
+Deno.test("@location attribute const", async (t) => {
   const src = `
     const pos = 0;
 

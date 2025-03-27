@@ -1,10 +1,9 @@
 import { expectTrimmedMatch } from "@wesl/mini-parse/vitest-util";
-import { test } from "vitest";
 import { link } from "../Linker.ts";
 import { underscoreMangle } from "../Mangler.ts";
 import { linkTestOpts } from "./TestUtil.ts";
 
-test("underscoreMangle", async () => {
+Deno.test("underscoreMangle", async () => {
   const main = `
     import package::file1::bar;
 fn main() { bar(); }
@@ -21,7 +20,7 @@ fn main() { bar(); }
   expectTrimmedMatch(linked, expected);
 });
 
-test("underscoreMangle longer ident", async () => {
+Deno.test("underscoreMangle longer ident", async () => {
   const main = `
     import package::container::file1::bar;
 fn main() { bar(); }
