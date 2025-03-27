@@ -1,0 +1,28 @@
+export const snapshot = {};
+
+snapshot[`nested scopes binding 1`] = `
+"{ 
+  -{ %main(main) #1  
+    { %bar(bar) #3  
+      { 
+        { %new_bar #5  bar #7 -> %bar(bar) #3  } #5
+        %bar #9 
+      } #4
+    } #2
+  } #1
+} #0"
+`;
+
+snapshot[`@location attribute const 1`] = `
+"{ 
+  -{ %pos(pos) #1  
+    {  } #2
+  } #1
+  -{ %fragmentMain(fragmentMain) #3  pos #9 -> %pos(pos) #1 
+     
+    { %pos(pos) #5  vec3f #7 -> undefined 
+      vec4f #11 -> undefined %x #13  pos #15 -> %pos(pos) #5 }
+       #4
+  } #3
+} #0"
+`;

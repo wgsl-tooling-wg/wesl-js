@@ -7,7 +7,6 @@
     "./vitest-util": "./vitest-util/index.ts"
   },
   "tasks": {
-    "dev": "deno test --allow-read --watch"
   },
   "lint": {
     "plugins": [

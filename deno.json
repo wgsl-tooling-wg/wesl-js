@@ -11,6 +11,7 @@
   },
   "workspace": [
     "./mini-parse",
+    "./wesl",
     "./testlib"
   ],
   "compilerOptions": {

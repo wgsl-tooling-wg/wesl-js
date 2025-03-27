@@ -1,4 +1,3 @@
-import { testParse } from "../test-util/index.ts";
 import { expect } from "@std/expect";
 import { calcMatcher } from "../examples/CalculatorExample.ts";
 import {
@@ -9,6 +8,7 @@ import {
 } from "../examples/CalculatorResultsExample.ts";
 import type { Parser } from "../Parser.ts";
 import type { Stream, Token } from "../Stream.ts";
+import { testParse } from "../test-util/index.ts";
 
 Deno.test("power 2 ^ 4", () => {
   const { parsed } = testParse(power, "2 ^ 3", calcMatcher);

@@ -1,0 +1,107 @@
+export const snapshot = {};
+
+snapshot[`extract binding struct 1`] = `
+"struct Bindings
+  text 'struct '
+  decl %Bindings
+  text ' {
+      '
+  member @group @binding particles: ptr<storage, array<f32>, read_write>
+    attribute @group('0')
+      expression '0'
+        text '0'
+    text ' '
+    attribute @binding('0')
+      expression '0'
+        text '0'
+    text ' '
+    name particles
+    text ': '
+    type ptr<storage, array<f32>, read_write>
+      ref ptr
+      text '<'
+      type storage
+        ref storage
+      text ', '
+      type array<f32>
+        ref array
+        text '<'
+        type f32
+          ref f32
+        text '>'
+      text ', '
+      type read_write
+        ref read_write
+      text '>'
+  text ', 
+    }'"
+`;
+
+snapshot[`extract binding struct 2`] = `
+"member @group @binding particles: ptr<storage, array<f32>, read_write>
+  attribute @group('0')
+    expression '0'
+      text '0'
+  text ' '
+  attribute @binding('0')
+    expression '0'
+      text '0'
+  text ' '
+  name particles
+  text ': '
+  type ptr<storage, array<f32>, read_write>
+    ref ptr
+    text '<'
+    type storage
+      ref storage
+    text ', '
+    type array<f32>
+      ref array
+      text '<'
+      type f32
+        ref f32
+      text '>'
+    text ', '
+    type read_write
+      ref read_write
+    text '>'"
+`;
+
+snapshot[`binding struct to ts 1`] = `
+'
+const myBindingsEntries = [ 
+      {
+        binding: 0,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: { type: "storage" }
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: { type: "uniform" }
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.COMPUTE,
+        texture: { sampleType: "float" }
+      },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.COMPUTE,
+        sampler: { type: "filtering" }
+      },
+      {
+        binding: 4,
+        visibility: GPUShaderStage.COMPUTE,
+        storageTexture: { format: "rgba8unorm", sampleType: "float", access: "read-only" }
+      } ];
+function myBindingsLayout(device: GPUDevice): GPUBindGroupLayout {
+  return device.createBindGroupLayout({
+    entries: myBindingsEntries 
+  });
+}
+
+export const layoutFunctions = { myBindingsLayout };
+export const layouts = { myBindingsEntries };
+  '
+`;

@@ -1,0 +1,38 @@
+export const snapshot = {};
+
+snapshot[`complex tree import 1`] = `
+[
+  {
+    importPath: [
+      "zap",
+      "bar",
+    ],
+    modulePath: [
+      "zap",
+      "foo",
+    ],
+  },
+  {
+    importPath: [
+      "zap",
+      "doh",
+    ],
+    modulePath: [
+      "zap",
+      "doh",
+    ],
+  },
+  {
+    importPath: [
+      "zap",
+      "bib",
+      "bog",
+    ],
+    modulePath: [
+      "zap",
+      "bib",
+      "bog",
+    ],
+  },
+]
+`;
