@@ -1,7 +1,7 @@
-import { expectNoLogAsync } from "mini-parse/test-util";
+import { expectNoLogAsync } from "@wesl/mini-parse/test-util";
 import lib from "random_wgsl";
 import { expect, test } from "vitest";
-import { link } from "../Linker.ts";
+import { link } from "@wesl/wesl";
 
 test("import rand() from a package", async () => {
   const src = `
