@@ -1,7 +1,5 @@
 import { build, emptyDir } from "@deno/dnt";
 import denoJson from "../deno.json" with { type: "json" };
-import { ensureDir, expandGlob } from "jsr:@std/fs";
-import * as path from "jsr:@std/path";
 
 const outDir = "./dist";
 
@@ -14,6 +12,8 @@ await build({
   shims: {
     deno: true,
   },
+  // Tests are skipped because of https://github.com/denoland/dnt/issues/254
+  test: false,
   importMap: "../deno.json",
   package: {
     // package.json properties
@@ -30,29 +30,14 @@ await build({
     },
   },
   compilerOptions: {
+    target: "Latest",
     lib: ["ESNext", "DOM"],
   },
 
-  async postBuild() {
+  postBuild() {
     // steps to run after building and before running the tests
     Deno.copyFileSync("../LICENSE-APACHE", outDir + "/LICENSE");
     Deno.copyFileSync("../LICENSE-MIT", outDir + "/LICENSE");
     Deno.copyFileSync("../README.md", outDir + "/README.md");
-
-    for await (const snapshot of expandGlob("*/__snapshots__/*.snap")) {
-      const resultPath = path.join(
-        outDir,
-        "esm",
-        path.relative(".", snapshot.path).replace(
-          /\.ts\.snap$/,
-          ".js.snap.js",
-        ),
-      );
-
-      await ensureDir(
-        path.dirname(resultPath),
-      );
-      await Deno.copyFile(snapshot.path, resultPath);
-    }
   },
 });

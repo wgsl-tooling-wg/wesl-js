@@ -277,11 +277,6 @@
         "dependencies": [
           "jsr:@deno/dnt@~0.41.3"
         ]
-      },
-      "wesl": {
-        "dependencies": [
-          "jsr:@deno/dnt@~0.41.3"
-        ]
       }
     }
   }
