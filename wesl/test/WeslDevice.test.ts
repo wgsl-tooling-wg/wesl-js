@@ -1,4 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
+/// <reference types="npm:@webgpu/types" />
 import { SrcMap } from "@wesl/mini-parse";
 import { expect } from "@std/expect";
 import { assertSpyCalls, spy } from "@std/testing/mock";
@@ -6,7 +7,7 @@ import { LinkedWesl } from "../LinkedWesl.ts";
 import { makeWeslDevice } from "../WeslDevice.ts";
 
 class MockedGPUDevice {
-  constructor(private overrideFns: Partial<GPUDevice>) {
+  constructor(overrideFns: Partial<GPUDevice>) {
     for (const [key, value] of Object.entries(overrideFns)) {
       (this as any)[key] = value;
     }

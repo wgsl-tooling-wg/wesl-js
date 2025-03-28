@@ -7,7 +7,11 @@
     "./test-util": "./test-util/index.ts",
     "./vitest-util": "./vitest-util/index.ts"
   },
+  "imports": {
+    "@deno/dnt": "jsr:@deno/dnt@^0.41.3"
+  },
   "tasks": {
+    "build:node": "deno run -A scripts/build_npm.ts"
   },
   "lint": {
     "plugins": [
