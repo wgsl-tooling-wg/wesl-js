@@ -6,6 +6,7 @@
     "jsr:@std/async@^1.0.12": "1.0.12",
     "jsr:@std/data-structures@^1.0.6": "1.0.6",
     "jsr:@std/expect@1": "1.0.14",
+    "jsr:@std/fs@*": "1.0.15",
     "jsr:@std/fs@^1.0.15": "1.0.15",
     "jsr:@std/internal@^1.0.6": "1.0.6",
     "jsr:@std/path@*": "1.0.8",
@@ -54,7 +55,7 @@
         "jsr:@std/assert@^1.0.12",
         "jsr:@std/async",
         "jsr:@std/data-structures",
-        "jsr:@std/fs",
+        "jsr:@std/fs@^1.0.15",
         "jsr:@std/internal",
         "jsr:@std/path@^1.0.8"
       ]
@@ -159,6 +160,7 @@
     "members": {
       "integration-tests": {
         "dependencies": [
+          "jsr:@std/fs@*",
           "jsr:@std/path@*",
           "npm:@use-gpu/shader@0.14.0",
           "npm:wgsl_reflect@1.2.0"

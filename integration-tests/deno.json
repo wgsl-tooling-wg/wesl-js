@@ -2,6 +2,8 @@
   "imports": {
     "@std/path": "jsr:@std/path",
     "wgsl_reflect": "npm:wgsl_reflect@1.2.0",
-    "@use-gpu/shader": "npm:@use-gpu/shader@0.14.0"
+    "@use-gpu/shader": "npm:@use-gpu/shader@0.14.0",
+    "wesl-testsuite": "../wesl-testsuite/src/index.ts",
+    "@std/fs": "jsr:@std/fs"
   }
 }
