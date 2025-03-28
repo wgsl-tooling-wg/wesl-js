@@ -1,9 +1,11 @@
 {
-  "typescript.preferences.autoImportSpecifierExcludeRegexes": [
-    "node:inspector/promises",
-    "inspector/promises",
-    "inspector"
-  ],
+  "deno.enable": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
   "files.watcherExclude": {
     "**/node_modules/**": true,
     "community-wgsl/**": true

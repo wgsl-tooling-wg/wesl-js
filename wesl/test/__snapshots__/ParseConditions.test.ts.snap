@@ -1,0 +1,133 @@
+export const snapshot = {};
+
+snapshot[`parse complex condition 1`] = `
+"module
+  fn a() @if
+    attribute @if(true || (!foo && !!false))
+    decl %a
+    statement
+      text '{}'"
+`;
+
+snapshot[`@if(false) enable f16 1`] = `
+"module
+  text '
+    '
+  attribute @if(false)
+  directive enable f16 @if
+  text '
+  '"
+`;
+
+snapshot[`@if(false) const_assert true; 1`] = `
+"module
+  text '
+    '
+  assert
+    attribute @if(false)
+    text ' const_assert true;'
+  text '
+  '"
+`;
+
+snapshot[`@if(true) var x = 7 1`] = `
+"module
+  text '
+    '
+  gvar %x @if
+    attribute @if(true)
+    text ' var '
+    typeDecl %x
+      decl %x
+    text ' = 7;'
+  text ' 
+  '"
+`;
+
+snapshot[`conditional statement 1`] = `
+"module
+  text '
+    '
+  fn main()
+    decl %main
+    statement
+      text '{
+      '
+      var %x
+        text 'var '
+        typeDecl %x
+          decl %x
+        text ' = 1'
+      text ';
+      '
+      statement @if
+        attribute @if(true)
+        text ' '
+        ref x
+        text ' = 2 ;'
+      text '
+    }'
+  text '
+  '"
+`;
+
+snapshot[`compound statement 1`] = `
+"module
+  text '
+    '
+  fn main()
+    decl %main
+    statement
+      text '{
+      '
+      statement @if
+        attribute @if(false)
+        text ' {
+        let '
+        typeDecl %x
+          decl %x
+        text ' = 1;
+      }'
+      text '
+    }'
+  text '
+  '"
+`;
+
+snapshot[`conditional local var 1`] = `
+"module
+  text '
+    '
+  fn main()
+    decl %main
+    statement
+      text '{
+      '
+      statement @if
+        attribute @if(true)
+        text ' '
+        var %x
+          text 'var '
+          typeDecl %x
+            decl %x
+          text ' = 1'
+        text ';'
+      text '
+    }'
+  text '
+  '"
+`;
+
+snapshot[`@if(MOBILE) const x = 1 1`] = `
+"module
+  text '
+    '
+  const %x @if
+    attribute @if(MOBILE)
+    text ' const '
+    typeDecl %x
+      decl %x
+    text ' = 1;'
+  text '
+  '"
+`;
