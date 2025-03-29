@@ -7,8 +7,11 @@
     "@std/assert": "jsr:@std/assert@1",
     "@std/expect": "jsr:@std/expect@1",
     "@std/testing": "jsr:@std/testing@1",
-    "vitest": "./testlib/mod.ts"
+    "vite": "npm:vite@^6.2.3",
+    "vitest": "npm:vitest@^3.0.9",
+    "vite-plugin-dts": "npm:vite-plugin-dts@^4.5.3"
   },
+  "nodeModulesDir": "auto",
   "workspace": [
     "./integration-tests",
     "./mini-parse",
