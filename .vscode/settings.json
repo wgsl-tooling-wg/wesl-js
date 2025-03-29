@@ -9,5 +9,6 @@
   "files.watcherExclude": {
     "**/node_modules/**": true,
     "community-wgsl/**": true
-  }
+  },
+  "deno.codeLens.test": true
 }
