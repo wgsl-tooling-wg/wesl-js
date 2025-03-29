@@ -1,5 +1,12 @@
 import { WGSLLinker } from "@use-gpu/shader";
-import { link, parseSrcModule, SrcModule, WeslAST } from "@wesl/wesl";
+import {
+  link,
+  parseSrcModule,
+  SrcModule,
+  WeslAST,
+  WeslStream,
+  WeslToken,
+} from "@wesl/wesl";
 import { WgslReflect } from "wgsl_reflect";
 
 type CompareTo =
@@ -12,6 +19,16 @@ const compareTo = null as CompareTo | null;
 const tests = await loadAllFiles();
 
 for (const instance of tests) {
+  Deno.bench({
+    name: `WESL Tokenizer (${instance.name})`,
+    group: instance.name,
+    fn() {
+      for (const [_, text] of instance.files) {
+        tokenizeWESL(text);
+      }
+    },
+  });
+
   Deno.bench({
     name: `WESL Parser (${instance.name})`,
     group: instance.name,
@@ -156,7 +173,7 @@ function useGpuParse(_filePath: string, text: string): void {
 }
 
 /** parse a single wesl file */
-export function parseWESL(src: string): WeslAST {
+function parseWESL(src: string): WeslAST {
   const srcModule: SrcModule = {
     modulePath: "package::test",
     debugFilePath: "./test.wesl",
@@ -164,4 +181,16 @@ export function parseWESL(src: string): WeslAST {
   };
 
   return parseSrcModule(srcModule, undefined);
+}
+
+function tokenizeWESL(src: string): WeslToken[] {
+  const stream = new WeslStream(src);
+  const tokens: WeslToken[] = [];
+  while (true) {
+    const token = stream.nextToken();
+    if (token === null) {
+      return tokens;
+    }
+    tokens.push(token);
+  }
 }

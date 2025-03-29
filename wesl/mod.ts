@@ -3,7 +3,7 @@ export * from "./debug/ASTtoString.ts";
 export * from "./debug/ScopeToString.ts";
 export * from "./LinkedWesl.ts";
 export * from "./Linker.ts";
-export { WeslStream } from "./parse/WeslStream.ts";
+export { WeslStream, type WeslToken } from "./parse/WeslStream.ts";
 export * from "./ParsedRegistry.ts";
 export * from "./ParseWESL.ts";
 export * from "./PathUtil.ts";
