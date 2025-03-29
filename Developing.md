@@ -8,9 +8,19 @@ included as git submodules.
 We recommend setting `git config submodule.recurse true` for this project,
 to make working with Git submodules easier.
 
-## Install Deno
+## Install Deno AND Node.js
 
-Make sure that you have a recent version of [Deno](https://deno.com/) installed.
+Make sure that you have a recent version of 
+- [Deno](https://deno.com/)
+- [Node.js](https://nodejs.org/) with npm
+
+## Install deps
+
+```
+deno install
+```
+
+This generates a `node_modules` folder.
 
 ## Run tests
 
