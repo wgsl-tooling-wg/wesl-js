@@ -264,6 +264,16 @@
       "jsr:@std/expect@1",
       "jsr:@std/testing@1"
     ],
+    "packageJson": {
+      "dependencies": [
+        "npm:@jsr/std__assert@1",
+        "npm:@jsr/std__expect@1",
+        "npm:@jsr/std__testing@1",
+        "npm:vite-plugin-dts@^4.5.3",
+        "npm:vite@^6.2.3",
+        "npm:vitest@^3.0.9"
+      ]
+    },
     "members": {
       "integration-tests": {
         "dependencies": [

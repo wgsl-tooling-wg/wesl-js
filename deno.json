@@ -28,6 +28,7 @@
     "./community-wgsl",
     "./cts",
     "./tools",
-    "./wesl-testsuite"
+    "./wesl-testsuite",
+    "*/dist"
   ]
 }

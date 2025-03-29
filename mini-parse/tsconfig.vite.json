@@ -1,0 +1,17 @@
+/** Get vite's d.ts generation on the same page as Deno*/
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "exclude": [
+    "./vite.config.ts",
+    "./expect-snapshot-rule.ts",
+    "test/**",
+    "test-util/**",
+    "vitest-util/**",
+    "scripts/**",
+  ]
+}
