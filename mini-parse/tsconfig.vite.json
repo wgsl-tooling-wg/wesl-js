@@ -8,10 +8,8 @@
   },
   "exclude": [
     "./vite.config.ts",
-    "./expect-snapshot-rule.ts",
     "test/**",
     "test-util/**",
-    "vitest-util/**",
-    "scripts/**",
+    "vitest-util/**"
   ]
 }

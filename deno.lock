@@ -37,6 +37,7 @@
     "npm:vite-plugin-dts@^4.5.3": "4.5.3_typescript@5.8.2_vite@6.2.3__@types+node@22.12.0_@types+node@22.12.0",
     "npm:vite@6.2.3": "6.2.3_@types+node@22.12.0",
     "npm:vite@^6.2.3": "6.2.3_@types+node@22.12.0",
+    "npm:vitest@3.0.9": "3.0.9_@types+node@22.12.0_vite@6.2.3__@types+node@22.12.0",
     "npm:vitest@^3.0.9": "3.0.9_@types+node@22.12.0_vite@6.2.3__@types+node@22.12.0",
     "npm:webgpu@*": "0.2.11",
     "npm:wgsl_reflect@1.2.0": "1.2.0"

@@ -10,7 +10,6 @@
     "build": "vite build",
     "test": "vitest"
   },
-  "packageManager": "pnpm@10.2.0",
   "exports": {
     ".": {
       "types": "./dist/mod.d.ts",
