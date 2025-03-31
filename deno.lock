@@ -1101,6 +1101,7 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@deno/dnt@~0.41.3",
       "jsr:@std/assert@1",
       "jsr:@std/expect@1",
       "jsr:@std/testing@1",
@@ -1115,11 +1116,6 @@
           "jsr:@std/path@*",
           "npm:@use-gpu/shader@0.14.0",
           "npm:wgsl_reflect@1.2.0"
-        ]
-      },
-      "mini-parse": {
-        "dependencies": [
-          "jsr:@deno/dnt@~0.41.3"
         ]
       }
     }

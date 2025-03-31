@@ -1,6 +1,7 @@
 {
   "tasks": {
-    "dev": "deno test --watch --allow-read"
+    "dev": "deno test --watch --allow-read",
+    "build:dnt": "deno run -A ./scripts/build_npm.ts"
   },
   "license": "MIT OR Apache-2.0",
   "imports": {
@@ -9,7 +10,8 @@
     "@std/testing": "jsr:@std/testing@1",
     "vite": "npm:vite@^6.2.3",
     "vitest": "npm:vitest@^3.0.9",
-    "vite-plugin-dts": "npm:vite-plugin-dts@^4.5.3"
+    "vite-plugin-dts": "npm:vite-plugin-dts@^4.5.3",
+    "@deno/dnt": "jsr:@deno/dnt@^0.41.3"
   },
   "nodeModulesDir": "auto",
   "workspace": [

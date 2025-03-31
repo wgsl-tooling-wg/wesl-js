@@ -10,10 +10,5 @@
   },
   "tasks": {
     "size": "echo TODO: not implemented"
-  },
-  "lint": {
-    "plugins": [
-      "../mini-parse/expect-snapshot-rule.ts"
-    ]
   }
 }

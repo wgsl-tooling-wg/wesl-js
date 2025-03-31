@@ -1,4 +1,5 @@
 /// <reference lib="deno.unstable" />
+/** A lint rule that can be added to a `deno.json` file */
 const plugin: Deno.lint.Plugin = {
   name: "expect-snapshot-plugin",
   rules: {
@@ -8,7 +9,6 @@ const plugin: Deno.lint.Plugin = {
           "CallExpression"(
             node,
           ) {
-            // :where(> MemberExpression[property.name=/toMatchSnapshot|toMatchInlineSnapshot/] > CallExpression[callee.name=/expect/])
             if (
               node.callee.type === "MemberExpression" &&
               node.callee.property.type === "Identifier" &&
