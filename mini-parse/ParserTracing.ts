@@ -1,4 +1,4 @@
-import { assert } from "@std/assert";
+import { assertThat } from "./Assertions.ts";
 import type { AnyParser, ParserContext, ParserTraceInfo } from "./Parser.ts";
 import { log } from "./WrappedLog.ts";
 
@@ -77,7 +77,7 @@ export function withTraceLogging<T>(
   traceInfo: ParserTraceInfo | undefined,
   fn: (ctxWithTracing: ParserContext) => T,
 ): T {
-  assert(tracing, "This function may only be called if tracing is enabled");
+  assertThat(tracing, "This function may only be called if tracing is enabled");
   let { _trace } = ctx;
   const trace = traceInfo?.traceEnabled;
 

@@ -9,6 +9,6 @@
     "wesl-testsuite": "../wesl-testsuite/src/index.ts"
   },
   "tasks": {
-    "size": "echo TODO: not implemented"
+    "size": "deno run --allow-read ./scripts/brotli.ts dist/sized.cjs"
   }
 }

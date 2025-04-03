@@ -1,6 +1,7 @@
 import { importCases } from "wesl-testsuite";
 import { testFromCase } from "./TestLink.ts";
+import { test } from "vitest";
 
 importCases.forEach((c) => {
-  Deno.test(c.name, () => testFromCase(c));
+  test(c.name, () => testFromCase(c));
 });

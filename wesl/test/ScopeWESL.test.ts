@@ -4,24 +4,29 @@ import { scopeToString } from "../debug/ScopeToString.ts";
 import type { WeslAST } from "../ParseWESL.ts";
 import { resetScopeIds } from "../Scope.ts";
 import { parseWESL } from "./TestUtil.ts";
-import { assertSnapshot } from "@std/testing/snapshot";
 
 function testParseWESL(src: string): WeslAST {
   resetScopeIds();
   return parseWESL(src);
 }
 
-test("scope from simple fn", async (t) => {
+test("scope from simple fn", () => {
   const src = `
     fn main() {
       var x: i32 = 1;
     }
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %main 
+        { %x i32 } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("scope from fn with reference", async (t) => {
+test("scope from fn with reference", () => {
   const src = `
     fn main() {
       var x: i32 = 1;
@@ -30,19 +35,34 @@ test("scope from fn with reference", async (t) => {
   `;
   const { rootScope } = testParseWESL(src);
 
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %main 
+        { %x i32 x } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("two fns", async (t) => {
+test("two fns", () => {
   const src = `
     fn foo() {}
     fn bar() {}
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %foo 
+        {  } #2
+      } #1
+      -{ %bar 
+        {  } #5
+      } #4
+    } #0"
+  `);
 });
 
-test("two fns, one with a decl", async (t) => {
+test("two fns, one with a decl", () => {
   const src = `
     fn foo() {
       var a:u32;
@@ -50,10 +70,19 @@ test("two fns, one with a decl", async (t) => {
     fn bar() {}
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %foo 
+        { %a u32 } #2
+      } #1
+      -{ %bar 
+        {  } #5
+      } #4
+    } #0"
+  `);
 });
 
-test("fn ref", async (t) => {
+test("fn ref", () => {
   const src = `
     fn foo() {
       bar();
@@ -61,28 +90,45 @@ test("fn ref", async (t) => {
     fn bar() {}
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %foo 
+        { bar } #2
+      } #1
+      -{ %bar 
+        {  } #5
+      } #4
+    } #0"
+  `);
 });
 
-test("struct", async (t) => {
+test("struct", () => {
   const src = `
     struct A {
       a: B,
     }
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %A 
+      { B } #1
+    } #0"
+  `);
 });
 
-test("alias", async (t) => {
+test("alias", () => {
   const src = `
     alias A = B;
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %A 
+      { B } #1
+    } #0"
+  `);
 });
 
-test("switch", async (t) => {
+test("switch", () => {
   const src = `
     fn main() {
       var code = 1u;
@@ -93,10 +139,21 @@ test("switch", async (t) => {
     }`;
   const { rootScope } = testParseWESL(src);
 
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %main 
+        { %code code 
+          { 
+            { %x } #5
+          } #4
+          {  } #6
+        } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("for()", async (t) => {
+test("for()", () => {
   const src = `
     fn main() {
       var i = 1.0;
@@ -104,20 +161,36 @@ test("for()", async (t) => {
     }`;
   const { rootScope } = testParseWESL(src);
 
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %main 
+        { %i 
+          { %i i i } #4
+        } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("fn with param", async (t) => {
+test("fn with param", () => {
   const src = `
     fn main(i: i32) {
       var x = 10 + i;
       for (var i = 0; i < x; i++) { }
     }`;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %main 
+        { %i i32 %x i 
+          { %i i x i } #4
+        } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("fn decl scope", async (t) => {
+test("fn decl scope", () => {
   const src = `
     fn main(i: i32) {
       var x = i;
@@ -125,47 +198,82 @@ test("fn decl scope", async (t) => {
   const { rootScope } = testParseWESL(src);
   const decls = findValidRootDecls(rootScope, {});
   const mainIdent = decls[0];
-  await assertSnapshot(t, scopeToString(mainIdent.dependentScope!));
+  expect(scopeToString(mainIdent.dependentScope!)).toMatchInlineSnapshot(
+    `"{ %i i32 %x i } #2"`,
+  );
 });
 
-test("builtin scope", async (t) => {
+test("builtin scope", () => {
   const src = `fn main( @builtin(vertex_index) a: u32) { }`;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %main 
+        { %a u32 } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("builtin enums", async (t) => {
+test("builtin enums", () => {
   const src =
     `struct read { a: vec2f } var<storage, read_write> storage_buffer: read;`;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %read 
+      { vec2f } #1
+      -{ %storage_buffer 
+        { read } #3
+      } #2
+    } #0"
+  `);
 });
 
-test("texture_storage_2d", async (t) => {
+test("texture_storage_2d", () => {
   const src = `
     @binding(3) @group(0) var tex_out : texture_storage_2d<rgba8unorm, write>;
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(
+    `
+    "{ 
+      -{ %tex_out 
+        { texture_storage_2d rgba8unorm write } #2
+      } #1
+    } #0"
+  `,
+  );
 });
 
-test("ptr 2 params", async (t) => {
+test("ptr 2 params", () => {
   const src = `
     fn foo(ptr: ptr<private, u32>) { }
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %foo 
+        { %ptr ptr private u32 } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("ptr 3 params", async (t) => {
+test("ptr 3 params", () => {
   const src = `
     fn foo(ptr: ptr<storage, array<u32, 128>, read>) { }
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %foo 
+        { %ptr ptr storage array u32 read } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("larger example", async (t) => {
+test("larger example", () => {
   const src = `
     struct UBO { width : u32, }
 
@@ -205,10 +313,46 @@ test("larger example", async (t) => {
   `;
 
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ %UBO 
+      { u32 } #1
+      %Buffer 
+      { array f32 } #2
+      -{ %ubo 
+        { UBO } #4
+      } #3
+      -{ %buf_in 
+        { Buffer } #6
+      } #5
+      -{ %buf_out 
+        { Buffer } #8
+      } #7
+      -{ %tex_in 
+        { texture_2d f32 } #10
+      } #9
+      -{ %tex_out 
+        { texture_storage_2d rgba8unorm write } #12
+      } #11
+      -{ %import_level 
+        { %coord vec3u buf_in %offset coord coord ubo buf_out 
+          offset textureLoad tex_in vec2i coord} #14
+      } #13
+      -{ %export_level 
+        { %coord vec3u all coord vec2u textureDimensions tex_out
+           
+          { %dst_offset coord coord ubo %src_offset coord coord 
+            ubo %a buf_in src_offset %b buf_in src_offset %c 
+            buf_in src_offset ubo %d buf_in src_offset ubo %sum 
+            dot vec4f a b c d vec4f buf_out dst_offset sum 
+            %probabilities vec4f a a b a b c sum max sum 
+            textureStore tex_out vec2i coord probabilities} #19
+        } #17
+      } #16
+    } #0"
+  `);
 });
 
-test("scope with an attribute", async (t) => {
+test("scope with an attribute", () => {
   const src = `
     fn main() {
       @if(foo){ }
@@ -216,10 +360,18 @@ test("scope with an attribute", async (t) => {
   `;
   const { rootScope } = testParseWESL(src);
 
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %main 
+        { 
+           @if(foo) {  } #4
+        } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("partial scope", async (t) => {
+test("partial scope", () => {
   const src = `
     fn main() {
       var x = 1;
@@ -229,10 +381,18 @@ test("partial scope", async (t) => {
   `;
   const { rootScope } = testParseWESL(src);
 
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %main 
+        { %x 
+           @if(false) -{ y } #4
+        } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("loop scope", async (t) => {
+test("loop scope", () => {
   const src = `
     fn main() {
       let a = 7;
@@ -246,10 +406,20 @@ test("loop scope", async (t) => {
   `;
   const { rootScope } = testParseWESL(src);
 
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %main 
+        { %a 
+          { %a 
+            { %a } #5
+          } #4
+        } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("nested scope test", async (t) => {
+test("nested scope test", () => {
   const src = `
     fn main() {
       let bar = 72;
@@ -262,10 +432,21 @@ test("nested scope test", async (t) => {
     }
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %main 
+        { %bar 
+          { 
+            { %new_bar bar } #5
+            %bar
+          } #4
+        } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("@if fn", async (t) => {
+test("@if fn", () => {
   const src = `
     const loc = 0;
 
@@ -275,24 +456,46 @@ test("@if fn", async (t) => {
     }
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %loc 
+        {  } #2
+      } #1
+       @if(true) -{ %fragmentMain loc 
+        { %p vec3f vec4f %x p } #4
+      } #3
+    } #0"
+  `);
 });
 
-test("@if const", async (t) => {
+test("@if const", () => {
   const src = `
     @if(true) const a = 0;
   `;
   const { rootScope } = testParseWESL(src);
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+       @if(true) -{ %a 
+        {  } #2
+      } #1
+    } #0"
+  `);
 });
 
-test("var<private> a: i32;", async (t) => {
+test("var<private> a: i32;", () => {
   const src = `
     var<private> a: i32 = 0;
   `;
   const { rootScope } = testParseWESL(src);
 
-  await assertSnapshot(t, scopeToString(rootScope));
+  expect(scopeToString(rootScope)).toMatchInlineSnapshot(`
+    "{ 
+      -{ %a 
+        { i32 } #2
+        {  } #3
+      } #1
+    } #0"
+  `);
 });
 
 // test("", () => {

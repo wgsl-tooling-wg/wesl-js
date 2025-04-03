@@ -14,7 +14,6 @@ import {
   transformBindingStruct,
 } from "../TransformBindingStructs.ts";
 import { linkTestOpts, parseTest } from "./TestUtil.ts";
-import { assertSnapshot } from "@std/testing/snapshot";
 
 test("markBindingStructs true", () => {
   const src = `
@@ -41,7 +40,7 @@ test("markBindingStructs false", () => {
   expect(structs.length).toBe(0);
 });
 
-test("transformBindingStruct", async (t) => {
+test("transformBindingStruct", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -56,10 +55,15 @@ test("transformBindingStruct", async (t) => {
   const srcBuilder = new SrcMapBuilder({ text: rootAst.srcModule.src });
   lowerAndEmit(srcBuilder, newVars, {});
   const linked = SrcMapBuilder.build([srcBuilder]).dest.text;
-  await assertSnapshot(t, linked);
+  expect(linked).toMatchInlineSnapshot(
+    `
+    "@group(0) @binding(0) var<storage, read_write> particles : array<f32>;
+    "
+  `,
+  );
 });
 
-test("findRefsToBindingStructs", async (t) => {
+test("findRefsToBindingStructs", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -79,10 +83,15 @@ test("findRefsToBindingStructs", async (t) => {
   const found = findRefsToBindingStructs(rootAst.moduleElem);
   expect(found.length).toBe(1);
   const foundAst = astToString(found[0].memberRef);
-  await assertSnapshot(t, foundAst);
+  expect(foundAst).toMatchInlineSnapshot(`
+    "memberRef b.particles
+      ref b
+      text '.'
+      name particles"
+  `);
 });
 
-test("transformBindingReference", async (t) => {
+test("transformBindingReference", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -101,10 +110,10 @@ test("transformBindingReference", async (t) => {
   const { memberRef, struct } = found[0];
   const synthElem = transformBindingReference(memberRef, struct);
   const synthAst = astToString(synthElem);
-  await assertSnapshot(t, synthAst);
+  expect(synthAst).toMatchInlineSnapshot(`"synthetic 'particles'"`);
 });
 
-test("lower binding structs", async (t) => {
+test("lower binding structs", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -127,7 +136,30 @@ test("lower binding structs", async (t) => {
   const lowered = lowerBindingStructs(tAst);
 
   const loweredAst = astToString(lowered.moduleElem);
-  await assertSnapshot(t, loweredAst);
+  expect(loweredAst).toMatchInlineSnapshot(`
+    "module
+      synthetic '@group(0) @binding(0) var<storage, read_write> particles : array<f32>;
+    '
+      text '
+        '
+      text '
+        '
+      fn main(b: Bindings)
+        decl %main
+        param
+        statement
+          text '{
+          let '
+          typeDecl %x
+            decl %x
+          text ' = '
+          memberRef b.particles
+            synthetic 'particles'
+          text ';
+        }'
+      text '
+      '"
+  `);
 
   const srcBuilder = new SrcMapBuilder({ text: lowered.srcModule.src });
   lowerAndEmit(srcBuilder, [lowered.moduleElem], {}, false);

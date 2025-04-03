@@ -1,4 +1,4 @@
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 
 /** trim source for test comparisons
  * rm blank lines

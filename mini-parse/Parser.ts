@@ -1,4 +1,4 @@
-import { assert } from "@std/assert";
+import { assertThat } from "./Assertions.ts";
 import {
   collect,
   type CollectFn,
@@ -181,7 +181,7 @@ export class Parser<I, T> {
   /** record a name for debug tracing */
   setTraceName(name: string): Parser<I, T> {
     if (tracing) {
-      assert(this._traceInfo);
+      assertThat(this._traceInfo);
       this._traceInfo.traceName = name;
     }
     return this;
@@ -190,7 +190,7 @@ export class Parser<I, T> {
   /** trigger tracing for this parser (and by default also this parsers descendants) */
   setTrace(opts: TraceOptions = {}): Parser<I, T> {
     if (tracing) {
-      assert(this._traceInfo);
+      assertThat(this._traceInfo);
       this._traceInfo.traceEnabled = opts;
     }
     return this;
@@ -268,7 +268,7 @@ function runParserWithTracing<I, T>(
   context: ParserContext,
   traceInfo: ParserTraceInfo | undefined,
 ): OptParserResult<T> {
-  assert(tracing);
+  assertThat(tracing);
   const origAppContext = context.app.context;
 
   // setup trace logging if enabled and active for this parser

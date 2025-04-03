@@ -1,10 +1,9 @@
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 import { srcLine, srcLog } from "../ParserLogging.ts";
 import { logCatch } from "../test-util/LogCatcher.ts";
 import { withLogger } from "../WrappedLog.ts";
-import { assertSnapshot } from "@std/testing/snapshot";
 
-Deno.test("srcLine", () => {
+test("srcLine", () => {
   const src1 = "1";
   const src2 = "line 2";
   const src3 = " line 3";
@@ -26,17 +25,17 @@ Deno.test("srcLine", () => {
   expect(line3).toBe(src3);
 });
 
-Deno.test("srcLog", async (t) => {
+test("srcLog", () => {
   const src = `a\n12345\nb`;
 
   const { log, logged } = logCatch();
   withLogger(log, () => {
     srcLog(src, 5, "uh-oh:");
   });
-  await assertSnapshot(t, logged());
+  expect(logged()).toMatchInlineSnapshot();
 });
 
-Deno.test("srcLog on longer example", async (t) => {
+test("srcLog on longer example", () => {
   const src = `
     #export(C, D) /*            */
     fn foo(c:C, d:D) { support(d); } 
@@ -47,15 +46,15 @@ Deno.test("srcLog on longer example", async (t) => {
   withLogger(log, () => {
     srcLog(src, 101, "ugh:");
   });
-  await assertSnapshot(t, logged());
+  expect(logged()).toMatchInlineSnapshot();
 });
 
-Deno.test("srcLog with two carets", async (t) => {
+test("srcLog with two carets", () => {
   const src = `a\n12345\nb`;
 
   const { log, logged } = logCatch();
   withLogger(log, () => {
     srcLog(src, [2, 7], "found:");
   });
-  await assertSnapshot(t, logged());
+  expect(logged()).toMatchInlineSnapshot();
 });

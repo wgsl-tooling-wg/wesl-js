@@ -2,7 +2,7 @@
 import type { SrcMap } from "@wesl/mini-parse";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
 import type { WeslDevice } from "./WeslDevice.ts";
-import { assert } from "@std/assert";
+import { assertThat } from "./Assertions.ts";
 
 /** Results of shader compilation. Has {@link WeslGPUCompilationMessage}
  * which are aware of the WESL module that an error was thrown from. */
@@ -81,7 +81,8 @@ export class LinkedWesl {
         module,
       );
       // Error message cannot be null, since we're passing at least one message to it.
-      assert(errorMessage !== null);
+      assertThat(errorMessage !== null);
+
       const error: ExtendedGPUValidationError = new GPUValidationError(
         errorMessage,
       );

@@ -10,5 +10,12 @@
     "**/node_modules/**": true,
     "community-wgsl/**": true
   },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "community-wgsl/**": true,
+    "cts/**": true
+  },
   "deno.codeLens.test": true
 }

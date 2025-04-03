@@ -1,4 +1,4 @@
-import { unreachable } from "@std/assert";
+import { assertUnreachable } from "../../mini-parse/Assertions.ts";
 import type {
   AbstractElem,
   Attribute,
@@ -124,7 +124,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   } else if (kind === "switch-clause") {
     // Nothing to do for now
   } else {
-    unreachable(kind);
+    assertUnreachable(kind);
   }
 }
 
@@ -152,7 +152,7 @@ function addAttributeFields(attr: Attribute, str: LineWrapper) {
   } else if (kind === "@interpolate") {
     str.add(` @interpolate(${attr.params.map((v) => v.name).join(", ")})`);
   } else {
-    unreachable(kind);
+    assertUnreachable(kind);
   }
 }
 
@@ -226,7 +226,7 @@ function addDirective(elem: DirectiveElem, str: LineWrapper) {
   } else if (kind === "enable" || kind === "requires") {
     str.add(` ${kind} ${directive.extensions.map((v) => v.name).join(", ")}`);
   } else {
-    unreachable(kind);
+    assertUnreachable(kind);
   }
   listAttributeElems(attributes, str);
 }

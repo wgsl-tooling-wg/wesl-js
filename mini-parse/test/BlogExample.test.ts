@@ -1,4 +1,4 @@
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 import {
   kind,
   opt,
@@ -10,9 +10,9 @@ import {
 import { FilterStream } from "../stream/FilterStream.ts";
 import { MatchersStream, RegexMatchers } from "../stream/MatchersStream.ts";
 import { matchOneOf } from "../stream/RegexHelpers.ts";
-import { assert } from "@std/assert";
+import { assertThat } from "../Assertions.ts";
 
-Deno.test("parse fn foo()", () => {
+test("parse fn foo()", () => {
   const src = "fn foo()";
 
   const tokens = new RegexMatchers({
@@ -39,7 +39,7 @@ Deno.test("parse fn foo()", () => {
   expect(result).toBeDefined();
 });
 
-Deno.test("parse fn foo() with annotation in grammar", () => {
+test("parse fn foo() with annotation in grammar", () => {
   const src = "fn foo()";
 
   const tokens = new RegexMatchers({
@@ -61,12 +61,12 @@ Deno.test("parse fn foo() with annotation in grammar", () => {
   const result = fnDecl.parse({ stream });
 
   expect(result).not.toBe(null);
-  assert(result !== null);
+  assertThat(result !== null);
   const fnName = result.value[2];
   expect(fnName).toBe("foo");
 });
 
-Deno.test("parse fn foo() with seqObj", () => {
+test("parse fn foo() with seqObj", () => {
   const src = "@export fn foo()";
 
   const tokens = new RegexMatchers({

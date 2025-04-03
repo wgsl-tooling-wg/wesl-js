@@ -1,11 +1,10 @@
 // deno-lint-ignore-file no-explicit-any
 import { testParse } from "../test-util/index.ts";
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 import { tagScope } from "../ParserCollect.ts";
 import { collectArray, or, seq, text } from "../ParserCombinator.ts";
-import { assertSnapshot } from "@std/testing/snapshot";
 
-Deno.test("collect runs a fn on commit", () => {
+test("collect runs a fn on commit", () => {
   const src = "a b c";
   const results: string[] = [];
   const p = seq(
@@ -18,7 +17,7 @@ Deno.test("collect runs a fn on commit", () => {
   expect(results).toEqual(["parsed", "collected"]);
 });
 
-Deno.test("collect fn sees tags", () => {
+test("collect fn sees tags", () => {
   const src = "a b c";
   const results: string[] = [];
   const p = seq(
@@ -35,7 +34,7 @@ Deno.test("collect fn sees tags", () => {
   expect(results).toEqual(["collected: a, b"]);
 });
 
-Deno.test("backtracking", () => {
+test("backtracking", () => {
   const src = "x a b c";
   const results: string[] = [];
   const p = seq(
@@ -59,7 +58,7 @@ Deno.test("backtracking", () => {
   expect(results).toEqual(["collected2: undefined, b"]);
 });
 
-Deno.test("collect with tag", () => {
+test("collect with tag", () => {
   const src = "a b c";
   const results: string[] = [];
   const p = seq(
@@ -77,7 +76,7 @@ Deno.test("collect with tag", () => {
   expect(results).toEqual(["collected: x"]);
 });
 
-Deno.test("ctag earlier collect", () => {
+test("ctag earlier collect", () => {
   const results: string[] = [];
   const p = or(
     "a",
@@ -89,7 +88,7 @@ Deno.test("ctag earlier collect", () => {
   expect(results).toEqual(["collected: B"]);
 });
 
-Deno.test("ctag collect inside seq", () => {
+test("ctag collect inside seq", () => {
   const results: any[] = [];
   const p = collectArray(
     seq(
@@ -105,7 +104,7 @@ Deno.test("ctag collect inside seq", () => {
   expect(results).toEqual([{ bee: ["B"] }]);
 });
 
-Deno.test("tagScope clears tags", async (t) => {
+test("tagScope clears tags", () => {
   const results: any[] = [];
   const p = tagScope(
     or(
@@ -120,10 +119,10 @@ Deno.test("tagScope clears tags", async (t) => {
   });
 
   testParse(p, "a");
-  await assertSnapshot(t, results);
+  expect(results).toMatchInlineSnapshot();
 });
 
-Deno.test("ctag propogates up through seq", () => {
+test("ctag propogates up through seq", () => {
   const results: any[] = [];
   const p = seq(
     "a",
@@ -136,7 +135,7 @@ Deno.test("ctag propogates up through seq", () => {
   expect(results).toEqual([{ btag: ["B"] }]);
 });
 
-Deno.test("tagScope resets original tags", () => {
+test("tagScope resets original tags", () => {
   const results: any[] = [];
   const p = seq(
     text("a").ptag("atag"),
@@ -146,7 +145,7 @@ Deno.test("tagScope resets original tags", () => {
   expect(results).toEqual([{ atag: ["a"] }]);
 });
 
-Deno.test("collect with ctag param", () => {
+test("collect with ctag param", () => {
   const src = "a b";
   const results: string[] = [];
   const p = seq(
@@ -160,7 +159,7 @@ Deno.test("collect with ctag param", () => {
   expect(results).toEqual(["tagged: B"]);
 });
 
-Deno.test("tagScope clears tags on entry", () => {
+test("tagScope clears tags on entry", () => {
   const results: any[] = [];
   const p = seq(
     text("a").ptag("A"),

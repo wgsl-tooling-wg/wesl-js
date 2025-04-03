@@ -2,7 +2,7 @@ import { expectNoLogAsync } from "@wesl/mini-parse/test-util";
 import { bindingStructsPlugin, link, noSuffix } from "@wesl/wesl";
 import { stripWesl } from "./stripWgsl.ts";
 import { allBulkTests, NamedPath } from "./findBulkTests.ts";
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 
 /**
  * Each test runs the linker on a source wgsl files and verifies
@@ -15,7 +15,7 @@ export function testWgslFiles(namedPaths: NamedPath[]) {
 
   namedPaths.forEach(({ name, filePath }) => {
     const shortPath = "./" + name;
-    Deno.test(name, async () => {
+    test(name, async () => {
       const orig = await Deno.readTextFile(filePath);
       const result = await expectNoLogAsync(() => {
         const weslSrc = { [shortPath]: orig };

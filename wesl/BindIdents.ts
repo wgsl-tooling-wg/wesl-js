@@ -19,7 +19,7 @@ import {
 } from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last } from "./Util.ts";
-import { assert } from "@std/assert";
+import { assertThat } from "./Assertions.ts";
 
 /**
   BindIdents pass
@@ -138,7 +138,7 @@ export function findValidRootDecls(
   const found: DeclIdent[] = [];
   for (const e of rootScope.contents) {
     if (e.kind === "decl") {
-      assert(e.declElem);
+      assertThat(e.declElem);
       if (elementValid(e.declElem!, conditions)) {
         found.push(e);
       }
@@ -325,12 +325,12 @@ function globalDeclToRootLiveDecls(
   decl: DeclIdent,
   conditions: Conditions,
 ): LiveDecls | undefined {
-  assert(decl.isGlobal, identToString(decl));
+  assertThat(decl.isGlobal, identToString(decl));
   let rootScope = decl.containingScope;
   while (rootScope.parent) {
     rootScope = rootScope.parent;
   }
-  assert(rootScope.kind === "scope");
+  assertThat(rootScope.kind === "scope");
   const root = rootScope as LexicalScope;
   if (root._scopeDecls) return root._scopeDecls;
 

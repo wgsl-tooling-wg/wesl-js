@@ -18,8 +18,7 @@ import { isGlobal } from "./BindIdents.ts";
 import { elementValid } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import type { Conditions, DeclIdent, Ident } from "./Scope.ts";
-import { assert } from "@std/assert";
-import { unreachable } from "@std/assert/unreachable";
+import { assertThat, assertUnreachable } from "./Assertions.ts";
 
 /** passed to the emitters */
 interface EmitContext {
@@ -326,7 +325,7 @@ export function expressionToString(elem: ExpressionElem): string {
       elem.arguments.map(expressionToString).join(", ")
     })`;
   } else {
-    unreachable(kind);
+    assertUnreachable(kind);
   }
 }
 
@@ -360,7 +359,7 @@ function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
 
 function displayName(declIdent: DeclIdent): string {
   if (isGlobal(declIdent)) {
-    assert(
+    assertThat(
       declIdent.mangledName,
       `ERR: mangled name not found for decl ident ${identToString(declIdent)}`,
     );

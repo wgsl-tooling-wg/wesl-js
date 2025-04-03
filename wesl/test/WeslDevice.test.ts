@@ -1,8 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 /// <reference types="npm:@webgpu/types" />
 import { SrcMap } from "@wesl/mini-parse";
-import { expect, test } from "vitest";
-import { assertSpyCalls, spy } from "@std/testing/mock";
+import { expect, test, vi } from "vitest";
 import { LinkedWesl } from "../LinkedWesl.ts";
 import { makeWeslDevice } from "../WeslDevice.ts";
 
@@ -67,7 +66,7 @@ test("WeslDevice doesn't conflict with popErrorsScope", async () => {
       },
     }) as any,
   );
-  using createShaderModuleSpy = spy(device, "createShaderModule");
+  const createShaderModuleSpy = vi.spyOn(device, "createShaderModule");
   device.pushErrorScope("validation");
   device.createShaderModule({
     code: "🐈",
@@ -87,7 +86,7 @@ test("WeslDevice doesn't conflict with popErrorsScope", async () => {
   expect(error).not.toBe(null);
   expect(error?.message).toContain("shader compilation failed");
   expect(error?.message).toContain(":1:1");
-  assertSpyCalls(createShaderModuleSpy, 1);
+  expect(createShaderModuleSpy).toHaveBeenCalledTimes(1);
 });
 
 test("LinkedWesl createShaderModule skips if it's not a WeslDevice", () => {
@@ -100,7 +99,7 @@ test("LinkedWesl createShaderModule skips if it's not a WeslDevice", () => {
     },
   }) as any;
 
-  using createShaderModuleSpy = spy(device, "createShaderModule");
+  const createShaderModuleSpy = vi.spyOn(device, "createShaderModule");
   const linkedWesl = new LinkedWesl(
     new SrcMap(
       {
@@ -112,12 +111,16 @@ test("LinkedWesl createShaderModule skips if it's not a WeslDevice", () => {
 
   // Test that this doesnt' throw
   linkedWesl.createShaderModule(device, {});
-  assertSpyCalls(createShaderModuleSpy, 1);
+  expect(createShaderModuleSpy).toHaveBeenCalledTimes(1);
 });
 
 test("Point at WESL code", async () => {
-  const GPUDeviceMock = spy(function (this: GPUDevice) {
-    this.createShaderModule = () => {
+  const GPUValidationErrorMock = vi.fn(function (this: any, message: string) {
+    this.message = message;
+  });
+  vi.stubGlobal("GPUValidationError", GPUValidationErrorMock);
+  const device: GPUDevice = new MockedGPUDevice({
+    createShaderModule: () => {
       return {
         getCompilationInfo(): Promise<GPUCompilationInfo> {
           return Promise.resolve({
@@ -136,18 +139,15 @@ test("Point at WESL code", async () => {
           });
         },
       } as any;
-    };
-    this.pushErrorScope = () => {};
-    this.popErrorScope = () => {
+    },
+    pushErrorScope: () => {
+    },
+    popErrorScope: () => {
       return Promise.resolve({
         message: "this message gets ignored",
       });
-    };
-    this.dispatchEvent = () => {
-      throw new Error("Should not be called");
-    };
-  });
-  const device = makeWeslDevice(new (GPUDeviceMock as any)());
+    },
+  }) as any;
 
   const linkedWesl = new LinkedWesl(
     new SrcMap(
@@ -179,9 +179,18 @@ test("Point at WESL code", async () => {
   expect(result?.message).not.toContain(":1:1");
   expect(result?.message).toContain(":2:1");
   expect(result?.message).toContain("shader compilation failed");
+
+  vi.unstubAllGlobals();
 });
 
 test("Invokes error throwing", async () => {
+  const GPUValidationErrorMock = vi.fn(function (this: any, message: string) {
+    this.message = message;
+  });
+  vi.stubGlobal("GPUValidationError", GPUValidationErrorMock);
+  const GPUUncapturedErrorEventMock = vi.fn(function () {});
+  vi.stubGlobal("GPUUncapturedErrorEvent", GPUUncapturedErrorEventMock);
+
   const dispatchEventPromise = Promise.withResolvers();
   const dispatchEventTimer = setTimeout(() => {
     dispatchEventPromise.reject();
@@ -222,8 +231,8 @@ test("Invokes error throwing", async () => {
       },
     }) as any,
   );
-  using dispatchEventSpy = spy(device, "dispatchEvent");
-  using injectErrorSpy = spy(device, "injectError");
+  const dispatchEventSpy = vi.spyOn(device, "dispatchEvent");
+  const injectErrorSpy = vi.spyOn(device, "injectError");
 
   const linkedWesl = new LinkedWesl(
     new SrcMap({
@@ -232,11 +241,11 @@ test("Invokes error throwing", async () => {
   );
 
   linkedWesl.createShaderModule(device, {});
-
-  assertSpyCalls(injectErrorSpy, 1);
-
+  expect(injectErrorSpy).toHaveBeenCalledTimes(1);
   await dispatchEventPromise.promise;
-  assertSpyCalls(dispatchEventSpy, 1);
+  expect(dispatchEventSpy).toHaveBeenCalledTimes(1);
+
+  vi.unstubAllGlobals();
 });
 
 // LATER

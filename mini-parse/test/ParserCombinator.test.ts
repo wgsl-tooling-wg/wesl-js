@@ -3,7 +3,7 @@ import {
   type TestMatcherKind,
   testParse,
 } from "../test-util/index.ts";
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 import type { Parser } from "../Parser.ts";
 import {
   any,
@@ -25,7 +25,6 @@ import {
 import { enableTracing } from "../ParserTracing.ts";
 import type { Stream, Token } from "../Stream.ts";
 import { withLogger } from "../WrappedLog.ts";
-import { assertSnapshot } from "@std/testing/snapshot";
 
 const m: Record<TestMatcherKind, TestMatcherKind> = {
   attr: "attr",
@@ -36,7 +35,7 @@ const m: Record<TestMatcherKind, TestMatcherKind> = {
   ws: "ws",
 };
 
-Deno.test("or() finds first match", () => {
+test("or() finds first match", () => {
   const src = "#import";
   const p = or("#import", "//");
   const { parsed, position } = testParse(p, src);
@@ -44,7 +43,7 @@ Deno.test("or() finds first match", () => {
   expect(position).toEqual(src.length);
 });
 
-Deno.test("or() finds second match", () => {
+test("or() finds second match", () => {
   const src = "// #import";
   const p = or("#import", "//");
   const { parsed, position } = testParse(p, src);
@@ -52,7 +51,7 @@ Deno.test("or() finds second match", () => {
   expect(position).toEqual("//".length);
 });
 
-Deno.test("or() finds no match ", () => {
+test("or() finds no match ", () => {
   const src = "fn decl() {}";
   const p = or("#import", "//");
   const { parsed, position } = testParse(p, src);
@@ -60,7 +59,7 @@ Deno.test("or() finds no match ", () => {
   expect(position).toEqual(0);
 });
 
-Deno.test("seq() returns null with partial match", () => {
+test("seq() returns null with partial match", () => {
   const src = "#import";
   const p = seq("#import", kind("word"));
   const { parsed, position } = testParse(p, src);
@@ -69,22 +68,22 @@ Deno.test("seq() returns null with partial match", () => {
   expect(position).toEqual(7);
 });
 
-Deno.test("seq() handles two element match", async (t) => {
+test("seq() handles two element match", () => {
   const src = "#import foo";
   const p = seq("#import", kind(m.word));
   const { parsed } = testParse(p, src);
-  await assertSnapshot(t, parsed);
+  expect(parsed).toMatchInlineSnapshot();
 });
 
-Deno.test("opt() makes failing match ok", async (t) => {
+test("opt() makes failing match ok", () => {
   const src = "foo";
   const p = seq(opt("#import"), kind("word"));
   const { parsed } = testParse(p, src);
   expect(parsed).not.toBeNull();
-  await assertSnapshot(t, parsed);
+  expect(parsed).toMatchInlineSnapshot();
 });
 
-Deno.test("repeat() to (1,2,3,4)", () => {
+test("repeat() to (1,2,3,4)", () => {
   const src = "(1,2,3,4)";
   const wordNum = or(kind("word"), kind("digits"));
   const params = seq(opt(wordNum), opt(repeat(preceded(",", wordNum))));
@@ -94,14 +93,14 @@ Deno.test("repeat() to (1,2,3,4)", () => {
   expect(parsed?.value).toEqual(["1", ["2", "3", "4"]]);
 });
 
-Deno.test("map()", () => {
+test("map()", () => {
   const src = "foo";
   const p = kind(m.word).map((r) => (r === "foo" ? "found" : "missed"));
   const { parsed } = testParse(p, src);
   expect(parsed?.value).toBe("found");
 });
 
-Deno.test("toParser()", () => {
+test("toParser()", () => {
   const src = "foo !";
   const bang = text("!");
   const p = kind("word").toParser(() => bang);
@@ -109,23 +108,23 @@ Deno.test("toParser()", () => {
   expect(parsed?.value).toEqual("!");
 });
 
-Deno.test("not() success", async (t) => {
+test("not() success", () => {
   const src = "foo bar";
   const p = repeat(seq(not("{"), any()));
   const { parsed } = testParse(p, src);
 
   const values = parsed!.value;
-  await assertSnapshot(t, values);
+  expect(values).toMatchInlineSnapshot();
 });
 
-Deno.test("not() failure", () => {
+test("not() failure", () => {
   const src = "foo";
   const p = not(kind(m.word));
   const { parsed } = testParse(p, src);
   expect(parsed).toBeNull();
 });
 
-Deno.test("recurse with fn()", () => {
+test("recurse with fn()", () => {
   const src = "{ a { b } }";
   const p: Parser<Stream<Token>, string[]> = delimited(
     "{",
@@ -137,7 +136,7 @@ Deno.test("recurse with fn()", () => {
   expect(parsed?.value).toEqual(["a", "b"]);
 });
 
-Deno.test("tracing", async (t) => {
+test("tracing", () => {
   const src = "a";
   const { log, logged } = logCatch();
   enableTracing();
@@ -146,24 +145,24 @@ Deno.test("tracing", async (t) => {
   withLogger(log, () => {
     testParse(p, src);
   });
-  await assertSnapshot(t, logged());
+  expect(logged()).toMatchInlineSnapshot();
 });
 
-Deno.test("infinite loop detection", () => {
+test("infinite loop detection", () => {
   const p = repeat(not("x"));
   expect(() => {
     testParse(p, "y");
   }).toThrow("infinite loop");
 });
 
-Deno.test("token start is after ignored ws", () => {
+test("token start is after ignored ws", () => {
   const src = " a";
   const p = span(kind(m.word));
   const { parsed } = testParse(p, src);
   expect(parsed?.value?.span).toEqual([1, 2]);
 });
 
-Deno.test("req logs a message on failure", () => {
+test("req logs a message on failure", () => {
   const src = "a 1;";
   const p = seq("a", req("b", "expected 'b'"));
   expect(() => {
@@ -171,7 +170,7 @@ Deno.test("req logs a message on failure", () => {
   }).toThrow("expected 'b'");
 });
 
-Deno.test("repeatWhile", () => {
+test("repeatWhile", () => {
   let count = 0;
   const p = repeatWhile("a", () => count++ < 2);
   const src = "a a a a";
@@ -179,21 +178,21 @@ Deno.test("repeatWhile", () => {
   expect(parsed?.value).toEqual(["a", "a"]);
 });
 
-Deno.test("repeat1", () => {
+test("repeat1", () => {
   const p = repeatPlus("a");
   const src = "a a";
   const { parsed } = testParse(p, src);
   expect(parsed?.value).toEqual(["a", "a"]);
 });
 
-Deno.test("repeat1 fails", () => {
+test("repeat1 fails", () => {
   const p = repeatPlus("a");
   const src = "b";
   const { parsed } = testParse(p, src);
   expect(parsed?.value).toBeUndefined();
 });
 
-Deno.test("withSep", () => {
+test("withSep", () => {
   const src = "a, b, c";
   const p = withSep(",", kind(m.word));
   const result = testParse(p, src);

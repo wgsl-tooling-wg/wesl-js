@@ -1,10 +1,11 @@
-import { assert, unreachable } from "@std/assert";
+import { assertUnreachable } from "../mini-parse/Assertions.ts";
 import type {
   AttributeElem,
   ElemWithAttributes,
   ExpressionElem,
   IfAttribute,
 } from "./AbstractElems.ts";
+import { assertThat } from "./Assertions.ts";
 import type { Conditions, Scope } from "./Scope.ts";
 import { findMap } from "./Util.ts";
 
@@ -49,22 +50,22 @@ function evaluateIfExpression(
 ): boolean {
   const { kind } = expression;
   if (kind == "unary-expression") {
-    assert(expression.operator.value === "!");
+    assertThat(expression.operator.value === "!");
     return !evaluateIfExpression(expression.expression, conditions);
   } else if (kind == "binary-expression") {
     const op = expression.operator.value;
-    assert(op === "||" || op === "&&");
+    assertThat(op === "||" || op === "&&");
     const leftResult = evaluateIfExpression(expression.left, conditions);
     if (op === "||") {
       return leftResult || evaluateIfExpression(expression.right, conditions);
     } else if (op === "&&") {
       return leftResult && evaluateIfExpression(expression.right, conditions);
     } else {
-      unreachable(op);
+      assertUnreachable(op);
     }
   } else if (kind == "literal") {
     const { value } = expression;
-    assert(value === "true" || value === "false");
+    assertThat(value === "true" || value === "false");
     return value === "true";
   } else if (kind == "parenthesized-expression") {
     return evaluateIfExpression(expression.expression, conditions);

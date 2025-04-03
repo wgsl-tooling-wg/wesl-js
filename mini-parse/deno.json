@@ -8,6 +8,5 @@
     "./vitest-util": "./vitest-util/index.ts"
   },
   "tasks": {
-    "build:node": "deno run -A scripts/build_npm.ts"
   }
 }

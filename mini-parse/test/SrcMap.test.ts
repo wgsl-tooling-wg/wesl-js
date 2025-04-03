@@ -1,7 +1,7 @@
 import { SrcMap } from "../SrcMap.ts";
-import { assertSnapshot } from "@std/testing/snapshot";
+import { expect, test } from "vitest";
 
-Deno.test("compact", async (t) => {
+test("compact", () => {
   const src = "a b";
   const dest = "|" + src + " d";
 
@@ -11,10 +11,10 @@ Deno.test("compact", async (t) => {
     { src: { text: src }, srcStart: 2, srcEnd: 3, destStart: 3, destEnd: 4 },
   ]);
   srcMap.compact();
-  await assertSnapshot(t, srcMap.entries);
+  expect(srcMap.entries).toMatchInlineSnapshot();
 });
 
-Deno.test("merge", async (t) => {
+test("merge", () => {
   const src = "a b";
   const src2 = "d";
   const mid = "|" + src + " " + src2;
@@ -38,5 +38,5 @@ Deno.test("merge", async (t) => {
   ]);
 
   const merged = map1.merge(map2);
-  await assertSnapshot(t, merged.entries);
+  expect(merged.entries).toMatchInlineSnapshot();
 });

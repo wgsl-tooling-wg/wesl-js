@@ -1,7 +1,7 @@
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 import { RegexMatchers } from "../stream/MatchersStream.ts";
 
-Deno.test("token matcher", () => {
+test("token matcher", () => {
   const m = new RegexMatchers({
     name: /[a-z]+/,
     spaces: /\s+/,

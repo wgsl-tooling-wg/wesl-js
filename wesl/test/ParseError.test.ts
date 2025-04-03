@@ -1,32 +1,36 @@
 import { expect, test } from "vitest";
 import { errorHighlight } from "../Util.ts";
 import { parseTest } from "./TestUtil.ts";
-import { assertSnapshot } from "@std/testing/snapshot";
 
-function getError(fn: () => void) {
-  try {
-    fn();
-  } catch (e) {
-    return e;
-  }
-}
-
-test("parse fn foo() { invalid }", async (t) => {
+test("parse fn foo() { invalid }", () => {
   const src = "fn foo() { let }";
-  await assertSnapshot(t, getError(() => parseTest(src)));
+  expect(() => parseTest(src)).toThrowErrorMatchingInlineSnapshot(`
+    [Error: ./test.wesl:1:15 error: invalid ident
+    fn foo() { let }
+                  ^^]
+  `);
 });
 
-test("parse invalid if", async (t) => {
+test("parse invalid if", () => {
   const src = `fn foo() { 
   let a = 3;
   if(1<1) { 🐈‍⬛ } else {  }
   }`;
-  await assertSnapshot(t, getError(() => parseTest(src)));
+  expect(() => parseTest(src)).toThrowErrorMatchingInlineSnapshot(`
+    [Error: ./test.wesl:3:13 error: Invalid token 🐈
+
+      if(1<1) { 🐈‍⬛ } else {  }
+                 ^^]
+  `);
 });
 
-test("parse invalid name", async (t) => {
+test("parse invalid name", () => {
   const src = "var package = 3;";
-  await assertSnapshot(t, getError(() => parseTest(src)));
+  expect(() => parseTest(src)).toThrowErrorMatchingInlineSnapshot(`
+    [Error: ./test.wesl:1:4 error: expected identifier
+    var package = 3;
+       ^^^^^^^^]
+  `);
 });
 
 test("error highlight", () => {

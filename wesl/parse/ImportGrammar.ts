@@ -28,7 +28,7 @@ import type {
 import { importElem } from "../WESLCollect.ts";
 import { word } from "./WeslBaseGrammar.ts";
 import type { WeslToken } from "./WeslStream.ts";
-import { unreachable } from "@std/assert";
+import { assertUnreachable } from "../Assertions.ts";
 
 function makeStatement(
   segments: ImportSegment[],
@@ -89,7 +89,7 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
     next.name = name;
     return makeStatement([], next);
   } else {
-    unreachable(next);
+    assertUnreachable(next);
   }
 });
 

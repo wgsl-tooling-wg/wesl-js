@@ -1,14 +1,12 @@
-import { assert } from "@std/assert";
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 
 // Blocked on https://github.com/denoland/deno/issues/28660
-Deno.test.ignore("Pass WESL shader to WebGPU", async () => {
+test.skip("Pass WESL shader to WebGPU", async () => {
   const device = await navigator.gpu.requestAdapter().then((v) =>
     v?.requestDevice()
   );
-  assert(device);
 
-  const module = device.createShaderModule({
+  const module = device!.createShaderModule({
     code: `
       @fragment fn fs() -> @location(0) vec4f {
         return vec4f(1, 0, 0, 1);

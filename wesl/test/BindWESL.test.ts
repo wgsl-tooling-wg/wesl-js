@@ -1,9 +1,8 @@
-import { test } from "vitest";
+import { expect, test } from "vitest";
 import { scopeToStringLong } from "../debug/ScopeToString.ts";
 import { bindTest } from "./TestUtil.ts";
-import { assertSnapshot } from "@std/testing/snapshot";
 
-test("nested scopes binding", async (t) => {
+test("nested scopes binding", () => {
   const src = `
     fn main() {
       let bar = 72;
@@ -19,10 +18,10 @@ test("nested scopes binding", async (t) => {
   const { registry } = bindTest(src);
   const ast = registry.modules["package::test"];
 
-  await assertSnapshot(t, scopeToStringLong(ast.rootScope));
+  expect(scopeToStringLong(ast.rootScope)).toMatchInlineSnapshot();
 });
 
-test("@location attribute const", async (t) => {
+test("@location attribute const", () => {
   const src = `
     const pos = 0;
 
@@ -33,5 +32,5 @@ test("@location attribute const", async (t) => {
   `;
   const { registry } = bindTest(src);
   const ast = registry.modules["package::test"];
-  await assertSnapshot(t, scopeToStringLong(ast.rootScope));
+  expect(scopeToStringLong(ast.rootScope)).toMatchInlineSnapshot();
 });

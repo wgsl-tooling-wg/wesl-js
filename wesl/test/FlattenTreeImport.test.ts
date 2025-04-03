@@ -1,9 +1,8 @@
-import { test } from "vitest";
+import { expect, test } from "vitest";
 import type { ImportCollection, ImportStatement } from "../AbstractElems.ts";
 import { flattenTreeImport } from "../FlattenTreeImport.ts";
-import { assertSnapshot } from "@std/testing/snapshot";
 
-test("complex tree import", async (t) => {
+test("complex tree import", () => {
   const list: ImportCollection = {
     kind: "import-collection",
     subtrees: [
@@ -36,5 +35,40 @@ test("complex tree import", async (t) => {
     finalSegment: list,
   };
   const flattened = flattenTreeImport(tree);
-  await assertSnapshot(t, flattened);
+  expect(flattened).toMatchInlineSnapshot(`
+    [
+      {
+        "importPath": [
+          "zap",
+          "bar",
+        ],
+        "modulePath": [
+          "zap",
+          "foo",
+        ],
+      },
+      {
+        "importPath": [
+          "zap",
+          "doh",
+        ],
+        "modulePath": [
+          "zap",
+          "doh",
+        ],
+      },
+      {
+        "importPath": [
+          "zap",
+          "bib",
+          "bog",
+        ],
+        "modulePath": [
+          "zap",
+          "bib",
+          "bog",
+        ],
+      },
+    ]
+  `);
 });

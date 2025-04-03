@@ -1,9 +1,9 @@
-import { unreachable } from "@std/assert";
 import type {
   ImportCollection,
   ImportItem,
   ImportStatement,
 } from "../AbstractElems.ts";
+import { assertUnreachable } from "../Assertions.ts";
 
 export function importToString(tree: ImportStatement): string {
   return importToStringImpl(tree) + ";";
@@ -24,6 +24,6 @@ function segmentToString(segment: ImportCollection | ImportItem): string {
   } else if (segment.kind === "import-collection") {
     return `{${segment.subtrees.map((s) => importToStringImpl(s)).join(", ")}}`;
   } else {
-    unreachable(segment);
+    assertUnreachable(segment);
   }
 }

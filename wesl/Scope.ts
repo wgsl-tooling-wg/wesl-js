@@ -1,5 +1,9 @@
-import { assert } from "@std/assert";
-import type { DeclarationElem, IfAttribute, RefIdentElem } from "./AbstractElems.ts";
+import type {
+  DeclarationElem,
+  IfAttribute,
+  RefIdentElem,
+} from "./AbstractElems.ts";
+import { assertThat } from "./Assertions.ts";
 import { scopeValid } from "./Conditions.ts";
 import type { LiveDecls } from "./LiveDeclarations.ts";
 import type { WeslAST } from "./ParseWESL.ts";
@@ -108,9 +112,9 @@ interface ScopeBase {
  * The first scope is mutated to append the contents of the second.  */
 export function mergeScope(a: Scope, b: Scope | undefined): void {
   if (!b) return;
-  assert(a.kind === b.kind);
-  assert(a.parent === b.parent);
-  assert(!b.ifAttribute);
+  assertThat(a.kind === b.kind);
+  assertThat(a.parent === b.parent);
+  assertThat(!b.ifAttribute);
   a.contents = a.contents.concat(b.contents);
 }
 

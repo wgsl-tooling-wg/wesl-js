@@ -1,4 +1,3 @@
-import { unreachable } from "@std/assert";
 import type {
   AttributeElem,
   NameElem,
@@ -8,6 +7,7 @@ import type {
   TypeTemplateParameter,
   UnknownExpressionElem,
 } from "./AbstractElems.ts";
+import { assertUnreachable } from "./Assertions.ts";
 import {
   diagnosticControlToString,
   expressionToString,
@@ -44,7 +44,7 @@ export function attributeToString(e: AttributeElem): string {
   } else if (kind === "@interpolate") {
     return `@interpolate(${e.attribute.params.map((v) => v.name).join(", ")})`;
   } else {
-    unreachable(kind);
+    assertUnreachable(kind);
   }
 }
 
@@ -58,7 +58,7 @@ export function typeParamToString(param?: TypeTemplateParameter): string {
 
   if (param.kind === "expression") return contentsToString(param);
   if (param.kind === "type") return typeRefToString(param);
-  unreachable(param);
+  assertUnreachable(param);
 }
 
 export function typeRefToString(t?: TypeRefElem): string {
@@ -99,6 +99,6 @@ export function contentsToString(
   } else if (elem.kind === "name") {
     return elem.name;
   } else {
-    unreachable(elem);
+    assertUnreachable(elem);
   }
 }

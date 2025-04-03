@@ -17,7 +17,7 @@ import {
   textureStorageTypes,
 } from "./StandardTypes.ts";
 import { findMap } from "./Util.ts";
-import { assert } from "@std/assert";
+import { assertThat } from "./Assertions.ts";
 
 export type BindingStructReportFn = (structs: BindingStructElem[]) => void;
 export const textureStorage = matchOneOf(textureStorageTypes);
@@ -253,8 +253,8 @@ function storageTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   if (textureStorage.test(typeRef.name.originalName)) {
     const firstParam = typeRef.templateParams?.[0];
     const secondParam = typeRef.templateParams?.[1];
-    assert(firstParam?.kind === "type"); // LATER: Temp hack
-    assert(secondParam?.kind === "type"); // LATER: Temp hack
+    assertThat(firstParam?.kind === "type"); // LATER: Temp hack
+    assertThat(secondParam?.kind === "type"); // LATER: Temp hack
     const sampleType = formatToTextureSampleType(
       firstParam.name.originalName as GPUTextureFormat,
     );
@@ -275,7 +275,7 @@ function externalTextureLayoutEntry(typeRef: TypeRefElem): string | undefined {
 function paramText(
   expression: UnknownExpressionElem | NameElem | TranslateTimeExpressionElem,
 ): string {
-  assert(
+  assertThat(
     expression.kind === "expression",
     "Only expression elements are supported in this position",
   );

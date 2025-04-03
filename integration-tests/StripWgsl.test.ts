@@ -1,7 +1,7 @@
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 import { stripWesl } from "./stripWgsl.ts";
 
-Deno.test("strip trailing commas", () => {
+test("strip trailing commas", () => {
   const withComma = `
     struct A { a: f32, }
   `;

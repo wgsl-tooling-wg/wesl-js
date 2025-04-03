@@ -1,5 +1,5 @@
 import { withLogSpy } from "@wesl/mini-parse/test-util";
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 import { importSyntaxCases } from "wesl-testsuite";
 import { weslImports } from "../parse/ImportGrammar.ts";
 import { testAppParse } from "./TestUtil.ts";
@@ -17,8 +17,8 @@ function expectParses(src: string): void {
 
 importSyntaxCases.forEach((c) => {
   if (c.fails) {
-    Deno.test(c.src, () => expectParseFail(c.src));
+    test(c.src, () => expectParseFail(c.src));
   } else {
-    Deno.test(c.src, () => expectParses(c.src));
+    test(c.src, () => expectParses(c.src));
   }
 });

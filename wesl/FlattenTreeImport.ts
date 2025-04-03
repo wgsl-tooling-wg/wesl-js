@@ -1,10 +1,10 @@
-import { unreachable } from "@std/assert";
 import type {
   ImportCollection,
   ImportItem,
   ImportSegment,
   ImportStatement,
 } from "./AbstractElems.ts";
+import { assertUnreachable } from "./Assertions.ts";
 
 export interface FlatImport {
   importPath: string[];
@@ -49,7 +49,7 @@ export function flattenTreeImport(imp: ImportStatement): FlatImport[] {
       const modulePath = [...resolvedExportPath, finalSegment.name];
       return [{ importPath, modulePath }];
     } else {
-      unreachable(finalSegment);
+      assertUnreachable(finalSegment);
     }
   }
 }

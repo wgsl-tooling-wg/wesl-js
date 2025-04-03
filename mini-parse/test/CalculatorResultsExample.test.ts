@@ -1,4 +1,4 @@
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 import { calcMatcher } from "../examples/CalculatorExample.ts";
 import {
   power,
@@ -10,37 +10,37 @@ import type { Parser } from "../Parser.ts";
 import type { Stream, Token } from "../Stream.ts";
 import { testParse } from "../test-util/index.ts";
 
-Deno.test("power 2 ^ 4", () => {
+test("power 2 ^ 4", () => {
   const { parsed } = testParse(power, "2 ^ 3", calcMatcher);
   expect(parsed?.value).toBe(8);
 });
 
-Deno.test("product 3 * 4 ", () => {
+test("product 3 * 4 ", () => {
   const { parsed } = testParse(product, "3 * 4", calcMatcher);
   expect(parsed?.value).toBe(12);
 });
 
-Deno.test("sum 3 + 4 ", () => {
+test("sum 3 + 4 ", () => {
   const { parsed } = testParse(sum, "3 + 4", calcMatcher);
   expect(parsed?.value).toBe(7);
 });
 
-Deno.test("parse 3 + 4 * 8", () => {
+test("parse 3 + 4 * 8", () => {
   const result = calcTest(resultsStatement, "3 + 4 * 8");
   expect(result).toBe(35);
 });
 
-Deno.test("parse 3 * 4 + 8", () => {
+test("parse 3 * 4 + 8", () => {
   const result = calcTest(resultsStatement, "3 * 4 + 8");
   expect(result).toBe(20);
 });
 
-Deno.test("parse 3^2 * 4 + 11", () => {
+test("parse 3^2 * 4 + 11", () => {
   const result = calcTest(resultsStatement, "3^2 *4 + 11");
   expect(result).toBe(47);
 });
 
-Deno.test("parse 2^4^2", () => {
+test("parse 2^4^2", () => {
   const result = calcTest(resultsStatement, "2^4^2");
   expect(result).toBe(2 ** (4 ** 2));
 });
