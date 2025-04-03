@@ -1,0 +1,32 @@
+{
+  "tasks": {
+  },
+  "license": "MIT OR Apache-2.0",
+  "imports": {
+    "vite": "npm:vite@^6.2.3",
+    "vitest": "npm:vitest@^3.0.9",
+    "vite-plugin-dts": "npm:vite-plugin-dts@^4.5.3"
+  },
+  "nodeModulesDir": "auto",
+  "workspace": [
+    "./integration-tests",
+    "./mini-parse",
+    "./wesl"
+  ],
+  "compilerOptions": {
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "dom.asynciterable",
+      "deno.ns"
+    ]
+  },
+  "exclude": [
+    "./community-wgsl",
+    "./cts",
+    "./tools",
+    "./wesl-testsuite",
+    "*/dist"
+  ]
+}

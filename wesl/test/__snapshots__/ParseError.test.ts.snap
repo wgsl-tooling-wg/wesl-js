@@ -1,0 +1,89 @@
+export const snapshot = {};
+
+snapshot[`parse fn foo() { invalid } 1`] = `
+Error: ./test.wesl:1:15 error: invalid ident
+fn foo() { let }
+              ^^
+    at eval (./test.wesl, <anonymous>:1:27)
+Caused by Error
+    at parseSrcModule (file:///E:/git/webgpu/wesl-js/wesl/ParseWESL.ts:106:21)
+    at parseWESL (file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:32:10)
+    at parseTestRaw (file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:112:10)
+    at file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:107:28
+    at withLogger (file:///E:/git/webgpu/wesl-js/mini-parse/WrappedLog.ts:9:12)
+    at expectNoLog (file:///E:/git/webgpu/wesl-js/mini-parse/test-util/TestParse.ts:78:14)
+    at parseTest (file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:107:10)
+    at file:///E:/git/webgpu/wesl-js/wesl/test/ParseError.test.ts:16:42
+    at getError (file:///E:/git/webgpu/wesl-js/wesl/test/ParseError.test.ts:8:5)
+    at file:///E:/git/webgpu/wesl-js/wesl/test/ParseError.test.ts:16:27
+Caused by Error: invalid ident
+    at Parser._req [as fn] (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCombinator.ts:520:13)
+    at Parser._run (file:///E:/git/webgpu/wesl-js/mini-parse/Parser.ts:161:27)
+    at Parser._seq [as fn] (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCombinator.ts:185:24)
+    at Parser._run (file:///E:/git/webgpu/wesl-js/mini-parse/Parser.ts:161:27)
+    at Parser._or [as fn] (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCombinator.ts:329:24)
+    at Parser._run (file:///E:/git/webgpu/wesl-js/mini-parse/Parser.ts:161:27)
+    at runAndCollectAfter (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCollect.ts:164:20)
+    at Parser._tagScope [as fn] (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCollect.ts:118:14)
+    at Parser._run (file:///E:/git/webgpu/wesl-js/mini-parse/Parser.ts:161:27)
+    at Parser._fn (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCombinator.ts:643:21)
+`;
+
+snapshot[`parse invalid if 1`] = `
+Error: ./test.wesl:3:13 error: Invalid token 🐈
+
+  if(1<1) { 🐈‍⬛ } else {  }
+             ^^
+    at eval (./test.wesl, <anonymous>:1:27)
+Caused by Error
+    at parseSrcModule (file:///E:/git/webgpu/wesl-js/wesl/ParseWESL.ts:106:21)
+    at parseWESL (file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:32:10)
+    at parseTestRaw (file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:112:10)
+    at file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:107:28
+    at withLogger (file:///E:/git/webgpu/wesl-js/mini-parse/WrappedLog.ts:9:12)
+    at expectNoLog (file:///E:/git/webgpu/wesl-js/mini-parse/test-util/TestParse.ts:78:14)
+    at parseTest (file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:107:10)
+    at file:///E:/git/webgpu/wesl-js/wesl/test/ParseError.test.ts:24:42
+    at getError (file:///E:/git/webgpu/wesl-js/wesl/test/ParseError.test.ts:8:5)
+    at file:///E:/git/webgpu/wesl-js/wesl/test/ParseError.test.ts:24:27
+Caused by Error: Invalid token 🐈
+    at WeslStream.nextToken (file:///E:/git/webgpu/wesl-js/wesl/parse/WeslStream.ts:119:15)
+    at skipIgnored (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCollect.ts:293:25)
+    at refinePosition (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCollect.ts:287:17)
+    at queueCollectFn (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCollect.ts:178:23)
+    at Parser._tagScope [as fn] (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCollect.ts:109:7)
+    at Parser._run (file:///E:/git/webgpu/wesl-js/mini-parse/Parser.ts:161:27)
+    at Parser._or [as fn] (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCombinator.ts:329:24)
+    at Parser._run (file:///E:/git/webgpu/wesl-js/mini-parse/Parser.ts:161:27)
+    at Parser._fn (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCombinator.ts:643:21)
+    at Parser._run (file:///E:/git/webgpu/wesl-js/mini-parse/Parser.ts:161:27)
+`;
+
+snapshot[`parse invalid name 1`] = `
+Error: ./test.wesl:1:4 error: expected identifier
+var package = 3;
+   ^^^^^^^^
+    at eval (./test.wesl, <anonymous>:1:27)
+Caused by Error
+    at parseSrcModule (file:///E:/git/webgpu/wesl-js/wesl/ParseWESL.ts:106:21)
+    at parseWESL (file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:32:10)
+    at parseTestRaw (file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:112:10)
+    at file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:107:28
+    at withLogger (file:///E:/git/webgpu/wesl-js/mini-parse/WrappedLog.ts:9:12)
+    at expectNoLog (file:///E:/git/webgpu/wesl-js/mini-parse/test-util/TestParse.ts:78:14)
+    at parseTest (file:///E:/git/webgpu/wesl-js/wesl/test/TestUtil.ts:107:10)
+    at file:///E:/git/webgpu/wesl-js/wesl/test/ParseError.test.ts:29:42
+    at getError (file:///E:/git/webgpu/wesl-js/wesl/test/ParseError.test.ts:8:5)
+    at file:///E:/git/webgpu/wesl-js/wesl/test/ParseError.test.ts:29:27
+Caused by Error: expected identifier
+    at Parser._req [as fn] (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCombinator.ts:520:13)
+    at Parser._run (file:///E:/git/webgpu/wesl-js/mini-parse/Parser.ts:161:27)
+    at runAndCollectAfter (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCollect.ts:164:20)
+    at Parser._tagScope [as fn] (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCollect.ts:118:14)
+    at Parser._run (file:///E:/git/webgpu/wesl-js/mini-parse/Parser.ts:161:27)
+    at runAndCollectAfter (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCollect.ts:164:20)
+    at Parser._ctag [as fn] (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCollect.ts:142:12)
+    at Parser._run (file:///E:/git/webgpu/wesl-js/mini-parse/Parser.ts:161:27)
+    at Parser._seq [as fn] (file:///E:/git/webgpu/wesl-js/mini-parse/ParserCombinator.ts:185:24)
+    at Parser._run (file:///E:/git/webgpu/wesl-js/mini-parse/Parser.ts:161:27)
+`;
