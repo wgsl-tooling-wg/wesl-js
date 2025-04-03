@@ -32,7 +32,11 @@ test("srcLog", () => {
   withLogger(log, () => {
     srcLog(src, 5, "uh-oh:");
   });
-  expect(logged()).toMatchInlineSnapshot();
+  expect(logged()).toMatchInlineSnapshot(`
+    "uh-oh:
+    12345   Ln 2
+       ^"
+  `);
 });
 
 test("srcLog on longer example", () => {
@@ -46,7 +50,11 @@ test("srcLog on longer example", () => {
   withLogger(log, () => {
     srcLog(src, 101, "ugh:");
   });
-  expect(logged()).toMatchInlineSnapshot();
+  expect(logged()).toMatchInlineSnapshot(`
+    "ugh:
+        fn support(d:D) { bar(d); }   Ln 5
+                          ^"
+  `);
 });
 
 test("srcLog with two carets", () => {
@@ -56,5 +64,9 @@ test("srcLog with two carets", () => {
   withLogger(log, () => {
     srcLog(src, [2, 7], "found:");
   });
-  expect(logged()).toMatchInlineSnapshot();
+  expect(logged()).toMatchInlineSnapshot(`
+    "found:
+    12345   Ln 2
+    ^    ^"
+  `);
 });

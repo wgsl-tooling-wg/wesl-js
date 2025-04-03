@@ -11,7 +11,19 @@ test("compact", () => {
     { src: { text: src }, srcStart: 2, srcEnd: 3, destStart: 3, destEnd: 4 },
   ]);
   srcMap.compact();
-  expect(srcMap.entries).toMatchInlineSnapshot();
+  expect(srcMap.entries).toMatchInlineSnapshot(`
+    [
+      {
+        "destEnd": 4,
+        "destStart": 1,
+        "src": {
+          "text": "a b",
+        },
+        "srcEnd": 3,
+        "srcStart": 0,
+      },
+    ]
+  `);
 });
 
 test("merge", () => {
@@ -38,5 +50,26 @@ test("merge", () => {
   ]);
 
   const merged = map1.merge(map2);
-  expect(merged.entries).toMatchInlineSnapshot();
+  expect(merged.entries).toMatchInlineSnapshot(`
+    [
+      {
+        "destEnd": 6,
+        "destStart": 3,
+        "src": {
+          "text": "a b",
+        },
+        "srcEnd": 3,
+        "srcStart": 0,
+      },
+      {
+        "destEnd": 9,
+        "destStart": 8,
+        "src": {
+          "text": "d",
+        },
+        "srcEnd": 1,
+        "srcStart": 0,
+      },
+    ]
+  `);
 });

@@ -72,7 +72,14 @@ test("seq() handles two element match", () => {
   const src = "#import foo";
   const p = seq("#import", kind(m.word));
   const { parsed } = testParse(p, src);
-  expect(parsed).toMatchInlineSnapshot();
+  expect(parsed).toMatchInlineSnapshot(`
+    {
+      "value": [
+        "#import",
+        "foo",
+      ],
+    }
+  `);
 });
 
 test("opt() makes failing match ok", () => {
@@ -80,7 +87,14 @@ test("opt() makes failing match ok", () => {
   const p = seq(opt("#import"), kind("word"));
   const { parsed } = testParse(p, src);
   expect(parsed).not.toBeNull();
-  expect(parsed).toMatchInlineSnapshot();
+  expect(parsed).toMatchInlineSnapshot(`
+    {
+      "value": [
+        null,
+        "foo",
+      ],
+    }
+  `);
 });
 
 test("repeat() to (1,2,3,4)", () => {
@@ -114,7 +128,32 @@ test("not() success", () => {
   const { parsed } = testParse(p, src);
 
   const values = parsed!.value;
-  expect(values).toMatchInlineSnapshot();
+  expect(values).toMatchInlineSnapshot(`
+    [
+      [
+        true,
+        {
+          "kind": "word",
+          "span": [
+            0,
+            3,
+          ],
+          "text": "foo",
+        },
+      ],
+      [
+        true,
+        {
+          "kind": "word",
+          "span": [
+            4,
+            7,
+          ],
+          "text": "bar",
+        },
+      ],
+    ]
+  `);
 });
 
 test("not() failure", () => {
@@ -145,7 +184,19 @@ test("tracing", () => {
   withLogger(log, () => {
     testParse(p, src);
   });
-  expect(logged()).toMatchInlineSnapshot();
+  expect(logged()).toMatchInlineSnapshot(`
+    "..repeat
+      ..wordz
+        : 'a' (word)
+        a   Ln 1
+        ^
+        ✓ kind 'word'
+      ✓ wordz
+      ..wordz
+        x kind 'word'
+      x wordz
+    ✓ repeat"
+  `);
 });
 
 test("infinite loop detection", () => {

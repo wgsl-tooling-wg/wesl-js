@@ -119,7 +119,12 @@ test("tagScope clears tags", () => {
   });
 
   testParse(p, "a");
-  expect(results).toMatchInlineSnapshot();
+  expect(results).toMatchInlineSnapshot(`
+    [
+      "inTagScope: a",
+      "outsideTagScope: undefined",
+    ]
+  `);
 });
 
 test("ctag propogates up through seq", () => {
