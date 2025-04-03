@@ -1,4 +1,4 @@
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 import type { BindingStructElem, StructElem } from "../AbstractElems.ts";
 import { astToString } from "../debug/ASTtoString.ts";
 import {
@@ -9,7 +9,7 @@ import { bindingStructsPlugin } from "../TransformBindingStructs.ts";
 import { linkTestOpts } from "./TestUtil.ts";
 import { assertSnapshot } from "@std/testing/snapshot";
 
-Deno.test("extract binding struct", async (t) => {
+test("extract binding struct", async (t) => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -42,7 +42,7 @@ Deno.test("extract binding struct", async (t) => {
   await assertSnapshot(t, membersAst);
 });
 
-Deno.test("binding struct to ts", async (t) => {
+test("binding struct to ts", async (t) => {
   const src = `
     struct Uniforms {
       foo: u32

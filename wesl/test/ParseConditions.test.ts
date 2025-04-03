@@ -1,13 +1,14 @@
+import { type expect, test } from "vitest";
 import { astToString } from "../debug/ASTtoString.ts";
 import { parseTest } from "./TestUtil.ts";
 import { assertSnapshot } from "@std/testing/snapshot";
 
-Deno.test("parse complex condition", async (t) => {
+test("parse complex condition", async (t) => {
   const ast = parseTest("@if(true || (!foo&&!!false) )\nfn a() {}");
   await assertSnapshot(t, astToString(ast.moduleElem));
 });
 
-Deno.test("@if(false) enable f16", async (t) => {
+test("@if(false) enable f16", async (t) => {
   const src = `
     @if(false) enable f16;
   `;
@@ -16,7 +17,7 @@ Deno.test("@if(false) enable f16", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("@if(false) const_assert true;", async (t) => {
+test("@if(false) const_assert true;", async (t) => {
   const src = `
     @if(false) const_assert true;
   `;
@@ -25,7 +26,7 @@ Deno.test("@if(false) const_assert true;", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("@if(true) var x = 7", async (t) => {
+test("@if(true) var x = 7", async (t) => {
   const src = `
     @if(true) var x = 7; 
   `;
@@ -34,7 +35,7 @@ Deno.test("@if(true) var x = 7", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("conditional statement", async (t) => {
+test("conditional statement", async (t) => {
   const src = `
     fn main() {
       var x = 1;
@@ -46,7 +47,7 @@ Deno.test("conditional statement", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("compound statement", async (t) => {
+test("compound statement", async (t) => {
   const src = `
     fn main() {
       @if(false) {
@@ -59,7 +60,7 @@ Deno.test("compound statement", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("conditional local var", async (t) => {
+test("conditional local var", async (t) => {
   const src = `
     fn main() {
       @if(true) var x = 1;
@@ -70,7 +71,7 @@ Deno.test("conditional local var", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("@if(MOBILE) const x = 1", async (t) => {
+test("@if(MOBILE) const x = 1", async (t) => {
   const src = `
     @if(MOBILE) const x = 1;
   `;
@@ -79,7 +80,7 @@ Deno.test("@if(MOBILE) const x = 1", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-// Deno.test("", () => {
+// test("", () => {
 //   const src = `
 //   `;
 //   const ast = parseTest(src);

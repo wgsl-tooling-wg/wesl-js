@@ -1,26 +1,27 @@
+import { type expect, test } from "vitest";
 import { astToString } from "../debug/ASTtoString.ts";
 import { importToString } from "../debug/ImportToString.ts";
 import { parseTest, parseTestRaw } from "./TestUtil.ts";
 import { assertSnapshot } from "@std/testing/snapshot";
 
-Deno.test("parse empty string", async (t) => {
+test("parse empty string", async (t) => {
   const ast = parseTest("");
   await assertSnapshot(t, astToString(ast.moduleElem));
 });
 
-Deno.test("parse fn foo() { }", async (t) => {
+test("parse fn foo() { }", async (t) => {
   const src = "fn foo() { }";
   const ast = parseTest(src);
   await assertSnapshot(t, astToString(ast.moduleElem));
 });
 
-Deno.test("parse fn with calls", async (t) => {
+test("parse fn with calls", async (t) => {
   const src = "fn foo() { foo(); bar(); }";
   const ast = parseTest(src);
   await assertSnapshot(t, astToString(ast.moduleElem));
 });
 
-Deno.test("parse unicode ident", async (t) => {
+test("parse unicode ident", async (t) => {
   // List taken straight from the examples at https://www.w3.org/TR/WGSL/#identifiers
   const src = `
   fn Δέλτα(){} 
@@ -39,49 +40,49 @@ Deno.test("parse unicode ident", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse global var", async (t) => {
+test("parse global var", async (t) => {
   const src = `var x: i32 = 1;`;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse alias", async (t) => {
+test("parse alias", async (t) => {
   const src = `alias Num = i32;`;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse const", async (t) => {
+test("parse const", async (t) => {
   const src = `const y = 11u;`;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse override ", async (t) => {
+test("parse override ", async (t) => {
   const src = `override z: f32;`;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse const_assert", async (t) => {
+test("parse const_assert", async (t) => {
   const src = `const_assert x < y;`;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse struct", async (t) => {
+test("parse struct", async (t) => {
   const src = `struct foo { bar: i32, zip: u32, } ;`;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse global diagnostic", async (t) => {
+test("parse global diagnostic", async (t) => {
   const src = `
     diagnostic(off,derivative_uniformity);
 
@@ -92,14 +93,14 @@ Deno.test("parse global diagnostic", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse @attribute before fn", async (t) => {
+test("parse @attribute before fn", async (t) => {
   const src = `@compute fn main() {} `;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse @compute @workgroup_size(a, b, 1) before fn", async (t) => {
+test("parse @compute @workgroup_size(a, b, 1) before fn", async (t) => {
   const src = `
     @compute 
     @workgroup_size(a, b, 1) 
@@ -110,7 +111,7 @@ Deno.test("parse @compute @workgroup_size(a, b, 1) before fn", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse top level var", async (t) => {
+test("parse top level var", async (t) => {
   const src = `
     @group(0) @binding(0) var<uniform> u: Uniforms;      
 
@@ -121,7 +122,7 @@ Deno.test("parse top level var", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse top level override and const", async (t) => {
+test("parse top level override and const", async (t) => {
   const src = `
     override x = 21;
     const y = 1;
@@ -133,21 +134,21 @@ Deno.test("parse top level override and const", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse root level ;;", async (t) => {
+test("parse root level ;;", async (t) => {
   const src = ";;";
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse simple alias", async (t) => {
+test("parse simple alias", async (t) => {
   const src = `alias NewType = OldType;`;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse array alias", async (t) => {
+test("parse array alias", async (t) => {
   const src = `
     alias Points3 = array<Point, 3>;
   `;
@@ -156,14 +157,14 @@ Deno.test("parse array alias", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("fnDecl parses fn with return type", async (t) => {
+test("fnDecl parses fn with return type", async (t) => {
   const src = `fn foo() -> MyType { }`;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("fnDecl parses :type specifier in fn args", async (t) => {
+test("fnDecl parses :type specifier in fn args", async (t) => {
   const src = `
     fn foo(a: MyType) { }
   `;
@@ -172,7 +173,7 @@ Deno.test("fnDecl parses :type specifier in fn args", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("fnDecl parses :type specifier in fn block", async (t) => {
+test("fnDecl parses :type specifier in fn block", async (t) => {
   const src = `
     fn foo() { 
       var b:MyType;
@@ -183,7 +184,7 @@ Deno.test("fnDecl parses :type specifier in fn block", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse type in <template> in fn args", async (t) => {
+test("parse type in <template> in fn args", async (t) => {
   const src = `
     fn foo(a: vec2<MyStruct>) { };`;
   const ast = parseTest(src);
@@ -191,7 +192,7 @@ Deno.test("parse type in <template> in fn args", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse simple templated type", async (t) => {
+test("parse simple templated type", async (t) => {
   const src = `fn main(a: array<MyStruct,4>) { }`;
 
   const ast = parseTest(src);
@@ -199,21 +200,21 @@ Deno.test("parse simple templated type", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse with space before template", async (t) => {
+test("parse with space before template", async (t) => {
   const src = `fn main(a: array <MyStruct,4>) { }`;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse nested template that ends with >> ", async (t) => {
+test("parse nested template that ends with >> ", async (t) => {
   const src = `fn main(a: vec2<array <MyStruct,4>>) { }`;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse type in <template> in global var", async (t) => {
+test("parse type in <template> in global var", async (t) => {
   const src = `var<private> x:array<MyStruct, 8>;`;
 
   const ast = parseTest(src);
@@ -221,7 +222,7 @@ Deno.test("parse type in <template> in global var", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse for(;;) {} not as a fn call", async (t) => {
+test("parse for(;;) {} not as a fn call", async (t) => {
   const src = `
     fn main() {
       for (var a = 1; a < 10; a++) {}
@@ -232,7 +233,7 @@ Deno.test("parse for(;;) {} not as a fn call", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("eolf followed by blank line", async (t) => {
+test("eolf followed by blank line", async (t) => {
   const src = `
     fn foo() { }
   `;
@@ -241,7 +242,7 @@ Deno.test("eolf followed by blank line", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse fn with attributes and suffix comma", async (t) => {
+test("parse fn with attributes and suffix comma", async (t) => {
   const src = `
   @compute
   @workgroup_size(workgroupThreads, 1, 1) 
@@ -255,42 +256,42 @@ Deno.test("parse fn with attributes and suffix comma", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse fn", async (t) => {
+test("parse fn", async (t) => {
   const src = `fn foo(x: i32, y: u32) -> f32 { return 1.0; }`;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse @attribute before fn", async (t) => {
+test("parse @attribute before fn", async (t) => {
   const src = `@compute fn main() {} `;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("import package::foo::bar;", async (t) => {
+test("import package::foo::bar;", async (t) => {
   const src = t.name;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse foo::bar(); ", async (t) => {
+test("parse foo::bar(); ", async (t) => {
   const src = "fn main() { foo::bar(); }";
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse let x: foo::bar; ", async (t) => {
+test("parse let x: foo::bar; ", async (t) => {
   const src = "fn main() { let x: foo::bar = 1; }";
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse var x: foo::bar;", async (t) => {
+test("parse var x: foo::bar;", async (t) => {
   const src = `
      var<private> x: foo::bar;
      fn main() { }
@@ -301,7 +302,7 @@ Deno.test("parse var x: foo::bar;", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse switch statement", async (t) => {
+test("parse switch statement", async (t) => {
   const src = `
     fn main(x: i32) {
       switch (x) {
@@ -315,7 +316,7 @@ Deno.test("parse switch statement", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse switch statement-2", async (t) => {
+test("parse switch statement-2", async (t) => {
   const src = `
 
     fn main(x: u32) {
@@ -330,7 +331,7 @@ Deno.test("parse switch statement-2", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse struct constructor in assignment", async (t) => {
+test("parse struct constructor in assignment", async (t) => {
   const src = `
     fn main() {
       var x = AStruct(1u);
@@ -341,7 +342,7 @@ Deno.test("parse struct constructor in assignment", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse struct.member (component_or_swizzle)", async (t) => {
+test("parse struct.member (component_or_swizzle)", async (t) => {
   const src = `
     fn main() {
         let x = u.frame;
@@ -352,44 +353,44 @@ Deno.test("parse struct.member (component_or_swizzle)", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("var<workgroup> work: array<u32, 128>;", async (t) => {
+test("var<workgroup> work: array<u32, 128>;", async (t) => {
   const ast = parseTest(t.name);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("fn f() { _ = 1; }", async (t) => {
+test("fn f() { _ = 1; }", async (t) => {
   const ast = parseTest(t.name);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("var foo: vec2<f32 >= vec2( 0.5, -0.5);", async (t) => {
+test("var foo: vec2<f32 >= vec2( 0.5, -0.5);", async (t) => {
   const ast = parseTest(t.name);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("fn main() { var tmp: array<i32, 1 << 1>=array(1, 2); }", async (t) => {
+test("fn main() { var tmp: array<i32, 1 << 1>=array(1, 2); }", async (t) => {
   const ast = parseTest(t.name);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("import a::b::c;", async (t) => {
+test("import a::b::c;", async (t) => {
   const ast = parseTest(t.name);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("import package::file1::{foo, bar};", async (t) => {
+test("import package::file1::{foo, bar};", async (t) => {
   const src = t.name;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test("import package::file1::{foo, bar};", async (t) => {
+test("import package::file1::{foo, bar};", async (t) => {
   const src = t.name;
   const ast = parseTest(src);
   const imps = ast.imports.map((t) => importToString(t)).join("\n");
@@ -397,19 +398,19 @@ Deno.test("import package::file1::{foo, bar};", async (t) => {
   await assertSnapshot(t, imps);
 });
 
-Deno.test("import foo_bar::boo;", async (t) => {
+test("import foo_bar::boo;", async (t) => {
   const ast = parseTest(t.name);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test(`import a::{ b };`, async (t) => {
+test(`import a::{ b };`, async (t) => {
   const ast = parseTest(t.name);
   const astString = astToString(ast.moduleElem);
   await assertSnapshot(t, astString);
 });
 
-Deno.test(`import a::{ b, c::{d, e}, f };`, async (t) => {
+test(`import a::{ b, c::{d, e}, f };`, async (t) => {
   const src = t.name;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
@@ -417,7 +418,7 @@ Deno.test(`import a::{ b, c::{d, e}, f };`, async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test(`parse ptr`, async (t) => {
+test(`parse ptr`, async (t) => {
   const src = `
     var particles: ptr<storage, f32, read_write>;
   `;
@@ -426,7 +427,7 @@ Deno.test(`parse ptr`, async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test(`parse ptr with internal array`, async (t) => {
+test(`parse ptr with internal array`, async (t) => {
   const src = `
     var particles: ptr<storage, array<f32>, read_write>;
   `;
@@ -435,7 +436,7 @@ Deno.test(`parse ptr with internal array`, async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test(`parse binding struct`, async (t) => {
+test(`parse binding struct`, async (t) => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -446,7 +447,7 @@ Deno.test(`parse binding struct`, async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test(`parse struct reference`, async (t) => {
+test(`parse struct reference`, async (t) => {
   const src = `
     fn f() { let x = a.b[0]; };
   `;
@@ -455,7 +456,7 @@ Deno.test(`parse struct reference`, async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("member reference with extra components", async (t) => {
+test("member reference with extra components", async (t) => {
   const src = `
   fn foo() {
     output[ out + 0u ] = c.p0.t0.x;
@@ -466,7 +467,7 @@ Deno.test("member reference with extra components", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse let declaration", async (t) => {
+test("parse let declaration", async (t) => {
   const src = `
     fn vertexMain() {
       let char = array<u32, 2>(0, 0);
@@ -477,7 +478,7 @@ Deno.test("parse let declaration", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse let declaration with type", async (t) => {
+test("parse let declaration with type", async (t) => {
   const src = `
     fn vertexMain() {
       let char : u32 = 0;
@@ -488,7 +489,7 @@ Deno.test("parse let declaration with type", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("separator in let assignment", async (t) => {
+test("separator in let assignment", async (t) => {
   const src = `
     fn vertexMain() {
       let a = b::c;
@@ -499,7 +500,7 @@ Deno.test("separator in let assignment", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("separator in fn call ", async (t) => {
+test("separator in fn call ", async (t) => {
   const src = `
     fn vertexMain() {
       b::c();
@@ -510,7 +511,7 @@ Deno.test("separator in fn call ", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("binding struct", async (t) => {
+test("binding struct", async (t) => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -524,7 +525,7 @@ Deno.test("binding struct", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("memberRefs with extra components", async (t) => {
+test("memberRefs with extra components", async (t) => {
   const src = `
     fn main() {
       b.particles[0] = b.uniforms.foo;
@@ -535,7 +536,7 @@ Deno.test("memberRefs with extra components", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("memberRef with ref in array", async (t) => {
+test("memberRef with ref in array", async (t) => {
   const src = `
     fn main() {
       vsOut.barycenticCoord[vertNdx] = 1.0;
@@ -546,7 +547,7 @@ Deno.test("memberRef with ref in array", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse inline package reference", async (t) => {
+test("parse inline package reference", async (t) => {
   const src = `
     fn main() {
       package::foo::bar();
@@ -557,7 +558,7 @@ Deno.test("parse inline package reference", async (t) => {
   await assertSnapshot(t, astString);
 });
 
-Deno.test("parse @location", async (t) => {
+test("parse @location", async (t) => {
   const src = `
       @fragment
       fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f { 

@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 /// <reference types="npm:@webgpu/types" />
 import { SrcMap } from "@wesl/mini-parse";
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 import { assertSpyCalls, spy } from "@std/testing/mock";
 import { LinkedWesl } from "../LinkedWesl.ts";
 import { makeWeslDevice } from "../WeslDevice.ts";
@@ -14,7 +14,7 @@ class MockedGPUDevice {
   }
 }
 
-Deno.test("WeslDevice doesn't conflict with uncapturederror", async () => {
+test("WeslDevice doesn't conflict with uncapturederror", async () => {
   let errorListener: EventListener;
   const device = makeWeslDevice(
     new MockedGPUDevice({
@@ -53,7 +53,7 @@ Deno.test("WeslDevice doesn't conflict with uncapturederror", async () => {
   expect(error.message).toBe("shader compilation failed");
 });
 
-Deno.test("WeslDevice doesn't conflict with popErrorsScope", async () => {
+test("WeslDevice doesn't conflict with popErrorsScope", async () => {
   const device = makeWeslDevice(
     new MockedGPUDevice({
       createShaderModule: () => {
@@ -90,7 +90,7 @@ Deno.test("WeslDevice doesn't conflict with popErrorsScope", async () => {
   assertSpyCalls(createShaderModuleSpy, 1);
 });
 
-Deno.test("LinkedWesl createShaderModule skips if it's not a WeslDevice", () => {
+test("LinkedWesl createShaderModule skips if it's not a WeslDevice", () => {
   const device: GPUDevice = new MockedGPUDevice({
     createShaderModule: () => {
       return {} as any;
@@ -115,7 +115,7 @@ Deno.test("LinkedWesl createShaderModule skips if it's not a WeslDevice", () => 
   assertSpyCalls(createShaderModuleSpy, 1);
 });
 
-Deno.test("Point at WESL code", async () => {
+test("Point at WESL code", async () => {
   const GPUDeviceMock = spy(function (this: GPUDevice) {
     this.createShaderModule = () => {
       return {
@@ -181,7 +181,7 @@ Deno.test("Point at WESL code", async () => {
   expect(result?.message).toContain("shader compilation failed");
 });
 
-Deno.test("Invokes error throwing", async () => {
+test("Invokes error throwing", async () => {
   const dispatchEventPromise = Promise.withResolvers();
   const dispatchEventTimer = setTimeout(() => {
     dispatchEventPromise.reject();

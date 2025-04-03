@@ -1,6 +1,6 @@
 import { SrcMapBuilder } from "@wesl/mini-parse";
 import { expectTrimmedMatch } from "@wesl/mini-parse/vitest-util";
-import { expect } from "@std/expect";
+import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
 import { astToString } from "../debug/ASTtoString.ts";
 import { lowerAndEmit } from "../LowerAndEmit.ts";
@@ -16,7 +16,7 @@ import {
 import { linkTestOpts, parseTest } from "./TestUtil.ts";
 import { assertSnapshot } from "@std/testing/snapshot";
 
-Deno.test("markBindingStructs true", () => {
+test("markBindingStructs true", () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -29,7 +29,7 @@ Deno.test("markBindingStructs true", () => {
   expect(structs[0].bindingStruct).toBe(true);
 });
 
-Deno.test("markBindingStructs false", () => {
+test("markBindingStructs false", () => {
   const src = `
     struct Bindings {
       particles: ptr<storage, array<f32>, read_write>, 
@@ -41,7 +41,7 @@ Deno.test("markBindingStructs false", () => {
   expect(structs.length).toBe(0);
 });
 
-Deno.test("transformBindingStruct", async (t) => {
+test("transformBindingStruct", async (t) => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -59,7 +59,7 @@ Deno.test("transformBindingStruct", async (t) => {
   await assertSnapshot(t, linked);
 });
 
-Deno.test("findRefsToBindingStructs", async (t) => {
+test("findRefsToBindingStructs", async (t) => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -82,7 +82,7 @@ Deno.test("findRefsToBindingStructs", async (t) => {
   await assertSnapshot(t, foundAst);
 });
 
-Deno.test("transformBindingReference", async (t) => {
+test("transformBindingReference", async (t) => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -104,7 +104,7 @@ Deno.test("transformBindingReference", async (t) => {
   await assertSnapshot(t, synthAst);
 });
 
-Deno.test("lower binding structs", async (t) => {
+test("lower binding structs", async (t) => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -135,7 +135,7 @@ Deno.test("lower binding structs", async (t) => {
   expectTrimmedMatch(linked, expected);
 });
 
-Deno.test("lower binding structs with conflicting root name", async () => {
+test("lower binding structs with conflicting root name", async () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 
@@ -160,7 +160,7 @@ Deno.test("lower binding structs with conflicting root name", async () => {
   expectTrimmedMatch(linked, expected);
 });
 
-Deno.test("lower 5 bindings", async () => {
+test("lower 5 bindings", async () => {
   const src = `
     struct Uniforms {
       foo: u32

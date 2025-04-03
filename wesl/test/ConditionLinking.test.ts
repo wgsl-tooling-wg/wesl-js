@@ -1,8 +1,9 @@
+import { test } from "vitest";
 import { testLink } from "./TestLink.ts";
 
 // LATER move these to cond cases? (or drop if duplicative)
 
-Deno.test("conditional statement", async () => {
+test("conditional statement", async () => {
   const app = `
     fn main() {
       @if(false) let x = 1;
@@ -16,7 +17,7 @@ Deno.test("conditional statement", async () => {
   await testLink({ app: app }, "app", expectWgsl);
 });
 
-Deno.test("conditional compound statement", async () => {
+test("conditional compound statement", async () => {
   const app = `
     fn main() {
       @if(false) {
@@ -32,7 +33,7 @@ Deno.test("conditional compound statement", async () => {
   await testLink({ app: app }, "app", expectWgsl);
 });
 
-Deno.test("conditional local variables", async () => {
+test("conditional local variables", async () => {
   const app = `
     fn main() {
       @if(true) var x = 1;
@@ -48,7 +49,7 @@ Deno.test("conditional local variables", async () => {
   await testLink({ app: app }, "app", expectWgsl);
 });
 
-Deno.test("conditional binding ", async () => {
+test("conditional binding ", async () => {
   const app = `
     fn main() {
       @if(true) var x = 1;
@@ -66,7 +67,7 @@ Deno.test("conditional binding ", async () => {
   await testLink({ app: app }, "app", expectWgsl);
 });
 
-Deno.test("conditional binding references", async () => {
+test("conditional binding references", async () => {
   const app = `
     import package::file1::b;
 
@@ -91,7 +92,7 @@ const b = 9;
   await testLink({ app, file1 }, "app", expectWgsl);
 });
 
-Deno.test("@if(MOBILE) statement", async () => {
+test("@if(MOBILE) statement", async () => {
   const app = `
     fn main() {
       @if(MOBILE) let x = 1;
@@ -107,7 +108,7 @@ Deno.test("@if(MOBILE) statement", async () => {
   await testLink({ app: app }, "app", expectWgsl);
 });
 
-Deno.test("@if(MOBILE) const", async () => {
+test("@if(MOBILE) const", async () => {
   const app = `
     fn main() {
       let y = package::util::x;
@@ -127,7 +128,7 @@ Deno.test("@if(MOBILE) const", async () => {
   await testLink({ app, util }, "app", expectWgsl);
 });
 
-Deno.test("@if(MOBILE) override", async () => {
+test("@if(MOBILE) override", async () => {
   const app = `
     fn main() {
       let y = package::util::x;
@@ -147,7 +148,7 @@ Deno.test("@if(MOBILE) override", async () => {
   await testLink({ app, util }, "app", expectWgsl);
 });
 
-Deno.test("@if(MOBILE) global var", async () => {
+test("@if(MOBILE) global var", async () => {
   const app = `
     fn main() {
       let y = package::util::x;

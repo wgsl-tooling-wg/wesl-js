@@ -1,7 +1,8 @@
 import { expectTrimmedMatch } from "@wesl/mini-parse/vitest-util";
+import { test } from "vitest";
 import { linkTestOpts } from "./TestUtil.ts";
 
-Deno.test("simple virtual module", async () => {
+test("simple virtual module", async () => {
   const src = `
     import virt::Uniforms;
     @binding(0) @group(0) var<uniform> u: Uniforms;
@@ -17,7 +18,7 @@ Deno.test("simple virtual module", async () => {
   expectTrimmedMatch(result, expected);
 });
 
-Deno.test("virtual constants", async () => {
+test("virtual constants", async () => {
   const src = `
     import constants::num_lights;
     fn main() {

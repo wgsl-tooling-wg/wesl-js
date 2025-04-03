@@ -1,13 +1,14 @@
 import { expectTrimmedMatch } from "@wesl/mini-parse/vitest-util";
+import { test } from "vitest";
 import { linkTest } from "./TestUtil.ts";
 
-Deno.test("link global var", async () => {
+test("link global var", async () => {
   const src = `var x: i32 = 1;`;
   const result = await linkTest(src);
   expectTrimmedMatch(result, src);
 });
 
-Deno.test("link an alias", async () => {
+test("link an alias", async () => {
   const src = `
     alias Num = f32;
 
@@ -17,7 +18,7 @@ Deno.test("link an alias", async () => {
   expectTrimmedMatch(result, src);
 });
 
-Deno.test("link a const_assert", async () => {
+test("link a const_assert", async () => {
   const src = `
     var x = 1;
     var y = 2;
@@ -27,7 +28,7 @@ Deno.test("link a const_assert", async () => {
   expectTrimmedMatch(result, src);
 });
 
-Deno.test("link a struct", async () => {
+test("link a struct", async () => {
   const src = `
     struct Point {
       x: i32,
@@ -38,7 +39,7 @@ Deno.test("link a struct", async () => {
   expectTrimmedMatch(result, src);
 });
 
-Deno.test("link a fn", async () => {
+test("link a fn", async () => {
   const src = `
     fn foo(x: i32, y: u32) -> f32 { 
       return 1.0; 
@@ -47,7 +48,7 @@ Deno.test("link a fn", async () => {
   expectTrimmedMatch(result, src);
 });
 
-Deno.test("handle a ptr type", async () => {
+test("handle a ptr type", async () => {
   const src = `
     fn uint_bitfieldExtract_u1_i1_i1_(value: ptr<function, u32>, bits: ptr<function, i32>) -> u32 { }
   `;
@@ -55,7 +56,7 @@ Deno.test("handle a ptr type", async () => {
   expectTrimmedMatch(result, src);
 });
 
-Deno.test("struct after var", async () => {
+test("struct after var", async () => {
   const src = `
     var config: TwoPassConfig;
 
@@ -65,7 +66,7 @@ Deno.test("struct after var", async () => {
   expectTrimmedMatch(result, src);
 });
 
-Deno.test("type inside fn with same name as fn", async () => {
+test("type inside fn with same name as fn", async () => {
   // illegal but shouldn't hang
   const src = `
     fn foo() {
@@ -77,7 +78,7 @@ Deno.test("type inside fn with same name as fn", async () => {
   expectTrimmedMatch(result, src);
 });
 
-Deno.test("call cross reference", async () => {
+test("call cross reference", async () => {
   const src = `
     fn foo() {
       bar();
@@ -92,7 +93,7 @@ Deno.test("call cross reference", async () => {
   expectTrimmedMatch(result, src);
 });
 
-Deno.test("struct self reference", async () => {
+test("struct self reference", async () => {
   const src = `
     struct A {
       a: A,
@@ -105,13 +106,13 @@ Deno.test("struct self reference", async () => {
   expectTrimmedMatch(result, src);
 });
 
-Deno.test("parse texture_storage_2d with texture format in typical type position", async () => {
+test("parse texture_storage_2d with texture format in typical type position", async () => {
   const src = `var t: texture_storage_2d<rgba8unorm, write>;`;
   const result = await linkTest(src);
   expectTrimmedMatch(result, src);
 });
 
-Deno.test("struct member ref with extra component_or_swizzle", async () => {
+test("struct member ref with extra component_or_swizzle", async () => {
   const src = `
     struct C { p: P }
     struct P { x: u32 }
