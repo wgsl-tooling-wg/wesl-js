@@ -16,6 +16,7 @@
     "organize:all": "pnpm --filter \"./packages/**\" organize",
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
     "publish:all": "pnpm --filter \"./packages/**\" publish",
+    "prep:examples": "tsx scripts/prep-examples.ts",
     "prepush": "run-s build:all test:all bench organize:all format:all typecheck:all",
     "test": "vitest",
     "test:all": "vitest --run",
