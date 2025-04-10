@@ -6,32 +6,39 @@ import main from "../shaders/main.wgsl?link";
 import { Loopable } from "./Drawable.ts";
 import { gpuDevice } from "./GpuUtil.ts";
 import { wgslToHTML } from "./Highlight.ts";
-import { mapKeys } from "./Util.ts";
 import { gpuAnimation } from "./Shader.ts";
+import { mapKeys } from "./Util.ts";
 
 /** Wire up the html UI and install the demo WebGPU shader */
 export async function startApp(
   canvas: HTMLCanvasElement,
   stopButton: HTMLButtonElement,
-  srcPanel: HTMLDivElement
+  srcPanel: HTMLDivElement,
 ): Promise<void> {
   const device = await gpuDevice();
   const linked = await link(main);
   const shaderModule = linked.createShaderModule(device, {});
   const animation = await gpuAnimation(device, canvas, shaderModule);
 
-  const randFiles = mapKeys(rand.modules, (s) => "random_wgsl/" + s);
-  const srcs = { ...main.weslSrc, ...randFiles };
-  srcPanel.innerHTML = makeSrcPanel(srcs, linked.dest);
+  const randFiles = mapKeys(rand.modules, s => "random_wgsl/" + s);
+  const linkedSrc = { linked: linked.dest };
+  const baseSrcs = { ...main.weslSrc, ...randFiles, ...linkedSrc };
+  const srcs = mapKeys(baseSrcs, dropSuffix);
+
+  srcPanel.innerHTML = makeSrcPanel(srcs);
 
   const buttonHandler = playPauseHandler(animation);
   stopButton.addEventListener("click", buttonHandler);
 }
 
+/** remove an optional file suffix from a string (e.g. 'foo.wesl' => 'foo') */
+function dropSuffix(src: string): string {
+  return src.replace(/\.\w+$/, "");
+}
+
 /** @return html for the tabs that display the source code */
-function makeSrcPanel(modules: Record<string, string>, linked: string): string {
-  const moduleEntries = Object.entries(modules);
-  const srcEntries = [...moduleEntries, ["linked", linked]];
+function makeSrcPanel(srcs: Record<string, string>): string {
+  const srcEntries = Object.entries(srcs);
   const srcTabs = srcEntries
     .map(([name]) => `<sl-tab slot="nav" panel="${name}">${name}</sl-tab>`)
     .join("\n");
@@ -42,7 +49,7 @@ function makeSrcPanel(modules: Record<string, string>, linked: string): string {
         <pre>
 ${wgslToHTML(src)}
         </pre>
-      </sl-tab-panel>`
+      </sl-tab-panel>`,
     )
     .join("\n");
 
