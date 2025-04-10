@@ -1,0 +1,10 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-read --allow-write=output.png --watch=shaders/ main.ts"
+  },
+  "imports": {
+    "@std/webgpu": "jsr:@std/webgpu@^0.224.7",
+    "wesl": "npm:wesl@^0.6.0-pre8",
+    "png": "https://deno.land/x/pngs@0.1.1/mod.ts"
+  }
+}

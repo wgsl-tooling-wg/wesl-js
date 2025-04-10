@@ -90,6 +90,53 @@ importers:
         specifier: ^17.7.2
         version: 17.7.2
 
+  examples/wesl-sample-vite:
+    dependencies:
+      random_wgsl:
+        specifier: 0.6.0-rc3
+        version: 0.6.0-rc3
+      wesl:
+        specifier: 0.6.0-rc3
+        version: 0.6.0-rc3
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.58
+        version: 0.1.60
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.2
+      vite:
+        specifier: ^6.2.2
+        version: 6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
+      wesl-plugin:
+        specifier: 0.6.0-rc3
+        version: 0.6.0-rc3(@farmfe/core@1.6.6)(@nuxt/kit@3.16.0)(@nuxt/schema@3.16.0)(esbuild@0.25.1)(vite@6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(webpack@5.98.0(esbuild@0.25.1))
+
+  examples/wesl-sample-vite-minimal:
+    dependencies:
+      random_wgsl:
+        specifier: 0.6.0-rc3
+        version: 0.6.0-rc3
+      wesl:
+        specifier: 0.6.0-rc3
+        version: 0.6.0-rc3
+      wesl-sample-vite-minimal:
+        specifier: 'link:'
+        version: 'link:'
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.58
+        version: 0.1.60
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.2
+      vite:
+        specifier: ^6.2.2
+        version: 6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
+      wesl-plugin:
+        specifier: 0.6.0-rc3
+        version: 0.6.0-rc3(@farmfe/core@1.6.6)(@nuxt/kit@3.16.0)(@nuxt/schema@3.16.0)(esbuild@0.25.1)(vite@6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(webpack@5.98.0(esbuild@0.25.1))
+
   examples/wesl_rand_example:
     dependencies:
       '@codemirror/language':
@@ -3160,6 +3207,9 @@ packages:
     resolution: {integrity: sha512-vqiC06CuhBTUdZH+RYl8sFrL096vA45Ok5ISO6sE/Mr1jRbGH4Csnhi8f3wKVl7x8mO4Au7Ir9D3Oyv1VYMFJw==}
     engines: {node: '>=12'}
 
+  mini-parse@0.6.0-rc3:
+    resolution: {integrity: sha512-ocuxAvEaAX4/95V8qpaZxfJO+ZC1/7IB24flNPtEWMBbcf/TGZsQcL5ueFeSPBprkL1vGYFIUTAVnX/aGS3wAg==}
+
   mini-parse@0.6.0-rc4:
     resolution: {integrity: sha512-p8+G8d+4Z+4ud0/Nyl3IO5T6tMTJ+UKULSyponsiy6VxbF0o4Maag8e8AaJj4VMix5/8ZBhxZ/AZlt9YcGBJXg==}
 
@@ -3644,6 +3694,9 @@ packages:
 
   queue-tick@1.0.1:
     resolution: {integrity: sha512-kJt5qhMxoszgU/62PLP1CJytzd2NKetjSRnyuj31fDd3Rlcz3fzlFdFLD1SItunPwyqEOkca6GbV612BWfaBag==}
+
+  random_wgsl@0.6.0-rc3:
+    resolution: {integrity: sha512-E5zmRewkleUUIA1r/fmjig+MTS625mWoZduGJT8V7LTtZtzQx6jFKeVmuOhC6gdYiwugdZljuKWQs7NEEPAO/Q==}
 
   random_wgsl@0.6.0-rc4:
     resolution: {integrity: sha512-PDorpWaMqOrpRJxDWMnMpTJa2ZfR3acxrcDwW76MJ9EdXX7eew3q2+DmA6DCkLRk9M9d600Jr/O6UknCCIdLDA==}
@@ -4584,6 +4637,32 @@ packages:
       webpack-cli:
         optional: true
 
+  wesl-plugin@0.6.0-rc3:
+    resolution: {integrity: sha512-YKMy43nMluDKMfJex79jyH7p+ph2zC0UcSkKVMixxlR0W3ZbBt1XS+ADqfLR9D2RUbrc9nZBwmKnU5DudKO3PA==}
+    peerDependencies:
+      '@farmfe/core': '>=1'
+      '@nuxt/kit': ^3
+      '@nuxt/schema': ^3
+      esbuild: '*'
+      rollup: ^3
+      vite: '>=3'
+      webpack: ^4 || ^5
+    peerDependenciesMeta:
+      '@farmfe/core':
+        optional: true
+      '@nuxt/kit':
+        optional: true
+      '@nuxt/schema':
+        optional: true
+      esbuild:
+        optional: true
+      rollup:
+        optional: true
+      vite:
+        optional: true
+      webpack:
+        optional: true
+
   wesl-plugin@0.6.0-rc4:
     resolution: {integrity: sha512-hKu2ZRp6hyHE1zgschg6PVBm+rYh5vJOHhnrFbyeyD7X2KtZaAnJVWVZOTAfUZY8yyE3V2t7s9IrHlINzhGZFw==}
     peerDependencies:
@@ -4612,6 +4691,9 @@ packages:
 
   wesl-testsuite@file:../wesl-testsuite:
     resolution: {directory: ../wesl-testsuite, type: directory}
+
+  wesl@0.6.0-rc3:
+    resolution: {integrity: sha512-xJxWP7UbHcUEBZDROQjoAcpSv/5wqlSB2CR5n8GcAKrflToQqQrYInb++Qh/6OLmKC28mmzqO4j1iHz91hQlDQ==}
 
   wesl@0.6.0-rc4:
     resolution: {integrity: sha512-2NUxMfHdWilOSQWCcQBZnxt4csc5HGDNoefD/1RLpLTyXcwM+10Z4gki9+DvKX1T546eG7pQ8Ak6NV/5zSvGGQ==}
@@ -8020,6 +8102,8 @@ snapshots:
 
   mimic-fn@4.0.0: {}
 
+  mini-parse@0.6.0-rc3: {}
+
   mini-parse@0.6.0-rc4: {}
 
   minimalistic-assert@1.0.1: {}
@@ -8482,6 +8566,8 @@ snapshots:
   queue-microtask@1.2.3: {}
 
   queue-tick@1.0.1: {}
+
+  random_wgsl@0.6.0-rc3: {}
 
   random_wgsl@0.6.0-rc4: {}
 
@@ -9515,6 +9601,20 @@ snapshots:
       - esbuild
       - uglify-js
 
+  wesl-plugin@0.6.0-rc3(@farmfe/core@1.6.6)(@nuxt/kit@3.16.0)(@nuxt/schema@3.16.0)(esbuild@0.25.1)(vite@6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(webpack@5.98.0(esbuild@0.25.1)):
+    dependencies:
+      import-meta-resolve: 4.1.0
+      toml: 3.0.0
+      unplugin: 2.2.0
+      wesl: 0.6.0-rc3
+    optionalDependencies:
+      '@farmfe/core': 1.6.6
+      '@nuxt/kit': 3.16.0
+      '@nuxt/schema': 3.16.0
+      esbuild: 0.25.1
+      vite: 6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
+      webpack: 5.98.0(esbuild@0.25.1)
+
   wesl-plugin@0.6.0-rc4(@farmfe/core@1.6.6)(@nuxt/kit@3.16.0)(@nuxt/schema@3.16.0)(esbuild@0.25.1)(vite@6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(webpack@5.98.0(esbuild@0.25.1)):
     dependencies:
       import-meta-resolve: 4.1.0
@@ -9530,6 +9630,10 @@ snapshots:
       webpack: 5.98.0(esbuild@0.25.1)
 
   wesl-testsuite@file:../wesl-testsuite: {}
+
+  wesl@0.6.0-rc3:
+    dependencies:
+      mini-parse: 0.6.0-rc3
 
   wesl@0.6.0-rc4:
     dependencies:
