@@ -12,7 +12,7 @@
     "@webgpu/types": "^0.1.58",
     "typescript": "~5.8.2",
     "vite": "^6.2.2",
-    "wesl-plugin": "0.6.0-rc3"
+    "wesl-plugin": "^0.6.0-rc4"
   },
   "pnpm": {
     "ignoredBuiltDependencies": [
@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "random_wgsl": "0.6.0-rc3",
-    "wesl": "0.6.0-rc3",
+    "wesl": "^0.6.0-rc4",
     "wesl-sample-vite-minimal": "link:"
   },
   "packageManager": "pnpm@10.2.0"
