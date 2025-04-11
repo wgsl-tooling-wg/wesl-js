@@ -14,11 +14,6 @@
     "vite": "^6.2.2",
     "wesl-plugin": "^0.6.0-rc4"
   },
-  "pnpm": {
-    "ignoredBuiltDependencies": [
-      "esbuild"
-    ]
-  },
   "dependencies": {
     "random_wgsl": "0.6.0-rc3",
     "wesl": "^0.6.0-rc4",
