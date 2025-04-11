@@ -16,8 +16,6 @@
   },
   "dependencies": {
     "random_wgsl": "0.6.0-rc3",
-    "wesl": "^0.6.0-rc4",
-    "wesl-sample-vite-minimal": "link:"
-  },
-  "packageManager": "pnpm@10.2.0"
+    "wesl": "^0.6.0-rc4"
+  }
 }
