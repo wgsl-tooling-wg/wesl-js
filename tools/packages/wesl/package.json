@@ -12,7 +12,10 @@
     "build:minified": "vite build --config minified.vite.config.js",
     "build:sizetest": "vite build --config sizetest.vite.config.js",
     "build:brotli-size": "tsx ./scripts/brotli.ts dist/sized.cjs",
+    "build:docs": "typedoc --plugin typedoc-theme-hierarchy --entryPoints ./src/index.ts --entryPointStrategy expand --out ./docs",
     "build:size": "run-s build:sizetest build:brotli-size",
+    "deploy:docsite": "run-s build:docs pages:deploy",
+    "pages:deploy": "wrangler pages deploy --project-name wesl-js docs",
     "typecheck": "tsc",
     "format": "prettier . --write",
     "lint": "eslint src",
@@ -43,7 +46,10 @@
     "random_wgsl": "workspace:*",
     "rollup-plugin-visualizer": "^5.14.0",
     "terser": "^5.39.0",
-    "vite-plugin-dts": "^4.5.3"
+    "typedoc": "^0.28.2",
+    "typedoc-theme-hierarchy": "^6.0.0",
+    "vite-plugin-dts": "^4.5.3",
+    "wrangler": "^4.10.0"
   },
   "keywords": [
     "webgpu",
