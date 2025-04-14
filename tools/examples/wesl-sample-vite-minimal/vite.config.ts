@@ -1,8 +1,6 @@
 import viteWesl from "wesl-plugin/vite";
 import { linkBuildExtension } from "wesl-plugin";
 
-const config = {
+export default {
   plugins: [viteWesl({ extensions: [linkBuildExtension] })],
 };
-
-export default config;
