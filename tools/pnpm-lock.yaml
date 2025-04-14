@@ -96,8 +96,8 @@ importers:
         specifier: 0.6.0-rc3
         version: 0.6.0-rc3
       wesl:
-        specifier: ^0.6.0-rc4
-        version: 0.6.0-rc4
+        specifier: workspace:*
+        version: link:../../packages/wesl
     devDependencies:
       '@webgpu/types':
         specifier: ^0.1.58
@@ -109,8 +109,8 @@ importers:
         specifier: ^6.2.2
         version: 6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1)
       wesl-plugin:
-        specifier: ^0.6.0-rc4
-        version: 0.6.0-rc4(@farmfe/core@1.6.6)(@nuxt/kit@3.16.0)(@nuxt/schema@3.16.0)(esbuild@0.25.1)(vite@6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))(webpack@5.98.0(esbuild@0.25.1))
+        specifier: workspace:*
+        version: link:../../packages/wesl-plugin
 
   examples/wesl-sample-vite-minimal:
     dependencies:
@@ -118,8 +118,8 @@ importers:
         specifier: 0.6.0-rc3
         version: 0.6.0-rc3
       wesl:
-        specifier: ^0.6.0-rc4
-        version: 0.6.0-rc4
+        specifier: workspace:*
+        version: link:../../packages/wesl
     devDependencies:
       '@webgpu/types':
         specifier: ^0.1.58
@@ -131,8 +131,8 @@ importers:
         specifier: ^6.2.2
         version: 6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1)
       wesl-plugin:
-        specifier: ^0.6.0-rc4
-        version: 0.6.0-rc4(@farmfe/core@1.6.6)(@nuxt/kit@3.16.0)(@nuxt/schema@3.16.0)(esbuild@0.25.1)(vite@6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))(webpack@5.98.0(esbuild@0.25.1))
+        specifier: workspace:*
+        version: link:../../packages/wesl-plugin
 
   examples/wesl_rand_example:
     dependencies:
@@ -155,8 +155,8 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2
       wesl:
-        specifier: ^0.6.0-rc4
-        version: 0.6.0-rc4
+        specifier: workspace:*
+        version: link:../../packages/wesl
     devDependencies:
       '@webgpu/types':
         specifier: ^0.1.60
@@ -180,8 +180,8 @@ importers:
         specifier: ^2.3.0
         version: 2.3.1(vite@6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
       wesl-plugin:
-        specifier: ^0.6.0-rc4
-        version: 0.6.0-rc4(@farmfe/core@1.6.6)(@nuxt/kit@3.16.0)(@nuxt/schema@3.16.0)(esbuild@0.25.1)(vite@6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))(webpack@5.98.0(esbuild@0.25.1))
+        specifier: workspace:*
+        version: link:../../packages/wesl-plugin
 
   packages/bench:
     dependencies:
@@ -3619,9 +3619,6 @@ packages:
     resolution: {integrity: sha512-vqiC06CuhBTUdZH+RYl8sFrL096vA45Ok5ISO6sE/Mr1jRbGH4Csnhi8f3wKVl7x8mO4Au7Ir9D3Oyv1VYMFJw==}
     engines: {node: '>=12'}
 
-  mini-parse@0.6.0-rc4:
-    resolution: {integrity: sha512-p8+G8d+4Z+4ud0/Nyl3IO5T6tMTJ+UKULSyponsiy6VxbF0o4Maag8e8AaJj4VMix5/8ZBhxZ/AZlt9YcGBJXg==}
-
   miniflare@4.20250409.0:
     resolution: {integrity: sha512-Hu02dYZvFR+MyrI57O6rSrOUTofcO9EIvcodgq2SAHzAeWSJw2E0oq9lylOrcckFwPMcwxUAb/cQN1LIoCyySw==}
     engines: {node: '>=18.0.0'}
@@ -5101,37 +5098,8 @@ packages:
       webpack-cli:
         optional: true
 
-  wesl-plugin@0.6.0-rc4:
-    resolution: {integrity: sha512-hKu2ZRp6hyHE1zgschg6PVBm+rYh5vJOHhnrFbyeyD7X2KtZaAnJVWVZOTAfUZY8yyE3V2t7s9IrHlINzhGZFw==}
-    peerDependencies:
-      '@farmfe/core': '>=1'
-      '@nuxt/kit': ^3
-      '@nuxt/schema': ^3
-      esbuild: '*'
-      rollup: ^3
-      vite: '>=3'
-      webpack: ^4 || ^5
-    peerDependenciesMeta:
-      '@farmfe/core':
-        optional: true
-      '@nuxt/kit':
-        optional: true
-      '@nuxt/schema':
-        optional: true
-      esbuild:
-        optional: true
-      rollup:
-        optional: true
-      vite:
-        optional: true
-      webpack:
-        optional: true
-
   wesl-testsuite@file:../wesl-testsuite:
     resolution: {directory: ../wesl-testsuite, type: directory}
-
-  wesl@0.6.0-rc4:
-    resolution: {integrity: sha512-2NUxMfHdWilOSQWCcQBZnxt4csc5HGDNoefD/1RLpLTyXcwM+10Z4gki9+DvKX1T546eG7pQ8Ak6NV/5zSvGGQ==}
 
   wgsl_reflect@1.2.0:
     resolution: {integrity: sha512-bDYcmWfbg4WsrBmPv6lsyjqXx02r8dkNAzR77OCNqIcR8snO4aNSBTjir9zqgR7rLnw6PaisiZxtCitSCIUlnQ==}
@@ -8880,8 +8848,6 @@ snapshots:
 
   mimic-fn@4.0.0: {}
 
-  mini-parse@0.6.0-rc4: {}
-
   miniflare@4.20250409.0:
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
@@ -10469,25 +10435,7 @@ snapshots:
       - esbuild
       - uglify-js
 
-  wesl-plugin@0.6.0-rc4(@farmfe/core@1.6.6)(@nuxt/kit@3.16.0)(@nuxt/schema@3.16.0)(esbuild@0.25.1)(vite@6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))(webpack@5.98.0(esbuild@0.25.1)):
-    dependencies:
-      import-meta-resolve: 4.1.0
-      toml: 3.0.0
-      unplugin: 2.2.0
-      wesl: 0.6.0-rc4
-    optionalDependencies:
-      '@farmfe/core': 1.6.6
-      '@nuxt/kit': 3.16.0
-      '@nuxt/schema': 3.16.0
-      esbuild: 0.25.1
-      vite: 6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1)
-      webpack: 5.98.0(esbuild@0.25.1)
-
   wesl-testsuite@file:../wesl-testsuite: {}
-
-  wesl@0.6.0-rc4:
-    dependencies:
-      mini-parse: 0.6.0-rc4
 
   wgsl_reflect@1.2.0: {}
 
