@@ -29,9 +29,30 @@ export interface WeslDevice extends GPUDevice {
 }
 
 /**
- * Mutates a {@link GPUDevice} for usage with WESL. Does not impact your existing code, wherever a {@link GPUDevice} can be used, a {@link WeslDevice} is also valid.
+ * Creates {@link WeslDevice} for usage with WESL.
+ * Does not impact your existing code, wherever a {@link GPUDevice} can be used,
+ * a {@link WeslDevice} is also valid.
  *
- * WESL uses this to display errors pointing at the WESL source instead of pointing at generated code.
+ * WESL uses a {@link WeslDevice} to display errors referencing the WESL source
+ * instead of referencing the generated WGSL code.
+ */
+export async function createWeslDevice(
+  adapter: GPUAdapter | null,
+  descriptor?: GPUDeviceDescriptor,
+): Promise<WeslDevice> {
+  if (!adapter) {
+    throw new Error("No GPU adapter");
+  }
+  return adapter.requestDevice(descriptor).then(makeWeslDevice);
+}
+
+/**
+ * Mutates a {@link GPUDevice} for usage with WESL.
+ * Does not impact your existing code, wherever a {@link GPUDevice} can be used,
+ * a {@link WeslDevice} is also valid.
+ *
+ * WESL uses a {@link WeslDevice} to display errors referencing the WESL source
+ * instead of referencing the generated WGSL code.
  */
 export function makeWeslDevice(device: GPUDevice): WeslDevice {
   const errorScopeStack: ErrorScope[] = [];
