@@ -1,26 +1,16 @@
-import { makeWeslDevice, WeslDevice } from "wesl";
+import { createWeslDevice, WeslDevice } from "wesl";
 
 /** @return a GPUDevice with a WESL wrapper for error reporting */
 export async function gpuDevice(): Promise<WeslDevice> {
-  const gpu = navigator.gpu;
-  if (!gpu) {
-    console.error("No GPU found, try chrome, or firefox on windows");
-    throw new Error("no GPU");
-  }
-  const adapter = await gpu.requestAdapter();
-  if (!adapter) {
-    console.error("No gpu adapter found");
-    throw new Error("no GPU adapter");
-  }
-  const device = await adapter.requestDevice();
-  return makeWeslDevice(device);
+  const adapter = await navigator.gpu.requestAdapter();
+  return createWeslDevice(adapter);
 }
 
 /** configure the webgpu canvas context for typical webgpu use */
 export function configureCanvas(
   device: GPUDevice,
   canvas: HTMLCanvasElement,
-  debug = false
+  debug = false,
 ): GPUCanvasContext {
   const context = canvas.getContext("webgpu");
   if (!context) {
