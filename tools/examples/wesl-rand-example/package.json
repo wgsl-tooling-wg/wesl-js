@@ -1,5 +1,5 @@
 {
-  "name": "wgsl-linker-rand-example",
+  "name": "wesl-rand-example",
   "private": true,
   "version": "0.0.1",
   "type": "module",
