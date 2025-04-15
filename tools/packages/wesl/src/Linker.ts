@@ -16,7 +16,7 @@ import { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
 import { filterMap, mapValues } from "./Util.ts";
 import { WeslBundle } from "./WeslBundle.ts";
 
-type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
+export type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 
 export interface WeslJsPlugin {
   transform?: LinkerTransform;
