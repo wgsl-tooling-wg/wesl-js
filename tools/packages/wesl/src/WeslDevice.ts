@@ -36,7 +36,7 @@ export interface WeslDevice extends GPUDevice {
  * WESL uses a {@link WeslDevice} to display errors referencing the WESL source
  * instead of referencing the generated WGSL code.
  */
-export async function createWeslDevice(
+export async function requestWeslDevice(
   adapter: GPUAdapter | null,
   descriptor?: GPUDeviceDescriptor,
 ): Promise<WeslDevice> {

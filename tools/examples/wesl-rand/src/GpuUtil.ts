@@ -1,9 +1,9 @@
-import { createWeslDevice, WeslDevice } from "wesl";
+import { requestWeslDevice, WeslDevice } from "wesl";
 
 /** @return a GPUDevice with a WESL wrapper for error reporting */
 export async function gpuDevice(): Promise<WeslDevice> {
   const adapter = await navigator.gpu.requestAdapter();
-  return createWeslDevice(adapter);
+  return requestWeslDevice(adapter);
 }
 
 /** configure the webgpu canvas context for typical webgpu use */
