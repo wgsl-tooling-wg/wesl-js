@@ -1,0 +1,13 @@
+export const snapshot = {};
+
+snapshot[`unresolved identifier 1`] = `
+"unresolved identifier 'x' in file: ./test.wesl
+    fn main() { x = 7; }   Ln 2
+                ^^"
+`;
+
+snapshot[`conditionally empty struct 1`] = `
+"struct Empty in ./test.wesl has no members (with current conditions)
+    struct Empty {   Ln 2
+    ^"
+`;
