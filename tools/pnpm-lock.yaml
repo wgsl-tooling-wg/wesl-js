@@ -90,6 +90,55 @@ importers:
         specifier: ^17.7.2
         version: 17.7.2
 
+  examples/wesl-rand:
+    dependencies:
+      '@codemirror/language':
+        specifier: ^6.11.0
+        version: 6.11.0
+      '@iizukak/codemirror-lang-wgsl':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@lezer/highlight':
+        specifier: ^1.2.1
+        version: 1.2.1
+      '@shoelace-style/shoelace':
+        specifier: ^2.20.1
+        version: 2.20.1(@floating-ui/utils@0.2.9)(@types/react@19.1.0)
+      random_wgsl:
+        specifier: 0.6.0-rc4
+        version: 0.6.0-rc4
+      style-mod:
+        specifier: ^4.1.2
+        version: 4.1.2
+      wesl:
+        specifier: workspace:*
+        version: link:../../packages/wesl
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.60
+        version: 0.1.60
+      eslint:
+        specifier: ^9.23.0
+        version: 9.24.0(jiti@2.4.2)
+      eslint-config-prettier:
+        specifier: ^10.1.1
+        version: 10.1.1(eslint@9.24.0(jiti@2.4.2))
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
+      typescript-eslint:
+        specifier: ^8.29.0
+        version: 8.29.1(eslint@9.24.0(jiti@2.4.2))(typescript@5.8.2)
+      vite:
+        specifier: ^6.2.5
+        version: 6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1)
+      vite-plugin-static-copy:
+        specifier: ^2.3.0
+        version: 2.3.1(vite@6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
+      wesl-plugin:
+        specifier: workspace:*
+        version: link:../../packages/wesl-plugin
+
   examples/wesl-sample-vite:
     dependencies:
       random_wgsl:
@@ -113,6 +162,50 @@ importers:
         version: link:../../packages/wesl-plugin
 
   examples/wesl-sample-vite-minimal:
+    dependencies:
+      random_wgsl:
+        specifier: 0.6.0-rc3
+        version: 0.6.0-rc3
+      wesl:
+        specifier: workspace:*
+        version: link:../../packages/wesl
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.58
+        version: 0.1.60
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.2
+      vite:
+        specifier: ^6.2.2
+        version: 6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1)
+      wesl-plugin:
+        specifier: workspace:*
+        version: link:../../packages/wesl-plugin
+
+  examples/wesl-vite:
+    dependencies:
+      random_wgsl:
+        specifier: 0.6.0-rc3
+        version: 0.6.0-rc3
+      wesl:
+        specifier: workspace:*
+        version: link:../../packages/wesl
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.58
+        version: 0.1.60
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.2
+      vite:
+        specifier: ^6.2.2
+        version: 6.2.5(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1)
+      wesl-plugin:
+        specifier: workspace:*
+        version: link:../../packages/wesl-plugin
+
+  examples/wesl-vite-minimal:
     dependencies:
       random_wgsl:
         specifier: 0.6.0-rc3
@@ -320,6 +413,10 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.13.10
 
   packages/wesl-plugin:
     dependencies:
