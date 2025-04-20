@@ -21,6 +21,6 @@
       "mini-parse": ["../mini-parse/src"]
     }
   },
-  "include": ["src/**/*", "src/viteTypes.d.ts"],
+  "include": ["src/**/*", "src/viteTypes.d.ts", "build.ts"],
   "exclude": ["node_modules"]
 }
