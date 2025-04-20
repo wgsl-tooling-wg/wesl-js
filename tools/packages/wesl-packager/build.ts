@@ -1,17 +1,42 @@
-import { build, Plugin } from "esbuild";
+import { build, BuildOptions, context, Plugin } from "esbuild";
 import { readFile } from "node:fs/promises";
 import * as path from "path";
+import { parseArgs, ParseArgsConfig } from "node:util";
 
-// an esbuild script with a plugin to handle ?raw style imports
+/* an esbuild script with a plugin to handle ?raw style imports */
 
-build({
+const buildOptions: BuildOptions = {
   plugins: [raw()],
   bundle: true,
   platform: "node",
   format: "esm",
   outfile: "bin/wesl-packager",
   entryPoints: ["src/main.ts"],
-});
+  logLevel: "info",
+};
+
+main();
+
+async function main() {
+  const opts = args();
+  if (opts.watch) {
+    await context(buildOptions).then(ctx => ctx.watch());
+  } else {
+    await build(buildOptions);
+  }
+}
+
+function args(): Record<string, any> {
+  const config: ParseArgsConfig = {
+    options: {
+      watch: {
+        type: "boolean",
+      },
+    },
+  };
+  const args = parseArgs(config);
+  return args.values;
+}
 
 /** Package resources as strings via ?raw */
 function raw(): Plugin {
