@@ -45,12 +45,12 @@ async function updatePackageJson(
     exports["./*"] = {
       import: `./${distDir}/*/weslBundle.js`,
       types: `./${distDir}/weslBundle.d.ts`,
-    }
+    };
   } else {
     exports["."] = {
       import: `./${distDir}/weslBundle.js`,
       types: `./${distDir}/weslBundle.d.ts`,
-    }
+    };
   }
 
   pkgJson.exports = exports;
