@@ -19,7 +19,11 @@ test("package two wgsl files", async () => {
   await rimraf(distDir);
   await mkdir(distDir);
   await packageCli(
-    `--projectDir ${projectDir} --rootDir ${srcDir} --outDir ${distDir}`,
+    `--projectDir ${projectDir} 
+     --rootDir ${srcDir} 
+     --updatePackageJson false
+     --src ${srcDir}/*.w[eg]sl
+     --outDir ${distDir}`,
   );
   const result = await readFile(path.join(distDir, "weslBundle.js"), "utf8");
   expect(result).toMatchInlineSnapshot(`
