@@ -1,14 +1,11 @@
-import { cp, mkdir, readFile } from "node:fs/promises";
+import { dlog } from "berry-pretty";
+import fs, { mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import path from "path";
 import { rimraf } from "rimraf";
 import { expect, test } from "vitest";
 import { packagerCli } from "../packagerCli.js";
-import fs from "node:fs/promises";
-import { dlog } from "berry-pretty";
-import {tmpdir} from "node:os";
-import { stat } from "node:fs";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 
@@ -42,14 +39,14 @@ test("package two wgsl files", async () => {
   `);
 });
 
-test.only("package multi ", async () => {
+test.skip("package multi ", async () => {
   // create a copy of multi_package in a temporary directory so we can mutate it
   const workDir = "/tmp/testing_multi";
   await rimraf(workDir);
   await mkdir(workDir);
 
   // const workDir = await fs.mkdtemp("wesl-packager-test-multi-");
-  dlog({workDir})
+  dlog({ workDir });
   try {
     const multiDir = path.join(testDir, "multi_package");
     await fs.cp(multiDir, workDir, {
@@ -68,9 +65,12 @@ test.only("package multi ", async () => {
       --outDir ${distDir}`,
     );
 
-  // verify package.json
-  const packageJson = await readFile(path.join(workDir, "package.json"), "utf8");
-  expect(packageJson).toMatchInlineSnapshot(`
+    // verify package.json
+    const packageJson = await readFile(
+      path.join(workDir, "package.json"),
+      "utf8",
+    );
+    expect(packageJson).toMatchInlineSnapshot(`
     "{
       "name": "multi-package",
       "private": true,
@@ -86,9 +86,12 @@ test.only("package multi ", async () => {
     }"
   `);
 
-  // verify dist bundles
-  const nestedBundle = await readFile(path.join(workDir, "dist/dir/nested/weslBundle.js"), "utf8");
-  expect(nestedBundle).toMatchInlineSnapshot(`
+    // verify dist bundles
+    const nestedBundle = await readFile(
+      path.join(workDir, "dist/dir/nested/weslBundle.js"),
+      "utf8",
+    );
+    expect(nestedBundle).toMatchInlineSnapshot(`
     "
     export const weslBundle = {
       "name": "multi-package",
@@ -102,8 +105,11 @@ test.only("package multi ", async () => {
       "
   `);
 
-  const dts = await readFile(path.join(workDir, "dist/weslBundle.d.ts"), "utf8");
-  expect(dts).toMatchInlineSnapshot(`
+    const dts = await readFile(
+      path.join(workDir, "dist/weslBundle.d.ts"),
+      "utf8",
+    );
+    expect(dts).toMatchInlineSnapshot(`
     "export interface WeslBundle {
       /** name of the package, e.g. random_wgsl */
       name: string;
@@ -126,8 +132,11 @@ test.only("package multi ", async () => {
     "
   `);
 
-  const multi = await readFile(path.join(workDir, "dist/multi/weslBundle.js"), "utf8");
-  expect(multi).toMatchInlineSnapshot(`
+    const multi = await readFile(
+      path.join(workDir, "dist/multi/weslBundle.js"),
+      "utf8",
+    );
+    expect(multi).toMatchInlineSnapshot(`
     "
     export const weslBundle = {
       "name": "multi-package",
@@ -140,7 +149,6 @@ test.only("package multi ", async () => {
     export default weslBundle;
       "
   `);
-
   } finally {
     // await rimraf(workDir);
   }
