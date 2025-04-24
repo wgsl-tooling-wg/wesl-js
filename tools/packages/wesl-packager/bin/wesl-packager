@@ -492,9 +492,9 @@ var YargsParser = class {
     };
     const negative = /^-([0-9]+(\.[0-9]+)?|\.[0-9]+)$/;
     const negatedBoolean = new RegExp("^--" + configuration["negation-prefix"] + "(.+)");
-    [].concat(opts.array || []).filter(Boolean).forEach(function(opt) {
-      const key = typeof opt === "object" ? opt.key : opt;
-      const assignment = Object.keys(opt).map(function(key2) {
+    [].concat(opts.array || []).filter(Boolean).forEach(function(opt2) {
+      const key = typeof opt2 === "object" ? opt2.key : opt2;
+      const assignment = Object.keys(opt2).map(function(key2) {
         const arrayFlagKeys = {
           boolean: "bools",
           string: "strings",
@@ -1371,10 +1371,10 @@ var UI = class {
     });
     return this.rows[this.rows.length - 1];
   }
-  colFromString(text) {
+  colFromString(text2) {
     return {
-      text,
-      padding: this.measurePadding(text)
+      text: text2,
+      padding: this.measurePadding(text2)
     };
   }
   measurePadding(str) {
@@ -1399,8 +1399,8 @@ var UI = class {
           ts += " ".repeat(wrapWidth - mixin2.stringWidth(col));
         }
         if (row[c].align && row[c].align !== "left" && this.wrap) {
-          const fn = align[row[c].align];
-          ts = fn(ts, wrapWidth);
+          const fn2 = align[row[c].align];
+          ts = fn2(ts, wrapWidth);
           if (mixin2.stringWidth(ts) < wrapWidth) {
             ts += " ".repeat((width || 0) - mixin2.stringWidth(ts) - 1);
           }
@@ -2096,7 +2096,7 @@ var CommandInstance = class {
     this.globalMiddleware = globalMiddleware;
     this.validation = validation2;
   }
-  addDirectory(dir, req, callerFile, opts) {
+  addDirectory(dir, req2, callerFile, opts) {
     opts = opts || {};
     if (typeof opts.recurse !== "boolean")
       opts.recurse = false;
@@ -2114,7 +2114,7 @@ var CommandInstance = class {
       }
       return visited;
     };
-    this.shim.requireDirectory({ require: req, filename: callerFile }, dir, opts);
+    this.shim.requireDirectory({ require: req2, filename: callerFile }, dir, opts);
   }
   addHandler(cmd, description, builder, handler, commandMiddleware, deprecated) {
     let aliases = [];
@@ -2906,8 +2906,8 @@ function usage(yargs, shim3) {
     const emit = typeof level === "function" ? level : logger[level];
     emit(self.help());
   };
-  self.functionDescription = (fn) => {
-    const description = fn.name ? shim3.Parser.decamelize(fn.name, "-") : __("generated-value");
+  self.functionDescription = (fn2) => {
+    const description = fn2.name ? shim3.Parser.decamelize(fn2.name, "-") : __("generated-value");
     return ["(", description, ")"].join("");
   };
   self.stringifiedValues = function stringifiedValues(values, separator) {
@@ -3011,17 +3011,17 @@ function usage(yargs, shim3) {
   };
   return self;
 }
-function isIndentedText(text) {
-  return typeof text === "object";
+function isIndentedText(text2) {
+  return typeof text2 === "object";
 }
-function addIndentation(text, indent) {
-  return isIndentedText(text) ? { text: text.text, indentation: text.indentation + indent } : { text, indentation: indent };
+function addIndentation(text2, indent) {
+  return isIndentedText(text2) ? { text: text2.text, indentation: text2.indentation + indent } : { text: text2, indentation: indent };
 }
-function getIndentation(text) {
-  return isIndentedText(text) ? text.indentation : 0;
+function getIndentation(text2) {
+  return isIndentedText(text2) ? text2.indentation : 0;
 }
-function getText(text) {
-  return isIndentedText(text) ? text.text : text;
+function getText(text2) {
+  return isIndentedText(text2) ? text2.text : text2;
 }
 
 // ../../node_modules/.pnpm/yargs@17.7.2/node_modules/yargs/build/lib/completion-templates.js
@@ -3264,15 +3264,15 @@ var Completion = class {
   }
   generateCompletionScript($0, cmd) {
     let script = this.zshShell ? completionZshTemplate : completionShTemplate;
-    const name = this.shim.path.basename($0);
+    const name2 = this.shim.path.basename($0);
     if ($0.match(/\.js$/))
       $0 = `./${$0}`;
-    script = script.replace(/{{app_name}}/g, name);
+    script = script.replace(/{{app_name}}/g, name2);
     script = script.replace(/{{completion_command}}/g, cmd);
     return script.replace(/{{app_path}}/g, $0);
   }
-  registerFunction(fn) {
-    this.customCompletionFunction = fn;
+  registerFunction(fn2) {
+    this.customCompletionFunction = fn2;
   }
   setParsed(parsed) {
     this.aliases = parsed.aliases;
@@ -3589,16 +3589,16 @@ ${customMsgs.join("\n")}` : "";
 }
 
 // ../../node_modules/.pnpm/yargs@17.7.2/node_modules/yargs/build/lib/yargs-factory.js
-var __classPrivateFieldSet = function(receiver, state, value, kind, f) {
-  if (kind === "m") throw new TypeError("Private method is not writable");
-  if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+var __classPrivateFieldSet = function(receiver, state, value, kind2, f) {
+  if (kind2 === "m") throw new TypeError("Private method is not writable");
+  if (kind2 === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
   if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-  return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
+  return kind2 === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
 };
-var __classPrivateFieldGet = function(receiver, state, kind, f) {
-  if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+var __classPrivateFieldGet = function(receiver, state, kind2, f) {
+  if (kind2 === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
   if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-  return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+  return kind2 === "m" ? f : kind2 === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _YargsInstance_command;
 var _YargsInstance_cwd;
@@ -3738,35 +3738,35 @@ var YargsInstance = class {
     __classPrivateFieldGet(this, _YargsInstance_options, "f").showHiddenOpt = __classPrivateFieldGet(this, _YargsInstance_defaultShowHiddenOpt, "f");
     __classPrivateFieldSet(this, _YargsInstance_logger, this[kCreateLogger](), "f");
   }
-  addHelpOpt(opt, msg) {
+  addHelpOpt(opt2, msg) {
     const defaultHelpOpt = "help";
-    argsert("[string|boolean] [string]", [opt, msg], arguments.length);
+    argsert("[string|boolean] [string]", [opt2, msg], arguments.length);
     if (__classPrivateFieldGet(this, _YargsInstance_helpOpt, "f")) {
       this[kDeleteFromParserHintObject](__classPrivateFieldGet(this, _YargsInstance_helpOpt, "f"));
       __classPrivateFieldSet(this, _YargsInstance_helpOpt, null, "f");
     }
-    if (opt === false && msg === void 0)
+    if (opt2 === false && msg === void 0)
       return this;
-    __classPrivateFieldSet(this, _YargsInstance_helpOpt, typeof opt === "string" ? opt : defaultHelpOpt, "f");
+    __classPrivateFieldSet(this, _YargsInstance_helpOpt, typeof opt2 === "string" ? opt2 : defaultHelpOpt, "f");
     this.boolean(__classPrivateFieldGet(this, _YargsInstance_helpOpt, "f"));
     this.describe(__classPrivateFieldGet(this, _YargsInstance_helpOpt, "f"), msg || __classPrivateFieldGet(this, _YargsInstance_usage, "f").deferY18nLookup("Show help"));
     return this;
   }
-  help(opt, msg) {
-    return this.addHelpOpt(opt, msg);
+  help(opt2, msg) {
+    return this.addHelpOpt(opt2, msg);
   }
-  addShowHiddenOpt(opt, msg) {
-    argsert("[string|boolean] [string]", [opt, msg], arguments.length);
-    if (opt === false && msg === void 0)
+  addShowHiddenOpt(opt2, msg) {
+    argsert("[string|boolean] [string]", [opt2, msg], arguments.length);
+    if (opt2 === false && msg === void 0)
       return this;
-    const showHiddenOpt = typeof opt === "string" ? opt : __classPrivateFieldGet(this, _YargsInstance_defaultShowHiddenOpt, "f");
+    const showHiddenOpt = typeof opt2 === "string" ? opt2 : __classPrivateFieldGet(this, _YargsInstance_defaultShowHiddenOpt, "f");
     this.boolean(showHiddenOpt);
     this.describe(showHiddenOpt, msg || __classPrivateFieldGet(this, _YargsInstance_usage, "f").deferY18nLookup("Show hidden options"));
     __classPrivateFieldGet(this, _YargsInstance_options, "f").showHiddenOpt = showHiddenOpt;
     return this;
   }
-  showHidden(opt, msg) {
-    return this.addShowHiddenOpt(opt, msg);
+  showHidden(opt2, msg) {
+    return this.addShowHiddenOpt(opt2, msg);
   }
   alias(key, value) {
     argsert("<object|string|array> [string|array]", [key, value], arguments.length);
@@ -3875,10 +3875,10 @@ var YargsInstance = class {
     });
     return this;
   }
-  completion(cmd, desc, fn) {
-    argsert("[string] [string|boolean|function] [function]", [cmd, desc, fn], arguments.length);
+  completion(cmd, desc, fn2) {
+    argsert("[string] [string|boolean|function] [function]", [cmd, desc, fn2], arguments.length);
     if (typeof desc === "function") {
-      fn = desc;
+      fn2 = desc;
       desc = void 0;
     }
     __classPrivateFieldSet(this, _YargsInstance_completionCommand, cmd || __classPrivateFieldGet(this, _YargsInstance_completionCommand, "f") || "completion", "f");
@@ -3886,8 +3886,8 @@ var YargsInstance = class {
       desc = "generate completion script";
     }
     this.command(__classPrivateFieldGet(this, _YargsInstance_completionCommand, "f"), desc);
-    if (fn)
-      __classPrivateFieldGet(this, _YargsInstance_completion, "f").registerFunction(fn);
+    if (fn2)
+      __classPrivateFieldGet(this, _YargsInstance_completion, "f").registerFunction(fn2);
     return this;
   }
   command(cmd, description, builder, handler, middlewares, deprecated) {
@@ -3900,8 +3900,8 @@ var YargsInstance = class {
   }
   commandDir(dir, opts) {
     argsert("<string> [object]", [dir, opts], arguments.length);
-    const req = __classPrivateFieldGet(this, _YargsInstance_parentRequire, "f") || __classPrivateFieldGet(this, _YargsInstance_shim, "f").require;
-    __classPrivateFieldGet(this, _YargsInstance_command, "f").addDirectory(dir, req, __classPrivateFieldGet(this, _YargsInstance_shim, "f").getCallerFile(), opts);
+    const req2 = __classPrivateFieldGet(this, _YargsInstance_parentRequire, "f") || __classPrivateFieldGet(this, _YargsInstance_shim, "f").require;
+    __classPrivateFieldGet(this, _YargsInstance_command, "f").addDirectory(dir, req2, __classPrivateFieldGet(this, _YargsInstance_shim, "f").getCallerFile(), opts);
     return this;
   }
   count(keys) {
@@ -4173,18 +4173,18 @@ var YargsInstance = class {
     this[kTrackManuallySetKeys](keys);
     return this;
   }
-  option(key, opt) {
-    argsert("<string|object> [object]", [key, opt], arguments.length);
+  option(key, opt2) {
+    argsert("<string|object> [object]", [key, opt2], arguments.length);
     if (typeof key === "object") {
       Object.keys(key).forEach((k) => {
         this.options(k, key[k]);
       });
     } else {
-      if (typeof opt !== "object") {
-        opt = {};
+      if (typeof opt2 !== "object") {
+        opt2 = {};
       }
       this[kTrackManuallySetKeys](key);
-      if (__classPrivateFieldGet(this, _YargsInstance_versionOpt, "f") && (key === "version" || (opt === null || opt === void 0 ? void 0 : opt.alias) === "version")) {
+      if (__classPrivateFieldGet(this, _YargsInstance_versionOpt, "f") && (key === "version" || (opt2 === null || opt2 === void 0 ? void 0 : opt2.alias) === "version")) {
         this[kEmitWarning]([
           '"version" is a reserved word.',
           "Please do one of the following:",
@@ -4195,94 +4195,94 @@ var YargsInstance = class {
         ].join("\n"), void 0, "versionWarning");
       }
       __classPrivateFieldGet(this, _YargsInstance_options, "f").key[key] = true;
-      if (opt.alias)
-        this.alias(key, opt.alias);
-      const deprecate = opt.deprecate || opt.deprecated;
+      if (opt2.alias)
+        this.alias(key, opt2.alias);
+      const deprecate = opt2.deprecate || opt2.deprecated;
       if (deprecate) {
         this.deprecateOption(key, deprecate);
       }
-      const demand = opt.demand || opt.required || opt.require;
+      const demand = opt2.demand || opt2.required || opt2.require;
       if (demand) {
         this.demand(key, demand);
       }
-      if (opt.demandOption) {
-        this.demandOption(key, typeof opt.demandOption === "string" ? opt.demandOption : void 0);
+      if (opt2.demandOption) {
+        this.demandOption(key, typeof opt2.demandOption === "string" ? opt2.demandOption : void 0);
       }
-      if (opt.conflicts) {
-        this.conflicts(key, opt.conflicts);
+      if (opt2.conflicts) {
+        this.conflicts(key, opt2.conflicts);
       }
-      if ("default" in opt) {
-        this.default(key, opt.default);
+      if ("default" in opt2) {
+        this.default(key, opt2.default);
       }
-      if (opt.implies !== void 0) {
-        this.implies(key, opt.implies);
+      if (opt2.implies !== void 0) {
+        this.implies(key, opt2.implies);
       }
-      if (opt.nargs !== void 0) {
-        this.nargs(key, opt.nargs);
+      if (opt2.nargs !== void 0) {
+        this.nargs(key, opt2.nargs);
       }
-      if (opt.config) {
-        this.config(key, opt.configParser);
+      if (opt2.config) {
+        this.config(key, opt2.configParser);
       }
-      if (opt.normalize) {
+      if (opt2.normalize) {
         this.normalize(key);
       }
-      if (opt.choices) {
-        this.choices(key, opt.choices);
+      if (opt2.choices) {
+        this.choices(key, opt2.choices);
       }
-      if (opt.coerce) {
-        this.coerce(key, opt.coerce);
+      if (opt2.coerce) {
+        this.coerce(key, opt2.coerce);
       }
-      if (opt.group) {
-        this.group(key, opt.group);
+      if (opt2.group) {
+        this.group(key, opt2.group);
       }
-      if (opt.boolean || opt.type === "boolean") {
+      if (opt2.boolean || opt2.type === "boolean") {
         this.boolean(key);
-        if (opt.alias)
-          this.boolean(opt.alias);
+        if (opt2.alias)
+          this.boolean(opt2.alias);
       }
-      if (opt.array || opt.type === "array") {
+      if (opt2.array || opt2.type === "array") {
         this.array(key);
-        if (opt.alias)
-          this.array(opt.alias);
+        if (opt2.alias)
+          this.array(opt2.alias);
       }
-      if (opt.number || opt.type === "number") {
+      if (opt2.number || opt2.type === "number") {
         this.number(key);
-        if (opt.alias)
-          this.number(opt.alias);
+        if (opt2.alias)
+          this.number(opt2.alias);
       }
-      if (opt.string || opt.type === "string") {
+      if (opt2.string || opt2.type === "string") {
         this.string(key);
-        if (opt.alias)
-          this.string(opt.alias);
+        if (opt2.alias)
+          this.string(opt2.alias);
       }
-      if (opt.count || opt.type === "count") {
+      if (opt2.count || opt2.type === "count") {
         this.count(key);
       }
-      if (typeof opt.global === "boolean") {
-        this.global(key, opt.global);
+      if (typeof opt2.global === "boolean") {
+        this.global(key, opt2.global);
       }
-      if (opt.defaultDescription) {
-        __classPrivateFieldGet(this, _YargsInstance_options, "f").defaultDescription[key] = opt.defaultDescription;
+      if (opt2.defaultDescription) {
+        __classPrivateFieldGet(this, _YargsInstance_options, "f").defaultDescription[key] = opt2.defaultDescription;
       }
-      if (opt.skipValidation) {
+      if (opt2.skipValidation) {
         this.skipValidation(key);
       }
-      const desc = opt.describe || opt.description || opt.desc;
+      const desc = opt2.describe || opt2.description || opt2.desc;
       const descriptions = __classPrivateFieldGet(this, _YargsInstance_usage, "f").getDescriptions();
       if (!Object.prototype.hasOwnProperty.call(descriptions, key) || typeof desc === "string") {
         this.describe(key, desc);
       }
-      if (opt.hidden) {
+      if (opt2.hidden) {
         this.hide(key);
       }
-      if (opt.requiresArg) {
+      if (opt2.requiresArg) {
         this.requiresArg(key);
       }
     }
     return this;
   }
-  options(key, opt) {
-    return this.option(key, opt);
+  options(key, opt2) {
+    return this.option(key, opt2);
   }
   parse(args, shortCircuit, _parseFn) {
     argsert("[string|array] [function|boolean|object] [function]", [args, shortCircuit, _parseFn], arguments.length);
@@ -4517,9 +4517,9 @@ var YargsInstance = class {
     __classPrivateFieldSet(this, _YargsInstance_usageConfig, config, "f");
     return this;
   }
-  version(opt, msg, ver) {
+  version(opt2, msg, ver) {
     const defaultVersionOpt = "version";
-    argsert("[boolean|string] [string] [string]", [opt, msg, ver], arguments.length);
+    argsert("[boolean|string] [string] [string]", [opt2, msg, ver], arguments.length);
     if (__classPrivateFieldGet(this, _YargsInstance_versionOpt, "f")) {
       this[kDeleteFromParserHintObject](__classPrivateFieldGet(this, _YargsInstance_versionOpt, "f"));
       __classPrivateFieldGet(this, _YargsInstance_usage, "f").version(void 0);
@@ -4527,18 +4527,18 @@ var YargsInstance = class {
     }
     if (arguments.length === 0) {
       ver = this[kGuessVersion]();
-      opt = defaultVersionOpt;
+      opt2 = defaultVersionOpt;
     } else if (arguments.length === 1) {
-      if (opt === false) {
+      if (opt2 === false) {
         return this;
       }
-      ver = opt;
-      opt = defaultVersionOpt;
+      ver = opt2;
+      opt2 = defaultVersionOpt;
     } else if (arguments.length === 2) {
       ver = msg;
       msg = void 0;
     }
-    __classPrivateFieldSet(this, _YargsInstance_versionOpt, typeof opt === "string" ? opt : defaultVersionOpt, "f");
+    __classPrivateFieldSet(this, _YargsInstance_versionOpt, typeof opt2 === "string" ? opt2 : defaultVersionOpt, "f");
     msg = msg || __classPrivateFieldGet(this, _YargsInstance_usage, "f").deferY18nLookup("Show version number");
     __classPrivateFieldGet(this, _YargsInstance_usage, "f").version(ver || void 0);
     this.boolean(__classPrivateFieldGet(this, _YargsInstance_versionOpt, "f"));
@@ -5210,7 +5210,7 @@ var parseClass = (glob2, position) => {
 };
 
 // ../../node_modules/.pnpm/minimatch@10.0.1/node_modules/minimatch/dist/esm/unescape.js
-var unescape = (s, { windowsPathsNoEscape = false } = {}) => {
+var unescape2 = (s, { windowsPathsNoEscape = false } = {}) => {
   return windowsPathsNoEscape ? s.replace(/\[([^\/\\])\]/g, "$1") : s.replace(/((?!\\).|^)\[([^\/\\])\]/g, "$1$2").replace(/\\([^\/])/g, "$1");
 };
 
@@ -5362,7 +5362,7 @@ var AST = class _AST {
     }
     return c;
   }
-  static #parseAST(str, ast, pos, opt) {
+  static #parseAST(str, ast, pos, opt2) {
     let escaping = false;
     let inBrace = false;
     let braceStart = -1;
@@ -5394,11 +5394,11 @@ var AST = class _AST {
           acc2 += c;
           continue;
         }
-        if (!opt.noext && isExtglobType(c) && str.charAt(i2) === "(") {
+        if (!opt2.noext && isExtglobType(c) && str.charAt(i2) === "(") {
           ast.push(acc2);
           acc2 = "";
           const ext2 = new _AST(c, ast);
-          i2 = _AST.#parseAST(str, ext2, i2, opt);
+          i2 = _AST.#parseAST(str, ext2, i2, opt2);
           ast.push(ext2);
           continue;
         }
@@ -5440,7 +5440,7 @@ var AST = class _AST {
         acc = "";
         const ext2 = new _AST(c, part);
         part.push(ext2);
-        i = _AST.#parseAST(str, ext2, i, opt);
+        i = _AST.#parseAST(str, ext2, i, opt2);
         continue;
       }
       if (c === "|") {
@@ -5596,7 +5596,7 @@ var AST = class _AST {
       const final2 = start2 + src + end;
       return [
         final2,
-        unescape(src),
+        unescape2(src),
         this.#hasMagic = !!this.#hasMagic,
         this.#uflag
       ];
@@ -5609,7 +5609,7 @@ var AST = class _AST {
       this.#parts = [s];
       this.type = null;
       this.#hasMagic = void 0;
-      return [s, unescape(this.toString()), false, false];
+      return [s, unescape2(this.toString()), false, false];
     }
     let bodyDotAllowed = !repeated || allowDot || dot || !startNoDot ? "" : this.#partsToRegExp(true);
     if (bodyDotAllowed === body) {
@@ -5630,7 +5630,7 @@ var AST = class _AST {
     }
     return [
       final,
-      unescape(body),
+      unescape2(body),
       this.#hasMagic = !!this.#hasMagic,
       this.#uflag
     ];
@@ -5689,7 +5689,7 @@ var AST = class _AST {
       }
       re += regExpEscape(c);
     }
-    return [re, unescape(glob2), !!hasMagic2, uflag];
+    return [re, unescape2(glob2), !!hasMagic2, uflag];
   }
 };
 
@@ -6414,7 +6414,7 @@ var Minimatch = class {
 minimatch.AST = AST;
 minimatch.Minimatch = Minimatch;
 minimatch.escape = escape;
-minimatch.unescape = unescape;
+minimatch.unescape = unescape2;
 
 // ../../node_modules/.pnpm/glob@11.0.1/node_modules/glob/dist/esm/glob.js
 import { fileURLToPath as fileURLToPath3 } from "node:url";
@@ -6423,8 +6423,8 @@ import { fileURLToPath as fileURLToPath3 } from "node:url";
 var perf = typeof performance === "object" && performance && typeof performance.now === "function" ? performance : Date;
 var warned = /* @__PURE__ */ new Set();
 var PROCESS = typeof process === "object" && !!process ? process : {};
-var emitWarning = (msg, type, code, fn) => {
-  typeof PROCESS.emitWarning === "function" ? PROCESS.emitWarning(msg, type, code, fn) : console.error(`[${code}] ${type}: ${msg}`);
+var emitWarning = (msg, type, code, fn2) => {
+  typeof PROCESS.emitWarning === "function" ? PROCESS.emitWarning(msg, type, code, fn2) : console.error(`[${code}] ${type}: ${msg}`);
 };
 var AC = globalThis.AbortController;
 var AS = globalThis.AbortSignal;
@@ -6434,8 +6434,8 @@ if (typeof AC === "undefined") {
     _onabort = [];
     reason;
     aborted = false;
-    addEventListener(_, fn) {
-      this._onabort.push(fn);
+    addEventListener(_, fn2) {
+      this._onabort.push(fn2);
     }
   };
   AC = class AbortController {
@@ -6448,8 +6448,8 @@ if (typeof AC === "undefined") {
         return;
       this.signal.reason = reason;
       this.signal.aborted = true;
-      for (const fn of this.signal._onabort) {
-        fn(reason);
+      for (const fn2 of this.signal._onabort) {
+        fn2(reason);
       }
       this.signal.onabort?.(reason);
     }
@@ -7026,13 +7026,13 @@ var LRUCache = class _LRUCache {
    * Find a value for which the supplied fn method returns a truthy value,
    * similar to `Array.find()`. fn is called as `fn(value, key, cache)`.
    */
-  find(fn, getOptions = {}) {
+  find(fn2, getOptions = {}) {
     for (const i of this.#indexes()) {
       const v = this.#valList[i];
       const value = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
       if (value === void 0)
         continue;
-      if (fn(value, this.#keyList[i], this)) {
+      if (fn2(value, this.#keyList[i], this)) {
         return this.get(this.#keyList[i], getOptions);
       }
     }
@@ -7048,26 +7048,26 @@ var LRUCache = class _LRUCache {
    *
    * Does not update age or recenty of use, or iterate over stale values.
    */
-  forEach(fn, thisp = this) {
+  forEach(fn2, thisp = this) {
     for (const i of this.#indexes()) {
       const v = this.#valList[i];
       const value = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
       if (value === void 0)
         continue;
-      fn.call(thisp, value, this.#keyList[i], this);
+      fn2.call(thisp, value, this.#keyList[i], this);
     }
   }
   /**
    * The same as {@link LRUCache.forEach} but items are iterated over in
    * reverse order.  (ie, less recently used items are iterated over first.)
    */
-  rforEach(fn, thisp = this) {
+  rforEach(fn2, thisp = this) {
     for (const i of this.#rindexes()) {
       const v = this.#valList[i];
       const value = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
       if (value === void 0)
         continue;
-      fn.call(thisp, value, this.#keyList[i], this);
+      fn2.call(thisp, value, this.#keyList[i], this);
     }
   }
   /**
@@ -7838,8 +7838,8 @@ var ABORTED = Symbol("aborted");
 var SIGNAL = Symbol("signal");
 var DATALISTENERS = Symbol("dataListeners");
 var DISCARDED = Symbol("discarded");
-var defer = (fn) => Promise.resolve().then(fn);
-var nodefer = (fn) => fn();
+var defer = (fn2) => Promise.resolve().then(fn2);
+var nodefer = (fn2) => fn2();
 var isEndish = (ev) => ev === "end" || ev === "finish" || ev === "prefinish";
 var isArrayBufferLike = (b) => b instanceof ArrayBuffer || !!b && typeof b === "object" && b.constructor && b.constructor.name === "ArrayBuffer" && b.byteLength >= 0;
 var isArrayBufferView = (b) => !Buffer.isBuffer(b) && ArrayBuffer.isView(b);
@@ -8041,7 +8041,7 @@ var Minipass = class extends EventEmitter {
     }
     if (!encoding)
       encoding = "utf8";
-    const fn = this[ASYNC] ? defer : nodefer;
+    const fn2 = this[ASYNC] ? defer : nodefer;
     if (!this[OBJECTMODE] && !Buffer.isBuffer(chunk)) {
       if (isArrayBufferView(chunk)) {
         chunk = Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength);
@@ -8061,14 +8061,14 @@ var Minipass = class extends EventEmitter {
       if (this[BUFFERLENGTH] !== 0)
         this.emit("readable");
       if (cb)
-        fn(cb);
+        fn2(cb);
       return this[FLOWING];
     }
     if (!chunk.length) {
       if (this[BUFFERLENGTH] !== 0)
         this.emit("readable");
       if (cb)
-        fn(cb);
+        fn2(cb);
       return this[FLOWING];
     }
     if (typeof chunk === "string" && // unless it is a string already ready for us to use
@@ -8087,7 +8087,7 @@ var Minipass = class extends EventEmitter {
     if (this[BUFFERLENGTH] !== 0)
       this.emit("readable");
     if (cb)
-      fn(cb);
+      fn2(cb);
     return this[FLOWING];
   }
   /**
@@ -8899,9 +8899,9 @@ var PathBase = class {
    *
    * @internal
    */
-  constructor(name, type = UNKNOWN, root, roots, nocase, children, opts) {
-    this.name = name;
-    this.#matchName = nocase ? normalizeNocase(name) : normalize2(name);
+  constructor(name2, type = UNKNOWN, root, roots, nocase, children, opts) {
+    this.name = name2;
+    this.#matchName = nocase ? normalizeNocase(name2) : normalize2(name2);
     this.#type = type & TYPEMASK;
     this.nocase = nocase;
     this.roots = roots;
@@ -8994,9 +8994,9 @@ var PathBase = class {
       return this.parent || this;
     }
     const children = this.children();
-    const name = this.nocase ? normalizeNocase(pathPart) : normalize2(pathPart);
+    const name2 = this.nocase ? normalizeNocase(pathPart) : normalize2(pathPart);
     for (const p of children) {
-      if (p.#matchName === name) {
+      if (p.#matchName === name2) {
         return p;
       }
     }
@@ -9023,13 +9023,13 @@ var PathBase = class {
     if (this.#relative !== void 0) {
       return this.#relative;
     }
-    const name = this.name;
+    const name2 = this.name;
     const p = this.parent;
     if (!p) {
       return this.#relative = this.name;
     }
     const pv = p.relative();
-    return pv + (!pv || !p.parent ? "" : this.sep) + name;
+    return pv + (!pv || !p.parent ? "" : this.sep) + name2;
   }
   /**
    * The relative path from the cwd, using / as the path separator.
@@ -9044,13 +9044,13 @@ var PathBase = class {
       return "";
     if (this.#relativePosix !== void 0)
       return this.#relativePosix;
-    const name = this.name;
+    const name2 = this.name;
     const p = this.parent;
     if (!p) {
       return this.#relativePosix = this.fullpathPosix();
     }
     const pv = p.relativePosix();
-    return pv + (!pv || !p.parent ? "" : "/") + name;
+    return pv + (!pv || !p.parent ? "" : "/") + name2;
   }
   /**
    * The fully resolved path string for this Path entry
@@ -9059,13 +9059,13 @@ var PathBase = class {
     if (this.#fullpath !== void 0) {
       return this.#fullpath;
     }
-    const name = this.name;
+    const name2 = this.name;
     const p = this.parent;
     if (!p) {
       return this.#fullpath = this.name;
     }
     const pv = p.fullpath();
-    const fp = pv + (!p.parent ? "" : this.sep) + name;
+    const fp = pv + (!p.parent ? "" : this.sep) + name2;
     return this.#fullpath = fp;
   }
   /**
@@ -9378,8 +9378,8 @@ var PathBase = class {
   #readdirMaybePromoteChild(e, c) {
     for (let p = c.provisional; p < c.length; p++) {
       const pchild = c[p];
-      const name = this.nocase ? normalizeNocase(e.name) : normalize2(e.name);
-      if (name !== pchild.#matchName) {
+      const name2 = this.nocase ? normalizeNocase(e.name) : normalize2(e.name);
+      if (name2 !== pchild.#matchName) {
         continue;
       }
       return this.#readdirPromoteChild(e, pchild, p, c);
@@ -9683,14 +9683,14 @@ var PathWin32 = class _PathWin32 extends PathBase {
    *
    * @internal
    */
-  constructor(name, type = UNKNOWN, root, roots, nocase, children, opts) {
-    super(name, type, root, roots, nocase, children, opts);
+  constructor(name2, type = UNKNOWN, root, roots, nocase, children, opts) {
+    super(name2, type, root, roots, nocase, children, opts);
   }
   /**
    * @internal
    */
-  newChild(name, type = UNKNOWN, opts = {}) {
-    return new _PathWin32(name, type, this.root, this.roots, this.nocase, this.childrenCache(), opts);
+  newChild(name2, type = UNKNOWN, opts = {}) {
+    return new _PathWin32(name2, type, this.root, this.roots, this.nocase, this.childrenCache(), opts);
   }
   /**
    * @internal
@@ -9736,8 +9736,8 @@ var PathPosix = class _PathPosix extends PathBase {
    *
    * @internal
    */
-  constructor(name, type = UNKNOWN, root, roots, nocase, children, opts) {
-    super(name, type, root, roots, nocase, children, opts);
+  constructor(name2, type = UNKNOWN, root, roots, nocase, children, opts) {
+    super(name2, type, root, roots, nocase, children, opts);
   }
   /**
    * @internal
@@ -9754,8 +9754,8 @@ var PathPosix = class _PathPosix extends PathBase {
   /**
    * @internal
    */
-  newChild(name, type = UNKNOWN, opts = {}) {
-    return new _PathPosix(name, type, this.root, this.roots, this.nocase, this.childrenCache(), opts);
+  newChild(name2, type = UNKNOWN, opts = {}) {
+    return new _PathPosix(name2, type, this.root, this.roots, this.nocase, this.childrenCache(), opts);
   }
 };
 var PathScurryBase = class {
@@ -10922,18 +10922,18 @@ var GlobUtil = class {
     if (this.signal?.aborted)
       return;
     this.paused = false;
-    let fn = void 0;
-    while (!this.paused && (fn = this.#onResume.shift())) {
-      fn();
+    let fn2 = void 0;
+    while (!this.paused && (fn2 = this.#onResume.shift())) {
+      fn2();
     }
   }
-  onResume(fn) {
+  onResume(fn2) {
     if (this.signal?.aborted)
       return;
     if (!this.paused) {
-      fn();
+      fn2();
     } else {
-      this.#onResume.push(fn);
+      this.#onResume.push(fn2);
     }
   }
   // do the requisite realpath/stat checking, and return the path
@@ -11455,7 +11455,7 @@ var glob = Object.assign(glob_, {
   Glob,
   hasMagic,
   escape,
-  unescape
+  unescape: unescape2
 });
 glob.glob = glob;
 
@@ -11463,18 +11463,2530 @@ glob.glob = glob;
 import fs, { mkdir } from "node:fs/promises";
 import path2 from "node:path";
 
+// ../mini-parse/src/Assertions.ts
+function assertThat(condition, msg) {
+  if (!condition) {
+    throw new Error(msg);
+  }
+}
+
+// ../mini-parse/src/WrappedLog.ts
+var log = console.log;
+
+// ../mini-parse/src/ParserTracing.ts
+var tracing = false;
+var tracePos = false;
+var noLog = () => {
+};
+var parserLog = noLog;
+function withTraceLogging(ctx, traceInfo, fn2) {
+  assertThat(tracing, "This function may only be called if tracing is enabled");
+  let { _trace } = ctx;
+  const trace = traceInfo?.traceEnabled;
+  let logging = (!!_trace || !!trace) && !trace?.hide;
+  if (logging) {
+    const { start = 0, end = 1e20 } = { ..._trace, ...trace };
+    const pos = ctx.stream.checkpoint();
+    if (pos < start || pos > end) {
+      logging = false;
+    }
+  }
+  if (_trace && (trace?.hide || trace?.shallow)) {
+    _trace = void 0;
+  }
+  if (!_trace && trace && !trace?.shallow && !trace?.hide) {
+    _trace = { indent: 0, ...trace };
+  }
+  let tlog = noLog;
+  if (logging) {
+    const pad = currentIndent(_trace);
+    tlog = (...msgs) => {
+      log(`${pad}${msgs[0]}`, ...msgs.slice(1));
+    };
+  }
+  if (_trace) {
+    _trace = { ..._trace, indent: _trace.indent + 1 };
+  }
+  return withParserLogger(tlog, () => fn2({ ...ctx, _trace }));
+}
+function currentIndent(ctx) {
+  return "  ".repeat(ctx?.indent || 0);
+}
+function withParserLogger(logFn, fn2) {
+  const orig = parserLog;
+  try {
+    parserLog = logFn;
+    return fn2();
+  } finally {
+    parserLog = orig;
+  }
+}
+
+// ../mini-parse/src/ParserLogging.ts
+function quotedText(text2) {
+  return text2 ? `'${text2.replace(/\n/g, "\\n")}'` : "";
+}
+function srcTrace(src, pos, ...msgs) {
+  logInternal(parserLog, src, pos, ...msgs);
+}
+function logInternal(log2, srcOrSrcMap, destPos, ...msgs) {
+  if (typeof srcOrSrcMap === "string") {
+    logInternalSrc(log2, srcOrSrcMap, destPos, ...msgs);
+    return;
+  }
+  const { src, positions } = mapSrcPositions(srcOrSrcMap, destPos);
+  logInternalSrc(log2, src.text, positions, ...msgs);
+}
+function mapSrcPositions(srcMap, destPos) {
+  const srcPos = srcMap.mapPositions(...[destPos].flat());
+  const { src } = srcPos[0];
+  let positions;
+  if (srcPos[1]?.src?.path === src.path && srcPos[1]?.src?.text === src.text) {
+    positions = srcPos.map((p) => p.position);
+  } else {
+    positions = srcPos[0].position;
+  }
+  return { src, positions };
+}
+function logInternalSrc(log2, src, pos, ...msgs) {
+  log2(...msgs);
+  const { line, lineNum, linePos, linePos2 } = srcLine(src, pos);
+  if (tracing && tracePos) {
+    const posStr = tracePos ? `  Pos ${pos}` : "";
+    log2(line, `  Ln ${lineNum}${posStr}`);
+  } else {
+    log2(line, `  Ln ${lineNum}`);
+  }
+  const caret = carets(linePos, linePos2);
+  log2(caret);
+}
+function carets(linePos, linePos2) {
+  const firstCaret = " ".repeat(linePos) + "^";
+  let secondCaret = "";
+  if (linePos2 && linePos2 > linePos) {
+    secondCaret = " ".repeat(linePos2 - linePos - 1) + "^";
+  }
+  return firstCaret + secondCaret;
+}
+var startCache = /* @__PURE__ */ new Map();
+function srcLine(src, position) {
+  let pos;
+  let pos2;
+  if (typeof position === "number") {
+    pos = position;
+  } else {
+    [pos, pos2] = position;
+  }
+  const starts = getStarts(src);
+  let start = 0;
+  let end = starts.length - 1;
+  if (pos >= starts[end]) {
+    start = end;
+  }
+  while (start + 1 < end) {
+    const mid = start + end >> 1;
+    if (pos >= starts[mid]) {
+      start = mid;
+    } else {
+      end = mid;
+    }
+  }
+  let linePos2;
+  if (pos2 !== void 0 && pos2 >= starts[start] && pos2 < starts[end]) {
+    linePos2 = pos2 - starts[start];
+  }
+  const lineNl = src.slice(starts[start], starts[start + 1] || src.length);
+  const line = lineNl.slice(-1) === "\n" ? lineNl.slice(0, -1) : lineNl;
+  return { line, linePos: pos - starts[start], linePos2, lineNum: start + 1 };
+}
+function getStarts(src) {
+  const found = startCache.get(src);
+  if (found) return found;
+  const starts = [...src.matchAll(/\n/g)].map((m) => m.index + 1);
+  starts.unshift(0);
+  startCache.set(src, starts);
+  return starts;
+}
+
+// ../mini-parse/src/Stream.ts
+function peekToken(stream2) {
+  const start = stream2.checkpoint();
+  const token2 = stream2.nextToken();
+  stream2.reset(start);
+  return token2;
+}
+
+// ../mini-parse/src/ParserCombinator.ts
+function token(kindStr, value) {
+  return terminalParser(
+    `token '${kindStr}' ${quotedText(value)}`,
+    function _token(state) {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
+      if (tracing) {
+        const text2 = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text2} (${next.kind})`);
+      }
+      if (next.kind !== kindStr || next.text !== value) {
+        return null;
+      }
+      return { value: next };
+    }
+  );
+}
+function tokenOf(kindStr, values) {
+  return terminalParser(
+    `tokenOf '${kindStr}'`,
+    function _tokenOf(state) {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
+      if (tracing) {
+        const text2 = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text2} (${next.kind})`);
+      }
+      if (next.kind !== kindStr || !values.includes(next.text)) {
+        return null;
+      }
+      return { value: next };
+    }
+  );
+}
+function tokenKind(kindStr) {
+  return terminalParser(
+    `tokenKind '${kindStr}'`,
+    function _tokenKind(state) {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
+      if (tracing) {
+        const text2 = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text2} (${next.kind})`);
+      }
+      if (next.kind !== kindStr) {
+        return null;
+      }
+      return { value: next };
+    }
+  );
+}
+function kind(kindStr) {
+  return terminalParser(
+    `kind '${kindStr}'`,
+    function _kind(state) {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
+      if (tracing) {
+        const text2 = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text2} (${next.kind})`);
+      }
+      if (next.kind !== kindStr) {
+        return null;
+      }
+      return { value: next.text };
+    }
+  );
+}
+function text(value) {
+  return terminalParser(
+    `${quotedText(value)}`,
+    function _text(state) {
+      const start = state.stream.checkpoint();
+      const next = state.stream.nextToken();
+      if (next === null) return null;
+      if (tracing) {
+        const text2 = quotedText(next.text);
+        srcTrace(state.stream.src, start, `: ${text2} (${next.kind})`);
+      }
+      if (next.text !== value) {
+        return null;
+      }
+      return { value: next.text };
+    }
+  );
+}
+function seq(...args) {
+  const parsers = args.map(parserArg);
+  return parser2("seq", function _seq(ctx) {
+    const values = [];
+    for (const p of parsers) {
+      const result = p._run(ctx);
+      if (result === null) {
+        return null;
+      }
+      values.push(result.value);
+    }
+    return { value: values };
+  });
+}
+function seqObj(args) {
+  const parsers = Object.entries(args).map(
+    ([name2, arg]) => [name2, parserArg(arg)]
+  );
+  return parser2("seqObj", function _seqObj(ctx) {
+    const values = {};
+    for (const [name2, p] of parsers) {
+      const result = p._run(ctx);
+      if (result === null) {
+        return null;
+      }
+      values[name2] = result.value;
+    }
+    return { value: values };
+  });
+}
+function collectArray(p) {
+  return p.collect({ before: pushOpenArray, after: closeArray });
+}
+function preceded(ignoredArg, arg) {
+  const ignored = parserArg(ignoredArg);
+  const p = parserArg(arg);
+  return parser2("preceded", function _preceded(ctx) {
+    const ignoredResult = ignored._run(ctx);
+    if (ignoredResult === null) return null;
+    const result = p._run(ctx);
+    return result;
+  });
+}
+function terminated(arg, ignoredArg) {
+  const p = parserArg(arg);
+  const ignored = parserArg(ignoredArg);
+  return parser2("terminated", function _terminated(ctx) {
+    const result = p._run(ctx);
+    if (result === null) return null;
+    const ignoredResult = ignored._run(ctx);
+    if (ignoredResult === null) return null;
+    return result;
+  });
+}
+function delimited(ignoredArg1, arg, ignoredArg2) {
+  const ignored1 = parserArg(ignoredArg1);
+  const p = parserArg(arg);
+  const ignored2 = parserArg(ignoredArg2);
+  return parser2("delimited", function _delimited(ctx) {
+    const ignoredResult1 = ignored1._run(ctx);
+    if (ignoredResult1 === null) return null;
+    const result = p._run(ctx);
+    if (result === null) return null;
+    const ignoredResult2 = ignored2._run(ctx);
+    if (ignoredResult2 === null) return null;
+    return result;
+  });
+}
+function separated_pair(arg1, ignoredArg, arg2) {
+  const p1 = parserArg(arg1);
+  const ignored = parserArg(ignoredArg);
+  const p2 = parserArg(arg2);
+  return parser2(
+    "terminated",
+    function _terminated(ctx) {
+      const result1 = p1._run(ctx);
+      if (result1 === null) return null;
+      const ignoredResult = ignored._run(ctx);
+      if (ignoredResult === null) return null;
+      const result2 = p2._run(ctx);
+      if (result2 === null) return null;
+      return { value: [result1.value, result2.value] };
+    }
+  );
+}
+function or(...args) {
+  const parsers = args.map(parserArg);
+  return parser2("or", function _or(state) {
+    const start = state.stream.checkpoint();
+    for (const p of parsers) {
+      const result = p._run(state);
+      if (result !== null) {
+        return result;
+      }
+      state.stream.reset(start);
+    }
+    return null;
+  });
+}
+function opt(arg) {
+  const p = parserArg(arg);
+  return parser2(
+    "opt",
+    function _opt(state) {
+      const start = state.stream.checkpoint();
+      const result = p._run(state);
+      if (result === null) {
+        state.stream.reset(start);
+        return { value: null };
+      } else {
+        return result;
+      }
+    }
+  );
+}
+function repeat(arg) {
+  const p = parserArg(arg);
+  return parser2("repeat", repeatWhileFilter(p));
+}
+function repeatPlus(arg) {
+  const p = parserArg(arg);
+  return seq(p, repeat(p)).map((r) => [r[0], ...r[1]]).setTraceName("repeatPlus");
+}
+function repeatWhileFilter(p, filterFn = () => true) {
+  return function _repeatWhileFilter(ctx) {
+    const values = [];
+    for (; ; ) {
+      const before = ctx.stream.checkpoint();
+      const result = p._run(ctx);
+      if (result === null) {
+        ctx.stream.reset(before);
+        return { value: values };
+      }
+      if (!filterFn(result)) {
+        return { value: values };
+      }
+      if (tracing) {
+        const after = ctx.stream.checkpoint();
+        if (before === after) {
+          throw new ParseError(
+            "infinite loop, parser passed to repeat must always make progress",
+            [before, after]
+          );
+        }
+      }
+      values.push(result.value);
+    }
+  };
+}
+function span(arg) {
+  const p = parserArg(arg);
+  return parser2("span", function _span(ctx) {
+    const start = peekToken(ctx.stream)?.span?.[0] ?? null;
+    const result = p._run(ctx);
+    if (result === null) return null;
+    const end = ctx.stream.checkpoint();
+    return {
+      value: {
+        value: result.value,
+        span: [start ?? end, end]
+      }
+    };
+  });
+}
+function eof() {
+  return terminalParser("eof", function _eof(state) {
+    const result = state.stream.nextToken();
+    if (result !== null) {
+      return null;
+    }
+    return { value: true };
+  });
+}
+function req(arg, msg) {
+  const p = parserArg(arg);
+  return parser2("req", function _req(ctx) {
+    const before = ctx.stream.checkpoint();
+    const result = p._run(ctx);
+    if (result === null) {
+      throw new ParseError(msg, [before, ctx.stream.checkpoint()]);
+    }
+    return result;
+  });
+}
+function yes() {
+  return terminalParser("yes", function _yes() {
+    return { value: null };
+  });
+}
+function withSep(sep2, p, opts = {}) {
+  const { trailing = true, requireOne = false } = opts;
+  const elementParser = parserArg(p);
+  const sepParser = parserArg(sep2);
+  return parser2("withSep", function _withSep(ctx) {
+    const results = [];
+    const startPosition = ctx.stream.checkpoint();
+    const result = elementParser._run(ctx);
+    if (result === null) {
+      ctx.stream.reset(startPosition);
+      if (requireOne) {
+        return null;
+      } else {
+        return {
+          value: results
+        };
+      }
+    }
+    results.push(result.value);
+    while (true) {
+      const beforeSeparator = ctx.stream.checkpoint();
+      const resultSeparator = sepParser._run(ctx);
+      if (resultSeparator === null) {
+        ctx.stream.reset(beforeSeparator);
+        break;
+      }
+      const beforeElement = ctx.stream.checkpoint();
+      const resultElement = elementParser._run(ctx);
+      if (resultElement === null) {
+        if (trailing) {
+          ctx.stream.reset(beforeElement);
+        } else {
+          ctx.stream.reset(beforeSeparator);
+        }
+        break;
+      }
+      results.push(resultElement.value);
+    }
+    return {
+      value: results
+    };
+  });
+}
+function withSepPlus(sep2, p) {
+  return withSep(sep2, p, { requireOne: true }).setTraceName("withSepPlus");
+}
+function withStreamAction(action) {
+  return terminalParser(
+    `withStreamAction`,
+    function _withStreamAction(state) {
+      const result = action(state.stream);
+      if (result === null) return null;
+      return { value: result };
+    }
+  );
+}
+function parserArg(arg) {
+  if (typeof arg === "string") {
+    return text(arg);
+  } else if (arg instanceof Parser2) {
+    return arg;
+  }
+  return fn(arg);
+}
+function fn(fn2) {
+  const parser3 = new Parser2({
+    fn: function _fn(state) {
+      let generatedParser = fn2();
+      if (!fn2) {
+        const before = state.stream.checkpoint();
+        throw new ParseError(`fn parser called before definition`, [
+          before,
+          before
+        ]);
+      }
+      parser3.fn = generatedParser.fn;
+      return parser3._run(state);
+    },
+    traceName: "fn()",
+    terminal: false
+  });
+  return parser3;
+}
+
+// ../mini-parse/src/ParserCollect.ts
+function collect(p, collectFn, ctag2) {
+  const origAfter = collectFn?.after ?? collectFn;
+  const beforeFn = collectFn?.before;
+  let afterFn = origAfter;
+  if (ctag2) {
+    afterFn = (cc) => {
+      const result = origAfter(cc);
+      if (result !== void 0 && result !== null) {
+        addTagValue(cc.tags, ctag2, result);
+      }
+      return result;
+    };
+  }
+  const debugName = ctag2 ? `${p.debugName}-${ctag2}` : `${p.debugName}`;
+  return parser2(
+    `collect`,
+    function _collect(ctx) {
+      const origStart = ctx.stream.checkpoint();
+      if (beforeFn) {
+        queueCollectFn(ctx, origStart, beforeFn, `${debugName}.before`);
+      }
+      return runAndCollectAfter(p, ctx, afterFn, debugName);
+    }
+  );
+}
+function tagScope(arg) {
+  const p = parserArg(arg);
+  return parser2(
+    `tagScope`,
+    function _tagScope(ctx) {
+      const origStart = ctx.stream.checkpoint();
+      let origTags;
+      queueCollectFn(
+        ctx,
+        origStart,
+        (cc) => {
+          origTags = cloneTags(cc.tags);
+          cc.tags = {};
+        },
+        `scope.before ${p.debugName}`
+      );
+      return runAndCollectAfter(
+        p,
+        ctx,
+        (cc) => {
+          cc.tags = origTags;
+        },
+        `tagScope`
+      );
+    }
+  );
+}
+function cloneTags(tags) {
+  const cloned = Object.entries(tags).map(([tag, values]) => {
+    return [tag, [...values]];
+  });
+  return Object.fromEntries(cloned);
+}
+function ctag(p, name2) {
+  return parser2(`ctag`, function _ctag(ctx) {
+    return runAndCollectAfter(
+      p,
+      ctx,
+      (cc) => {
+        const valueEntry = last(cc._values);
+        addTagValue(cc.tags, name2, valueEntry.value);
+      },
+      `ctag ${name2}`
+    );
+  });
+}
+function runAndCollectAfter(p, ctx, collectFn, debugName = "") {
+  const origStart = ctx.stream.checkpoint();
+  const result = p._run(ctx);
+  if (result) {
+    queueCollectFn(ctx, origStart, collectFn, debugName);
+  }
+  return result;
+}
+function queueCollectFn(ctx, origStart, collectFn, debugName) {
+  const srcPosition = refinePosition(ctx.stream, origStart);
+  ctx._collect.push({
+    srcPosition,
+    collectFn,
+    debugName
+  });
+}
+function pushOpenArray(cc) {
+  cc._values.push({ value: null, openArray: [] });
+}
+function closeArray(cc) {
+  const lastValue = last(cc._values);
+  if (lastValue.openArray === void 0)
+    console.log("---closeArray: no open array");
+  cc._values.pop();
+  saveCollectValue(cc, lastValue.openArray);
+}
+function ptag(p, name2) {
+  return parser2(`ptag`, function _ptag(ctx) {
+    const origStart = ctx.stream.checkpoint();
+    const result = p._run(ctx);
+    if (result) {
+      const tagFn = (ctx2) => addTagValue(ctx2.tags, name2, result.value);
+      queueCollectFn(ctx, origStart, tagFn, `ptag ${name2}`);
+    }
+    return result;
+  });
+}
+function addTagValue(tags, name2, value) {
+  if (tags[name2] === void 0) {
+    tags[name2] = [];
+  }
+  tags[name2].push(value);
+}
+function runCollection(_collect, app, stream2) {
+  const tags = {};
+  const { src } = stream2;
+  const _values = [{ value: null, openArray: void 0 }];
+  const collectContext = {
+    tags,
+    src,
+    start: -1,
+    end: -1,
+    app,
+    _values
+  };
+  _collect.forEach((entry) => {
+    const { collectFn, srcPosition } = entry;
+    collectContext.start = srcPosition.start;
+    collectContext.end = srcPosition.end;
+    const collectResult = collectFn(collectContext);
+    saveCollectValue(collectContext, collectResult);
+  });
+}
+function saveCollectValue(cc, value) {
+  if (value !== void 0) {
+    const valueEntry = last(cc._values);
+    if (!valueEntry) console.log("----saveCollectValue: no valueEntry");
+    if (valueEntry) valueEntry.value = value;
+    if (valueEntry?.openArray !== void 0) {
+      valueEntry.openArray.push(value);
+    }
+  }
+}
+function last(elems) {
+  return elems[elems.length - 1];
+}
+function refinePosition(stream2, origStart) {
+  const end = stream2.checkpoint();
+  stream2.reset(origStart);
+  const start = skipIgnored(stream2);
+  stream2.reset(end);
+  return { start, end };
+}
+function skipIgnored(stream2) {
+  const result = stream2.nextToken();
+  if (result === null) {
+    return stream2.checkpoint();
+  } else {
+    stream2.reset(result.span[0]);
+    return stream2.checkpoint();
+  }
+}
+
+// ../mini-parse/src/Parser.ts
+var ParserTraceInfo = class {
+  constructor(traceName = void 0, traceEnabled = void 0) {
+    this.traceName = traceName;
+    this.traceEnabled = traceEnabled;
+    /** true for elements without children like kind(), and text(),
+     * (to avoid intro log statement while tracing) */
+    this.traceIsTerminal = false;
+  }
+};
+var ParseError = class extends Error {
+  constructor(msg, span2) {
+    super(msg);
+    this.span = span2;
+  }
+};
+var Parser2 = class {
+  constructor(args) {
+    this.fn = args.fn;
+    if (tracing) {
+      this._traceInfo = new ParserTraceInfo(args.traceName, args.trace);
+      if (args.terminal) {
+        this._traceInfo.traceIsTerminal = true;
+      }
+    }
+  }
+  /** run the parser given an already created parsing context
+   *
+   * Execute a parser by running the core parsing fn given the parsing context
+   * also:
+   * . log if tracing is enabled
+   * . backtrack on failure
+   * . rollback context on failure
+   */
+  _run(context) {
+    if (tracing) {
+      return runParserWithTracing(
+        this.debugName,
+        this.fn,
+        context,
+        this._traceInfo
+      );
+    } else {
+      const origAppContext = context.app.context;
+      const origCollectLength = context._collect.length;
+      const result = this.fn(context);
+      if (result === null) {
+        context.app.context = origAppContext;
+        context._collect.length = origCollectLength;
+      }
+      return result;
+    }
+  }
+  /** tag parse results */
+  ptag(name2) {
+    return ptag(this, name2);
+  }
+  /** tag collect results */
+  ctag(name2) {
+    return ctag(this, name2);
+  }
+  /** record a name for debug tracing */
+  setTraceName(name2) {
+    if (tracing) {
+      assertThat(this._traceInfo);
+      this._traceInfo.traceName = name2;
+    }
+    return this;
+  }
+  /** trigger tracing for this parser (and by default also this parsers descendants) */
+  setTrace(opts = {}) {
+    if (tracing) {
+      assertThat(this._traceInfo);
+      this._traceInfo.traceEnabled = opts;
+    }
+    return this;
+  }
+  /** map results to a new value.
+   */
+  map(fn2) {
+    return map(this, fn2);
+  }
+  /** Queue a function that runs later, typically to collect AST elements from the parse.
+   * when a commit() is parsed.
+   * Collection functions are dropped with parser backtracking, so
+   * only succsessful parses are collected. */
+  collect(fn2, ctag2) {
+    return collect(this, fn2, ctag2);
+  }
+  /** switch next parser based on results */
+  toParser(fn2) {
+    return toParser(this, fn2);
+  }
+  /**
+   * start parsing
+   *
+   * @throws {ParseError} when a combinator like `req` fails
+   */
+  parse(init) {
+    const { stream: stream2, appState: app = { context: {}, stable: [] } } = init;
+    const _collect = [];
+    const result = this._run({
+      stream: stream2,
+      app,
+      _collect
+    });
+    if (result) runCollection(_collect, app, stream2);
+    return result;
+  }
+  /** name of this parser for debugging/tracing */
+  get debugName() {
+    if (tracing) {
+      return this._traceInfo?.traceName ?? "parser";
+    }
+    return "parser";
+  }
+};
+function parser2(traceName, fn2, terminal) {
+  return new Parser2({ fn: fn2, traceName, terminal });
+}
+function terminalParser(traceName, parserFn) {
+  return parser2(traceName, parserFn, true);
+}
+function runParserWithTracing(debugName, fn2, context, traceInfo) {
+  assertThat(tracing);
+  const origAppContext = context.app.context;
+  const result = withTraceLogging(
+    context,
+    traceInfo,
+    runInContext
+  );
+  return result;
+  function runInContext(ctx) {
+    const origCollectLength = ctx._collect.length;
+    if (tracing) {
+      const traceSuccessOnly = ctx._trace?.successOnly;
+      if (!traceInfo?.traceIsTerminal && !traceSuccessOnly) {
+        parserLog(`..${debugName}`);
+      }
+    }
+    let result2 = fn2(ctx);
+    if (result2 === null) {
+      if (tracing) {
+        const traceSuccessOnly = ctx._trace?.successOnly;
+        if (!traceSuccessOnly) {
+          parserLog(`x ${debugName}`);
+        }
+      }
+      context.app.context = origAppContext;
+      ctx._collect.length = origCollectLength;
+    } else {
+      if (tracing) parserLog(`\u2713 ${debugName}`);
+    }
+    return result2;
+  }
+}
+function map(p, fn2) {
+  return parser2(`map`, function _map(ctx) {
+    const result = p._run(ctx);
+    if (result === null) return null;
+    return { value: fn2(result.value) };
+  });
+}
+function toParser(p, toParserFn) {
+  return parser2(
+    "toParser",
+    function _toParser(ctx) {
+      const result = p._run(ctx);
+      if (result === null) return null;
+      const newParser = toParserFn(result);
+      if (newParser === null) {
+        return result;
+      }
+      const nextResult = newParser._run(ctx);
+      return nextResult;
+    }
+  );
+}
+
+// ../mini-parse/src/stream/RegexHelpers.ts
+function toRegexSource(nameExp) {
+  const [name2, e] = nameExp;
+  if (typeof e === "string") {
+    const expSrc = `(${escapeRegex(e)})`;
+    verifyNonCapturing(name2, new RegExp(expSrc));
+    return expSrc;
+  } else {
+    verifyNonCapturing(name2, e);
+    return `(${e.source})`;
+  }
+}
+function verifyNonCapturing(name2, exp) {
+  const willMatch = new RegExp("|" + exp.source);
+  const result = willMatch.exec("");
+  if (result.length > 1) {
+    throw new Error(
+      `match expression groups must be non-capturing: ${name2}: /${exp.source}/. Use (?:...) instead.`
+    );
+  }
+}
+var regexSpecials = /[$+*.?|(){}[\]\\/^]/g;
+function escapeRegex(s) {
+  return s.replace(regexSpecials, "\\$&");
+}
+function matchOneOf(syms) {
+  const symbolList = syms.split(/\s+/).sort((a, b) => b.length - a.length);
+  const escaped = symbolList.filter((s) => s).map(escapeRegex);
+  return new RegExp(escaped.join("|"));
+}
+
+// ../mini-parse/src/stream/MatchersStream.ts
+var RegexMatchers = class {
+  constructor(matchers) {
+    this.groups = Object.keys(matchers);
+    const expParts = Object.entries(matchers).map(toRegexSource).join("|");
+    this.exp = new RegExp(expParts, "dyu");
+  }
+  execAt(text2, position) {
+    this.exp.lastIndex = position;
+    const matches = this.exp.exec(text2);
+    const matchedIndex = findGroupDex(matches?.indices);
+    if (matchedIndex) {
+      const { span: span2, groupDex } = matchedIndex;
+      const kind2 = this.groups[groupDex];
+      return {
+        kind: kind2,
+        span: span2,
+        text: text2.slice(span2[0], span2[1])
+      };
+    } else {
+      return null;
+    }
+  }
+};
+function findGroupDex(indices) {
+  if (indices !== void 0) {
+    for (let i = 1; i < indices.length; i++) {
+      const span2 = indices[i];
+      if (span2 !== void 0) {
+        return { span: span2, groupDex: i - 1 };
+      }
+    }
+  }
+}
+
+// ../wesl/src/Assertions.ts
+function assertThat2(condition, msg) {
+  if (!condition) {
+    throw new Error(msg);
+  }
+}
+function assertThatDebug(condition, msg) {
+  tracing && assertThat2(condition, msg);
+}
+function assertUnreachable(value) {
+  throw new ErrorWithData("Unreachable value", { data: value });
+}
+var ErrorWithData = class extends Error {
+  constructor(message, options) {
+    super(message, options);
+    this.data = options?.data;
+  }
+};
+
+// ../wesl/src/Util.ts
+function filterMap(arr, fn2) {
+  const out = [];
+  for (const t of arr) {
+    const u = fn2(t);
+    if (u) out.push(u);
+  }
+  return out;
+}
+
+// ../wesl/src/Scope.ts
+function mergeScope(a, b) {
+  if (!b) return;
+  assertThatDebug(a.kind === b.kind);
+  assertThatDebug(a.parent === b.parent);
+  assertThatDebug(!b.ifAttribute);
+  a.contents = a.contents.concat(b.contents);
+}
+var scopeId = 0;
+var identId = 0;
+function nextIdentId() {
+  return identId++;
+}
+function emptyScope(parent, kind2 = "scope") {
+  const id = scopeId++;
+  return { id, kind: kind2, parent, contents: [] };
+}
+
+// ../../node_modules/.pnpm/berry-pretty@0.0.5/node_modules/berry-pretty/dist/index.js
+var spaces = memoize((nesting) => {
+  return " ".repeat(nesting);
+});
+var defaultCallerSize = 20;
+var multiLinePad = "\n" + spaces(defaultCallerSize + 3);
+function memoize(fn2) {
+  const cache = /* @__PURE__ */ new Map();
+  return function(...args) {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) {
+      return cache.get(key);
+    } else {
+      const value = fn2(...args);
+      cache.set(key, value);
+      return value;
+    }
+  };
+}
+if (typeof DOMRect === "undefined") {
+  globalThis.DOMRect = function() {
+  };
+}
+
+// ../wesl/src/WESLCollect.ts
+function importElem(cc) {
+  const importElems = cc.tags.owo?.[0];
+  for (const importElem2 of importElems) {
+    cc.app.stable.imports.push(importElem2.imports);
+    addToOpenElem(cc, importElem2);
+  }
+}
+function addToOpenElem(cc, elem) {
+  const weslContext = cc.app.context;
+  const { openElems } = weslContext;
+  if (openElems && openElems.length) {
+    const open = openElems[openElems.length - 1];
+    open.contents.push(elem);
+  }
+}
+function refIdent(cc) {
+  const { src, start, end } = cc;
+  const app = cc.app;
+  const { srcModule } = app.stable;
+  const originalName = src.slice(start, end);
+  const kind2 = "ref";
+  const ident2 = {
+    kind: kind2,
+    originalName,
+    ast: cc.app.stable,
+    id: nextIdentId(),
+    refIdentElem: null
+    // set below
+  };
+  const identElem = { kind: kind2, start, end, srcModule, ident: ident2 };
+  ident2.refIdentElem = identElem;
+  saveIdent(cc, identElem);
+  addToOpenElem(cc, identElem);
+  return identElem;
+}
+function declCollect(cc) {
+  return declCollectInternal(cc, false);
+}
+function globalDeclCollect(cc) {
+  return declCollectInternal(cc, true);
+}
+function declCollectInternal(cc, isGlobal2) {
+  const { src, start, end } = cc;
+  const app = cc.app;
+  const { scope: containingScope } = app.context;
+  const { srcModule } = app.stable;
+  const originalName = src.slice(start, end);
+  const kind2 = "decl";
+  const declElem = null;
+  const ident2 = {
+    declElem,
+    kind: kind2,
+    originalName,
+    containingScope,
+    isGlobal: isGlobal2,
+    id: nextIdentId(),
+    srcModule
+  };
+  const identElem = { kind: kind2, start, end, srcModule, ident: ident2 };
+  saveIdent(cc, identElem);
+  addToOpenElem(cc, identElem);
+  return identElem;
+}
+var typedDecl = collectElem(
+  "typeDecl",
+  (cc, openElem) => {
+    const decl = cc.tags.decl_elem?.[0];
+    const typeRef = cc.tags.typeRefElem?.[0];
+    const typeScope = cc.tags.decl_type?.[0];
+    const partial = { ...openElem, decl, typeScope, typeRef };
+    const elem = withTextCover(partial, cc);
+    return elem;
+  }
+);
+function saveIdent(cc, identElem) {
+  const { ident: ident2 } = identElem;
+  ident2.id = nextIdentId();
+  const weslContext = cc.app.context;
+  weslContext.scope.contents.push(ident2);
+}
+function startScope(cc) {
+  startSomeScope("scope", cc);
+}
+function startPartialScope(cc) {
+  startSomeScope("partial", cc);
+}
+function startSomeScope(kind2, cc) {
+  const { scope } = cc.app.context;
+  const newScope = emptyScope(scope, kind2);
+  scope.contents.push(newScope);
+  cc.app.context.scope = newScope;
+}
+function completeScope(cc) {
+  return completeScopeInternal(cc, true);
+}
+function completeScopeNoIf(cc) {
+  return completeScopeInternal(cc, false);
+}
+function completeScopeInternal(cc, attachIfs) {
+  const weslContext = cc.app.context;
+  const completedScope = weslContext.scope;
+  const { parent } = completedScope;
+  if (parent) {
+    weslContext.scope = parent;
+  } else if (tracing) {
+    console.log("ERR: completeScope, no parent scope", completedScope.contents);
+  }
+  if (attachIfs) {
+    const ifAttributes = collectIfAttributes(cc);
+    completedScope.ifAttribute = ifAttributes?.[0];
+  }
+  return completedScope;
+}
+function collectIfAttributes(cc) {
+  const attributes = cc.tags.attribute;
+  return filterIfAttributes(attributes);
+}
+function filterIfAttributes(attributes) {
+  if (!attributes) return;
+  return filterMap(
+    attributes,
+    (a) => a.attribute.kind === "@if" ? a.attribute : void 0
+  );
+}
+function collectVarLike(kind2) {
+  return collectElem(kind2, (cc, openElem) => {
+    const name2 = cc.tags.var_name?.[0];
+    const decl_scope = cc.tags.decl_scope?.[0];
+    const attributes = cc.tags.attribute;
+    const partElem = { ...openElem, name: name2, attributes };
+    const varElem = withTextCover(partElem, cc);
+    const declIdent = name2.decl.ident;
+    declIdent.declElem = varElem;
+    if (name2.typeScope) {
+      mergeScope(name2.typeScope, decl_scope);
+      declIdent.dependentScope = name2.typeScope;
+    } else {
+      declIdent.dependentScope = decl_scope;
+    }
+    return varElem;
+  });
+}
+var aliasCollect = collectElem(
+  "alias",
+  (cc, openElem) => {
+    const name2 = cc.tags.alias_name?.[0];
+    const alias_scope = cc.tags.alias_scope?.[0];
+    const typeRef = cc.tags.typeRefElem?.[0];
+    const attributes = cc.tags.attributes?.flat() ?? [];
+    const partElem = { ...openElem, name: name2, attributes, typeRef };
+    const aliasElem = withTextCover(partElem, cc);
+    name2.ident.dependentScope = alias_scope;
+    name2.ident.declElem = aliasElem;
+    return aliasElem;
+  }
+);
+var fnCollect = collectElem(
+  "fn",
+  (cc, openElem) => {
+    const ourTags = fnTags(cc);
+    const { name: name2, headerScope, returnScope, bodyScope, body, params } = ourTags;
+    const { attributes, returnAttributes, returnType, fnScope } = ourTags;
+    const fnElem = {
+      ...openElem,
+      ...{ name: name2, attributes, params, returnAttributes, body, returnType }
+    };
+    fnScope.ifAttribute = filterIfAttributes(attributes)?.[0];
+    const mergedScope = headerScope;
+    returnScope && mergeScope(mergedScope, returnScope);
+    mergeScope(mergedScope, bodyScope);
+    const filtered = [];
+    for (const e of fnScope.contents) {
+      if (e === headerScope || e == returnScope) {
+        continue;
+      } else if (e === bodyScope) {
+        filtered.push(mergedScope);
+      } else {
+        filtered.push(e);
+      }
+    }
+    fnScope.contents = filtered;
+    name2.ident.declElem = fnElem;
+    name2.ident.dependentScope = mergedScope;
+    return fnElem;
+  }
+);
+function fnTags(cc) {
+  const { fn_attributes, fn_name, fn_param, return_attributes } = cc.tags;
+  const { return_type } = cc.tags;
+  const { header_scope, return_scope, body_scope, body_statement } = cc.tags;
+  const { fn_partial_scope } = cc.tags;
+  const name2 = fn_name?.[0];
+  const headerScope = header_scope?.[0];
+  const returnScope = return_scope?.[0];
+  const bodyScope = body_scope?.[0];
+  const body = body_statement?.[0];
+  const params = fn_param?.flat(3) ?? [];
+  const attributes = fn_attributes?.flat();
+  const returnAttributes = return_attributes?.flat();
+  const returnType = return_type?.flat(3)[0];
+  const fnScope = fn_partial_scope?.[0];
+  return {
+    ...{ name: name2, headerScope, returnScope, bodyScope, body, params },
+    ...{ attributes, returnAttributes, returnType, fnScope }
+  };
+}
+var collectFnParam = collectElem(
+  "param",
+  (cc, openElem) => {
+    const name2 = cc.tags.param_name?.[0];
+    const attributes = cc.tags.attributes?.flat() ?? [];
+    const elem = { ...openElem, name: name2, attributes };
+    const paramElem = withTextCover(elem, cc);
+    name2.decl.ident.declElem = paramElem;
+    return paramElem;
+  }
+);
+var collectStruct = collectElem(
+  "struct",
+  (cc, openElem) => {
+    const name2 = cc.tags.type_name?.[0];
+    const members = cc.tags.members;
+    const attributes = cc.tags.attributes?.flat() ?? [];
+    name2.ident.dependentScope = cc.tags.struct_scope?.[0];
+    const structElem = { ...openElem, name: name2, attributes, members };
+    const elem = withTextCover(structElem, cc);
+    name2.ident.declElem = elem;
+    return elem;
+  }
+);
+var collectStructMember = collectElem(
+  "member",
+  (cc, openElem) => {
+    const name2 = cc.tags.nameElem?.[0];
+    const typeRef = cc.tags.typeRefElem?.[0];
+    const attributes = cc.tags.attribute?.flat(3);
+    const partElem = { ...openElem, name: name2, attributes, typeRef };
+    return withTextCover(partElem, cc);
+  }
+);
+var specialAttribute = collectElem(
+  "attribute",
+  (cc, openElem) => {
+    const attribute = cc.tags.attr_variant?.[0];
+    const attrElem = { ...openElem, attribute };
+    return attrElem;
+  }
+);
+var assertCollect = attrElemCollect("assert");
+var statementCollect = attrElemCollect("statement");
+var switchClauseCollect = attrElemCollect("switch-clause");
+function attrElemCollect(kind2) {
+  return collectElem(kind2, (cc, openElem) => {
+    const attributes = cc.tags.attribute?.flat(3);
+    const partElem = { ...openElem, attributes };
+    return withTextCover(partElem, cc);
+  });
+}
+var collectAttribute = collectElem(
+  "attribute",
+  (cc, openElem) => {
+    const params = cc.tags.attrParam;
+    const name2 = cc.tags.name?.[0];
+    const kind2 = "@attribute";
+    const stdAttribute = { kind: kind2, name: name2, params };
+    const attrElem = { ...openElem, attribute: stdAttribute };
+    return attrElem;
+  }
+);
+var typeRefCollect = collectElem(
+  "type",
+  // @ts-ignore
+  (cc, openElem) => {
+    let templateParamsTemp = cc.tags.templateParam?.flat(3);
+    const typeRef = cc.tags.typeRefName?.[0];
+    const name2 = typeof typeRef === "string" ? typeRef : typeRef.ident;
+    const partElem = {
+      ...openElem,
+      name: name2,
+      templateParams: templateParamsTemp
+    };
+    return withTextCover(partElem, cc);
+  }
+);
+var expressionCollect = collectElem(
+  "expression",
+  (cc, openElem) => {
+    const partElem = { ...openElem };
+    return withTextCover(partElem, cc);
+  }
+);
+function globalAssertCollect(cc) {
+  const globalAssert = cc.tags.const_assert?.flat()[0];
+  const ast = cc.app.stable;
+  if (!ast.moduleAsserts) ast.moduleAsserts = [];
+  ast.moduleAsserts.push(globalAssert);
+}
+var stuffCollect = collectElem(
+  "stuff",
+  (cc, openElem) => {
+    const partElem = { ...openElem };
+    return withTextCover(partElem, cc);
+  }
+);
+var memberRefCollect = collectElem(
+  "memberRef",
+  (cc, openElem) => {
+    const { component, structRef, extra_components } = cc.tags;
+    const member = component[0];
+    const name2 = structRef?.flat()[0];
+    const extraComponents = extra_components?.flat()[0];
+    const partElem = {
+      ...openElem,
+      name: name2,
+      member,
+      extraComponents
+    };
+    return withTextCover(partElem, cc);
+  }
+);
+function nameCollect(cc) {
+  const { start, end, src, app } = cc;
+  const name2 = src.slice(start, end);
+  const elem = { kind: "name", start, end, name: name2 };
+  addToOpenElem(cc, elem);
+  return elem;
+}
+var collectModule = collectElem(
+  "module",
+  (cc, openElem) => {
+    const ccComplete = { ...cc, start: 0, end: cc.src.length };
+    const moduleElem = withTextCover(openElem, ccComplete);
+    const weslState = cc.app.stable;
+    weslState.moduleElem = moduleElem;
+    return moduleElem;
+  }
+);
+function directiveCollect(cc) {
+  const { start, end } = cc;
+  const directive = cc.tags.directive?.flat()[0];
+  const attributes = cc.tags.attribute?.flat();
+  const kind2 = "directive";
+  const elem = { kind: kind2, attributes, start, end, directive };
+  addToOpenElem(cc, elem);
+  return elem;
+}
+var scopeCollect = {
+  before: startScope,
+  after: completeScope
+};
+var scopeCollectNoIf = {
+  before: startScope,
+  after: completeScopeNoIf
+};
+var partialScopeCollect = {
+  before: startPartialScope,
+  after: completeScope
+};
+function collectElem(kind2, fn2) {
+  return {
+    before: (cc) => {
+      const partialElem = { kind: kind2, contents: [] };
+      const weslContext = cc.app.context;
+      weslContext.openElems.push(partialElem);
+    },
+    after: (cc) => {
+      const weslContext = cc.app.context;
+      const partialElem = weslContext.openElems.pop();
+      console.assert(partialElem && partialElem.kind === kind2);
+      const elem = fn2(cc, { ...partialElem, start: cc.start, end: cc.end });
+      if (elem) addToOpenElem(cc, elem);
+      return elem;
+    }
+  };
+}
+function withTextCover(elem, cc) {
+  const contents = coverWithText(cc, elem);
+  return { ...elem, contents };
+}
+function coverWithText(cc, elem) {
+  let { start: pos } = cc;
+  const ast = cc.app.stable;
+  const { contents, end } = elem;
+  const sorted = contents.sort((a, b) => a.start - b.start);
+  const elems = [];
+  for (const elem2 of sorted) {
+    if (pos < elem2.start) {
+      elems.push(makeTextElem(elem2.start));
+    }
+    elems.push(elem2);
+    pos = elem2.end;
+  }
+  if (pos < end) {
+    elems.push(makeTextElem(end));
+  }
+  return elems;
+  function makeTextElem(end2) {
+    return { kind: "text", start: pos, end: end2, srcModule: ast.srcModule };
+  }
+}
+
+// ../wesl/src/parse/WeslBaseGrammar.ts
+var word = kind("word");
+var keyword = kind("keyword");
+var qualified_ident = withSepPlus("::", or(word, "package", "super"));
+var number = kind("number");
+
+// ../wesl/src/parse/ImportGrammar.ts
+function makeStatement(segments, finalSegment) {
+  return { kind: "import-statement", segments, finalSegment };
+}
+function makeSegment(name2) {
+  return { kind: "import-segment", name: name2 };
+}
+function makeCollection(subtrees) {
+  return {
+    kind: "import-collection",
+    subtrees
+  };
+}
+function makeItem(name2, as) {
+  return { kind: "import-item", name: name2, as };
+}
+function prependSegments(segments, statement2) {
+  statement2.segments = segments.concat(statement2.segments);
+  return statement2;
+}
+var import_collection = null;
+var import_path_or_item = seq(
+  word,
+  or(
+    preceded(
+      "::",
+      req(
+        or(
+          fn(() => import_collection),
+          fn(() => import_path_or_item)
+        ),
+        "invalid import, expected '{' or name"
+      )
+    ),
+    preceded("as", req(word, "invalid alias, expected name")).map(
+      (v) => makeItem("", v)
+    ),
+    yes().map(() => makeItem(""))
+    // Optional
+  )
+).map(([name2, next]) => {
+  if (next.kind === "import-collection") {
+    return makeStatement([makeSegment(name2)], next);
+  } else if (next.kind === "import-statement") {
+    return prependSegments([makeSegment(name2)], next);
+  } else if (next.kind === "import-item") {
+    next.name = name2;
+    return makeStatement([], next);
+  } else {
+    assertUnreachable(next);
+  }
+});
+import_collection = delimited(
+  "{",
+  withSepPlus(",", () => import_path_or_item).map(makeCollection),
+  req("}", "invalid import collection, expected }")
+);
+var import_relative = or(
+  terminated("package", req("::", "invalid import, expected '::'")).map((v) => [
+    makeSegment(v)
+  ]),
+  repeatPlus(
+    terminated("super", req("::", "invalid import, expected '::'")).map(
+      makeSegment
+    )
+  )
+);
+var import_statement = span(
+  delimited(
+    "import",
+    seqObj({
+      relative: opt(import_relative),
+      collection_or_statement: req(
+        or(import_collection, import_path_or_item),
+        "invalid import, expected { or name"
+      )
+    }).map(({ relative: relative2, collection_or_statement }) => {
+      if (collection_or_statement.kind === "import-statement") {
+        return prependSegments(relative2 ?? [], collection_or_statement);
+      } else {
+        return makeStatement(relative2 ?? [], collection_or_statement);
+      }
+    }),
+    req(";", "invalid import, expected ';'")
+  )
+).map(
+  (v) => ({
+    kind: "import",
+    imports: v.value,
+    start: v.span[0],
+    end: v.span[1]
+  })
+);
+var weslImports = tagScope(
+  repeat(import_statement).ptag("owo").collect(importElem)
+);
+if (tracing) {
+  const names = {
+    import_collection,
+    import_path_or_item,
+    import_relative,
+    import_statement,
+    weslImports
+  };
+  Object.entries(names).forEach(([name2, parser3]) => {
+    parser3.setTraceName(name2);
+  });
+}
+
+// ../wesl/src/parse/Keywords.ts
+var keywords = `alias break case const const_assert continue continuing 
+  default diagnostic discard else enable false fn for if 
+  let loop override requires return struct switch true var while`.split(/\s+/);
+var reservedWords = `NULL Self abstract active alignas alignof as asm asm_fragment async attribute auto await 
+  become binding_array cast catch class co_await co_return co_yield coherent column_major 
+  common compile compile_fragment concept const_cast consteval constexpr constinit crate 
+  debugger decltype delete demote demote_to_helper do dynamic_cast 
+  enum explicit export extends extern external fallthrough filter final finally friend from fxgroup 
+  get goto groupshared highp impl implements import inline instanceof interface layout lowp 
+  macro macro_rules match mediump meta mod module move mut mutable 
+  namespace new nil noexcept noinline nointerpolation non_coherent noncoherent noperspective null nullptr 
+  of operator package packoffset partition pass patch pixelfragment precise precision premerge 
+  priv protected pub public readonly ref regardless register reinterpret_cast require resource restrict 
+  self set shared sizeof smooth snorm static static_assert static_cast std subroutine super 
+  target template this thread_local throw trait try type typedef typeid typename typeof 
+  union unless unorm unsafe unsized use using varying virtual volatile wgsl where with writeonly yield`.split(
+  /\s+/
+);
+
+// ../wesl/src/parse/WeslStream.ts
+var blankspaces = /[ \t\n\v\f\r\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}]+/u;
+var symbolSet = "& && -> @ / ! [ ] { } :: : , == = != >>= >> >= > <<= << <= < % - -- . + ++ | || ( ) ; * ~ ^ // /* */ += -= *= /= %= &= |= ^= _";
+var ident = /(?:(?:[_\p{XID_Start}][\p{XID_Continue}]+)|(?:[\p{XID_Start}]))/u;
+var keywordOrReserved = new Set(keywords.concat(reservedWords));
+var digits = new RegExp(
+  // decimal_float_literal
+  /(?:0[fh])|(?:[1-9][0-9]*[fh])/.source + /|(?:[0-9]*\.[0-9]+(?:[eE][+-]?[0-9]+)?[fh]?)/.source + /|(?:[0-9]+\.[0-9]*(?:[eE][+-]?[0-9]+)?[fh]?)/.source + /|(?:[0-9]+[eE][+-]?[0-9]+[fh]?)/.source + // hex_float_literal
+  /|(?:0[xX][0-9a-fA-F]*\.[0-9a-fA-F]+(?:[pP][+-]?[0-9]+[fh]?)?)/.source + /|(?:0[xX][0-9a-fA-F]+\.[0-9a-fA-F]*(?:[pP][+-]?[0-9]+[fh]?)?)/.source + /|(?:0[xX][0-9a-fA-F]+[pP][+-]?[0-9]+[fh]?)/.source + // hex_int_literal
+  /|(?:0[xX][0-9a-fA-F]+[iu]?)/.source + // decimal_int_literal
+  /|(?:0[iu]?)|(?:[1-9][0-9]*[iu]?)/.source
+);
+var commentStart = /\/\/|\/\*/;
+var weslMatcher = new RegexMatchers({
+  word: ident,
+  number: digits,
+  blankspaces,
+  commentStart,
+  symbol: matchOneOf(symbolSet),
+  invalid: /[^]/
+});
+function weslExtension(combinator) {
+  return combinator;
+}
+var templateOpen = withStreamAction((stream2) => {
+  return stream2.nextTemplateStartToken();
+});
+var templateClose = withStreamAction((stream2) => {
+  return stream2.nextTemplateEndToken();
+});
+
+// ../wesl/src/parse/WeslExpression.ts
+var opt_template_list = opt(
+  seq(
+    templateOpen,
+    withSepPlus(",", () => template_parameter),
+    req(templateClose, "invalid template, expected '>'")
+  )
+);
+var other_address_space = or("private", "workgroup", "uniform", "function");
+var storage_address_space = seq(
+  "storage",
+  opt(seq(",", or("read", "read_write")))
+);
+var var_template_list = opt(
+  seq(
+    templateOpen,
+    or(storage_address_space, other_address_space),
+    req(templateClose, "invalid template, expected '>'")
+  )
+);
+var template_elaborated_ident = seq(
+  qualified_ident.collect(refIdent),
+  opt_template_list
+);
+var literal = or("true", "false", number);
+var paren_expression = seq(
+  "(",
+  () => expression,
+  req(")", "invalid expression, expected ')'")
+);
+var primary_expression = or(
+  literal,
+  paren_expression,
+  seq(template_elaborated_ident, opt(fn(() => argument_expression_list)))
+);
+var component_or_swizzle = repeatPlus(
+  or(
+    preceded(".", word),
+    collectArray(
+      delimited(
+        "[",
+        () => expression,
+        req("]", "invalid expression, expected ']'")
+      )
+    )
+  )
+);
+var simple_component_reference = tagScope(
+  seq(
+    qualified_ident.collect(refIdent, "structRef"),
+    seq(".", word.collect(nameCollect, "component")),
+    opt(component_or_swizzle.collect(stuffCollect, "extra_components"))
+  ).collect(memberRefCollect)
+);
+var unary_expression = or(
+  seq(tokenOf("symbol", ["!", "&", "*", "-", "~"]), () => unary_expression),
+  or(
+    simple_component_reference,
+    seq(primary_expression, opt(component_or_swizzle))
+  )
+);
+var bitwise_post_unary = or(
+  // LATER I can skip template list discovery in these cases, because a&b<c cannot be a comparison. Must be a template
+  repeatPlus(seq("&", unary_expression)),
+  repeatPlus(seq("^", unary_expression)),
+  repeatPlus(seq("|", unary_expression))
+);
+var multiplicative_operator = or("%", "*", "/");
+var additive_operator = or("+", "-");
+var shift_post_unary = (inTemplate) => {
+  const shift_left = seq("<<", unary_expression);
+  const shift_right = seq(">>", unary_expression);
+  const mul_add = seq(
+    repeat(seq(multiplicative_operator, unary_expression)),
+    repeat(
+      seq(
+        additive_operator,
+        unary_expression,
+        repeat(seq(multiplicative_operator, unary_expression))
+      )
+    )
+  );
+  return inTemplate ? or(shift_left, mul_add) : or(shift_left, shift_right, mul_add);
+};
+var relational_post_unary = (inTemplate) => {
+  return seq(
+    shift_post_unary(inTemplate),
+    opt(
+      seq(
+        // '<' is unambiguous, since templates were already caught by the primary expression inside of the previous unary_expression!
+        inTemplate ? tokenOf("symbol", ["<", "<=", "!=", "=="]) : tokenOf("symbol", [">", ">=", "<", "<=", "!=", "=="]),
+        // LATER I can skip template list discovery in this cases, because a>=b<c cannot be a comparison. Must be a template
+        unary_expression,
+        shift_post_unary(inTemplate)
+      )
+    )
+  );
+};
+var expressionParser = (inTemplate) => {
+  return seq(
+    unary_expression,
+    or(
+      bitwise_post_unary,
+      seq(
+        relational_post_unary(inTemplate),
+        inTemplate ? (
+          // Don't accept || or && in template mode
+          yes()
+        ) : or(
+          repeatPlus(
+            seq("||", seq(unary_expression, relational_post_unary(false)))
+          ),
+          repeatPlus(
+            seq("&&", seq(unary_expression, relational_post_unary(false)))
+          ),
+          yes().map(() => [])
+        )
+      )
+    )
+  );
+};
+var maybe_template = false;
+var expression = expressionParser(maybe_template);
+var is_template = true;
+var template_arg_expression = expressionParser(is_template);
+var std_type_specifier = seq(
+  qualified_ident.collect(refIdent, "typeRefName"),
+  () => opt_template_list
+).collect(typeRefCollect);
+var type_specifier = tagScope(
+  std_type_specifier
+).ctag("typeRefElem");
+var template_parameter = or(
+  // LATER Remove this, it's wrong. This should instead be done by inspecting the syntax tree.
+  type_specifier.ctag("templateParam"),
+  template_arg_expression.collect(expressionCollect, "templateParam")
+);
+var argument_expression_list = seq(
+  "(",
+  withSep(",", expression),
+  req(")", "invalid fn arguments, expected ')'")
+);
+if (tracing) {
+  const names = {
+    opt_template_list,
+    other_address_space,
+    storage_address_space,
+    var_template_list,
+    template_elaborated_ident,
+    primary_expression,
+    literal,
+    paren_expression,
+    component_or_swizzle,
+    simple_component_reference,
+    unary_expression,
+    bitwise_post_unary,
+    multiplicative_operator,
+    additive_operator,
+    expression,
+    template_arg_expression,
+    std_type_specifier,
+    type_specifier,
+    template_parameter,
+    argument_expression_list
+  };
+  Object.entries(names).forEach(([name2, parser3]) => {
+    parser3.setTraceName(name2);
+  });
+}
+
+// ../wesl/src/parse/WeslGrammar.ts
+var name = tokenKind("word").map(makeName);
+var diagnostic_rule_name = seq(
+  name,
+  opt(preceded(".", req(name, "invalid diagnostic rule name, expected name")))
+);
+var diagnostic_control = delimited(
+  "(",
+  req(
+    separated_pair(name, ",", diagnostic_rule_name),
+    "invalid diagnostic control, expected rule name"
+  ),
+  seq(opt(","), req(")", "invalid diagnostic control, expected ')'"))
+);
+var name_list = withSep(",", name, { requireOne: true });
+var special_attribute = tagScope(
+  preceded(
+    "@",
+    or(
+      // These attributes have no arguments
+      or("compute", "const", "fragment", "invariant", "must_use", "vertex").map((name2) => makeStandardAttribute([name2, []])),
+      // These attributes have arguments, but the argument doesn't have any identifiers
+      preceded("interpolate", req(delimited("(", name_list, ")"), "invalid @interpolate, expected '('")).map(makeInterpolateAttribute),
+      preceded("builtin", req(delimited("(", name, ")"), "invalid @builtin, expected '('")).map(makeBuiltinAttribute),
+      preceded("diagnostic", req(diagnostic_control, "invalid @diagnostic, expected '('")).map(makeDiagnosticAttribute)
+    ).ptag("attr_variant")
+  ).collect(specialAttribute)
+);
+var if_attribute = tagScope(
+  preceded(
+    seq("@", weslExtension("if")),
+    span(
+      delimited(
+        "(",
+        fn(() => attribute_if_expression),
+        seq(opt(","), ")")
+      )
+    ).map(makeTranslateTimeExpressionElem)
+  ).map(makeIfAttribute).ptag("attr_variant").collect(specialAttribute)
+);
+var normal_attribute = tagScope(
+  preceded(
+    "@",
+    or(
+      // These are normal attributes, with required arguments
+      seq(
+        or(
+          "workgroup_size",
+          "align",
+          "binding",
+          "blend_src",
+          "group",
+          "id",
+          "location",
+          "size"
+        ).ptag("name"),
+        req(() => attribute_argument_list, "invalid attribute, expected '('")
+      ),
+      // Everything else is also a normal attribute, optional expression list
+      seq(
+        // we don't want this to interfere with if_attribute, 
+        // but not("if") isn't necessary for now, since 'if' is a keyword, not a word
+        word.ptag("name"),
+        opt(() => attribute_argument_list)
+      )
+    )
+  ).collect(collectAttribute)
+);
+var attribute_argument_list = delimited(
+  "(",
+  withSep(
+    ",",
+    span(fn(() => expression)).collect(expressionCollect, "attrParam")
+    // LATER These unknown expressions have decls inside of them, that's why they're tough to replace!
+  ),
+  req(")", "invalid attribute arguments, expected ')'")
+);
+var attribute_no_if = or(
+  special_attribute,
+  normal_attribute
+).ctag("attribute");
+var attribute_incl_if = or(
+  if_attribute,
+  special_attribute,
+  normal_attribute
+).ctag("attribute");
+var opt_attributes = repeat(attribute_incl_if);
+var opt_attributes_no_if = repeat(attribute_no_if);
+var globalTypeNameDecl = req(
+  word.collect(globalDeclCollect, "type_name"),
+  "invalid type name, expected a name"
+);
+var fnNameDecl = req(
+  word.collect(globalDeclCollect, "fn_name"),
+  "missing fn name"
+);
+var optionally_typed_ident = tagScope(
+  seq(
+    word.collect(declCollect, "decl_elem"),
+    opt(seq(":", type_specifier))
+  ).collect(typedDecl)
+).ctag("var_name");
+var req_optionally_typed_ident = req(optionally_typed_ident, "invalid ident");
+var global_ident = tagScope(
+  req(
+    seq(
+      word.collect(globalDeclCollect, "decl_elem"),
+      opt(seq(":", type_specifier.collect(scopeCollect, "decl_type")))
+    ).collect(typedDecl),
+    "expected identifier"
+  )
+).ctag("var_name");
+var struct_member = tagScope(
+  seq(
+    opt_attributes,
+    word.collect(nameCollect, "nameElem"),
+    req(":", "invalid struct member, expected ':'"),
+    req(type_specifier, "invalid struct member, expected type specifier")
+  ).collect(collectStructMember)
+).ctag("members");
+var struct_decl = seq(
+  weslExtension(opt_attributes).collect((cc) => cc.tags.attribute, "attributes"),
+  "struct",
+  req(globalTypeNameDecl, "invalid struct, expected name"),
+  seq(
+    req("{", "invalid struct, expected '{'"),
+    withSepPlus(",", struct_member),
+    req("}", "invalid struct, expected '}'")
+  ).collect(scopeCollect, "struct_scope")
+).collect(collectStruct);
+var fn_call = seq(
+  qualified_ident.collect(refIdent),
+  () => opt_template_list,
+  argument_expression_list
+);
+var fnParam = tagScope(
+  seq(
+    opt_attributes.collect((cc) => cc.tags.attribute, "attributes"),
+    word.collect(declCollect, "decl_elem"),
+    opt(seq(":", req(type_specifier, "invalid fn parameter, expected type specifier"))).collect(typedDecl, "param_name")
+  ).collect(collectFnParam)
+).ctag("fn_param");
+var fnParamList = seq("(", withSep(",", fnParam), ")");
+var local_variable_decl = seq(
+  "var",
+  () => var_template_list,
+  req_optionally_typed_ident,
+  opt(seq("=", () => expression))
+  // no decl_scope, but I think that's ok
+).collect(collectVarLike("var"));
+var global_variable_decl = seq(
+  opt_attributes,
+  "var",
+  () => var_template_list,
+  global_ident,
+  opt(seq("=", () => expression.collect(scopeCollect, "decl_scope"))),
+  ";"
+).collect(collectVarLike("gvar")).collect(partialScopeCollect);
+var attribute_if_primary_expression = or(
+  tokenOf("keyword", ["true", "false"]).map(makeLiteral),
+  delimited(
+    token("symbol", "("),
+    fn(() => attribute_if_expression),
+    token("symbol", ")")
+  ).map(makeParenthesizedExpression),
+  tokenKind("word").map(makeTranslateTimeFeature)
+);
+var attribute_if_unary_expression = or(
+  seq(
+    token("symbol", "!").map(makeUnaryOperator),
+    fn(() => attribute_if_unary_expression)
+  ).map(makeUnaryExpression),
+  attribute_if_primary_expression
+);
+var attribute_if_expression = weslExtension(
+  seq(
+    attribute_if_unary_expression,
+    or(
+      repeatPlus(
+        seq(
+          token("symbol", "||").map(makeBinaryOperator),
+          req(
+            attribute_if_unary_expression,
+            "invalid expression, expected expression"
+          )
+        )
+      ),
+      repeatPlus(
+        seq(
+          token("symbol", "&&").map(makeBinaryOperator),
+          req(
+            attribute_if_unary_expression,
+            "invalid expression, expected expression"
+          )
+        )
+      ),
+      yes().map(() => [])
+    )
+  ).map(makeRepeatingBinaryExpression)
+);
+var unscoped_compound_statement = seq(
+  opt_attributes,
+  text("{"),
+  repeat(() => statement),
+  req("}", "invalid block, expected }")
+).collect(statementCollect);
+var compound_statement = tagScope(
+  seq(
+    opt_attributes,
+    seq(
+      text("{"),
+      repeat(() => statement),
+      req("}", "invalid block, expected '}'")
+    ).collect(scopeCollect)
+  ).collect(statementCollect)
+);
+var for_init = seq(
+  opt_attributes,
+  or(
+    fn_call,
+    () => variable_or_value_statement,
+    () => variable_updating_statement
+  )
+);
+var for_update = seq(
+  opt_attributes,
+  or(fn_call, () => variable_updating_statement)
+);
+var for_statement = seq(
+  // LATER consider allowing @if on for_init, expression and for_update
+  "for",
+  seq(
+    req("(", "invalid for loop, expected '('"),
+    opt(for_init),
+    req(";", "invalid for loop, expected ';'"),
+    opt(expression),
+    req(";", "invalid for loop, expected ';'"),
+    opt(for_update),
+    req(")", "invalid for loop, expected ')'"),
+    unscoped_compound_statement
+  ).collect(scopeCollect)
+);
+var if_statement = seq(
+  "if",
+  req(seq(expression, compound_statement), "invalid if statement"),
+  repeat(
+    seq(
+      "else",
+      "if",
+      req(seq(expression, compound_statement), "invalid else if branch")
+    )
+  ),
+  opt(
+    seq("else", req(compound_statement, "invalid else branch, expected '{'"))
+  )
+);
+var loop_statement = seq(
+  "loop",
+  opt_attributes_no_if,
+  req(
+    seq(
+      "{",
+      repeat(() => statement),
+      opt(
+        tagScope(
+          seq(
+            opt_attributes,
+            "continuing",
+            opt_attributes_no_if,
+            "{",
+            repeat(() => statement),
+            tagScope(
+              opt(
+                seq(
+                  opt_attributes,
+                  seq("break", "if", expression, ";")
+                ).collect(statementCollect)
+              )
+            ),
+            "}"
+          ).collect(statementCollect).collect(scopeCollect)
+        )
+      ),
+      "}"
+    ),
+    "invalid loop statement"
+  )
+).collect(scopeCollect);
+var case_selector = or("default", expression);
+var switch_clause = tagScope(
+  seq(
+    opt_attributes,
+    or(
+      seq(
+        "case",
+        withSep(",", case_selector, { requireOne: true }),
+        opt(":"),
+        compound_statement
+      ),
+      seq("default", opt(":"), compound_statement)
+    ).collect(switchClauseCollect)
+  )
+);
+var switch_body = seq(opt_attributes, "{", repeatPlus(switch_clause), "}");
+var switch_statement = seq("switch", expression, switch_body);
+var while_statement = seq("while", expression, compound_statement);
+var regular_statement = or(
+  for_statement,
+  if_statement,
+  loop_statement,
+  switch_statement,
+  while_statement,
+  seq("break", ";"),
+  // ambiguous with break if
+  seq("continue", req(";", "invalid statement, expected ';'")),
+  seq(";"),
+  // LATER this one cannot have attributes in front of it
+  () => const_assert,
+  seq("discard", req(";", "invalid statement, expected ';'")),
+  seq("return", opt(expression), req(";", "invalid statement, expected ';'")),
+  seq(fn_call, req(";", "invalid statement, expected ';'")),
+  seq(
+    () => variable_or_value_statement,
+    req(";", "invalid statement, expected ';'")
+  ),
+  seq(
+    () => variable_updating_statement,
+    req(";", "invalid statement, expected ';'")
+  )
+);
+var conditional_statement = tagScope(
+  seq(
+    opt_attributes,
+    regular_statement
+  ).collect(statementCollect).collect(partialScopeCollect)
+);
+var unconditional_statement = tagScope(
+  seq(
+    opt_attributes_no_if,
+    regular_statement
+  )
+);
+var statement = or(
+  compound_statement,
+  unconditional_statement,
+  conditional_statement
+);
+var lhs_expression = or(
+  simple_component_reference,
+  seq(
+    qualified_ident.collect(refIdent),
+    opt(component_or_swizzle)
+  ),
+  seq(
+    "(",
+    () => lhs_expression,
+    ")",
+    opt(component_or_swizzle)
+    // LATER this doesn't find member references.
+  ),
+  seq("&", () => lhs_expression),
+  seq("*", () => lhs_expression)
+);
+var variable_or_value_statement = tagScope(
+  // LATER consider collecting these as var elems and scopes
+  or(
+    // Also covers the = expression case
+    local_variable_decl,
+    seq("const", req_optionally_typed_ident, req("=", "invalid const declaration, expected '='"), expression),
+    seq(
+      "let",
+      req_optionally_typed_ident,
+      req("=", "invalid let declaration, expected '='"),
+      expression
+    )
+  )
+);
+var variable_updating_statement = or(
+  seq(
+    lhs_expression,
+    or("=", "<<=", ">>=", "%=", "&=", "*=", "+=", "-=", "/=", "^=", "|="),
+    expression
+  ),
+  seq(lhs_expression, or("++", "--")),
+  seq("_", "=", expression)
+);
+var fn_decl = seq(
+  tagScope(
+    opt_attributes.collect((cc) => cc.tags.attribute || [])
+  ).ctag("fn_attributes"),
+  text("fn"),
+  req(fnNameDecl, "invalid fn, expected function name"),
+  seq(
+    req(fnParamList, "invalid fn, expected function parameters").collect(scopeCollect, "header_scope"),
+    opt(seq(
+      "->",
+      opt_attributes.collect((cc) => cc.tags.attribute, "return_attributes"),
+      type_specifier.ctag("return_type").collect(scopeCollect, "return_scope")
+    )),
+    req(
+      unscoped_compound_statement,
+      "invalid fn, expected function body"
+    ).ctag("body_statement").collect(scopeCollect, "body_scope")
+  )
+).collect(partialScopeCollect, "fn_partial_scope").collect(fnCollect);
+var global_value_decl = or(
+  seq(
+    opt_attributes,
+    "override",
+    global_ident,
+    seq(opt(seq("=", expression.collect(scopeCollectNoIf, "decl_scope")))),
+    ";"
+  ).collect(collectVarLike("override")),
+  seq(
+    opt_attributes,
+    "const",
+    global_ident,
+    "=",
+    seq(expression).collect(scopeCollectNoIf, "decl_scope"),
+    ";"
+  ).collect(collectVarLike("const"))
+).collect(partialScopeCollect);
+var global_alias = seq(
+  weslExtension(opt_attributes).collect((cc) => cc.tags.attribute, "attributes"),
+  "alias",
+  req(word, "invalid alias, expected name").collect(globalDeclCollect, "alias_name"),
+  req("=", "invalid alias, expected '='"),
+  req(type_specifier, "invalid alias, expected type").collect(scopeCollect, "alias_scope"),
+  req(";", "invalid alias, expected ';'")
+).collect(aliasCollect);
+var const_assert = tagScope(
+  seq(
+    opt_attributes,
+    "const_assert",
+    req(expression, "invalid const_assert, expected expression"),
+    req(";", "invalid statement, expected ';'")
+  ).collect(assertCollect)
+).ctag("const_assert");
+var global_directive = tagScope(
+  seq(
+    opt_attributes,
+    terminated(
+      or(
+        preceded("diagnostic", diagnostic_control).map(makeDiagnosticDirective),
+        preceded("enable", name_list).map(makeEnableDirective),
+        preceded("requires", name_list).map(makeRequiresDirective)
+      ).ptag("directive"),
+      ";"
+    )
+  ).collect(directiveCollect)
+);
+var global_decl = tagScope(
+  or(
+    fn_decl,
+    global_variable_decl,
+    global_value_decl,
+    ";",
+    global_alias,
+    const_assert.collect(globalAssertCollect),
+    struct_decl
+  )
+);
+var weslRoot = seq(
+  weslExtension(weslImports),
+  repeat(global_directive),
+  repeat(global_decl),
+  req(eof(), "invalid WESL, expected EOF")
+).collect(collectModule, "collectModule");
+function makeDiagnosticDirective([severity, rule]) {
+  return { kind: "diagnostic", severity, rule };
+}
+function makeEnableDirective(extensions) {
+  return { kind: "enable", extensions };
+}
+function makeRequiresDirective(extensions) {
+  return { kind: "requires", extensions };
+}
+function makeStandardAttribute([name2, params]) {
+  return {
+    kind: "@attribute",
+    name: name2,
+    params
+  };
+}
+function makeInterpolateAttribute(params) {
+  return {
+    kind: "@interpolate",
+    params
+  };
+}
+function makeBuiltinAttribute(param) {
+  return {
+    kind: "@builtin",
+    param
+  };
+}
+function makeDiagnosticAttribute([severity, rule]) {
+  return {
+    kind: "@diagnostic",
+    severity,
+    rule
+  };
+}
+function makeIfAttribute(param) {
+  return {
+    kind: "@if",
+    param
+  };
+}
+function makeTranslateTimeExpressionElem(args) {
+  return {
+    kind: "translate-time-expression",
+    expression: args.value,
+    span: args.span
+  };
+}
+function makeName(token2) {
+  return {
+    kind: "name",
+    name: token2.text,
+    start: token2.span[0],
+    end: token2.span[1]
+  };
+}
+function makeLiteral(token2) {
+  return {
+    kind: "literal",
+    value: token2.text,
+    span: token2.span
+  };
+}
+function makeTranslateTimeFeature(token2) {
+  return {
+    kind: "translate-time-feature",
+    name: token2.text,
+    span: token2.span
+  };
+}
+function makeParenthesizedExpression(expression2) {
+  return {
+    kind: "parenthesized-expression",
+    expression: expression2
+  };
+}
+function makeUnaryOperator(token2) {
+  return {
+    value: token2.text,
+    span: token2.span
+  };
+}
+function makeBinaryOperator(token2) {
+  return {
+    value: token2.text,
+    span: token2.span
+  };
+}
+function makeUnaryExpression([operator, expression2]) {
+  return {
+    kind: "unary-expression",
+    operator,
+    expression: expression2
+  };
+}
+function makeRepeatingBinaryExpression([start, repeating]) {
+  let result = start;
+  for (const [op, left2] of repeating) {
+    result = makeBinaryExpression([result, op, left2]);
+  }
+  return result;
+}
+function makeBinaryExpression([left2, operator, right2]) {
+  return {
+    kind: "binary-expression",
+    operator,
+    left: left2,
+    right: right2
+  };
+}
+if (tracing) {
+  const names = {
+    name,
+    diagnostic_rule_name,
+    diagnostic_control,
+    name_list,
+    special_attribute,
+    if_attribute,
+    normal_attribute,
+    attribute_argument_list,
+    attribute_no_if,
+    attribute_incl_if,
+    opt_attributes,
+    opt_attributes_no_if,
+    globalTypeNameDecl,
+    fnNameDecl,
+    optionally_typed_ident,
+    req_optionally_typed_ident,
+    global_ident,
+    struct_member,
+    struct_decl,
+    fn_call,
+    fnParam,
+    fnParamList,
+    local_variable_decl,
+    global_variable_decl,
+    attribute_if_primary_expression,
+    attribute_if_unary_expression,
+    attribute_if_expression,
+    unscoped_compound_statement,
+    compound_statement,
+    for_init,
+    for_update,
+    for_statement,
+    if_statement,
+    loop_statement,
+    case_selector,
+    switch_clause,
+    switch_body,
+    switch_statement,
+    while_statement,
+    regular_statement,
+    conditional_statement,
+    statement,
+    lhs_expression,
+    variable_or_value_statement,
+    variable_updating_statement,
+    fn_decl,
+    global_value_decl,
+    global_alias,
+    const_assert,
+    global_directive,
+    global_decl,
+    weslRoot,
+    qualified_ident,
+    // from WeslBaseGrammar
+    word
+    // from WeslBaseGrammar
+  };
+  Object.entries(names).forEach(([name2, parser3]) => {
+    parser3.setTraceName(name2);
+  });
+}
+
+// ../wesl/src/vlq/vlq.ts
+var char_to_integer = {};
+var integer_to_char = {};
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".split("").forEach(function(char, i) {
+  char_to_integer[char] = i;
+  integer_to_char[i] = char;
+});
+
+// ../wesl/src/StandardTypes.ts
+var stdFns = `bitcast all any select arrayLength 
+  abs acos acosh asin asinh atan atanh atan2 ceil clamp cos cosh 
+  countLeadingZeros countOneBits countTrailingZeros cross 
+  degrees determinant distance dot dot4U8Packed dot4I8Packed 
+  exp exp2 extractBits faceForward firstLeadingBit firstTrailingBit 
+  floor fma fract frexp insertBits inverseSqrt ldexp length log log2
+  max min mix modf normalize pow quantizeToF16 radians reflect refract
+  reverseBits round saturate sign sin sinh smoothstep sqrt step tan tanh
+  transpose trunc
+  dpdx dpdxCoarse dpdxFine dpdy dpdyCoarse dpdyFine fwidth 
+  fwidthCoarse fwidthFine
+  textureDimensions textureGather textureGatherCompare textureLoad
+  textureNumLayers textureNumLevels textureNumSamples
+  textureSample textureSampleBias textureSampleCompare textureSampleCompareLevel
+  textureSampleGrad textureSampleLevel textureSampleBaseClampToEdge
+  textureStore
+  atomicLoad atomicStore atomicAdd atomicSub atomicMax atomicMin
+  atomicAnd atomicOr atomicXor atomicExchange atomicCompareExchangeWeak
+  pack4x8snorm pack4x8unorm pack4xI8 pack4xU8 pack4xI8Clamp pack4xU8Clamp
+  pack2x16snorm pack2x16unorm pack2x16float
+  unpack4x8snorm unpack4x8unorm unpack4xI8 unpack4xU8 
+  unpack2x16snorm unpack2x16unorm unpack2x16float
+  storageBarrier textureBarrier workgroupBarrier workgroupUniformLoad
+  subgroupAdd subgroupAll subgroupAnd subgroupAny subgroupBallot 
+  subgroupBroadcast subgroupBroadcastFirst subgroupElect 
+  subgroupExclusiveAdd subgroupExclusiveMul subgroupInclusiveAdd 
+  subgroupInclusiveMul subgroupMax subgroupMin subgroupMul subgroupOr 
+  subgroupShuffle subgroupShuffleUp subgroupShuffleXor subgroupXor
+  quadBroadcast quadSwapDiagonal quadSwapX quadSwapY`.split(/\s+/);
+var sampledTextureTypes = `
+  texture_1d texture_2d texture_2d_array texture_3d 
+  texture_cube texture_cube_array
+`;
+var multisampledTextureTypes = `
+  texture_multisampled_2d texture_depth_multisampled_2d
+`;
+var textureStorageTypes = `
+  texture_storage_1d texture_storage_2d texture_storage_2d_array 
+  texture_storage_3d
+`;
+var stdTypes = `array atomic bool f16 f32 i32 
+  mat2x2 mat2x3 mat2x4 mat3x2 mat3x3 mat3x4 mat4x2 mat4x3 mat4x4
+  mat2x2f mat2x3f mat2x4f mat3x2f mat3x3f mat3x4f
+  mat4x2f mat4x3f mat4x4f
+  mat2x2h mat2x3h mat2x4h mat3x2h mat3x3h mat3x4h
+  mat4x2h mat4x3h mat4x4h
+  u32 vec2 vec3 vec4 ptr
+  vec2i vec3i vec4i vec2u vec3u vec4u
+  vec2f vec3f vec4f vec2h vec3h vec4h
+  ${sampledTextureTypes}
+  ${multisampledTextureTypes}
+  texture_external
+  ${textureStorageTypes}
+  texture_depth_2d texture_depth_2d_array texture_depth_cube
+  texture_depth_cube_array
+  sampler sampler_comparison
+  rgba8unorm rgba8snorm rgba8uint rgba8sint
+  rgba16uint rgba16sint rgba16float 
+  r32uint r32sint r32float rg32uint rg32sint rg32float
+  rgba32uint rgba32sint rgba32float
+  bgra8unorm`.split(/\s+/);
+var stdEnumerants = `read write read_write 
+  function private workgroup uniform storage
+  rgba8unorm rgba8snorm rgba8uint rgba8sint 
+  rgba16uint rgba16sint rgba16float 
+  r32uint r32sint r32float rg32uint rg32sint rg32float
+  rgba32uint rgba32sint rgba32float bgra8unorm`.split(/\s+/);
+
+// ../wesl/src/PathUtil.ts
+function noSuffix(path3) {
+  const lastSlash = path3.lastIndexOf("/");
+  const lastStart = lastSlash === -1 ? 0 : lastSlash + 1;
+  const suffix = path3.indexOf(".", lastStart);
+  const suffixStart = suffix === -1 ? path3.length : suffix;
+  return path3.slice(0, suffixStart);
+}
+
+// ../wesl/src/Reflection.ts
+var textureStorage = matchOneOf(textureStorageTypes);
+var textureTypes = matchOneOf(sampledTextureTypes);
+var multiNames = matchOneOf(multisampledTextureTypes);
+
 // raw-loader:/Users/lee/wesl-js/tools/packages/wesl/src/WeslBundle.ts?raw
 var WeslBundle_default = 'export interface WeslBundle {\n  /** name of the package, e.g. random_wgsl */\n  name: string;\n\n  /** wesl edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of wesl/wgsl modules:\n   *    keys are file paths, relative to package root (e.g. "./lib.wgsl")\n   *    values are wgsl/wesl code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n';
 
 // src/packageWgsl.ts
 async function packageWgsl(args) {
-  const { projectDir, outDir } = args;
+  const { projectDir, outDir, multiBundle } = args;
   const modules = await loadModules(args);
+  if (Object.entries(modules).length === 0) {
+    console.error("no WGSL/WESL files found in", args.src);
+    throw new Error("no WGSL/WESL files found");
+  }
   const pkgJsonPath = path2.join(projectDir, "package.json");
-  const { name } = await loadPackageFields(pkgJsonPath);
+  const { name: name2 } = await loadPackageFields(pkgJsonPath);
   const edition = "unstable_2025_1";
-  await writeJsBundle({ name, edition, modules }, outDir);
+  if (!args.multiBundle) {
+    await writeJsBundle({ name: name2, edition, modules }, outDir);
+  } else {
+    await writeMultiBundle(modules, name2, edition, outDir);
+  }
   await writeTypeScriptDts(outDir);
+  if (args.updatePackageJson) {
+    await updatePackageJson(projectDir, outDir, multiBundle);
+  }
+}
+async function updatePackageJson(projectDir, outDir, multiBundle) {
+  const pkgJsonPath = path2.join(projectDir, "package.json");
+  const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
+  const pkgJson = JSON.parse(pkgJsonString);
+  const exports = {};
+  const distDir = path2.relative(projectDir, outDir);
+  if (multiBundle) {
+    exports["./*"] = {
+      import: `./${distDir}/*/weslBundle.js`,
+      types: `./${distDir}/weslBundle.d.ts`
+    };
+  } else {
+    exports["."] = {
+      import: `./${distDir}/weslBundle.js`,
+      types: `./${distDir}/weslBundle.d.ts`
+    };
+  }
+  pkgJson.exports = exports;
+  await fs.writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2));
+}
+async function writeMultiBundle(modules, name2, edition, outDir) {
+  for (const [moduleName, moduleSrc] of Object.entries(modules)) {
+    const moduleBundle = {
+      name: name2,
+      edition,
+      modules: { [moduleName]: moduleSrc }
+    };
+    const bundleDirRelative = noSuffix(moduleName);
+    const bundleDir = path2.join(outDir, bundleDirRelative);
+    await writeJsBundle(moduleBundle, bundleDir);
+  }
 }
 async function writeTypeScriptDts(outDir) {
   const constDecl = `
@@ -11498,7 +14010,7 @@ export default weslBundle;
 }
 async function loadModules(args) {
   const { rootDir } = args;
-  const shaderFiles = await glob(`${rootDir}/*.w[ge]sl`, {
+  const shaderFiles = await glob(`${args.src}`, {
     ignore: "node_modules/**"
   });
   const promisedSrcs = shaderFiles.map(
@@ -11515,15 +14027,15 @@ function zip(as, bs) {
 async function loadPackageFields(pkgJsonPath) {
   const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
   const pkgJson = JSON.parse(pkgJsonString);
-  const { name } = pkgJson;
-  verifyField("name", name);
+  const { name: name2 } = pkgJson;
+  verifyField("name", name2);
   function verifyField(field, value) {
     if (value === void 0) {
       console.error(`no '${field}' field found in "${pkgJsonPath}"`);
       throw new Error("package.json incomplete");
     }
   }
-  return { name };
+  return { name: name2 };
 }
 
 // src/packagerCli.ts
@@ -11537,10 +14049,21 @@ function parseArgs(args) {
     type: "string",
     default: ".",
     describe: "base directory of WGSL/WESL files"
+  }).option("src", {
+    type: "string",
+    describe: "WGSL/WESL files to bundle in the package (glob syntax)"
   }).option("projectDir", {
     type: "string",
     default: ".",
     describe: "directory containing package.json"
+  }).option("multiBundle", {
+    type: "boolean",
+    default: false,
+    describe: "make a shader bundle for each source file"
+  }).option("updatePackageJson", {
+    type: "boolean",
+    default: true,
+    describe: "add 'exports' entries into package.json"
   }).option("outDir", {
     type: "string",
     default: "dist",
@@ -11549,8 +14072,21 @@ function parseArgs(args) {
 }
 
 // src/main.ts
+import { exit } from "process";
 var rawArgs = hideBin(process.argv);
-packagerCli(rawArgs);
+packagerCli(rawArgs).catch((e) => {
+  console.error(e);
+  exit(1);
+});
+/*!
+Copyright (c) 2017-2021 [these people](https://github.com/Rich-Harris/vlq/graphs/contributors)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 /*! Bundled license information:
 
 yargs-parser/build/lib/string-utils.js:

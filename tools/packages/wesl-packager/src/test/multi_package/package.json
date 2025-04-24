@@ -1,0 +1,7 @@
+{
+  "name": "multi-package",
+  "private": true,
+  "dependencies": {
+    "dependent_package": "link:../dependent_package"
+  }
+}

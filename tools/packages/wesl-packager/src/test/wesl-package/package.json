@@ -1,4 +1,5 @@
 {
   "name": "test-wesl-package",
+  "private": true,
   "version": "0.1.1"
 }
