@@ -14051,6 +14051,7 @@ function parseArgs(args) {
     describe: "base directory of WGSL/WESL files"
   }).option("src", {
     type: "string",
+    default: "./shaders/*.w[eg]sl",
     describe: "WGSL/WESL files to bundle in the package (glob syntax)"
   }).option("projectDir", {
     type: "string",
