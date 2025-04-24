@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { glob } from "glob";
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
