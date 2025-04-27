@@ -133,7 +133,7 @@ test("package multi ", async () => {
   `);
 
     const multi = await readFile(
-      path.join(workDir, "dist/multi/weslBundle.js"),
+      path.join(workDir, "dist/transitive/weslBundle.js"),
       "utf8",
     );
     expect(multi).toMatchInlineSnapshot(`
@@ -142,7 +142,7 @@ test("package multi ", async () => {
       "name": "multi-package",
       "edition": "unstable_2025_1",
       "modules": {
-        "multi.wesl": "import dependent_package::dep;\\n\\nfn multi() { dep(); } "
+        "transitive.wesl": "import dependent_package::dep;\\n\\nfn toDep() { dep(); } "
       }
     }
 
