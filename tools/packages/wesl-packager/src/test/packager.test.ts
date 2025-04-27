@@ -46,7 +46,6 @@ test("package multi ", async () => {
   await mkdir(workDir);
 
   // const workDir = await fs.mkdtemp("wesl-packager-test-multi-");
-  dlog({ workDir });
   try {
     const multiDir = path.join(testDir, "multi_package");
     await fs.cp(multiDir, workDir, {
@@ -64,6 +63,8 @@ test("package multi ", async () => {
       --rootDir ${workDir}/shaders
       --outDir ${distDir}`,
     );
+
+    // TODO consider matching files and contents with `packages/test_pkg/multi_pkg` rather than inlining here
 
     // verify package.json
     const packageJson = await readFile(
