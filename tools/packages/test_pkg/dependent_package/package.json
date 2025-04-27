@@ -1,0 +1,10 @@
+{
+  "name": "dependent_package",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./dist/weslBundle.d.ts",
+      "import": "./dist/weslBundle.js"
+    }
+  }
+}
