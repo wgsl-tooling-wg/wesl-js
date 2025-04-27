@@ -44,6 +44,19 @@ test("import from multi_pkg/second", async () => {
   expect(result.dest).toContain("fn two()");
 });
 
-test("import from multi_pkg/multi", async () => {
-  dlog({ trans });
+test("import from multi_pkg/transitive", async () => {
+  const main = `
+    import multi_pkg::transitive::toDep;
+
+    @compute @workgroupSize(1)
+    fn main() {
+      toDep();
+    }
+  `;
+  const weslSrc = { main };
+  const result = await expectNoLogAsync(async () =>
+    link({ weslSrc, libs: [trans] }),
+  );
+  expect(result.dest).toContain("fn toDep()");
+  expect(result.dest).toContain("fn dep()");
 });
