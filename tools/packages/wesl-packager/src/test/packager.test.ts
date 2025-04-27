@@ -39,7 +39,7 @@ test("package two wgsl files", async () => {
   `);
 });
 
-test.skip("package multi ", async () => {
+test("package multi ", async () => {
   // create a copy of multi_package in a temporary directory so we can mutate it
   const workDir = "/tmp/testing_multi";
   await rimraf(workDir);
