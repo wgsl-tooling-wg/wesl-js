@@ -1,3 +1,3 @@
 import dependent_package::dep;
 
-fn multi() { dep(); } 
+fn toDep() { dep(); } 

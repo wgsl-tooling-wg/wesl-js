@@ -1,1 +1,1 @@
-fn second() { }
+fn two() { }
