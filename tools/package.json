@@ -19,7 +19,7 @@
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
     "publish:all": "pnpm --filter \"./packages/**\" publish",
     "prepush": "run-s build:all test:all bench organize:all format:all typecheck:all",
-    "test": "vitest",
+    "test": "FORCE_COLOR=1 vitest",
     "test:all": "vitest --run",
     "test:linkExtension": "nodemon --config nodemon-link-extension.json",
     "typecheck:all": "pnpm --filter \"./packages/**\" typecheck"

@@ -332,9 +332,21 @@ importers:
         specifier: workspace:*
         version: link:../wesl
     devDependencies:
+      '@types/diff':
+        specifier: ^7.0.1
+        version: 7.0.1
       '@types/node':
         specifier: ^22.13.10
         version: 22.13.10
+      diff:
+        specifier: ^7.0.0
+        version: 7.0.0
+      dir-compare:
+        specifier: ^5.0.0
+        version: 5.0.0
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
 
   packages/wesl-plugin:
     dependencies:
@@ -2476,6 +2488,9 @@ packages:
 
   diffie-hellman@5.0.3:
     resolution: {integrity: sha512-kqag/Nl+f3GwyK25fhUMYj81BUOrZ9IuJsjIcDE5icNM9FJHAVm3VcUDxdLPoQtTuUylWm6ZIknYJwwaPxsUzg==}
+
+  dir-compare@5.0.0:
+    resolution: {integrity: sha512-/GCjdixGQyJ9sj/HiMTYaNGztXqHnj0kWuKDfrGU6fCvZzQBihMBQLToG/dwg5cSs7lm5707iwbKOdsJh5VV4g==}
 
   dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
@@ -7526,6 +7541,11 @@ snapshots:
       bn.js: 4.12.1
       miller-rabin: 4.0.1
       randombytes: 2.1.0
+
+  dir-compare@5.0.0:
+    dependencies:
+      minimatch: 3.1.2
+      p-limit: 3.1.0
 
   dir-glob@3.0.1:
     dependencies:
