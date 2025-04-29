@@ -55,6 +55,9 @@ export interface BindResults {
   /** additional global statements to include in linked results
    * (e.g. for adding module level const_assert statements) */
   newStatements: EmittableElem[];
+
+  /** if accumulateUnbound is true, collection of unbound module paths */
+  unbound?: string[][];
 }
 
 /** an element that can be directly emitted into the linked result */
@@ -80,6 +83,10 @@ export interface BindIdentsParams
   extends Pick<LinkRegistryParams, "registry" | "conditions" | "mangler"> {
   rootAst: WeslAST;
   virtuals?: VirtualLibrarySet;
+
+  /** if false, throw on unbound identifiers. If true, accumulate unbound identifiers into
+   * a BindResults.unbound.  */
+  accumulateUnbound?: true;
 }
 
 /**
@@ -91,7 +98,7 @@ export interface BindIdentsParams
  * @return any new declaration elements found (they will need to be emitted)
  */
 export function bindIdents(params: BindIdentsParams): BindResults {
-  const { rootAst, registry, virtuals } = params;
+  const { rootAst, registry, virtuals, accumulateUnbound } = params;
   const { conditions = {}, mangler = minimalMangle } = params;
   const { rootScope } = rootAst;
 
@@ -105,6 +112,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     knownDecls.add(decl);
   });
 
+  const unbound = accumulateUnbound ? [] : undefined;
   const globalStatements = new Map<AbstractElem, EmittableElem>();
   const bindContext = {
     registry,
@@ -115,6 +123,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     globalStatements,
     virtuals,
     mangler,
+    unbound,
   };
 
   // initialize liveDecls with all module level declarations
@@ -124,7 +133,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
 
   const decls = bindIdentsRecursive(rootScope, bindContext, liveDecls, true);
   const newStatements = [...globalStatements.values()];
-  return { decls, globalNames, newStatements };
+  return { decls, globalNames, newStatements, unbound };
 }
 
 /**
@@ -175,6 +184,9 @@ interface BindContext {
 
   /** virtual libraries provided by the user (e.g. for code generators or constants) */
   virtuals?: VirtualLibrarySet;
+
+  /** list of unbound identifiers if accumulateUnbound is true */
+  unbound?: string[][];
 }
 
 /**
@@ -249,19 +261,19 @@ function handleRef(
   liveDecls: LiveDecls,
   bindContext: BindContext,
 ): DeclIdent | undefined {
-  const { registry, conditions } = bindContext;
+  const { registry, conditions, unbound } = bindContext;
   const { virtuals } = bindContext;
   if (!ident.refersTo && !ident.std) {
     const foundDecl =
       findDeclInModule(ident, liveDecls) ??
-      findQualifiedImport(ident, registry, conditions, virtuals);
+      findQualifiedImport(ident, registry, conditions, virtuals, unbound);
 
     if (foundDecl) {
       ident.refersTo = foundDecl.decl;
       return handleNewDecl(ident, foundDecl, bindContext);
     } else if (stdWgsl(ident.originalName)) {
       ident.std = true;
-    } else {
+    } else if (!unbound) {
       failMissingIdent(ident);
     }
   }
@@ -403,14 +415,21 @@ function findDeclInModule(
   }
 }
 
-/** Match a reference identifier to a declaration in
+/**
+ * Match a reference identifier to a declaration in
  * another module via an import statement
- * or via an inline qualified ident e.g.  foo::bar() */
+ * or via an inline qualified ident e.g. foo::bar().
+ *
+ * If the lookup fails and the optional `unbound` array is provided,
+ * this function will push the unresolved identifier parts to `unbound`
+ * instead of throwing an error.
+ */
 function findQualifiedImport(
   refIdent: RefIdent,
   parsed: ParsedRegistry,
   conditions: Conditions,
-  virtuals?: VirtualLibrarySet,
+  virtuals: VirtualLibrarySet | undefined,
+  unbound: string[][] | undefined,
 ): FoundDecl | undefined {
   const flatImps = flatImports(refIdent.ast);
 
@@ -422,7 +441,25 @@ function findQualifiedImport(
 
   if (modulePathParts) {
     const { srcModule } = refIdent.ast;
-    return findExport(modulePathParts, srcModule, parsed, conditions, virtuals);
+    const result = findExport(
+      modulePathParts,
+      srcModule,
+      parsed,
+      conditions,
+      virtuals,
+    );
+    if (!result) {
+      if (unbound) {
+        unbound.push(modulePathParts);
+      } else {
+        // TODO show error with source location
+        const msg = `ident ${modulePathParts.join("::")}, but module not found`;
+        console.log(msg);
+      }
+    }
+    return result;
+  } else if (unbound) {
+    unbound.push(identParts);
   }
 }
 
@@ -464,8 +501,6 @@ function findExport(
     virtualModule(modulePathParts[0], conditions, virtuals); // LATER consider virtual modules with submodules
 
   if (!moduleAst) {
-    // TODO show error with source location
-    console.log(`ident ${modulePathParts.join("::")}, but module not found`);
     return undefined;
   }
 
