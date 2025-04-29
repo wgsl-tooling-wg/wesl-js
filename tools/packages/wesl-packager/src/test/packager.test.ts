@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import path from "path";
 import { rimraf } from "rimraf";
 import { expect, test } from "vitest";
-import { packagerCli } from "../packagerCli.js";
+import { packagerCli } from "../PackagerCli.js";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 
