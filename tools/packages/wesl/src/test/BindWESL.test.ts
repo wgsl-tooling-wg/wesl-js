@@ -1,6 +1,8 @@
 import { expect, test } from "vitest";
 import { scopeToStringLong } from "../debug/ScopeToString.ts";
 import { bindTest } from "./TestUtil.ts";
+import { parsedRegistry, parseIntoRegistry, resetScopeIds } from "wesl";
+import { bindIdents, BindIdentsParams } from "../BindIdents.ts";
 
 test("nested scopes binding", () => {
   const src = `
@@ -56,4 +58,29 @@ test("@location attribute const", () => {
       } #3
     } #0"
   `);
+});
+
+test("collect unbound references", async () => {
+  const main = `
+    import pkg1::bar;
+    import pkg2::foo;
+
+    const w = 7;
+
+    fn main() {
+      let x = foo; // Unbound reference
+      let y = bar::baz; // Unbound reference
+      let z = w; // Bound reference
+    }
+   `;
+
+  resetScopeIds();
+  const registry = parsedRegistry();
+  parseIntoRegistry({ main }, registry);
+  const rootAst = registry.modules["package::main"];
+  const bindResult = bindIdents({ registry, rootAst, accumulateUnbound: true });
+
+  const expected = ["pkg1::bar::baz", "pkg2::foo"];
+  const expectedArrays = expected.map(s => s.split("::")).sort();
+  expect(bindResult.unbound?.sort()).deep.equal(expectedArrays);
 });
