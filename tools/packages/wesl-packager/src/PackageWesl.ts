@@ -4,7 +4,7 @@ import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { noSuffix, WeslBundle } from "wesl";
 import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
-import { CliArgs } from "./packagerCli.js";
+import { CliArgs } from "./PackagerCli.js";
 import { dlog } from "berry-pretty";
 
 /** write weslBundle .js and .d.ts files for this shader */

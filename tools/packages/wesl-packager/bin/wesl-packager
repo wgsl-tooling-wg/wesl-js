@@ -7330,7 +7330,7 @@ var multiNames = matchOneOf(multisampledTextureTypes);
 // raw-loader:/Users/lee/wesl-js/tools/packages/wesl/src/WeslBundle.ts?raw
 var WeslBundle_default = 'export interface WeslBundle {\n  /** name of the package, e.g. random_wgsl */\n  name: string;\n\n  /** wesl edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of wesl/wgsl modules:\n   *    keys are file paths, relative to package root (e.g. "./lib.wgsl")\n   *    values are wgsl/wesl code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n';
 
-// src/packageWgsl.ts
+// src/PackageWesl.ts
 async function packageWgsl(args) {
   const { projectDir, outDir, multiBundle } = args;
   const modules = await loadModules(args);
@@ -7433,7 +7433,7 @@ async function loadPackageFields(pkgJsonPath) {
   return { name: name2 };
 }
 
-// src/packagerCli.ts
+// src/PackagerCli.ts
 var cliArgs;
 async function packagerCli(rawArgs2) {
   cliArgs = parseArgs(rawArgs2);
