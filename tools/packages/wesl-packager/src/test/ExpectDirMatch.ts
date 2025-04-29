@@ -10,6 +10,15 @@ export const defaultOptions: Options = {
   excludeFilter: "node_modules, .gitignore",
 };
 
+/**
+ * Compare two directories recursively and asserts that their contents match.
+ * Logs any differences found (extra, missing, or changed files).
+ * Fails the test if any differences are detected.
+ *
+ * @param resultDir - Path to the directory containing actual results.
+ * @param expectDir - Path to the directory containing expected results.
+ * @param options - Optional dir-compare options to customize comparison.
+ */
 export function expectDirMatch(
   resultDir: string,
   expectDir: string,
@@ -18,20 +27,21 @@ export function expectDirMatch(
   const compareOpts = { ...defaultOptions, ...options };
   const compareResult: Result = compareSync(resultDir, expectDir, compareOpts);
   const diffs = compareResult.diffSet!.filter(r => r.state !== "equal");
-  diffs.forEach(reportDiff);
+  diffs.forEach(logDiff);
   if (diffs.length > 0) {
     expect.fail(`${resultDir} and ${expectDir} do not match`);
   }
 }
 
-function reportDiff(diff: Difference): void {
+/** print a difference between two files or directories to the error log */
+function logDiff(diff: Difference): void {
   const { name1, name2, path1, path2, state, relativePath } = diff;
   const relative =
     relativePath.endsWith("/") ? relativePath : `${relativePath}/`;
   if (state === "left") {
-    console.warn(`Extra in result: ${relative}${name1}`);
+    console.error(`Extra in result: ${relative}${name1}`);
   } else if (state === "right") {
-    console.warn(`Missing in result: ${relative}${name2}`);
+    console.error(`Missing in result: ${relative}${name2}`);
   } else {
     const resultPath = path.join(path1!, name1!);
     const expectPath = path.join(path2!, name2!);
@@ -39,6 +49,7 @@ function reportDiff(diff: Difference): void {
   }
 }
 
+/** error log a difference between two files */
 function logFileDiff(resultPath: string, expectPath: string): void {
   const resultStr = fs.readFileSync(resultPath, "utf8");
   const expectStr = fs.readFileSync(expectPath, "utf8");
