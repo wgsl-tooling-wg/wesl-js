@@ -143,3 +143,7 @@ async function loadPackageFields(pkgJsonPath: string): Promise<PkgFields> {
   }
   return { name };
 }
+
+/** 
+ * TODO parse and bindIdents on the wesl files, collecting the dependencies.
+*/
