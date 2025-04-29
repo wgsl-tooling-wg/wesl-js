@@ -418,7 +418,7 @@ function findQualifiedImport(
 
   // find module path by combining identifer reference with import statement
   const modulePathParts =
-    matchingImport(identParts, flatImps) ?? qualifiedImport(identParts);
+    matchingImport(identParts, flatImps) ?? qualifiedIdent(identParts);
 
   if (modulePathParts) {
     const { srcModule } = refIdent.ast;
@@ -426,7 +426,7 @@ function findQualifiedImport(
   }
 }
 
-function qualifiedImport(identParts: string[]): string[] | undefined {
+function qualifiedIdent(identParts: string[]): string[] | undefined {
   if (identParts.length > 1) return identParts;
 }
 
