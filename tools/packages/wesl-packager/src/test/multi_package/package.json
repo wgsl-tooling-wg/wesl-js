@@ -1,5 +1,5 @@
 {
-  "name": "multi-package",
+  "name": "multi_pkg",
   "private": true,
   "dependencies": {
     "dependent_package": "link:../dependent_package"

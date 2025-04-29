@@ -1,4 +1,3 @@
-import { dlog } from "berry-pretty";
 import fs, { mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,6 +5,7 @@ import path from "path";
 import { rimraf } from "rimraf";
 import { expect, test } from "vitest";
 import { packagerCli } from "../PackagerCli.js";
+import { expectDirMatch } from "./ExpectDirMatch.js";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 
@@ -64,92 +64,9 @@ test("package multi ", async () => {
       --outDir ${distDir}`,
     );
 
-    // TODO consider matching files and contents with `packages/test_pkg/multi_pkg` rather than inlining here
+    const expectDir = path.join(testDir, "../../../test_pkg/multi_pkg");
+    expectDirMatch(workDir, expectDir);
 
-    // verify package.json
-    const packageJson = await readFile(
-      path.join(workDir, "package.json"),
-      "utf8",
-    );
-    expect(packageJson).toMatchInlineSnapshot(`
-    "{
-      "name": "multi-package",
-      "private": true,
-      "dependencies": {
-        "dependent_package": "link:../dependent_package"
-      },
-      "exports": {
-        "./*": {
-          "import": "./dist/*/weslBundle.js",
-          "types": "./dist/weslBundle.d.ts"
-        }
-      }
-    }"
-  `);
-
-    // verify dist bundles
-    const nestedBundle = await readFile(
-      path.join(workDir, "dist/dir/nested/weslBundle.js"),
-      "utf8",
-    );
-    expect(nestedBundle).toMatchInlineSnapshot(`
-    "
-    export const weslBundle = {
-      "name": "multi-package",
-      "edition": "unstable_2025_1",
-      "modules": {
-        "dir/nested.wesl": "fn nest() {} "
-      }
-    }
-
-    export default weslBundle;
-      "
-  `);
-
-    const dts = await readFile(
-      path.join(workDir, "dist/weslBundle.d.ts"),
-      "utf8",
-    );
-    expect(dts).toMatchInlineSnapshot(`
-    "export interface WeslBundle {
-      /** name of the package, e.g. random_wgsl */
-      name: string;
-
-      /** wesl edition of the code e.g. unstable_2025_1 */
-      edition: string;
-
-      /** map of wesl/wgsl modules:
-       *    keys are file paths, relative to package root (e.g. "./lib.wgsl")
-       *    values are wgsl/wesl code strings
-       */
-      modules: Record<string, string>;
-
-      /** packages referenced by this package */
-      dependencies?: WeslBundle[];
-    }
-
-    export declare const weslBundle: WeslBundle;
-    export default weslBundle;
-    "
-  `);
-
-    const multi = await readFile(
-      path.join(workDir, "dist/transitive/weslBundle.js"),
-      "utf8",
-    );
-    expect(multi).toMatchInlineSnapshot(`
-    "
-    export const weslBundle = {
-      "name": "multi-package",
-      "edition": "unstable_2025_1",
-      "modules": {
-        "transitive.wesl": "import dependent_package::dep;\\n\\nfn toDep() { dep(); } "
-      }
-    }
-
-    export default weslBundle;
-      "
-  `);
   } finally {
     // await rimraf(workDir);
   }
