@@ -9,7 +9,7 @@ import { expectDirMatch } from "./ExpectDirMatch.js";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 
-test("package two wgsl files", async () => {
+test("package two wgsl files into one bundle", async () => {
   const projectDir = path.join(testDir, "wesl-package");
   const distDir = path.join(projectDir, "dist");
   const srcDir = path.join(projectDir, "src");
@@ -24,18 +24,17 @@ test("package two wgsl files", async () => {
   );
   const result = await readFile(path.join(distDir, "weslBundle.js"), "utf8");
   expect(result).toMatchInlineSnapshot(`
-    "
-    export const weslBundle = {
-      "name": "test-wesl-package",
-      "edition": "unstable_2025_1",
-      "modules": {
+    "export const weslBundle = {
+      name: "test-wesl-package",
+      edition: "unstable_2025_1",
+      modules: {
         "util.wgsl": "fn foo() {}",
-        "lib.wesl": "import package::util;\\n"
-      }
-    }
+        "lib.wesl": "import package::util;\\n",
+      },
+    };
 
     export default weslBundle;
-      "
+    "
   `);
 });
 
