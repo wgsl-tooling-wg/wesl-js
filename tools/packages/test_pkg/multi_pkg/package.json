@@ -2,7 +2,7 @@
   "name": "multi_pkg",
   "private": true,
   "dependencies": {
-    "dependent_package": "link:../dependent_package"
+    "dependent_package": "workspace:*"
   },
   "exports": {
     "./*": {
