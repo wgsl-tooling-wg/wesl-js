@@ -1,6 +1,7 @@
 packages:
 - 'packages/*'
 - 'packages/test_pkg/*'
+- 'packages/wesl-packager/src/test/multi_package'
 - 'packages/wesl-plugin/test/linkExtension'
 - 'packages/wesl-plugin/test/linkExtensionNoToml'
 - 'packages/wesl-plugin/test/staticExtension'
