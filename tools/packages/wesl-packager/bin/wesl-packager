@@ -239,6 +239,1196 @@ var require_brace_expansion = __commonJS({
   }
 });
 
+// ../../node_modules/.pnpm/@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/wasm-nodejs/biome_wasm.js
+var require_biome_wasm = __commonJS({
+  "../../node_modules/.pnpm/@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/wasm-nodejs/biome_wasm.js"(exports, module) {
+    var imports = {};
+    imports["__wbindgen_placeholder__"] = module.exports;
+    var wasm;
+    var { TextEncoder, TextDecoder } = __require("util");
+    var heap = new Array(128).fill(void 0);
+    heap.push(void 0, null, true, false);
+    function getObject(idx) {
+      return heap[idx];
+    }
+    var heap_next = heap.length;
+    function dropObject(idx) {
+      if (idx < 132) return;
+      heap[idx] = heap_next;
+      heap_next = idx;
+    }
+    function takeObject(idx) {
+      const ret = getObject(idx);
+      dropObject(idx);
+      return ret;
+    }
+    function isLikeNone(x) {
+      return x === void 0 || x === null;
+    }
+    var cachedDataViewMemory0 = null;
+    function getDataViewMemory0() {
+      if (cachedDataViewMemory0 === null || cachedDataViewMemory0.buffer.detached === true || cachedDataViewMemory0.buffer.detached === void 0 && cachedDataViewMemory0.buffer !== wasm.memory.buffer) {
+        cachedDataViewMemory0 = new DataView(wasm.memory.buffer);
+      }
+      return cachedDataViewMemory0;
+    }
+    var WASM_VECTOR_LEN = 0;
+    var cachedUint8ArrayMemory0 = null;
+    function getUint8ArrayMemory0() {
+      if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0) {
+        cachedUint8ArrayMemory0 = new Uint8Array(wasm.memory.buffer);
+      }
+      return cachedUint8ArrayMemory0;
+    }
+    var cachedTextEncoder = new TextEncoder("utf-8");
+    var encodeString = typeof cachedTextEncoder.encodeInto === "function" ? function(arg, view) {
+      return cachedTextEncoder.encodeInto(arg, view);
+    } : function(arg, view) {
+      const buf = cachedTextEncoder.encode(arg);
+      view.set(buf);
+      return {
+        read: arg.length,
+        written: buf.length
+      };
+    };
+    function passStringToWasm0(arg, malloc, realloc) {
+      if (realloc === void 0) {
+        const buf = cachedTextEncoder.encode(arg);
+        const ptr2 = malloc(buf.length, 1) >>> 0;
+        getUint8ArrayMemory0().subarray(ptr2, ptr2 + buf.length).set(buf);
+        WASM_VECTOR_LEN = buf.length;
+        return ptr2;
+      }
+      let len = arg.length;
+      let ptr = malloc(len, 1) >>> 0;
+      const mem = getUint8ArrayMemory0();
+      let offset = 0;
+      for (; offset < len; offset++) {
+        const code = arg.charCodeAt(offset);
+        if (code > 127) break;
+        mem[ptr + offset] = code;
+      }
+      if (offset !== len) {
+        if (offset !== 0) {
+          arg = arg.slice(offset);
+        }
+        ptr = realloc(ptr, len, len = offset + arg.length * 3, 1) >>> 0;
+        const view = getUint8ArrayMemory0().subarray(ptr + offset, ptr + len);
+        const ret = encodeString(arg, view);
+        offset += ret.written;
+        ptr = realloc(ptr, len, offset, 1) >>> 0;
+      }
+      WASM_VECTOR_LEN = offset;
+      return ptr;
+    }
+    function addHeapObject(obj) {
+      if (heap_next === heap.length) heap.push(heap.length + 1);
+      const idx = heap_next;
+      heap_next = heap[idx];
+      heap[idx] = obj;
+      return idx;
+    }
+    var cachedTextDecoder = new TextDecoder("utf-8", { ignoreBOM: true, fatal: true });
+    cachedTextDecoder.decode();
+    function getStringFromWasm0(ptr, len) {
+      ptr = ptr >>> 0;
+      return cachedTextDecoder.decode(getUint8ArrayMemory0().subarray(ptr, ptr + len));
+    }
+    function debugString(val) {
+      const type = typeof val;
+      if (type == "number" || type == "boolean" || val == null) {
+        return `${val}`;
+      }
+      if (type == "string") {
+        return `"${val}"`;
+      }
+      if (type == "symbol") {
+        const description = val.description;
+        if (description == null) {
+          return "Symbol";
+        } else {
+          return `Symbol(${description})`;
+        }
+      }
+      if (type == "function") {
+        const name2 = val.name;
+        if (typeof name2 == "string" && name2.length > 0) {
+          return `Function(${name2})`;
+        } else {
+          return "Function";
+        }
+      }
+      if (Array.isArray(val)) {
+        const length = val.length;
+        let debug = "[";
+        if (length > 0) {
+          debug += debugString(val[0]);
+        }
+        for (let i = 1; i < length; i++) {
+          debug += ", " + debugString(val[i]);
+        }
+        debug += "]";
+        return debug;
+      }
+      const builtInMatches = /\[object ([^\]]+)\]/.exec(toString.call(val));
+      let className;
+      if (builtInMatches.length > 1) {
+        className = builtInMatches[1];
+      } else {
+        return toString.call(val);
+      }
+      if (className == "Object") {
+        try {
+          return "Object(" + JSON.stringify(val) + ")";
+        } catch (_) {
+          return "Object";
+        }
+      }
+      if (val instanceof Error) {
+        return `${val.name}: ${val.message}
+${val.stack}`;
+      }
+      return className;
+    }
+    module.exports.main = function() {
+      wasm.main();
+    };
+    function handleError(f, args) {
+      try {
+        return f.apply(this, args);
+      } catch (e) {
+        wasm.__wbindgen_exn_store(addHeapObject(e));
+      }
+    }
+    var DiagnosticPrinterFinalization = typeof FinalizationRegistry === "undefined" ? { register: () => {
+    }, unregister: () => {
+    } } : new FinalizationRegistry((ptr) => wasm.__wbg_diagnosticprinter_free(ptr >>> 0, 1));
+    var DiagnosticPrinter = class {
+      __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        DiagnosticPrinterFinalization.unregister(this);
+        return ptr;
+      }
+      free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_diagnosticprinter_free(ptr, 0);
+      }
+      /**
+      * @param {string} file_name
+      * @param {string} file_source
+      */
+      constructor(file_name, file_source) {
+        const ptr0 = passStringToWasm0(file_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(file_source, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.diagnosticprinter_new(ptr0, len0, ptr1, len1);
+        this.__wbg_ptr = ret >>> 0;
+        DiagnosticPrinterFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+      }
+      /**
+      * @param {Diagnostic} diagnostic
+      */
+      print_simple(diagnostic) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.diagnosticprinter_print_simple(retptr, this.__wbg_ptr, addHeapObject(diagnostic));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          if (r1) {
+            throw takeObject(r0);
+          }
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {Diagnostic} diagnostic
+      */
+      print_verbose(diagnostic) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.diagnosticprinter_print_verbose(retptr, this.__wbg_ptr, addHeapObject(diagnostic));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          if (r1) {
+            throw takeObject(r0);
+          }
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @returns {string}
+      */
+      finish() {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+          const ptr = this.__destroy_into_raw();
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.diagnosticprinter_finish(retptr, ptr);
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+          var ptr1 = r0;
+          var len1 = r1;
+          if (r3) {
+            ptr1 = 0;
+            len1 = 0;
+            throw takeObject(r2);
+          }
+          deferred2_0 = ptr1;
+          deferred2_1 = len1;
+          return getStringFromWasm0(ptr1, len1);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+          wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+      }
+    };
+    module.exports.DiagnosticPrinter = DiagnosticPrinter;
+    var WorkspaceFinalization = typeof FinalizationRegistry === "undefined" ? { register: () => {
+    }, unregister: () => {
+    } } : new FinalizationRegistry((ptr) => wasm.__wbg_workspace_free(ptr >>> 0, 1));
+    var Workspace = class {
+      __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        WorkspaceFinalization.unregister(this);
+        return ptr;
+      }
+      free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_workspace_free(ptr, 0);
+      }
+      /**
+      */
+      constructor() {
+        const ret = wasm.workspace_new();
+        this.__wbg_ptr = ret >>> 0;
+        WorkspaceFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+      }
+      /**
+      * @param {SupportsFeatureParams} params
+      * @returns {FileFeaturesResult}
+      */
+      fileFeatures(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_fileFeatures(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          if (r2) {
+            throw takeObject(r1);
+          }
+          return takeObject(r0);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {UpdateSettingsParams} params
+      */
+      updateSettings(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_updateSettings(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          if (r1) {
+            throw takeObject(r0);
+          }
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {RegisterProjectFolderParams} params
+      * @returns {ProjectKey}
+      */
+      registerProjectFolder(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_registerProjectFolder(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          if (r2) {
+            throw takeObject(r1);
+          }
+          return takeObject(r0);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {OpenFileParams} params
+      */
+      openFile(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_openFile(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          if (r1) {
+            throw takeObject(r0);
+          }
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {GetFileContentParams} params
+      * @returns {string}
+      */
+      getFileContent(params) {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_getFileContent(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+          var ptr1 = r0;
+          var len1 = r1;
+          if (r3) {
+            ptr1 = 0;
+            len1 = 0;
+            throw takeObject(r2);
+          }
+          deferred2_0 = ptr1;
+          deferred2_1 = len1;
+          return getStringFromWasm0(ptr1, len1);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+          wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+      }
+      /**
+      * @param {GetSyntaxTreeParams} params
+      * @returns {GetSyntaxTreeResult}
+      */
+      getSyntaxTree(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_getSyntaxTree(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          if (r2) {
+            throw takeObject(r1);
+          }
+          return takeObject(r0);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {GetControlFlowGraphParams} params
+      * @returns {string}
+      */
+      getControlFlowGraph(params) {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_getControlFlowGraph(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+          var ptr1 = r0;
+          var len1 = r1;
+          if (r3) {
+            ptr1 = 0;
+            len1 = 0;
+            throw takeObject(r2);
+          }
+          deferred2_0 = ptr1;
+          deferred2_1 = len1;
+          return getStringFromWasm0(ptr1, len1);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+          wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+      }
+      /**
+      * @param {GetFormatterIRParams} params
+      * @returns {string}
+      */
+      getFormatterIr(params) {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_getFormatterIr(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+          var ptr1 = r0;
+          var len1 = r1;
+          if (r3) {
+            ptr1 = 0;
+            len1 = 0;
+            throw takeObject(r2);
+          }
+          deferred2_0 = ptr1;
+          deferred2_1 = len1;
+          return getStringFromWasm0(ptr1, len1);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+          wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+      }
+      /**
+      * @param {ChangeFileParams} params
+      */
+      changeFile(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_changeFile(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          if (r1) {
+            throw takeObject(r0);
+          }
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {CloseFileParams} params
+      */
+      closeFile(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_closeFile(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          if (r1) {
+            throw takeObject(r0);
+          }
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {PullDiagnosticsParams} params
+      * @returns {PullDiagnosticsResult}
+      */
+      pullDiagnostics(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_pullDiagnostics(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          if (r2) {
+            throw takeObject(r1);
+          }
+          return takeObject(r0);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {PullActionsParams} params
+      * @returns {PullActionsResult}
+      */
+      pullActions(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_pullActions(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          if (r2) {
+            throw takeObject(r1);
+          }
+          return takeObject(r0);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {FormatFileParams} params
+      * @returns {any}
+      */
+      formatFile(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_formatFile(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          if (r2) {
+            throw takeObject(r1);
+          }
+          return takeObject(r0);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {FormatRangeParams} params
+      * @returns {any}
+      */
+      formatRange(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_formatRange(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          if (r2) {
+            throw takeObject(r1);
+          }
+          return takeObject(r0);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {FormatOnTypeParams} params
+      * @returns {any}
+      */
+      formatOnType(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_formatOnType(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          if (r2) {
+            throw takeObject(r1);
+          }
+          return takeObject(r0);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {FixFileParams} params
+      * @returns {FixFileResult}
+      */
+      fixFile(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_fixFile(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          if (r2) {
+            throw takeObject(r1);
+          }
+          return takeObject(r0);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {OrganizeImportsParams} params
+      * @returns {OrganizeImportsResult}
+      */
+      organizeImports(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_organizeImports(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          if (r2) {
+            throw takeObject(r1);
+          }
+          return takeObject(r0);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+      /**
+      * @param {RenameParams} params
+      * @returns {RenameResult}
+      */
+      rename(params) {
+        try {
+          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+          wasm.workspace_rename(retptr, this.__wbg_ptr, addHeapObject(params));
+          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+          if (r2) {
+            throw takeObject(r1);
+          }
+          return takeObject(r0);
+        } finally {
+          wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+      }
+    };
+    module.exports.Workspace = Workspace;
+    module.exports.__wbindgen_is_undefined = function(arg0) {
+      const ret = getObject(arg0) === void 0;
+      return ret;
+    };
+    module.exports.__wbindgen_in = function(arg0, arg1) {
+      const ret = getObject(arg0) in getObject(arg1);
+      return ret;
+    };
+    module.exports.__wbindgen_object_drop_ref = function(arg0) {
+      takeObject(arg0);
+    };
+    module.exports.__wbindgen_boolean_get = function(arg0) {
+      const v = getObject(arg0);
+      const ret = typeof v === "boolean" ? v ? 1 : 0 : 2;
+      return ret;
+    };
+    module.exports.__wbindgen_is_bigint = function(arg0) {
+      const ret = typeof getObject(arg0) === "bigint";
+      return ret;
+    };
+    module.exports.__wbindgen_number_get = function(arg0, arg1) {
+      const obj = getObject(arg1);
+      const ret = typeof obj === "number" ? obj : void 0;
+      getDataViewMemory0().setFloat64(arg0 + 8 * 1, isLikeNone(ret) ? 0 : ret, true);
+      getDataViewMemory0().setInt32(arg0 + 4 * 0, !isLikeNone(ret), true);
+    };
+    module.exports.__wbindgen_string_get = function(arg0, arg1) {
+      const obj = getObject(arg1);
+      const ret = typeof obj === "string" ? obj : void 0;
+      var ptr1 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len1 = WASM_VECTOR_LEN;
+      getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
+      getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
+    };
+    module.exports.__wbindgen_is_object = function(arg0) {
+      const val = getObject(arg0);
+      const ret = typeof val === "object" && val !== null;
+      return ret;
+    };
+    module.exports.__wbindgen_bigint_from_i64 = function(arg0) {
+      const ret = arg0;
+      return addHeapObject(ret);
+    };
+    module.exports.__wbindgen_jsval_eq = function(arg0, arg1) {
+      const ret = getObject(arg0) === getObject(arg1);
+      return ret;
+    };
+    module.exports.__wbindgen_bigint_from_u64 = function(arg0) {
+      const ret = BigInt.asUintN(64, arg0);
+      return addHeapObject(ret);
+    };
+    module.exports.__wbindgen_error_new = function(arg0, arg1) {
+      const ret = new Error(getStringFromWasm0(arg0, arg1));
+      return addHeapObject(ret);
+    };
+    module.exports.__wbindgen_is_string = function(arg0) {
+      const ret = typeof getObject(arg0) === "string";
+      return ret;
+    };
+    module.exports.__wbindgen_as_number = function(arg0) {
+      const ret = +getObject(arg0);
+      return ret;
+    };
+    module.exports.__wbindgen_object_clone_ref = function(arg0) {
+      const ret = getObject(arg0);
+      return addHeapObject(ret);
+    };
+    module.exports.__wbindgen_jsval_loose_eq = function(arg0, arg1) {
+      const ret = getObject(arg0) == getObject(arg1);
+      return ret;
+    };
+    module.exports.__wbg_String_b9412f8799faab3e = function(arg0, arg1) {
+      const ret = String(getObject(arg1));
+      const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      const len1 = WASM_VECTOR_LEN;
+      getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
+      getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
+    };
+    module.exports.__wbindgen_number_new = function(arg0) {
+      const ret = arg0;
+      return addHeapObject(ret);
+    };
+    module.exports.__wbindgen_string_new = function(arg0, arg1) {
+      const ret = getStringFromWasm0(arg0, arg1);
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_getwithrefkey_edc2c8960f0f1191 = function(arg0, arg1) {
+      const ret = getObject(arg0)[getObject(arg1)];
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_set_f975102236d3c502 = function(arg0, arg1, arg2) {
+      getObject(arg0)[takeObject(arg1)] = takeObject(arg2);
+    };
+    module.exports.__wbg_new_abda76e883ba8a5f = function() {
+      const ret = new Error();
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_stack_658279fe44541cf6 = function(arg0, arg1) {
+      const ret = getObject(arg1).stack;
+      const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      const len1 = WASM_VECTOR_LEN;
+      getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
+      getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
+    };
+    module.exports.__wbg_error_f851667af71bcfc6 = function(arg0, arg1) {
+      let deferred0_0;
+      let deferred0_1;
+      try {
+        deferred0_0 = arg0;
+        deferred0_1 = arg1;
+        console.error(getStringFromWasm0(arg0, arg1));
+      } finally {
+        wasm.__wbindgen_free(deferred0_0, deferred0_1, 1);
+      }
+    };
+    module.exports.__wbindgen_is_function = function(arg0) {
+      const ret = typeof getObject(arg0) === "function";
+      return ret;
+    };
+    module.exports.__wbg_get_3baa728f9d58d3f6 = function(arg0, arg1) {
+      const ret = getObject(arg0)[arg1 >>> 0];
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_length_ae22078168b726f5 = function(arg0) {
+      const ret = getObject(arg0).length;
+      return ret;
+    };
+    module.exports.__wbg_new_a220cf903aa02ca2 = function() {
+      const ret = new Array();
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_new_8608a2b51a5f6737 = function() {
+      const ret = /* @__PURE__ */ new Map();
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_next_de3e9db4440638b2 = function(arg0) {
+      const ret = getObject(arg0).next;
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_next_f9cb570345655b9a = function() {
+      return handleError(function(arg0) {
+        const ret = getObject(arg0).next();
+        return addHeapObject(ret);
+      }, arguments);
+    };
+    module.exports.__wbg_done_bfda7aa8f252b39f = function(arg0) {
+      const ret = getObject(arg0).done;
+      return ret;
+    };
+    module.exports.__wbg_value_6d39332ab4788d86 = function(arg0) {
+      const ret = getObject(arg0).value;
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_iterator_888179a48810a9fe = function() {
+      const ret = Symbol.iterator;
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_get_224d16597dbbfd96 = function() {
+      return handleError(function(arg0, arg1) {
+        const ret = Reflect.get(getObject(arg0), getObject(arg1));
+        return addHeapObject(ret);
+      }, arguments);
+    };
+    module.exports.__wbg_call_1084a111329e68ce = function() {
+      return handleError(function(arg0, arg1) {
+        const ret = getObject(arg0).call(getObject(arg1));
+        return addHeapObject(ret);
+      }, arguments);
+    };
+    module.exports.__wbg_new_525245e2b9901204 = function() {
+      const ret = new Object();
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_set_673dda6c73d19609 = function(arg0, arg1, arg2) {
+      getObject(arg0)[arg1 >>> 0] = takeObject(arg2);
+    };
+    module.exports.__wbg_isArray_8364a5371e9737d8 = function(arg0) {
+      const ret = Array.isArray(getObject(arg0));
+      return ret;
+    };
+    module.exports.__wbg_instanceof_ArrayBuffer_61dfc3198373c902 = function(arg0) {
+      let result;
+      try {
+        result = getObject(arg0) instanceof ArrayBuffer;
+      } catch (_) {
+        result = false;
+      }
+      const ret = result;
+      return ret;
+    };
+    module.exports.__wbg_new_796382978dfd4fb0 = function(arg0, arg1) {
+      const ret = new Error(getStringFromWasm0(arg0, arg1));
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_instanceof_Map_763ce0e95960d55e = function(arg0) {
+      let result;
+      try {
+        result = getObject(arg0) instanceof Map;
+      } catch (_) {
+        result = false;
+      }
+      const ret = result;
+      return ret;
+    };
+    module.exports.__wbg_set_49185437f0ab06f8 = function(arg0, arg1, arg2) {
+      const ret = getObject(arg0).set(getObject(arg1), getObject(arg2));
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_isSafeInteger_7f1ed56200d90674 = function(arg0) {
+      const ret = Number.isSafeInteger(getObject(arg0));
+      return ret;
+    };
+    module.exports.__wbg_entries_7a0e06255456ebcd = function(arg0) {
+      const ret = Object.entries(getObject(arg0));
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_buffer_b7b08af79b0b0974 = function(arg0) {
+      const ret = getObject(arg0).buffer;
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_new_ea1883e1e5e86686 = function(arg0) {
+      const ret = new Uint8Array(getObject(arg0));
+      return addHeapObject(ret);
+    };
+    module.exports.__wbg_set_d1e79e2388520f18 = function(arg0, arg1, arg2) {
+      getObject(arg0).set(getObject(arg1), arg2 >>> 0);
+    };
+    module.exports.__wbg_length_8339fcf5d8ecd12e = function(arg0) {
+      const ret = getObject(arg0).length;
+      return ret;
+    };
+    module.exports.__wbg_instanceof_Uint8Array_247a91427532499e = function(arg0) {
+      let result;
+      try {
+        result = getObject(arg0) instanceof Uint8Array;
+      } catch (_) {
+        result = false;
+      }
+      const ret = result;
+      return ret;
+    };
+    module.exports.__wbindgen_bigint_get_as_i64 = function(arg0, arg1) {
+      const v = getObject(arg1);
+      const ret = typeof v === "bigint" ? v : void 0;
+      getDataViewMemory0().setBigInt64(arg0 + 8 * 1, isLikeNone(ret) ? BigInt(0) : ret, true);
+      getDataViewMemory0().setInt32(arg0 + 4 * 0, !isLikeNone(ret), true);
+    };
+    module.exports.__wbindgen_debug_string = function(arg0, arg1) {
+      const ret = debugString(getObject(arg1));
+      const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      const len1 = WASM_VECTOR_LEN;
+      getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
+      getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
+    };
+    module.exports.__wbindgen_throw = function(arg0, arg1) {
+      throw new Error(getStringFromWasm0(arg0, arg1));
+    };
+    module.exports.__wbindgen_memory = function() {
+      const ret = wasm.memory;
+      return addHeapObject(ret);
+    };
+    var path6 = __require("path").join(__dirname, "biome_wasm_bg.wasm");
+    var bytes = __require("fs").readFileSync(path6);
+    var wasmModule = new WebAssembly.Module(bytes);
+    var wasmInstance = new WebAssembly.Instance(wasmModule, imports);
+    wasm = wasmInstance.exports;
+    module.exports.__wasm = wasm;
+    wasm.__wbindgen_start();
+  }
+});
+
+// ../../node_modules/.pnpm/@biomejs+js-api@0.7.1_@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/js-api/dist/wasm.js
+var require_wasm = __commonJS({
+  "../../node_modules/.pnpm/@biomejs+js-api@0.7.1_@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/js-api/dist/wasm.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    } : function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    } : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Distribution = void 0;
+    exports.loadModule = loadModule;
+    exports.wrapError = wrapError;
+    var Distribution2;
+    (function(Distribution3) {
+      Distribution3[Distribution3["BUNDLER"] = 0] = "BUNDLER";
+      Distribution3[Distribution3["NODE"] = 1] = "NODE";
+      Distribution3[Distribution3["WEB"] = 2] = "WEB";
+    })(Distribution2 || (exports.Distribution = Distribution2 = {}));
+    var isInitialized = {
+      [Distribution2.BUNDLER]: false,
+      [Distribution2.NODE]: false,
+      [Distribution2.WEB]: false
+    };
+    async function loadModule(dist) {
+      let modulePromise;
+      switch (dist) {
+        case Distribution2.BUNDLER: {
+          modulePromise = Promise.resolve().then(() => __importStar(__require("@biomejs/wasm-bundler")));
+          break;
+        }
+        case Distribution2.NODE: {
+          modulePromise = Promise.resolve().then(() => __importStar(require_biome_wasm()));
+          break;
+        }
+        case Distribution2.WEB: {
+          modulePromise = Promise.resolve().then(() => __importStar(__require("@biomejs/wasm-web")));
+          break;
+        }
+      }
+      const module2 = await modulePromise;
+      if (!isInitialized[dist]) {
+        isInitialized[dist] = true;
+        module2.main();
+      }
+      return module2;
+    }
+    var WasmError = class _WasmError extends Error {
+      constructor(stackTrace) {
+        super();
+        this.stackTrace = stackTrace;
+      }
+      static fromError(e) {
+        return new _WasmError(e);
+      }
+    };
+    function wrapError(e) {
+      return WasmError.fromError(e);
+    }
+  }
+});
+
+// ../../node_modules/.pnpm/@biomejs+js-api@0.7.1_@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/js-api/dist/index.js
+var require_dist = __commonJS({
+  "../../node_modules/.pnpm/@biomejs+js-api@0.7.1_@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/js-api/dist/index.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Biome = exports.Distribution = void 0;
+    var wasm_1 = require_wasm();
+    Object.defineProperty(exports, "Distribution", { enumerable: true, get: function() {
+      return wasm_1.Distribution;
+    } });
+    function isFormatContentDebug(options) {
+      return "debug" in options && options.debug !== void 0;
+    }
+    var Biome2 = class _Biome {
+      constructor(module2, workspace) {
+        this.module = module2;
+        this.workspace = workspace;
+      }
+      /**
+       * It creates a new instance of the class {Biome}.
+       */
+      static async create(options) {
+        const module2 = await (0, wasm_1.loadModule)(options.distribution);
+        const workspace = new module2.Workspace();
+        const biome2 = new _Biome(module2, workspace);
+        biome2.registerProjectFolder();
+        return biome2;
+      }
+      /**
+       * Stop this instance of Biome
+       *
+       * After calling `shutdown()` on this object, it should be considered
+       * unusable as calling any method on it will fail
+       */
+      shutdown() {
+        this.workspace.free();
+      }
+      /**
+       * Allows to apply a custom configuration.
+       *
+       * If fails when the configuration is incorrect.
+       *
+       * @param configuration
+       */
+      applyConfiguration(configuration) {
+        try {
+          this.workspace.updateSettings({
+            configuration,
+            gitignore_matches: [],
+            workspace_directory: "./"
+          });
+        } catch (e) {
+          throw (0, wasm_1.wrapError)(e);
+        }
+      }
+      registerProjectFolder(path6) {
+        this.workspace.registerProjectFolder({
+          path: path6,
+          setAsCurrentWorkspace: true
+        });
+      }
+      tryCatchWrapper(func) {
+        try {
+          return func();
+        } catch (err) {
+          throw (0, wasm_1.wrapError)(err);
+        }
+      }
+      withFile(path6, content, func) {
+        return this.tryCatchWrapper(() => {
+          const biomePath = {
+            path: path6,
+            was_written: false,
+            kind: ["Handleable"]
+          };
+          this.workspace.openFile({
+            content,
+            version: 0,
+            path: biomePath
+          });
+          try {
+            return func(biomePath);
+          } finally {
+            this.workspace.closeFile({
+              path: biomePath
+            });
+          }
+        });
+      }
+      /**
+       * If formats some content.
+       *
+       * @param {String} content The content to format
+       * @param {FormatContentOptions | FormatContentDebugOptions} options Options needed when formatting some content
+       */
+      formatContent(content, options) {
+        return this.withFile(options.filePath, content, (path6) => {
+          let code = content;
+          const { diagnostics } = this.workspace.pullDiagnostics({
+            path: path6,
+            categories: ["Syntax"],
+            max_diagnostics: Number.MAX_SAFE_INTEGER,
+            only: [],
+            skip: []
+          });
+          const hasErrors = diagnostics.some((diag) => diag.severity === "fatal" || diag.severity === "error");
+          if (!hasErrors) {
+            if (options.range) {
+              const result = this.workspace.formatRange({
+                path: path6,
+                range: options.range
+              });
+              code = result.code;
+            } else {
+              const result = this.workspace.formatFile({
+                path: path6
+              });
+              code = result.code;
+            }
+            if (isFormatContentDebug(options)) {
+              const ir = this.workspace.getFormatterIr({
+                path: path6
+              });
+              return {
+                content: code,
+                diagnostics,
+                ir
+              };
+            }
+          }
+          return {
+            content: code,
+            diagnostics
+          };
+        });
+      }
+      /**
+       * Lint the content of a file.
+       *
+       * @param {String} content The content to lint
+       * @param {LintContentOptions} options Options needed when linting some content
+       */
+      lintContent(content, { filePath, fixFileMode }) {
+        const maybeFixedContent = fixFileMode ? this.withFile(filePath, content, (path6) => {
+          let code = content;
+          const result = this.workspace.fixFile({
+            path: path6,
+            fix_file_mode: fixFileMode,
+            should_format: false,
+            only: [],
+            skip: [],
+            rule_categories: ["Syntax", "Lint"]
+          });
+          code = result.code;
+          return code;
+        }) : content;
+        return this.withFile(filePath, maybeFixedContent, (path6) => {
+          const { diagnostics } = this.workspace.pullDiagnostics({
+            path: path6,
+            categories: ["Syntax", "Lint"],
+            max_diagnostics: Number.MAX_SAFE_INTEGER,
+            only: [],
+            skip: []
+          });
+          return {
+            content: maybeFixedContent,
+            diagnostics
+          };
+        });
+      }
+      /**
+       * Print a list of diagnostics to an HTML string.
+       *
+       * @param {Diagnostic[]} diagnostics The list of diagnostics to print
+       * @param {PrintDiagnosticsOptions} options Options needed for printing the diagnostics
+       */
+      printDiagnostics(diagnostics, options) {
+        return this.tryCatchWrapper(() => {
+          const printer = new this.module.DiagnosticPrinter(options.filePath, options.fileSource);
+          try {
+            for (const diag of diagnostics) {
+              if (options.verbose) {
+                printer.print_verbose(diag);
+              } else {
+                printer.print_simple(diag);
+              }
+            }
+            return printer.finish();
+          } catch (err) {
+            printer.free();
+            throw err;
+          }
+        });
+      }
+    };
+    exports.Biome = Biome2;
+  }
+});
+
 // ../../node_modules/.pnpm/yargs@17.7.2/node_modules/yargs/build/lib/yerror.js
 var YError = class _YError extends Error {
   constructor(msg) {
@@ -1285,11 +2475,11 @@ var parser = new YargsParser({
   resolve,
   // TODO: figure  out a  way to combine ESM and CJS coverage, such  that
   // we can exercise all the lines below:
-  require: (path3) => {
+  require: (path6) => {
     if (typeof __require !== "undefined") {
-      return __require(path3);
-    } else if (path3.match(/\.json$/)) {
-      return JSON.parse(readFileSync(path3, "utf8"));
+      return __require(path6);
+    } else if (path6.match(/\.json$/)) {
+      return JSON.parse(readFileSync(path6, "utf8"));
     } else {
       throw Error("only .json config files are supported in ESM");
     }
@@ -1811,13 +3001,13 @@ var y18n_default = y18n2;
 // ../../node_modules/.pnpm/yargs@17.7.2/node_modules/yargs/lib/platform-shims/esm.mjs
 var REQUIRE_ERROR = "require is not supported by ESM";
 var REQUIRE_DIRECTORY_ERROR = "loading a directory of commands is not supported yet for ESM";
-var __dirname;
+var __dirname2;
 try {
-  __dirname = fileURLToPath(import.meta.url);
+  __dirname2 = fileURLToPath(import.meta.url);
 } catch (e) {
-  __dirname = process.cwd();
+  __dirname2 = process.cwd();
 }
-var mainFilename = __dirname.substring(0, __dirname.lastIndexOf("node_modules"));
+var mainFilename = __dirname2.substring(0, __dirname2.lastIndexOf("node_modules"));
 var esm_default = {
   assert: {
     notStrictEqual,
@@ -1862,7 +3052,7 @@ var esm_default = {
     return [...str].length;
   },
   y18n: y18n_default({
-    directory: resolve4(__dirname, "../../../locales"),
+    directory: resolve4(__dirname2, "../../../locales"),
     updateFiles: false
   })
 };
@@ -4042,12 +5232,12 @@ var YargsInstance = class {
   async getCompletion(args, done) {
     argsert("<array> [function]", [args, done], arguments.length);
     if (!done) {
-      return new Promise((resolve5, reject) => {
+      return new Promise((resolve6, reject) => {
         __classPrivateFieldGet(this, _YargsInstance_completion, "f").getCompletion(args, (err, completions) => {
           if (err)
             reject(err);
           else
-            resolve5(completions);
+            resolve6(completions);
         });
       });
     } else {
@@ -8524,10 +9714,10 @@ var Minipass = class extends EventEmitter {
    * Return a void Promise that resolves once the stream ends.
    */
   async promise() {
-    return new Promise((resolve5, reject) => {
+    return new Promise((resolve6, reject) => {
       this.on(DESTROYED, () => reject(new Error("stream destroyed")));
       this.on("error", (er) => reject(er));
-      this.on("end", () => resolve5());
+      this.on("end", () => resolve6());
     });
   }
   /**
@@ -8551,7 +9741,7 @@ var Minipass = class extends EventEmitter {
         return Promise.resolve({ done: false, value: res });
       if (this[EOF])
         return stop();
-      let resolve5;
+      let resolve6;
       let reject;
       const onerr = (er) => {
         this.off("data", ondata);
@@ -8565,19 +9755,19 @@ var Minipass = class extends EventEmitter {
         this.off("end", onend);
         this.off(DESTROYED, ondestroy);
         this.pause();
-        resolve5({ value, done: !!this[EOF] });
+        resolve6({ value, done: !!this[EOF] });
       };
       const onend = () => {
         this.off("error", onerr);
         this.off("data", ondata);
         this.off(DESTROYED, ondestroy);
         stop();
-        resolve5({ done: true, value: void 0 });
+        resolve6({ done: true, value: void 0 });
       };
       const ondestroy = () => onerr(new Error("stream destroyed"));
       return new Promise((res2, rej) => {
         reject = rej;
-        resolve5 = res2;
+        resolve6 = res2;
         this.once(DESTROYED, ondestroy);
         this.once("error", onerr);
         this.once("end", onend);
@@ -8938,12 +10128,12 @@ var PathBase = class {
   /**
    * Get the Path object referenced by the string path, resolved from this Path
    */
-  resolve(path3) {
-    if (!path3) {
+  resolve(path6) {
+    if (!path6) {
       return this;
     }
-    const rootPath = this.getRootString(path3);
-    const dir = path3.substring(rootPath.length);
+    const rootPath = this.getRootString(path6);
+    const dir = path6.substring(rootPath.length);
     const dirParts = dir.split(this.splitSep);
     const result = rootPath ? this.getRoot(rootPath).#resolveParts(dirParts) : this.#resolveParts(dirParts);
     return result;
@@ -9261,8 +10451,8 @@ var PathBase = class {
       return void 0;
     }
     try {
-      const read = await this.#fs.promises.readlink(this.fullpath());
-      const linkTarget = (await this.parent.realpath())?.resolve(read);
+      const read2 = await this.#fs.promises.readlink(this.fullpath());
+      const linkTarget = (await this.parent.realpath())?.resolve(read2);
       if (linkTarget) {
         return this.#linkTarget = linkTarget;
       }
@@ -9286,8 +10476,8 @@ var PathBase = class {
       return void 0;
     }
     try {
-      const read = this.#fs.readlinkSync(this.fullpath());
-      const linkTarget = this.parent.realpathSync()?.resolve(read);
+      const read2 = this.#fs.readlinkSync(this.fullpath());
+      const linkTarget = this.parent.realpathSync()?.resolve(read2);
       if (linkTarget) {
         return this.#linkTarget = linkTarget;
       }
@@ -9547,9 +10737,9 @@ var PathBase = class {
     if (this.#asyncReaddirInFlight) {
       await this.#asyncReaddirInFlight;
     } else {
-      let resolve5 = () => {
+      let resolve6 = () => {
       };
-      this.#asyncReaddirInFlight = new Promise((res) => resolve5 = res);
+      this.#asyncReaddirInFlight = new Promise((res) => resolve6 = res);
       try {
         for (const e of await this.#fs.promises.readdir(fullpath, {
           withFileTypes: true
@@ -9562,7 +10752,7 @@ var PathBase = class {
         children.provisional = 0;
       }
       this.#asyncReaddirInFlight = void 0;
-      resolve5();
+      resolve6();
     }
     return children.slice(0, children.provisional);
   }
@@ -9695,8 +10885,8 @@ var PathWin32 = class _PathWin32 extends PathBase {
   /**
    * @internal
    */
-  getRootString(path3) {
-    return win32.parse(path3).root;
+  getRootString(path6) {
+    return win32.parse(path6).root;
   }
   /**
    * @internal
@@ -9742,8 +10932,8 @@ var PathPosix = class _PathPosix extends PathBase {
   /**
    * @internal
    */
-  getRootString(path3) {
-    return path3.startsWith("/") ? "/" : "";
+  getRootString(path6) {
+    return path6.startsWith("/") ? "/" : "";
   }
   /**
    * @internal
@@ -9792,8 +10982,8 @@ var PathScurryBase = class {
    *
    * @internal
    */
-  constructor(cwd = process.cwd(), pathImpl, sep2, { nocase, childrenCacheSize = 16 * 1024, fs: fs2 = defaultFS } = {}) {
-    this.#fs = fsFromOption(fs2);
+  constructor(cwd = process.cwd(), pathImpl, sep2, { nocase, childrenCacheSize = 16 * 1024, fs: fs3 = defaultFS } = {}) {
+    this.#fs = fsFromOption(fs3);
     if (cwd instanceof URL || cwd.startsWith("file://")) {
       cwd = fileURLToPath2(cwd);
     }
@@ -9832,11 +11022,11 @@ var PathScurryBase = class {
   /**
    * Get the depth of a provided path, string, or the cwd
    */
-  depth(path3 = this.cwd) {
-    if (typeof path3 === "string") {
-      path3 = this.cwd.resolve(path3);
+  depth(path6 = this.cwd) {
+    if (typeof path6 === "string") {
+      path6 = this.cwd.resolve(path6);
     }
-    return path3.depth();
+    return path6.depth();
   }
   /**
    * Return the cache of child entries.  Exposed so subclasses can create
@@ -10215,7 +11405,7 @@ var PathScurryBase = class {
     const dirs = /* @__PURE__ */ new Set();
     const queue = [entry];
     let processing = 0;
-    const process2 = () => {
+    const process3 = () => {
       let paused = false;
       while (!paused) {
         const dir = queue.shift();
@@ -10256,9 +11446,9 @@ var PathScurryBase = class {
             }
           }
           if (paused && !results.flowing) {
-            results.once("drain", process2);
+            results.once("drain", process3);
           } else if (!sync2) {
-            process2();
+            process3();
           }
         };
         let sync2 = true;
@@ -10266,7 +11456,7 @@ var PathScurryBase = class {
         sync2 = false;
       }
     };
-    process2();
+    process3();
     return results;
   }
   streamSync(entry = this.cwd, opts = {}) {
@@ -10284,7 +11474,7 @@ var PathScurryBase = class {
     }
     const queue = [entry];
     let processing = 0;
-    const process2 = () => {
+    const process3 = () => {
       let paused = false;
       while (!paused) {
         const dir = queue.shift();
@@ -10318,14 +11508,14 @@ var PathScurryBase = class {
         }
       }
       if (paused && !results.flowing)
-        results.once("drain", process2);
+        results.once("drain", process3);
     };
-    process2();
+    process3();
     return results;
   }
-  chdir(path3 = this.cwd) {
+  chdir(path6 = this.cwd) {
     const oldCwd = this.cwd;
-    this.cwd = typeof path3 === "string" ? this.cwd.resolve(path3) : path3;
+    this.cwd = typeof path6 === "string" ? this.cwd.resolve(path6) : path6;
     this.cwd[setAsCwd](oldCwd);
   }
 };
@@ -10351,8 +11541,8 @@ var PathScurryWin32 = class extends PathScurryBase {
   /**
    * @internal
    */
-  newRoot(fs2) {
-    return new PathWin32(this.rootPath, IFDIR, void 0, this.roots, this.nocase, this.childrenCache(), { fs: fs2 });
+  newRoot(fs3) {
+    return new PathWin32(this.rootPath, IFDIR, void 0, this.roots, this.nocase, this.childrenCache(), { fs: fs3 });
   }
   /**
    * Return true if the provided path string is an absolute path
@@ -10380,8 +11570,8 @@ var PathScurryPosix = class extends PathScurryBase {
   /**
    * @internal
    */
-  newRoot(fs2) {
-    return new PathPosix(this.rootPath, IFDIR, void 0, this.roots, this.nocase, this.childrenCache(), { fs: fs2 });
+  newRoot(fs3) {
+    return new PathPosix(this.rootPath, IFDIR, void 0, this.roots, this.nocase, this.childrenCache(), { fs: fs3 });
   }
   /**
    * Return true if the provided path string is an absolute path
@@ -10681,8 +11871,8 @@ var MatchRecord = class {
   }
   // match, absolute, ifdir
   entries() {
-    return [...this.store.entries()].map(([path3, n]) => [
-      path3,
+    return [...this.store.entries()].map(([path6, n]) => [
+      path6,
       !!(n & 2),
       !!(n & 1)
     ]);
@@ -10887,9 +12077,9 @@ var GlobUtil = class {
   signal;
   maxDepth;
   includeChildMatches;
-  constructor(patterns, path3, opts) {
+  constructor(patterns, path6, opts) {
     this.patterns = patterns;
-    this.path = path3;
+    this.path = path6;
     this.opts = opts;
     this.#sep = !opts.posix && opts.platform === "win32" ? "\\" : "/";
     this.includeChildMatches = opts.includeChildMatches !== false;
@@ -10908,11 +12098,11 @@ var GlobUtil = class {
       });
     }
   }
-  #ignored(path3) {
-    return this.seen.has(path3) || !!this.#ignore?.ignored?.(path3);
+  #ignored(path6) {
+    return this.seen.has(path6) || !!this.#ignore?.ignored?.(path6);
   }
-  #childrenIgnored(path3) {
-    return !!this.#ignore?.childrenIgnored?.(path3);
+  #childrenIgnored(path6) {
+    return !!this.#ignore?.childrenIgnored?.(path6);
   }
   // backpressure mechanism
   pause() {
@@ -11127,8 +12317,8 @@ var GlobUtil = class {
 };
 var GlobWalker = class extends GlobUtil {
   matches = /* @__PURE__ */ new Set();
-  constructor(patterns, path3, opts) {
-    super(patterns, path3, opts);
+  constructor(patterns, path6, opts) {
+    super(patterns, path6, opts);
   }
   matchEmit(e) {
     this.matches.add(e);
@@ -11165,8 +12355,8 @@ var GlobWalker = class extends GlobUtil {
 };
 var GlobStream = class extends GlobUtil {
   results;
-  constructor(patterns, path3, opts) {
-    super(patterns, path3, opts);
+  constructor(patterns, path6, opts) {
+    super(patterns, path6, opts);
     this.results = new Minipass({
       signal: this.signal,
       objectMode: true
@@ -11460,8 +12650,8 @@ var glob = Object.assign(glob_, {
 glob.glob = glob;
 
 // src/PackageWesl.ts
-import fs, { mkdir } from "node:fs/promises";
-import path2 from "node:path";
+import fs2, { mkdir } from "node:fs/promises";
+import path5 from "node:path";
 
 // ../mini-parse/src/Assertions.ts
 function assertThat(condition, msg) {
@@ -11523,6 +12713,9 @@ function withParserLogger(logFn, fn2) {
 }
 
 // ../mini-parse/src/ParserLogging.ts
+function srcLog(src, pos, ...msgs) {
+  logInternal(log, src, pos, ...msgs);
+}
 function quotedText(text2) {
   return text2 ? `'${text2.replace(/\n/g, "\\n")}'` : "";
 }
@@ -12324,6 +13517,49 @@ function toParser(p, toParserFn) {
   );
 }
 
+// ../mini-parse/src/stream/CachingStream.ts
+var CachingStream = class {
+  constructor(inner) {
+    this.inner = inner;
+    this.cache = new Cache(5);
+  }
+  checkpoint() {
+    return this.inner.checkpoint();
+  }
+  reset(position) {
+    this.inner.reset(position);
+  }
+  nextToken() {
+    const startPos = this.checkpoint();
+    const cachedValue = this.cache.get(startPos);
+    if (cachedValue !== void 0) {
+      this.reset(cachedValue.checkpoint);
+      return cachedValue.token;
+    } else {
+      const token2 = this.inner.nextToken();
+      const checkpoint = this.checkpoint();
+      this.cache.set(startPos, { token: token2, checkpoint });
+      return token2;
+    }
+  }
+  get src() {
+    return this.inner.src;
+  }
+};
+var Cache = class extends Map {
+  constructor(max) {
+    super();
+    this.max = max;
+  }
+  set(k, v) {
+    if (this.size > this.max) {
+      const first = this.keys().next().value;
+      if (first) this.delete(first);
+    }
+    return super.set(k, v);
+  }
+};
+
 // ../mini-parse/src/stream/RegexHelpers.ts
 function toRegexSource(nameExp) {
   const [name2, e] = nameExp;
@@ -12356,6 +13592,28 @@ function matchOneOf(syms) {
 }
 
 // ../mini-parse/src/stream/MatchersStream.ts
+var MatchersStream = class {
+  constructor(text2, matchers) {
+    this.text = text2;
+    this.matchers = matchers;
+    this.position = 0;
+  }
+  checkpoint() {
+    return this.position;
+  }
+  reset(position) {
+    this.position = position;
+  }
+  nextToken() {
+    const result = this.matchers.execAt(this.text, this.position);
+    if (result === null) return null;
+    this.position = result.span[1];
+    return result;
+  }
+  get src() {
+    return this.text;
+  }
+};
 var RegexMatchers = class {
   constructor(matchers) {
     this.groups = Object.keys(matchers);
@@ -12399,6 +13657,8 @@ function assertThat2(condition, msg) {
 function assertThatDebug(condition, msg) {
   tracing && assertThat2(condition, msg);
 }
+function assertUnreachableSilent(_value) {
+}
 function assertUnreachable(value) {
   throw new ErrorWithData("Unreachable value", { data: value });
 }
@@ -12410,6 +13670,9 @@ var ErrorWithData = class extends Error {
 };
 
 // ../wesl/src/Util.ts
+function last2(a) {
+  return a[a.length - 1];
+}
 function filterMap(arr, fn2) {
   const out = [];
   for (const t of arr) {
@@ -12417,6 +13680,94 @@ function filterMap(arr, fn2) {
     if (u) out.push(u);
   }
   return out;
+}
+function findMap(arr, fn2) {
+  for (const t of arr) {
+    const u = fn2(t);
+    if (u) return u;
+  }
+  return void 0;
+}
+function offsetToLineNumber(offset, text2) {
+  offset = Math.min(text2.length, Math.max(0, offset));
+  let lineStartOffset = 0;
+  let lineNum = 1;
+  while (true) {
+    const lineEnd = text2.indexOf("\n", lineStartOffset);
+    if (lineEnd === -1 || offset <= lineEnd) {
+      const linePos = 1 + (offset - lineStartOffset);
+      return [lineNum, linePos];
+    } else {
+      lineStartOffset = lineEnd + 1;
+      lineNum += 1;
+    }
+  }
+}
+function errorHighlight(source, span2) {
+  let lineStartOffset = source.lastIndexOf("\n", span2[0]);
+  if (lineStartOffset === -1) {
+    lineStartOffset = 0;
+  }
+  let lineEndOffset = source.indexOf("\n", span2[0]);
+  if (lineEndOffset === -1) {
+    lineEndOffset = source.length;
+  }
+  const errorLength = span2[1] - span2[0];
+  const caretCount = Math.max(1, errorLength);
+  const linePos = span2[0] - lineStartOffset;
+  return [
+    source.slice(lineStartOffset, lineEndOffset),
+    " ".repeat(linePos) + "^".repeat(caretCount)
+  ];
+}
+
+// ../wesl/src/Conditions.ts
+function elementValid(elem, conditions) {
+  const attributes = elem.attributes;
+  if (!attributes) return true;
+  const ifAttr = findMap(attributes, extractIfAttribute);
+  return !ifAttr || evaluateIfAttribute(ifAttr, conditions);
+}
+function scopeValid(scope, conditions) {
+  const { ifAttribute } = scope;
+  if (!ifAttribute) return true;
+  const result = evaluateIfAttribute(ifAttribute, conditions);
+  return result;
+}
+function extractIfAttribute(elem) {
+  const { attribute } = elem;
+  return attribute.kind === "@if" ? attribute : void 0;
+}
+function evaluateIfAttribute(ifAttribute, conditions) {
+  return evaluateIfExpression(ifAttribute.param.expression, conditions);
+}
+function evaluateIfExpression(expression2, conditions) {
+  const { kind: kind2 } = expression2;
+  if (kind2 == "unary-expression") {
+    assertThatDebug(expression2.operator.value === "!");
+    return !evaluateIfExpression(expression2.expression, conditions);
+  } else if (kind2 == "binary-expression") {
+    const op = expression2.operator.value;
+    assertThatDebug(op === "||" || op === "&&");
+    const leftResult = evaluateIfExpression(expression2.left, conditions);
+    if (op === "||") {
+      return leftResult || evaluateIfExpression(expression2.right, conditions);
+    } else if (op === "&&") {
+      return leftResult && evaluateIfExpression(expression2.right, conditions);
+    } else {
+      assertUnreachable(op);
+    }
+  } else if (kind2 == "literal") {
+    const { value } = expression2;
+    assertThatDebug(value === "true" || value === "false");
+    return value === "true";
+  } else if (kind2 == "parenthesized-expression") {
+    return evaluateIfExpression(expression2.expression, conditions);
+  } else if (kind2 === "translate-time-feature") {
+    return conditions[expression2.name];
+  } else {
+    throw new Error(`unexpected @if expression ${JSON.stringify(expression2)}`);
+  }
 }
 
 // ../wesl/src/Scope.ts
@@ -12427,6 +13778,10 @@ function mergeScope(a, b) {
   assertThatDebug(!b.ifAttribute);
   a.contents = a.contents.concat(b.contents);
 }
+function resetScopeIds() {
+  scopeId = 0;
+  identId = 0;
+}
 var scopeId = 0;
 var identId = 0;
 function nextIdentId() {
@@ -12436,6 +13791,80 @@ function emptyScope(parent, kind2 = "scope") {
   const id = scopeId++;
   return { id, kind: kind2, parent, contents: [] };
 }
+function publicDecl(scope, name2, conditions) {
+  for (const elem of scope.contents) {
+    if (elem.kind === "decl" && elem.originalName === name2) {
+      return elem;
+    } else if (elem.kind === "partial" && scopeValid(elem, conditions)) {
+      const found = publicDecl(elem, name2, conditions);
+      if (found) return found;
+    }
+  }
+}
+
+// ../wesl/src/debug/ScopeToString.ts
+function identToString(ident2) {
+  if (!ident2) return JSON.stringify(ident2);
+  const { kind: kind2, originalName } = ident2;
+  const idStr = ident2.id ? `#${ident2.id}` : "";
+  if (kind2 === "ref") {
+    const ref = identToString(ident2.refersTo);
+    return `${originalName} ${idStr} -> ${ref}`;
+  } else {
+    const { mangledName } = ident2;
+    const mangled = mangledName ? `(${mangledName})` : "";
+    return `%${originalName}${mangled} ${idStr} `;
+  }
+}
+
+// ../wesl/src/LiveDeclarations.ts
+function makeLiveDecls(parent = null) {
+  return { decls: /* @__PURE__ */ new Map(), parent };
+}
+
+// ../wesl/src/Mangler.ts
+function minimalMangle(_d, _s, proposedName, globalNames) {
+  return minimallyMangledName(proposedName, globalNames);
+}
+function minimallyMangledName(proposedName, globalNames) {
+  let renamed = proposedName;
+  let conflicts = 0;
+  while (globalNames.has(renamed)) {
+    renamed = proposedName + conflicts++;
+  }
+  return renamed;
+}
+
+// ../wesl/src/FlattenTreeImport.ts
+function flattenTreeImport(imp) {
+  return recursiveResolve([], [], imp.segments, imp.finalSegment);
+  function recursiveResolve(resolvedImportPath, resolvedExportPath, remainingPath, finalSegment) {
+    if (remainingPath.length > 0) {
+      const [segment, ...rest] = remainingPath;
+      const importPath = [...resolvedImportPath, segment.name];
+      const modulePath = [...resolvedExportPath, segment.name];
+      return recursiveResolve(importPath, modulePath, rest, finalSegment);
+    } else if (finalSegment.kind === "import-collection") {
+      return finalSegment.subtrees.flatMap((elem) => {
+        return recursiveResolve(
+          resolvedImportPath,
+          resolvedExportPath,
+          elem.segments,
+          elem.finalSegment
+        );
+      });
+    } else if (finalSegment.kind === "import-item") {
+      const importPath = [
+        ...resolvedImportPath,
+        finalSegment.as ?? finalSegment.name
+      ];
+      const modulePath = [...resolvedExportPath, finalSegment.name];
+      return [{ importPath, modulePath }];
+    } else {
+      assertUnreachable(finalSegment);
+    }
+  }
+}
 
 // ../../node_modules/.pnpm/berry-pretty@0.0.5/node_modules/berry-pretty/dist/index.js
 var spaces = memoize((nesting) => {
@@ -12444,14 +13873,14 @@ var spaces = memoize((nesting) => {
 var defaultCallerSize = 20;
 var multiLinePad = "\n" + spaces(defaultCallerSize + 3);
 function memoize(fn2) {
-  const cache = /* @__PURE__ */ new Map();
+  const cache2 = /* @__PURE__ */ new Map();
   return function(...args) {
     const key = JSON.stringify(args);
-    if (cache.has(key)) {
-      return cache.get(key);
+    if (cache2.has(key)) {
+      return cache2.get(key);
     } else {
       const value = fn2(...args);
-      cache.set(key, value);
+      cache2.set(key, value);
       return value;
     }
   };
@@ -13022,6 +14451,166 @@ var weslMatcher = new RegexMatchers({
 function weslExtension(combinator) {
   return combinator;
 }
+var WeslStream = class {
+  constructor(src) {
+    this.src = src;
+    /** New line */
+    this.eolPattern = /[\n\v\f\u{0085}\u{2028}\u{2029}]|\r\n?/gu;
+    /** Block comments */
+    this.blockCommentPattern = /\/\*|\*\//g;
+    this.stream = new CachingStream(new MatchersStream(src, weslMatcher));
+  }
+  checkpoint() {
+    return this.stream.checkpoint();
+  }
+  reset(position) {
+    this.stream.reset(position);
+  }
+  nextToken() {
+    while (true) {
+      const token2 = this.stream.nextToken();
+      if (token2 === null) return null;
+      const kind2 = token2.kind;
+      if (kind2 === "blankspaces") {
+        continue;
+      } else if (kind2 === "commentStart") {
+        if (token2.text === "//") {
+          this.stream.reset(this.skipToEol(token2.span[1]));
+        } else {
+          this.stream.reset(this.skipBlockComment(token2.span[1]));
+        }
+      } else if (kind2 === "word") {
+        let returnToken = token2;
+        if (keywordOrReserved.has(token2.text)) {
+          returnToken.kind = "keyword";
+        }
+        return returnToken;
+      } else if (kind2 === "invalid") {
+        throw new ParseError("Invalid token " + token2.text, token2.span);
+      } else {
+        return token2;
+      }
+    }
+  }
+  skipToEol(position) {
+    this.eolPattern.lastIndex = position;
+    const result = this.eolPattern.exec(this.src);
+    if (result === null) {
+      return this.src.length;
+    } else {
+      return this.eolPattern.lastIndex;
+    }
+  }
+  skipBlockComment(position) {
+    while (true) {
+      this.blockCommentPattern.lastIndex = position;
+      const result = this.blockCommentPattern.exec(this.src);
+      if (result === null) {
+        throw new ParseError("Unclosed block comment!", [position, position]);
+      } else if (result[0] === "*/") {
+        return this.blockCommentPattern.lastIndex;
+      } else if (result[0] === "/*") {
+        position = this.skipBlockComment(this.blockCommentPattern.lastIndex);
+      } else {
+        throw new Error("Unreachable, invalid block comment pattern");
+      }
+    }
+  }
+  /**
+   * Only matches the `<` token if it is a template
+   * Precondition: An ident was parsed right before this.
+   * Runs the [template list discovery algorithm](https://www.w3.org/TR/WGSL/#template-list-discovery).
+   */
+  nextTemplateStartToken() {
+    const startPosition = this.stream.checkpoint();
+    const token2 = this.nextToken();
+    this.stream.reset(startPosition);
+    if (token2 === null) return null;
+    if (token2.kind !== "symbol") {
+      return null;
+    }
+    if (token2.text === "<") {
+      if (this.isTemplateStart(token2.span[1])) {
+        this.stream.reset(token2.span[1]);
+        return token2;
+      } else {
+        this.stream.reset(startPosition);
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+  nextTemplateEndToken() {
+    const startPosition = this.stream.checkpoint();
+    const token2 = this.nextToken();
+    this.stream.reset(startPosition);
+    if (token2 === null) return null;
+    if (token2.kind === "symbol" && token2.text[0] === ">") {
+      const tokenPosition = token2.span[0];
+      this.stream.reset(tokenPosition + 1);
+      return {
+        kind: "symbol",
+        span: [tokenPosition, tokenPosition + 1],
+        text: ">"
+      };
+    } else {
+      return null;
+    }
+  }
+  isTemplateStart(afterToken) {
+    this.stream.reset(afterToken);
+    let pendingCounter = 1;
+    while (true) {
+      const nextToken = this.stream.nextToken();
+      if (nextToken === null) return false;
+      if (nextToken.kind !== "symbol") continue;
+      if (nextToken.text === "<") {
+        pendingCounter += 1;
+      } else if (nextToken.text[0] === ">") {
+        if (nextToken.text === ">" || nextToken.text == ">=") {
+          pendingCounter -= 1;
+        } else if (nextToken.text === ">>=" || nextToken.text === ">>") {
+          pendingCounter -= 2;
+        } else {
+          throw new Error(
+            "This case should never be reached, looks like we forgot one of the tokens that start with >"
+          );
+        }
+        if (pendingCounter <= 0) {
+          return true;
+        }
+      } else if (nextToken.text === "(") {
+        this.skipBracketsTo(")");
+      } else if (nextToken.text === "[") {
+        this.skipBracketsTo("]");
+      } else if (nextToken.text === "==" || nextToken.text === "!=" || nextToken.text === ";" || nextToken.text === "{" || nextToken.text === ":" || nextToken.text === "&&" || nextToken.text === "||") {
+        return false;
+      }
+    }
+  }
+  /**
+   * Call this after consuming an opening bracket.
+   * Skips until a closing bracket. This also consumes the closing bracket.
+   */
+  skipBracketsTo(closingBracket) {
+    while (true) {
+      const nextToken = this.stream.nextToken();
+      if (nextToken === null) {
+        const after = this.stream.checkpoint();
+        throw new ParseError("Unclosed bracket!", [after, after]);
+      }
+      if (nextToken.kind !== "symbol") continue;
+      if (nextToken.text === "(") {
+        this.skipBracketsTo(")");
+      } else if (nextToken.text === "[") {
+        this.skipBracketsTo("]");
+      } else if (nextToken.text === closingBracket) {
+        return;
+      }
+    }
+  }
+};
 var templateOpen = withStreamAction((stream2) => {
   return stream2.nextTemplateStartToken();
 });
@@ -13848,6 +15437,144 @@ var integer_to_char = {};
   char_to_integer[char] = i;
   integer_to_char[i] = char;
 });
+function encodeVlq(value) {
+  if (typeof value === "number") {
+    return encode_integer(value);
+  }
+  let result = "";
+  for (let i = 0; i < value.length; i += 1) {
+    result += encode_integer(value[i]);
+  }
+  return result;
+}
+function encode_integer(num) {
+  let result = "";
+  if (num < 0) {
+    num = -num << 1 | 1;
+  } else {
+    num <<= 1;
+  }
+  do {
+    let clamped = num & 31;
+    num >>>= 5;
+    if (num > 0) {
+      clamped |= 32;
+    }
+    result += integer_to_char[clamped];
+  } while (num > 0);
+  return result;
+}
+
+// ../wesl/src/WeslDevice.ts
+function throwClickableError({
+  url,
+  text: text2,
+  lineNumber,
+  lineColumn,
+  length,
+  error
+}) {
+  let mappings = encodeVlq([
+    0,
+    0,
+    Math.max(0, lineNumber - 1),
+    Math.max(0, lineColumn - 1)
+  ]) + "," + // Sadly no browser makes use of this info to map the error properly
+  encodeVlq([
+    18,
+    // Arbitrary number that is high enough
+    0,
+    Math.max(0, lineNumber - 1),
+    Math.max(0, lineColumn - 1) + length
+  ]);
+  const sourceMap = {
+    version: 3,
+    file: null,
+    sources: [url],
+    sourcesContent: [text2 ?? null],
+    names: [],
+    mappings
+  };
+  let generatedCode = `throw new Error(${JSON.stringify(error.message + "")})`;
+  generatedCode += "\n//# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
+  generatedCode += "\n//# sourceURL=" + sourceMap.sources[0];
+  let oldLimit = 0;
+  if ("stackTraceLimit" in Error) {
+    oldLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 1;
+  }
+  try {
+    (0, eval)(generatedCode);
+  } catch (e) {
+    if ("stackTraceLimit" in Error) {
+      Error.stackTraceLimit = oldLimit;
+    }
+    error.message = "";
+    e.cause = error;
+    throw e;
+  }
+}
+
+// ../wesl/src/ParseWESL.ts
+var WeslParseError = class extends Error {
+  constructor(opts) {
+    const source = opts.src.src;
+    const [lineNum, linePos] = offsetToLineNumber(opts.cause.span[0], source);
+    let message = `${opts.src.debugFilePath}:${lineNum}:${linePos}`;
+    message += ` error: ${opts.cause.message}
+`;
+    message += errorHighlight(source, opts.cause.span).join("\n");
+    super(message, {
+      cause: opts.cause
+    });
+    this.span = opts.cause.span;
+    this.src = opts.src;
+  }
+};
+function parseSrcModule(srcModule, srcMap) {
+  const stream2 = new WeslStream(srcModule.src);
+  const appState = blankWeslParseState(srcModule);
+  const init = { stream: stream2, appState };
+  try {
+    const parseResult = weslRoot.parse(init);
+    if (parseResult === null) {
+      throw new Error("parseWESL failed");
+    }
+  } catch (e) {
+    if (e instanceof ParseError) {
+      const [lineNumber, lineColumn] = offsetToLineNumber(
+        e.span[0],
+        srcModule.src
+      );
+      const error = new WeslParseError({ cause: e, src: srcModule });
+      throwClickableError({
+        url: srcModule.debugFilePath,
+        text: srcModule.src,
+        error,
+        lineNumber,
+        lineColumn,
+        length: e.span[1] - e.span[0]
+      });
+    } else {
+      throw e;
+    }
+  }
+  return appState.stable;
+}
+function blankWeslParseState(srcModule) {
+  const rootScope = emptyScope(null);
+  const moduleElem = null;
+  return {
+    context: { scope: rootScope, openElems: [] },
+    stable: { srcModule, imports: [], rootScope, moduleElem }
+  };
+}
+function flatImports(ast) {
+  if (ast._flatImports) return ast._flatImports;
+  const flat = ast.imports.flatMap(flattenTreeImport);
+  ast._flatImports = flat;
+  return flat;
+}
 
 // ../wesl/src/StandardTypes.ts
 var stdFns = `bitcast all any select arrayLength 
@@ -13917,14 +15644,338 @@ var stdEnumerants = `read write read_write
   rgba16uint rgba16sint rgba16float 
   r32uint r32sint r32float rg32uint rg32sint rg32float
   rgba32uint rgba32sint rgba32float bgra8unorm`.split(/\s+/);
+function stdType(name2) {
+  return stdTypes.includes(name2);
+}
+function stdFn(name2) {
+  return stdFns.includes(name2) || stdType(name2);
+}
+function stdEnumerant(name2) {
+  return stdEnumerants.includes(name2);
+}
+
+// ../wesl/src/BindIdents.ts
+function bindIdents(params) {
+  const { rootAst, registry, virtuals, accumulateUnbound } = params;
+  const { conditions = {}, mangler = minimalMangle } = params;
+  const { rootScope } = rootAst;
+  const globalNames = /* @__PURE__ */ new Set();
+  const knownDecls = /* @__PURE__ */ new Set();
+  const validRootDecls = findValidRootDecls(rootScope, conditions);
+  validRootDecls.forEach((decl) => {
+    decl.mangledName = decl.originalName;
+    globalNames.add(decl.originalName);
+    knownDecls.add(decl);
+  });
+  const unbound = accumulateUnbound ? [] : void 0;
+  const globalStatements = /* @__PURE__ */ new Map();
+  const bindContext = {
+    registry,
+    conditions,
+    knownDecls,
+    foundScopes: /* @__PURE__ */ new Set(),
+    globalNames,
+    globalStatements,
+    virtuals,
+    mangler,
+    unbound
+  };
+  const declEntries = validRootDecls.map((d) => [d.originalName, d]);
+  const liveDecls = { decls: new Map(declEntries), parent: null };
+  const decls = bindIdentsRecursive(rootScope, bindContext, liveDecls, true);
+  const newStatements = [...globalStatements.values()];
+  return { decls, globalNames, newStatements, unbound };
+}
+function findValidRootDecls(rootScope, conditions) {
+  const found = [];
+  for (const e of rootScope.contents) {
+    if (e.kind === "decl") {
+      assertThatDebug(e.declElem);
+      if (elementValid(e.declElem, conditions)) {
+        found.push(e);
+      }
+    } else if (e.kind === "partial") {
+      found.push(...findValidRootDecls(e, conditions));
+    }
+  }
+  return found;
+}
+function bindIdentsRecursive(scope, bindContext, liveDecls, isRoot = false) {
+  const { conditions, foundScopes } = bindContext;
+  if (foundScopes.has(scope)) return [];
+  foundScopes.add(scope);
+  const newGlobals = [];
+  const newFromChildren = [];
+  scope.contents.forEach((child) => {
+    const { kind: kind2 } = child;
+    if (kind2 === "decl") {
+      const ident2 = child;
+      if (!isRoot) liveDecls.decls.set(ident2.originalName, ident2);
+    } else if (kind2 === "ref") {
+      const newDecl = handleRef(child, liveDecls, bindContext);
+      newDecl && newGlobals.push(newDecl);
+    } else {
+      const fromScope = handleScope(child, liveDecls, bindContext);
+      if (fromScope) {
+        newFromChildren.push(...fromScope);
+      }
+    }
+  });
+  const newFromRefs = newGlobals.flatMap((decl) => {
+    const foundsScope = decl.dependentScope;
+    if (foundsScope) {
+      const rootDecls = globalDeclToRootLiveDecls(decl, conditions);
+      if (rootDecls) {
+        const rootLive = makeLiveDecls(rootDecls);
+        return bindIdentsRecursive(foundsScope, bindContext, rootLive);
+      }
+    }
+    return [];
+  });
+  return [newGlobals, newFromChildren, newFromRefs].flat();
+}
+function handleRef(ident2, liveDecls, bindContext) {
+  const { registry, conditions, unbound } = bindContext;
+  const { virtuals } = bindContext;
+  if (!ident2.refersTo && !ident2.std) {
+    const foundDecl = findDeclInModule(ident2, liveDecls) ?? findQualifiedImport(ident2, registry, conditions, virtuals, unbound);
+    if (foundDecl) {
+      ident2.refersTo = foundDecl.decl;
+      return handleNewDecl(ident2, foundDecl, bindContext);
+    } else if (stdWgsl(ident2.originalName)) {
+      ident2.std = true;
+    } else if (!unbound) {
+      failMissingIdent(ident2);
+    }
+  }
+}
+function handleScope(childScope2, liveDecls, bindContext) {
+  const { conditions } = bindContext;
+  if (!scopeValid(childScope2, conditions)) return;
+  const { kind: kind2 } = childScope2;
+  if (kind2 === "scope") {
+    const newLive = makeLiveDecls(liveDecls);
+    return bindIdentsRecursive(childScope2, bindContext, newLive);
+  } else if (kind2 === "partial") {
+    return bindIdentsRecursive(childScope2, bindContext, liveDecls);
+  } else {
+    assertUnreachableSilent(kind2);
+  }
+}
+function handleNewDecl(refIdent2, foundDecl, bindContext) {
+  const { decl, moduleAst } = foundDecl;
+  const { knownDecls, globalNames, mangler, globalStatements } = bindContext;
+  if (!knownDecls.has(decl)) {
+    knownDecls.add(decl);
+    const { srcModule } = decl;
+    const proposed = refIdent2.originalName;
+    setMangledName(proposed, decl, globalNames, srcModule, mangler);
+    if (isGlobal(decl)) {
+      const { moduleAsserts } = moduleAst;
+      const moduleEmit = moduleAsserts?.map((elem) => ({ srcModule, elem }));
+      moduleEmit?.forEach((e) => globalStatements.set(e.elem, e));
+      return decl;
+    }
+  }
+}
+function globalDeclToRootLiveDecls(decl, conditions) {
+  assertThatDebug(decl.isGlobal, identToString(decl));
+  let rootScope = decl.containingScope;
+  while (rootScope.parent) {
+    rootScope = rootScope.parent;
+  }
+  assertThatDebug(rootScope.kind === "scope");
+  const root = rootScope;
+  if (root._scopeDecls) return root._scopeDecls;
+  const rootDecls = findValidRootDecls(rootScope, conditions);
+  const entires = rootDecls.map((d) => [d.originalName, d]);
+  const decls = new Map(entires);
+  const liveDecls = { decls };
+  root._scopeDecls = liveDecls;
+  return liveDecls;
+}
+function failMissingIdent(ident2) {
+  const { refIdentElem } = ident2;
+  if (refIdentElem) {
+    const { srcModule, start, end } = refIdentElem;
+    const { debugFilePath: filePath } = srcModule;
+    const msg = `unresolved identifier '${ident2.originalName}' in file: ${filePath}`;
+    srcLog(srcModule.src, [start, end], msg);
+    throw new Error(msg);
+  }
+}
+function setMangledName(proposedName, decl, globalNames, srcModule, mangler) {
+  if (!decl.mangledName) {
+    let mangledName;
+    if (isGlobal(decl)) {
+      const sep2 = proposedName.lastIndexOf("::");
+      const name2 = sep2 === -1 ? proposedName : proposedName.slice(sep2 + 2);
+      mangledName = mangler(decl, srcModule, name2, globalNames);
+    } else {
+      mangledName = decl.originalName;
+    }
+    decl.mangledName = mangledName;
+    globalNames.add(mangledName);
+  }
+}
+function stdWgsl(name2) {
+  return stdType(name2) || stdFn(name2) || stdEnumerant(name2);
+}
+function findDeclInModule(ident2, liveDecls) {
+  const { originalName } = ident2;
+  const found = liveDecls.decls.get(originalName);
+  if (found) {
+    return { decl: found, moduleAst: ident2.ast };
+  }
+  const { parent } = liveDecls;
+  if (parent) {
+    return findDeclInModule(ident2, parent);
+  }
+}
+function findQualifiedImport(refIdent2, parsed, conditions, virtuals, unbound) {
+  const flatImps = flatImports(refIdent2.ast);
+  const identParts = refIdent2.originalName.split("::");
+  const modulePathParts = matchingImport(identParts, flatImps) ?? qualifiedIdent(identParts);
+  if (modulePathParts) {
+    const { srcModule } = refIdent2.ast;
+    const result = findExport(
+      modulePathParts,
+      srcModule,
+      parsed,
+      conditions,
+      virtuals
+    );
+    if (!result) {
+      if (unbound) {
+        unbound.push(modulePathParts);
+      } else {
+        const msg = `ident ${modulePathParts.join("::")}, but module not found`;
+        console.log(msg);
+      }
+    }
+    return result;
+  } else if (unbound) {
+    unbound.push(identParts);
+  }
+}
+function qualifiedIdent(identParts) {
+  if (identParts.length > 1) return identParts;
+}
+function matchingImport(identParts, flatImports2) {
+  for (const flat of flatImports2) {
+    if (flat.importPath.at(-1) === identParts.at(0)) {
+      return [...flat.modulePath, ...identParts.slice(1)];
+    }
+  }
+}
+function findExport(modulePathParts, srcModule, parsed, conditions = {}, virtuals) {
+  const fqPathParts = absoluteModulePath(modulePathParts, srcModule);
+  const modulePath = fqPathParts.slice(0, -1).join("::");
+  const moduleAst = parsed.modules[modulePath] ?? virtualModule(modulePathParts[0], conditions, virtuals);
+  if (!moduleAst) {
+    return void 0;
+  }
+  const name2 = last2(modulePathParts);
+  const decl = publicDecl(moduleAst.rootScope, name2, conditions);
+  if (decl) {
+    return { decl, moduleAst };
+  }
+}
+function absoluteModulePath(modulePathParts, srcModule) {
+  const lastSuper = modulePathParts.findLastIndex((p) => p === "super");
+  if (lastSuper > -1) {
+    const srcModuleParts = srcModule.modulePath.split("::");
+    const base = srcModuleParts.slice(0, -(lastSuper + 1));
+    const noSupers = modulePathParts.slice(lastSuper + 1);
+    return [...base, ...noSupers];
+  }
+  return modulePathParts;
+}
+function virtualModule(moduleName, conditions = {}, virtuals) {
+  if (!virtuals) return void 0;
+  const found = virtuals[moduleName];
+  if (found) {
+    const { ast, fn: fn2 } = found;
+    if (ast) return ast;
+    const src = fn2(conditions);
+    const srcModule = {
+      modulePath: moduleName,
+      debugFilePath: moduleName,
+      src
+    };
+    found.ast = parseSrcModule(srcModule);
+    return found.ast;
+  }
+}
+function isGlobal(declIdent) {
+  const { declElem } = declIdent;
+  if (!declElem) return false;
+  return ["alias", "const", "override", "fn", "struct", "gvar"].includes(
+    declElem.kind
+  );
+}
 
 // ../wesl/src/PathUtil.ts
-function noSuffix(path3) {
-  const lastSlash = path3.lastIndexOf("/");
+function normalize3(path6) {
+  const segments = path6.split("/");
+  const noDots = segments.filter((s) => s !== ".");
+  const noDbl = [];
+  noDots.forEach((s) => {
+    if (s !== "") {
+      if (s === ".." && noDbl.length && noDbl[noDbl.length - 1] !== "..") {
+        noDbl.pop();
+      } else {
+        noDbl.push(s);
+      }
+    }
+  });
+  return noDbl.join("/");
+}
+function noSuffix(path6) {
+  const lastSlash = path6.lastIndexOf("/");
   const lastStart = lastSlash === -1 ? 0 : lastSlash + 1;
-  const suffix = path3.indexOf(".", lastStart);
-  const suffixStart = suffix === -1 ? path3.length : suffix;
-  return path3.slice(0, suffixStart);
+  const suffix = path6.indexOf(".", lastStart);
+  const suffixStart = suffix === -1 ? path6.length : suffix;
+  return path6.slice(0, suffixStart);
+}
+
+// ../wesl/src/ParsedRegistry.ts
+function parsedRegistry() {
+  resetScopeIds();
+  return { modules: {} };
+}
+function parseIntoRegistry(srcFiles, registry, packageName = "package", debugWeslRoot) {
+  if (debugWeslRoot === void 0) {
+    debugWeslRoot = "";
+  } else if (!debugWeslRoot.endsWith("/")) {
+    debugWeslRoot += "/";
+  }
+  const srcModules = Object.entries(srcFiles).map(
+    ([filePath, src]) => {
+      const modulePath = fileToModulePath(filePath, packageName);
+      return { modulePath, debugFilePath: debugWeslRoot + filePath, src };
+    }
+  );
+  srcModules.forEach((mod) => {
+    const parsed = parseSrcModule(mod, void 0);
+    if (registry.modules[mod.modulePath]) {
+      throw new Error(`duplicate module path: '${mod.modulePath}'`);
+    }
+    registry.modules[mod.modulePath] = parsed;
+  });
+}
+var libRegex = /^lib\.w[eg]sl$/i;
+function fileToModulePath(filePath, packageName) {
+  if (filePath.includes("::")) {
+    return filePath;
+  }
+  if (packageName !== "package" && libRegex.test(filePath)) {
+    return packageName;
+  }
+  const strippedPath = noSuffix(normalize3(filePath));
+  const moduleSuffix = strippedPath.replaceAll("/", "::");
+  const modulePath = packageName + "::" + moduleSuffix;
+  return modulePath;
 }
 
 // ../wesl/src/Reflection.ts
@@ -13935,7 +15986,1414 @@ var multiNames = matchOneOf(multisampledTextureTypes);
 // raw-loader:/Users/lee/wesl-js/tools/packages/wesl/src/WeslBundle.ts?raw
 var WeslBundle_default = 'export interface WeslBundle {\n  /** name of the package, e.g. random_wgsl */\n  name: string;\n\n  /** wesl edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of wesl/wgsl modules:\n   *    keys are file paths, relative to package root (e.g. "./lib.wgsl")\n   *    values are wgsl/wesl code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n';
 
+// ../../node_modules/.pnpm/import-meta-resolve@4.1.0/node_modules/import-meta-resolve/lib/resolve.js
+import assert2 from "node:assert";
+import { statSync as statSync3, realpathSync as realpathSync2 } from "node:fs";
+import process2 from "node:process";
+import { URL as URL2, fileURLToPath as fileURLToPath6, pathToFileURL } from "node:url";
+import path3 from "node:path";
+import { builtinModules } from "node:module";
+
+// ../../node_modules/.pnpm/import-meta-resolve@4.1.0/node_modules/import-meta-resolve/lib/get-format.js
+import { fileURLToPath as fileURLToPath5 } from "node:url";
+
+// ../../node_modules/.pnpm/import-meta-resolve@4.1.0/node_modules/import-meta-resolve/lib/package-json-reader.js
+import fs from "node:fs";
+import path2 from "node:path";
+import { fileURLToPath as fileURLToPath4 } from "node:url";
+
+// ../../node_modules/.pnpm/import-meta-resolve@4.1.0/node_modules/import-meta-resolve/lib/errors.js
+import v8 from "node:v8";
+import assert from "node:assert";
+import { format as format3, inspect as inspect2 } from "node:util";
+var own = {}.hasOwnProperty;
+var classRegExp = /^([A-Z][a-z\d]*)+$/;
+var kTypes = /* @__PURE__ */ new Set([
+  "string",
+  "function",
+  "number",
+  "object",
+  // Accept 'Function' and 'Object' as alternative to the lower cased version.
+  "Function",
+  "Object",
+  "boolean",
+  "bigint",
+  "symbol"
+]);
+var codes = {};
+function formatList(array, type = "and") {
+  return array.length < 3 ? array.join(` ${type} `) : `${array.slice(0, -1).join(", ")}, ${type} ${array[array.length - 1]}`;
+}
+var messages = /* @__PURE__ */ new Map();
+var nodeInternalPrefix = "__node_internal_";
+var userStackTraceLimit;
+codes.ERR_INVALID_ARG_TYPE = createError(
+  "ERR_INVALID_ARG_TYPE",
+  /**
+   * @param {string} name
+   * @param {Array<string> | string} expected
+   * @param {unknown} actual
+   */
+  (name2, expected, actual) => {
+    assert(typeof name2 === "string", "'name' must be a string");
+    if (!Array.isArray(expected)) {
+      expected = [expected];
+    }
+    let message = "The ";
+    if (name2.endsWith(" argument")) {
+      message += `${name2} `;
+    } else {
+      const type = name2.includes(".") ? "property" : "argument";
+      message += `"${name2}" ${type} `;
+    }
+    message += "must be ";
+    const types2 = [];
+    const instances = [];
+    const other = [];
+    for (const value of expected) {
+      assert(
+        typeof value === "string",
+        "All expected entries have to be of type string"
+      );
+      if (kTypes.has(value)) {
+        types2.push(value.toLowerCase());
+      } else if (classRegExp.exec(value) === null) {
+        assert(
+          value !== "object",
+          'The value "object" should be written as "Object"'
+        );
+        other.push(value);
+      } else {
+        instances.push(value);
+      }
+    }
+    if (instances.length > 0) {
+      const pos = types2.indexOf("object");
+      if (pos !== -1) {
+        types2.slice(pos, 1);
+        instances.push("Object");
+      }
+    }
+    if (types2.length > 0) {
+      message += `${types2.length > 1 ? "one of type" : "of type"} ${formatList(
+        types2,
+        "or"
+      )}`;
+      if (instances.length > 0 || other.length > 0) message += " or ";
+    }
+    if (instances.length > 0) {
+      message += `an instance of ${formatList(instances, "or")}`;
+      if (other.length > 0) message += " or ";
+    }
+    if (other.length > 0) {
+      if (other.length > 1) {
+        message += `one of ${formatList(other, "or")}`;
+      } else {
+        if (other[0].toLowerCase() !== other[0]) message += "an ";
+        message += `${other[0]}`;
+      }
+    }
+    message += `. Received ${determineSpecificType(actual)}`;
+    return message;
+  },
+  TypeError
+);
+codes.ERR_INVALID_MODULE_SPECIFIER = createError(
+  "ERR_INVALID_MODULE_SPECIFIER",
+  /**
+   * @param {string} request
+   * @param {string} reason
+   * @param {string} [base]
+   */
+  (request, reason, base = void 0) => {
+    return `Invalid module "${request}" ${reason}${base ? ` imported from ${base}` : ""}`;
+  },
+  TypeError
+);
+codes.ERR_INVALID_PACKAGE_CONFIG = createError(
+  "ERR_INVALID_PACKAGE_CONFIG",
+  /**
+   * @param {string} path
+   * @param {string} [base]
+   * @param {string} [message]
+   */
+  (path6, base, message) => {
+    return `Invalid package config ${path6}${base ? ` while importing ${base}` : ""}${message ? `. ${message}` : ""}`;
+  },
+  Error
+);
+codes.ERR_INVALID_PACKAGE_TARGET = createError(
+  "ERR_INVALID_PACKAGE_TARGET",
+  /**
+   * @param {string} packagePath
+   * @param {string} key
+   * @param {unknown} target
+   * @param {boolean} [isImport=false]
+   * @param {string} [base]
+   */
+  (packagePath, key, target, isImport = false, base = void 0) => {
+    const relatedError = typeof target === "string" && !isImport && target.length > 0 && !target.startsWith("./");
+    if (key === ".") {
+      assert(isImport === false);
+      return `Invalid "exports" main target ${JSON.stringify(target)} defined in the package config ${packagePath}package.json${base ? ` imported from ${base}` : ""}${relatedError ? '; targets must start with "./"' : ""}`;
+    }
+    return `Invalid "${isImport ? "imports" : "exports"}" target ${JSON.stringify(
+      target
+    )} defined for '${key}' in the package config ${packagePath}package.json${base ? ` imported from ${base}` : ""}${relatedError ? '; targets must start with "./"' : ""}`;
+  },
+  Error
+);
+codes.ERR_MODULE_NOT_FOUND = createError(
+  "ERR_MODULE_NOT_FOUND",
+  /**
+   * @param {string} path
+   * @param {string} base
+   * @param {boolean} [exactUrl]
+   */
+  (path6, base, exactUrl = false) => {
+    return `Cannot find ${exactUrl ? "module" : "package"} '${path6}' imported from ${base}`;
+  },
+  Error
+);
+codes.ERR_NETWORK_IMPORT_DISALLOWED = createError(
+  "ERR_NETWORK_IMPORT_DISALLOWED",
+  "import of '%s' by %s is not supported: %s",
+  Error
+);
+codes.ERR_PACKAGE_IMPORT_NOT_DEFINED = createError(
+  "ERR_PACKAGE_IMPORT_NOT_DEFINED",
+  /**
+   * @param {string} specifier
+   * @param {string} packagePath
+   * @param {string} base
+   */
+  (specifier, packagePath, base) => {
+    return `Package import specifier "${specifier}" is not defined${packagePath ? ` in package ${packagePath}package.json` : ""} imported from ${base}`;
+  },
+  TypeError
+);
+codes.ERR_PACKAGE_PATH_NOT_EXPORTED = createError(
+  "ERR_PACKAGE_PATH_NOT_EXPORTED",
+  /**
+   * @param {string} packagePath
+   * @param {string} subpath
+   * @param {string} [base]
+   */
+  (packagePath, subpath, base = void 0) => {
+    if (subpath === ".")
+      return `No "exports" main defined in ${packagePath}package.json${base ? ` imported from ${base}` : ""}`;
+    return `Package subpath '${subpath}' is not defined by "exports" in ${packagePath}package.json${base ? ` imported from ${base}` : ""}`;
+  },
+  Error
+);
+codes.ERR_UNSUPPORTED_DIR_IMPORT = createError(
+  "ERR_UNSUPPORTED_DIR_IMPORT",
+  "Directory import '%s' is not supported resolving ES modules imported from %s",
+  Error
+);
+codes.ERR_UNSUPPORTED_RESOLVE_REQUEST = createError(
+  "ERR_UNSUPPORTED_RESOLVE_REQUEST",
+  'Failed to resolve module specifier "%s" from "%s": Invalid relative URL or base scheme is not hierarchical.',
+  TypeError
+);
+codes.ERR_UNKNOWN_FILE_EXTENSION = createError(
+  "ERR_UNKNOWN_FILE_EXTENSION",
+  /**
+   * @param {string} extension
+   * @param {string} path
+   */
+  (extension, path6) => {
+    return `Unknown file extension "${extension}" for ${path6}`;
+  },
+  TypeError
+);
+codes.ERR_INVALID_ARG_VALUE = createError(
+  "ERR_INVALID_ARG_VALUE",
+  /**
+   * @param {string} name
+   * @param {unknown} value
+   * @param {string} [reason='is invalid']
+   */
+  (name2, value, reason = "is invalid") => {
+    let inspected = inspect2(value);
+    if (inspected.length > 128) {
+      inspected = `${inspected.slice(0, 128)}...`;
+    }
+    const type = name2.includes(".") ? "property" : "argument";
+    return `The ${type} '${name2}' ${reason}. Received ${inspected}`;
+  },
+  TypeError
+  // Note: extra classes have been shaken out.
+  // , RangeError
+);
+function createError(sym, value, constructor) {
+  messages.set(sym, value);
+  return makeNodeErrorWithCode(constructor, sym);
+}
+function makeNodeErrorWithCode(Base, key) {
+  return NodeError;
+  function NodeError(...parameters) {
+    const limit = Error.stackTraceLimit;
+    if (isErrorStackTraceLimitWritable()) Error.stackTraceLimit = 0;
+    const error = new Base();
+    if (isErrorStackTraceLimitWritable()) Error.stackTraceLimit = limit;
+    const message = getMessage(key, parameters, error);
+    Object.defineProperties(error, {
+      // Note: no need to implement `kIsNodeError` symbol, would be hard,
+      // probably.
+      message: {
+        value: message,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      },
+      toString: {
+        /** @this {Error} */
+        value() {
+          return `${this.name} [${key}]: ${this.message}`;
+        },
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    captureLargerStackTrace(error);
+    error.code = key;
+    return error;
+  }
+}
+function isErrorStackTraceLimitWritable() {
+  try {
+    if (v8.startupSnapshot.isBuildingSnapshot()) {
+      return false;
+    }
+  } catch {
+  }
+  const desc = Object.getOwnPropertyDescriptor(Error, "stackTraceLimit");
+  if (desc === void 0) {
+    return Object.isExtensible(Error);
+  }
+  return own.call(desc, "writable") && desc.writable !== void 0 ? desc.writable : desc.set !== void 0;
+}
+function hideStackFrames(wrappedFunction) {
+  const hidden = nodeInternalPrefix + wrappedFunction.name;
+  Object.defineProperty(wrappedFunction, "name", { value: hidden });
+  return wrappedFunction;
+}
+var captureLargerStackTrace = hideStackFrames(
+  /**
+   * @param {Error} error
+   * @returns {Error}
+   */
+  // @ts-expect-error: fine
+  function(error) {
+    const stackTraceLimitIsWritable = isErrorStackTraceLimitWritable();
+    if (stackTraceLimitIsWritable) {
+      userStackTraceLimit = Error.stackTraceLimit;
+      Error.stackTraceLimit = Number.POSITIVE_INFINITY;
+    }
+    Error.captureStackTrace(error);
+    if (stackTraceLimitIsWritable) Error.stackTraceLimit = userStackTraceLimit;
+    return error;
+  }
+);
+function getMessage(key, parameters, self) {
+  const message = messages.get(key);
+  assert(message !== void 0, "expected `message` to be found");
+  if (typeof message === "function") {
+    assert(
+      message.length <= parameters.length,
+      // Default options do not count.
+      `Code: ${key}; The provided arguments length (${parameters.length}) does not match the required ones (${message.length}).`
+    );
+    return Reflect.apply(message, self, parameters);
+  }
+  const regex = /%[dfijoOs]/g;
+  let expectedLength = 0;
+  while (regex.exec(message) !== null) expectedLength++;
+  assert(
+    expectedLength === parameters.length,
+    `Code: ${key}; The provided arguments length (${parameters.length}) does not match the required ones (${expectedLength}).`
+  );
+  if (parameters.length === 0) return message;
+  parameters.unshift(message);
+  return Reflect.apply(format3, null, parameters);
+}
+function determineSpecificType(value) {
+  if (value === null || value === void 0) {
+    return String(value);
+  }
+  if (typeof value === "function" && value.name) {
+    return `function ${value.name}`;
+  }
+  if (typeof value === "object") {
+    if (value.constructor && value.constructor.name) {
+      return `an instance of ${value.constructor.name}`;
+    }
+    return `${inspect2(value, { depth: -1 })}`;
+  }
+  let inspected = inspect2(value, { colors: false });
+  if (inspected.length > 28) {
+    inspected = `${inspected.slice(0, 25)}...`;
+  }
+  return `type ${typeof value} (${inspected})`;
+}
+
+// ../../node_modules/.pnpm/import-meta-resolve@4.1.0/node_modules/import-meta-resolve/lib/package-json-reader.js
+var hasOwnProperty = {}.hasOwnProperty;
+var { ERR_INVALID_PACKAGE_CONFIG } = codes;
+var cache = /* @__PURE__ */ new Map();
+function read(jsonPath, { base, specifier }) {
+  const existing = cache.get(jsonPath);
+  if (existing) {
+    return existing;
+  }
+  let string;
+  try {
+    string = fs.readFileSync(path2.toNamespacedPath(jsonPath), "utf8");
+  } catch (error) {
+    const exception = (
+      /** @type {ErrnoException} */
+      error
+    );
+    if (exception.code !== "ENOENT") {
+      throw exception;
+    }
+  }
+  const result = {
+    exists: false,
+    pjsonPath: jsonPath,
+    main: void 0,
+    name: void 0,
+    type: "none",
+    // Ignore unknown types for forwards compatibility
+    exports: void 0,
+    imports: void 0
+  };
+  if (string !== void 0) {
+    let parsed;
+    try {
+      parsed = JSON.parse(string);
+    } catch (error_) {
+      const cause = (
+        /** @type {ErrnoException} */
+        error_
+      );
+      const error = new ERR_INVALID_PACKAGE_CONFIG(
+        jsonPath,
+        (base ? `"${specifier}" from ` : "") + fileURLToPath4(base || specifier),
+        cause.message
+      );
+      error.cause = cause;
+      throw error;
+    }
+    result.exists = true;
+    if (hasOwnProperty.call(parsed, "name") && typeof parsed.name === "string") {
+      result.name = parsed.name;
+    }
+    if (hasOwnProperty.call(parsed, "main") && typeof parsed.main === "string") {
+      result.main = parsed.main;
+    }
+    if (hasOwnProperty.call(parsed, "exports")) {
+      result.exports = parsed.exports;
+    }
+    if (hasOwnProperty.call(parsed, "imports")) {
+      result.imports = parsed.imports;
+    }
+    if (hasOwnProperty.call(parsed, "type") && (parsed.type === "commonjs" || parsed.type === "module")) {
+      result.type = parsed.type;
+    }
+  }
+  cache.set(jsonPath, result);
+  return result;
+}
+function getPackageScopeConfig(resolved) {
+  let packageJSONUrl = new URL("package.json", resolved);
+  while (true) {
+    const packageJSONPath2 = packageJSONUrl.pathname;
+    if (packageJSONPath2.endsWith("node_modules/package.json")) {
+      break;
+    }
+    const packageConfig = read(fileURLToPath4(packageJSONUrl), {
+      specifier: resolved
+    });
+    if (packageConfig.exists) {
+      return packageConfig;
+    }
+    const lastPackageJSONUrl = packageJSONUrl;
+    packageJSONUrl = new URL("../package.json", packageJSONUrl);
+    if (packageJSONUrl.pathname === lastPackageJSONUrl.pathname) {
+      break;
+    }
+  }
+  const packageJSONPath = fileURLToPath4(packageJSONUrl);
+  return {
+    pjsonPath: packageJSONPath,
+    exists: false,
+    type: "none"
+  };
+}
+function getPackageType(url) {
+  return getPackageScopeConfig(url).type;
+}
+
+// ../../node_modules/.pnpm/import-meta-resolve@4.1.0/node_modules/import-meta-resolve/lib/get-format.js
+var { ERR_UNKNOWN_FILE_EXTENSION } = codes;
+var hasOwnProperty2 = {}.hasOwnProperty;
+var extensionFormatMap = {
+  // @ts-expect-error: hush.
+  __proto__: null,
+  ".cjs": "commonjs",
+  ".js": "module",
+  ".json": "json",
+  ".mjs": "module"
+};
+function mimeToFormat(mime) {
+  if (mime && /\s*(text|application)\/javascript\s*(;\s*charset=utf-?8\s*)?/i.test(mime))
+    return "module";
+  if (mime === "application/json") return "json";
+  return null;
+}
+var protocolHandlers = {
+  // @ts-expect-error: hush.
+  __proto__: null,
+  "data:": getDataProtocolModuleFormat,
+  "file:": getFileProtocolModuleFormat,
+  "http:": getHttpProtocolModuleFormat,
+  "https:": getHttpProtocolModuleFormat,
+  "node:"() {
+    return "builtin";
+  }
+};
+function getDataProtocolModuleFormat(parsed) {
+  const { 1: mime } = /^([^/]+\/[^;,]+)[^,]*?(;base64)?,/.exec(
+    parsed.pathname
+  ) || [null, null, null];
+  return mimeToFormat(mime);
+}
+function extname2(url) {
+  const pathname = url.pathname;
+  let index = pathname.length;
+  while (index--) {
+    const code = pathname.codePointAt(index);
+    if (code === 47) {
+      return "";
+    }
+    if (code === 46) {
+      return pathname.codePointAt(index - 1) === 47 ? "" : pathname.slice(index);
+    }
+  }
+  return "";
+}
+function getFileProtocolModuleFormat(url, _context, ignoreErrors) {
+  const value = extname2(url);
+  if (value === ".js") {
+    const packageType = getPackageType(url);
+    if (packageType !== "none") {
+      return packageType;
+    }
+    return "commonjs";
+  }
+  if (value === "") {
+    const packageType = getPackageType(url);
+    if (packageType === "none" || packageType === "commonjs") {
+      return "commonjs";
+    }
+    return "module";
+  }
+  const format4 = extensionFormatMap[value];
+  if (format4) return format4;
+  if (ignoreErrors) {
+    return void 0;
+  }
+  const filepath = fileURLToPath5(url);
+  throw new ERR_UNKNOWN_FILE_EXTENSION(value, filepath);
+}
+function getHttpProtocolModuleFormat() {
+}
+function defaultGetFormatWithoutErrors(url, context) {
+  const protocol = url.protocol;
+  if (!hasOwnProperty2.call(protocolHandlers, protocol)) {
+    return null;
+  }
+  return protocolHandlers[protocol](url, context, true) || null;
+}
+
+// ../../node_modules/.pnpm/import-meta-resolve@4.1.0/node_modules/import-meta-resolve/lib/utils.js
+var { ERR_INVALID_ARG_VALUE } = codes;
+var DEFAULT_CONDITIONS = Object.freeze(["node", "import"]);
+var DEFAULT_CONDITIONS_SET = new Set(DEFAULT_CONDITIONS);
+function getDefaultConditions() {
+  return DEFAULT_CONDITIONS;
+}
+function getDefaultConditionsSet() {
+  return DEFAULT_CONDITIONS_SET;
+}
+function getConditionsSet(conditions) {
+  if (conditions !== void 0 && conditions !== getDefaultConditions()) {
+    if (!Array.isArray(conditions)) {
+      throw new ERR_INVALID_ARG_VALUE(
+        "conditions",
+        conditions,
+        "expected an array"
+      );
+    }
+    return new Set(conditions);
+  }
+  return getDefaultConditionsSet();
+}
+
+// ../../node_modules/.pnpm/import-meta-resolve@4.1.0/node_modules/import-meta-resolve/lib/resolve.js
+var RegExpPrototypeSymbolReplace = RegExp.prototype[Symbol.replace];
+var {
+  ERR_NETWORK_IMPORT_DISALLOWED,
+  ERR_INVALID_MODULE_SPECIFIER,
+  ERR_INVALID_PACKAGE_CONFIG: ERR_INVALID_PACKAGE_CONFIG2,
+  ERR_INVALID_PACKAGE_TARGET,
+  ERR_MODULE_NOT_FOUND,
+  ERR_PACKAGE_IMPORT_NOT_DEFINED,
+  ERR_PACKAGE_PATH_NOT_EXPORTED,
+  ERR_UNSUPPORTED_DIR_IMPORT,
+  ERR_UNSUPPORTED_RESOLVE_REQUEST
+} = codes;
+var own2 = {}.hasOwnProperty;
+var invalidSegmentRegEx = /(^|\\|\/)((\.|%2e)(\.|%2e)?|(n|%6e|%4e)(o|%6f|%4f)(d|%64|%44)(e|%65|%45)(_|%5f)(m|%6d|%4d)(o|%6f|%4f)(d|%64|%44)(u|%75|%55)(l|%6c|%4c)(e|%65|%45)(s|%73|%53))?(\\|\/|$)/i;
+var deprecatedInvalidSegmentRegEx = /(^|\\|\/)((\.|%2e)(\.|%2e)?|(n|%6e|%4e)(o|%6f|%4f)(d|%64|%44)(e|%65|%45)(_|%5f)(m|%6d|%4d)(o|%6f|%4f)(d|%64|%44)(u|%75|%55)(l|%6c|%4c)(e|%65|%45)(s|%73|%53))(\\|\/|$)/i;
+var invalidPackageNameRegEx = /^\.|%|\\/;
+var patternRegEx = /\*/g;
+var encodedSeparatorRegEx = /%2f|%5c/i;
+var emittedPackageWarnings = /* @__PURE__ */ new Set();
+var doubleSlashRegEx = /[/\\]{2}/;
+function emitInvalidSegmentDeprecation(target, request, match2, packageJsonUrl, internal, base, isTarget) {
+  if (process2.noDeprecation) {
+    return;
+  }
+  const pjsonPath = fileURLToPath6(packageJsonUrl);
+  const double = doubleSlashRegEx.exec(isTarget ? target : request) !== null;
+  process2.emitWarning(
+    `Use of deprecated ${double ? "double slash" : "leading or trailing slash matching"} resolving "${target}" for module request "${request}" ${request === match2 ? "" : `matched to "${match2}" `}in the "${internal ? "imports" : "exports"}" field module resolution of the package at ${pjsonPath}${base ? ` imported from ${fileURLToPath6(base)}` : ""}.`,
+    "DeprecationWarning",
+    "DEP0166"
+  );
+}
+function emitLegacyIndexDeprecation(url, packageJsonUrl, base, main) {
+  if (process2.noDeprecation) {
+    return;
+  }
+  const format4 = defaultGetFormatWithoutErrors(url, { parentURL: base.href });
+  if (format4 !== "module") return;
+  const urlPath = fileURLToPath6(url.href);
+  const packagePath = fileURLToPath6(new URL2(".", packageJsonUrl));
+  const basePath = fileURLToPath6(base);
+  if (!main) {
+    process2.emitWarning(
+      `No "main" or "exports" field defined in the package.json for ${packagePath} resolving the main entry point "${urlPath.slice(
+        packagePath.length
+      )}", imported from ${basePath}.
+Default "index" lookups for the main are deprecated for ES modules.`,
+      "DeprecationWarning",
+      "DEP0151"
+    );
+  } else if (path3.resolve(packagePath, main) !== urlPath) {
+    process2.emitWarning(
+      `Package ${packagePath} has a "main" field set to "${main}", excluding the full filename and extension to the resolved file at "${urlPath.slice(
+        packagePath.length
+      )}", imported from ${basePath}.
+ Automatic extension resolution of the "main" field is deprecated for ES modules.`,
+      "DeprecationWarning",
+      "DEP0151"
+    );
+  }
+}
+function tryStatSync(path6) {
+  try {
+    return statSync3(path6);
+  } catch {
+  }
+}
+function fileExists(url) {
+  const stats = statSync3(url, { throwIfNoEntry: false });
+  const isFile = stats ? stats.isFile() : void 0;
+  return isFile === null || isFile === void 0 ? false : isFile;
+}
+function legacyMainResolve(packageJsonUrl, packageConfig, base) {
+  let guess;
+  if (packageConfig.main !== void 0) {
+    guess = new URL2(packageConfig.main, packageJsonUrl);
+    if (fileExists(guess)) return guess;
+    const tries2 = [
+      `./${packageConfig.main}.js`,
+      `./${packageConfig.main}.json`,
+      `./${packageConfig.main}.node`,
+      `./${packageConfig.main}/index.js`,
+      `./${packageConfig.main}/index.json`,
+      `./${packageConfig.main}/index.node`
+    ];
+    let i2 = -1;
+    while (++i2 < tries2.length) {
+      guess = new URL2(tries2[i2], packageJsonUrl);
+      if (fileExists(guess)) break;
+      guess = void 0;
+    }
+    if (guess) {
+      emitLegacyIndexDeprecation(
+        guess,
+        packageJsonUrl,
+        base,
+        packageConfig.main
+      );
+      return guess;
+    }
+  }
+  const tries = ["./index.js", "./index.json", "./index.node"];
+  let i = -1;
+  while (++i < tries.length) {
+    guess = new URL2(tries[i], packageJsonUrl);
+    if (fileExists(guess)) break;
+    guess = void 0;
+  }
+  if (guess) {
+    emitLegacyIndexDeprecation(guess, packageJsonUrl, base, packageConfig.main);
+    return guess;
+  }
+  throw new ERR_MODULE_NOT_FOUND(
+    fileURLToPath6(new URL2(".", packageJsonUrl)),
+    fileURLToPath6(base)
+  );
+}
+function finalizeResolution(resolved, base, preserveSymlinks) {
+  if (encodedSeparatorRegEx.exec(resolved.pathname) !== null) {
+    throw new ERR_INVALID_MODULE_SPECIFIER(
+      resolved.pathname,
+      'must not include encoded "/" or "\\" characters',
+      fileURLToPath6(base)
+    );
+  }
+  let filePath;
+  try {
+    filePath = fileURLToPath6(resolved);
+  } catch (error) {
+    const cause = (
+      /** @type {ErrnoException} */
+      error
+    );
+    Object.defineProperty(cause, "input", { value: String(resolved) });
+    Object.defineProperty(cause, "module", { value: String(base) });
+    throw cause;
+  }
+  const stats = tryStatSync(
+    filePath.endsWith("/") ? filePath.slice(-1) : filePath
+  );
+  if (stats && stats.isDirectory()) {
+    const error = new ERR_UNSUPPORTED_DIR_IMPORT(filePath, fileURLToPath6(base));
+    error.url = String(resolved);
+    throw error;
+  }
+  if (!stats || !stats.isFile()) {
+    const error = new ERR_MODULE_NOT_FOUND(
+      filePath || resolved.pathname,
+      base && fileURLToPath6(base),
+      true
+    );
+    error.url = String(resolved);
+    throw error;
+  }
+  if (!preserveSymlinks) {
+    const real = realpathSync2(filePath);
+    const { search, hash } = resolved;
+    resolved = pathToFileURL(real + (filePath.endsWith(path3.sep) ? "/" : ""));
+    resolved.search = search;
+    resolved.hash = hash;
+  }
+  return resolved;
+}
+function importNotDefined(specifier, packageJsonUrl, base) {
+  return new ERR_PACKAGE_IMPORT_NOT_DEFINED(
+    specifier,
+    packageJsonUrl && fileURLToPath6(new URL2(".", packageJsonUrl)),
+    fileURLToPath6(base)
+  );
+}
+function exportsNotFound(subpath, packageJsonUrl, base) {
+  return new ERR_PACKAGE_PATH_NOT_EXPORTED(
+    fileURLToPath6(new URL2(".", packageJsonUrl)),
+    subpath,
+    base && fileURLToPath6(base)
+  );
+}
+function throwInvalidSubpath(request, match2, packageJsonUrl, internal, base) {
+  const reason = `request is not a valid match in pattern "${match2}" for the "${internal ? "imports" : "exports"}" resolution of ${fileURLToPath6(packageJsonUrl)}`;
+  throw new ERR_INVALID_MODULE_SPECIFIER(
+    request,
+    reason,
+    base && fileURLToPath6(base)
+  );
+}
+function invalidPackageTarget(subpath, target, packageJsonUrl, internal, base) {
+  target = typeof target === "object" && target !== null ? JSON.stringify(target, null, "") : `${target}`;
+  return new ERR_INVALID_PACKAGE_TARGET(
+    fileURLToPath6(new URL2(".", packageJsonUrl)),
+    subpath,
+    target,
+    internal,
+    base && fileURLToPath6(base)
+  );
+}
+function resolvePackageTargetString(target, subpath, match2, packageJsonUrl, base, pattern, internal, isPathMap, conditions) {
+  if (subpath !== "" && !pattern && target[target.length - 1] !== "/")
+    throw invalidPackageTarget(match2, target, packageJsonUrl, internal, base);
+  if (!target.startsWith("./")) {
+    if (internal && !target.startsWith("../") && !target.startsWith("/")) {
+      let isURL2 = false;
+      try {
+        new URL2(target);
+        isURL2 = true;
+      } catch {
+      }
+      if (!isURL2) {
+        const exportTarget = pattern ? RegExpPrototypeSymbolReplace.call(
+          patternRegEx,
+          target,
+          () => subpath
+        ) : target + subpath;
+        return packageResolve(exportTarget, packageJsonUrl, conditions);
+      }
+    }
+    throw invalidPackageTarget(match2, target, packageJsonUrl, internal, base);
+  }
+  if (invalidSegmentRegEx.exec(target.slice(2)) !== null) {
+    if (deprecatedInvalidSegmentRegEx.exec(target.slice(2)) === null) {
+      if (!isPathMap) {
+        const request = pattern ? match2.replace("*", () => subpath) : match2 + subpath;
+        const resolvedTarget = pattern ? RegExpPrototypeSymbolReplace.call(
+          patternRegEx,
+          target,
+          () => subpath
+        ) : target;
+        emitInvalidSegmentDeprecation(
+          resolvedTarget,
+          request,
+          match2,
+          packageJsonUrl,
+          internal,
+          base,
+          true
+        );
+      }
+    } else {
+      throw invalidPackageTarget(match2, target, packageJsonUrl, internal, base);
+    }
+  }
+  const resolved = new URL2(target, packageJsonUrl);
+  const resolvedPath = resolved.pathname;
+  const packagePath = new URL2(".", packageJsonUrl).pathname;
+  if (!resolvedPath.startsWith(packagePath))
+    throw invalidPackageTarget(match2, target, packageJsonUrl, internal, base);
+  if (subpath === "") return resolved;
+  if (invalidSegmentRegEx.exec(subpath) !== null) {
+    const request = pattern ? match2.replace("*", () => subpath) : match2 + subpath;
+    if (deprecatedInvalidSegmentRegEx.exec(subpath) === null) {
+      if (!isPathMap) {
+        const resolvedTarget = pattern ? RegExpPrototypeSymbolReplace.call(
+          patternRegEx,
+          target,
+          () => subpath
+        ) : target;
+        emitInvalidSegmentDeprecation(
+          resolvedTarget,
+          request,
+          match2,
+          packageJsonUrl,
+          internal,
+          base,
+          false
+        );
+      }
+    } else {
+      throwInvalidSubpath(request, match2, packageJsonUrl, internal, base);
+    }
+  }
+  if (pattern) {
+    return new URL2(
+      RegExpPrototypeSymbolReplace.call(
+        patternRegEx,
+        resolved.href,
+        () => subpath
+      )
+    );
+  }
+  return new URL2(subpath, resolved);
+}
+function isArrayIndex(key) {
+  const keyNumber = Number(key);
+  if (`${keyNumber}` !== key) return false;
+  return keyNumber >= 0 && keyNumber < 4294967295;
+}
+function resolvePackageTarget(packageJsonUrl, target, subpath, packageSubpath, base, pattern, internal, isPathMap, conditions) {
+  if (typeof target === "string") {
+    return resolvePackageTargetString(
+      target,
+      subpath,
+      packageSubpath,
+      packageJsonUrl,
+      base,
+      pattern,
+      internal,
+      isPathMap,
+      conditions
+    );
+  }
+  if (Array.isArray(target)) {
+    const targetList = target;
+    if (targetList.length === 0) return null;
+    let lastException;
+    let i = -1;
+    while (++i < targetList.length) {
+      const targetItem = targetList[i];
+      let resolveResult;
+      try {
+        resolveResult = resolvePackageTarget(
+          packageJsonUrl,
+          targetItem,
+          subpath,
+          packageSubpath,
+          base,
+          pattern,
+          internal,
+          isPathMap,
+          conditions
+        );
+      } catch (error) {
+        const exception = (
+          /** @type {ErrnoException} */
+          error
+        );
+        lastException = exception;
+        if (exception.code === "ERR_INVALID_PACKAGE_TARGET") continue;
+        throw error;
+      }
+      if (resolveResult === void 0) continue;
+      if (resolveResult === null) {
+        lastException = null;
+        continue;
+      }
+      return resolveResult;
+    }
+    if (lastException === void 0 || lastException === null) {
+      return null;
+    }
+    throw lastException;
+  }
+  if (typeof target === "object" && target !== null) {
+    const keys = Object.getOwnPropertyNames(target);
+    let i = -1;
+    while (++i < keys.length) {
+      const key = keys[i];
+      if (isArrayIndex(key)) {
+        throw new ERR_INVALID_PACKAGE_CONFIG2(
+          fileURLToPath6(packageJsonUrl),
+          base,
+          '"exports" cannot contain numeric property keys.'
+        );
+      }
+    }
+    i = -1;
+    while (++i < keys.length) {
+      const key = keys[i];
+      if (key === "default" || conditions && conditions.has(key)) {
+        const conditionalTarget = (
+          /** @type {unknown} */
+          target[key]
+        );
+        const resolveResult = resolvePackageTarget(
+          packageJsonUrl,
+          conditionalTarget,
+          subpath,
+          packageSubpath,
+          base,
+          pattern,
+          internal,
+          isPathMap,
+          conditions
+        );
+        if (resolveResult === void 0) continue;
+        return resolveResult;
+      }
+    }
+    return null;
+  }
+  if (target === null) {
+    return null;
+  }
+  throw invalidPackageTarget(
+    packageSubpath,
+    target,
+    packageJsonUrl,
+    internal,
+    base
+  );
+}
+function isConditionalExportsMainSugar(exports, packageJsonUrl, base) {
+  if (typeof exports === "string" || Array.isArray(exports)) return true;
+  if (typeof exports !== "object" || exports === null) return false;
+  const keys = Object.getOwnPropertyNames(exports);
+  let isConditionalSugar = false;
+  let i = 0;
+  let keyIndex = -1;
+  while (++keyIndex < keys.length) {
+    const key = keys[keyIndex];
+    const currentIsConditionalSugar = key === "" || key[0] !== ".";
+    if (i++ === 0) {
+      isConditionalSugar = currentIsConditionalSugar;
+    } else if (isConditionalSugar !== currentIsConditionalSugar) {
+      throw new ERR_INVALID_PACKAGE_CONFIG2(
+        fileURLToPath6(packageJsonUrl),
+        base,
+        `"exports" cannot contain some keys starting with '.' and some not. The exports object must either be an object of package subpath keys or an object of main entry condition name keys only.`
+      );
+    }
+  }
+  return isConditionalSugar;
+}
+function emitTrailingSlashPatternDeprecation(match2, pjsonUrl, base) {
+  if (process2.noDeprecation) {
+    return;
+  }
+  const pjsonPath = fileURLToPath6(pjsonUrl);
+  if (emittedPackageWarnings.has(pjsonPath + "|" + match2)) return;
+  emittedPackageWarnings.add(pjsonPath + "|" + match2);
+  process2.emitWarning(
+    `Use of deprecated trailing slash pattern mapping "${match2}" in the "exports" field module resolution of the package at ${pjsonPath}${base ? ` imported from ${fileURLToPath6(base)}` : ""}. Mapping specifiers ending in "/" is no longer supported.`,
+    "DeprecationWarning",
+    "DEP0155"
+  );
+}
+function packageExportsResolve(packageJsonUrl, packageSubpath, packageConfig, base, conditions) {
+  let exports = packageConfig.exports;
+  if (isConditionalExportsMainSugar(exports, packageJsonUrl, base)) {
+    exports = { ".": exports };
+  }
+  if (own2.call(exports, packageSubpath) && !packageSubpath.includes("*") && !packageSubpath.endsWith("/")) {
+    const target = exports[packageSubpath];
+    const resolveResult = resolvePackageTarget(
+      packageJsonUrl,
+      target,
+      "",
+      packageSubpath,
+      base,
+      false,
+      false,
+      false,
+      conditions
+    );
+    if (resolveResult === null || resolveResult === void 0) {
+      throw exportsNotFound(packageSubpath, packageJsonUrl, base);
+    }
+    return resolveResult;
+  }
+  let bestMatch = "";
+  let bestMatchSubpath = "";
+  const keys = Object.getOwnPropertyNames(exports);
+  let i = -1;
+  while (++i < keys.length) {
+    const key = keys[i];
+    const patternIndex = key.indexOf("*");
+    if (patternIndex !== -1 && packageSubpath.startsWith(key.slice(0, patternIndex))) {
+      if (packageSubpath.endsWith("/")) {
+        emitTrailingSlashPatternDeprecation(
+          packageSubpath,
+          packageJsonUrl,
+          base
+        );
+      }
+      const patternTrailer = key.slice(patternIndex + 1);
+      if (packageSubpath.length >= key.length && packageSubpath.endsWith(patternTrailer) && patternKeyCompare(bestMatch, key) === 1 && key.lastIndexOf("*") === patternIndex) {
+        bestMatch = key;
+        bestMatchSubpath = packageSubpath.slice(
+          patternIndex,
+          packageSubpath.length - patternTrailer.length
+        );
+      }
+    }
+  }
+  if (bestMatch) {
+    const target = (
+      /** @type {unknown} */
+      exports[bestMatch]
+    );
+    const resolveResult = resolvePackageTarget(
+      packageJsonUrl,
+      target,
+      bestMatchSubpath,
+      bestMatch,
+      base,
+      true,
+      false,
+      packageSubpath.endsWith("/"),
+      conditions
+    );
+    if (resolveResult === null || resolveResult === void 0) {
+      throw exportsNotFound(packageSubpath, packageJsonUrl, base);
+    }
+    return resolveResult;
+  }
+  throw exportsNotFound(packageSubpath, packageJsonUrl, base);
+}
+function patternKeyCompare(a, b) {
+  const aPatternIndex = a.indexOf("*");
+  const bPatternIndex = b.indexOf("*");
+  const baseLengthA = aPatternIndex === -1 ? a.length : aPatternIndex + 1;
+  const baseLengthB = bPatternIndex === -1 ? b.length : bPatternIndex + 1;
+  if (baseLengthA > baseLengthB) return -1;
+  if (baseLengthB > baseLengthA) return 1;
+  if (aPatternIndex === -1) return 1;
+  if (bPatternIndex === -1) return -1;
+  if (a.length > b.length) return -1;
+  if (b.length > a.length) return 1;
+  return 0;
+}
+function packageImportsResolve(name2, base, conditions) {
+  if (name2 === "#" || name2.startsWith("#/") || name2.endsWith("/")) {
+    const reason = "is not a valid internal imports specifier name";
+    throw new ERR_INVALID_MODULE_SPECIFIER(name2, reason, fileURLToPath6(base));
+  }
+  let packageJsonUrl;
+  const packageConfig = getPackageScopeConfig(base);
+  if (packageConfig.exists) {
+    packageJsonUrl = pathToFileURL(packageConfig.pjsonPath);
+    const imports = packageConfig.imports;
+    if (imports) {
+      if (own2.call(imports, name2) && !name2.includes("*")) {
+        const resolveResult = resolvePackageTarget(
+          packageJsonUrl,
+          imports[name2],
+          "",
+          name2,
+          base,
+          false,
+          true,
+          false,
+          conditions
+        );
+        if (resolveResult !== null && resolveResult !== void 0) {
+          return resolveResult;
+        }
+      } else {
+        let bestMatch = "";
+        let bestMatchSubpath = "";
+        const keys = Object.getOwnPropertyNames(imports);
+        let i = -1;
+        while (++i < keys.length) {
+          const key = keys[i];
+          const patternIndex = key.indexOf("*");
+          if (patternIndex !== -1 && name2.startsWith(key.slice(0, -1))) {
+            const patternTrailer = key.slice(patternIndex + 1);
+            if (name2.length >= key.length && name2.endsWith(patternTrailer) && patternKeyCompare(bestMatch, key) === 1 && key.lastIndexOf("*") === patternIndex) {
+              bestMatch = key;
+              bestMatchSubpath = name2.slice(
+                patternIndex,
+                name2.length - patternTrailer.length
+              );
+            }
+          }
+        }
+        if (bestMatch) {
+          const target = imports[bestMatch];
+          const resolveResult = resolvePackageTarget(
+            packageJsonUrl,
+            target,
+            bestMatchSubpath,
+            bestMatch,
+            base,
+            true,
+            true,
+            false,
+            conditions
+          );
+          if (resolveResult !== null && resolveResult !== void 0) {
+            return resolveResult;
+          }
+        }
+      }
+    }
+  }
+  throw importNotDefined(name2, packageJsonUrl, base);
+}
+function parsePackageName(specifier, base) {
+  let separatorIndex = specifier.indexOf("/");
+  let validPackageName = true;
+  let isScoped = false;
+  if (specifier[0] === "@") {
+    isScoped = true;
+    if (separatorIndex === -1 || specifier.length === 0) {
+      validPackageName = false;
+    } else {
+      separatorIndex = specifier.indexOf("/", separatorIndex + 1);
+    }
+  }
+  const packageName = separatorIndex === -1 ? specifier : specifier.slice(0, separatorIndex);
+  if (invalidPackageNameRegEx.exec(packageName) !== null) {
+    validPackageName = false;
+  }
+  if (!validPackageName) {
+    throw new ERR_INVALID_MODULE_SPECIFIER(
+      specifier,
+      "is not a valid package name",
+      fileURLToPath6(base)
+    );
+  }
+  const packageSubpath = "." + (separatorIndex === -1 ? "" : specifier.slice(separatorIndex));
+  return { packageName, packageSubpath, isScoped };
+}
+function packageResolve(specifier, base, conditions) {
+  if (builtinModules.includes(specifier)) {
+    return new URL2("node:" + specifier);
+  }
+  const { packageName, packageSubpath, isScoped } = parsePackageName(
+    specifier,
+    base
+  );
+  const packageConfig = getPackageScopeConfig(base);
+  if (packageConfig.exists) {
+    const packageJsonUrl2 = pathToFileURL(packageConfig.pjsonPath);
+    if (packageConfig.name === packageName && packageConfig.exports !== void 0 && packageConfig.exports !== null) {
+      return packageExportsResolve(
+        packageJsonUrl2,
+        packageSubpath,
+        packageConfig,
+        base,
+        conditions
+      );
+    }
+  }
+  let packageJsonUrl = new URL2(
+    "./node_modules/" + packageName + "/package.json",
+    base
+  );
+  let packageJsonPath = fileURLToPath6(packageJsonUrl);
+  let lastPath;
+  do {
+    const stat = tryStatSync(packageJsonPath.slice(0, -13));
+    if (!stat || !stat.isDirectory()) {
+      lastPath = packageJsonPath;
+      packageJsonUrl = new URL2(
+        (isScoped ? "../../../../node_modules/" : "../../../node_modules/") + packageName + "/package.json",
+        packageJsonUrl
+      );
+      packageJsonPath = fileURLToPath6(packageJsonUrl);
+      continue;
+    }
+    const packageConfig2 = read(packageJsonPath, { base, specifier });
+    if (packageConfig2.exports !== void 0 && packageConfig2.exports !== null) {
+      return packageExportsResolve(
+        packageJsonUrl,
+        packageSubpath,
+        packageConfig2,
+        base,
+        conditions
+      );
+    }
+    if (packageSubpath === ".") {
+      return legacyMainResolve(packageJsonUrl, packageConfig2, base);
+    }
+    return new URL2(packageSubpath, packageJsonUrl);
+  } while (packageJsonPath.length !== lastPath.length);
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath6(base), false);
+}
+function isRelativeSpecifier(specifier) {
+  if (specifier[0] === ".") {
+    if (specifier.length === 1 || specifier[1] === "/") return true;
+    if (specifier[1] === "." && (specifier.length === 2 || specifier[2] === "/")) {
+      return true;
+    }
+  }
+  return false;
+}
+function shouldBeTreatedAsRelativeOrAbsolutePath(specifier) {
+  if (specifier === "") return false;
+  if (specifier[0] === "/") return true;
+  return isRelativeSpecifier(specifier);
+}
+function moduleResolve(specifier, base, conditions, preserveSymlinks) {
+  const protocol = base.protocol;
+  const isData = protocol === "data:";
+  const isRemote = isData || protocol === "http:" || protocol === "https:";
+  let resolved;
+  if (shouldBeTreatedAsRelativeOrAbsolutePath(specifier)) {
+    try {
+      resolved = new URL2(specifier, base);
+    } catch (error_) {
+      const error = new ERR_UNSUPPORTED_RESOLVE_REQUEST(specifier, base);
+      error.cause = error_;
+      throw error;
+    }
+  } else if (protocol === "file:" && specifier[0] === "#") {
+    resolved = packageImportsResolve(specifier, base, conditions);
+  } else {
+    try {
+      resolved = new URL2(specifier);
+    } catch (error_) {
+      if (isRemote && !builtinModules.includes(specifier)) {
+        const error = new ERR_UNSUPPORTED_RESOLVE_REQUEST(specifier, base);
+        error.cause = error_;
+        throw error;
+      }
+      resolved = packageResolve(specifier, base, conditions);
+    }
+  }
+  assert2(resolved !== void 0, "expected to be defined");
+  if (resolved.protocol !== "file:") {
+    return resolved;
+  }
+  return finalizeResolution(resolved, base, preserveSymlinks);
+}
+function checkIfDisallowedImport(specifier, parsed, parsedParentURL) {
+  if (parsedParentURL) {
+    const parentProtocol = parsedParentURL.protocol;
+    if (parentProtocol === "http:" || parentProtocol === "https:") {
+      if (shouldBeTreatedAsRelativeOrAbsolutePath(specifier)) {
+        const parsedProtocol = parsed?.protocol;
+        if (parsedProtocol && parsedProtocol !== "https:" && parsedProtocol !== "http:") {
+          throw new ERR_NETWORK_IMPORT_DISALLOWED(
+            specifier,
+            parsedParentURL,
+            "remote imports cannot import from a local location."
+          );
+        }
+        return { url: parsed?.href || "" };
+      }
+      if (builtinModules.includes(specifier)) {
+        throw new ERR_NETWORK_IMPORT_DISALLOWED(
+          specifier,
+          parsedParentURL,
+          "remote imports cannot import from a local location."
+        );
+      }
+      throw new ERR_NETWORK_IMPORT_DISALLOWED(
+        specifier,
+        parsedParentURL,
+        "only relative and absolute specifiers are supported."
+      );
+    }
+  }
+}
+function isURL(self) {
+  return Boolean(
+    self && typeof self === "object" && "href" in self && typeof self.href === "string" && "protocol" in self && typeof self.protocol === "string" && self.href && self.protocol
+  );
+}
+function throwIfInvalidParentURL(parentURL) {
+  if (parentURL === void 0) {
+    return;
+  }
+  if (typeof parentURL !== "string" && !isURL(parentURL)) {
+    throw new codes.ERR_INVALID_ARG_TYPE(
+      "parentURL",
+      ["string", "URL"],
+      parentURL
+    );
+  }
+}
+function defaultResolve(specifier, context = {}) {
+  const { parentURL } = context;
+  assert2(parentURL !== void 0, "expected `parentURL` to be defined");
+  throwIfInvalidParentURL(parentURL);
+  let parsedParentURL;
+  if (parentURL) {
+    try {
+      parsedParentURL = new URL2(parentURL);
+    } catch {
+    }
+  }
+  let parsed;
+  let protocol;
+  try {
+    parsed = shouldBeTreatedAsRelativeOrAbsolutePath(specifier) ? new URL2(specifier, parsedParentURL) : new URL2(specifier);
+    protocol = parsed.protocol;
+    if (protocol === "data:") {
+      return { url: parsed.href, format: null };
+    }
+  } catch {
+  }
+  const maybeReturn = checkIfDisallowedImport(
+    specifier,
+    parsed,
+    parsedParentURL
+  );
+  if (maybeReturn) return maybeReturn;
+  if (protocol === void 0 && parsed) {
+    protocol = parsed.protocol;
+  }
+  if (protocol === "node:") {
+    return { url: specifier };
+  }
+  if (parsed && parsed.protocol === "node:") return { url: specifier };
+  const conditions = getConditionsSet(context.conditions);
+  const url = moduleResolve(specifier, new URL2(parentURL), conditions, false);
+  return {
+    // Do NOT cast `url` to a string: that will work even when there are real
+    // problems, silencing them
+    url: url.href,
+    format: defaultGetFormatWithoutErrors(url, { parentURL })
+  };
+}
+
+// ../../node_modules/.pnpm/import-meta-resolve@4.1.0/node_modules/import-meta-resolve/index.js
+function resolve5(specifier, parent) {
+  if (!parent) {
+    throw new Error(
+      "Please pass `parent`: `import-meta-resolve` cannot ponyfill that"
+    );
+  }
+  try {
+    return defaultResolve(specifier, { parentURL: parent }).url;
+  } catch (error) {
+    const exception = (
+      /** @type {ErrnoException} */
+      error
+    );
+    if ((exception.code === "ERR_UNSUPPORTED_DIR_IMPORT" || exception.code === "ERR_MODULE_NOT_FOUND") && typeof exception.url === "string") {
+      return exception.url;
+    }
+    throw error;
+  }
+}
+
+// src/ParseDependencies.ts
+import path4 from "node:path";
+import { pathToFileURL as pathToFileURL2 } from "node:url";
+function parseDependencies(weslSrc, projectDir) {
+  const registry = parsedRegistry();
+  parseIntoRegistry(weslSrc, registry);
+  const rootAst = Object.values(registry.modules)[0];
+  const bindResult = bindIdents({ registry, rootAst, accumulateUnbound: true });
+  const { unbound } = bindResult;
+  if (!unbound) return [];
+  const fullProjectDir = path4.resolve(path4.join(projectDir, "foo"));
+  const projectURL = pathToFileURL2(fullProjectDir).href;
+  const deps = filterMap(
+    unbound,
+    (mPath) => unboundToDependency(mPath, projectURL)
+  );
+  const uniqueDeps = [...new Set(deps)];
+  return uniqueDeps;
+}
+function unboundToDependency(mPath, importerURL) {
+  for (let i = mPath.length; i >= 0; i--) {
+    const subPath = mPath.slice(0, i).join("/");
+    try {
+      resolve5(subPath, importerURL);
+      return subPath;
+    } catch {
+      continue;
+    }
+  }
+  return void 0;
+}
+
 // src/PackageWesl.ts
+var import_js_api = __toESM(require_dist(), 1);
+var biome = await setupBiome();
 async function packageWgsl(args) {
   const { projectDir, outDir, multiBundle } = args;
   const modules = await loadModules(args);
@@ -13943,13 +17401,14 @@ async function packageWgsl(args) {
     console.error("no WGSL/WESL files found in", args.src);
     throw new Error("no WGSL/WESL files found");
   }
-  const pkgJsonPath = path2.join(projectDir, "package.json");
+  const pkgJsonPath = path5.join(projectDir, "package.json");
   const { name: name2 } = await loadPackageFields(pkgJsonPath);
   const edition = "unstable_2025_1";
-  if (!args.multiBundle) {
-    await writeJsBundle({ name: name2, edition, modules }, outDir);
+  if (args.multiBundle) {
+    await writeMultiBundle(modules, name2, edition, projectDir, outDir);
   } else {
-    await writeMultiBundle(modules, name2, edition, outDir);
+    const deps = parseDependencies(modules, projectDir);
+    await writeJsBundle({ name: name2, edition, modules }, deps, outDir);
   }
   await writeTypeScriptDts(outDir);
   if (args.updatePackageJson) {
@@ -13957,11 +17416,11 @@ async function packageWgsl(args) {
   }
 }
 async function updatePackageJson(projectDir, outDir, multiBundle) {
-  const pkgJsonPath = path2.join(projectDir, "package.json");
-  const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
+  const pkgJsonPath = path5.join(projectDir, "package.json");
+  const pkgJsonString = await fs2.readFile(pkgJsonPath, { encoding: "utf8" });
   const pkgJson = JSON.parse(pkgJsonString);
   const exports = {};
-  const distDir = path2.relative(projectDir, outDir);
+  const distDir = path5.relative(projectDir, outDir);
   if (multiBundle) {
     exports["./*"] = {
       import: `./${distDir}/*/weslBundle.js`,
@@ -13974,18 +17433,20 @@ async function updatePackageJson(projectDir, outDir, multiBundle) {
     };
   }
   pkgJson.exports = exports;
-  await fs.writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2));
+  await fs2.writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2));
 }
-async function writeMultiBundle(modules, name2, edition, outDir) {
+async function writeMultiBundle(modules, name2, edition, projectDir, outDir) {
   for (const [moduleName, moduleSrc] of Object.entries(modules)) {
+    const oneModule = { [moduleName]: moduleSrc };
     const moduleBundle = {
       name: name2,
       edition,
-      modules: { [moduleName]: moduleSrc }
+      modules: oneModule
     };
+    const dependencies = parseDependencies(oneModule, projectDir);
     const bundleDirRelative = noSuffix(moduleName);
-    const bundleDir = path2.join(outDir, bundleDirRelative);
-    await writeJsBundle(moduleBundle, bundleDir);
+    const bundleDir = path5.join(outDir, bundleDirRelative);
+    await writeJsBundle(moduleBundle, dependencies, bundleDir);
   }
 }
 async function writeTypeScriptDts(outDir) {
@@ -13994,19 +17455,50 @@ export declare const weslBundle: WeslBundle;
 export default weslBundle;
 `;
   const declText = WeslBundle_default + constDecl;
-  const outPath = path2.join(outDir, "weslBundle.d.ts");
-  await fs.writeFile(outPath, declText);
+  const outPath = path5.join(outDir, "weslBundle.d.ts");
+  await fs2.writeFile(outPath, declText);
 }
-async function writeJsBundle(weslBundle, outDir) {
+async function writeJsBundle(weslBundle, dependencies, outDir) {
   await mkdir(outDir, { recursive: true });
-  const bundleString = JSON.stringify(weslBundle, null, 2);
+  const depNames = dependencies.map((dep) => dep.replaceAll("/", "_"));
+  const depsWithNames = zip(dependencies, depNames);
+  const imports = depsWithNames.map(([dep, depName]) => {
+    return `import ${depName} from "${dep}";`;
+  }).join("\n");
+  const importsStr = imports ? `${imports}
+` : "";
+  const bundleString = bundleToString(weslBundle, depNames);
   const outString = `
-export const weslBundle = ${bundleString}
+    ${importsStr}
+    export const weslBundle = ${bundleString}
 
-export default weslBundle;
+    export default weslBundle;
   `;
-  const outPath = path2.join(outDir, "weslBundle.js");
-  await fs.writeFile(outPath, outString);
+  const outPath = path5.join(outDir, "weslBundle.js");
+  const formatted = biome.formatContent(outString, { filePath: "b.js" });
+  await fs2.writeFile(outPath, formatted.content);
+}
+function bundleToString(bundle, dependencies) {
+  const { name: name2, edition, modules } = bundle;
+  let dependencyLine = "";
+  if (dependencies.length) {
+    dependencyLine = `, dependencies: [${dependencies.join(", ")}]`;
+  }
+  const result = `{
+      name: "${name2}",
+      edition: "${edition}",
+      modules: ${modulesToString(modules)}
+      ${dependencyLine}
+    }`;
+  return result;
+}
+function modulesToString(modules) {
+  const entries = Object.entries(modules).map(
+    ([name2, src]) => `"${name2}": ${JSON.stringify(src)}`
+  );
+  return `{
+        ${entries.join(",\n")}
+      }`;
 }
 async function loadModules(args) {
   const { rootDir } = args;
@@ -14014,10 +17506,10 @@ async function loadModules(args) {
     ignore: "node_modules/**"
   });
   const promisedSrcs = shaderFiles.map(
-    (f) => fs.readFile(f, { encoding: "utf8" })
+    (f) => fs2.readFile(f, { encoding: "utf8" })
   );
   const src = await Promise.all(promisedSrcs);
-  const relativePaths = shaderFiles.map((p) => path2.relative(rootDir, p));
+  const relativePaths = shaderFiles.map((p) => path5.relative(rootDir, p));
   const moduleEntries = zip(relativePaths, src);
   return Object.fromEntries(moduleEntries);
 }
@@ -14025,7 +17517,7 @@ function zip(as, bs) {
   return as.map((a, i) => [a, bs[i]]);
 }
 async function loadPackageFields(pkgJsonPath) {
-  const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
+  const pkgJsonString = await fs2.readFile(pkgJsonPath, { encoding: "utf8" });
   const pkgJson = JSON.parse(pkgJsonString);
   const { name: name2 } = pkgJson;
   verifyField("name", name2);
@@ -14037,6 +17529,16 @@ async function loadPackageFields(pkgJsonPath) {
   }
   return { name: name2 };
 }
+async function setupBiome() {
+  const biome2 = await import_js_api.Biome.create({
+    distribution: import_js_api.Distribution.NODE
+    // Or BUNDLER / WEB depending on the distribution package you've installed
+  });
+  biome2.applyConfiguration({
+    formatter: { indentStyle: "space" }
+  });
+  return biome2;
+}
 
 // src/PackagerCli.ts
 var cliArgs;
@@ -14045,14 +17547,14 @@ async function packagerCli(rawArgs2) {
   await packageWgsl(cliArgs);
 }
 function parseArgs(args) {
-  return yargs_default(args).command("$0", "create an npm package from WGSL/WESL files").option("rootDir", {
-    type: "string",
-    default: ".",
-    describe: "base directory of WGSL/WESL files"
-  }).option("src", {
+  return yargs_default(args).command("$0", "create an npm package from WGSL/WESL files").option("src", {
     type: "string",
     default: "./shaders/*.w[eg]sl",
     describe: "WGSL/WESL files to bundle in the package (glob syntax)"
+  }).option("rootDir", {
+    type: "string",
+    default: ".",
+    describe: "base directory of WGSL/WESL files"
   }).option("projectDir", {
     type: "string",
     default: ".",
@@ -14061,6 +17563,10 @@ function parseArgs(args) {
     type: "boolean",
     default: false,
     describe: "make a shader bundle for each source file"
+  }).option("exportName", {
+    type: "string",
+    default: ".",
+    describe: "package.json export name for consolidated bundle (ignored for multiBundle)"
   }).option("updatePackageJson", {
     type: "boolean",
     default: true,
@@ -14068,7 +17574,7 @@ function parseArgs(args) {
   }).option("outDir", {
     type: "string",
     default: "dist",
-    describe: "where to put bundled output files"
+    describe: "where to put bundled output files (relative to projectDir)"
   }).help().parseSync();
 }
 

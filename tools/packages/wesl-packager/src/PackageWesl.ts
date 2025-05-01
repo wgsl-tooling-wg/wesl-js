@@ -5,7 +5,10 @@ import path from "node:path";
 import { noSuffix, WeslBundle } from "wesl";
 import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
 import { CliArgs } from "./PackagerCli.js";
-import { dlog } from "berry-pretty";
+import { parseDependencies } from "./ParseDependencies.js";
+import { Biome, Distribution } from "@biomejs/js-api";
+
+const biome = await setupBiome();
 
 /** write weslBundle .js and .d.ts files for this shader */
 export async function packageWgsl(args: CliArgs): Promise<void> {
@@ -19,10 +22,11 @@ export async function packageWgsl(args: CliArgs): Promise<void> {
   const { name } = await loadPackageFields(pkgJsonPath);
   const edition = "unstable_2025_1";
 
-  if (!args.multiBundle) {
-    await writeJsBundle({ name, edition, modules }, outDir);
+  if (args.multiBundle) {
+    await writeMultiBundle(modules, name, edition, projectDir, outDir);
   } else {
-    await writeMultiBundle(modules, name, edition, outDir);
+    const deps = parseDependencies(modules, projectDir);
+    await writeJsBundle({ name, edition, modules }, deps, outDir);
   }
   await writeTypeScriptDts(outDir);
   if (args.updatePackageJson) {
@@ -57,21 +61,25 @@ async function updatePackageJson(
   await fs.writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2));
 }
 
+/** create one bundle per source module */
 async function writeMultiBundle(
   modules: Record<string, string>,
   name: string,
   edition: string,
+  projectDir: string,
   outDir: string,
 ): Promise<void> {
   for (const [moduleName, moduleSrc] of Object.entries(modules)) {
+    const oneModule = { [moduleName]: moduleSrc };
     const moduleBundle: WeslBundle = {
       name,
       edition,
-      modules: { [moduleName]: moduleSrc },
+      modules: oneModule,
     };
+    const dependencies = parseDependencies(oneModule, projectDir);
     const bundleDirRelative = noSuffix(moduleName);
     const bundleDir = path.join(outDir, bundleDirRelative);
-    await writeJsBundle(moduleBundle, bundleDir);
+    await writeJsBundle(moduleBundle, dependencies, bundleDir);
   }
 }
 
@@ -87,21 +95,61 @@ export default weslBundle;
   await fs.writeFile(outPath, declText);
 }
 
-/** Write weslBundle.js containing the bundled shader sources */
+/** Write a weslBundle.js containing the bundled shader sources */
 async function writeJsBundle(
   weslBundle: WeslBundle,
+  dependencies: string[],
   outDir: string,
 ): Promise<void> {
   await mkdir(outDir, { recursive: true });
 
-  const bundleString = JSON.stringify(weslBundle, null, 2);
-  const outString = `
-export const weslBundle = ${bundleString}
+  const depNames = dependencies.map(dep => dep.replaceAll("/", "_"));
+  const depsWithNames = zip(dependencies, depNames);
 
-export default weslBundle;
+  const imports = depsWithNames
+    .map(([dep, depName]) => {
+      return `import ${depName} from "${dep}";`;
+    })
+    .join("\n");
+  const importsStr = imports ? `${imports}\n` : "";
+
+  const bundleString = bundleToString(weslBundle, depNames);
+
+  const outString = `
+    ${importsStr}
+    export const weslBundle = ${bundleString}
+
+    export default weslBundle;
   `;
+
   const outPath = path.join(outDir, "weslBundle.js");
-  await fs.writeFile(outPath, outString);
+  const formatted = biome.formatContent(outString, { filePath: "b.js" });
+  await fs.writeFile(outPath, formatted.content);
+}
+
+function bundleToString(bundle: WeslBundle, dependencies: string[]): string {
+  const { name, edition, modules } = bundle;
+  let dependencyLine = "";
+  if (dependencies.length) {
+    dependencyLine = `, dependencies: [${dependencies.join(", ")}]`;
+  }
+
+  const result = `{
+      name: "${name}",
+      edition: "${edition}",
+      modules: ${modulesToString(modules)}
+      ${dependencyLine}
+    }`;
+  return result;
+}
+
+function modulesToString(modules: Record<string, string>): string {
+  const entries = Object.entries(modules).map(
+    ([name, src]) => `"${name}": ${JSON.stringify(src)}`,
+  );
+  return `{
+        ${entries.join(",\n")}
+      }`;
 }
 
 /** load the wesl/wgsl shader sources */
@@ -144,6 +192,13 @@ async function loadPackageFields(pkgJsonPath: string): Promise<PkgFields> {
   return { name };
 }
 
-/** 
- * TODO parse and bindIdents on the wesl files, collecting the dependencies.
-*/
+/** setup biome to use as a formatter */
+async function setupBiome(): Promise<Biome> {
+  const biome = await Biome.create({
+    distribution: Distribution.NODE, // Or BUNDLER / WEB depending on the distribution package you've installed
+  });
+  biome.applyConfiguration({
+    formatter: { indentStyle: "space" },
+  });
+  return biome;
+}
