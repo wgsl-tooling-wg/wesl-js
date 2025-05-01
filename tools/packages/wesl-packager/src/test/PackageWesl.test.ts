@@ -38,13 +38,20 @@ test("package two wgsl files into one bundle", async () => {
   `);
 });
 
+/** set to true for manual review of test results */
+const saveTestDir = false;
+
 test("package multi ", async () => {
   // create a copy of multi_package in a temporary directory so we can mutate it
-  const workDir = "/tmp/testing_multi";
-  await rimraf(workDir);
-  await mkdir(workDir);
+  let workDir: string;
+  if (saveTestDir) {
+    workDir = "/tmp/testing_multi";
+    await rimraf(workDir);
+    await mkdir(workDir);
+  } else {
+    workDir = await fs.mkdtemp("/tmp/wesl-packager-test-multi-");
+  }
 
-  // const workDir = await fs.mkdtemp("wesl-packager-test-multi-");
   try {
     const multiDir = path.join(testDir, "multi_package");
     await fs.cp(multiDir, workDir, {
@@ -65,9 +72,10 @@ test("package multi ", async () => {
 
     const expectDir = path.join(testDir, "../../../test_pkg/multi_pkg");
     expectDirMatch(workDir, expectDir);
-
   } finally {
-    // await rimraf(workDir);
+    if (!saveTestDir) {
+      await rimraf(workDir);
+    }
   }
 });
 
