@@ -45,6 +45,7 @@ function logDiff(diff: Difference): void {
   } else {
     const resultPath = path.join(path1!, name1!);
     const expectPath = path.join(path2!, name2!);
+    process.stderr.write(`\n--- File ${relative}${name1} is different: ---\n`);
     logFileDiff(resultPath, expectPath);
   }
 }
@@ -58,11 +59,19 @@ function logFileDiff(resultPath: string, expectPath: string): void {
     if (process.env.FORCE_COLOR) {
       diffResult.forEach(part => {
         const { value, added, removed } = part;
-        let colored = value;
+        let spaced = value;
+        if (value.trim() === "") {
+          spaced = value
+            .replaceAll(" ", "█")
+            .replaceAll("\n", "\\n")
+            .replaceAll("\t", "→");
+        }
+
+        let colored = spaced;
         if (added) {
-          colored = pico.bold(pico.green(value));
+          colored = pico.bold(pico.green(spaced));
         } else if (removed) {
-          colored = pico.bold(pico.red(value));
+          colored = pico.bold(pico.red(spaced));
         }
         process.stderr.write(colored);
       });
@@ -76,7 +85,7 @@ function logFileDiff(resultPath: string, expectPath: string): void {
         } else if (removed) {
           prefix = "- ";
         }
-        console.error(prefix + value);
+        process.stderr.write(prefix + value + "\n");
       });
     }
   } else {
