@@ -8282,15 +8282,6 @@ async function writeMultiBundle(modules, name2, edition, projectDir, outDir) {
     await writeJsBundle(moduleBundle, dependencies, bundleDir);
   }
 }
-async function writeTypeScriptDts(outDir) {
-  const constDecl = `
-export declare const weslBundle: WeslBundle;
-export default weslBundle;
-`;
-  const declText = WeslBundle_default + constDecl;
-  const outPath = path2.join(outDir, "weslBundle.d.ts");
-  await fs.writeFile(outPath, declText);
-}
 async function writeJsBundle(weslBundle, dependencies, outDir) {
   await mkdir(outDir, { recursive: true });
   const depNames = dependencies.map((dep) => dep.replaceAll("/", "_"));
@@ -8300,7 +8291,7 @@ async function writeJsBundle(weslBundle, dependencies, outDir) {
   }).join("\n");
   const importsStr = imports ? `${imports}
 ` : "";
-  const bundleString = bundleToString(weslBundle, depNames);
+  const bundleString = bundleToJsString(weslBundle, depNames);
   const outString = `
     ${importsStr}
     export const weslBundle = ${bundleString}
@@ -8311,27 +8302,28 @@ async function writeJsBundle(weslBundle, dependencies, outDir) {
   const formatted = biome.formatContent(outString, { filePath: "b.js" });
   await fs.writeFile(outPath, formatted.content);
 }
-function bundleToString(bundle, dependencies) {
-  const { name: name2, edition, modules } = bundle;
-  let dependencyLine = "";
-  if (dependencies.length) {
-    dependencyLine = `, dependencies: [${dependencies.join(", ")}]`;
-  }
-  const result = `{
-      name: "${name2}",
-      edition: "${edition}",
-      modules: ${modulesToString(modules)}
-      ${dependencyLine}
-    }`;
-  return result;
+async function writeTypeScriptDts(outDir) {
+  const constDecl = `
+    export declare const weslBundle: WeslBundle;
+    export default weslBundle;
+  `;
+  const declText = WeslBundle_default + constDecl;
+  const formatted = biome.formatContent(declText, { filePath: "t.d.ts" });
+  const outPath = path2.join(outDir, "weslBundle.d.ts");
+  await fs.writeFile(outPath, formatted.content);
 }
-function modulesToString(modules) {
-  const entries = Object.entries(modules).map(
-    ([name2, src]) => `"${name2}": ${JSON.stringify(src)}`
-  );
-  return `{
-        ${entries.join(",\n")}
-      }`;
+function bundleToJsString(bundle, dependencies) {
+  const { name: name2, edition, modules } = bundle;
+  const depsObj = dependencies.length ? { dependencies: 99 } : {};
+  const obj = { name: name2, edition, modules, ...depsObj };
+  const jsonString = JSON.stringify(obj, null, 2);
+  if (dependencies.length) {
+    const dependenciesStr = `: [${dependencies.join(", ")}]`;
+    const result = jsonString.replace(": 99", dependenciesStr);
+    return result;
+  } else {
+    return jsonString;
+  }
 }
 async function loadModules(args) {
   const { rootDir } = args;
@@ -8365,7 +8357,6 @@ async function loadPackageFields(pkgJsonPath) {
 async function setupBiome() {
   const biome2 = await Biome.create({
     distribution: Distribution.NODE
-    // Or BUNDLER / WEB depending on the distribution package you've installed
   });
   biome2.applyConfiguration({
     formatter: { indentStyle: "space" }

@@ -34,6 +34,7 @@ export async function packageWgsl(args: CliArgs): Promise<void> {
   }
 }
 
+/** add an 'exports' entry to package.json for the wesl bundles */
 async function updatePackageJson(
   projectDir: string,
   outDir: string,
@@ -83,18 +84,6 @@ async function writeMultiBundle(
   }
 }
 
-/** Write weslBundle.d.ts containing the type definitions for a WeslBundle */
-async function writeTypeScriptDts(outDir: string): Promise<void> {
-  // TODO could we use /// <reference types="wesl"> to get the type of WeslBundle?
-  const constDecl = `
-export declare const weslBundle: WeslBundle;
-export default weslBundle;
-`;
-  const declText = weslBundleDecl + constDecl;
-  const outPath = path.join(outDir, "weslBundle.d.ts");
-  await fs.writeFile(outPath, declText);
-}
-
 /** Write a weslBundle.js containing the bundled shader sources */
 async function writeJsBundle(
   weslBundle: WeslBundle,
@@ -113,7 +102,7 @@ async function writeJsBundle(
     .join("\n");
   const importsStr = imports ? `${imports}\n` : "";
 
-  const bundleString = bundleToString(weslBundle, depNames);
+  const bundleString = bundleToJsString(weslBundle, depNames);
 
   const outString = `
     ${importsStr}
@@ -127,29 +116,33 @@ async function writeJsBundle(
   await fs.writeFile(outPath, formatted.content);
 }
 
-function bundleToString(bundle: WeslBundle, dependencies: string[]): string {
-  const { name, edition, modules } = bundle;
-  let dependencyLine = "";
-  if (dependencies.length) {
-    dependencyLine = `, dependencies: [${dependencies.join(", ")}]`;
-  }
+/** Write weslBundle.d.ts containing the type definitions for a WeslBundle */
+async function writeTypeScriptDts(outDir: string): Promise<void> {
+  // TODO could we use /// <reference types="wesl"> to get the type of WeslBundle?
+  const constDecl = `
+    export declare const weslBundle: WeslBundle;
+    export default weslBundle;
+  `;
+  const declText = weslBundleDecl + constDecl;
+  const formatted = biome.formatContent(declText, { filePath: "t.d.ts" });
 
-  const result = `{
-      name: "${name}",
-      edition: "${edition}",
-      modules: ${modulesToString(modules)}
-      ${dependencyLine}
-    }`;
-  return result;
+  const outPath = path.join(outDir, "weslBundle.d.ts");
+  await fs.writeFile(outPath, formatted.content);
 }
 
-function modulesToString(modules: Record<string, string>): string {
-  const entries = Object.entries(modules).map(
-    ([name, src]) => `"${name}": ${JSON.stringify(src)}`,
-  );
-  return `{
-        ${entries.join(",\n")}
-      }`;
+/** @return the bundle plus dependencies as a JavaScript string */
+function bundleToJsString(bundle: WeslBundle, dependencies: string[]): string {
+  const { name, edition, modules } = bundle;
+  const depsObj = dependencies.length ? { dependencies: 99 } : {};
+  const obj = { name, edition, modules, ...depsObj };
+  const jsonString = JSON.stringify(obj, null, 2);
+  if (dependencies.length) {
+    const dependenciesStr = `: [${dependencies.join(", ")}]`;
+    const result = jsonString.replace(": 99", dependenciesStr);
+    return result;
+  } else {
+    return jsonString;
+  }
 }
 
 /** load the wesl/wgsl shader sources */
@@ -195,7 +188,7 @@ async function loadPackageFields(pkgJsonPath: string): Promise<PkgFields> {
 /** setup biome to use as a formatter */
 async function setupBiome(): Promise<Biome> {
   const biome = await Biome.create({
-    distribution: Distribution.NODE, // Or BUNDLER / WEB depending on the distribution package you've installed
+    distribution: Distribution.NODE,
   });
   biome.applyConfiguration({
     formatter: { indentStyle: "space" },
