@@ -31,9 +31,13 @@ export function parseDependencies(
   const { unbound } = bindResult;
   if (!unbound) return [];
 
+  // a package module reference needs at least two segments (length 1 is probably a builtin wgsl fn or type)
+  const pkgRefs = unbound.filter(modulePath => modulePath.length > 1);
+  if (pkgRefs.length === 0) return [];
+
   const fullProjectDir = path.resolve(path.join(projectDir, "foo"));
   const projectURL = pathToFileURL(fullProjectDir).href;
-  const deps = filterMap(unbound, mPath =>
+  const deps = filterMap(pkgRefs, mPath =>
     unboundToDependency(mPath, projectURL),
   );
   const uniqueDeps = [...new Set(deps)];
