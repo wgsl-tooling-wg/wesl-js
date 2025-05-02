@@ -281,7 +281,7 @@ importers:
     devDependencies:
       multi_pkg:
         specifier: workspace:*
-        version: link:../wesl-packager/src/test/multi_package
+        version: link:../test_pkg/multi_pkg
       ncp:
         specifier: ^2.0.0
         version: 2.0.0

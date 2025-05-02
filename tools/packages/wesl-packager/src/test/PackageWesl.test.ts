@@ -58,6 +58,9 @@ test("package multi ", async () => {
       recursive: true,
       preserveTimestamps: true,
     });
+    replaceInFile(path.join(workDir, "package.json"), {
+      multi_pkg_src: "multi_pkg",
+    });
 
     const distDir = path.join(workDir, "dist");
     // run wesl-packager in temporary directory
@@ -81,4 +84,15 @@ test("package multi ", async () => {
 
 function packageCli(argsLine: string): Promise<void> {
   return packagerCli(argsLine.split(/\s+/));
+}
+
+async function replaceInFile(
+  filePath: string,
+  replacements: Record<string, string>,
+): Promise<void> {
+  let content = await readFile(filePath, "utf8");
+  for (const [search, replace] of Object.entries(replacements)) {
+    content = content.replaceAll(search, replace);
+  }
+  await fs.writeFile(filePath, content, "utf8");
 }

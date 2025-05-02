@@ -1,5 +1,5 @@
 {
-  "name": "multi_pkg",
+  "name": "multi_pkg_src",
   "private": true,
   "dependencies": {
     "dependent_package": "workspace:*"
