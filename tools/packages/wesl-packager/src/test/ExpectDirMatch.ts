@@ -20,8 +20,8 @@ export const defaultOptions: Options = {
  * @param options - Optional dir-compare options to customize comparison.
  */
 export function expectDirMatch(
-  resultDir: string,
   expectDir: string,
+  resultDir: string,
   options?: Options,
 ): void {
   const compareOpts = { ...defaultOptions, ...options };
