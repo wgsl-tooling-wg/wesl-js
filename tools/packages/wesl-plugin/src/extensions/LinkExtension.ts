@@ -23,8 +23,10 @@ async function emitLinkJs(
   const tomlRelative = path.relative(tomlDir, resolvedWeslRoot);
   const debugWeslRoot = tomlRelative.replaceAll(path.sep, "/");
 
+  const sanitizedDeps = dependencies.map(dep => dep.replaceAll("/", "_"));
+
   const bundleImports = dependencies
-    .map(p => `import ${p} from "${p}";`)
+    .map((p, i) => `import ${sanitizedDeps[i]} from "${p}";`)
     .join("\n");
 
   const rootName = path.basename(rootModuleName);
@@ -36,7 +38,7 @@ async function emitLinkJs(
     debugWeslRoot,
   };
 
-  const libsStr = `libs: [${dependencies.join(", ")}]`;
+  const libsStr = `libs: [${sanitizedDeps.join(", ")}]`;
   const linkParamsStr = `{
     ${serializeFields(linkParams)},
     ${libsStr},
