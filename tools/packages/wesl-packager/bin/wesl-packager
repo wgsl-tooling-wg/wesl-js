@@ -9178,10 +9178,12 @@ function parseDependencies(weslSrc, projectDir) {
   const bindResult = bindIdents({ registry, rootAst, accumulateUnbound: true });
   const { unbound } = bindResult;
   if (!unbound) return [];
+  const pkgRefs = unbound.filter((modulePath) => modulePath.length > 1);
+  if (pkgRefs.length === 0) return [];
   const fullProjectDir = path.resolve(path.join(projectDir, "foo"));
   const projectURL = pathToFileURL(fullProjectDir).href;
   const deps = filterMap(
-    unbound,
+    pkgRefs,
     (mPath) => unboundToDependency(mPath, projectURL)
   );
   const uniqueDeps = [...new Set(deps)];
