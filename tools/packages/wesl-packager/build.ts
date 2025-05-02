@@ -12,7 +12,12 @@ const buildOptions: BuildOptions = {
   format: "esm",
   outfile: "bin/wesl-packager",
   entryPoints: ["src/main.ts"],
-  external: ["@biomejs/wasm-bundler", "@biomejs/wasm-web"],
+  external: [
+    "@biomejs/wasm-nodejs",
+    "@biomejs/js-api",
+    "glob",
+    "import-meta-resolve",
+  ],
   logLevel: "info",
 };
 

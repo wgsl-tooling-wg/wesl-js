@@ -22,14 +22,14 @@
     "@biomejs/js-api": "^0.7.1",
     "@biomejs/wasm-nodejs": "^1.9.4",
     "glob": "^11.0.1",
-    "import-meta-resolve": "^4.1.0",
-    "wesl": "workspace:*"
+    "import-meta-resolve": "^4.1.0"
   },
   "devDependencies": {
     "@types/diff": "^7.0.1",
     "@types/node": "^22.13.10",
     "diff": "^7.0.0",
     "dir-compare": "^5.0.0",
-    "picocolors": "^1.1.1"
+    "picocolors": "^1.1.1",
+    "wesl": "workspace:*"
   }
 }
