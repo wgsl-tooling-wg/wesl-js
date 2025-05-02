@@ -9276,7 +9276,7 @@ async function writeJsBundle(weslBundle, dependencies, outDir) {
   }).join("\n");
   const importsStr = imports ? `${imports}
 ` : "";
-  const bundleString = bundleToString(weslBundle, depNames);
+  const bundleString = bundleToJsString(weslBundle, depNames);
   const outString = `
     ${importsStr}
     export const weslBundle = ${bundleString}
@@ -9318,7 +9318,6 @@ async function loadPackageFields(pkgJsonPath) {
 async function setupBiome() {
   const biome2 = await Biome.create({
     distribution: Distribution.NODE
-    // Or BUNDLER / WEB depending on the distribution package you've installed
   });
   biome2.applyConfiguration({
     formatter: { indentStyle: "space" }
