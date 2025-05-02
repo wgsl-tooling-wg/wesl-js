@@ -86,6 +86,7 @@ function packageCli(argsLine: string): Promise<void> {
   return packagerCli(argsLine.split(/\s+/));
 }
 
+/** Rewrite a file, replacing specified strings.  */
 async function replaceInFile(
   filePath: string,
   replacements: Record<string, string>,
