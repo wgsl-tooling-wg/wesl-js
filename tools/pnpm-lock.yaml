@@ -283,7 +283,7 @@ importers:
         version: link:../mini-parse
     devDependencies:
       multi_pkg:
-        specifier: workspace:*
+        specifier: workspace:x
         version: link:../test_pkg/multi_pkg
       ncp:
         specifier: ^2.0.0
