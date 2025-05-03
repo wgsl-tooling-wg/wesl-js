@@ -8,15 +8,16 @@
   ],
   "scripts": {
     "echo": "echo",
-    "build": "node ../wesl-packager/bin/wesl-packager --rootDir src"
+    "build": "wesl-packager"
   },
   "exports": {
     ".": {
-      "types": "./dist/weslBundle.d.ts",
-      "import": "./dist/weslBundle.js"
+      "import": "./dist/weslBundle.js",
+      "types": "./dist/weslBundle.d.ts"
     }
   },
   "devDependencies": {
-    "wesl": "workspace:*"
+    "wesl": "workspace:*",
+    "wesl-packager": "workspace:*"
   }
 }

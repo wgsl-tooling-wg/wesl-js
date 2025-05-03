@@ -104,9 +104,6 @@ importers:
       '@shoelace-style/shoelace':
         specifier: ^2.20.1
         version: 2.20.1(@floating-ui/utils@0.2.9)(@types/react@19.1.0)
-      lygia:
-        specifier: file:../../../../lygia
-        version: file:../../lygia
       random_wgsl:
         specifier: 0.6.0-rc4
         version: 0.6.0-rc4
@@ -267,6 +264,9 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
+      wesl-packager:
+        specifier: workspace:*
+        version: link:../wesl-packager
 
   packages/test_pkg/dependent_package: {}
 
@@ -3637,9 +3637,6 @@ packages:
 
   lunr@2.3.9:
     resolution: {integrity: sha512-zTU3DaZaF3Rt9rhN3uBMGQD3dD2/vFQqnvZCDv4dl5iOzq2IZQqTxu90r4E5J+nP70J3ilqVCrbho2eWaeW8Ow==}
-
-  lygia@file:../../lygia:
-    resolution: {directory: ../../lygia, type: directory}
 
   magic-string@0.23.2:
     resolution: {integrity: sha512-oIUZaAxbcxYIp4AyLafV6OVKoB3YouZs0UTCJ8mOKBHNyJgGDaMJ4TgA+VylJh6fx7EQCC52XkbURxxG9IoJXA==}
@@ -8886,8 +8883,6 @@ snapshots:
       yallist: 4.0.0
 
   lunr@2.3.9: {}
-
-  lygia@file:../../lygia: {}
 
   magic-string@0.23.2:
     dependencies:
