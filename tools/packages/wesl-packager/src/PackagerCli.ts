@@ -19,7 +19,7 @@ function parseArgs(args: string[]) {
     })
     .option("rootDir", {
       type: "string",
-      default: ".",
+      default: "./shaders",
       describe: "base directory of WGSL/WESL files",
     })
     .option("projectDir", {
