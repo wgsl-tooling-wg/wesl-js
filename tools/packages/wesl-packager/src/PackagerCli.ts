@@ -35,7 +35,8 @@ function parseArgs(args: string[]) {
     .option("exportName", {
       type: "string",
       default: ".",
-      describe: "package.json export name for consolidated bundle (ignored for multiBundle)",
+      describe:
+        "package.json export name for consolidated bundle (ignored for multiBundle)",
     })
     .option("updatePackageJson", {
       type: "boolean",

@@ -1,7 +1,7 @@
 import { build, BuildOptions, context, Plugin } from "esbuild";
 import { readFile } from "node:fs/promises";
-import * as path from "path";
 import { parseArgs, ParseArgsConfig } from "node:util";
+import * as path from "path";
 
 /* an esbuild script with a plugin to handle ?raw style imports */
 

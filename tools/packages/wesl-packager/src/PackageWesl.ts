@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import { Biome, Distribution } from "@biomejs/js-api";
 import { glob } from "glob";
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
@@ -6,7 +7,6 @@ import { noSuffix, WeslBundle } from "wesl";
 import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
 import { CliArgs } from "./PackagerCli.js";
 import { parseDependencies } from "./ParseDependencies.js";
-import { Biome, Distribution } from "@biomejs/js-api";
 
 const biome = await setupBiome();
 

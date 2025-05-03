@@ -1,7 +1,7 @@
 /// <reference types="wesl-plugin/suffixes" />
-import { test, expect } from "vitest";
-import linkParams from "../shaders/main.wesl?link";
+import { expect, test } from "vitest";
 import { link } from "wesl";
+import linkParams from "../shaders/main.wesl?link";
 
 test("link subpath", async () => {
   const linked = await link(linkParams);
