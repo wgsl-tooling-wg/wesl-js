@@ -17,5 +17,5 @@ The `PackageWesl.test.ts` uses colored output.
 to see the colors, use:
 
 ```sh
-FORCE_COLOR=1 pnpm vitest 
+FORCE_COLOR=1 pnpm vitest
 ```

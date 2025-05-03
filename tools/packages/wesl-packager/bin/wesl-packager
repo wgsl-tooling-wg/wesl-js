@@ -6044,6 +6044,7 @@ var Yargs = YargsFactory(esm_default);
 var yargs_default = Yargs;
 
 // src/PackageWesl.ts
+import { Biome, Distribution } from "@biomejs/js-api";
 import { glob } from "glob";
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
@@ -9203,7 +9204,6 @@ function unboundToDependency(mPath, importerURL) {
 }
 
 // src/PackageWesl.ts
-import { Biome, Distribution } from "@biomejs/js-api";
 var biome = await setupBiome();
 async function packageWgsl(args) {
   const { projectDir, outDir, multiBundle } = args;
@@ -9366,7 +9366,6 @@ function parseArgs(args) {
 }
 
 // src/main.ts
-import { exit } from "process";
 var rawArgs = hideBin(process.argv);
 packagerCli(rawArgs).catch((e) => {
   console.error(e);

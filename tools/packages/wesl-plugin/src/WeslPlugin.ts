@@ -3,20 +3,20 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import toml from "toml";
 import type {
-  ExternalIdResult,
-  Thenable,
-  TransformResult,
-  UnpluginBuildContext,
-  UnpluginContext,
-  UnpluginContextMeta,
-  UnpluginOptions,
+    ExternalIdResult,
+    Thenable,
+    TransformResult,
+    UnpluginBuildContext,
+    UnpluginContext,
+    UnpluginContextMeta,
+    UnpluginOptions
 } from "unplugin";
 import { createUnplugin } from "unplugin";
 import {
-  Conditions,
-  parsedRegistry,
-  ParsedRegistry,
-  parseIntoRegistry,
+    Conditions,
+    parsedRegistry,
+    ParsedRegistry,
+    parseIntoRegistry
 } from "wesl";
 import { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
 import type { WeslPluginOptions } from "./WeslPluginOptions.js";

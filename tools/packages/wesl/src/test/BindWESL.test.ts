@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
+import { parsedRegistry, parseIntoRegistry, resetScopeIds } from "wesl";
+import { bindIdents } from "../BindIdents.ts";
 import { scopeToStringLong } from "../debug/ScopeToString.ts";
 import { bindTest } from "./TestUtil.ts";
-import { parsedRegistry, parseIntoRegistry, resetScopeIds } from "wesl";
-import { bindIdents, BindIdentsParams } from "../BindIdents.ts";
 
 test("nested scopes binding", () => {
   const src = `

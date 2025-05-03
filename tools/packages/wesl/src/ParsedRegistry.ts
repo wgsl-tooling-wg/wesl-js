@@ -2,7 +2,6 @@ import { WeslBundle } from "wesl";
 import { parseSrcModule, WeslAST } from "./ParseWESL.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
 import { resetScopeIds, SrcModule } from "./Scope.ts";
-import { dlog } from "berry-pretty";
 
 export interface ParsedRegistry {
   modules: Record<string, WeslAST>; // key is module path, e.g. "rand_pkg::foo::bar"
@@ -87,9 +86,9 @@ export function parseLibsIntoRegistry(
   libs.forEach(({ modules, name }) =>
     parseIntoRegistry(modules, registry, name),
   );
-  // TODO registry scoping should be hierarchical, not flat 
+  // TODO registry scoping should be hierarchical, not flat
   libs.forEach(({ dependencies }) =>
-    parseLibsIntoRegistry(dependencies || [], registry)
+    parseLibsIntoRegistry(dependencies || [], registry),
   );
 }
 
