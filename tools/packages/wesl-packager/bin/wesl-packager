@@ -6,1195 +6,8 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
 
-// ../../node_modules/.pnpm/@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/wasm-nodejs/biome_wasm.js
-var require_biome_wasm = __commonJS({
-  "../../node_modules/.pnpm/@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/wasm-nodejs/biome_wasm.js"(exports, module) {
-    var imports = {};
-    imports["__wbindgen_placeholder__"] = module.exports;
-    var wasm;
-    var { TextEncoder, TextDecoder } = __require("util");
-    var heap = new Array(128).fill(void 0);
-    heap.push(void 0, null, true, false);
-    function getObject(idx) {
-      return heap[idx];
-    }
-    var heap_next = heap.length;
-    function dropObject(idx) {
-      if (idx < 132) return;
-      heap[idx] = heap_next;
-      heap_next = idx;
-    }
-    function takeObject(idx) {
-      const ret = getObject(idx);
-      dropObject(idx);
-      return ret;
-    }
-    function isLikeNone(x) {
-      return x === void 0 || x === null;
-    }
-    var cachedDataViewMemory0 = null;
-    function getDataViewMemory0() {
-      if (cachedDataViewMemory0 === null || cachedDataViewMemory0.buffer.detached === true || cachedDataViewMemory0.buffer.detached === void 0 && cachedDataViewMemory0.buffer !== wasm.memory.buffer) {
-        cachedDataViewMemory0 = new DataView(wasm.memory.buffer);
-      }
-      return cachedDataViewMemory0;
-    }
-    var WASM_VECTOR_LEN = 0;
-    var cachedUint8ArrayMemory0 = null;
-    function getUint8ArrayMemory0() {
-      if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0) {
-        cachedUint8ArrayMemory0 = new Uint8Array(wasm.memory.buffer);
-      }
-      return cachedUint8ArrayMemory0;
-    }
-    var cachedTextEncoder = new TextEncoder("utf-8");
-    var encodeString = typeof cachedTextEncoder.encodeInto === "function" ? function(arg, view) {
-      return cachedTextEncoder.encodeInto(arg, view);
-    } : function(arg, view) {
-      const buf = cachedTextEncoder.encode(arg);
-      view.set(buf);
-      return {
-        read: arg.length,
-        written: buf.length
-      };
-    };
-    function passStringToWasm0(arg, malloc, realloc) {
-      if (realloc === void 0) {
-        const buf = cachedTextEncoder.encode(arg);
-        const ptr2 = malloc(buf.length, 1) >>> 0;
-        getUint8ArrayMemory0().subarray(ptr2, ptr2 + buf.length).set(buf);
-        WASM_VECTOR_LEN = buf.length;
-        return ptr2;
-      }
-      let len = arg.length;
-      let ptr = malloc(len, 1) >>> 0;
-      const mem = getUint8ArrayMemory0();
-      let offset = 0;
-      for (; offset < len; offset++) {
-        const code = arg.charCodeAt(offset);
-        if (code > 127) break;
-        mem[ptr + offset] = code;
-      }
-      if (offset !== len) {
-        if (offset !== 0) {
-          arg = arg.slice(offset);
-        }
-        ptr = realloc(ptr, len, len = offset + arg.length * 3, 1) >>> 0;
-        const view = getUint8ArrayMemory0().subarray(ptr + offset, ptr + len);
-        const ret = encodeString(arg, view);
-        offset += ret.written;
-        ptr = realloc(ptr, len, offset, 1) >>> 0;
-      }
-      WASM_VECTOR_LEN = offset;
-      return ptr;
-    }
-    function addHeapObject(obj) {
-      if (heap_next === heap.length) heap.push(heap.length + 1);
-      const idx = heap_next;
-      heap_next = heap[idx];
-      heap[idx] = obj;
-      return idx;
-    }
-    var cachedTextDecoder = new TextDecoder("utf-8", { ignoreBOM: true, fatal: true });
-    cachedTextDecoder.decode();
-    function getStringFromWasm0(ptr, len) {
-      ptr = ptr >>> 0;
-      return cachedTextDecoder.decode(getUint8ArrayMemory0().subarray(ptr, ptr + len));
-    }
-    function debugString(val) {
-      const type = typeof val;
-      if (type == "number" || type == "boolean" || val == null) {
-        return `${val}`;
-      }
-      if (type == "string") {
-        return `"${val}"`;
-      }
-      if (type == "symbol") {
-        const description = val.description;
-        if (description == null) {
-          return "Symbol";
-        } else {
-          return `Symbol(${description})`;
-        }
-      }
-      if (type == "function") {
-        const name2 = val.name;
-        if (typeof name2 == "string" && name2.length > 0) {
-          return `Function(${name2})`;
-        } else {
-          return "Function";
-        }
-      }
-      if (Array.isArray(val)) {
-        const length = val.length;
-        let debug = "[";
-        if (length > 0) {
-          debug += debugString(val[0]);
-        }
-        for (let i = 1; i < length; i++) {
-          debug += ", " + debugString(val[i]);
-        }
-        debug += "]";
-        return debug;
-      }
-      const builtInMatches = /\[object ([^\]]+)\]/.exec(toString.call(val));
-      let className;
-      if (builtInMatches.length > 1) {
-        className = builtInMatches[1];
-      } else {
-        return toString.call(val);
-      }
-      if (className == "Object") {
-        try {
-          return "Object(" + JSON.stringify(val) + ")";
-        } catch (_) {
-          return "Object";
-        }
-      }
-      if (val instanceof Error) {
-        return `${val.name}: ${val.message}
-${val.stack}`;
-      }
-      return className;
-    }
-    module.exports.main = function() {
-      wasm.main();
-    };
-    function handleError(f, args) {
-      try {
-        return f.apply(this, args);
-      } catch (e) {
-        wasm.__wbindgen_exn_store(addHeapObject(e));
-      }
-    }
-    var DiagnosticPrinterFinalization = typeof FinalizationRegistry === "undefined" ? { register: () => {
-    }, unregister: () => {
-    } } : new FinalizationRegistry((ptr) => wasm.__wbg_diagnosticprinter_free(ptr >>> 0, 1));
-    var DiagnosticPrinter = class {
-      __destroy_into_raw() {
-        const ptr = this.__wbg_ptr;
-        this.__wbg_ptr = 0;
-        DiagnosticPrinterFinalization.unregister(this);
-        return ptr;
-      }
-      free() {
-        const ptr = this.__destroy_into_raw();
-        wasm.__wbg_diagnosticprinter_free(ptr, 0);
-      }
-      /**
-      * @param {string} file_name
-      * @param {string} file_source
-      */
-      constructor(file_name, file_source) {
-        const ptr0 = passStringToWasm0(file_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(file_source, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len1 = WASM_VECTOR_LEN;
-        const ret = wasm.diagnosticprinter_new(ptr0, len0, ptr1, len1);
-        this.__wbg_ptr = ret >>> 0;
-        DiagnosticPrinterFinalization.register(this, this.__wbg_ptr, this);
-        return this;
-      }
-      /**
-      * @param {Diagnostic} diagnostic
-      */
-      print_simple(diagnostic) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.diagnosticprinter_print_simple(retptr, this.__wbg_ptr, addHeapObject(diagnostic));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          if (r1) {
-            throw takeObject(r0);
-          }
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {Diagnostic} diagnostic
-      */
-      print_verbose(diagnostic) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.diagnosticprinter_print_verbose(retptr, this.__wbg_ptr, addHeapObject(diagnostic));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          if (r1) {
-            throw takeObject(r0);
-          }
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @returns {string}
-      */
-      finish() {
-        let deferred2_0;
-        let deferred2_1;
-        try {
-          const ptr = this.__destroy_into_raw();
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.diagnosticprinter_finish(retptr, ptr);
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-          var ptr1 = r0;
-          var len1 = r1;
-          if (r3) {
-            ptr1 = 0;
-            len1 = 0;
-            throw takeObject(r2);
-          }
-          deferred2_0 = ptr1;
-          deferred2_1 = len1;
-          return getStringFromWasm0(ptr1, len1);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-          wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-        }
-      }
-    };
-    module.exports.DiagnosticPrinter = DiagnosticPrinter;
-    var WorkspaceFinalization = typeof FinalizationRegistry === "undefined" ? { register: () => {
-    }, unregister: () => {
-    } } : new FinalizationRegistry((ptr) => wasm.__wbg_workspace_free(ptr >>> 0, 1));
-    var Workspace = class {
-      __destroy_into_raw() {
-        const ptr = this.__wbg_ptr;
-        this.__wbg_ptr = 0;
-        WorkspaceFinalization.unregister(this);
-        return ptr;
-      }
-      free() {
-        const ptr = this.__destroy_into_raw();
-        wasm.__wbg_workspace_free(ptr, 0);
-      }
-      /**
-      */
-      constructor() {
-        const ret = wasm.workspace_new();
-        this.__wbg_ptr = ret >>> 0;
-        WorkspaceFinalization.register(this, this.__wbg_ptr, this);
-        return this;
-      }
-      /**
-      * @param {SupportsFeatureParams} params
-      * @returns {FileFeaturesResult}
-      */
-      fileFeatures(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_fileFeatures(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          if (r2) {
-            throw takeObject(r1);
-          }
-          return takeObject(r0);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {UpdateSettingsParams} params
-      */
-      updateSettings(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_updateSettings(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          if (r1) {
-            throw takeObject(r0);
-          }
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {RegisterProjectFolderParams} params
-      * @returns {ProjectKey}
-      */
-      registerProjectFolder(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_registerProjectFolder(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          if (r2) {
-            throw takeObject(r1);
-          }
-          return takeObject(r0);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {OpenFileParams} params
-      */
-      openFile(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_openFile(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          if (r1) {
-            throw takeObject(r0);
-          }
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {GetFileContentParams} params
-      * @returns {string}
-      */
-      getFileContent(params) {
-        let deferred2_0;
-        let deferred2_1;
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_getFileContent(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-          var ptr1 = r0;
-          var len1 = r1;
-          if (r3) {
-            ptr1 = 0;
-            len1 = 0;
-            throw takeObject(r2);
-          }
-          deferred2_0 = ptr1;
-          deferred2_1 = len1;
-          return getStringFromWasm0(ptr1, len1);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-          wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-        }
-      }
-      /**
-      * @param {GetSyntaxTreeParams} params
-      * @returns {GetSyntaxTreeResult}
-      */
-      getSyntaxTree(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_getSyntaxTree(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          if (r2) {
-            throw takeObject(r1);
-          }
-          return takeObject(r0);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {GetControlFlowGraphParams} params
-      * @returns {string}
-      */
-      getControlFlowGraph(params) {
-        let deferred2_0;
-        let deferred2_1;
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_getControlFlowGraph(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-          var ptr1 = r0;
-          var len1 = r1;
-          if (r3) {
-            ptr1 = 0;
-            len1 = 0;
-            throw takeObject(r2);
-          }
-          deferred2_0 = ptr1;
-          deferred2_1 = len1;
-          return getStringFromWasm0(ptr1, len1);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-          wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-        }
-      }
-      /**
-      * @param {GetFormatterIRParams} params
-      * @returns {string}
-      */
-      getFormatterIr(params) {
-        let deferred2_0;
-        let deferred2_1;
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_getFormatterIr(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-          var ptr1 = r0;
-          var len1 = r1;
-          if (r3) {
-            ptr1 = 0;
-            len1 = 0;
-            throw takeObject(r2);
-          }
-          deferred2_0 = ptr1;
-          deferred2_1 = len1;
-          return getStringFromWasm0(ptr1, len1);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-          wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-        }
-      }
-      /**
-      * @param {ChangeFileParams} params
-      */
-      changeFile(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_changeFile(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          if (r1) {
-            throw takeObject(r0);
-          }
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {CloseFileParams} params
-      */
-      closeFile(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_closeFile(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          if (r1) {
-            throw takeObject(r0);
-          }
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {PullDiagnosticsParams} params
-      * @returns {PullDiagnosticsResult}
-      */
-      pullDiagnostics(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_pullDiagnostics(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          if (r2) {
-            throw takeObject(r1);
-          }
-          return takeObject(r0);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {PullActionsParams} params
-      * @returns {PullActionsResult}
-      */
-      pullActions(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_pullActions(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          if (r2) {
-            throw takeObject(r1);
-          }
-          return takeObject(r0);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {FormatFileParams} params
-      * @returns {any}
-      */
-      formatFile(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_formatFile(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          if (r2) {
-            throw takeObject(r1);
-          }
-          return takeObject(r0);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {FormatRangeParams} params
-      * @returns {any}
-      */
-      formatRange(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_formatRange(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          if (r2) {
-            throw takeObject(r1);
-          }
-          return takeObject(r0);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {FormatOnTypeParams} params
-      * @returns {any}
-      */
-      formatOnType(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_formatOnType(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          if (r2) {
-            throw takeObject(r1);
-          }
-          return takeObject(r0);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {FixFileParams} params
-      * @returns {FixFileResult}
-      */
-      fixFile(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_fixFile(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          if (r2) {
-            throw takeObject(r1);
-          }
-          return takeObject(r0);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {OrganizeImportsParams} params
-      * @returns {OrganizeImportsResult}
-      */
-      organizeImports(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_organizeImports(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          if (r2) {
-            throw takeObject(r1);
-          }
-          return takeObject(r0);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-      /**
-      * @param {RenameParams} params
-      * @returns {RenameResult}
-      */
-      rename(params) {
-        try {
-          const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-          wasm.workspace_rename(retptr, this.__wbg_ptr, addHeapObject(params));
-          var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-          var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-          var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-          if (r2) {
-            throw takeObject(r1);
-          }
-          return takeObject(r0);
-        } finally {
-          wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-      }
-    };
-    module.exports.Workspace = Workspace;
-    module.exports.__wbindgen_is_undefined = function(arg0) {
-      const ret = getObject(arg0) === void 0;
-      return ret;
-    };
-    module.exports.__wbindgen_in = function(arg0, arg1) {
-      const ret = getObject(arg0) in getObject(arg1);
-      return ret;
-    };
-    module.exports.__wbindgen_object_drop_ref = function(arg0) {
-      takeObject(arg0);
-    };
-    module.exports.__wbindgen_boolean_get = function(arg0) {
-      const v = getObject(arg0);
-      const ret = typeof v === "boolean" ? v ? 1 : 0 : 2;
-      return ret;
-    };
-    module.exports.__wbindgen_is_bigint = function(arg0) {
-      const ret = typeof getObject(arg0) === "bigint";
-      return ret;
-    };
-    module.exports.__wbindgen_number_get = function(arg0, arg1) {
-      const obj = getObject(arg1);
-      const ret = typeof obj === "number" ? obj : void 0;
-      getDataViewMemory0().setFloat64(arg0 + 8 * 1, isLikeNone(ret) ? 0 : ret, true);
-      getDataViewMemory0().setInt32(arg0 + 4 * 0, !isLikeNone(ret), true);
-    };
-    module.exports.__wbindgen_string_get = function(arg0, arg1) {
-      const obj = getObject(arg1);
-      const ret = typeof obj === "string" ? obj : void 0;
-      var ptr1 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-      var len1 = WASM_VECTOR_LEN;
-      getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
-      getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
-    };
-    module.exports.__wbindgen_is_object = function(arg0) {
-      const val = getObject(arg0);
-      const ret = typeof val === "object" && val !== null;
-      return ret;
-    };
-    module.exports.__wbindgen_bigint_from_i64 = function(arg0) {
-      const ret = arg0;
-      return addHeapObject(ret);
-    };
-    module.exports.__wbindgen_jsval_eq = function(arg0, arg1) {
-      const ret = getObject(arg0) === getObject(arg1);
-      return ret;
-    };
-    module.exports.__wbindgen_bigint_from_u64 = function(arg0) {
-      const ret = BigInt.asUintN(64, arg0);
-      return addHeapObject(ret);
-    };
-    module.exports.__wbindgen_error_new = function(arg0, arg1) {
-      const ret = new Error(getStringFromWasm0(arg0, arg1));
-      return addHeapObject(ret);
-    };
-    module.exports.__wbindgen_is_string = function(arg0) {
-      const ret = typeof getObject(arg0) === "string";
-      return ret;
-    };
-    module.exports.__wbindgen_as_number = function(arg0) {
-      const ret = +getObject(arg0);
-      return ret;
-    };
-    module.exports.__wbindgen_object_clone_ref = function(arg0) {
-      const ret = getObject(arg0);
-      return addHeapObject(ret);
-    };
-    module.exports.__wbindgen_jsval_loose_eq = function(arg0, arg1) {
-      const ret = getObject(arg0) == getObject(arg1);
-      return ret;
-    };
-    module.exports.__wbg_String_b9412f8799faab3e = function(arg0, arg1) {
-      const ret = String(getObject(arg1));
-      const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-      const len1 = WASM_VECTOR_LEN;
-      getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
-      getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
-    };
-    module.exports.__wbindgen_number_new = function(arg0) {
-      const ret = arg0;
-      return addHeapObject(ret);
-    };
-    module.exports.__wbindgen_string_new = function(arg0, arg1) {
-      const ret = getStringFromWasm0(arg0, arg1);
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_getwithrefkey_edc2c8960f0f1191 = function(arg0, arg1) {
-      const ret = getObject(arg0)[getObject(arg1)];
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_set_f975102236d3c502 = function(arg0, arg1, arg2) {
-      getObject(arg0)[takeObject(arg1)] = takeObject(arg2);
-    };
-    module.exports.__wbg_new_abda76e883ba8a5f = function() {
-      const ret = new Error();
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_stack_658279fe44541cf6 = function(arg0, arg1) {
-      const ret = getObject(arg1).stack;
-      const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-      const len1 = WASM_VECTOR_LEN;
-      getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
-      getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
-    };
-    module.exports.__wbg_error_f851667af71bcfc6 = function(arg0, arg1) {
-      let deferred0_0;
-      let deferred0_1;
-      try {
-        deferred0_0 = arg0;
-        deferred0_1 = arg1;
-        console.error(getStringFromWasm0(arg0, arg1));
-      } finally {
-        wasm.__wbindgen_free(deferred0_0, deferred0_1, 1);
-      }
-    };
-    module.exports.__wbindgen_is_function = function(arg0) {
-      const ret = typeof getObject(arg0) === "function";
-      return ret;
-    };
-    module.exports.__wbg_get_3baa728f9d58d3f6 = function(arg0, arg1) {
-      const ret = getObject(arg0)[arg1 >>> 0];
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_length_ae22078168b726f5 = function(arg0) {
-      const ret = getObject(arg0).length;
-      return ret;
-    };
-    module.exports.__wbg_new_a220cf903aa02ca2 = function() {
-      const ret = new Array();
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_new_8608a2b51a5f6737 = function() {
-      const ret = /* @__PURE__ */ new Map();
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_next_de3e9db4440638b2 = function(arg0) {
-      const ret = getObject(arg0).next;
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_next_f9cb570345655b9a = function() {
-      return handleError(function(arg0) {
-        const ret = getObject(arg0).next();
-        return addHeapObject(ret);
-      }, arguments);
-    };
-    module.exports.__wbg_done_bfda7aa8f252b39f = function(arg0) {
-      const ret = getObject(arg0).done;
-      return ret;
-    };
-    module.exports.__wbg_value_6d39332ab4788d86 = function(arg0) {
-      const ret = getObject(arg0).value;
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_iterator_888179a48810a9fe = function() {
-      const ret = Symbol.iterator;
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_get_224d16597dbbfd96 = function() {
-      return handleError(function(arg0, arg1) {
-        const ret = Reflect.get(getObject(arg0), getObject(arg1));
-        return addHeapObject(ret);
-      }, arguments);
-    };
-    module.exports.__wbg_call_1084a111329e68ce = function() {
-      return handleError(function(arg0, arg1) {
-        const ret = getObject(arg0).call(getObject(arg1));
-        return addHeapObject(ret);
-      }, arguments);
-    };
-    module.exports.__wbg_new_525245e2b9901204 = function() {
-      const ret = new Object();
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_set_673dda6c73d19609 = function(arg0, arg1, arg2) {
-      getObject(arg0)[arg1 >>> 0] = takeObject(arg2);
-    };
-    module.exports.__wbg_isArray_8364a5371e9737d8 = function(arg0) {
-      const ret = Array.isArray(getObject(arg0));
-      return ret;
-    };
-    module.exports.__wbg_instanceof_ArrayBuffer_61dfc3198373c902 = function(arg0) {
-      let result;
-      try {
-        result = getObject(arg0) instanceof ArrayBuffer;
-      } catch (_) {
-        result = false;
-      }
-      const ret = result;
-      return ret;
-    };
-    module.exports.__wbg_new_796382978dfd4fb0 = function(arg0, arg1) {
-      const ret = new Error(getStringFromWasm0(arg0, arg1));
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_instanceof_Map_763ce0e95960d55e = function(arg0) {
-      let result;
-      try {
-        result = getObject(arg0) instanceof Map;
-      } catch (_) {
-        result = false;
-      }
-      const ret = result;
-      return ret;
-    };
-    module.exports.__wbg_set_49185437f0ab06f8 = function(arg0, arg1, arg2) {
-      const ret = getObject(arg0).set(getObject(arg1), getObject(arg2));
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_isSafeInteger_7f1ed56200d90674 = function(arg0) {
-      const ret = Number.isSafeInteger(getObject(arg0));
-      return ret;
-    };
-    module.exports.__wbg_entries_7a0e06255456ebcd = function(arg0) {
-      const ret = Object.entries(getObject(arg0));
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_buffer_b7b08af79b0b0974 = function(arg0) {
-      const ret = getObject(arg0).buffer;
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_new_ea1883e1e5e86686 = function(arg0) {
-      const ret = new Uint8Array(getObject(arg0));
-      return addHeapObject(ret);
-    };
-    module.exports.__wbg_set_d1e79e2388520f18 = function(arg0, arg1, arg2) {
-      getObject(arg0).set(getObject(arg1), arg2 >>> 0);
-    };
-    module.exports.__wbg_length_8339fcf5d8ecd12e = function(arg0) {
-      const ret = getObject(arg0).length;
-      return ret;
-    };
-    module.exports.__wbg_instanceof_Uint8Array_247a91427532499e = function(arg0) {
-      let result;
-      try {
-        result = getObject(arg0) instanceof Uint8Array;
-      } catch (_) {
-        result = false;
-      }
-      const ret = result;
-      return ret;
-    };
-    module.exports.__wbindgen_bigint_get_as_i64 = function(arg0, arg1) {
-      const v = getObject(arg1);
-      const ret = typeof v === "bigint" ? v : void 0;
-      getDataViewMemory0().setBigInt64(arg0 + 8 * 1, isLikeNone(ret) ? BigInt(0) : ret, true);
-      getDataViewMemory0().setInt32(arg0 + 4 * 0, !isLikeNone(ret), true);
-    };
-    module.exports.__wbindgen_debug_string = function(arg0, arg1) {
-      const ret = debugString(getObject(arg1));
-      const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-      const len1 = WASM_VECTOR_LEN;
-      getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
-      getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
-    };
-    module.exports.__wbindgen_throw = function(arg0, arg1) {
-      throw new Error(getStringFromWasm0(arg0, arg1));
-    };
-    module.exports.__wbindgen_memory = function() {
-      const ret = wasm.memory;
-      return addHeapObject(ret);
-    };
-    var path6 = __require("path").join(__dirname, "biome_wasm_bg.wasm");
-    var bytes = __require("fs").readFileSync(path6);
-    var wasmModule = new WebAssembly.Module(bytes);
-    var wasmInstance = new WebAssembly.Instance(wasmModule, imports);
-    wasm = wasmInstance.exports;
-    module.exports.__wasm = wasm;
-    wasm.__wbindgen_start();
-  }
-});
-
-// ../../node_modules/.pnpm/@biomejs+js-api@0.7.1_@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/js-api/dist/wasm.js
-var require_wasm = __commonJS({
-  "../../node_modules/.pnpm/@biomejs+js-api@0.7.1_@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/js-api/dist/wasm.js"(exports) {
-    "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
-      if (k2 === void 0) k2 = k;
-      var desc = Object.getOwnPropertyDescriptor(m, k);
-      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-        desc = { enumerable: true, get: function() {
-          return m[k];
-        } };
-      }
-      Object.defineProperty(o, k2, desc);
-    } : function(o, m, k, k2) {
-      if (k2 === void 0) k2 = k;
-      o[k2] = m[k];
-    });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
-      Object.defineProperty(o, "default", { enumerable: true, value: v });
-    } : function(o, v) {
-      o["default"] = v;
-    });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule) return mod;
-      var result = {};
-      if (mod != null) {
-        for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-      }
-      __setModuleDefault(result, mod);
-      return result;
-    };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Distribution = void 0;
-    exports.loadModule = loadModule;
-    exports.wrapError = wrapError;
-    var Distribution2;
-    (function(Distribution3) {
-      Distribution3[Distribution3["BUNDLER"] = 0] = "BUNDLER";
-      Distribution3[Distribution3["NODE"] = 1] = "NODE";
-      Distribution3[Distribution3["WEB"] = 2] = "WEB";
-    })(Distribution2 || (exports.Distribution = Distribution2 = {}));
-    var isInitialized = {
-      [Distribution2.BUNDLER]: false,
-      [Distribution2.NODE]: false,
-      [Distribution2.WEB]: false
-    };
-    async function loadModule(dist) {
-      let modulePromise;
-      switch (dist) {
-        case Distribution2.BUNDLER: {
-          modulePromise = Promise.resolve().then(() => __importStar(__require("@biomejs/wasm-bundler")));
-          break;
-        }
-        case Distribution2.NODE: {
-          modulePromise = Promise.resolve().then(() => __importStar(require_biome_wasm()));
-          break;
-        }
-        case Distribution2.WEB: {
-          modulePromise = Promise.resolve().then(() => __importStar(__require("@biomejs/wasm-web")));
-          break;
-        }
-      }
-      const module2 = await modulePromise;
-      if (!isInitialized[dist]) {
-        isInitialized[dist] = true;
-        module2.main();
-      }
-      return module2;
-    }
-    var WasmError = class _WasmError extends Error {
-      constructor(stackTrace) {
-        super();
-        this.stackTrace = stackTrace;
-      }
-      static fromError(e) {
-        return new _WasmError(e);
-      }
-    };
-    function wrapError(e) {
-      return WasmError.fromError(e);
-    }
-  }
-});
-
-// ../../node_modules/.pnpm/@biomejs+js-api@0.7.1_@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/js-api/dist/index.js
-var require_dist = __commonJS({
-  "../../node_modules/.pnpm/@biomejs+js-api@0.7.1_@biomejs+wasm-nodejs@1.9.4/node_modules/@biomejs/js-api/dist/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Biome = exports.Distribution = void 0;
-    var wasm_1 = require_wasm();
-    Object.defineProperty(exports, "Distribution", { enumerable: true, get: function() {
-      return wasm_1.Distribution;
-    } });
-    function isFormatContentDebug(options) {
-      return "debug" in options && options.debug !== void 0;
-    }
-    var Biome2 = class _Biome {
-      constructor(module2, workspace) {
-        this.module = module2;
-        this.workspace = workspace;
-      }
-      /**
-       * It creates a new instance of the class {Biome}.
-       */
-      static async create(options) {
-        const module2 = await (0, wasm_1.loadModule)(options.distribution);
-        const workspace = new module2.Workspace();
-        const biome2 = new _Biome(module2, workspace);
-        biome2.registerProjectFolder();
-        return biome2;
-      }
-      /**
-       * Stop this instance of Biome
-       *
-       * After calling `shutdown()` on this object, it should be considered
-       * unusable as calling any method on it will fail
-       */
-      shutdown() {
-        this.workspace.free();
-      }
-      /**
-       * Allows to apply a custom configuration.
-       *
-       * If fails when the configuration is incorrect.
-       *
-       * @param configuration
-       */
-      applyConfiguration(configuration) {
-        try {
-          this.workspace.updateSettings({
-            configuration,
-            gitignore_matches: [],
-            workspace_directory: "./"
-          });
-        } catch (e) {
-          throw (0, wasm_1.wrapError)(e);
-        }
-      }
-      registerProjectFolder(path6) {
-        this.workspace.registerProjectFolder({
-          path: path6,
-          setAsCurrentWorkspace: true
-        });
-      }
-      tryCatchWrapper(func) {
-        try {
-          return func();
-        } catch (err) {
-          throw (0, wasm_1.wrapError)(err);
-        }
-      }
-      withFile(path6, content, func) {
-        return this.tryCatchWrapper(() => {
-          const biomePath = {
-            path: path6,
-            was_written: false,
-            kind: ["Handleable"]
-          };
-          this.workspace.openFile({
-            content,
-            version: 0,
-            path: biomePath
-          });
-          try {
-            return func(biomePath);
-          } finally {
-            this.workspace.closeFile({
-              path: biomePath
-            });
-          }
-        });
-      }
-      /**
-       * If formats some content.
-       *
-       * @param {String} content The content to format
-       * @param {FormatContentOptions | FormatContentDebugOptions} options Options needed when formatting some content
-       */
-      formatContent(content, options) {
-        return this.withFile(options.filePath, content, (path6) => {
-          let code = content;
-          const { diagnostics } = this.workspace.pullDiagnostics({
-            path: path6,
-            categories: ["Syntax"],
-            max_diagnostics: Number.MAX_SAFE_INTEGER,
-            only: [],
-            skip: []
-          });
-          const hasErrors = diagnostics.some((diag) => diag.severity === "fatal" || diag.severity === "error");
-          if (!hasErrors) {
-            if (options.range) {
-              const result = this.workspace.formatRange({
-                path: path6,
-                range: options.range
-              });
-              code = result.code;
-            } else {
-              const result = this.workspace.formatFile({
-                path: path6
-              });
-              code = result.code;
-            }
-            if (isFormatContentDebug(options)) {
-              const ir = this.workspace.getFormatterIr({
-                path: path6
-              });
-              return {
-                content: code,
-                diagnostics,
-                ir
-              };
-            }
-          }
-          return {
-            content: code,
-            diagnostics
-          };
-        });
-      }
-      /**
-       * Lint the content of a file.
-       *
-       * @param {String} content The content to lint
-       * @param {LintContentOptions} options Options needed when linting some content
-       */
-      lintContent(content, { filePath, fixFileMode }) {
-        const maybeFixedContent = fixFileMode ? this.withFile(filePath, content, (path6) => {
-          let code = content;
-          const result = this.workspace.fixFile({
-            path: path6,
-            fix_file_mode: fixFileMode,
-            should_format: false,
-            only: [],
-            skip: [],
-            rule_categories: ["Syntax", "Lint"]
-          });
-          code = result.code;
-          return code;
-        }) : content;
-        return this.withFile(filePath, maybeFixedContent, (path6) => {
-          const { diagnostics } = this.workspace.pullDiagnostics({
-            path: path6,
-            categories: ["Syntax", "Lint"],
-            max_diagnostics: Number.MAX_SAFE_INTEGER,
-            only: [],
-            skip: []
-          });
-          return {
-            content: maybeFixedContent,
-            diagnostics
-          };
-        });
-      }
-      /**
-       * Print a list of diagnostics to an HTML string.
-       *
-       * @param {Diagnostic[]} diagnostics The list of diagnostics to print
-       * @param {PrintDiagnosticsOptions} options Options needed for printing the diagnostics
-       */
-      printDiagnostics(diagnostics, options) {
-        return this.tryCatchWrapper(() => {
-          const printer = new this.module.DiagnosticPrinter(options.filePath, options.fileSource);
-          try {
-            for (const diag of diagnostics) {
-              if (options.verbose) {
-                printer.print_verbose(diag);
-              } else {
-                printer.print_simple(diag);
-              }
-            }
-            return printer.finish();
-          } catch (err) {
-            printer.free();
-            throw err;
-          }
-        });
-      }
-    };
-    exports.Biome = Biome2;
-  }
-});
+// src/main.ts
+import { exit } from "process";
 
 // ../../node_modules/.pnpm/yargs@17.7.2/node_modules/yargs/build/lib/yerror.js
 var YError = class _YError extends Error {
@@ -2242,11 +1055,11 @@ var parser = new YargsParser({
   resolve,
   // TODO: figure  out a  way to combine ESM and CJS coverage, such  that
   // we can exercise all the lines below:
-  require: (path2) => {
+  require: (path3) => {
     if (typeof __require !== "undefined") {
-      return __require(path2);
-    } else if (path2.match(/\.json$/)) {
-      return JSON.parse(readFileSync(path2, "utf8"));
+      return __require(path3);
+    } else if (path3.match(/\.json$/)) {
+      return JSON.parse(readFileSync(path3, "utf8"));
     } else {
       throw Error("only .json config files are supported in ESM");
     }
@@ -6047,7 +4860,7 @@ var yargs_default = Yargs;
 import { Biome, Distribution } from "@biomejs/js-api";
 import { glob } from "glob";
 import fs, { mkdir } from "node:fs/promises";
-import path from "node:path";
+import path2 from "node:path";
 
 // ../mini-parse/src/Assertions.ts
 function assertThat(condition, msg) {
@@ -7847,6 +6660,166 @@ var weslMatcher = new RegexMatchers({
 function weslExtension(combinator) {
   return combinator;
 }
+var WeslStream = class {
+  constructor(src) {
+    this.src = src;
+    /** New line */
+    this.eolPattern = /[\n\v\f\u{0085}\u{2028}\u{2029}]|\r\n?/gu;
+    /** Block comments */
+    this.blockCommentPattern = /\/\*|\*\//g;
+    this.stream = new CachingStream(new MatchersStream(src, weslMatcher));
+  }
+  checkpoint() {
+    return this.stream.checkpoint();
+  }
+  reset(position) {
+    this.stream.reset(position);
+  }
+  nextToken() {
+    while (true) {
+      const token2 = this.stream.nextToken();
+      if (token2 === null) return null;
+      const kind2 = token2.kind;
+      if (kind2 === "blankspaces") {
+        continue;
+      } else if (kind2 === "commentStart") {
+        if (token2.text === "//") {
+          this.stream.reset(this.skipToEol(token2.span[1]));
+        } else {
+          this.stream.reset(this.skipBlockComment(token2.span[1]));
+        }
+      } else if (kind2 === "word") {
+        let returnToken = token2;
+        if (keywordOrReserved.has(token2.text)) {
+          returnToken.kind = "keyword";
+        }
+        return returnToken;
+      } else if (kind2 === "invalid") {
+        throw new ParseError("Invalid token " + token2.text, token2.span);
+      } else {
+        return token2;
+      }
+    }
+  }
+  skipToEol(position) {
+    this.eolPattern.lastIndex = position;
+    const result = this.eolPattern.exec(this.src);
+    if (result === null) {
+      return this.src.length;
+    } else {
+      return this.eolPattern.lastIndex;
+    }
+  }
+  skipBlockComment(position) {
+    while (true) {
+      this.blockCommentPattern.lastIndex = position;
+      const result = this.blockCommentPattern.exec(this.src);
+      if (result === null) {
+        throw new ParseError("Unclosed block comment!", [position, position]);
+      } else if (result[0] === "*/") {
+        return this.blockCommentPattern.lastIndex;
+      } else if (result[0] === "/*") {
+        position = this.skipBlockComment(this.blockCommentPattern.lastIndex);
+      } else {
+        throw new Error("Unreachable, invalid block comment pattern");
+      }
+    }
+  }
+  /**
+   * Only matches the `<` token if it is a template
+   * Precondition: An ident was parsed right before this.
+   * Runs the [template list discovery algorithm](https://www.w3.org/TR/WGSL/#template-list-discovery).
+   */
+  nextTemplateStartToken() {
+    const startPosition = this.stream.checkpoint();
+    const token2 = this.nextToken();
+    this.stream.reset(startPosition);
+    if (token2 === null) return null;
+    if (token2.kind !== "symbol") {
+      return null;
+    }
+    if (token2.text === "<") {
+      if (this.isTemplateStart(token2.span[1])) {
+        this.stream.reset(token2.span[1]);
+        return token2;
+      } else {
+        this.stream.reset(startPosition);
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+  nextTemplateEndToken() {
+    const startPosition = this.stream.checkpoint();
+    const token2 = this.nextToken();
+    this.stream.reset(startPosition);
+    if (token2 === null) return null;
+    if (token2.kind === "symbol" && token2.text[0] === ">") {
+      const tokenPosition = token2.span[0];
+      this.stream.reset(tokenPosition + 1);
+      return {
+        kind: "symbol",
+        span: [tokenPosition, tokenPosition + 1],
+        text: ">"
+      };
+    } else {
+      return null;
+    }
+  }
+  isTemplateStart(afterToken) {
+    this.stream.reset(afterToken);
+    let pendingCounter = 1;
+    while (true) {
+      const nextToken = this.stream.nextToken();
+      if (nextToken === null) return false;
+      if (nextToken.kind !== "symbol") continue;
+      if (nextToken.text === "<") {
+        pendingCounter += 1;
+      } else if (nextToken.text[0] === ">") {
+        if (nextToken.text === ">" || nextToken.text == ">=") {
+          pendingCounter -= 1;
+        } else if (nextToken.text === ">>=" || nextToken.text === ">>") {
+          pendingCounter -= 2;
+        } else {
+          throw new Error(
+            "This case should never be reached, looks like we forgot one of the tokens that start with >"
+          );
+        }
+        if (pendingCounter <= 0) {
+          return true;
+        }
+      } else if (nextToken.text === "(") {
+        this.skipBracketsTo(")");
+      } else if (nextToken.text === "[") {
+        this.skipBracketsTo("]");
+      } else if (nextToken.text === "==" || nextToken.text === "!=" || nextToken.text === ";" || nextToken.text === "{" || nextToken.text === ":" || nextToken.text === "&&" || nextToken.text === "||") {
+        return false;
+      }
+    }
+  }
+  /**
+   * Call this after consuming an opening bracket.
+   * Skips until a closing bracket. This also consumes the closing bracket.
+   */
+  skipBracketsTo(closingBracket) {
+    while (true) {
+      const nextToken = this.stream.nextToken();
+      if (nextToken === null) {
+        const after = this.stream.checkpoint();
+        throw new ParseError("Unclosed bracket!", [after, after]);
+      }
+      if (nextToken.kind !== "symbol") continue;
+      if (nextToken.text === "(") {
+        this.skipBracketsTo(")");
+      } else if (nextToken.text === "[") {
+        this.skipBracketsTo("]");
+      } else if (nextToken.text === closingBracket) {
+        return;
+      }
+    }
+  }
+};
 var templateOpen = withStreamAction((stream) => {
   return stream.nextTemplateStartToken();
 });
@@ -9152,12 +8125,66 @@ function isGlobal(declIdent) {
 }
 
 // ../wesl/src/PathUtil.ts
-function noSuffix(path2) {
-  const lastSlash = path2.lastIndexOf("/");
+function normalize2(path3) {
+  const segments = path3.split("/");
+  const noDots = segments.filter((s) => s !== ".");
+  const noDbl = [];
+  noDots.forEach((s) => {
+    if (s !== "") {
+      if (s === ".." && noDbl.length && noDbl[noDbl.length - 1] !== "..") {
+        noDbl.pop();
+      } else {
+        noDbl.push(s);
+      }
+    }
+  });
+  return noDbl.join("/");
+}
+function noSuffix(path3) {
+  const lastSlash = path3.lastIndexOf("/");
   const lastStart = lastSlash === -1 ? 0 : lastSlash + 1;
-  const suffix = path2.indexOf(".", lastStart);
-  const suffixStart = suffix === -1 ? path2.length : suffix;
-  return path2.slice(0, suffixStart);
+  const suffix = path3.indexOf(".", lastStart);
+  const suffixStart = suffix === -1 ? path3.length : suffix;
+  return path3.slice(0, suffixStart);
+}
+
+// ../wesl/src/ParsedRegistry.ts
+function parsedRegistry() {
+  resetScopeIds();
+  return { modules: {} };
+}
+function parseIntoRegistry(srcFiles, registry, packageName = "package", debugWeslRoot) {
+  if (debugWeslRoot === void 0) {
+    debugWeslRoot = "";
+  } else if (!debugWeslRoot.endsWith("/")) {
+    debugWeslRoot += "/";
+  }
+  const srcModules = Object.entries(srcFiles).map(
+    ([filePath, src]) => {
+      const modulePath = fileToModulePath(filePath, packageName);
+      return { modulePath, debugFilePath: debugWeslRoot + filePath, src };
+    }
+  );
+  srcModules.forEach((mod) => {
+    const parsed = parseSrcModule(mod, void 0);
+    if (registry.modules[mod.modulePath]) {
+      throw new Error(`duplicate module path: '${mod.modulePath}'`);
+    }
+    registry.modules[mod.modulePath] = parsed;
+  });
+}
+var libRegex = /^lib\.w[eg]sl$/i;
+function fileToModulePath(filePath, packageName) {
+  if (filePath.includes("::")) {
+    return filePath;
+  }
+  if (packageName !== "package" && libRegex.test(filePath)) {
+    return packageName;
+  }
+  const strippedPath = noSuffix(normalize2(filePath));
+  const moduleSuffix = strippedPath.replaceAll("/", "::");
+  const modulePath = packageName + "::" + moduleSuffix;
+  return modulePath;
 }
 
 // ../wesl/src/Reflection.ts
@@ -9212,7 +8239,7 @@ async function packageWgsl(args) {
     console.error("no WGSL/WESL files found in", args.src);
     throw new Error("no WGSL/WESL files found");
   }
-  const pkgJsonPath = path.join(projectDir, "package.json");
+  const pkgJsonPath = path2.join(projectDir, "package.json");
   const { name: name2 } = await loadPackageFields(pkgJsonPath);
   const edition = "unstable_2025_1";
   if (args.multiBundle) {
@@ -9227,11 +8254,11 @@ async function packageWgsl(args) {
   }
 }
 async function updatePackageJson(projectDir, outDir, multiBundle) {
-  const pkgJsonPath = path.join(projectDir, "package.json");
+  const pkgJsonPath = path2.join(projectDir, "package.json");
   const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
   const pkgJson = JSON.parse(pkgJsonString);
   const exports = {};
-  const distDir = path.relative(projectDir, outDir);
+  const distDir = path2.relative(projectDir, outDir);
   if (multiBundle) {
     exports["./*"] = {
       import: `./${distDir}/*/weslBundle.js`,
@@ -9256,18 +8283,9 @@ async function writeMultiBundle(modules, name2, edition, projectDir, outDir) {
     };
     const dependencies = parseDependencies(oneModule, projectDir);
     const bundleDirRelative = noSuffix(moduleName);
-    const bundleDir = path.join(outDir, bundleDirRelative);
-    await writeJsBundle(moduleBundle, bundleDir);
+    const bundleDir = path2.join(outDir, bundleDirRelative);
+    await writeJsBundle(moduleBundle, dependencies, bundleDir);
   }
-}
-async function writeTypeScriptDts(outDir) {
-  const constDecl = `
-export declare const weslBundle: WeslBundle;
-export default weslBundle;
-`;
-  const declText = WeslBundle_default + constDecl;
-  const outPath = path.join(outDir, "weslBundle.d.ts");
-  await fs.writeFile(outPath, declText);
 }
 async function writeJsBundle(weslBundle, dependencies, outDir) {
   await mkdir(outDir, { recursive: true });
@@ -9285,8 +8303,32 @@ async function writeJsBundle(weslBundle, dependencies, outDir) {
 
     export default weslBundle;
   `;
-  const outPath = path.join(outDir, "weslBundle.js");
-  await fs.writeFile(outPath, outString);
+  const outPath = path2.join(outDir, "weslBundle.js");
+  const formatted = biome.formatContent(outString, { filePath: "b.js" });
+  await fs.writeFile(outPath, formatted.content);
+}
+async function writeTypeScriptDts(outDir) {
+  const constDecl = `
+    export declare const weslBundle: WeslBundle;
+    export default weslBundle;
+  `;
+  const declText = WeslBundle_default + constDecl;
+  const formatted = biome.formatContent(declText, { filePath: "t.d.ts" });
+  const outPath = path2.join(outDir, "weslBundle.d.ts");
+  await fs.writeFile(outPath, formatted.content);
+}
+function bundleToJsString(bundle, dependencies) {
+  const { name: name2, edition, modules } = bundle;
+  const depsObj = dependencies.length ? { dependencies: 99 } : {};
+  const obj = { name: name2, edition, modules, ...depsObj };
+  const jsonString = JSON.stringify(obj, null, 2);
+  if (dependencies.length) {
+    const dependenciesStr = `: [${dependencies.join(", ")}]`;
+    const result = jsonString.replace(": 99", dependenciesStr);
+    return result;
+  } else {
+    return jsonString;
+  }
 }
 async function loadModules(args) {
   const { rootDir } = args;
@@ -9297,7 +8339,7 @@ async function loadModules(args) {
     (f) => fs.readFile(f, { encoding: "utf8" })
   );
   const src = await Promise.all(promisedSrcs);
-  const relativePaths = shaderFiles.map((p) => path.relative(rootDir, p));
+  const relativePaths = shaderFiles.map((p) => path2.relative(rootDir, p));
   const moduleEntries = zip(relativePaths, src);
   return Object.fromEntries(moduleEntries);
 }
