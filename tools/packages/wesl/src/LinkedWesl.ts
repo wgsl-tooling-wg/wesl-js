@@ -49,7 +49,7 @@ export class LinkedWesl {
    */
   createShaderModule(
     device: GPUDevice | WeslDevice,
-    descriptor: Omit<GPUShaderModuleDescriptor, "code"> | undefined,
+    descriptor?: Omit<GPUShaderModuleDescriptor, "code">,
   ): GPUShaderModule {
     // Skip the custom behaviour if we do not have a WESL device.
     if (!("injectError" in device)) {
