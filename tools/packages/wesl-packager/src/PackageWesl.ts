@@ -59,7 +59,8 @@ async function updatePackageJson(
   }
 
   pkgJson.exports = exports;
-  await fs.writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2));
+  const jsonString = JSON.stringify(pkgJson, null, 2).concat("\n");
+  await fs.writeFile(pkgJsonPath, jsonString);
 }
 
 /** create one bundle per source module */
