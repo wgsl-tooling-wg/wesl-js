@@ -30,6 +30,7 @@
     "diff": "^7.0.0",
     "dir-compare": "^5.0.0",
     "picocolors": "^1.1.1",
+    "dependent_package": "workspace:x",
     "wesl": "workspace:*"
   }
 }
