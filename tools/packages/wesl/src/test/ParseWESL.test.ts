@@ -1606,7 +1606,6 @@ test("parse @location", () => {
       }
   `;
   const ast = parseTest(src);
-  ast;
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
     "module
