@@ -1,6 +1,5 @@
 import { expect, test } from "vitest";
 import { parseDependencies } from "../ParseDependencies.ts";
-import { dlog } from "berry-pretty";
 
 const thisDir = import.meta.dirname;
 

@@ -136,6 +136,30 @@ export function bindIdents(params: BindIdentsParams): BindResults {
   return { decls, globalNames, newStatements, unbound };
 }
 
+/** bind local references in library sources to reveal references to external packages */
+export function findUnboundIdents(registry: ParsedRegistry): string[][] {
+  const bindContext = {
+    registry,
+    conditions: {},
+    knownDecls: new Set<DeclIdent>(),
+    foundScopes: new Set<Scope>(),
+    globalNames: new Set<string>(),
+    globalStatements: new Map<AbstractElem, EmittableElem>(),
+    mangler: minimalMangle,
+    unbound: [],
+    dontFollowDecls: true,
+  };
+
+  Object.entries(registry.modules).map(([module, ast]) => {
+    const rootDecls = findValidRootDecls(ast.rootScope, {});
+    const declEntries = rootDecls.map(d => [d.originalName, d] as const);
+    const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
+    bindIdentsRecursive(ast.rootScope, bindContext, liveDecls, true);
+  });
+
+  return bindContext.unbound;
+}
+
 /**
  * @return the list of conditional valid declarations at the root level
  * decls are either in the root scope or in a conditionally valid partial scope
@@ -187,6 +211,10 @@ interface BindContext {
 
   /** list of unbound identifiers if accumulateUnbound is true */
   unbound?: string[][];
+
+  /** don't recurse to follow references from declarations in other modules
+   * (for libraries, where we're not tracing static usage from the root) */
+  dontFollowDecls?: boolean;
 }
 
 /**
@@ -206,7 +234,7 @@ function bindIdentsRecursive(
   isRoot = false,
 ): DeclIdent[] {
   // early exit if we've processed this scope before
-  const { conditions, foundScopes } = bindContext;
+  const { dontFollowDecls, foundScopes } = bindContext;
   if (foundScopes.has(scope)) return [];
   foundScopes.add(scope);
 
@@ -233,7 +261,18 @@ function bindIdentsRecursive(
   });
 
   // follow references from referenced declarations
-  const newFromRefs = newGlobals.flatMap(decl => {
+  const newFromRefs =
+    dontFollowDecls ? [] : handleDecls(newGlobals, bindContext);
+
+  return [newGlobals, newFromChildren, newFromRefs].flat();
+}
+
+function handleDecls(
+  newGlobals: DeclIdent[],
+  bindContext: BindContext,
+): DeclIdent[] {
+  const { conditions } = bindContext;
+  return newGlobals.flatMap(decl => {
     const foundsScope = decl.dependentScope; // not all decls have dependent scopes (e.g. var with no initializer)
     if (foundsScope) {
       const rootDecls = globalDeclToRootLiveDecls(decl, conditions);
@@ -244,8 +283,6 @@ function bindIdentsRecursive(
     }
     return [];
   });
-
-  return [newGlobals, newFromChildren, newFromRefs].flat();
 }
 
 /**

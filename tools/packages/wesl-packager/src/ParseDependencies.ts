@@ -2,7 +2,7 @@ import { resolve } from "import-meta-resolve";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { filterMap, parsedRegistry, parseIntoRegistry } from "wesl";
-import { bindIdents } from "../../wesl/src/BindIdents.ts";
+import { findUnboundIdents } from "../../wesl/src/BindIdents.ts";
 
 /**
  * Find the wesl package dependencies in a set of WESL files
@@ -26,9 +26,7 @@ export function parseDependencies(
   const registry = parsedRegistry();
   parseIntoRegistry(weslSrc, registry);
 
-  const rootAst = Object.values(registry.modules)[0]; // TODO need a mode in bindIdents w/o rootAst
-  const bindResult = bindIdents({ registry, rootAst, accumulateUnbound: true });
-  const { unbound } = bindResult;
+  const unbound = findUnboundIdents(registry);
   if (!unbound) return [];
 
   // a package module reference needs at least two segments (length 1 is probably a builtin wgsl fn or type)
