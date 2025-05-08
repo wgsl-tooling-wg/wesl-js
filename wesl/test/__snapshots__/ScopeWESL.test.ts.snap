@@ -1,0 +1,249 @@
+export const snapshot = {};
+
+snapshot[`scope from simple fn 1`] = `
+"{ 
+  -{ %main 
+    { %x i32 } #2
+  } #1
+} #0"
+`;
+
+snapshot[`scope from fn with reference 1`] = `
+"{ 
+  -{ %main 
+    { %x i32 x } #2
+  } #1
+} #0"
+`;
+
+snapshot[`two fns 1`] = `
+"{ 
+  -{ %foo 
+    {  } #2
+  } #1
+  -{ %bar 
+    {  } #5
+  } #4
+} #0"
+`;
+
+snapshot[`two fns, one with a decl 1`] = `
+"{ 
+  -{ %foo 
+    { %a u32 } #2
+  } #1
+  -{ %bar 
+    {  } #5
+  } #4
+} #0"
+`;
+
+snapshot[`fn ref 1`] = `
+"{ 
+  -{ %foo 
+    { bar } #2
+  } #1
+  -{ %bar 
+    {  } #5
+  } #4
+} #0"
+`;
+
+snapshot[`struct 1`] = `
+"{ %A 
+  { B } #1
+} #0"
+`;
+
+snapshot[`alias 1`] = `
+"{ %A 
+  { B } #1
+} #0"
+`;
+
+snapshot[`switch 1`] = `
+"{ 
+  -{ %main 
+    { %code code 
+      { 
+        { %x } #5
+      } #4
+      {  } #6
+    } #2
+  } #1
+} #0"
+`;
+
+snapshot[`for() 1`] = `
+"{ 
+  -{ %main 
+    { %i 
+      { %i i i } #4
+    } #2
+  } #1
+} #0"
+`;
+
+snapshot[`fn with param 1`] = `
+"{ 
+  -{ %main 
+    { %i i32 %x i 
+      { %i i x i } #4
+    } #2
+  } #1
+} #0"
+`;
+
+snapshot[`fn decl scope 1`] = `"{ %i i32 %x i } #2"`;
+
+snapshot[`builtin scope 1`] = `
+"{ 
+  -{ %main 
+    { %a u32 } #2
+  } #1
+} #0"
+`;
+
+snapshot[`builtin enums 1`] = `
+"{ %read 
+  { vec2f } #1
+  -{ %storage_buffer 
+    { read } #3
+  } #2
+} #0"
+`;
+
+snapshot[`texture_storage_2d 1`] = `
+"{ 
+  -{ %tex_out 
+    { texture_storage_2d rgba8unorm write } #2
+  } #1
+} #0"
+`;
+
+snapshot[`ptr 2 params 1`] = `
+"{ 
+  -{ %foo 
+    { %ptr ptr private u32 } #2
+  } #1
+} #0"
+`;
+
+snapshot[`ptr 3 params 1`] = `
+"{ 
+  -{ %foo 
+    { %ptr ptr storage array u32 read } #2
+  } #1
+} #0"
+`;
+
+snapshot[`larger example 1`] = `
+"{ %UBO 
+  { u32 } #1
+  %Buffer 
+  { array f32 } #2
+  -{ %ubo 
+    { UBO } #4
+  } #3
+  -{ %buf_in 
+    { Buffer } #6
+  } #5
+  -{ %buf_out 
+    { Buffer } #8
+  } #7
+  -{ %tex_in 
+    { texture_2d f32 } #10
+  } #9
+  -{ %tex_out 
+    { texture_storage_2d rgba8unorm write } #12
+  } #11
+  -{ %import_level 
+    { %coord vec3u buf_in %offset coord coord ubo buf_out 
+      offset textureLoad tex_in vec2i coord} #14
+  } #13
+  -{ %export_level 
+    { %coord vec3u all coord vec2u textureDimensions tex_out
+       
+      { %dst_offset coord coord ubo %src_offset coord coord 
+        ubo %a buf_in src_offset %b buf_in src_offset %c 
+        buf_in src_offset ubo %d buf_in src_offset ubo %sum 
+        dot vec4f a b c d vec4f buf_out dst_offset sum 
+        %probabilities vec4f a a b a b c sum max sum 
+        textureStore tex_out vec2i coord probabilities} #19
+    } #17
+  } #16
+} #0"
+`;
+
+snapshot[`scope with an attribute 1`] = `
+"{ 
+  -{ %main 
+    { 
+       @if(foo) {  } #4
+    } #2
+  } #1
+} #0"
+`;
+
+snapshot[`partial scope 1`] = `
+"{ 
+  -{ %main 
+    { %x 
+       @if(false) -{ y } #4
+    } #2
+  } #1
+} #0"
+`;
+
+snapshot[`loop scope 1`] = `
+"{ 
+  -{ %main 
+    { %a 
+      { %a 
+        { %a } #5
+      } #4
+    } #2
+  } #1
+} #0"
+`;
+
+snapshot[`nested scope test 1`] = `
+"{ 
+  -{ %main 
+    { %bar 
+      { 
+        { %new_bar bar } #5
+        %bar
+      } #4
+    } #2
+  } #1
+} #0"
+`;
+
+snapshot[`@if fn 1`] = `
+"{ 
+  -{ %loc 
+    {  } #2
+  } #1
+   @if(true) -{ %fragmentMain loc 
+    { %p vec3f vec4f %x p } #4
+  } #3
+} #0"
+`;
+
+snapshot[`@if const 1`] = `
+"{ 
+   @if(true) -{ %a 
+    {  } #2
+  } #1
+} #0"
+`;
+
+snapshot[`var<private> a: i32; 1`] = `
+"{ 
+  -{ %a 
+    { i32 } #2
+    {  } #3
+  } #1
+} #0"
+`;

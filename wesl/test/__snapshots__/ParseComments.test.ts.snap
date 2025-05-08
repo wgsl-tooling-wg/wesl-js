@@ -1,0 +1,12 @@
+export const snapshot = {};
+
+snapshot[`parse fn with line comment 1`] = `
+"module
+  text '
+    '
+  fn binaryOp()
+    decl %binaryOp
+    statement
+      text '{ // binOpImpl
+    }'"
+`;

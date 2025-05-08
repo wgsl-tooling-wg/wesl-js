@@ -8,30 +8,33 @@ included as git submodules.
 We recommend setting `git config submodule.recurse true` for this project,
 to make working with Git submodules easier.
 
-## 
+## Install Deno AND Node.js
 
-The main wesl tools are in the /tools directory.
+Make sure that you have a recent version of 
+- [Deno](https://deno.com/)
+- [Node.js](https://nodejs.org/) with npm
 
-### Install packages:
+## Install deps
 
-```sh
-cd wesl-js
-pnpm install
+```
+deno install
 ```
 
-### Scripts
+This generates a `node_modules` folder.
 
-See `wesl-js/tools/package.json` for scripts you can run. 
+## Run tests
 
-This is the most common one:
-
-```sh
-pnpm test
+```
+deno run dev
 ```
 
-If it fails with a `Error [ERR_MODULE_NOT_FOUND]:`, try doing `pnpm run build:all` first.
+### Update Snapshots
 
-Wallaby is also available for most tests, use the configuration in `wesl-js/wallaby.js`
+```
+deno test --allow-all -- --update
+```
+
+For snapshot testing, we are using https://jsr.io/@std/testing/doc/snapshot
 
 ### wesl tool packages
 

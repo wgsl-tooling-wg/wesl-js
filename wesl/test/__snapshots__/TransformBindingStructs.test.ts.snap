@@ -1,0 +1,40 @@
+export const snapshot = {};
+
+snapshot[`transformBindingStruct 1`] = `
+"@group(0) @binding(0) var<storage, read_write> particles : array<f32>;
+"
+`;
+
+snapshot[`findRefsToBindingStructs 1`] = `
+"memberRef b.particles
+  ref b
+  text '.'
+  name particles"
+`;
+
+snapshot[`transformBindingReference 1`] = `"synthetic 'particles'"`;
+
+snapshot[`lower binding structs 1`] = `
+"module
+  synthetic '@group(0) @binding(0) var<storage, read_write> particles : array<f32>;
+'
+  text '
+    '
+  text '
+    '
+  fn main(b: Bindings)
+    decl %main
+    param
+    statement
+      text '{
+      let '
+      typeDecl %x
+        decl %x
+      text ' = '
+      memberRef b.particles
+        synthetic 'particles'
+      text ';
+    }'
+  text '
+  '"
+`;

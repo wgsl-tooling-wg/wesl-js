@@ -1,11 +1,21 @@
 {
-  "typescript.preferences.autoImportSpecifierExcludeRegexes": [
-    "node:inspector/promises",
-    "inspector/promises",
-    "inspector"
-  ],
+  "deno.enable": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
   "files.watcherExclude": {
     "**/node_modules/**": true,
     "community-wgsl/**": true
-  }
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "community-wgsl/**": true,
+    "cts/**": true
+  },
+  "deno.codeLens.test": true
 }

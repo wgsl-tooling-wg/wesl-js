@@ -1,0 +1,1260 @@
+export const snapshot = {};
+
+snapshot[`parse empty string 1`] = `"module"`;
+
+snapshot[`parse fn foo() { } 1`] = `
+"module
+  fn foo()
+    decl %foo
+    statement
+      text '{ }'"
+`;
+
+snapshot[`parse fn with calls 1`] = `
+"module
+  fn foo()
+    decl %foo
+    statement
+      text '{ '
+      ref foo
+      text '(); '
+      ref bar
+      text '(); }'"
+`;
+
+snapshot[`parse unicode ident 1`] = `
+"module
+  text '
+  '
+  fn Δέλτα()
+    decl %Δέλτα
+    statement
+      text '{}'
+  text ' 
+  '
+  fn réflexion()
+    decl %réflexion
+    statement
+      text '{}'
+  text ' 
+  '
+  fn Кызыл()
+    decl %Кызыл
+    statement
+      text '{}'
+  text ' 
+  '
+  fn 𐰓𐰏𐰇()
+    decl %𐰓𐰏𐰇
+    statement
+      text '{}'
+  text ' 
+  '
+  fn 朝焼け()
+    decl %朝焼け
+    statement
+      text '{}'
+  text '
+  '
+  fn سلام()
+    decl %سلام
+    statement
+      text '{}'
+  text ' 
+  '
+  fn 검정()
+    decl %검정
+    statement
+      text '{}'
+  text ' 
+  '
+  fn שָׁלוֹם()
+    decl %שָׁלוֹם
+    statement
+      text '{}'
+  text '
+  '
+  fn गुलाबी()
+    decl %गुलाबी
+    statement
+      text '{}'
+  text '
+  '
+  fn փիրուզ()
+    decl %փիրուզ
+    statement
+      text '{}'
+  text '
+  '"
+`;
+
+snapshot[`parse global var 1`] = `
+"module
+  gvar %x : i32
+    text 'var '
+    typeDecl %x : i32
+      decl %x
+      text ': '
+      type i32
+        ref i32
+    text ' = 1;'"
+`;
+
+snapshot[`parse alias 1`] = `
+"module
+  alias %Num=i32
+    text 'alias '
+    decl %Num
+    text ' = '
+    type i32
+      ref i32
+    text ';'"
+`;
+
+snapshot[`parse const 1`] = `
+"module
+  const %y
+    text 'const '
+    typeDecl %y
+      decl %y
+    text ' = 11u;'"
+`;
+
+snapshot[`parse override  1`] = `
+"module
+  override %z : f32
+    text 'override '
+    typeDecl %z : f32
+      decl %z
+      text ': '
+      type f32
+        ref f32
+    text ';'"
+`;
+
+snapshot[`parse const_assert 1`] = `
+"module
+  assert
+    text 'const_assert '
+    ref x
+    text ' < '
+    ref y
+    text ';'"
+`;
+
+snapshot[`parse struct 1`] = `
+"module
+  struct foo
+    text 'struct '
+    decl %foo
+    text ' { '
+    member bar: i32
+      name bar
+      text ': '
+      type i32
+        ref i32
+    text ', '
+    member zip: u32
+      name zip
+      text ': '
+      type u32
+        ref u32
+    text ', }'
+  text ' ;'"
+`;
+
+snapshot[`parse global diagnostic 1`] = `
+"module
+  text '
+    '
+  directive diagnostic(off, derivative_uniformity)
+  text '
+
+    '
+  fn main()
+    decl %main
+    statement
+      text '{}'
+  text '
+    '"
+`;
+
+snapshot[`parse @attribute before fn 1`] = `
+"module
+  fn main() @compute
+    attribute @compute
+    decl %main
+    statement
+      text '{}'
+  text ' '"
+`;
+
+snapshot[`parse @compute @workgroup_size(a, b, 1) before fn 1`] = `
+"module
+  text '
+    '
+  fn main() @compute @workgroup_size
+    attribute @compute
+    attribute @workgroup_size(ref a, ref b, '1')
+      expression ref a
+        ref a
+      expression ref b
+        ref b
+      expression '1'
+        text '1'
+    decl %main
+    statement
+      text '{}'
+  text '
+    '"
+`;
+
+snapshot[`parse top level var 1`] = `
+"module
+  text '
+    '
+  gvar %u : Uniforms @group @binding
+    attribute @group('0')
+      expression '0'
+        text '0'
+    text ' '
+    attribute @binding('0')
+      expression '0'
+        text '0'
+    text ' var<uniform> '
+    typeDecl %u : Uniforms
+      decl %u
+      text ': '
+      type Uniforms
+        ref Uniforms
+    text ';'
+  text '      
+
+    '
+  fn main()
+    decl %main
+    statement
+      text '{}'
+  text '
+  '"
+`;
+
+snapshot[`parse top level override and const 1`] = `
+"module
+  text '
+    '
+  override %x
+    text 'override '
+    typeDecl %x
+      decl %x
+    text ' = 21;'
+  text '
+    '
+  const %y
+    text 'const '
+    typeDecl %y
+      decl %y
+    text ' = 1;'
+  text '
+
+    '
+  fn main()
+    decl %main
+    statement
+      text '{}'
+  text '
+  '"
+`;
+
+snapshot[`parse root level ;; 1`] = `
+"module
+  text ';;'"
+`;
+
+snapshot[`parse simple alias 1`] = `
+"module
+  alias %NewType=OldType
+    text 'alias '
+    decl %NewType
+    text ' = '
+    type OldType
+      ref OldType
+    text ';'"
+`;
+
+snapshot[`parse array alias 1`] = `
+"module
+  text '
+    '
+  alias %Points3=array<Point, '3'>
+    text 'alias '
+    decl %Points3
+    text ' = '
+    type array<Point, '3'>
+      ref array
+      text '<'
+      type Point
+        ref Point
+      text ', '
+      expression '3'
+        text '3'
+      text '>'
+    text ';'
+  text '
+  '"
+`;
+
+snapshot[`fnDecl parses fn with return type 1`] = `
+"module
+  fn foo() -> MyType
+    decl %foo
+    type MyType
+      ref MyType
+    statement
+      text '{ }'"
+`;
+
+snapshot[`fnDecl parses :type specifier in fn args 1`] = `
+"module
+  text '
+    '
+  fn foo(a: MyType)
+    decl %foo
+    param
+      decl %a
+      typeDecl %a : MyType
+        text ': '
+        type MyType
+          ref MyType
+    statement
+      text '{ }'
+  text '
+  '"
+`;
+
+snapshot[`fnDecl parses :type specifier in fn block 1`] = `
+"module
+  text '
+    '
+  fn foo()
+    decl %foo
+    statement
+      text '{ 
+      '
+      var %b : MyType
+        text 'var '
+        typeDecl %b : MyType
+          decl %b
+          text ':'
+          type MyType
+            ref MyType
+      text ';
+    }'
+  text '
+  '"
+`;
+
+snapshot[`parse type in <template> in fn args 1`] = `
+"module
+  text '
+    '
+  fn foo(a: vec2<MyStruct>)
+    decl %foo
+    param
+      decl %a
+      typeDecl %a : vec2<MyStruct>
+        text ': '
+        type vec2<MyStruct>
+          ref vec2
+          text '<'
+          type MyStruct
+            ref MyStruct
+          text '>'
+    statement
+      text '{ }'
+  text ';'"
+`;
+
+snapshot[`parse simple templated type 1`] = `
+"module
+  fn main(a: array<MyStruct, '4'>)
+    decl %main
+    param
+      decl %a
+      typeDecl %a : array<MyStruct, '4'>
+        text ': '
+        type array<MyStruct, '4'>
+          ref array
+          text '<'
+          type MyStruct
+            ref MyStruct
+          text ','
+          expression '4'
+            text '4'
+          text '>'
+    statement
+      text '{ }'"
+`;
+
+snapshot[`parse with space before template 1`] = `
+"module
+  fn main(a: array<MyStruct, '4'>)
+    decl %main
+    param
+      decl %a
+      typeDecl %a : array<MyStruct, '4'>
+        text ': '
+        type array<MyStruct, '4'>
+          ref array
+          text ' <'
+          type MyStruct
+            ref MyStruct
+          text ','
+          expression '4'
+            text '4'
+          text '>'
+    statement
+      text '{ }'"
+`;
+
+snapshot[`parse nested template that ends with >>  1`] = `
+"module
+  fn main(a: vec2<array<MyStruct, '4'>>)
+    decl %main
+    param
+      decl %a
+      typeDecl %a : vec2<array<MyStruct, '4'>>
+        text ': '
+        type vec2<array<MyStruct, '4'>>
+          ref vec2
+          text '<'
+          type array<MyStruct, '4'>
+            ref array
+            text ' <'
+            type MyStruct
+              ref MyStruct
+            text ','
+            expression '4'
+              text '4'
+            text '>'
+          text '>'
+    statement
+      text '{ }'"
+`;
+
+snapshot[`parse type in <template> in global var 1`] = `
+"module
+  gvar %x : array<MyStruct, '8'>
+    text 'var<private> '
+    typeDecl %x : array<MyStruct, '8'>
+      decl %x
+      text ':'
+      type array<MyStruct, '8'>
+        ref array
+        text '<'
+        type MyStruct
+          ref MyStruct
+        text ', '
+        expression '8'
+          text '8'
+        text '>'
+    text ';'"
+`;
+
+snapshot[`parse for(;;) {} not as a fn call 1`] = `
+"module
+  text '
+    '
+  fn main()
+    decl %main
+    statement
+      text '{
+      for ('
+      var %a
+        text 'var '
+        typeDecl %a
+          decl %a
+        text ' = 1'
+      text '; '
+      ref a
+      text ' < 10; '
+      ref a
+      text '++) '
+      statement
+        text '{}'
+      text '
+    }'
+  text '
+  '"
+`;
+
+snapshot[`eolf followed by blank line 1`] = `
+"module
+  text '
+    '
+  fn foo()
+    decl %foo
+    statement
+      text '{ }'
+  text '
+  '"
+`;
+
+snapshot[`parse fn with attributes and suffix comma 1`] = `
+"module
+  text '
+  '
+  fn main(grid: vec3<u32>, localIndex: u32) @compute @workgroup_size
+    attribute @compute
+    attribute @workgroup_size(ref workgroupThreads, '1', '1')
+      expression ref workgroupThreads
+        ref workgroupThreads
+      expression '1'
+        text '1'
+      expression '1'
+        text '1'
+    decl %main
+    param
+      attribute @builtin(global_invocation_id)
+      text ' '
+      decl %grid
+      typeDecl %grid : vec3<u32>
+        text ': '
+        type vec3<u32>
+          ref vec3
+          text '<'
+          type u32
+            ref u32
+          text '>'
+    param
+      attribute @builtin(local_invocation_index)
+      text ' '
+      decl %localIndex
+      typeDecl %localIndex : u32
+        text ': '
+        type u32
+          ref u32
+    statement
+      text '{ }'
+  text '
+  '"
+`;
+
+snapshot[`parse fn 1`] = `
+"module
+  fn foo(x: i32, y: u32) -> f32
+    decl %foo
+    param
+      decl %x
+      typeDecl %x : i32
+        text ': '
+        type i32
+          ref i32
+    param
+      decl %y
+      typeDecl %y : u32
+        text ': '
+        type u32
+          ref u32
+    type f32
+      ref f32
+    statement
+      text '{ return 1.0; }'"
+`;
+
+snapshot[`parse @attribute before fn 2`] = `
+"module
+  fn main() @compute
+    attribute @compute
+    decl %main
+    statement
+      text '{}'
+  text ' '"
+`;
+
+snapshot[`import package::foo::bar; 1`] = `
+"module
+  import package::foo::bar;"
+`;
+
+snapshot[`parse foo::bar();  1`] = `
+"module
+  fn main()
+    decl %main
+    statement
+      text '{ '
+      ref foo::bar
+      text '(); }'"
+`;
+
+snapshot[`parse let x: foo::bar;  1`] = `
+"module
+  fn main()
+    decl %main
+    statement
+      text '{ let '
+      typeDecl %x : foo::bar
+        decl %x
+        text ': '
+        type foo::bar
+          ref foo::bar
+      text ' = 1; }'"
+`;
+
+snapshot[`parse var x: foo::bar; 1`] = `
+"module
+  text '
+     '
+  gvar %x : foo::bar
+    text 'var<private> '
+    typeDecl %x : foo::bar
+      decl %x
+      text ': '
+      type foo::bar
+        ref foo::bar
+    text ';'
+  text '
+     '
+  fn main()
+    decl %main
+    statement
+      text '{ }'
+  text '
+  '"
+`;
+
+snapshot[`parse switch statement 1`] = `
+"module
+  text '
+    '
+  fn main(x: i32)
+    decl %main
+    param
+      decl %x
+      typeDecl %x : i32
+        text ': '
+        type i32
+          ref i32
+    statement
+      text '{
+      switch ('
+      ref x
+      text ') {
+        '
+      switch-clause
+        text 'case 1: '
+        statement
+          text '{ break; }'
+      text '
+        '
+      switch-clause
+        text 'default: '
+        statement
+          text '{ break; }'
+      text '
+      }
+    }'
+  text '
+  '"
+`;
+
+snapshot[`parse switch statement-2 1`] = `
+"module
+  text '
+
+    '
+  fn main(x: u32)
+    decl %main
+    param
+      decl %x
+      typeDecl %x : u32
+        text ': '
+        type u32
+          ref u32
+    statement
+      text '{
+      switch ( '
+      ref code
+      text ' ) {
+        '
+      switch-clause
+        text 'case 5u: '
+        statement
+          text '{ if 1 > 0 '
+          statement
+            text '{ }'
+          text ' }'
+      text '
+        '
+      switch-clause
+        text 'default: '
+        statement
+          text '{ break; }'
+      text '
+      }
+    }'
+  text '
+  '"
+`;
+
+snapshot[`parse struct constructor in assignment 1`] = `
+"module
+  text '
+    '
+  fn main()
+    decl %main
+    statement
+      text '{
+      '
+      var %x
+        text 'var '
+        typeDecl %x
+          decl %x
+        text ' = '
+        ref AStruct
+        text '(1u)'
+      text ';
+    }'
+  text '
+   '"
+`;
+
+snapshot[`parse struct.member (component_or_swizzle) 1`] = `
+"module
+  text '
+    '
+  fn main()
+    decl %main
+    statement
+      text '{
+        let '
+      typeDecl %x
+        decl %x
+      text ' = '
+      memberRef u.frame
+        ref u
+        text '.'
+        name frame
+      text ';
+    }'
+  text '
+  '"
+`;
+
+snapshot[`var<workgroup> work: array<u32, 128>; 1`] = `
+"module
+  gvar %work : array<u32, '128'>
+    text 'var<workgroup> '
+    typeDecl %work : array<u32, '128'>
+      decl %work
+      text ': '
+      type array<u32, '128'>
+        ref array
+        text '<'
+        type u32
+          ref u32
+        text ', '
+        expression '128'
+          text '128'
+        text '>'
+    text ';'"
+`;
+
+snapshot[`fn f() { _ = 1; } 1`] = `
+"module
+  fn f()
+    decl %f
+    statement
+      text '{ _ = 1; }'"
+`;
+
+snapshot[`var foo: vec2<f32 >= vec2( 0.5, -0.5); 1`] = `
+"module
+  gvar %foo : vec2<f32>
+    text 'var '
+    typeDecl %foo : vec2<f32>
+      decl %foo
+      text ': '
+      type vec2<f32>
+        ref vec2
+        text '<'
+        type f32
+          ref f32
+        text ' >'
+    text '= '
+    ref vec2
+    text '( 0.5, -0.5);'"
+`;
+
+snapshot[`fn main() { var tmp: array<i32, 1 << 1>=array(1, 2); } 1`] = `
+"module
+  fn main()
+    decl %main
+    statement
+      text '{ '
+      var %tmp : array<i32, '1 << 1'>
+        text 'var '
+        typeDecl %tmp : array<i32, '1 << 1'>
+          decl %tmp
+          text ': '
+          type array<i32, '1 << 1'>
+            ref array
+            text '<'
+            type i32
+              ref i32
+            text ', '
+            expression '1 << 1'
+              text '1 << 1'
+            text '>'
+        text '='
+        ref array
+        text '(1, 2)'
+      text '; }'"
+`;
+
+snapshot[`import a::b::c; 1`] = `
+"module
+  import a::b::c;"
+`;
+
+snapshot[`import package::file1::{foo, bar}; 1`] = `
+"module
+  import package::file1::{foo, bar};"
+`;
+
+snapshot[`import package::file1::{foo, bar}; 2`] = `"package::file1::{foo, bar};"`;
+
+snapshot[`import foo_bar::boo; 1`] = `
+"module
+  import foo_bar::boo;"
+`;
+
+snapshot[`import a::{ b }; 1`] = `
+"module
+  import a::{b};"
+`;
+
+snapshot[`import a::{ b, c::{d, e}, f }; 1`] = `
+"module
+  import a::{b, c::{d, e}, f};"
+`;
+
+snapshot[`parse ptr 1`] = `
+"module
+  text '
+    '
+  gvar %particles : ptr<storage, f32, read_write>
+    text 'var '
+    typeDecl %particles : ptr<storage, f32, read_write>
+      decl %particles
+      text ': '
+      type ptr<storage, f32, read_write>
+        ref ptr
+        text '<'
+        type storage
+          ref storage
+        text ', '
+        type f32
+          ref f32
+        text ', '
+        type read_write
+          ref read_write
+        text '>'
+    text ';'
+  text '
+  '"
+`;
+
+snapshot[`parse ptr with internal array 1`] = `
+"module
+  text '
+    '
+  gvar %particles : ptr<storage, array<f32>, read_write>
+    text 'var '
+    typeDecl %particles : ptr<storage, array<f32>, read_write>
+      decl %particles
+      text ': '
+      type ptr<storage, array<f32>, read_write>
+        ref ptr
+        text '<'
+        type storage
+          ref storage
+        text ', '
+        type array<f32>
+          ref array
+          text '<'
+          type f32
+            ref f32
+          text '>'
+        text ', '
+        type read_write
+          ref read_write
+        text '>'
+    text ';'
+  text '
+  '"
+`;
+
+snapshot[`parse binding struct 1`] = `
+"module
+  text '
+    '
+  struct Bindings
+    text 'struct '
+    decl %Bindings
+    text ' {
+      '
+    member @group @binding particles: ptr<storage, array<f32>, read_write>
+      attribute @group('0')
+        expression '0'
+          text '0'
+      text ' '
+      attribute @binding('0')
+        expression '0'
+          text '0'
+      text ' '
+      name particles
+      text ': '
+      type ptr<storage, array<f32>, read_write>
+        ref ptr
+        text '<'
+        type storage
+          ref storage
+        text ', '
+        type array<f32>
+          ref array
+          text '<'
+          type f32
+            ref f32
+          text '>'
+        text ', '
+        type read_write
+          ref read_write
+        text '>'
+    text ', 
+    }'
+  text '
+  '"
+`;
+
+snapshot[`parse struct reference 1`] = `
+"module
+  text '
+    '
+  fn f()
+    decl %f
+    statement
+      text '{ let '
+      typeDecl %x
+        decl %x
+      text ' = '
+      memberRef a.b[0]
+        ref a
+        text '.'
+        name b
+        stuff
+          text '[0]'
+      text '; }'
+  text ';
+  '"
+`;
+
+snapshot[`member reference with extra components 1`] = `
+"module
+  text '
+  '
+  fn foo()
+    decl %foo
+    statement
+      text '{
+    '
+      ref output
+      text '[ '
+      ref out
+      text ' + 0u ] = '
+      memberRef c.p0.t0.x
+        ref c
+        text '.'
+        name p0
+        stuff
+          text '.t0.x'
+      text ';
+  }'
+  text '
+ '"
+`;
+
+snapshot[`parse let declaration 1`] = `
+"module
+  text '
+    '
+  fn vertexMain()
+    decl %vertexMain
+    statement
+      text '{
+      let '
+      typeDecl %char
+        decl %char
+      text ' = '
+      ref array
+      text '<'
+      type u32
+        ref u32
+      text ', '
+      expression '2'
+        text '2'
+      text '>(0, 0);
+    }'
+  text '
+  '"
+`;
+
+snapshot[`parse let declaration with type 1`] = `
+"module
+  text '
+    '
+  fn vertexMain()
+    decl %vertexMain
+    statement
+      text '{
+      let '
+      typeDecl %char : u32
+        decl %char
+        text ' : '
+        type u32
+          ref u32
+      text ' = 0;
+    }'
+  text '
+  '"
+`;
+
+snapshot[`separator in let assignment 1`] = `
+"module
+  text '
+    '
+  fn vertexMain()
+    decl %vertexMain
+    statement
+      text '{
+      let '
+      typeDecl %a
+        decl %a
+      text ' = '
+      ref b::c
+      text ';
+    }'
+  text '
+  '"
+`;
+
+snapshot[`separator in fn call  1`] = `
+"module
+  text '
+    '
+  fn vertexMain()
+    decl %vertexMain
+    statement
+      text '{
+      '
+      ref b::c
+      text '();
+    }'
+  text '
+  '"
+`;
+
+snapshot[`binding struct 1`] = `
+"module
+  text '
+    '
+  struct Bindings
+    text 'struct '
+    decl %Bindings
+    text ' {
+      '
+    member @group @binding particles: ptr<storage, array<f32>, read_write>
+      attribute @group('0')
+        expression '0'
+          text '0'
+      text ' '
+      attribute @binding('0')
+        expression '0'
+          text '0'
+      text ' '
+      name particles
+      text ': '
+      type ptr<storage, array<f32>, read_write>
+        ref ptr
+        text '<'
+        type storage
+          ref storage
+        text ', '
+        type array<f32>
+          ref array
+          text '<'
+          type f32
+            ref f32
+          text '>'
+        text ', '
+        type read_write
+          ref read_write
+        text '>'
+    text ', 
+      '
+    member @group @binding uniforms: ptr<uniform, Uniforms>
+      attribute @group('0')
+        expression '0'
+          text '0'
+      text ' '
+      attribute @binding('1')
+        expression '1'
+          text '1'
+      text ' '
+      name uniforms
+      text ': '
+      type ptr<uniform, Uniforms>
+        ref ptr
+        text '<'
+        type uniform
+          ref uniform
+        text ', '
+        type Uniforms
+          ref Uniforms
+        text '>'
+    text ', 
+      '
+    member @group @binding tex: texture_2d<rgba8unorm>
+      attribute @group('0')
+        expression '0'
+          text '0'
+      text ' '
+      attribute @binding('2')
+        expression '2'
+          text '2'
+      text ' '
+      name tex
+      text ': '
+      type texture_2d<rgba8unorm>
+        ref texture_2d
+        text '<'
+        type rgba8unorm
+          ref rgba8unorm
+        text '>'
+    text ',
+      '
+    member @group @binding samp: sampler
+      attribute @group('0')
+        expression '0'
+          text '0'
+      text ' '
+      attribute @binding('3')
+        expression '3'
+          text '3'
+      text ' '
+      name samp
+      text ': '
+      type sampler
+        ref sampler
+    text ',
+    }'
+  text '
+  '"
+`;
+
+snapshot[`memberRefs with extra components 1`] = `
+"module
+  text '
+    '
+  fn main()
+    decl %main
+    statement
+      text '{
+      '
+      memberRef b.particles[0]
+        ref b
+        text '.'
+        name particles
+        stuff
+          text '[0]'
+      text ' = '
+      memberRef b.uniforms.foo
+        ref b
+        text '.'
+        name uniforms
+        stuff
+          text '.foo'
+      text ';
+    }'
+  text '
+  '"
+`;
+
+snapshot[`memberRef with ref in array 1`] = `
+"module
+  text '
+    '
+  fn main()
+    decl %main
+    statement
+      text '{
+      '
+      memberRef vsOut.barycenticCoord[ vertNdx ]
+        ref vsOut
+        text '.'
+        name barycenticCoord
+        stuff
+          text '['
+          ref vertNdx
+          text ']'
+      text ' = 1.0;
+    }'
+  text '
+  '"
+`;
+
+snapshot[`parse inline package reference 1`] = `
+"module
+  text '
+    '
+  fn main()
+    decl %main
+    statement
+      text '{
+      '
+      ref package::foo::bar
+      text '();
+    }'
+  text '
+  '"
+`;
+
+snapshot[`parse @location 1`] = `
+"module
+  text '
+      '
+  fn fragmentMain(pos: vec4f) @fragment -> vec4f
+    attribute @fragment
+    decl %fragmentMain
+    param
+      attribute @builtin(position)
+      text ' '
+      decl %pos
+      typeDecl %pos : vec4f
+        text ': '
+        type vec4f
+          ref vec4f
+    attribute @location('0')
+      expression '0'
+        text '0'
+    type vec4f
+      ref vec4f
+    statement @location
+      text '{ 
+        return '
+      ref pos
+      text ';
+      }'
+  text '
+  '"
+`;

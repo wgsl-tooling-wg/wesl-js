@@ -1,0 +1,12 @@
+{
+  "name": "@wesl/mini-parse",
+  "version": "0.7.0",
+  "license": "MIT OR Apache-2.0",
+  "exports": {
+    ".": "./mod.ts",
+    "./test-util": "./test-util/index.ts",
+    "./vitest-util": "./vitest-util/index.ts"
+  },
+  "tasks": {
+  }
+}
