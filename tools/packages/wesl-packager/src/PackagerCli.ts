@@ -1,17 +1,19 @@
 import yargs from "yargs";
 import { packageWgsl } from "./PackageWesl.js";
 
-export type CliArgs = ReturnType<typeof parseArgs>;
+export type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 let cliArgs: CliArgs;
 
 export async function packagerCli(rawArgs: string[]): Promise<void> {
-  cliArgs = parseArgs(rawArgs);
+  cliArgs = await parseArgs(rawArgs);
   await packageWgsl(cliArgs);
 }
 
-function parseArgs(args: string[]) {
+async function parseArgs(args: string[]) {
+  const appVersion = await versionFromPackageJson();
   return yargs(args)
     .command("$0", "create an npm package from WGSL/WESL files")
+    .version(appVersion)
     .option("src", {
       type: "string",
       default: "./shaders/*.w[eg]sl",
@@ -49,5 +51,12 @@ function parseArgs(args: string[]) {
       describe: "where to put bundled output files (relative to projectDir)",
     })
     .help()
-    .parseSync();
+    .parse();
+}
+
+async function versionFromPackageJson(): Promise<string> {
+  const pkgJsonPath = new URL("../package.json", import.meta.url);
+  const pkgModule = await import(pkgJsonPath.href, { with: { type: "json" } });
+  const version = pkgModule.default.version;
+  return version as string;
 }
