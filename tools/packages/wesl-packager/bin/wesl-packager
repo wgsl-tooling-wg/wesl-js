@@ -6516,7 +6516,10 @@ function coverWithText(cc, elem) {
 // ../wesl/src/parse/WeslBaseGrammar.ts
 var word = kind("word");
 var keyword = kind("keyword");
-var qualified_ident = withSepPlus("::", or(word, "package", "super"));
+var qualified_ident = withSepPlus(
+  "::",
+  or(word, keyword, "package", "super")
+);
 var number = kind("number");
 
 // ../wesl/src/parse/ImportGrammar.ts

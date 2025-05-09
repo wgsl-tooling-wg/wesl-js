@@ -1637,3 +1637,28 @@ test("parse @location", () => {
       '"
   `);
 });
+
+test("parse foo::else()", () => {
+  const src = `
+    fn main() {
+      foo::else();
+    }
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      fn main()
+        decl %main
+        statement
+          text '{
+          '
+          ref foo::else
+          text '();
+        }'
+      text '
+      '"
+  `);
+});
