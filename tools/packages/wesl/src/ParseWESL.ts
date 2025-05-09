@@ -10,7 +10,7 @@ import { WeslStream } from "./parse/WeslStream.ts";
 import { emptyScope, Scope, SrcModule } from "./Scope.ts";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
 import { OpenElem } from "./WESLCollect.ts";
-import { throwClickableError } from "./WeslDevice.ts";
+import { throwClickableError } from "./ClickableError.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *
