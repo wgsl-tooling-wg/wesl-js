@@ -218,7 +218,7 @@ export function throwClickableError({
 
   // Run the error-throwing file
   try {
-    (0, eval)(generatedCode);
+    (0, eval)(generatedCode);   // run eval() in global scope
   } catch (e: any) {
     if ("stackTraceLimit" in Error) {
       Error.stackTraceLimit = oldLimit;
