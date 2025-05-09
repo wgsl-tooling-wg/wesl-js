@@ -1,7 +1,12 @@
 import { resolve } from "import-meta-resolve";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { filterMap, parsedRegistry, parseIntoRegistry } from "wesl";
+import {
+  filterMap,
+  parsedRegistry,
+  parseIntoRegistry,
+  WeslParseError,
+} from "wesl";
 import { findUnboundIdents } from "../../wesl/src/BindIdents.ts";
 
 /**
@@ -24,7 +29,15 @@ export function parseDependencies(
   projectDir: string,
 ): string[] {
   const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry);
+  try {
+    parseIntoRegistry(weslSrc, registry);
+  } catch (e: any) {
+    if (e.cause instanceof WeslParseError) {
+      console.error(e.message, "\n");
+    } else {
+      throw e;
+    }
+  }
 
   const unbound = findUnboundIdents(registry);
   if (!unbound) return [];

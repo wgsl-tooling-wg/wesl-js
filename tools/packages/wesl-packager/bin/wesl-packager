@@ -8194,7 +8194,15 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 function parseDependencies(weslSrc, projectDir) {
   const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry);
+  try {
+    parseIntoRegistry(weslSrc, registry);
+  } catch (e) {
+    if (e.cause instanceof WeslParseError) {
+      console.error(e.message, "\n");
+    } else {
+      throw e;
+    }
+  }
   const unbound = findUnboundIdents(registry);
   if (!unbound) return [];
   const pkgRefs = unbound.filter((modulePath) => modulePath.length > 1);
