@@ -78,6 +78,7 @@ export function weslExtension<T>(combinator: T): T {
   return combinator;
 }
 
+/** A stream that produces WESL tokens, skipping over comments and white space */
 export class WeslStream implements Stream<WeslToken> {
   private stream: Stream<TypedToken<InternalTokenKind>>;
   /** New line */
