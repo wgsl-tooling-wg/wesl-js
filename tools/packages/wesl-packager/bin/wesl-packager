@@ -5224,6 +5224,18 @@ function opt(arg) {
     }
   );
 }
+function not(arg) {
+  const p = parserArg(arg);
+  return parser2("not", function _not(state) {
+    const pos = state.stream.checkpoint();
+    const result = p._run(state);
+    if (result === null) {
+      state.stream.reset(pos);
+      return { value: true };
+    }
+    return null;
+  });
+}
 function repeat(arg) {
   const p = parserArg(arg);
   return parser2("repeat", repeatWhileFilter(p));
@@ -6528,8 +6540,10 @@ function prependSegments(segments, statement2) {
   return statement2;
 }
 var import_collection = null;
+var segment_blacklist = or("super", "package", "import", "as");
+var packageWord = preceded(not(segment_blacklist), or(word, keyword));
 var import_path_or_item = seq(
-  word,
+  packageWord,
   or(
     preceded(
       "::",

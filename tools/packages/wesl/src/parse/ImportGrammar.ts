@@ -1,6 +1,7 @@
 import {
   delimited,
   fn,
+  not,
   opt,
   or,
   Parser,
@@ -27,7 +28,7 @@ import type {
 } from "../AbstractElems.js";
 import { assertUnreachable } from "../Assertions.js";
 import { importElem } from "../WESLCollect.js";
-import { word } from "./WeslBaseGrammar.js";
+import { keyword, word } from "./WeslBaseGrammar.js";
 import { WeslToken } from "./WeslStream.js";
 
 function makeStatement(
@@ -62,8 +63,13 @@ let import_collection: Parser<
   ImportCollection
 > = null as any;
 
+const segment_blacklist = or("super", "package", "import", "as");
+
+/** words allowed in an import segment (after the package:: or super::super:: part if any) */
+const packageWord = preceded(not(segment_blacklist), or(word, keyword));
+
 const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
-  word,
+  packageWord,
   or(
     preceded(
       "::",
