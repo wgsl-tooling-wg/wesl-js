@@ -641,6 +641,7 @@ function coverWithText(cc: CollectContext, elem: ContainerElem): GrammarElem[] {
   }
 }
 
+/** for debugging */
 function collectLog(cc: CollectContext, ...messages: any[]): void {
   const { src, start, end } = cc;
   srcLog(src, [start, end], ...messages);

@@ -22,9 +22,9 @@ test("conditionally empty struct", async () => {
   const { log } = await linkWithLogQuietly(src);
   expect(log).toMatchInlineSnapshot(
     `
-    "struct Empty in ./test.wesl has no members (with current conditions)
+    "struct 'Empty' has no members (with current conditions) in file: ./test.wesl
         struct Empty {   Ln 2
-        ^"
+               ^^^^^"
   `,
   );
 });

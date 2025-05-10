@@ -1,4 +1,6 @@
-import { tracing } from "mini-parse";
+import { srcLog, tracing } from "mini-parse";
+import { DeclIdentElem, RefIdent, RefIdentElem } from "wesl";
+import { offsetToLineNumber } from "./Util.ts";
 import { encodeVlq } from "./vlq/vlq";
 
 export interface ClickableErrorParams {
@@ -88,4 +90,39 @@ export function throwClickableError(params: ClickableErrorParams): void {
     if (tracing) e.cause = error; // users don't want to see this, but WESL developers might
     throw e;
   }
+}
+
+/** Warn the user about an identifier and throw a clickable exception */
+export function failIdent(ident: RefIdent, msg?: string): void {
+  const { refIdentElem, originalName } = ident;
+  const baseMessage = msg ?? `'${originalName}'`;
+
+  if (refIdentElem) {
+    failIdentElem(refIdentElem, baseMessage);
+  } else {
+    throw new Error(baseMessage);
+  }
+}
+
+/** Warn the user about an identifier and throw a clickable exception */
+export function failIdentElem(
+  identElem: DeclIdentElem | RefIdentElem,
+  msg = "",
+): void {
+  const { srcModule, start, end } = identElem;
+  const { debugFilePath, src } = srcModule;
+  const detailedMessage = `${msg} in file: ${debugFilePath}`;
+  srcLog(src, [start, end], detailedMessage);
+
+  const [lineNumber, lineColumn] = offsetToLineNumber(start, src);
+  const length = end - start;
+
+  throwClickableError({
+    url: debugFilePath,
+    text: src,
+    lineNumber,
+    lineColumn,
+    length,
+    error: new Error(detailedMessage),
+  });
 }

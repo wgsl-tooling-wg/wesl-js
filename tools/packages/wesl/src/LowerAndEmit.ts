@@ -1,4 +1,4 @@
-import { srcLog, SrcMapBuilder } from "mini-parse";
+import { SrcMapBuilder } from "mini-parse";
 import {
   AbstractElem,
   AttributeElem,
@@ -20,6 +20,7 @@ import {
   assertUnreachableSilent,
 } from "./Assertions.ts";
 import { isGlobal } from "./BindIdents.ts";
+import { failIdentElem } from "./ClickableError.ts";
 import { elementValid } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { Conditions, DeclIdent, Ident } from "./Scope.ts";
@@ -200,12 +201,8 @@ export function emitStruct(e: StructElem, ctx: EmitContext): void {
 function warnEmptyStruct(e: StructElem): void {
   const { name, members } = e;
   const condStr = members.length ? "(with current conditions)" : "";
-  const { debugFilePath: filePath } = name.srcModule;
-  srcLog(
-    name.srcModule.src,
-    e.start,
-    `struct ${name.ident.originalName} in ${filePath} has no members ${condStr}`,
-  );
+  const message = `struct '${name.ident.originalName}' has no members ${condStr}`;
+  failIdentElem(name, message);
 }
 
 export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {

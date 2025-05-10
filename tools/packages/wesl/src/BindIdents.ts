@@ -1,7 +1,6 @@
-import { srcLog } from "mini-parse";
 import { AbstractElem } from "./AbstractElems.ts";
 import { assertThatDebug, assertUnreachableSilent } from "./Assertions.ts";
-import { throwClickableError } from "./ClickableError.ts";
+import { failIdent } from "./ClickableError.ts";
 import { elementValid, scopeValid } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import { FlatImport } from "./FlattenTreeImport.ts";
@@ -20,7 +19,7 @@ import {
   SrcModule,
 } from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
-import { last, offsetToLineNumber } from "./Util.ts";
+import { last } from "./Util.ts";
 
 /**
   BindIdents pass
@@ -312,7 +311,7 @@ function handleRef(
     } else if (stdWgsl(ident.originalName)) {
       ident.std = true;
     } else if (!unbound) {
-      failResolve(ident);
+      failIdent(ident, `unresolved identifier '${ident.originalName}'`);
     }
   }
 }
@@ -391,35 +390,6 @@ function globalDeclToRootLiveDecls(
   const liveDecls = { decls };
   root._scopeDecls = liveDecls;
   return liveDecls;
-}
-
-/** Warn the user about an unresolved identifier and throw a clickable exception */
-function failResolve(ident: RefIdent, msg?: string): void {
-  const { refIdentElem, originalName } = ident;
-  const baseMessage = msg ?? `unresolved identifier '${originalName}'`;
-
-  if (refIdentElem) {
-    const { srcModule, start, end } = refIdentElem;
-    const { debugFilePath: filePath, src } = srcModule;
-
-    const detailedMessage = `${baseMessage} in file: ${filePath}`;
-
-    srcLog(src, [start, end], detailedMessage);
-
-    const [lineNumber, lineColumn] = offsetToLineNumber(start, src);
-    const length = end - start;
-
-    throwClickableError({
-      url: filePath,
-      text: src,
-      lineNumber,
-      lineColumn,
-      length,
-      error: new Error(detailedMessage),
-    });
-  } else {
-    throw new Error(baseMessage);
-  }
 }
 
 /**
@@ -508,7 +478,7 @@ function findQualifiedImport(
         unbound.push(modulePathParts);
       } else {
         const msg = `module not found for '${modulePathParts.join("::")}'`;
-        failResolve(refIdent, msg);
+        failIdent(refIdent, msg);
       }
     }
     return result;
