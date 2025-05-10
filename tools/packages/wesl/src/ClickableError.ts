@@ -1,6 +1,5 @@
+import { tracing } from "mini-parse";
 import { encodeVlq } from "./vlq/vlq";
-
-// Based on https://stackoverflow.com/questions/65274147/sourceurl-for-css
 
 export interface ClickableErrorParams {
   url: string;
@@ -75,7 +74,7 @@ export function throwClickableError(params: ClickableErrorParams): void {
       Error.stackTraceLimit = oldLimit;
     }
     error.message = "";
-    e.cause = error;
+    if (tracing) e.cause = error; // users don't want to see this, but WESL developers might
     throw e;
   }
 }
