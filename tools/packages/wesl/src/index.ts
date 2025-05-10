@@ -3,6 +3,7 @@ export * from "./debug/ASTtoString.js";
 export * from "./debug/ScopeToString.js";
 export * from "./LinkedWesl.js";
 export * from "./Linker.js";
+export * from "./BindIdents.js";
 export * from "./Mangler.js";
 export { WeslStream } from "./parse/WeslStream.js";
 export * from "./ParsedRegistry.js";
