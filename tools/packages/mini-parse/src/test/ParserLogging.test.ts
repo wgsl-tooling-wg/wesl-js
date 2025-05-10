@@ -58,6 +58,7 @@ test("srcLog on longer example", () => {
 });
 
 test("srcLog with two carets", () => {
+  // indexes:  01 234567 8
   const src = `a\n12345\nb`;
 
   const { log, logged } = logCatch();
@@ -67,6 +68,6 @@ test("srcLog with two carets", () => {
   expect(logged()).toMatchInlineSnapshot(`
     "found:
     12345   Ln 2
-    ^    ^"
+    ^^^^^"
   `);
 });

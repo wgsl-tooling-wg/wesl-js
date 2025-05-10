@@ -9,7 +9,7 @@ test("unresolved identifier", async () => {
   expect(log).toMatchInlineSnapshot(`
     "unresolved identifier 'x' in file: ./test.wesl
         fn main() { x = 7; }   Ln 2
-                    ^^"
+                    ^"
   `);
 });
 
