@@ -94,7 +94,8 @@ export async function link(params: LinkParams): Promise<LinkedWesl> {
   const registry = parsedRegistry();
   parseIntoRegistry(weslSrc, registry, "package", debugWeslRoot);
   parseLibsIntoRegistry(libs, registry);
-  return new LinkedWesl(linkRegistry({ registry, ...params }));
+  const srcMap = linkRegistry({ registry, ...params });
+  return new LinkedWesl(srcMap);
 }
 
 export interface LinkRegistryParams
