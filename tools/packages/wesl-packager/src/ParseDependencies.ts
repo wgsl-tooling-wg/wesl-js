@@ -59,7 +59,7 @@ export function parseDependencies(
 /**
  * Find the longest resolvable npm subpath from a module path.
  *
- * @param mPath module path, e.g. ['foo', 'bar', 'baz']
+ * @param mPath module path, e.g. ['foo', 'bar', 'baz', 'elem']
  * @param importerURL URL of the importer, e.g. 'file:///path/to/project/foo/bar/baz.wesl' (doesn't need to be a real file)
  * @returns longest resolvable subpath of mPath, e.g. 'foo/bar/baz' or 'foo/bar'
  */
@@ -67,15 +67,34 @@ function unboundToDependency(
   mPath: string[],
   importerURL: string,
 ): string | undefined {
-  for (let i = mPath.length; i >= 0; i--) {
-    const subPath = mPath.slice(0, i).join("/");
-    try {
-      resolve(subPath, importerURL);
-      return subPath;
-    } catch {
-      // if the subPath cannot be resolved try a shorter version
-      continue;
-    }
+  // return the longest subpath that can be resolved
+  return exportSubpaths(mPath).find(subPath =>
+    // Note that we're not checking here that the resolved file exists.
+    // The file (a weslBundle.js file somewhere in dist) may not have been built yet.
+    // LATER we could do save these paths and check that the resolved files exist.
+    tryResolve(subPath, importerURL),
+  );
+}
+/** Try to resolve a path using node's resolve algorithm.
+ * @return the resolved path */
+function tryResolve(path: string, importerURL: string): string | undefined {
+  try {
+    // Resolve() throws if the path is not resolvable.
+    //
+    return resolve(path, importerURL);
+  } catch (e) {
+    return undefined;
   }
-  return undefined;
+}
+
+/**
+ * Yield possible export entry subpaths from module path
+ * longest subpath first.
+ */
+function* exportSubpaths(mPath: string[]): Generator<string> {
+  const longest = mPath.length - 1; // drop the last segment (the element name)
+  for (let i = longest; i >= 0; i--) {
+    const subPath = mPath.slice(0, i).join("/");
+    yield subPath;
+  }
 }
