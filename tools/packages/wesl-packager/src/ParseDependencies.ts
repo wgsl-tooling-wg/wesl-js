@@ -75,13 +75,12 @@ function unboundToDependency(
     tryResolve(subPath, importerURL),
   );
 }
+
 /** Try to resolve a path using node's resolve algorithm.
  * @return the resolved path */
 function tryResolve(path: string, importerURL: string): string | undefined {
   try {
-    // Resolve() throws if the path is not resolvable.
-    //
-    return resolve(path, importerURL);
+    return resolve(path, importerURL); // resolve() throws if the path is not resolvable.
   } catch (e) {
     return undefined;
   }
