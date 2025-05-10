@@ -2,20 +2,31 @@ import { tracing } from "mini-parse";
 import { encodeVlq } from "./vlq/vlq";
 
 export interface ClickableErrorParams {
+  /** url of the source file (e.g. `shaders/app.wesl`) */
   url: string;
+
+  /** source text of the shader */
   text: string | null;
+
+  /** line number in the source text (1 indexed) */
   lineNumber: number;
+
+  /** line number in the source text (1 indexed) */
   lineColumn: number;
+
+  /** number of characters in the error section */
   length: number;
+
+  /** the original error */
   error: Error;
 }
 
-/** Throw an Error with an embedded source map, so that browser users can
- * click on the error and see the source code.
- */
-
+/** Throw an error with an embedded source map so that browser users can
+ *  click on the error in the browser debug console and see the wesl source code.  */
 export function throwClickableError(params: ClickableErrorParams): void {
   const { url, text, lineNumber, lineColumn, length, error } = params;
+
+  // Based on https://stackoverflow.com/questions/65274147/sourceurl-for-css
 
   // We remap an error directly to where we need it to be
   // The fields are

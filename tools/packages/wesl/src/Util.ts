@@ -145,7 +145,7 @@ export function mapValues<T, U>(
 }
 
 /**
- * Maps an index to a 1-indexed line number, and 1-indexed column.
+ * Maps an character position in a string to a 1-indexed line number, and 1-indexed column.
  */
 export function offsetToLineNumber(
   offset: number,
