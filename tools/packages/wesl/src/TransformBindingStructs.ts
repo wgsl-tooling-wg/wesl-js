@@ -23,7 +23,7 @@ import {
   typeParamToString,
 } from "./RawEmit.ts";
 import { textureStorage } from "./Reflection.ts";
-import type { DeclIdent, RefIdent } from "./Scope.ts";
+import type { DeclIdent, Ident, RefIdent } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
 
 export function bindingStructsPlugin(): WeslJsPlugin {
@@ -75,7 +75,7 @@ export function lowerBindingStructs(ast: TransformedAST): TransformedAST {
   );
   // remove intermediate fn param declaration b:Bindings from 'fn(b:Bindings)'
   bindingRefs.forEach(({ intermediates }) =>
-    intermediates.forEach((e) => (e.contents = [])),
+    intermediates.forEach((e) => { e.contents = []; }),
   );
   const contents = removeBindingStructs(moduleElem);
   moduleElem.contents = [...newVars, ...contents];
@@ -128,7 +128,7 @@ export function markBindingStructs(
 ): BindingStructElem[] {
   const structs = moduleElem.contents.filter((elem) => elem.kind === "struct");
   const bindingStructs = structs.filter(containsBinding);
-  bindingStructs.forEach((struct) => (struct.bindingStruct = true));
+  bindingStructs.forEach((struct) => { struct.bindingStruct = true; });
   // LATER also mark structs that reference a binding struct..
   return bindingStructs as BindingStructElem[];
 }
@@ -277,11 +277,11 @@ function traceToStruct(ident: RefIdent): StructTrace | undefined {
   if (declElem && declElem.kind === "param") {
     const name = declElem.name.typeRef?.name;
     if (typeof name !== "string") {
-      if (name.std) {
+      if (name?.std) {
         return undefined;
       }
 
-      const paramDecl = findDecl(name);
+      const paramDecl = findDecl(name as Ident);
       const structElem = paramDecl.declElem;
       if (structElem?.kind === "struct") {
         return { struct: structElem, intermediates: [declElem] };
