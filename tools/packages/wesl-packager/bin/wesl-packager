@@ -723,13 +723,13 @@ var YargsParser = class {
     function applyEnvVars(argv2, configOnly) {
       if (typeof envPrefix === "undefined")
         return;
-      const prefix = typeof envPrefix === "string" ? envPrefix : "";
+      const prefix2 = typeof envPrefix === "string" ? envPrefix : "";
       const env2 = mixin.env();
       Object.keys(env2).forEach(function(envVar) {
-        if (prefix === "" || envVar.lastIndexOf(prefix, 0) === 0) {
+        if (prefix2 === "" || envVar.lastIndexOf(prefix2, 0) === 0) {
           const keys = envVar.split("__").map(function(key, i) {
             if (i === 0) {
-              key = key.substring(prefix.length);
+              key = key.substring(prefix2.length);
             }
             return camelCase(key);
           });
@@ -2461,9 +2461,9 @@ function usage(yargs, shim3) {
       if (yargs.getInternalMethods().getParserConfiguration()["sort-commands"] === true) {
         commands = commands.sort((a, b) => a[0].localeCompare(b[0]));
       }
-      const prefix = base$0 ? `${base$0} ` : "";
+      const prefix2 = base$0 ? `${base$0} ` : "";
       commands.forEach((command2) => {
-        const commandString = `${prefix}${parentCommands}${command2[0].replace(/^\$0 ?/, "")}`;
+        const commandString = `${prefix2}${parentCommands}${command2[0].replace(/^\$0 ?/, "")}`;
         ui2.span({
           text: commandString,
           padding: [0, 2, 0, 2],
@@ -3762,12 +3762,12 @@ var YargsInstance = class {
     __classPrivateFieldSet(this, _YargsInstance_detectLocale, detect, "f");
     return this;
   }
-  env(prefix) {
-    argsert("[string|boolean]", [prefix], arguments.length);
-    if (prefix === false)
+  env(prefix2) {
+    argsert("[string|boolean]", [prefix2], arguments.length);
+    if (prefix2 === false)
       delete __classPrivateFieldGet(this, _YargsInstance_options, "f").envPrefix;
     else
-      __classPrivateFieldGet(this, _YargsInstance_options, "f").envPrefix = prefix || "";
+      __classPrivateFieldGet(this, _YargsInstance_options, "f").envPrefix = prefix2 || "";
     return this;
   }
   epilogue(msg) {
@@ -7709,17 +7709,17 @@ function makeUnaryExpression([operator, expression2]) {
 }
 function makeRepeatingBinaryExpression([start, repeating]) {
   let result = start;
-  for (const [op, left2] of repeating) {
-    result = makeBinaryExpression([result, op, left2]);
+  for (const [op, left3] of repeating) {
+    result = makeBinaryExpression([result, op, left3]);
   }
   return result;
 }
-function makeBinaryExpression([left2, operator, right2]) {
+function makeBinaryExpression([left3, operator, right3]) {
   return {
     kind: "binary-expression",
     operator,
-    left: left2,
-    right: right2
+    left: left3,
+    right: right3
   };
 }
 if (tracing) {
@@ -8240,7 +8240,7 @@ var multiNames = matchOneOf(multisampledTextureTypes);
 // raw-loader:/Users/lee/wesl-js/tools/packages/wesl/src/WeslBundle.ts?raw
 var WeslBundle_default = 'export interface WeslBundle {\n  /** name of the package, e.g. random_wgsl */\n  name: string;\n\n  /** wesl edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of wesl/wgsl modules:\n   *    keys are file paths, relative to package root (e.g. "./lib.wgsl")\n   *    values are wgsl/wesl code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n';
 
-// src/ParseDependencies.ts
+// ../wesl-tooling/src/ParseDependencies.ts
 import { resolve as resolve5 } from "import-meta-resolve";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -8292,6 +8292,137 @@ function* exportSubpaths(mPath) {
     yield subPath;
   }
 }
+
+// ../../node_modules/.pnpm/berry-pretty@0.0.4/node_modules/berry-pretty/dist/index.js
+var spaces2 = memoize2((nesting) => {
+  return " ".repeat(nesting);
+});
+var defaultCallerSize2 = 20;
+var multiLinePad2 = "\n" + spaces2(defaultCallerSize2 + 3);
+function memoize2(fn2) {
+  const cache = /* @__PURE__ */ new Map();
+  return function(...args) {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) {
+      return cache.get(key);
+    } else {
+      const value = fn2(...args);
+      cache.set(key, value);
+      return value;
+    }
+  };
+}
+if (typeof DOMRect === "undefined") {
+  globalThis.DOMRect = function() {
+  };
+}
+
+// ../../node_modules/.pnpm/thimbleberry@0.2.9/node_modules/thimbleberry/dist/thimbleberry.js
+function memoMemo(fn2, options) {
+  const memoizer = options?.memoCache || persistentMemoCache;
+  const keyFn = options?.keyFn || defaultKeyFn;
+  const cache = memoizer();
+  return function(...args) {
+    const key = keyFn(...args);
+    const found = cache.get(key);
+    if (found !== void 0) {
+      return found;
+    } else {
+      const value = fn2(...args);
+      cache.set(key, value);
+      return value;
+    }
+  };
+}
+function persistentMemoCache() {
+  return /* @__PURE__ */ new Map();
+}
+function defaultKeyFn(...args) {
+  return JSON.stringify(args[0] ?? "");
+}
+function memoizeWithDevice(fn2) {
+  const keyFn = cacheKeyWithDevice;
+  let memoFn;
+  return function(paramsObj, memoCache) {
+    if (!memoFn) {
+      memoFn = memoMemo(fn2, { keyFn, memoCache });
+    }
+    return memoFn(paramsObj);
+  };
+}
+function cacheKeyWithDevice(paramsObj) {
+  const deviceStr = `device: ${paramsObj.device?.label ?? "."}`;
+  const withoutDevice = { ...paramsObj };
+  delete withoutDevice["device"];
+  const mainStr = JSON.stringify({ ...withoutDevice });
+  const result = `${mainStr}; ${deviceStr}`;
+  return result;
+}
+function filledGPUBuffer(device, data, usage2 = GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE, label, ArrayConstructor = Float32Array) {
+  const buffer = device.createBuffer({
+    label,
+    size: data.length * ArrayConstructor.BYTES_PER_ELEMENT,
+    usage: usage2,
+    mappedAtCreation: true
+  });
+  new ArrayConstructor(buffer.getMappedRange()).set(data);
+  buffer.unmap();
+  return buffer;
+}
+var [top2, bottom2] = [1, -1];
+var [left2, right2] = [-1, 1];
+var fullFrameTriangleStrip = [
+  [left2, bottom2],
+  [left2, top2],
+  [right2, top2],
+  // upper left triangle
+  [right2, bottom2],
+  [left2, bottom2]
+  // lower right triangle
+];
+var resources = /* @__PURE__ */ new WeakMap();
+var autoContextStack = [];
+var trackCount = 0;
+function trackUse(target, context) {
+  const refCount = resources.get(target) || 0;
+  if (refCount === 0) {
+    trackCount++;
+  }
+  resources.set(target, refCount + 1);
+  last3(autoContextStack)?._addRef(target);
+  context?._addRef(target);
+  return target;
+}
+function last3(a) {
+  return a[a.length - 1];
+}
+var fullFrameVertexBuffer = memoizeWithDevice(createFrameVertexBuffer);
+function createFrameVertexBuffer(params) {
+  const { device } = params;
+  const verts = fullFrameTriangleStrip.flat();
+  const usage2 = GPUBufferUsage.VERTEX;
+  const buffer = filledGPUBuffer(device, verts, usage2, "full-screen-verts", Float32Array);
+  trackUse(buffer);
+  return buffer;
+}
+var placeholderTexture = memoMemo(makePlaceholderTexture);
+function makePlaceholderTexture(device) {
+  return device.createTexture({
+    label: "placeholder texture",
+    size: [50, 50],
+    format: "rgba8unorm",
+    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC
+  });
+}
+var prefix = /\s*/.source;
+var findUnquoted = /(?<findUnquoted>[\w-<>.]+)/.source;
+var findQuoted = /"(?<findQuoted>[^=]+)"/.source;
+var replaceKey = /\s*(?<replaceKey>[\w-]+)/.source;
+var replaceValue = /\s*"(?<replaceValue>[^"]+)"/.source;
+var parseRule = new RegExp(
+  `${prefix}(${findUnquoted}|${findQuoted})=(${replaceKey}|${replaceValue})`,
+  "g"
+);
 
 // src/PackageWesl.ts
 var biome = await setupBiome();

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseDependencies } from "../ParseDependencies.ts";
+import { parseDependencies } from "../src/ParseDependencies.ts";
 
 const thisDir = import.meta.dirname;
 

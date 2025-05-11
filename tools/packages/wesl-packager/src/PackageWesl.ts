@@ -3,10 +3,10 @@ import { Biome, Distribution } from "@biomejs/js-api";
 import { glob } from "glob";
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
-import { noSuffix, WeslBundle } from "wesl";
+import { noSuffix, type WeslBundle } from "wesl";
 import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
-import { CliArgs } from "./PackagerCli.js";
-import { parseDependencies } from "./ParseDependencies.js";
+import type { CliArgs } from "./PackagerCli.ts";
+import { parseDependencies } from "wesl-tooling";
 
 const biome = await setupBiome();
 
@@ -93,7 +93,7 @@ async function writeJsBundle(
 ): Promise<void> {
   await mkdir(outDir, { recursive: true });
 
-  const depNames = dependencies.map(dep => dep.replaceAll("/", "_"));
+  const depNames = dependencies.map((dep) => dep.replaceAll("/", "_"));
   const depsWithNames = zip(dependencies, depNames);
 
   const imports = depsWithNames
@@ -152,11 +152,11 @@ async function loadModules(args: CliArgs): Promise<Record<string, string>> {
   const shaderFiles = await glob(`${args.src}`, {
     ignore: "node_modules/**",
   });
-  const promisedSrcs = shaderFiles.map(f =>
+  const promisedSrcs = shaderFiles.map((f) =>
     fs.readFile(f, { encoding: "utf8" }),
   );
   const src = await Promise.all(promisedSrcs);
-  const relativePaths = shaderFiles.map(p => path.relative(rootDir, p));
+  const relativePaths = shaderFiles.map((p) => path.relative(rootDir, p));
   const moduleEntries = zip(relativePaths, src);
   return Object.fromEntries(moduleEntries);
 }

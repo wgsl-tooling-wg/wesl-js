@@ -1,7 +1,7 @@
 import fs, { mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import path from "path";
+import path from "node:path";
 import { rimraf } from "rimraf";
 import { expect, test } from "vitest";
 import { packagerCli } from "../PackagerCli.js";
