@@ -1,0 +1,30 @@
+{
+  "name": "wesl-tooling",
+  "version": "0.6.2-a",
+  "type": "module",
+  "scripts": {
+    "echo": "echo",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "format": "prettier . --write",
+    "lint": "eslint src",
+    "typecheck": "tsc",
+    "prepublishOnly": "run-s build",
+    "test": "FORCE_COLOR=1 vitest",
+    "test:once": "vitest run"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "import-meta-resolve": "^4.1.0"
+  },
+  "devDependencies": {
+    "dependent_package": "workspace:x",
+    "tsdown": "^0.11.3",
+    "wesl": "workspace:*"
+  }
+}
