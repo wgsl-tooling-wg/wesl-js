@@ -42,7 +42,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "multi_pkg": "workspace:^",
+    "multi_pkg": "workspace:x",
     "ncp": "^2.0.0",
     "random_wgsl": "workspace:*",
     "rollup-plugin-visualizer": "^5.14.0",
