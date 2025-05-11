@@ -10,12 +10,12 @@
   },
   "devDependencies": {
     "@webgpu/types": "^0.1.60",
-    "eslint": "^9.23.0",
-    "eslint-config-prettier": "^10.1.1",
-    "typescript": "^5.8.2",
-    "typescript-eslint": "^8.29.0",
-    "vite": "^6.2.5",
-    "vite-plugin-static-copy": "^2.3.0",
+    "eslint": "^9.26.0",
+    "eslint-config-prettier": "^10.1.5",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.0",
+    "vite": "^6.3.5",
+    "vite-plugin-static-copy": "^3.0.0",
     "wesl-plugin": "workspace:*"
   },
   "dependencies": {
@@ -23,7 +23,7 @@
     "@iizukak/codemirror-lang-wgsl": "^0.3.0",
     "@lezer/highlight": "^1.2.1",
     "@shoelace-style/shoelace": "^2.20.1",
-    "random_wgsl": "0.6.0-rc4",
+    "random_wgsl": "0.6.1",
     "style-mod": "^4.1.2",
     "wesl": "workspace:*"
   }

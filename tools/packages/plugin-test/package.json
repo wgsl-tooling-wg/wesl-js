@@ -14,13 +14,13 @@
   },
   "dependencies": {
     "mini-parse": "workspace:*",
-    "wesl": "workspace:*",
     "thimbleberry": "^0.2.9",
-    "webgpu": "^0.2.11",
+    "webgpu": "^0.2.12",
+    "wesl": "workspace:*",
     "wesl-plugin": "workspace:*"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.10"
   },
   "version": "0.6.1"
 }

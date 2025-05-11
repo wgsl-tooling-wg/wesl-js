@@ -20,7 +20,7 @@
   ],
   "bin": "bin/wesl-link",
   "dependencies": {
-    "@types/diff": "^7.0.1",
+    "@types/diff": "^7.0.2",
     "diff": "^7.0.0",
     "wesl": "workspace:*"
   },

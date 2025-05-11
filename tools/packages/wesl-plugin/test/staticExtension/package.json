@@ -15,10 +15,10 @@
     "mini-parse": "workspace:*",
     "random_wgsl": "workspace:*",
     "thimbleberry": "^0.2.9",
-    "webgpu": "^0.2.11",
+    "webgpu": "^0.2.12",
     "wesl-plugin": "workspace:*"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.10"
   }
 }

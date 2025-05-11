@@ -1,7 +1,10 @@
 {
   "name": "wesl",
   "version": "0.6.1",
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "echo": "echo",
     "build": "run-s build:main build:minified",
@@ -39,15 +42,19 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "multi_pkg": "workspace:^",
     "ncp": "^2.0.0",
     "random_wgsl": "workspace:*",
-    "multi_pkg": "workspace:x",
     "rollup-plugin-visualizer": "^5.14.0",
     "terser": "^5.39.0",
-    "typedoc": "^0.28.2",
+    "typedoc": "^0.28.4",
     "typedoc-theme-hierarchy": "^6.0.0",
     "vite-plugin-dts": "^4.5.3",
-    "wrangler": "^4.10.0"
+    "wrangler": "^4.14.4"
   },
-  "keywords": ["webgpu", "wgsl", "wesl"]
+  "keywords": [
+    "webgpu",
+    "wgsl",
+    "wesl"
+  ]
 }

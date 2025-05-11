@@ -13,11 +13,11 @@
     "test": "vitest"
   },
   "dependencies": {
-    "wesl": "workspace:*",
-    "thimbleberry": "^0.2.9"
+    "thimbleberry": "^0.2.9",
+    "wesl": "workspace:*"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.10"
   },
   "version": "0.6.1"
 }

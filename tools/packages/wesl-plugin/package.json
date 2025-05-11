@@ -14,18 +14,18 @@
   "dependencies": {
     "import-meta-resolve": "^4.1.0",
     "toml": "^3.0.0",
-    "unplugin": "^2.2.0",
+    "unplugin": "^2.3.2",
     "wesl": "workspace:*"
   },
   "devDependencies": {
-    "@nuxt/kit": "^3.16.0",
-    "@nuxt/schema": "^3.16.0",
+    "@nuxt/kit": "^3.17.2",
+    "@nuxt/schema": "^3.17.2",
     "bumpp": "^10.1.0",
     "chalk": "^5.4.1",
-    "nodemon": "^3.1.9",
-    "rollup": "^4.35.0",
+    "nodemon": "^3.1.10",
+    "rollup": "^4.40.2",
     "tsup": "^8.4.0",
-    "webpack": "^5.98.0"
+    "webpack": "^5.99.8"
   },
   "packageManager": "pnpm@10.2.0",
   "description": "",

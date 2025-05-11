@@ -16,7 +16,7 @@
     "wesl-plugin": "workspace:*"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9",
+    "nodemon": "^3.1.10",
     "wesl": "workspace:*",
     "wesl-plugin": "workspace:*"
   },

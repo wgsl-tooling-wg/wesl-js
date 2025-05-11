@@ -14,22 +14,24 @@
     "test": "FORCE_COLOR=1 vitest",
     "test:once": "vitest run"
   },
-  "files": ["bin"],
+  "files": [
+    "bin"
+  ],
   "bin": "bin/wesl-packager",
   "dependencies": {
     "@biomejs/js-api": "^0.7.1",
     "@biomejs/wasm-nodejs": "^1.9.4",
-    "glob": "^11.0.1",
+    "glob": "^11.0.2",
     "import-meta-resolve": "^4.1.0",
     "wesl-tooling": "workspace:*"
   },
   "devDependencies": {
-    "@types/diff": "^7.0.1",
-    "@types/node": "^22.13.10",
+    "@types/diff": "^7.0.2",
+    "@types/node": "^22.15.17",
+    "dependent_package": "workspace:^",
     "diff": "^7.0.0",
     "dir-compare": "^5.0.0",
     "picocolors": "^1.1.1",
-    "dependent_package": "workspace:x",
     "wesl": "workspace:*"
   }
 }

@@ -9,13 +9,13 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@webgpu/types": "^0.1.58",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.2",
+    "@webgpu/types": "^0.1.60",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5",
     "wesl-plugin": "workspace:*"
   },
   "dependencies": {
-    "random_wgsl": "0.6.0-rc3",
+    "random_wgsl": "0.6.1",
     "wesl": "workspace:*"
   }
 }
