@@ -92,8 +92,8 @@ export function bindingGroupLayoutTs(
   const entriesName = `${structName}Entries`;
 
   const fnParams = typeScript
-    ? `(device: GPUDevice): GPUBindGroupLayout`
-    : `(device)`;
+    ? "(device: GPUDevice): GPUBindGroupLayout"
+    : "(device)";
 
   const src = `
 const ${entriesName} = [ ${entries} ];
@@ -185,8 +185,8 @@ function layoutEntry(member: StructMemberElem): string {
       externalTextureLayoutEntry(typeRef);
   }
   if (!entry) {
-    console.error(`unhandled type`, typeName);
-    entry = `{ }`;
+    console.error("unhandled type", typeName);
+    entry = "{ }";
   }
   return entry;
 }

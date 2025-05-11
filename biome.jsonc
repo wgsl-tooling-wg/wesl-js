@@ -8,7 +8,7 @@
   "files": {
     "ignoreUnknown": false,
     "include": ["tools", "package.json", "biome.jsonc"],
-		"ignore": ["assets"]
+    "ignore": ["assets", "dist"]
   },
   "formatter": {
     "enabled": true,
@@ -22,7 +22,16 @@
     "rules": {
       "recommended": true,
       "style": {
-        "useTemplate": "off"
+        "useTemplate": "off",
+        "noUselessElse": "off",
+        "noUnusedTemplateLiteral": "off",
+        "noNonNullAssertion": "off"
+      },
+      "complexity": {
+        "noForEach": "off"
+      },
+      "correctness": {
+        "noUnnecessaryContinue": "off"
       },
       "suspicious": {
         "noExplicitAny": "off"
@@ -34,15 +43,19 @@
       "quoteStyle": "double"
     }
   },
-	"overrides" [{
-		"include": ["ClickableError.ts"],
-		"linter": {
-			"rules": {
-				"style": {
-					"noCommaOperator": "off"
-				}
-			}
-		}
-
-	}]
+  "overrides": [
+    {
+      "include": ["ClickableError.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noCommaOperator": "off"
+          },
+          "security": {
+            "noGlobalEval": "off"
+          }
+        }
+      }
+    }
+  ]
 }

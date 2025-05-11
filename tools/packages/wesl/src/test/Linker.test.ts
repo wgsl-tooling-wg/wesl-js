@@ -107,7 +107,7 @@ test("struct self reference", async () => {
 });
 
 test("parse texture_storage_2d with texture format in typical type position", async () => {
-  const src = `var t: texture_storage_2d<rgba8unorm, write>;`;
+  const src = "var t: texture_storage_2d<rgba8unorm, write>;";
   const result = await linkTest(src);
   expectTrimmedMatch(result, src);
 });

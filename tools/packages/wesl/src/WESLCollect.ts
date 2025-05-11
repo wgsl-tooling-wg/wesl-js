@@ -72,7 +72,7 @@ export function importElem(cc: CollectContext) {
 function addToOpenElem(cc: CollectContext, elem: AbstractElem): void {
   const weslContext: WeslParseContext = cc.app.context;
   const { openElems } = weslContext;
-  if (openElems && openElems.length) {
+  if (openElems?.length) {
     const open = openElems[openElems.length - 1];
     open.contents.push(elem);
   }
@@ -219,7 +219,7 @@ function filterIfAttributes(
   attributes?: AttributeElem[],
 ): IfAttribute[] | undefined {
   if (!attributes) return;
-  return filterMap(attributes, (a) =>
+  return filterMap(attributes, a =>
     a.attribute.kind === "@if" ? a.attribute : undefined,
   );
 }
@@ -322,7 +322,7 @@ export const fnCollect = collectElem(
     // rewrite scope contents to remove old scopes and add merged scope
     const filtered: (Ident | Scope)[] = [];
     for (const e of fnScope.contents) {
-      if (e === headerScope || e == returnScope) {
+      if (e === headerScope || e === returnScope) {
         continue;
       } else if (e === bodyScope) {
         filtered.push(mergedScope);
@@ -368,7 +368,7 @@ function fnTags(cc: CollectContext) {
 export const collectFnParam = collectElem(
   "param",
   (cc: CollectContext, openElem: PartElem<FnParamElem>) => {
-    const name = cc.tags.param_name?.[0]! as TypedDeclElem;
+    const name = cc.tags.param_name?.[0] as TypedDeclElem;
     const attributes: AttributeElem[] = cc.tags.attributes?.flat() ?? [];
     const elem: FnParamElem = { ...openElem, name, attributes };
     const paramElem = withTextCover(elem, cc);
@@ -396,7 +396,7 @@ export const collectStruct = collectElem(
 export const collectStructMember = collectElem(
   "member",
   (cc: CollectContext, openElem: PartElem<StructMemberElem>) => {
-    const name = cc.tags.nameElem?.[0]!;
+    const name = cc.tags.nameElem?.[0] as NameElem;
     const typeRef = cc.tags.typeRefElem?.[0];
     const attributes = cc.tags.attribute?.flat(3) as AttributeElem[];
     const partElem = { ...openElem, name, attributes, typeRef };
@@ -440,7 +440,7 @@ export const collectAttribute = collectElem(
   "attribute",
   (cc: CollectContext, openElem: PartElem<AttributeElem>) => {
     const params = cc.tags.attrParam as UnknownExpressionElem[] | undefined;
-    const name = cc.tags.name?.[0]! as string;
+    const name = cc.tags.name?.[0] as string;
     const kind = "@attribute";
     const stdAttribute: StandardAttribute = { kind, name, params };
     const attrElem: AttributeElem = { ...openElem, attribute: stdAttribute };
@@ -495,7 +495,7 @@ export const memberRefCollect = collectElem(
   "memberRef",
   (cc: CollectContext, openElem: PartElem<SimpleMemberRef>) => {
     const { component, structRef, extra_components } = cc.tags;
-    const member = component![0] as NameElem;
+    const member = component?.[0] as NameElem;
     const name = structRef?.flat()[0] as RefIdentElem;
     const extraComponents = extra_components?.flat()[0] as StuffElem;
 
@@ -597,7 +597,7 @@ function collectElem<V extends ContainerElem>(
     after: (cc: CollectContext) => {
       // LATER refine start?
       const weslContext: WeslParseContext = cc.app.context;
-      const partialElem = weslContext.openElems.pop()!;
+      const partialElem = weslContext.openElems.pop() as PartElem<V>;
       console.assert(partialElem && partialElem.kind === kind);
       const elem = fn(cc, { ...partialElem, start: cc.start, end: cc.end });
       if (elem) addToOpenElem(cc, elem as AbstractElem);

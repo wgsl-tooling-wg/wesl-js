@@ -22,14 +22,14 @@ test("extract binding struct", () => {
   const config = {
     plugins: [
       bindingStructsPlugin(),
-      reportBindingStructsPlugin((report) => (found = report)),
+      reportBindingStructsPlugin((report) => {found = report}),
     ],
   };
   linkTestOpts({ config }, src);
 
   // verify struct found
   expect(found).toBeDefined();
-  const s = found![0];
+  const s = found?.[0] as StructElem;
   expect(s).toBeDefined();
   expect(astToString(s)).toMatchInlineSnapshot(`
     "struct Bindings
@@ -126,11 +126,11 @@ test("binding struct to ts", () => {
   const config = {
     plugins: [
       bindingStructsPlugin(),
-      reportBindingStructsPlugin((report) => (found = report)),
+      reportBindingStructsPlugin((report) => {found = report}),
     ],
   };
   linkTestOpts({ config }, src);
-  const ts = bindingGroupLayoutTs(found![0] as BindingStructElem);
+  const ts = bindingGroupLayoutTs(found?.[0] as BindingStructElem);
   expect(ts).toMatchInlineSnapshot(`
     "
     const myBindingsEntries = [ 

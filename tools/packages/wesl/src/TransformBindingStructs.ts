@@ -264,7 +264,7 @@ function refersToBindingStruct(
 ): MemberRefToStruct | undefined {
   const found = traceToStruct(memberRef.name.ident);
 
-  if (found && found.struct.bindingStruct) {
+  if (found?.struct.bindingStruct) {
     return { memberRef, ...found };
   }
 }
@@ -275,7 +275,7 @@ function traceToStruct(ident: RefIdent): StructTrace | undefined {
   const declElem = decl.declElem;
   // for now only handle the case where the reference points at a fn parameter
   if (declElem && declElem.kind === "param") {
-    const name = declElem.name.typeRef!.name;
+    const name = declElem.name.typeRef?.name;
     if (typeof name !== "string") {
       if (name.std) {
         return undefined;

@@ -54,17 +54,22 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
 
     // terminal elements copy strings to the output
     case "text":
-      return emitText(e, ctx);
+      emitText(e, ctx);
+      return;
     case "name":
-      return emitName(e, ctx);
+      emitName(e, ctx);
+      return;
     case "synthetic":
-      return emitSynthetic(e, ctx);
+      emitSynthetic(e, ctx);
+      return;
 
     // identifiers are copied to the output, but with potentially mangled names
     case "ref":
-      return emitRefIdent(e, ctx);
+      emitRefIdent(e, ctx);
+      return;
     case "decl":
-      return emitDeclIdent(e, ctx);
+      emitDeclIdent(e, ctx);
+      return;
 
     // container elements just emit their child elements
     case "param":
@@ -79,7 +84,8 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "statement":
     case "stuff":
     case "switch-clause":
-      return emitContents(e, ctx);
+      emitContents(e, ctx);
+      return;
 
     // root level container elements get some extra newlines to make the output prettier
     case "override":
@@ -88,20 +94,26 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
     case "alias":
     case "gvar":
       emitRootElemNl(ctx);
-      return emitContents(e, ctx);
+      emitContents(e, ctx);
+      return;
 
     case "fn":
       emitRootElemNl(ctx);
-      return emitFn(e, ctx);
+      emitFn(e, ctx);
+      return;
 
     case "struct":
       emitRootElemNl(ctx);
-      return emitStruct(e, ctx);
+      emitStruct(e, ctx);
+      return;
 
     case "attribute":
-      return emitAttribute(e, ctx);
+      emitAttribute(e, ctx);
+      return;
+
     case "directive":
-      return emitDirective(e, ctx);
+      emitDirective(e, ctx);
+      return;
 
     default:
       assertUnreachable(e);
@@ -359,7 +371,7 @@ function displayName(declIdent: DeclIdent): string {
       `ERR: mangled name not found for decl ident ${identToString(declIdent)}`,
     );
     // mangled name was set in binding step
-    return declIdent.mangledName!;
+    return declIdent.mangledName as string;
   }
 
   return declIdent.mangledName || declIdent.originalName;

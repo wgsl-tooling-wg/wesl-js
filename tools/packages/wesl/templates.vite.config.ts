@@ -1,4 +1,4 @@
-import { resolve } from "path";
+import { resolve } from "node:path";
 import { type LibraryOptions, defineConfig } from "vite";
 import { baseViteConfig } from "./base.vite.config.js";
 

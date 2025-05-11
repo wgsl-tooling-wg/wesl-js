@@ -48,10 +48,10 @@ function evaluateIfExpression(
   conditions: Conditions,
 ): boolean {
   const { kind } = expression;
-  if (kind == "unary-expression") {
+  if (kind === "unary-expression") {
     assertThatDebug(expression.operator.value === "!");
     return !evaluateIfExpression(expression.expression, conditions);
-  } else if (kind == "binary-expression") {
+  } else if (kind === "binary-expression") {
     const op = expression.operator.value;
     assertThatDebug(op === "||" || op === "&&");
     const leftResult = evaluateIfExpression(expression.left, conditions);
@@ -62,11 +62,11 @@ function evaluateIfExpression(
     } else {
       assertUnreachable(op);
     }
-  } else if (kind == "literal") {
+  } else if (kind === "literal") {
     const { value } = expression;
     assertThatDebug(value === "true" || value === "false");
     return value === "true";
-  } else if (kind == "parenthesized-expression") {
+  } else if (kind === "parenthesized-expression") {
     return evaluateIfExpression(expression.expression, conditions);
   } else if (kind === "translate-time-feature") {
     return conditions[expression.name];

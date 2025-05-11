@@ -216,7 +216,7 @@ export class WeslStream implements Stream<WeslToken> {
         // Start a nested template
         pendingCounter += 1;
       } else if (nextToken.text[0] === ">") {
-        if (nextToken.text === ">" || nextToken.text == ">=") {
+        if (nextToken.text === ">" || nextToken.text === ">=") {
           pendingCounter -= 1;
         } else if (nextToken.text === ">>=" || nextToken.text === ">>") {
           pendingCounter -= 2;
