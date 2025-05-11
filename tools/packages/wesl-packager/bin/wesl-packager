@@ -8627,26 +8627,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 /*! Bundled license information:
 
 yargs-parser/build/lib/string-utils.js:
-  (**
-   * @license
-   * Copyright (c) 2016, Contributors
-   * SPDX-License-Identifier: ISC
-   *)
-
 yargs-parser/build/lib/tokenize-arg-string.js:
-  (**
-   * @license
-   * Copyright (c) 2016, Contributors
-   * SPDX-License-Identifier: ISC
-   *)
-
 yargs-parser/build/lib/yargs-parser-types.js:
-  (**
-   * @license
-   * Copyright (c) 2016, Contributors
-   * SPDX-License-Identifier: ISC
-   *)
-
 yargs-parser/build/lib/yargs-parser.js:
   (**
    * @license
