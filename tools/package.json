@@ -53,7 +53,7 @@
     "wesl-testsuite": "file:../wesl-testsuite",
     "yargs": "^17.7.2"
   },
-  "packageManager": "pnpm@10.2.0",
+  "packageManager": "pnpm@10.10.0",
   "pnpm": {
     "ignoredBuiltDependencies": [
       "es5-ext"
