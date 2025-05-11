@@ -1,5 +1,5 @@
 import { assertUnreachable } from "../../../mini-parse/src/Assertions.ts";
-import {
+import type {
   AbstractElem,
   Attribute,
   AttributeElem,

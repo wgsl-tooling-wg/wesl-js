@@ -1,4 +1,5 @@
-import { childScope, Ident, Scope } from "../Scope.ts";
+import type { Ident, Scope } from "../Scope.ts";
+import { childScope } from "../Scope.ts";
 import { attributeToString } from "./ASTtoString.ts";
 import { LineWrapper } from "./LineWrapper.ts";
 

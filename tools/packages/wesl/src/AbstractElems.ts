@@ -1,5 +1,5 @@
-import { Span } from "mini-parse";
-import { DeclIdent, RefIdent, Scope, SrcModule } from "./Scope.ts";
+import type { Span } from "mini-parse";
+import type { DeclIdent, RefIdent, Scope, SrcModule } from "./Scope.ts";
 
 /**
  * Structures to describe the 'interesting' parts of a WESL source file.
