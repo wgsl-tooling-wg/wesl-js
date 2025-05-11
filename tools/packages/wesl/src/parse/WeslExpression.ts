@@ -1,16 +1,16 @@
 import {
+  type Parser,
+  type Stream,
   collectArray,
   delimited,
   fn,
   opt,
   or,
-  Parser,
   preceded,
   repeat,
   repeatPlus,
   req,
   seq,
-  Stream,
   tagScope,
   tokenOf,
   tracing,
@@ -27,7 +27,7 @@ import {
   typeRefCollect,
 } from "../WESLCollect";
 import { number, qualified_ident, word } from "./WeslBaseGrammar";
-import { templateClose, templateOpen, WeslToken } from "./WeslStream";
+import { type WeslToken, templateClose, templateOpen } from "./WeslStream";
 
 export const opt_template_list = opt(
   seq(
@@ -55,7 +55,7 @@ export const var_template_list = opt(
 // prettier-ignore
 const template_elaborated_ident = seq(
   qualified_ident.collect(refIdent),
-  opt_template_list
+  opt_template_list,
 );
 const literal = or("true", "false", number);
 const paren_expression = seq(
@@ -88,8 +88,8 @@ export const simple_component_reference = tagScope(
   seq(
     qualified_ident.collect(refIdent, "structRef"),
     seq(".", word.collect(nameCollect, "component")),
-    opt(component_or_swizzle.collect(stuffCollect, "extra_components"))
-  ).collect(memberRefCollect)
+    opt(component_or_swizzle.collect(stuffCollect, "extra_components")),
+  ).collect(memberRefCollect),
 );
 const unary_expression: Parser<Stream<WeslToken>, any> = or(
   seq(tokenOf("symbol", ["!", "&", "*", "-", "~"]), () => unary_expression),
@@ -119,8 +119,8 @@ const shift_post_unary = (inTemplate: boolean) => {
       ),
     ),
   );
-  return inTemplate ?
-      or(shift_left, mul_add)
+  return inTemplate
+    ? or(shift_left, mul_add)
     : or(shift_left, shift_right, mul_add);
 };
 const relational_post_unary = (inTemplate: boolean) => {
@@ -129,9 +129,9 @@ const relational_post_unary = (inTemplate: boolean) => {
     opt(
       seq(
         // '<' is unambiguous, since templates were already caught by the primary expression inside of the previous unary_expression!
-        inTemplate ?
-          tokenOf("symbol", ["<", "<=", "!=", "=="])
-        : tokenOf("symbol", [">", ">=", "<", "<=", "!=", "=="]),
+        inTemplate
+          ? tokenOf("symbol", ["<", "<=", "!=", "=="])
+          : tokenOf("symbol", [">", ">=", "<", "<=", "!=", "=="]),
         // LATER I can skip template list discovery in this cases, because a>=b<c cannot be a comparison. Must be a template
         unary_expression,
         shift_post_unary(inTemplate),
@@ -153,38 +153,38 @@ const expressionParser = (
       bitwise_post_unary,
       seq(
         relational_post_unary(inTemplate),
-        inTemplate ?
-          // Don't accept || or && in template mode
-          yes()
-        : or(
-            repeatPlus(
-              seq("||", seq(unary_expression, relational_post_unary(false))),
+        inTemplate
+          ? // Don't accept || or && in template mode
+            yes()
+          : or(
+              repeatPlus(
+                seq("||", seq(unary_expression, relational_post_unary(false))),
+              ),
+              repeatPlus(
+                seq("&&", seq(unary_expression, relational_post_unary(false))),
+              ),
+              yes().map(() => []),
             ),
-            repeatPlus(
-              seq("&&", seq(unary_expression, relational_post_unary(false))),
-            ),
-            yes().map(() => []),
-          ),
       ),
     ),
   );
 };
 
-let maybe_template = false;
+const maybe_template = false;
 export const expression = expressionParser(maybe_template);
-let is_template = true;
+const is_template = true;
 const template_arg_expression = expressionParser(is_template);
 
 // prettier-ignore
 const std_type_specifier = seq(
-  qualified_ident                   .collect(refIdent, "typeRefName"),
+  qualified_ident.collect(refIdent, "typeRefName"),
   () => opt_template_list,
-)                                   .collect(typeRefCollect);
+).collect(typeRefCollect);
 
 // prettier-ignore
-export const type_specifier: Parser<Stream<WeslToken>,any> = tagScope(
-   std_type_specifier,
-)                                   .ctag("typeRefElem");
+export const type_specifier: Parser<Stream<WeslToken>, any> = tagScope(
+  std_type_specifier,
+).ctag("typeRefElem");
 
 /** a template_arg_expression with additional collection for parameters
  * that are types like array<f32> vs. expressions like 1+2 */
@@ -192,7 +192,7 @@ export const type_specifier: Parser<Stream<WeslToken>,any> = tagScope(
 const template_parameter = or(
   // LATER Remove this, it's wrong. This should instead be done by inspecting the syntax tree.
   type_specifier.ctag("templateParam"),
-  template_arg_expression.collect(expressionCollect, "templateParam")
+  template_arg_expression.collect(expressionCollect, "templateParam"),
 );
 
 export const argument_expression_list = seq(

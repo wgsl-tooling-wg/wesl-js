@@ -1,5 +1,5 @@
+import type { DeclIdent } from "./Scope.ts";
 import { identToString } from "./debug/ScopeToString.ts";
-import { DeclIdent } from "./Scope.ts";
 
 /** decls currently visible in this scope */
 export interface LiveDecls {

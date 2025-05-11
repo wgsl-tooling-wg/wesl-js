@@ -1,11 +1,11 @@
 import { expect, test } from "vitest";
-import { BindingStructElem, StructElem } from "../AbstractElems.ts";
-import { astToString } from "../debug/ASTtoString.ts";
+import type { BindingStructElem, StructElem } from "../AbstractElems.ts";
 import {
   bindingGroupLayoutTs,
   reportBindingStructsPlugin,
 } from "../Reflection.ts";
 import { bindingStructsPlugin } from "../TransformBindingStructs.ts";
+import { astToString } from "../debug/ASTtoString.ts";
 import { linkTestOpts } from "./TestUtil.ts";
 
 test("extract binding struct", () => {
@@ -22,7 +22,7 @@ test("extract binding struct", () => {
   const config = {
     plugins: [
       bindingStructsPlugin(),
-      reportBindingStructsPlugin(report => (found = report)),
+      reportBindingStructsPlugin((report) => (found = report)),
     ],
   };
   linkTestOpts({ config }, src);
@@ -71,8 +71,8 @@ test("extract binding struct", () => {
   expect((s as BindingStructElem).entryFn).toBeDefined();
 
   // verify struct members
-  const members = s.members.filter(e => e.kind === "member");
-  const membersAst = members.map(e => astToString(e)).join("\n");
+  const members = s.members.filter((e) => e.kind === "member");
+  const membersAst = members.map((e) => astToString(e)).join("\n");
   expect(membersAst).toMatchInlineSnapshot(
     `
     "member @group @binding particles: ptr<storage, array<f32>, read_write>
@@ -126,7 +126,7 @@ test("binding struct to ts", () => {
   const config = {
     plugins: [
       bindingStructsPlugin(),
-      reportBindingStructsPlugin(report => (found = report)),
+      reportBindingStructsPlugin((report) => (found = report)),
     ],
   };
   linkTestOpts({ config }, src);

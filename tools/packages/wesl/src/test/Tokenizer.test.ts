@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { WeslStream, WeslToken } from "../parse/WeslStream";
+import { WeslStream, type WeslToken } from "../parse/WeslStream";
 
 test("tokenize empty string", () => {
   const tokenizer = new WeslStream("");

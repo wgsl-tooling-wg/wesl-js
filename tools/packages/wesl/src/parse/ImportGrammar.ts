@@ -1,10 +1,11 @@
 import {
+  type Parser,
+  type Stream,
   delimited,
   fn,
   not,
   opt,
   or,
-  Parser,
   preceded,
   repeat,
   repeatPlus,
@@ -12,7 +13,6 @@ import {
   seq,
   seqObj,
   span,
-  Stream,
   tagScope,
   terminated,
   tracing,
@@ -29,7 +29,7 @@ import type {
 import { assertUnreachable } from "../Assertions.js";
 import { importElem } from "../WESLCollect.js";
 import { keyword, word } from "./WeslBaseGrammar.js";
-import { WeslToken } from "./WeslStream.js";
+import type { WeslToken } from "./WeslStream.js";
 
 function makeStatement(
   segments: ImportSegment[],
@@ -81,7 +81,7 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
         "invalid import, expected '{' or name",
       ),
     ),
-    preceded("as", req(word, "invalid alias, expected name")).map(v =>
+    preceded("as", req(word, "invalid alias, expected name")).map((v) =>
       makeItem("", v),
     ),
     yes().map(() => makeItem("")), // Optional
@@ -106,7 +106,7 @@ import_collection = delimited(
 );
 
 const import_relative = or(
-  terminated("package", req("::", "invalid import, expected '::'")).map(v => [
+  terminated("package", req("::", "invalid import, expected '::'")).map((v) => [
     makeSegment(v),
   ]),
   repeatPlus(

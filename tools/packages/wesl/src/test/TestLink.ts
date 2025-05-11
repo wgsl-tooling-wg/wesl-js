@@ -1,8 +1,8 @@
 import { expectTrimmedMatch, trimSrc } from "mini-parse/vitest-util";
-import { expect, RunnerTestSuite } from "vitest";
-import { WgslTestSrc } from "wesl-testsuite";
+import { type RunnerTestSuite, expect } from "vitest";
+import type { WgslTestSrc } from "wesl-testsuite";
 import { link } from "../Linker.js";
-import { ManglerFn, underscoreMangle } from "../Mangler.ts";
+import { type ManglerFn, underscoreMangle } from "../Mangler.ts";
 import { resetScopeIds } from "../Scope.ts";
 
 /**
@@ -71,9 +71,9 @@ export function verifyCaseCoverage(
   caseList: WgslTestSrc[],
 ): (suite: RunnerTestSuite) => void {
   return function verifyCases(suite: RunnerTestSuite) {
-    const testNameSet = new Set(suite.tasks.map(t => t.name));
-    const caseNames = caseList.map(c => c.name);
-    const missing = caseNames.filter(name => !testNameSet.has(name));
+    const testNameSet = new Set(suite.tasks.map((t) => t.name));
+    const caseNames = caseList.map((c) => c.name);
+    const missing = caseNames.filter((name) => !testNameSet.has(name));
     if (missing.length) {
       console.error("Missing tests for cases:", missing);
       expect("missing test: " + missing.toString()).toBe("");

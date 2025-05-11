@@ -1,6 +1,6 @@
-import { LibraryOptions, defineConfig } from "vite";
-import { baseViteConfig } from "./base.vite.config.js";
 import { resolve } from "path";
+import { type LibraryOptions, defineConfig } from "vite";
+import { baseViteConfig } from "./base.vite.config.js";
 
 const config = baseViteConfig();
 config.build.emptyOutDir = false;

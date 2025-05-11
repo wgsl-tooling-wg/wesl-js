@@ -1,5 +1,5 @@
 import { matchOneOf } from "mini-parse";
-import {
+import type {
   BindingStructElem,
   NameElem,
   StructMemberElem,
@@ -9,9 +9,9 @@ import {
   UnknownExpressionElem,
 } from "./AbstractElems.ts";
 import { assertThat } from "./Assertions.ts";
-import { TransformedAST, WeslJsPlugin } from "./Linker.ts";
+import type { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { identElemLog } from "./LinkerUtil.ts";
-import { RefIdent } from "./Scope.ts";
+import type { RefIdent } from "./Scope.ts";
 import {
   multisampledTextureTypes,
   sampledTextureTypes,
@@ -85,14 +85,15 @@ export function bindingGroupLayoutTs(
   const structName = firstLetterLower(struct.name.ident.mangledName!);
   const visibility = shaderVisiblity(struct);
   const entries = struct.members
-    .map(m => memberToLayoutEntry(m, visibility))
+    .map((m) => memberToLayoutEntry(m, visibility))
     .join(",");
 
   const fnName = `${structName}Layout`;
   const entriesName = `${structName}Entries`;
 
-  const fnParams =
-    typeScript ? `(device: GPUDevice): GPUBindGroupLayout` : `(device)`;
+  const fnParams = typeScript
+    ? `(device: GPUDevice): GPUBindGroupLayout`
+    : `(device)`;
 
   const src = `
 const ${entriesName} = [ ${entries} ];
@@ -228,8 +229,9 @@ const multiNames = matchOneOf(multisampledTextureTypes);
 
 function textureLayoutEntry(typeRef: TypeRefElem): string | undefined {
   const { originalName } = typeRef.name as RefIdent;
-  const multisampled =
-    multiNames.test(originalName) ? ", multisampled: true, " : "";
+  const multisampled = multiNames.test(originalName)
+    ? ", multisampled: true, "
+    : "";
   if (multisampled || textureTypes.test(originalName)) {
     // LATER viewDimension
     const sampleType = getSampleType(typeRef);

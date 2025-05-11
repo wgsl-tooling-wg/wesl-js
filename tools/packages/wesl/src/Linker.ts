@@ -1,20 +1,20 @@
-import { SrcMap, SrcMapBuilder, tracing } from "mini-parse";
-import { AbstractElem, ModuleElem } from "./AbstractElems.ts";
-import { bindIdents, EmittableElem } from "./BindIdents.ts";
+import { type SrcMap, SrcMapBuilder, tracing } from "mini-parse";
+import type { AbstractElem, ModuleElem } from "./AbstractElems.ts";
+import { type EmittableElem, bindIdents } from "./BindIdents.ts";
 import { LinkedWesl } from "./LinkedWesl.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
-import { ManglerFn } from "./Mangler.ts";
+import type { ManglerFn } from "./Mangler.ts";
+import type { WeslAST } from "./ParseWESL.ts";
 import {
-  parsedRegistry,
-  ParsedRegistry,
+  type ParsedRegistry,
   parseIntoRegistry,
   parseLibsIntoRegistry,
+  parsedRegistry,
   selectModule,
 } from "./ParsedRegistry.ts";
-import { WeslAST } from "./ParseWESL.ts";
-import { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
+import type { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
 import { filterMap, mapValues } from "./Util.ts";
-import { WeslBundle } from "./WeslBundle.ts";
+import type { WeslBundle } from "./WeslBundle.ts";
 
 export type LinkerTransform = (boundAST: TransformedAST) => TransformedAST;
 
@@ -153,7 +153,7 @@ export function bindAndTransform(
   if (constants) {
     virtualLibs = { ...virtualLibs, constants: constantsGenerator(constants) };
   }
-  let virtuals = virtualLibs && mapValues(virtualLibs, fn => ({ fn }));
+  const virtuals = virtualLibs && mapValues(virtualLibs, (fn) => ({ fn }));
 
   /* --- Step #2   Binding Idents --- */
   // link active Ident references to declarations, and uniquify global declarations
@@ -201,7 +201,7 @@ function applyTransformPlugins(
   // for now only transform the root module
   const startAst = { moduleElem, srcModule, globalNames, notableElems: {} };
   const plugins = config?.plugins ?? [];
-  const transforms = filterMap(plugins, plugin => plugin.transform);
+  const transforms = filterMap(plugins, (plugin) => plugin.transform);
   const transformedAst = transforms.reduce(
     (ast, transform) => transform(ast),
     startAst,
@@ -221,7 +221,7 @@ function emitWgsl(
   /* --- Step #3   Writing WGSL --- */ // note doesn't require the scope tree anymore
 
   // emit any new statements (module level const asserts)
-  const prologueBuilders = newStatements.map(s => {
+  const prologueBuilders = newStatements.map((s) => {
     const { elem, srcModule } = s;
     const { src: text, debugFilePath: path } = srcModule;
     const builder = new SrcMapBuilder({ text, path });
@@ -236,7 +236,7 @@ function emitWgsl(
   });
   lowerAndEmit(rootBuilder, [rootModuleElem], conditions, false); // emit the entire root module
 
-  const declBuilders = newDecls.map(decl => {
+  const declBuilders = newDecls.map((decl) => {
     const builder = new SrcMapBuilder({
       text: decl.srcModule.src,
       path: decl.srcModule.debugFilePath,

@@ -1,5 +1,5 @@
 import { srcLog, tracing } from "mini-parse";
-import { DeclIdentElem, RefIdent, RefIdentElem } from "wesl";
+import type { DeclIdentElem, RefIdent, RefIdentElem } from "wesl";
 import { offsetToLineNumber } from "./Util.ts";
 import { encodeVlq } from "./vlq/vlq";
 
@@ -39,7 +39,7 @@ export function throwClickableError(params: ClickableErrorParams): void {
 
   // So we need 2 mappings. One to map to the correct spot,
   // and another one to be the "length" (terminate the first mapping)
-  let mappings =
+  const mappings =
     encodeVlq([
       0,
       0,

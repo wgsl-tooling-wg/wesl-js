@@ -9,18 +9,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 // Copied from https://github.com/Rich-Harris/vlq and adjusted
 
-let char_to_integer: Record<string, number> = {};
-let integer_to_char: Record<number, string> = {};
+const char_to_integer: Record<string, number> = {};
+const integer_to_char: Record<number, string> = {};
 
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
   .split("")
-  .forEach(function (char, i) {
+  .forEach((char, i) => {
     char_to_integer[char] = i;
     integer_to_char[i] = char;
   });
 
 export function decodeVlq(string: string) {
-  let result: number[] = [];
+  const result: number[] = [];
 
   let shift = 0;
   let value = 0;

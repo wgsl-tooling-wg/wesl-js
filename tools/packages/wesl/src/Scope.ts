@@ -1,8 +1,12 @@
-import { DeclarationElem, IfAttribute, RefIdentElem } from "./AbstractElems.ts";
+import type {
+  DeclarationElem,
+  IfAttribute,
+  RefIdentElem,
+} from "./AbstractElems.ts";
 import { assertThatDebug } from "./Assertions.ts";
 import { scopeValid } from "./Conditions.ts";
-import { LiveDecls } from "./LiveDeclarations.ts";
-import { WeslAST } from "./ParseWESL.ts";
+import type { LiveDecls } from "./LiveDeclarations.ts";
+import type { WeslAST } from "./ParseWESL.ts";
 
 export interface SrcModule {
   /** module path "rand_pkg::sub::foo", or "package::main" */

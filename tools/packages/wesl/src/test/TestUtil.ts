@@ -1,25 +1,25 @@
-import { Parser, Stream, withLoggerAsync } from "mini-parse";
+import { type Parser, type Stream, withLoggerAsync } from "mini-parse";
 import {
+  type TestParseResult,
   expectNoLog,
   logCatch,
-  TestParseResult,
   testParseWithStream,
 } from "mini-parse/test-util";
 import {
-  BoundAndTransformed,
-  ParsedRegistry,
-  parsedRegistry,
+  type BoundAndTransformed,
+  type ParsedRegistry,
+  type SrcModule,
   parseIntoRegistry,
-  SrcModule,
+  parsedRegistry,
 } from "wesl";
-import { bindAndTransform, link, LinkParams } from "../Linker.js";
-import { WeslStream, WeslToken } from "../parse/WeslStream.js";
+import { type LinkParams, bindAndTransform, link } from "../Linker.js";
 import {
+  type WeslAST,
   parseSrcModule,
   syntheticWeslParseState,
-  WeslAST,
 } from "../ParseWESL.js";
 import { resetScopeIds } from "../Scope.js";
+import { WeslStream, type WeslToken } from "../parse/WeslStream.js";
 
 /** parse a single wesl file */
 export function parseWESL(src: string): WeslAST {

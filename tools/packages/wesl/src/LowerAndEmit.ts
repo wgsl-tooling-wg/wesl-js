@@ -1,5 +1,5 @@
-import { SrcMapBuilder } from "mini-parse";
-import {
+import type { SrcMapBuilder } from "mini-parse";
+import type {
   AbstractElem,
   AttributeElem,
   ContainerElem,
@@ -22,8 +22,8 @@ import {
 import { isGlobal } from "./BindIdents.ts";
 import { failIdentElem } from "./ClickableError.ts";
 import { elementValid } from "./Conditions.ts";
+import type { Conditions, DeclIdent, Ident } from "./Scope.ts";
 import { identToString } from "./debug/ScopeToString.ts";
-import { Conditions, DeclIdent, Ident } from "./Scope.ts";
 
 /** passed to the emitters */
 interface EmitContext {
@@ -41,7 +41,7 @@ export function lowerAndEmit(
 ): void {
   const emitContext: EmitContext = { conditions, srcBuilder, extracting };
   // rootElems.forEach(r => console.log(astToString(r) + "\n"));
-  rootElems.forEach(e => lowerAndEmitElem(e, emitContext));
+  rootElems.forEach((e) => lowerAndEmitElem(e, emitContext));
 }
 
 export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
@@ -135,7 +135,7 @@ export function emitFn(e: FnElem, ctx: EmitContext): void {
   emitDeclIdent(name, ctx);
 
   builder.appendNext("(");
-  const validParams = params.filter(p => conditionsValid(p, conditions));
+  const validParams = params.filter((p) => conditionsValid(p, conditions));
   validParams.forEach((p, i) => {
     emitContentsNoWs(p, ctx);
     if (i < validParams.length - 1) {
@@ -158,7 +158,7 @@ function emitAttributes(
   attributes: AttributeElem[] | undefined,
   ctx: EmitContext,
 ): void {
-  attributes?.forEach(a => {
+  attributes?.forEach((a) => {
     emitAttribute(a, ctx);
     ctx.srcBuilder.add(" ", a.start, a.end);
   });
@@ -169,7 +169,9 @@ export function emitStruct(e: StructElem, ctx: EmitContext): void {
   const { name, members, start, end } = e;
   const { srcBuilder } = ctx;
 
-  const validMembers = members.filter(m => conditionsValid(m, ctx.conditions));
+  const validMembers = members.filter((m) =>
+    conditionsValid(m, ctx.conditions),
+  );
   const validLength = validMembers.length;
 
   if (validLength === 0) {
@@ -187,7 +189,7 @@ export function emitStruct(e: StructElem, ctx: EmitContext): void {
   } else {
     srcBuilder.add(" {\n", name.end, members[0].start);
 
-    validMembers.forEach(m => {
+    validMembers.forEach((m) => {
       srcBuilder.add("  ", m.start - 1, m.start);
       emitContentsNoWs(m, ctx);
       srcBuilder.add(",", m.end, m.end + 1);
@@ -211,12 +213,12 @@ export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
 }
 
 export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
-  elem.contents.forEach(e => lowerAndEmitElem(e, ctx));
+  elem.contents.forEach((e) => lowerAndEmitElem(e, ctx));
 }
 
 /** emit contents w/o white space */
 function emitContentsNoWs(elem: ContainerElem, ctx: EmitContext): void {
-  elem.contents.forEach(e => {
+  elem.contents.forEach((e) => {
     if (e.kind === "text") {
       const { srcModule, start, end } = e;
       const text = srcModule.src.slice(start, end);
@@ -282,7 +284,7 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
     // (@if is wesl only, dropped from wgsl)
   } else if (kind === "@interpolate") {
     ctx.srcBuilder.add(
-      `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`,
+      `@interpolate(${e.attribute.params.map((v) => v.name).join(", ")})`,
       e.start,
       e.end,
     );
@@ -335,13 +337,13 @@ function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
     );
   } else if (kind === "enable") {
     ctx.srcBuilder.add(
-      `enable ${directive.extensions.map(v => v.name).join(", ")};`,
+      `enable ${directive.extensions.map((v) => v.name).join(", ")};`,
       e.start,
       e.end,
     );
   } else if (kind === "requires") {
     ctx.srcBuilder.add(
-      `requires ${directive.extensions.map(v => v.name).join(", ")};`,
+      `requires ${directive.extensions.map((v) => v.name).join(", ")};`,
       e.start,
       e.end,
     );

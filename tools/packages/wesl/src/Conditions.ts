@@ -1,11 +1,11 @@
-import {
+import type {
   AttributeElem,
   ElemWithAttributes,
   ExpressionElem,
   IfAttribute,
 } from "./AbstractElems.ts";
 import { assertThatDebug, assertUnreachable } from "./Assertions.ts";
-import { Conditions, Scope } from "./Scope.ts";
+import type { Conditions, Scope } from "./Scope.ts";
 import { findMap } from "./Util.ts";
 
 /** @return true if the element is valid under current Conditions */

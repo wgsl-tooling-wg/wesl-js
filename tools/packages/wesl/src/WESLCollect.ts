@@ -1,6 +1,11 @@
 import { dlog } from "berry-pretty";
-import { CollectContext, CollectPair, srcLog, tracing } from "mini-parse";
 import {
+  type CollectContext,
+  type CollectPair,
+  srcLog,
+  tracing,
+} from "mini-parse";
+import type {
   AbstractElem,
   AliasElem,
   Attribute,
@@ -8,8 +13,8 @@ import {
   ConstAssertElem,
   ConstElem,
   ContainerElem,
-  DeclarationElem,
   DeclIdentElem,
+  DeclarationElem,
   DirectiveElem,
   DirectiveVariant,
   FnElem,
@@ -32,26 +37,26 @@ import {
   StuffElem,
   SwitchClauseElem,
   TextElem,
-  TypedDeclElem,
   TypeRefElem,
+  TypedDeclElem,
   UnknownExpressionElem,
   VarElem,
 } from "./AbstractElems.ts";
-import {
+import type {
   StableState,
   WeslAST,
   WeslParseContext,
   WeslParseState,
 } from "./ParseWESL.ts";
 import {
-  DeclIdent,
+  type DeclIdent,
+  type Ident,
+  type PartialScope,
+  type RefIdent,
+  type Scope,
   emptyScope,
-  Ident,
   mergeScope,
   nextIdentId,
-  PartialScope,
-  RefIdent,
-  Scope,
 } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
 
@@ -214,26 +219,25 @@ function filterIfAttributes(
   attributes?: AttributeElem[],
 ): IfAttribute[] | undefined {
   if (!attributes) return;
-  return filterMap(attributes, a =>
+  return filterMap(attributes, (a) =>
     a.attribute.kind === "@if" ? a.attribute : undefined,
   );
 }
 
 // prettier-ignore
-export type OpenElem<T extends ContainerElem = ContainerElem> = 
-  Pick< T, "kind" | "contents">;
+export type OpenElem<T extends ContainerElem = ContainerElem> = Pick<
+  T,
+  "kind" | "contents"
+>;
 
 // prettier-ignore
-export type PartElem<T extends ContainerElem = ContainerElem > = 
-  Pick< T, "kind" | "start" | "end" | "contents"> ;
+export type PartElem<T extends ContainerElem = ContainerElem> = Pick<
+  T,
+  "kind" | "start" | "end" | "contents"
+>;
 
 // prettier-ignore
-type VarLikeElem =
-  | GlobalVarElem
-  | VarElem
-  | LetElem
-  | ConstElem
-  | OverrideElem;
+type VarLikeElem = GlobalVarElem | VarElem | LetElem | ConstElem | OverrideElem;
 
 export function collectVarLike<E extends VarLikeElem>(
   kind: E["kind"],
@@ -448,7 +452,8 @@ export const typeRefCollect = collectElem(
   "type",
   // @ts-ignore
   (cc: CollectContext, openElem: PartElem<TypeRefElem>) => {
-    let templateParamsTemp: any[] | undefined = cc.tags.templateParam?.flat(3);
+    const templateParamsTemp: any[] | undefined =
+      cc.tags.templateParam?.flat(3);
 
     const typeRef = cc.tags.typeRefName?.[0] as string | RefIdentElem;
     const name = typeof typeRef === "string" ? typeRef : typeRef.ident;

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parsedRegistry, parseIntoRegistry, resetScopeIds } from "wesl";
+import { parseIntoRegistry, parsedRegistry, resetScopeIds } from "wesl";
 import { bindIdents } from "../BindIdents.ts";
 import { scopeToStringLong } from "../debug/ScopeToString.ts";
 import { bindTest } from "./TestUtil.ts";
@@ -81,6 +81,6 @@ test("collect unbound references", async () => {
   const bindResult = bindIdents({ registry, rootAst, accumulateUnbound: true });
 
   const expected = ["pkg1::bar::baz", "pkg2::foo"];
-  const expectedArrays = expected.map(s => s.split("::")).sort();
+  const expectedArrays = expected.map((s) => s.split("::")).sort();
   expect(bindResult.unbound?.sort()).deep.equal(expectedArrays);
 });

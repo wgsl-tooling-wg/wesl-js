@@ -1,4 +1,4 @@
-import { Span } from "mini-parse";
+import type { Span } from "mini-parse";
 
 export function multiKeySet<A, B, V>(
   m: Map<A, Map<B, V>>,
@@ -19,7 +19,7 @@ export function replaceWords(
   text: string,
   replace: Record<string, string>,
 ): string {
-  return text.replaceAll(tokenRegex, s => (s in replace ? replace[s] : s));
+  return text.replaceAll(tokenRegex, (s) => (s in replace ? replace[s] : s));
 }
 
 /** return an array partitioned into possibly overlapping groups */

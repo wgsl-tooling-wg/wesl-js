@@ -1,5 +1,5 @@
-import { SrcMap } from "mini-parse";
 import { setTimeout } from "node:timers";
+import { SrcMap } from "mini-parse";
 import { expect, test, vi } from "vitest";
 import { LinkedWesl } from "../LinkedWesl";
 import { makeWeslDevice } from "../WeslDevice";
@@ -8,7 +8,7 @@ test("WeslDevice doesn't conflict with uncapturederror", async () => {
   const GPUDeviceMock = vi.fn(function (this: GPUDevice) {
     let errorListener: EventListener;
     this.createShaderModule = () => {
-      let errorEvent: Partial<GPUUncapturedErrorEvent> = {
+      const errorEvent: Partial<GPUUncapturedErrorEvent> = {
         error: {
           message: "shader compilation failed",
         },
@@ -35,7 +35,7 @@ test("WeslDevice doesn't conflict with uncapturederror", async () => {
     const TIMEOUT = setTimeout(() => {
       reject();
     }, 1000);
-    device.addEventListener("uncapturederror", ev => {
+    device.addEventListener("uncapturederror", (ev) => {
       clearTimeout(TIMEOUT);
       resolve(ev.error);
     });
@@ -71,7 +71,7 @@ test("WeslDevice doesn't conflict with popErrorsScope", async () => {
     const TIMEOUT = setTimeout(() => {
       reject();
     }, 1000);
-    device.popErrorScope().then(v => {
+    device.popErrorScope().then((v) => {
       clearTimeout(TIMEOUT);
       resolve(v);
     });
@@ -183,7 +183,7 @@ test("Point at WESL code", async () => {
 
   device.pushErrorScope("validation");
   linkedWesl.createShaderModule(device, {});
-  let result = await device.popErrorScope();
+  const result = await device.popErrorScope();
 
   // Expect that it's not the original, but instead the changed version
   expect(result?.message).not.toContain("this message gets ignored");
@@ -199,7 +199,7 @@ test("Invokes error throwing", async () => {
     this.message = message;
   });
   vi.stubGlobal("GPUValidationError", GPUValidationErrorMock);
-  const GPUUncapturedErrorEventMock = vi.fn(function () {});
+  const GPUUncapturedErrorEventMock = vi.fn(() => {});
   vi.stubGlobal("GPUUncapturedErrorEvent", GPUUncapturedErrorEventMock);
 
   const dispatchEventPromise = Promise.withResolvers();

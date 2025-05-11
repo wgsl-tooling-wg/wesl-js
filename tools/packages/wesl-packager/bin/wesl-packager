@@ -5943,7 +5943,7 @@ function errorHighlight(source, span2) {
 // ../wesl/src/vlq/vlq.ts
 var char_to_integer = {};
 var integer_to_char = {};
-"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".split("").forEach(function(char, i) {
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".split("").forEach((char, i) => {
   char_to_integer[char] = i;
   integer_to_char[i] = char;
 });
@@ -5978,7 +5978,7 @@ function encode_integer(num) {
 // ../wesl/src/ClickableError.ts
 function throwClickableError(params) {
   const { url, text: text2, lineNumber, lineColumn, length, error } = params;
-  let mappings = encodeVlq([
+  const mappings = encodeVlq([
     0,
     0,
     Math.max(0, lineNumber - 1),
@@ -6487,7 +6487,7 @@ var typeRefCollect = collectElem(
   "type",
   // @ts-ignore
   (cc, openElem) => {
-    let templateParamsTemp = cc.tags.templateParam?.flat(3);
+    const templateParamsTemp = cc.tags.templateParam?.flat(3);
     const typeRef = cc.tags.typeRefName?.[0];
     const name2 = typeof typeRef === "string" ? typeRef : typeRef.ident;
     const partElem = {
@@ -6808,7 +6808,7 @@ var WeslStream = class {
           this.stream.reset(this.skipBlockComment(token2.span[1]));
         }
       } else if (kind2 === "word") {
-        let returnToken = token2;
+        const returnToken = token2;
         if (keywordOrReserved.has(token2.text)) {
           returnToken.kind = "keyword";
         }
@@ -7136,11 +7136,25 @@ var special_attribute = tagScope(
     "@",
     or(
       // These attributes have no arguments
-      or("compute", "const", "fragment", "invariant", "must_use", "vertex").map((name2) => makeStandardAttribute([name2, []])),
+      or("compute", "const", "fragment", "invariant", "must_use", "vertex").map(
+        (name2) => makeStandardAttribute([name2, []])
+      ),
       // These attributes have arguments, but the argument doesn't have any identifiers
-      preceded("interpolate", req(delimited("(", name_list, ")"), "invalid @interpolate, expected '('")).map(makeInterpolateAttribute),
-      preceded("builtin", req(delimited("(", name, ")"), "invalid @builtin, expected '('")).map(makeBuiltinAttribute),
-      preceded("diagnostic", req(diagnostic_control, "invalid @diagnostic, expected '('")).map(makeDiagnosticAttribute)
+      preceded(
+        "interpolate",
+        req(
+          delimited("(", name_list, ")"),
+          "invalid @interpolate, expected '('"
+        )
+      ).map(makeInterpolateAttribute),
+      preceded(
+        "builtin",
+        req(delimited("(", name, ")"), "invalid @builtin, expected '('")
+      ).map(makeBuiltinAttribute),
+      preceded(
+        "diagnostic",
+        req(diagnostic_control, "invalid @diagnostic, expected '('")
+      ).map(makeDiagnosticAttribute)
     ).ptag("attr_variant")
   ).collect(specialAttribute)
 );
@@ -7176,7 +7190,7 @@ var normal_attribute = tagScope(
       ),
       // Everything else is also a normal attribute, optional expression list
       seq(
-        // we don't want this to interfere with if_attribute, 
+        // we don't want this to interfere with if_attribute,
         // but not("if") isn't necessary for now, since 'if' is a keyword, not a word
         word.ptag("name"),
         opt(() => attribute_argument_list)
@@ -7193,10 +7207,9 @@ var attribute_argument_list = delimited(
   ),
   req(")", "invalid attribute arguments, expected ')'")
 );
-var attribute_no_if = or(
-  special_attribute,
-  normal_attribute
-).ctag("attribute");
+var attribute_no_if = or(special_attribute, normal_attribute).ctag(
+  "attribute"
+);
 var attribute_incl_if = or(
   if_attribute,
   special_attribute,
@@ -7237,7 +7250,10 @@ var struct_member = tagScope(
   ).collect(collectStructMember)
 ).ctag("members");
 var struct_decl = seq(
-  weslExtension(opt_attributes).collect((cc) => cc.tags.attribute, "attributes"),
+  weslExtension(opt_attributes).collect(
+    (cc) => cc.tags.attribute,
+    "attributes"
+  ),
   "struct",
   req(globalTypeNameDecl, "invalid struct, expected name"),
   seq(
@@ -7255,7 +7271,12 @@ var fnParam = tagScope(
   seq(
     opt_attributes.collect((cc) => cc.tags.attribute, "attributes"),
     word.collect(declCollect, "decl_elem"),
-    opt(seq(":", req(type_specifier, "invalid fn parameter, expected type specifier"))).collect(typedDecl, "param_name")
+    opt(
+      seq(
+        ":",
+        req(type_specifier, "invalid fn parameter, expected type specifier")
+      )
+    ).collect(typedDecl, "param_name")
   ).collect(collectFnParam)
 ).ctag("fn_param");
 var fnParamList = seq("(", withSep(",", fnParam), ")");
@@ -7447,16 +7468,10 @@ var regular_statement = or(
   )
 );
 var conditional_statement = tagScope(
-  seq(
-    opt_attributes,
-    regular_statement
-  ).collect(statementCollect).collect(partialScopeCollect)
+  seq(opt_attributes, regular_statement).collect(statementCollect).collect(partialScopeCollect)
 );
 var unconditional_statement = tagScope(
-  seq(
-    opt_attributes_no_if,
-    regular_statement
-  )
+  seq(opt_attributes_no_if, regular_statement)
 );
 var statement = or(
   compound_statement,
@@ -7465,10 +7480,7 @@ var statement = or(
 );
 var lhs_expression = or(
   simple_component_reference,
-  seq(
-    qualified_ident.collect(refIdent),
-    opt(component_or_swizzle)
-  ),
+  seq(qualified_ident.collect(refIdent), opt(component_or_swizzle)),
   seq(
     "(",
     () => lhs_expression,
@@ -7484,7 +7496,12 @@ var variable_or_value_statement = tagScope(
   or(
     // Also covers the = expression case
     local_variable_decl,
-    seq("const", req_optionally_typed_ident, req("=", "invalid const declaration, expected '='"), expression),
+    seq(
+      "const",
+      req_optionally_typed_ident,
+      req("=", "invalid const declaration, expected '='"),
+      expression
+    ),
     seq(
       "let",
       req_optionally_typed_ident,
@@ -7503,22 +7520,24 @@ var variable_updating_statement = or(
   seq("_", "=", expression)
 );
 var fn_decl = seq(
-  tagScope(
-    opt_attributes.collect((cc) => cc.tags.attribute || [])
-  ).ctag("fn_attributes"),
+  tagScope(opt_attributes.collect((cc) => cc.tags.attribute || [])).ctag(
+    "fn_attributes"
+  ),
   text("fn"),
   req(fnNameDecl, "invalid fn, expected function name"),
   seq(
-    req(fnParamList, "invalid fn, expected function parameters").collect(scopeCollect, "header_scope"),
-    opt(seq(
-      "->",
-      opt_attributes.collect((cc) => cc.tags.attribute, "return_attributes"),
-      type_specifier.ctag("return_type").collect(scopeCollect, "return_scope")
-    )),
-    req(
-      unscoped_compound_statement,
-      "invalid fn, expected function body"
-    ).ctag("body_statement").collect(scopeCollect, "body_scope")
+    req(fnParamList, "invalid fn, expected function parameters").collect(
+      scopeCollect,
+      "header_scope"
+    ),
+    opt(
+      seq(
+        "->",
+        opt_attributes.collect((cc) => cc.tags.attribute, "return_attributes"),
+        type_specifier.ctag("return_type").collect(scopeCollect, "return_scope")
+      )
+    ),
+    req(unscoped_compound_statement, "invalid fn, expected function body").ctag("body_statement").collect(scopeCollect, "body_scope")
   )
 ).collect(partialScopeCollect, "fn_partial_scope").collect(fnCollect);
 var global_value_decl = or(
@@ -7539,11 +7558,20 @@ var global_value_decl = or(
   ).collect(collectVarLike("const"))
 ).collect(partialScopeCollect);
 var global_alias = seq(
-  weslExtension(opt_attributes).collect((cc) => cc.tags.attribute, "attributes"),
+  weslExtension(opt_attributes).collect(
+    (cc) => cc.tags.attribute,
+    "attributes"
+  ),
   "alias",
-  req(word, "invalid alias, expected name").collect(globalDeclCollect, "alias_name"),
+  req(word, "invalid alias, expected name").collect(
+    globalDeclCollect,
+    "alias_name"
+  ),
   req("=", "invalid alias, expected '='"),
-  req(type_specifier, "invalid alias, expected type").collect(scopeCollect, "alias_scope"),
+  req(type_specifier, "invalid alias, expected type").collect(
+    scopeCollect,
+    "alias_scope"
+  ),
   req(";", "invalid alias, expected ';'")
 ).collect(aliasCollect);
 var const_assert = tagScope(

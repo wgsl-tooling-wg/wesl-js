@@ -1,7 +1,7 @@
-import { WeslBundle } from "wesl";
-import { parseSrcModule, WeslAST } from "./ParseWESL.ts";
-import { normalize, noSuffix } from "./PathUtil.ts";
-import { resetScopeIds, SrcModule } from "./Scope.ts";
+import type { WeslBundle } from "wesl";
+import { type WeslAST, parseSrcModule } from "./ParseWESL.ts";
+import { noSuffix, normalize } from "./PathUtil.ts";
+import { type SrcModule, resetScopeIds } from "./Scope.ts";
 
 export interface ParsedRegistry {
   modules: Record<string, WeslAST>; // key is module path, e.g. "rand_pkg::foo::bar"
@@ -55,7 +55,7 @@ export function selectModule(
 export function parseIntoRegistry(
   srcFiles: Record<string, string>,
   registry: ParsedRegistry,
-  packageName: string = "package",
+  packageName = "package",
   debugWeslRoot?: string,
 ): void {
   if (debugWeslRoot === undefined) {
@@ -69,7 +69,7 @@ export function parseIntoRegistry(
       return { modulePath, debugFilePath: debugWeslRoot + filePath, src };
     },
   );
-  srcModules.forEach(mod => {
+  srcModules.forEach((mod) => {
     const parsed = parseSrcModule(mod, undefined);
     if (registry.modules[mod.modulePath]) {
       throw new Error(`duplicate module path: '${mod.modulePath}'`);

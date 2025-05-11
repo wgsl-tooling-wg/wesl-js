@@ -1,4 +1,4 @@
-import { SrcMap } from "mini-parse";
+import type { SrcMap } from "mini-parse";
 import { assertThat } from "../../mini-parse/src/Assertions";
 import { errorHighlight, offsetToLineNumber } from "./Util";
 import type { WeslDevice } from "./WeslDevice";
@@ -66,9 +66,9 @@ export class LinkedWesl {
     });
     device.popErrorScope();
     // And report the error!
-    let { promise, resolve } = Promise.withResolvers<GPUError | null>();
+    const { promise, resolve } = Promise.withResolvers<GPUError | null>();
     device.injectError("validation", promise); // Inject our custom error
-    module.getCompilationInfo().then(compilationInfo => {
+    module.getCompilationInfo().then((compilationInfo) => {
       if (compilationInfo.messages.length === 0) {
         resolve(null);
         return;
@@ -106,7 +106,7 @@ export class LinkedWesl {
   ): WeslGPUCompilationInfo {
     return {
       __brand: compilationInfo.__brand,
-      messages: compilationInfo.messages.map(v =>
+      messages: compilationInfo.messages.map((v) =>
         this.mapGPUCompilationMessage(v),
       ),
     };
@@ -119,12 +119,12 @@ export class LinkedWesl {
     const srcPosition = srcMap.destToSrc(message.offset);
     // LATER what if this gets mapped to a completely different place?
     const srcEndPosition =
-      message.length > 0 ?
-        srcMap.destToSrc(message.offset + message.length)
-      : srcPosition;
+      message.length > 0
+        ? srcMap.destToSrc(message.offset + message.length)
+        : srcPosition;
     const length = srcEndPosition.position - srcPosition.position;
 
-    let [lineNum, linePos] = offsetToLineNumber(
+    const [lineNum, linePos] = offsetToLineNumber(
       srcPosition.position,
       srcPosition.src.text,
     );
@@ -159,8 +159,8 @@ function compilationInfoToErrorMessage(
   let result = `Compilation log for [Invalid ShaderModule (${
     shaderModule.label || "unlabled"
   })]:\n`;
-  let errorCount = compilationInfo.messages.filter(
-    v => v.type === "error",
+  const errorCount = compilationInfo.messages.filter(
+    (v) => v.type === "error",
   ).length;
   if (errorCount > 0) {
     result += `${errorCount} error(s) generated while compiling the shader:\n`;

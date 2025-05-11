@@ -1,11 +1,11 @@
 import {
   CachingStream,
   MatchersStream,
-  matchOneOf,
   ParseError,
   RegexMatchers,
-  Stream,
-  TypedToken,
+  type Stream,
+  type TypedToken,
+  matchOneOf,
   withStreamAction,
 } from "mini-parse";
 import { keywords, reservedWords } from "./Keywords";
@@ -110,7 +110,7 @@ export class WeslStream implements Stream<WeslToken> {
           this.stream.reset(this.skipBlockComment(token.span[1]));
         }
       } else if (kind === "word") {
-        let returnToken = token as TypedToken<typeof kind | "keyword">;
+        const returnToken = token as TypedToken<typeof kind | "keyword">;
         if (keywordOrReserved.has(token.text)) {
           returnToken.kind = "keyword";
         }
@@ -270,9 +270,9 @@ export class WeslStream implements Stream<WeslToken> {
   }
 }
 
-export const templateOpen = withStreamAction(stream => {
+export const templateOpen = withStreamAction((stream) => {
   return (stream as WeslStream).nextTemplateStartToken();
 });
-export const templateClose = withStreamAction(stream => {
+export const templateClose = withStreamAction((stream) => {
   return (stream as WeslStream).nextTemplateEndToken();
 });

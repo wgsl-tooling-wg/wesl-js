@@ -15,7 +15,7 @@ function expectParses(src: string): void {
   expect(result.stable.imports.length).toBeGreaterThan(0);
 }
 
-importSyntaxCases.forEach(c => {
+importSyntaxCases.forEach((c) => {
   if (c.fails) {
     test(c.src, () => expectParseFail(c.src));
   } else {
