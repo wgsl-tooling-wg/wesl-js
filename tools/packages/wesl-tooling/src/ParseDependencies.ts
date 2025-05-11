@@ -44,12 +44,12 @@ export function parseDependencies(
   if (!unbound) return [];
 
   // a package module reference needs at least two segments (length 1 is probably a builtin wgsl fn or type)
-  const pkgRefs = unbound.filter((modulePath) => modulePath.length > 1);
+  const pkgRefs = unbound.filter(modulePath => modulePath.length > 1);
   if (pkgRefs.length === 0) return [];
 
   const fullProjectDir = path.resolve(path.join(projectDir, "foo"));
   const projectURL = pathToFileURL(fullProjectDir).href;
-  const deps = filterMap(pkgRefs, (mPath) =>
+  const deps = filterMap(pkgRefs, mPath =>
     unboundToDependency(mPath, projectURL),
   );
   const uniqueDeps = [...new Set(deps)];
@@ -69,7 +69,7 @@ function unboundToDependency(
   importerURL: string,
 ): string | undefined {
   // return the longest subpath that can be resolved
-  return exportSubpaths(mPath).find((subPath) =>
+  return exportSubpaths(mPath).find(subPath =>
     // Note that we're not checking here that the resolved file exists.
     // The file (a weslBundle.js file somewhere in dist) may not have been built yet.
     // LATER we could do save these paths and check that the resolved files exist.
@@ -109,10 +109,11 @@ export async function dependencyBundles(
   projectDir: string,
 ): Promise<WeslBundle[]> {
   const deps = parseDependencies(weslSrc, projectDir);
-  const bundles = deps.map(async (dep) => {
+  const bundles = deps.map(async dep => {
     const url = resolve(dep, projectDir);
-    const m = await import(url);
-    return m.default;
+    const module = await import(url);
+    return module.default;
   });
+
   return await Promise.all(bundles);
 }
