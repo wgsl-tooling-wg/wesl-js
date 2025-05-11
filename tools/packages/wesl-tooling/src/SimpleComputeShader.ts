@@ -1,11 +1,18 @@
-import { link, requestWeslDevice, type WeslDevice } from "wesl";
+import {
+  link,
+  requestWeslDevice,
+  type VirtualLibraryFn,
+  type WeslDevice,
+} from "wesl";
 import { dependencyBundles } from "./ParseDependencies.ts";
 import { copyBuffer, type GPUElementFormat } from "thimbleberry";
+
+const resultBufferSize = 16; // 4x4 bytes
 
 /**
  * Compiles a single WESL shader source string into a GPUShaderModule for testing
  * with automatic package detection.
- * 
+ *
  * Parses the shader source to find references to wesl packages, and
  * then searches installed npm packages to find the appropriate npm package
  * bundle to include in the link.
@@ -19,10 +26,11 @@ export async function compileShader(
   projectDir: string,
   device: WeslDevice,
   src: string,
+  virtualLibs?: Record<string, VirtualLibraryFn>,
 ): Promise<GPUShaderModule> {
   const weslSrc = { main: src };
   const libs = await dependencyBundles(weslSrc, projectDir);
-  const linked = await link({ weslSrc, libs });
+  const linked = await link({ weslSrc, libs, virtualLibs });
 
   // Unfortunately we can't call linked.createShaderModule()
   // because of limitations in the node-webgpu package.
@@ -37,8 +45,8 @@ export async function compileShader(
 /**
  * Transpiles and runs a simple compute shader on the GPU for testing.
  *
- * a 16 byte storage buffer is available for the shader at `@group(0) @binding(0)`.
- * Compute shaders can write test results into the buffer.
+ * A storage buffer is available for the shader to write test results.
+ * `test::results[0]` is the first element of the buffer in wesl.
  * After execution the storage buffer is copied back to the CPU and returned
  * for test validation.
  *
@@ -54,17 +62,30 @@ export async function testComputeShader(
   projectDir: string,
   gpu: GPU,
   src: string,
-  resultFormat?: GPUElementFormat,
+  resultFormat: GPUElementFormat = "f32",
 ): Promise<number[]> {
   const adapter = await gpu.requestAdapter();
   const device = await requestWeslDevice(adapter);
   try {
-    const module = await compileShader(projectDir, device, src);
+    const arraySize = resultBufferSize / elementByteSize(resultFormat);
+    const arrayType = `array<${resultFormat}, ${arraySize}>`;
+    const virtualLibs = {
+      test: () =>
+        `@group(0) @binding(0) var <storage, read_write> results: ${arrayType};`,
+    };
+    const module = await compileShader(projectDir, device, src, virtualLibs);
     const result = await runSimpleComputePipeline(device, module, resultFormat);
     return result;
   } finally {
     device.destroy();
   }
+}
+
+/** size in bytes of a wgsl numeric type, e.g. 'f32' => 4 */
+function elementByteSize(fmt: GPUElementFormat): number {
+  const found = fmt.match(/\d+/);
+  const bits = Number.parseInt(found?.[0] as string);
+  return bits / 8;
 }
 
 /**
@@ -109,7 +130,7 @@ export async function runSimpleComputePipeline(
 
   const storageBuffer = device.createBuffer({
     label: "storage",
-    size: 16,
+    size: resultBufferSize,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
   });
 
