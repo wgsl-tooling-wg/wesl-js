@@ -28,7 +28,7 @@
   "devDependencies": {
     "@types/diff": "^7.0.2",
     "@types/node": "^22.15.17",
-    "dependent_package": "workspace:^",
+    "dependent_package": "workspace:x",
     "diff": "^7.0.0",
     "dir-compare": "^5.0.0",
     "picocolors": "^1.1.1",
