@@ -42,7 +42,7 @@ async function parseArgs(args: string[]) {
     })
     .option("updatePackageJson", {
       type: "boolean",
-      default: true,
+      default: false,
       describe: "add 'exports' entries into package.json",
     })
     .option("outDir", {
