@@ -9,6 +9,22 @@ import { copyBuffer, type GPUElementFormat } from "thimbleberry";
 
 const resultBufferSize = 16; // 4x4 bytes
 
+export interface CompileShaderParams {
+  /** The project directory, used for resolving dependencies.  */
+  projectDir: string;
+  
+  /** The GPUDevice to use for shader compilation. */
+  device: GPUDevice;
+
+  /** The WGSL/WESL shader source code. */
+  src: string;
+
+  /** Optional conditions for shader compilation. */
+  conditions?: Record<string, boolean>;
+
+  /** Optional virtual libraries to include in the shader. */
+  virtualLibs?: Record<string, VirtualLibraryFn>;
+}
 /**
  * Compiles a single WESL shader source string into a GPUShaderModule for testing
  * with automatic package detection.
@@ -18,19 +34,17 @@ const resultBufferSize = 16; // 4x4 bytes
  * bundle to include in the link.
  *
  * @param projectDir - The project directory, used for resolving dependencies.
- * @param device - The WeslDevice to use for shader compilation.
+ * @param device - The GPUDevice to use for shader compilation.
  * @param src - The WESL shader source code.
  * @returns A Promise that resolves to the compiled GPUShaderModule.
  */
 export async function compileShader(
-  projectDir: string,
-  device: WeslDevice,
-  src: string,
-  virtualLibs?: Record<string, VirtualLibraryFn>,
+  params: CompileShaderParams,
 ): Promise<GPUShaderModule> {
+  const { projectDir, device, src, conditions, virtualLibs } = params;
   const weslSrc = { main: src };
   const libs = await dependencyBundles(weslSrc, projectDir);
-  const linked = await link({ weslSrc, libs, virtualLibs });
+  const linked = await link({ weslSrc, libs, virtualLibs, conditions });
 
   // Unfortunately we can't call linked.createShaderModule()
   // because of limitations in the node-webgpu package.
@@ -63,6 +77,7 @@ export async function testComputeShader(
   gpu: GPU,
   src: string,
   resultFormat: GPUElementFormat = "f32",
+  conditions: Record<string, boolean> = {},
 ): Promise<number[]> {
   const adapter = await gpu.requestAdapter();
   const device = await requestWeslDevice(adapter);
@@ -73,7 +88,8 @@ export async function testComputeShader(
       test: () =>
         `@group(0) @binding(0) var <storage, read_write> results: ${arrayType};`,
     };
-    const module = await compileShader(projectDir, device, src, virtualLibs);
+    const params = { projectDir, device, src, conditions, virtualLibs };
+    const module = await compileShader(params);
     const result = await runSimpleComputePipeline(device, module, resultFormat);
     return result;
   } finally {
