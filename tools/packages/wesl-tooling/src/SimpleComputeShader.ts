@@ -5,14 +5,14 @@ import {
   type WeslDevice,
 } from "wesl";
 import { dependencyBundles } from "./ParseDependencies.ts";
-import { copyBuffer, type GPUElementFormat } from "thimbleberry";
+import { elementStride, copyBuffer, type WgslElementType } from "thimbleberry";
 
 const resultBufferSize = 16; // 4x4 bytes
 
 export interface CompileShaderParams {
   /** The project directory, used for resolving dependencies.  */
   projectDir: string;
-  
+
   /** The GPUDevice to use for shader compilation. */
   device: GPUDevice;
 
@@ -76,13 +76,13 @@ export async function testComputeShader(
   projectDir: string,
   gpu: GPU,
   src: string,
-  resultFormat: GPUElementFormat = "f32",
+  resultFormat: WgslElementType,
   conditions: Record<string, boolean> = {},
 ): Promise<number[]> {
   const adapter = await gpu.requestAdapter();
   const device = await requestWeslDevice(adapter);
   try {
-    const arraySize = resultBufferSize / elementByteSize(resultFormat);
+    const arraySize = resultBufferSize / elementStride(resultFormat);
     const arrayType = `array<${resultFormat}, ${arraySize}>`;
     const virtualLibs = {
       test: () =>
@@ -95,13 +95,6 @@ export async function testComputeShader(
   } finally {
     device.destroy();
   }
-}
-
-/** size in bytes of a wgsl numeric type, e.g. 'f32' => 4 */
-function elementByteSize(fmt: GPUElementFormat): number {
-  const found = fmt.match(/\d+/);
-  const bits = Number.parseInt(found?.[0] as string);
-  return bits / 8;
 }
 
 /**
@@ -123,7 +116,7 @@ function elementByteSize(fmt: GPUElementFormat): number {
 export async function runSimpleComputePipeline(
   device: GPUDevice,
   module: GPUShaderModule,
-  resultFormat?: GPUElementFormat,
+  resultFormat?: WgslElementType,
 ): Promise<number[]> {
   const bgLayout = device.createBindGroupLayout({
     entries: [

@@ -286,7 +286,7 @@ importers:
         version: link:../mini-parse
     devDependencies:
       multi_pkg:
-        specifier: workspace:^
+        specifier: workspace:x
         version: link:../test_pkg/multi_pkg
       ncp:
         specifier: ^2.0.0
@@ -354,7 +354,7 @@ importers:
         specifier: ^22.15.17
         version: 22.15.17
       dependent_package:
-        specifier: workspace:^
+        specifier: workspace:x
         version: link:../test_pkg/dependent_package
       diff:
         specifier: ^7.0.0
@@ -534,11 +534,11 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0
       thimbleberry:
-        specifier: ^0.2.9
-        version: 0.2.9
+        specifier: ^0.2.10
+        version: 0.2.10
     devDependencies:
       dependent_package:
-        specifier: workspace:^
+        specifier: workspace:x
         version: link:../test_pkg/dependent_package
       tsdown:
         specifier: ^0.11.3
@@ -4991,6 +4991,9 @@ packages:
 
   thenify@3.3.1:
     resolution: {integrity: sha512-RVZSIV5IG10Hk3enotrhvz0T9em6cyHBLkH/YAZuKqd8hRkKhSfCGIcP2KUY0EPxndzANBmNllzWPwak+bheSw==}
+
+  thimbleberry@0.2.10:
+    resolution: {integrity: sha512-sWQIKq9FdqYZbsUfw7l7/HqxNmvze0e6/FUlgjBkwYtfd5A30cjfY2M+mHUGlO0+bGZro5J0c7lfeHJ1Zu7/JQ==}
 
   thimbleberry@0.2.9:
     resolution: {integrity: sha512-m1vB5d3VunjmaoDFk5e7YDm+EI1GIHdWyJgh9ELbfGuArb49mr3mXqARoEbUKwKEMnIs+Kc+aikIfgQ2VQKeYg==}
@@ -10577,6 +10580,14 @@ snapshots:
   thenify@3.3.1:
     dependencies:
       any-promise: 1.3.0
+
+  thimbleberry@0.2.10:
+    dependencies:
+      '@petamoriken/float16': 3.9.2
+      '@reactively/core': 0.0.8
+      '@reactively/decorate': 0.0.4
+      berry-pretty: 0.0.4
+      fast-deep-equal: 3.1.3
 
   thimbleberry@0.2.9:
     dependencies:
