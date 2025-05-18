@@ -18,6 +18,7 @@ const buildOptions: BuildOptions = {
     "glob",
     "import-meta-resolve",
   ],
+  target: "node22",
   logLevel: "info",
 };
 
