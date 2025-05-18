@@ -7,7 +7,7 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
 });
 
 // src/main.ts
-import { exit } from "process";
+import { exit } from "node:process";
 
 // ../../node_modules/.pnpm/yargs@17.7.2/node_modules/yargs/build/lib/yerror.js
 var YError = class _YError extends Error {
@@ -1039,8 +1039,8 @@ var _c;
 var minNodeVersion = process && process.env && process.env.YARGS_MIN_NODE_VERSION ? Number(process.env.YARGS_MIN_NODE_VERSION) : 12;
 var nodeVersion = (_b = (_a = process === null || process === void 0 ? void 0 : process.versions) === null || _a === void 0 ? void 0 : _a.node) !== null && _b !== void 0 ? _b : (_c = process === null || process === void 0 ? void 0 : process.version) === null || _c === void 0 ? void 0 : _c.slice(1);
 if (nodeVersion) {
-  const major = Number(nodeVersion.match(/^([^.]+)/)[1]);
-  if (major < minNodeVersion) {
+  const major2 = Number(nodeVersion.match(/^([^.]+)/)[1]);
+  if (major2 < minNodeVersion) {
     throw Error(`yargs parser supports a minimum Node.js version of ${minNodeVersion}. Read our version support policy: https://github.com/yargs/yargs-parser#supported-nodejs-versions`);
   }
 }
@@ -8594,7 +8594,7 @@ async function parseArgs(args) {
     describe: "package.json export name for consolidated bundle (ignored for multiBundle)"
   }).option("updatePackageJson", {
     type: "boolean",
-    default: true,
+    default: false,
     describe: "add 'exports' entries into package.json"
   }).option("outDir", {
     type: "string",
@@ -8611,6 +8611,11 @@ async function versionFromPackageJson() {
 
 // src/main.ts
 var rawArgs = hideBin(process.argv);
+var [major] = process.versions.node.split(".").map(Number);
+if (major < 22) {
+  console.error(`Please upgrade node to version 22 or higher. (The current node version is ${process.version})`);
+  exit(1);
+}
 packagerCli(rawArgs).catch((e) => {
   console.error(e);
   exit(1);
