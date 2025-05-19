@@ -73,7 +73,6 @@ test("chain with error reporting", () => {
     : T; // no elements
 
   function chain<T extends Elem[]>(...args: ChainOK<T>): void {
-    return true as any;
   }
   const ns: ChainElem<number, string> = { in: 1, out: "s" };
   const sn: ChainElem<string, number> = { in: "i", out: 9 };

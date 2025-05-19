@@ -6,7 +6,7 @@ import { StyleModule } from "style-mod";
 StyleModule.mount(document, defaultHighlightStyle.module!);
 
 const div = document.createElement("div");
-function escape(text: string) {
+function escapeText(text: string) {
   div.textContent = text;
   return div.innerHTML;
 }
@@ -20,14 +20,14 @@ export function wgslToHTML(code: string): string {
     defaultHighlightStyle,
     (from, to, classes) => {
       if (from > last) {
-        dom += `<span>${escape(code.slice(last, from))}</span>`;
+        dom += `<span>${escapeText(code.slice(last, from))}</span>`;
       }
-      dom += `<span class="${classes}">${escape(code.slice(from, to))}</span>`;
+      dom += `<span class="${classes}">${escapeText(code.slice(from, to))}</span>`;
       last = to;
     },
   );
   if (last < code.length) {
-    dom += `<span>${escape(code.slice(last))}</span>`;
+    dom += `<span>${escapeText(code.slice(last))}</span>`;
   }
   return `<div>${dom}<div>`;
 }

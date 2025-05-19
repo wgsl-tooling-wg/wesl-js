@@ -54,7 +54,8 @@ export const product = seqObj({
   if (!mulDiv) return pow;
   const result = mulDiv.reduce((acc, opVal) => {
     const [op, val] = opVal;
-    return op === "*" ? (acc *= val) : (acc /= val);
+    if (op === "*") return acc * val;
+    else return acc / val;
   }, pow);
   return result;
 });
@@ -66,7 +67,8 @@ export const sum = seqObj({
   if (!sumOp) return left;
   return sumOp.reduce((acc, opVal) => {
     const [op, val] = opVal;
-    return op === "+" ? (acc += val) : (acc -= val);
+    if (op === "+") return acc + val;
+    else return acc - val;
   }, left);
 });
 /* */ expr = sum; // prettier-ignore
