@@ -2,10 +2,10 @@
 import { exit } from "node:process";
 import { hideBin } from "yargs/helpers";
 import yargs from "yargs";
-import { Biome, Distribution } from "@biomejs/js-api";
-import { glob } from "glob";
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
+import { Biome, Distribution } from "@biomejs/js-api";
+import { glob } from "glob";
 import { noSuffix } from "wesl";
 import { parseDependencies } from "wesl-tooling";
 
