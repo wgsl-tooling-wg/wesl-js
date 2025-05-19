@@ -72,23 +72,24 @@ export function encodeVlq(value: number | number[]) {
 
 function encode_integer(num: number) {
   let result = "";
+  let enc: number;
 
   if (num < 0) {
-    num = (-num << 1) | 1;
+    enc = (-num << 1) | 1;
   } else {
-    num <<= 1;
+    enc = num << 1;
   }
 
   do {
-    let clamped = num & 31;
-    num >>>= 5;
+    let clamped = enc & 31;
+    enc >>>= 5;
 
-    if (num > 0) {
+    if (enc > 0) {
       clamped |= 32;
     }
 
     result += integer_to_char[clamped];
-  } while (num > 0);
+  } while (enc > 0);
 
   return result;
 }
