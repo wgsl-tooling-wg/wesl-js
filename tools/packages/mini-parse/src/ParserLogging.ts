@@ -1,6 +1,6 @@
-import { ParserContext } from "./Parser.js";
+import type { ParserContext } from "./Parser.js";
 import { parserLog, tracePos, tracing } from "./ParserTracing.js";
-import { SrcMap, SrcWithPath } from "./SrcMap.js";
+import type { SrcMap, SrcWithPath } from "./SrcMap.js";
 import { log } from "./WrappedLog.js";
 
 /** log an message along with the source line and a caret indicating the error position in the line

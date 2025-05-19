@@ -1,7 +1,12 @@
-import { diffChars, diffLines } from "diff";
-import { compareSync, Difference, Options, Result } from "dir-compare";
 import fs from "node:fs";
 import path from "node:path";
+import { diffChars, diffLines } from "diff";
+import {
+  type Difference,
+  type Options,
+  type Result,
+  compareSync,
+} from "dir-compare";
 import pico from "picocolors";
 import { expect } from "vitest";
 
@@ -36,8 +41,9 @@ export function expectDirMatch(
 /** print a difference between two files or directories to the error log */
 function logDiff(diff: Difference): void {
   const { name1, name2, path1, path2, state, relativePath } = diff;
-  const relative =
-    relativePath.endsWith("/") ? relativePath : `${relativePath}/`;
+  const relative = relativePath.endsWith("/")
+    ? relativePath
+    : `${relativePath}/`;
   if (state === "left") {
     console.error(`Extra in result: ${relative}${name1}`);
   } else if (state === "right") {

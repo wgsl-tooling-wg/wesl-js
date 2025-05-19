@@ -1,5 +1,5 @@
-import { Span } from "../Span.ts";
-import { Stream, TypedToken } from "../Stream.ts";
+import type { Span } from "../Span.ts";
+import type { Stream, TypedToken } from "../Stream.ts";
 import { toRegexSource } from "./RegexHelpers.ts";
 
 /**
@@ -8,7 +8,7 @@ import { toRegexSource } from "./RegexHelpers.ts";
 export class MatchersStream<Kind extends string>
   implements Stream<TypedToken<Kind>>
 {
-  private position: number = 0;
+  private position = 0;
   constructor(
     public text: string,
     private matchers: RegexMatchers<Kind>,

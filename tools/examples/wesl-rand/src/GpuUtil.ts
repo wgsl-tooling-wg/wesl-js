@@ -1,4 +1,4 @@
-import { requestWeslDevice, WeslDevice } from "wesl";
+import { type WeslDevice, requestWeslDevice } from "wesl";
 
 /** @return a GPUDevice with a WESL wrapper for error reporting */
 export async function gpuDevice(): Promise<WeslDevice> {

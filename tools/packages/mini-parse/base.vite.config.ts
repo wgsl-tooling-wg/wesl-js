@@ -1,7 +1,7 @@
-import { UserConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
+import { resolve } from "node:path";
+import type { UserConfig } from "vite";
 import dts from "vite-plugin-dts";
-import { resolve } from "path";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 export function baseViteConfig(): UserConfig {
   return {

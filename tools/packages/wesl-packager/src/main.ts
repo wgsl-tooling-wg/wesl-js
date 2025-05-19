@@ -7,7 +7,9 @@ const rawArgs = hideBin(process.argv);
 
 const [major] = process.versions.node.split(".").map(Number);
 if (major < 22) {
-  console.error(`Please upgrade node to version 22 or higher. (The current node version is ${process.version})`);
+  console.error(
+    `Please upgrade node to version 22 or higher. (The current node version is ${process.version})`,
+  );
   exit(1);
 }
 

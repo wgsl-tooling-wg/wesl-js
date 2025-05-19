@@ -1,8 +1,8 @@
-import { glob } from "glob";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { BulkTest, bulkTests } from "wesl-testsuite";
-import { NamedPath } from "./testWgslFiles.ts";
+import { glob } from "glob";
+import { type BulkTest, bulkTests } from "wesl-testsuite";
+import type { NamedPath } from "./testWgslFiles.ts";
 
 /* Vitest parallelizes per .test.ts file.
  *

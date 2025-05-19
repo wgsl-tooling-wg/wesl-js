@@ -1,9 +1,9 @@
 /// <reference types="wesl-plugin/suffixes" />
-import { SlIconButton } from "@shoelace-style/shoelace";
+import type { SlIconButton } from "@shoelace-style/shoelace";
 import rand from "random_wgsl";
 import { link } from "wesl";
 import main from "../shaders/main.wgsl?link";
-import { Loopable } from "./Drawable.ts";
+import type { Loopable } from "./Drawable.ts";
 import { gpuDevice } from "./GpuUtil.ts";
 import { wgslToHTML } from "./Highlight.ts";
 import { gpuAnimation } from "./Shader.ts";

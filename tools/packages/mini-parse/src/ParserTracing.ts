@@ -1,5 +1,5 @@
 import { assertThat } from "./Assertions.js";
-import { AnyParser, ParserContext, ParserTraceInfo } from "./Parser.js";
+import type { AnyParser, ParserContext, ParserTraceInfo } from "./Parser.js";
 import { log } from "./WrappedLog.js";
 
 /** true if parser tracing is enabled */

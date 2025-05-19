@@ -1,12 +1,12 @@
-import { resolve } from "import-meta-resolve";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { resolve } from "import-meta-resolve";
 import type { WeslBundle } from "wesl";
 import {
-  filterMap,
-  parsedRegistry,
-  parseIntoRegistry,
   WeslParseError,
+  filterMap,
+  parseIntoRegistry,
+  parsedRegistry,
 } from "wesl";
 import { findUnboundIdents } from "wesl";
 

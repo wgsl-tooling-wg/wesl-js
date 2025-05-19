@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { srcLine, srcLog } from "../ParserLogging.js";
-import { logCatch } from "../test-util/LogCatcher.js";
 import { withLogger } from "../WrappedLog.js";
+import { logCatch } from "../test-util/LogCatcher.js";
 
 test("srcLine", () => {
   const src1 = "1";

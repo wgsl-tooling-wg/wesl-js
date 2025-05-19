@@ -57,13 +57,8 @@
   },
   "packageManager": "pnpm@10.10.0",
   "pnpm": {
-    "ignoredBuiltDependencies": [
-      "es5-ext"
-    ],
-    "onlyBuiltDependencies": [
-      "core-js",
-      "esbuild"
-    ],
+    "ignoredBuiltDependencies": ["es5-ext"],
+    "onlyBuiltDependencies": ["core-js", "esbuild"],
     "overrides": {}
   }
 }

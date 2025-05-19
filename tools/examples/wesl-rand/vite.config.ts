@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
-import viteWesl from "wesl-plugin/vite";
 import { linkBuildExtension } from "wesl-plugin";
+import viteWesl from "wesl-plugin/vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({

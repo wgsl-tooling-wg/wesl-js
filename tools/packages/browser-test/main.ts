@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { copyBuffer } from "thimbleberry";
-import { link, type LinkParams, makeWeslDevice } from "wesl";
+import { type LinkParams, link, makeWeslDevice } from "wesl";
 // Convince vite to also watch these files
 import mainWesl from "./src/shaders/main.wesl?raw";
 import uniformsWesl from "./src/shaders/uniforms.wesl?raw";

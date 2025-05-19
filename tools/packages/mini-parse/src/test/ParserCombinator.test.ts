@@ -1,6 +1,10 @@
-import { logCatch, TestMatcherKind, testParse } from "mini-parse/test-util";
+import {
+  type TestMatcherKind,
+  logCatch,
+  testParse,
+} from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import { Parser } from "../Parser.js";
+import type { Parser } from "../Parser.js";
 import {
   any,
   delimited,
@@ -19,7 +23,7 @@ import {
   withSep,
 } from "../ParserCombinator.js";
 import { enableTracing } from "../ParserTracing.js";
-import { Stream, Token } from "../Stream.js";
+import type { Stream, Token } from "../Stream.js";
 import { withLogger } from "../WrappedLog.js";
 
 const m: Record<TestMatcherKind, TestMatcherKind> = {

@@ -1,22 +1,22 @@
 import { assertThat } from "./Assertions.js";
 import {
+  type CollectFn,
+  type CollectFnEntry,
+  type CollectPair,
   collect,
-  CollectFn,
-  CollectFnEntry,
-  CollectPair,
   ctag,
   ptag,
   runCollection,
 } from "./ParserCollect.js";
 import {
+  type TraceContext,
+  type TraceOptions,
   parserLog,
-  TraceContext,
-  TraceOptions,
   tracing,
   withTraceLogging,
 } from "./ParserTracing.js";
-import { Span } from "./Span.js";
-import { Stream, Token, TypedToken } from "./Stream.js";
+import type { Span } from "./Span.js";
+import type { Stream, Token, TypedToken } from "./Stream.js";
 
 export interface AppState<C, S> {
   /**
@@ -94,7 +94,7 @@ export class ParserTraceInfo {
   ) {}
   /** true for elements without children like kind(), and text(),
    * (to avoid intro log statement while tracing) */
-  traceIsTerminal: boolean = false;
+  traceIsTerminal = false;
 }
 
 /** A parser with no requirements, a bottom type. */
@@ -285,7 +285,7 @@ function runParserWithTracing<I, T>(
     }
 
     // run the parser function for this stage
-    let result = fn(ctx);
+    const result = fn(ctx);
 
     if (result === null) {
       // parser failed

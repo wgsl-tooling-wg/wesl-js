@@ -1,5 +1,5 @@
-import { expectNoLogAsync } from "mini-parse/test-util";
 import fs from "node:fs/promises";
+import { expectNoLogAsync } from "mini-parse/test-util";
 import { expect, test } from "vitest";
 import { bindingStructsPlugin, link, noSuffix } from "wesl";
 import { stripWesl } from "./stripWgsl";

@@ -5,9 +5,12 @@ export interface Drawable {
 
 /** a drawable that can be animated continuously */
 export class Loopable {
-  private looping: boolean = true;
+  private looping = true;
 
-  constructor(private drawable: Drawable, run = true) {
+  constructor(
+    private drawable: Drawable,
+    run = true,
+  ) {
     this.looping = run; // initialize the looping state from the constructor
     if (!run) drawable.draw(); // ensure we draw once to start
     this.drawRepeat();

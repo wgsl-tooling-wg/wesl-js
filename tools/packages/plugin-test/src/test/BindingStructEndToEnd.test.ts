@@ -1,7 +1,12 @@
 /// <reference types="wesl-plugin/suffixes" />
 import { copyBuffer } from "thimbleberry";
 import { beforeAll, expect, test } from "vitest";
-import { bindingStructsPlugin, link, LinkConfig, LinkParams } from "wesl";
+import {
+  type LinkConfig,
+  type LinkParams,
+  bindingStructsPlugin,
+  link,
+} from "wesl";
 
 let gpu: GPU;
 

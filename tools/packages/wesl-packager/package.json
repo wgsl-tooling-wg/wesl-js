@@ -14,9 +14,7 @@
     "test": "FORCE_COLOR=1 vitest",
     "test:once": "vitest run"
   },
-  "files": [
-    "bin"
-  ],
+  "files": ["bin"],
   "bin": "bin/wesl-packager",
   "dependencies": {
     "@biomejs/js-api": "^0.7.1",

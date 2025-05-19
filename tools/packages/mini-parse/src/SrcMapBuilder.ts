@@ -1,4 +1,4 @@
-import { SrcMap, SrcMapEntry, SrcWithPath } from "./SrcMap.js";
+import { SrcMap, type SrcMapEntry, type SrcWithPath } from "./SrcMap.js";
 
 /**
  * Incrementally append to a string, tracking source references

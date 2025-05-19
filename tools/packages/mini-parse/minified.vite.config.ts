@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { LibraryOptions, defineConfig } from "vite";
+import { type LibraryOptions, defineConfig } from "vite";
 import { baseViteConfig } from "./base.vite.config.js";
 // import { visualizer } from "rollup-plugin-visualizer";
 

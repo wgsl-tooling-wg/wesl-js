@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
-import { PluginExtension, PluginExtensionApi } from "wesl-plugin";
-import { StructElem, TypeRefElem } from "../../wesl/src/AbstractElems.js";
+import type { PluginExtension, PluginExtensionApi } from "wesl-plugin";
+import type { StructElem, TypeRefElem } from "../../wesl/src/AbstractElems.js";
 
 export interface WeslStruct {
   members: Record<string, WeslMember>;

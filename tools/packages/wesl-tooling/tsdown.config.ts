@@ -6,5 +6,5 @@ export default defineConfig({
   clean: true,
   dts: true,
   platform: "neutral",
-  external: ["node:url", "node:path", "wesl"]
+  external: ["node:url", "node:path", "wesl"],
 });

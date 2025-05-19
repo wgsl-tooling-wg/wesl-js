@@ -1,4 +1,4 @@
-import { Stream, Token } from "../Stream.ts";
+import type { Stream, Token } from "../Stream.ts";
 
 /** Only lets tokens through that pass the filter */
 export class FilterStream<T extends Token> implements Stream<T> {

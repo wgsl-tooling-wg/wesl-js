@@ -1,8 +1,8 @@
-import glob from "fast-glob";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseArgs, ParseArgsConfig } from "node:util";
+import { type ParseArgsConfig, parseArgs } from "node:util";
+import glob from "fast-glob";
 
 /*
  * update example package.json files to have the current version of wesl as dependencies

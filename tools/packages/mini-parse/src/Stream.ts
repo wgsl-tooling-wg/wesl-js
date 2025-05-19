@@ -1,4 +1,4 @@
-import { Span } from "./Span.ts";
+import type { Span } from "./Span.ts";
 
 /**
  * An interface for a tokenizer. Returns a "next token", and can be reset to previously saved positions (checkpoints).

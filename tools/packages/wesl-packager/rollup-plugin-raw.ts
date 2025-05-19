@@ -1,15 +1,15 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import type { LoadResult, Plugin, PluginContext } from 'rollup';
+import fs from "node:fs/promises";
+import path from "node:path";
+import type { LoadResult, Plugin, PluginContext } from "rollup";
 
-const rawSuffix = '?raw';
+const rawSuffix = "?raw";
 // The \\0 prefix is a convention in Rollup to indicate that a module ID is virtual
 // or handled by a plugin and should not be resolved by other plugins or the default resolver.
-const virtualPrefix = '\\0raw:';
+const virtualPrefix = "\\0raw:";
 
 export default function rawFileImporter(): Plugin {
   return {
-    name: 'raw-file-importer',
+    name: "raw-file-importer",
 
     resolveId(sourceId: string, importer: string | undefined): string | null {
       if (sourceId.endsWith(rawSuffix)) {
@@ -26,10 +26,10 @@ export default function rawFileImporter(): Plugin {
       if (resolvedId.startsWith(virtualPrefix)) {
         const actualPath = resolvedId.slice(virtualPrefix.length);
         try {
-          const fileContent = await fs.readFile(actualPath, 'utf-8');
+          const fileContent = await fs.readFile(actualPath, "utf-8");
           return {
             code: `export default ${JSON.stringify(fileContent)};`,
-            map: { mappings: '' } // empty sourcemap
+            map: { mappings: "" }, // empty sourcemap
           };
         } catch (error) {
           let message = `Failed to load raw file: ${actualPath}`;
@@ -40,6 +40,6 @@ export default function rawFileImporter(): Plugin {
         }
       }
       return null;
-    }
+    },
   };
 }

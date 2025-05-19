@@ -1,7 +1,7 @@
-import { Parser } from "../Parser.js";
+import type { Parser } from "../Parser.js";
 import { kind, opt, or, repeat, seq } from "../ParserCombinator.js";
 import { tracing } from "../ParserTracing.js";
-import { Stream, TypedToken } from "../Stream.js";
+import type { Stream, TypedToken } from "../Stream.js";
 import { RegexMatchers } from "../stream/MatchersStream.js";
 import { matchOneOf } from "../stream/RegexHelpers.js";
 
@@ -14,9 +14,9 @@ export const calcMatcher = new RegexMatchers<CalcKind>({
   symbol: matchOneOf("( ) ^"),
 });
 
-export const num       = kind("number"); // prettier-ignore
+export const num = kind("number"); // prettier-ignore
 export const plusMinus = kind("plusMinus"); // prettier-ignore
-export const mulDiv    = kind("mulDiv"); // prettier-ignore
+export const mulDiv = kind("mulDiv"); // prettier-ignore
 export type CalcStream = Stream<TypedToken<CalcKind>>;
 let expr: Parser<CalcStream, any> = null as any; // help TS with forward reference
 
@@ -28,11 +28,11 @@ let expr: Parser<CalcStream, any> = null as any; // help TS with forward referen
     Value   ← [0-9]+ / '(' Expr ')'
 */
 
-const value     = or(num, seq("(", expr, ")")); // prettier-ignore
-const power:any = seq(value, opt(seq("^", () => power))); // prettier-ignore
-const product   = seq(power, repeat(seq(mulDiv, power))); // prettier-ignore
-const sum       = seq(product, repeat(seq(plusMinus, product))); // prettier-ignore
-/* */ expr      = sum; // prettier-ignore
+const value = or(num, seq("(", expr, ")")); // prettier-ignore
+const power: any = seq(value, opt(seq("^", () => power))); // prettier-ignore
+const product = seq(power, repeat(seq(mulDiv, power))); // prettier-ignore
+const sum = seq(product, repeat(seq(plusMinus, product))); // prettier-ignore
+/* */ expr = sum; // prettier-ignore
 
 export const statement = repeat(expr);
 

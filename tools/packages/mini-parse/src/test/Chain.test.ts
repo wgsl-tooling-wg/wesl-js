@@ -7,12 +7,11 @@ test("chain", () => {
   type ElemOut<T> = T extends ChainElem<any, infer O> ? O : never;
   type ElemIn<T> = T extends ChainElem<infer I, any> ? I : never;
 
-  type ChainOK<T extends Elem[]> =
-    T extends [infer A, ...infer R] ?
-      R extends readonly [Elem, ...Elem[]] ?
-        ElemOut<A> extends ElemIn<R[0]> ?
-          R extends Elem[] ?
-            ChainOK<R>
+  type ChainOK<T extends Elem[]> = T extends [infer A, ...infer R]
+    ? R extends readonly [Elem, ...Elem[]]
+      ? ElemOut<A> extends ElemIn<R[0]>
+        ? R extends Elem[]
+          ? ChainOK<R>
           : "??" // (how could R not extend Elem[]?)
         : false // fail
       : true // R is empty, so we've succeeded..
@@ -40,10 +39,9 @@ test("chain", () => {
 
 // verify that we can count elems recursively
 test("recurse count", () => {
-  type CountRecurse<T extends unknown[]> =
-    T extends [infer A, ...infer R] ?
-      R extends readonly [unknown, ...unknown[]] ?
-        `x${CountRecurse<R>}`
+  type CountRecurse<T extends unknown[]> = T extends [infer A, ...infer R]
+    ? R extends readonly [unknown, ...unknown[]]
+      ? `x${CountRecurse<R>}`
       : "y"
     : "z";
 
@@ -61,16 +59,18 @@ test("chain with error reporting", () => {
   type ElemIn<T> = T extends ChainElem<infer I, any> ? I : never;
 
   // prettier-ignore
-  type ChainOK<T extends Elem[]> = 
-    T extends [infer A, ...infer R]
-      ? R extends readonly [unknown, ...unknown[]]
-        ? ElemOut<A> extends ElemIn<R[0]>
-          ? R extends Elem[]
-            ? ChainOK<R>
-            : "??" // (how could R not extend Elem[]?)
-          : {msg: `chain input doesn't match previous output`, types: [ElemOut<A>, ElemIn<R[0]>]} // fail
-        : T // R is empty, so we've succeeded..
-      : T ; // no elements
+  type ChainOK<T extends Elem[]> = T extends [infer A, ...infer R]
+    ? R extends readonly [unknown, ...unknown[]]
+      ? ElemOut<A> extends ElemIn<R[0]>
+        ? R extends Elem[]
+          ? ChainOK<R>
+          : "??" // (how could R not extend Elem[]?)
+        : {
+            msg: `chain input doesn't match previous output`;
+            types: [ElemOut<A>, ElemIn<R[0]>];
+          } // fail
+      : T // R is empty, so we've succeeded..
+    : T; // no elements
 
   function chain<T extends Elem[]>(...args: ChainOK<T>): void {
     return true as any;
@@ -87,10 +87,9 @@ test("chain with error reporting", () => {
 
 test("withIndex", () => {
   // prettier-ignore
-  type WithIndex<T extends unknown[]> = 
-    T extends unknown
-      ? { [K in keyof T]: [K, T[K]] }
-      : never;
+  type WithIndex<T extends unknown[]> = T extends unknown
+    ? { [K in keyof T]: [K, T[K]] }
+    : never;
 
   type m = WithIndex<[string, number]>;
 });

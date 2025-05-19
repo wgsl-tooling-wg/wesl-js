@@ -1,12 +1,12 @@
+import fs from "node:fs";
+import path from "node:path";
 import { createTwoFilesPatch } from "diff";
-import fs from "fs";
 import { enableTracing, log } from "mini-parse";
-import path from "path";
 import { astToString, link, noSuffix, scopeToString } from "wesl";
 import yargs from "yargs";
 import {
-  parsedRegistry,
   parseIntoRegistry,
+  parsedRegistry,
 } from "../../wesl/src/ParsedRegistry.js"; // LATER fix import
 
 type CliArgs = ReturnType<typeof parseArgs>;
@@ -120,7 +120,7 @@ function parseDefineValue(value: string): string | number | boolean {
   const v = value.toLowerCase();
   if (v === "true") return true;
   if (v === "false") return false;
-  if (value === "NaN") return NaN;
+  if (value === "NaN") return Number.NaN;
   const n = Number.parseFloat(value);
   if (!Number.isNaN(n)) return n;
   return value;

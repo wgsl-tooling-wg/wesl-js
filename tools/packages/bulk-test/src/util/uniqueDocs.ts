@@ -1,7 +1,7 @@
-import { dlog } from "berry-pretty";
-import { Change, diffLines } from "diff";
-import { glob } from "glob";
 import fs from "node:fs/promises";
+import { dlog } from "berry-pretty";
+import { type Change, diffLines } from "diff";
+import { glob } from "glob";
 
 /* Search through a set of files to find the uniquest ones.
  * Uses a diff library to compare files with each other

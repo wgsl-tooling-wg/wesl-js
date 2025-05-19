@@ -1,6 +1,6 @@
 import { defaultHighlightStyle } from "@codemirror/language";
-import { highlightTree } from "@lezer/highlight";
 import { wgslLanguage } from "@iizukak/codemirror-lang-wgsl";
+import { highlightTree } from "@lezer/highlight";
 import { StyleModule } from "style-mod";
 
 StyleModule.mount(document, defaultHighlightStyle.module!);
@@ -24,7 +24,7 @@ export function wgslToHTML(code: string): string {
       }
       dom += `<span class="${classes}">${escape(code.slice(from, to))}</span>`;
       last = to;
-    }
+    },
   );
   if (last < code.length) {
     dom += `<span>${escape(code.slice(last))}</span>`;

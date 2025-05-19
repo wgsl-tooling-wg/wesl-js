@@ -1,4 +1,4 @@
-import { Parser } from "../Parser.js";
+import type { Parser } from "../Parser.js";
 import {
   delimited,
   fn,
@@ -10,8 +10,13 @@ import {
   seqObj,
 } from "../ParserCombinator.js";
 import { tracing } from "../ParserTracing.js";
-import { Stream, Token } from "../Stream.js";
-import { CalcStream, mulDiv, num, plusMinus } from "./CalculatorExample.js";
+import type { Stream, Token } from "../Stream.js";
+import {
+  type CalcStream,
+  mulDiv,
+  num,
+  plusMinus,
+} from "./CalculatorExample.js";
 
 let expr: Parser<CalcStream, number> = null as any; // help TS with forward reference
 
@@ -24,7 +29,7 @@ let expr: Parser<CalcStream, number> = null as any; // help TS with forward refe
 */
 
 const value = or(
-  num.map(r => parseInt(r, 10)),
+  num.map(r => Number.parseInt(r, 10)),
   delimited("(", () => expr, ")"),
 );
 
@@ -64,7 +69,7 @@ export const sum = seqObj({
     return op === "+" ? (acc += val) : (acc -= val);
   }, left);
 });
-/* */ expr     = sum; // prettier-ignore
+/* */ expr = sum; // prettier-ignore
 
 export const resultsStatement = expr as Parser<Stream<Token>, number>;
 

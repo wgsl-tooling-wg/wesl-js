@@ -1,4 +1,4 @@
-import {
+import type {
   CombinatorArg,
   InputFromArg,
   OrParser,
@@ -10,20 +10,25 @@ import {
   SeqValues,
 } from "./CombinatorTypes.js";
 import {
-  OptParserResult,
+  type OptParserResult,
   ParseError,
   Parser,
+  type ParserContext,
+  type ParserResult,
+  type ParserStream,
   parser,
-  ParserContext,
-  ParserResult,
-  ParserStream,
   terminalParser,
 } from "./Parser.js";
 import { closeArray, pushOpenArray } from "./ParserCollect.js";
 import { quotedText, srcTrace } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
-import { Span } from "./Span.js";
-import { peekToken, Stream, Token, TypedToken } from "./Stream.js";
+import type { Span } from "./Span.js";
+import {
+  type Stream,
+  type Token,
+  type TypedToken,
+  peekToken,
+} from "./Stream.js";
 
 /** Parsing Combinators
  *
@@ -623,7 +628,7 @@ export function parserArg<A extends CombinatorArg>(arg: A): ParserFromArg<A> {
 export function fn<I, T>(fn: () => Parser<I, T>): Parser<I, T> {
   const parser = new Parser<I, T>({
     fn: function _fn(state: ParserContext): OptParserResult<T> {
-      let generatedParser = fn();
+      const generatedParser = fn();
       if (!fn) {
         const before = state.stream.checkpoint();
         throw new ParseError(`fn parser called before definition`, [

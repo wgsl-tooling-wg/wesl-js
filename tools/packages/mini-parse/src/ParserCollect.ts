@@ -1,14 +1,14 @@
-import { CombinatorArg, ResultFromArg } from "./CombinatorTypes.js";
+import type { CombinatorArg, ResultFromArg } from "./CombinatorTypes.js";
 import {
-  AppState,
-  OptParserResult,
+  type AppState,
+  type OptParserResult,
+  type Parser,
+  type ParserContext,
+  type ParserStream,
   parser,
-  Parser,
-  ParserContext,
-  ParserStream,
 } from "./Parser.js";
 import { parserArg } from "./ParserCombinator.js";
-import { Stream, Token } from "./Stream.js";
+import type { Stream, Token } from "./Stream.js";
 
 export type TagRecord = Record<string | symbol, any[] | undefined>;
 export type NoTags = Record<string | symbol, never>;
@@ -153,7 +153,7 @@ function runAndCollectAfter<I, T>(
   p: Parser<I, T>,
   ctx: ParserContext,
   collectFn: CollectFn<any>,
-  debugName: string = "",
+  debugName = "",
 ): OptParserResult<T> {
   const origStart = ctx.stream.checkpoint();
   const result = p._run(ctx);

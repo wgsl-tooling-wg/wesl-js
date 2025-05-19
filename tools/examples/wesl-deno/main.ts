@@ -1,7 +1,7 @@
 import { createCapture } from "@std/webgpu/create-capture";
 import { getRowPadding } from "@std/webgpu/row-padding";
-import { link } from "wesl";
 import { encode as encodePng } from "png";
+import { link } from "wesl";
 
 const adapter = await navigator.gpu.requestAdapter();
 const device = await adapter?.requestDevice()!;
@@ -16,7 +16,7 @@ const { padded, unpadded } = getRowPadding(dimensions.width);
 const { texture, outputBuffer } = createCapture(
   device,
   dimensions.width,
-  dimensions.height
+  dimensions.height,
 );
 
 const shader = (
@@ -24,7 +24,7 @@ const shader = (
     weslSrc: {
       "main.wesl": await Deno.readTextFile("./shaders/main.wesl"),
       "fullscreen_quad.wesl": await Deno.readTextFile(
-        "./shaders/fullscreen_quad.wesl"
+        "./shaders/fullscreen_quad.wesl",
       ),
       "mandelbrot.wesl": await Deno.readTextFile("./shaders/mandelbrot.wesl"),
     },
@@ -70,7 +70,7 @@ encoder.copyTextureToBuffer(
     buffer: outputBuffer,
     bytesPerRow: padded,
   },
-  dimensions
+  dimensions,
 );
 
 device.queue.submit([encoder.finish()]);

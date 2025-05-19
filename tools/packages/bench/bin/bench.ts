@@ -1,7 +1,7 @@
-import { WGSLLinker } from "@use-gpu/shader";
-import fs from "fs/promises";
+import fs from "node:fs/promises";
 import path from "node:path";
-import { link, parseSrcModule, SrcModule, WeslAST } from "wesl";
+import { WGSLLinker } from "@use-gpu/shader";
+import { type SrcModule, type WeslAST, link, parseSrcModule } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
 

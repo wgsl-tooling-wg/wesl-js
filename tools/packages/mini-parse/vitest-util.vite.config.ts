@@ -1,7 +1,7 @@
+import { resolve } from "node:path";
 /// <reference types="vitest/config" />
-import { LibraryOptions, defineConfig } from "vite";
+import { type LibraryOptions, defineConfig } from "vite";
 import { baseViteConfig } from "./base.vite.config.js";
-import { resolve } from "path";
 
 const config = baseViteConfig();
 config.build.emptyOutDir = false;

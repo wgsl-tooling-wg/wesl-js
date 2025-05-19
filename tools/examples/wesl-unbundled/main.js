@@ -15,12 +15,12 @@ if (device === undefined) {
 
 const shaderCode = await link({
   weslSrc: {
-    "main.wesl": await fetch("./shaders/main.wesl").then((v) => v.text()),
+    "main.wesl": await fetch("./shaders/main.wesl").then(v => v.text()),
     "fullscreen_quad.wesl": await fetch("./shaders/fullscreen_quad.wesl").then(
-      (v) => v.text()
+      v => v.text(),
     ),
-    "mandelbrot.wesl": await fetch("./shaders/mandelbrot.wesl").then((v) =>
-      v.text()
+    "mandelbrot.wesl": await fetch("./shaders/mandelbrot.wesl").then(v =>
+      v.text(),
     ),
   },
 });

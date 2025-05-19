@@ -1,11 +1,11 @@
-import fs from "fs/promises";
+import fs from "node:fs/promises";
+import { dlog } from "berry-pretty";
 import {
-  DifferenceOptions,
+  type DifferenceOptions,
+  type SavedText,
   differentText,
-  SavedText,
   sortBySize,
 } from "../src/util/uniqueDocs.ts";
-import { dlog } from "berry-pretty";
 
 /*
  * The pickBoatShaders script diff compares hlsl files, incrementally and

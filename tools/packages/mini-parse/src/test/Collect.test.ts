@@ -76,7 +76,7 @@ test("collect with tag", () => {
 });
 
 test("ctag earlier collect", () => {
-  let results: string[] = [];
+  const results: string[] = [];
   const p = or(
     "a",
     text("b").collect(() => "B", "1"),
@@ -88,7 +88,7 @@ test("ctag earlier collect", () => {
 });
 
 test("ctag collect inside seq", () => {
-  let results: any[] = [];
+  const results: any[] = [];
   const p = collectArray(
     seq(
       "a",
@@ -104,7 +104,7 @@ test("ctag collect inside seq", () => {
 });
 
 test("tagScope clears tags", () => {
-  let results: any[] = [];
+  const results: any[] = [];
   const p = tagScope(
     or(
       text("a")
@@ -127,7 +127,7 @@ test("tagScope clears tags", () => {
 });
 
 test("ctag propogates up through seq", () => {
-  let results: any[] = [];
+  const results: any[] = [];
   const p = seq(
     "a",
     text("b")
@@ -140,7 +140,7 @@ test("ctag propogates up through seq", () => {
 });
 
 test("tagScope resets original tags", () => {
-  let results: any[] = [];
+  const results: any[] = [];
   const p = seq(
     text("a").ptag("atag"),
     tagScope(text("b")), // shouldn't reset 'atag' for later collect
@@ -164,7 +164,7 @@ test("collect with ctag param", () => {
 });
 
 test("tagScope clears tags on entry", () => {
-  let results: any[] = [];
+  const results: any[] = [];
 
   const p = seq(
     text("a").ptag("A"),

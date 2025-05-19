@@ -13,7 +13,7 @@ const num = kind("number");
 
 export const simpleSum = seq(num, or("+", "-"), num);
 
-const int = num.map(r => parseInt(r, 10));
+const int = num.map(r => Number.parseInt(r, 10));
 
 export const sumResults = seq(int, or("+", "-"), int).map(([a, op, b]) => {
   return op === "+" ? a + b : a - b;

@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { LibraryOptions, defineConfig } from "vite";
+import { type LibraryOptions, defineConfig } from "vite";
 import { baseViteConfig } from "./base.vite.config.js";
 
 const config = baseViteConfig();
