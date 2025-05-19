@@ -151,15 +151,15 @@ export function offsetToLineNumber(
   offset: number,
   text: string,
 ): [lineNum: number, linePos: number] {
-  offset = Math.min(text.length, Math.max(0, offset));
+  const safeOffset = Math.min(text.length, Math.max(0, offset));
   let lineStartOffset = 0;
   let lineNum = 1;
   while (true) {
     // LATER: Does this "line break" actually match the spec? I think not
     const lineEnd = text.indexOf("\n", lineStartOffset);
-    if (lineEnd === -1 || offset <= lineEnd) {
+    if (lineEnd === -1 || safeOffset <= lineEnd) {
       // Last relevant line
-      const linePos = 1 + (offset - lineStartOffset);
+      const linePos = 1 + (safeOffset - lineStartOffset);
       return [lineNum, linePos];
     } else {
       // Go to the next line

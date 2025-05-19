@@ -70,6 +70,7 @@ const weslMatcher = new RegexMatchers<InternalTokenKind>({
   blankspaces,
   commentStart,
   symbol: matchOneOf(symbolSet),
+  // biome-ignore lint/correctness/noEmptyCharacterClassInRegex: TODO
   invalid: /[^]/,
 });
 
@@ -135,7 +136,8 @@ export class WeslStream implements Stream<WeslToken> {
     }
   }
 
-  private skipBlockComment(position: number): number {
+  private skipBlockComment(start: number): number {
+    let position = start;
     while (true) {
       this.blockCommentPattern.lastIndex = position;
       const result = this.blockCommentPattern.exec(this.src);

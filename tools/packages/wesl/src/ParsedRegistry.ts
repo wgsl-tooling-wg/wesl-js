@@ -58,15 +58,16 @@ export function parseIntoRegistry(
   packageName = "package",
   debugWeslRoot?: string,
 ): void {
-  if (debugWeslRoot === undefined) {
-    debugWeslRoot = "";
-  } else if (!debugWeslRoot.endsWith("/")) {
-    debugWeslRoot += "/";
+  let weslRoot = debugWeslRoot;
+  if (weslRoot === undefined) {
+    weslRoot = "";
+  } else if (!weslRoot.endsWith("/")) {
+    weslRoot += "/";
   }
   const srcModules: SrcModule[] = Object.entries(srcFiles).map(
     ([filePath, src]) => {
       const modulePath = fileToModulePath(filePath, packageName);
-      return { modulePath, debugFilePath: debugWeslRoot + filePath, src };
+      return { modulePath, debugFilePath: weslRoot + filePath, src };
     },
   );
   srcModules.forEach(mod => {
