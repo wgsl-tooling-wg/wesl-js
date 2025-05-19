@@ -22,6 +22,6 @@
       "wesl-tooling": ["../wesl-tooling/src"]
     }
   },
-  "include": ["src/**/*", "src/viteTypes.d.ts", "build.ts"],
+  "include": ["src/**/*", "src/viteTypes.d.ts", "rollup-plugin-raw.ts"],
   "exclude": ["node_modules"]
 }
