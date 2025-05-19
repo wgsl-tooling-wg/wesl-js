@@ -23,7 +23,9 @@
     "@biomejs/wasm-nodejs": "^1.9.4",
     "glob": "^11.0.2",
     "import-meta-resolve": "^4.1.0",
-    "wesl-tooling": "workspace:*"
+    "wesl": "workspace:*",
+    "wesl-tooling": "workspace:*",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/diff": "^7.0.2",
@@ -33,8 +35,6 @@
     "dir-compare": "^5.0.0",
     "picocolors": "^1.1.1",
     "rollup": "^4.40.2",
-    "rollup-plugin-string-import": "^1.2.5",
-    "tsdown": "^0.11.3",
-    "wesl": "workspace:*"
+    "tsdown": "^0.11.12"
   }
 }
