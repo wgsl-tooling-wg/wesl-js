@@ -112,7 +112,7 @@ function externalDefines(): Record<string, string> {
   }
 
   throw new Error("external defines Not implemented");
-  const withParsedValues = pairs.map(([k, v]) => [k, parseDefineValue(v)]);
+  // const withParsedValues = pairs.map(([k, v]) => [k, parseDefineValue(v)]);
   // return Object.fromEntries(withParsedValues);
 }
 
