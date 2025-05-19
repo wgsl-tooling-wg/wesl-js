@@ -1,7 +1,7 @@
 import { addVitePlugin, addWebpackPlugin, defineNuxtModule } from "@nuxt/kit";
+import type { WeslPluginOptions } from "../WeslPluginOptions";
 import vite from "./vite";
 import webpack from "./webpack";
-import type { WeslPluginOptions } from "../WeslPluginOptions";
 import "@nuxt/schema";
 
 export interface ModuleOptions extends WeslPluginOptions {}

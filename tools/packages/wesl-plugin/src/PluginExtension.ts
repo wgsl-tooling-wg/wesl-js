@@ -1,5 +1,5 @@
-import { ParsedRegistry, WeslJsPlugin } from "wesl";
-import { WeslTomlInfo } from "./WeslPlugin.ts";
+import type { ParsedRegistry, WeslJsPlugin } from "wesl";
+import type { WeslTomlInfo } from "./WeslPlugin.ts";
 
 /** function type required for for emit extensions */
 export type ExtensionEmitFn = (

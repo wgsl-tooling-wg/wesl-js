@@ -1,8 +1,11 @@
-import { resolve } from "import-meta-resolve";
 import path from "node:path";
 import url from "node:url";
-import { Conditions, link, noSuffix } from "wesl";
-import { PluginExtension, PluginExtensionApi } from "../PluginExtension.ts";
+import { resolve } from "import-meta-resolve";
+import { type Conditions, link, noSuffix } from "wesl";
+import type {
+  PluginExtension,
+  PluginExtensionApi,
+} from "../PluginExtension.ts";
 
 /**
  * a wesl-js ?static build extension that statically links from the root file

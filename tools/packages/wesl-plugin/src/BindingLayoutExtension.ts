@@ -1,9 +1,9 @@
-import { bindAndTransform, bindingStructsPlugin, LinkConfig } from "wesl";
+import { type LinkConfig, bindAndTransform, bindingStructsPlugin } from "wesl";
 import {
-    bindingGroupLayoutTs,
-    reportBindingStructsPlugin
+  bindingGroupLayoutTs,
+  reportBindingStructsPlugin,
 } from "../../wesl/src/Reflection.ts"; // LATER fix import
-import { PluginExtension, PluginExtensionApi } from "./PluginExtension.ts";
+import type { PluginExtension, PluginExtensionApi } from "./PluginExtension.ts";
 
 export const bindingLayoutExtension: PluginExtension = {
   extensionName: "bindingLayout",

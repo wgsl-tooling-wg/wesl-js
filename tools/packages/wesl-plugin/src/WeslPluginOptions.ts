@@ -1,4 +1,4 @@
-import { PluginExtension } from "./PluginExtension.ts";
+import type { PluginExtension } from "./PluginExtension.ts";
 
 export interface WeslPluginOptions {
   weslToml?: string;

@@ -1,24 +1,24 @@
-import { glob } from "glob";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { glob } from "glob";
 import toml from "toml";
 import type {
-    ExternalIdResult,
-    Thenable,
-    TransformResult,
-    UnpluginBuildContext,
-    UnpluginContext,
-    UnpluginContextMeta,
-    UnpluginOptions
+  ExternalIdResult,
+  Thenable,
+  TransformResult,
+  UnpluginBuildContext,
+  UnpluginContext,
+  UnpluginContextMeta,
+  UnpluginOptions,
 } from "unplugin";
 import { createUnplugin } from "unplugin";
 import {
-    Conditions,
-    parsedRegistry,
-    ParsedRegistry,
-    parseIntoRegistry
+  type Conditions,
+  type ParsedRegistry,
+  parseIntoRegistry,
+  parsedRegistry,
 } from "wesl";
-import { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
+import type { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
 import type { WeslPluginOptions } from "./WeslPluginOptions.js";
 
 /** loaded (or synthesized) info from .toml */
@@ -93,7 +93,7 @@ interface PluginContext {
  *  2. `import "./shaders/bar.wesl?link"` - produces a javascript file for preconstructed link functions
  */
 export function weslPlugin(
-  options: WeslPluginOptions = {},
+  options: WeslPluginOptions,
   meta: UnpluginContextMeta,
 ): UnpluginOptions {
   const cache: PluginCache = {};
@@ -234,9 +234,8 @@ function buildLoader(context: PluginContext): Loader {
       const plugin = pluginsMap[matched.pluginName];
       const { baseId, importParams } = matched;
       const conditions = importParamsToConditions(importParams);
-      const shaderPath =
-        baseId.startsWith(resolvedPrefix) ?
-          baseId.slice(resolvedPrefix.length)
+      const shaderPath = baseId.startsWith(resolvedPrefix)
+        ? baseId.slice(resolvedPrefix.length)
         : baseId;
 
       return await plugin.emitFn(shaderPath, buildPluginApi, conditions);

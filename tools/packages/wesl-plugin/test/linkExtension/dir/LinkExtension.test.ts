@@ -1,6 +1,6 @@
 /// <reference types="wesl-plugin/suffixes" />
 import { expect, expectTypeOf, test } from "vitest";
-import { LinkParams } from "wesl";
+import type { LinkParams } from "wesl";
 import linkParams from "../shaders/foo/app.wesl?link";
 
 test("verify ?link", async () => {
