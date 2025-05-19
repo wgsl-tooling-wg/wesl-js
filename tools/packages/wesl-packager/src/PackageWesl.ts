@@ -1,6 +1,6 @@
+/// <reference types="vite/client" />
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
-/// <reference types="vite/client" />
 import { Biome, Distribution } from "@biomejs/js-api";
 import { glob } from "glob";
 import { type WeslBundle, noSuffix } from "wesl";
