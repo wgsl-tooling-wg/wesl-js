@@ -1,6 +1,6 @@
 {
   "name": "wesl-packager",
-  "version": "0.6.2",
+  "version": "0.6.3-a",
   "type": "module",
   "scripts": {
     "echo": "echo",
@@ -32,6 +32,8 @@
     "diff": "^7.0.0",
     "dir-compare": "^5.0.0",
     "picocolors": "^1.1.1",
+    "rollup-plugin-string-import": "^1.2.5",
+    "tsdown": "^0.11.3",
     "wesl": "workspace:*"
   }
 }
