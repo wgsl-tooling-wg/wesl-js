@@ -27,7 +27,7 @@ export function astToString(elem: AbstractElem, indent = 0): string {
   addElemFields(elem, str);
   let childStrings: string[] = [];
   if ("contents" in elem) {
-    childStrings = elem.contents.map((e) => astToString(e, indent + 2));
+    childStrings = elem.contents.map(e => astToString(e, indent + 2));
   }
   if (childStrings.length) {
     str.nl();
@@ -78,7 +78,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     addAttributeFields(elem.attribute, str);
   } else if (kind === "expression") {
     const contents = elem.contents
-      .map((e) => {
+      .map(e => {
         if (e.kind === "text") {
           return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
         } else {
@@ -150,7 +150,7 @@ function addAttributeFields(attr: Attribute, str: LineWrapper) {
     str.add(expressionToString(attr.param.expression));
     str.add(")");
   } else if (kind === "@interpolate") {
-    str.add(` @interpolate(${attr.params.map((v) => v.name).join(", ")})`);
+    str.add(` @interpolate(${attr.params.map(v => v.name).join(", ")})`);
   } else {
     assertUnreachable(kind);
   }
@@ -204,7 +204,7 @@ function listAttributeElems(
   attributes: AttributeElem[] | undefined,
   str: LineWrapper,
 ) {
-  attributes?.forEach((a) => str.add(" " + attributeName(a.attribute)));
+  attributes?.forEach(a => str.add(" " + attributeName(a.attribute)));
 }
 
 function attributeName(attr: Attribute): string {
@@ -224,7 +224,7 @@ function addDirective(elem: DirectiveElem, str: LineWrapper) {
     const control = diagnosticControlToString(severity, rule);
     str.add(` diagnostic${control}`);
   } else if (kind === "enable" || kind === "requires") {
-    str.add(` ${kind} ${directive.extensions.map((v) => v.name).join(", ")}`);
+    str.add(` ${kind} ${directive.extensions.map(v => v.name).join(", ")}`);
   } else {
     assertUnreachable(kind);
   }
@@ -237,7 +237,7 @@ function unknownExpressionToString(elem: UnknownExpressionElem): string {
     // @ts-ignore
     const contents = elem.contents
       // @ts-ignore
-      .map((e) => {
+      .map(e => {
         if (e.kind === "text") {
           return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
         } else {
@@ -277,7 +277,7 @@ function typeRefElemToString(elem: TypeRefElem): string {
 }
 
 export function debugContentsToString(elem: StuffElem): string {
-  const parts = elem.contents.map((c) => {
+  const parts = elem.contents.map(c => {
     const { kind } = c;
     if (kind === "text") {
       return c.srcModule.src.slice(c.start, c.end);

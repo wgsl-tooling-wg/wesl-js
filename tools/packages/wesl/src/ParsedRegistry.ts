@@ -69,7 +69,7 @@ export function parseIntoRegistry(
       return { modulePath, debugFilePath: debugWeslRoot + filePath, src };
     },
   );
-  srcModules.forEach((mod) => {
+  srcModules.forEach(mod => {
     const parsed = parseSrcModule(mod, undefined);
     if (registry.modules[mod.modulePath]) {
       throw new Error(`duplicate module path: '${mod.modulePath}'`);

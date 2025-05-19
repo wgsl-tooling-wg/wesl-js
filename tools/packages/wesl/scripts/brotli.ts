@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "node:fs";
 import brotli from "brotli";
 
 const buffer = fs.readFileSync(process.argv[2]);

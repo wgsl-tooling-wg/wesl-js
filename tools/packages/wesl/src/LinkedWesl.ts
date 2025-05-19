@@ -68,7 +68,7 @@ export class LinkedWesl {
     // And report the error!
     const { promise, resolve } = Promise.withResolvers<GPUError | null>();
     device.injectError("validation", promise); // Inject our custom error
-    module.getCompilationInfo().then((compilationInfo) => {
+    module.getCompilationInfo().then(compilationInfo => {
       if (compilationInfo.messages.length === 0) {
         resolve(null);
         return;
@@ -106,7 +106,7 @@ export class LinkedWesl {
   ): WeslGPUCompilationInfo {
     return {
       __brand: compilationInfo.__brand,
-      messages: compilationInfo.messages.map((v) =>
+      messages: compilationInfo.messages.map(v =>
         this.mapGPUCompilationMessage(v),
       ),
     };
@@ -160,7 +160,7 @@ function compilationInfoToErrorMessage(
     shaderModule.label || "unlabled"
   })]:\n`;
   const errorCount = compilationInfo.messages.filter(
-    (v) => v.type === "error",
+    v => v.type === "error",
   ).length;
   if (errorCount > 0) {
     result += `${errorCount} error(s) generated while compiling the shader:\n`;

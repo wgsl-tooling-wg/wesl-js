@@ -11,7 +11,7 @@ export function importToString(tree: ImportStatement): string {
 
 function importToStringImpl(tree: ImportStatement): string {
   return [
-    ...tree.segments.map((s) => s.name),
+    ...tree.segments.map(s => s.name),
     segmentToString(tree.finalSegment),
   ].join("::");
 }
@@ -22,7 +22,7 @@ function segmentToString(segment: ImportCollection | ImportItem): string {
     const asMsg = as ? ` as ${as}` : "";
     return `${name}${asMsg}`;
   } else if (segment.kind === "import-collection") {
-    return `{${segment.subtrees.map((s) => importToStringImpl(s)).join(", ")}}`;
+    return `{${segment.subtrees.map(s => importToStringImpl(s)).join(", ")}}`;
   } else {
     assertUnreachable(segment);
   }

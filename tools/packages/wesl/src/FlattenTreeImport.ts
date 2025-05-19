@@ -33,7 +33,7 @@ export function flattenTreeImport(imp: ImportStatement): FlatImport[] {
       return recursiveResolve(importPath, modulePath, rest, finalSegment);
     } else if (finalSegment.kind === "import-collection") {
       // resolve path with each element in the list
-      return finalSegment.subtrees.flatMap((elem) => {
+      return finalSegment.subtrees.flatMap(elem => {
         return recursiveResolve(
           resolvedImportPath,
           resolvedExportPath,

@@ -58,11 +58,11 @@ export function makeWeslDevice(device: GPUDevice): WeslDevice {
   const errorScopeStack: ErrorScope[] = [];
 
   (device as WeslDevice).injectError = (type, error) => {
-    const errorScope = errorScopeStack.findLast((v) => v.filter === type);
+    const errorScope = errorScopeStack.findLast(v => v.filter === type);
     if (errorScope !== undefined) {
       errorScope.errors.push(error);
     } else {
-      error.then((e) => {
+      error.then(e => {
         if (e !== null) {
           dispatchError(e);
         }
@@ -76,7 +76,7 @@ export function makeWeslDevice(device: GPUDevice): WeslDevice {
     // We also make sure to first go through the normal "uncapturederror" process. Since this is the last `addEventListener`, it will get called at the very end.
     device.addEventListener(
       "uncapturederror",
-      (ev) => {
+      ev => {
         if (!ev.defaultPrevented) {
           if ("compilationInfo" in ev.error) {
             const error = ev.error as ExtendedGPUValidationError;
@@ -142,7 +142,7 @@ export function makeWeslDevice(device: GPUDevice): WeslDevice {
       // And get the first error (not null)
       // LATER consider reporting *all* errors, and not just the first
       const errorPromise = Promise.all(errorScope.errors).then(
-        (values) => values.find((v) => v !== null) ?? null,
+        values => values.find(v => v !== null) ?? null,
       );
       return errorPromise;
     };

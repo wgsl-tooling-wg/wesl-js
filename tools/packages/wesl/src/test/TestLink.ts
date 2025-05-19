@@ -71,9 +71,9 @@ export function verifyCaseCoverage(
   caseList: WgslTestSrc[],
 ): (suite: RunnerTestSuite) => void {
   return function verifyCases(suite: RunnerTestSuite) {
-    const testNameSet = new Set(suite.tasks.map((t) => t.name));
-    const caseNames = caseList.map((c) => c.name);
-    const missing = caseNames.filter((name) => !testNameSet.has(name));
+    const testNameSet = new Set(suite.tasks.map(t => t.name));
+    const caseNames = caseList.map(c => c.name);
+    const missing = caseNames.filter(name => !testNameSet.has(name));
     if (missing.length) {
       console.error("Missing tests for cases:", missing);
       expect("missing test: " + missing.toString()).toBe("");

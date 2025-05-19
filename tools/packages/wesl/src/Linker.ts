@@ -153,7 +153,7 @@ export function bindAndTransform(
   if (constants) {
     virtualLibs = { ...virtualLibs, constants: constantsGenerator(constants) };
   }
-  const virtuals = virtualLibs && mapValues(virtualLibs, (fn) => ({ fn }));
+  const virtuals = virtualLibs && mapValues(virtualLibs, fn => ({ fn }));
 
   /* --- Step #2   Binding Idents --- */
   // link active Ident references to declarations, and uniquify global declarations
@@ -201,7 +201,7 @@ function applyTransformPlugins(
   // for now only transform the root module
   const startAst = { moduleElem, srcModule, globalNames, notableElems: {} };
   const plugins = config?.plugins ?? [];
-  const transforms = filterMap(plugins, (plugin) => plugin.transform);
+  const transforms = filterMap(plugins, plugin => plugin.transform);
   const transformedAst = transforms.reduce(
     (ast, transform) => transform(ast),
     startAst,
@@ -221,7 +221,7 @@ function emitWgsl(
   /* --- Step #3   Writing WGSL --- */ // note doesn't require the scope tree anymore
 
   // emit any new statements (module level const asserts)
-  const prologueBuilders = newStatements.map((s) => {
+  const prologueBuilders = newStatements.map(s => {
     const { elem, srcModule } = s;
     const { src: text, debugFilePath: path } = srcModule;
     const builder = new SrcMapBuilder({ text, path });
@@ -236,7 +236,7 @@ function emitWgsl(
   });
   lowerAndEmit(rootBuilder, [rootModuleElem], conditions, false); // emit the entire root module
 
-  const declBuilders = newDecls.map((decl) => {
+  const declBuilders = newDecls.map(decl => {
     const builder = new SrcMapBuilder({
       text: decl.srcModule.src,
       path: decl.srcModule.debugFilePath,

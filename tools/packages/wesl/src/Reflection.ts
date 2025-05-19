@@ -85,7 +85,7 @@ export function bindingGroupLayoutTs(
   const structName = firstLetterLower(struct.name.ident.mangledName!);
   const visibility = shaderVisiblity(struct);
   const entries = struct.members
-    .map((m) => memberToLayoutEntry(m, visibility))
+    .map(m => memberToLayoutEntry(m, visibility))
     .join(",");
 
   const fnName = `${structName}Layout`;

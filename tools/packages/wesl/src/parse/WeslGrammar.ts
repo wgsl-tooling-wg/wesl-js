@@ -113,7 +113,7 @@ const special_attribute = tagScope(
     or(
       // These attributes have no arguments
       or("compute", "const", "fragment", "invariant", "must_use", "vertex").map(
-        (name) => makeStandardAttribute([name, []]),
+        name => makeStandardAttribute([name, []]),
       ),
 
       // These attributes have arguments, but the argument doesn't have any identifiers
@@ -257,10 +257,7 @@ const struct_member = tagScope(
 
 // prettier-ignore
 const struct_decl = seq(
-  weslExtension(opt_attributes).collect(
-    (cc) => cc.tags.attribute,
-    "attributes",
-  ),
+  weslExtension(opt_attributes).collect(cc => cc.tags.attribute, "attributes"),
   "struct",
   req(globalTypeNameDecl, "invalid struct, expected name"),
   seq(
@@ -281,7 +278,7 @@ const fn_call = seq(
 // prettier-ignore
 const fnParam = tagScope(
   seq(
-    opt_attributes.collect((cc) => cc.tags.attribute, "attributes"),
+    opt_attributes.collect(cc => cc.tags.attribute, "attributes"),
     word.collect(declCollect, "decl_elem"),
     opt(
       seq(
@@ -579,7 +576,7 @@ const variable_updating_statement = or(
 
 // prettier-ignore
 const fn_decl = seq(
-  tagScope(opt_attributes.collect((cc) => cc.tags.attribute || [])).ctag(
+  tagScope(opt_attributes.collect(cc => cc.tags.attribute || [])).ctag(
     "fn_attributes",
   ),
   text("fn"),
@@ -592,7 +589,7 @@ const fn_decl = seq(
     opt(
       seq(
         "->",
-        opt_attributes.collect((cc) => cc.tags.attribute, "return_attributes"),
+        opt_attributes.collect(cc => cc.tags.attribute, "return_attributes"),
         type_specifier
           .ctag("return_type")
           .collect(scopeCollect, "return_scope"),
@@ -627,10 +624,7 @@ const global_value_decl = or(
 
 // prettier-ignore
 const global_alias = seq(
-  weslExtension(opt_attributes).collect(
-    (cc) => cc.tags.attribute,
-    "attributes",
-  ),
+  weslExtension(opt_attributes).collect(cc => cc.tags.attribute, "attributes"),
   "alias",
   req(word, "invalid alias, expected name").collect(
     globalDeclCollect,

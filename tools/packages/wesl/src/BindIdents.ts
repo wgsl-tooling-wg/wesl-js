@@ -106,7 +106,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
   const knownDecls = new Set<DeclIdent>();
   const validRootDecls = findValidRootDecls(rootScope, conditions);
 
-  validRootDecls.forEach((decl) => {
+  validRootDecls.forEach(decl => {
     decl.mangledName = decl.originalName;
     globalNames.add(decl.originalName);
     knownDecls.add(decl);
@@ -128,7 +128,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
 
   // initialize liveDecls with all module level declarations
   // (note that in wgsl module level declarations may appear in any order, incl after their references.)
-  const declEntries = validRootDecls.map((d) => [d.originalName, d] as const);
+  const declEntries = validRootDecls.map(d => [d.originalName, d] as const);
   const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
 
   const decls = bindIdentsRecursive(rootScope, bindContext, liveDecls, true);
@@ -152,7 +152,7 @@ export function findUnboundIdents(registry: ParsedRegistry): string[][] {
 
   Object.entries(registry.modules).map(([module, ast]) => {
     const rootDecls = findValidRootDecls(ast.rootScope, {});
-    const declEntries = rootDecls.map((d) => [d.originalName, d] as const);
+    const declEntries = rootDecls.map(d => [d.originalName, d] as const);
     const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
     bindIdentsRecursive(ast.rootScope, bindContext, liveDecls, true);
   });
@@ -244,7 +244,7 @@ function bindIdentsRecursive(
   const newFromChildren: DeclIdent[] = [];
 
   // process all identifiers and subscopes in this scope
-  scope.contents.forEach((child) => {
+  scope.contents.forEach(child => {
     const { kind } = child;
     if (kind === "decl") {
       const ident = child;
@@ -273,7 +273,7 @@ function handleDecls(
   bindContext: BindContext,
 ): DeclIdent[] {
   const { conditions } = bindContext;
-  return newGlobals.flatMap((decl) => {
+  return newGlobals.flatMap(decl => {
     const foundsScope = decl.dependentScope; // not all decls have dependent scopes (e.g. var with no initializer)
     if (foundsScope) {
       const rootDecls = globalDeclToRootLiveDecls(decl, conditions);
@@ -363,8 +363,8 @@ function handleNewDecl(
 
     if (isGlobal(decl)) {
       const { moduleAsserts } = moduleAst;
-      const moduleEmit = moduleAsserts?.map((elem) => ({ srcModule, elem }));
-      moduleEmit?.forEach((e) => globalStatements.set(e.elem, e));
+      const moduleEmit = moduleAsserts?.map(elem => ({ srcModule, elem }));
+      moduleEmit?.forEach(e => globalStatements.set(e.elem, e));
 
       return decl;
     }
@@ -386,7 +386,7 @@ function globalDeclToRootLiveDecls(
   if (root._scopeDecls) return root._scopeDecls;
 
   const rootDecls = findValidRootDecls(rootScope, conditions);
-  const entires = rootDecls.map((d) => [d.originalName, d] as const);
+  const entires = rootDecls.map(d => [d.originalName, d] as const);
   const decls = new Map(entires);
   const liveDecls = { decls };
   root._scopeDecls = liveDecls;
@@ -541,7 +541,7 @@ function absoluteModulePath(
   modulePathParts: string[],
   srcModule: SrcModule,
 ): string[] {
-  const lastSuper = modulePathParts.findLastIndex((p) => p === "super");
+  const lastSuper = modulePathParts.findLastIndex(p => p === "super");
   if (lastSuper > -1) {
     const srcModuleParts = srcModule.modulePath.split("::");
     const base = srcModuleParts.slice(0, -(lastSuper + 1));

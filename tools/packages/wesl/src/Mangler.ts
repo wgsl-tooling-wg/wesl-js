@@ -33,7 +33,7 @@ export function underscoreMangle(
 ): string {
   const { modulePath } = srcModule;
   return [...modulePath.split("::"), decl.originalName]
-    .map((v) => {
+    .map(v => {
       const underscoreCount = (v.match(/_/g) ?? []).length;
       if (underscoreCount > 0) {
         return "_" + underscoreCount + v;
@@ -58,7 +58,7 @@ export function lengthPrefixMangle(
     ...srcModule.modulePath.split("::"),
     decl.originalName,
   ];
-  return "_" + qualifiedIdent.map((v) => codepointCount(v) + v).join("");
+  return "_" + qualifiedIdent.map(v => codepointCount(v) + v).join("");
 }
 
 /**

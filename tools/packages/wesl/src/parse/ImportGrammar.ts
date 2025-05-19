@@ -81,7 +81,7 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
         "invalid import, expected '{' or name",
       ),
     ),
-    preceded("as", req(word, "invalid alias, expected name")).map((v) =>
+    preceded("as", req(word, "invalid alias, expected name")).map(v =>
       makeItem("", v),
     ),
     yes().map(() => makeItem("")), // Optional
@@ -106,7 +106,7 @@ import_collection = delimited(
 );
 
 const import_relative = or(
-  terminated("package", req("::", "invalid import, expected '::'")).map((v) => [
+  terminated("package", req("::", "invalid import, expected '::'")).map(v => [
     makeSegment(v),
   ]),
   repeatPlus(

@@ -715,7 +715,7 @@ test("parse @attribute before fn", () => {
   `);
 });
 
-test("import package::foo::bar;", (ctx) => {
+test("import package::foo::bar;", ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
@@ -951,7 +951,7 @@ test("parse struct.member (component_or_swizzle)", () => {
   `);
 });
 
-test("var<workgroup> work: array<u32, 128>;", (ctx) => {
+test("var<workgroup> work: array<u32, 128>;", ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -974,7 +974,7 @@ test("var<workgroup> work: array<u32, 128>;", (ctx) => {
   `);
 });
 
-test("fn f() { _ = 1; }", (ctx) => {
+test("fn f() { _ = 1; }", ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -986,7 +986,7 @@ test("fn f() { _ = 1; }", (ctx) => {
   `);
 });
 
-test("var foo: vec2<f32 >= vec2( 0.5, -0.5);", (ctx) => {
+test("var foo: vec2<f32 >= vec2( 0.5, -0.5);", ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -1008,7 +1008,7 @@ test("var foo: vec2<f32 >= vec2( 0.5, -0.5);", (ctx) => {
   `);
 });
 
-test("fn main() { var tmp: array<i32, 1 << 1>=array(1, 2); }", (ctx) => {
+test("fn main() { var tmp: array<i32, 1 << 1>=array(1, 2); }", ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -1038,7 +1038,7 @@ test("fn main() { var tmp: array<i32, 1 << 1>=array(1, 2); }", (ctx) => {
   `);
 });
 
-test("import a::b::c;", (ctx) => {
+test("import a::b::c;", ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -1047,7 +1047,7 @@ test("import a::b::c;", (ctx) => {
   `);
 });
 
-test("import package::file1::{foo, bar};", (ctx) => {
+test("import package::file1::{foo, bar};", ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
@@ -1057,15 +1057,15 @@ test("import package::file1::{foo, bar};", (ctx) => {
   `);
 });
 
-test("import package::file1::{foo, bar};", (ctx) => {
+test("import package::file1::{foo, bar};", ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
-  const imps = ast.imports.map((t) => importToString(t)).join("\n");
+  const imps = ast.imports.map(t => importToString(t)).join("\n");
 
   expect(imps).toMatchInlineSnapshot(`"package::file1::{foo, bar};"`);
 });
 
-test("import foo_bar::boo;", (ctx) => {
+test("import foo_bar::boo;", ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -1074,7 +1074,7 @@ test("import foo_bar::boo;", (ctx) => {
   `);
 });
 
-test(`import a::{ b };`, (ctx) => {
+test(`import a::{ b };`, ctx => {
   const ast = parseTest(ctx.task.name);
   const astString = astToString(ast.moduleElem);
   expect(astString).toMatchInlineSnapshot(`
@@ -1083,7 +1083,7 @@ test(`import a::{ b };`, (ctx) => {
   `);
 });
 
-test(`import a::{ b, c::{d, e}, f };`, (ctx) => {
+test(`import a::{ b, c::{d, e}, f };`, ctx => {
   const src = ctx.task.name;
   const ast = parseTest(src);
   const astString = astToString(ast.moduleElem);
@@ -1094,7 +1094,7 @@ test(`import a::{ b, c::{d, e}, f };`, (ctx) => {
   `);
 });
 
-test(`parse ptr`, (ctx) => {
+test(`parse ptr`, ctx => {
   const src = `
     var particles: ptr<storage, f32, read_write>;
   `;
@@ -1127,7 +1127,7 @@ test(`parse ptr`, (ctx) => {
   `);
 });
 
-test(`parse ptr with internal array`, (ctx) => {
+test(`parse ptr with internal array`, ctx => {
   const src = `
     var particles: ptr<storage, array<f32>, read_write>;
   `;
@@ -1164,7 +1164,7 @@ test(`parse ptr with internal array`, (ctx) => {
   `);
 });
 
-test(`parse binding struct`, (ctx) => {
+test(`parse binding struct`, ctx => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 

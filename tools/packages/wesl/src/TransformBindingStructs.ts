@@ -64,7 +64,7 @@ export function lowerBindingStructs(ast: TransformedAST): TransformedAST {
   const { moduleElem, globalNames, notableElems } = clonedAst;
   const bindingStructs = markBindingStructs(moduleElem); // CONSIDER should we only mark bining structs referenced from the entry point?
   markEntryTypes(moduleElem, bindingStructs);
-  const newVars = bindingStructs.flatMap((s) =>
+  const newVars = bindingStructs.flatMap(s =>
     transformBindingStruct(s, globalNames),
   );
   const bindingRefs = findRefsToBindingStructs(moduleElem);
@@ -75,7 +75,9 @@ export function lowerBindingStructs(ast: TransformedAST): TransformedAST {
   );
   // remove intermediate fn param declaration b:Bindings from 'fn(b:Bindings)'
   bindingRefs.forEach(({ intermediates }) =>
-    intermediates.forEach((e) => { e.contents = []; }),
+    intermediates.forEach(e => {
+      e.contents = [];
+    }),
   );
   const contents = removeBindingStructs(moduleElem);
   moduleElem.contents = [...newVars, ...contents];
@@ -87,7 +89,7 @@ export function markEntryTypes(
   moduleElem: ModuleElem,
   bindingStructs: BindingStructElem[],
 ): void {
-  const fns = moduleElem.contents.filter((e) => e.kind === "fn");
+  const fns = moduleElem.contents.filter(e => e.kind === "fn");
   const fnFound = fnReferencesBindingStruct(fns, bindingStructs);
   if (fnFound) {
     const { fn, struct } = fnFound;
@@ -105,7 +107,7 @@ function fnReferencesBindingStruct(
       const ref = p.name?.typeRef?.name as RefIdent | undefined;
       const referencedElem = (ref?.refersTo as DeclIdent)
         ?.declElem as StructElem;
-      const struct = bindingStructs.find((s) => s === referencedElem);
+      const struct = bindingStructs.find(s => s === referencedElem);
       if (struct) {
         return { fn, struct };
       }
@@ -115,7 +117,7 @@ function fnReferencesBindingStruct(
 
 function removeBindingStructs(moduleElem: ModuleElem): AbstractElem[] {
   return moduleElem.contents.filter(
-    (elem) => elem.kind !== "struct" || !elem.bindingStruct,
+    elem => elem.kind !== "struct" || !elem.bindingStruct,
   );
 }
 
@@ -126,9 +128,11 @@ function removeBindingStructs(moduleElem: ModuleElem): AbstractElem[] {
 export function markBindingStructs(
   moduleElem: ModuleElem,
 ): BindingStructElem[] {
-  const structs = moduleElem.contents.filter((elem) => elem.kind === "struct");
+  const structs = moduleElem.contents.filter(elem => elem.kind === "struct");
   const bindingStructs = structs.filter(containsBinding);
-  bindingStructs.forEach((struct) => { struct.bindingStruct = true; });
+  bindingStructs.forEach(struct => {
+    struct.bindingStruct = true;
+  });
   // LATER also mark structs that reference a binding struct..
   return bindingStructs as BindingStructElem[];
 }
@@ -152,7 +156,7 @@ export function transformBindingStruct(
   s: StructElem,
   globalNames: Set<string>,
 ): SyntheticElem[] {
-  return s.members.map((member) => {
+  return s.members.map(member => {
     const { typeRef, name: memberName } = member;
     const { name: typeName } = typeRef!; // members should always have a typeRef.. LATER fix typing to show this
     const typeParameters = typeRef?.templateParams;
@@ -252,7 +256,7 @@ export function findRefsToBindingStructs(
   moduleElem: ModuleElem,
 ): MemberRefToStruct[] {
   const members: SimpleMemberRef[] = [];
-  visitAst(moduleElem, (elem) => {
+  visitAst(moduleElem, elem => {
     if (elem.kind === "memberRef") members.push(elem);
   });
   return filterMap(members, refersToBindingStruct);
@@ -304,7 +308,7 @@ export function transformBindingReference(
   struct: StructElem,
 ): SyntheticElem {
   const refName = memberRef.member.name;
-  const structMember = struct.members.find((m) => m.name.name === refName)!;
+  const structMember = struct.members.find(m => m.name.name === refName)!;
   if (!structMember || !structMember.mangledVarName) {
     if (tracing) console.log(`missing mangledVarName for ${refName}`);
     return { kind: "synthetic", text: refName };

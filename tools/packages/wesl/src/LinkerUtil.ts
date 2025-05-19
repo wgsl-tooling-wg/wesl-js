@@ -13,7 +13,7 @@ export function visitAst(
   visitor(elem);
   if ((elem as ContainerElem).contents) {
     const container = elem as ContainerElem;
-    container.contents.forEach((child) => visitAst(child, visitor));
+    container.contents.forEach(child => visitAst(child, visitor));
   }
 }
 

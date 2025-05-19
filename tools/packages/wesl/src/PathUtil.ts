@@ -3,10 +3,10 @@
 /** return path with ./ and foo/.. elements removed */
 export function normalize(path: string): string {
   const segments = path.split("/");
-  const noDots = segments.filter((s) => s !== ".");
+  const noDots = segments.filter(s => s !== ".");
   const noDbl: string[] = [];
 
-  noDots.forEach((s) => {
+  noDots.forEach(s => {
     if (s !== "") {
       if (s === ".." && noDbl.length && noDbl[noDbl.length - 1] !== "..") {
         noDbl.pop();

@@ -81,6 +81,6 @@ test("collect unbound references", async () => {
   const bindResult = bindIdents({ registry, rootAst, accumulateUnbound: true });
 
   const expected = ["pkg1::bar::baz", "pkg2::foo"];
-  const expectedArrays = expected.map((s) => s.split("::")).sort();
+  const expectedArrays = expected.map(s => s.split("::")).sort();
   expect(bindResult.unbound?.sort()).deep.equal(expectedArrays);
 });

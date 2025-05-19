@@ -270,9 +270,9 @@ export class WeslStream implements Stream<WeslToken> {
   }
 }
 
-export const templateOpen = withStreamAction((stream) => {
+export const templateOpen = withStreamAction(stream => {
   return (stream as WeslStream).nextTemplateStartToken();
 });
-export const templateClose = withStreamAction((stream) => {
+export const templateClose = withStreamAction(stream => {
   return (stream as WeslStream).nextTemplateEndToken();
 });
