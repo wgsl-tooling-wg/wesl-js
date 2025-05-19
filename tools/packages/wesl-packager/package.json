@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "echo": "echo",
-    "build": "tsx build.ts",
-    "build:watch": "tsx build.ts --watch",
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
     "format": "prettier . --write",
     "lint": "eslint src",
     "organize": "organize-imports-cli tsconfig.json",

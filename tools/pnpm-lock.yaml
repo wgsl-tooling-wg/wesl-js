@@ -212,7 +212,7 @@ importers:
     dependencies:
       thimbleberry:
         specifier: ^0.2.9
-        version: 0.2.9
+        version: 0.2.10
       wesl:
         specifier: workspace:*
         version: link:../wesl
@@ -247,7 +247,7 @@ importers:
         version: link:../mini-parse
       thimbleberry:
         specifier: ^0.2.9
-        version: 0.2.9
+        version: 0.2.10
       webgpu:
         specifier: ^0.2.12
         version: 0.2.12
@@ -365,6 +365,12 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
+      rollup-plugin-string-import:
+        specifier: ^1.2.5
+        version: 1.2.5(rollup@4.40.2)
+      tsdown:
+        specifier: ^0.11.3
+        version: 0.11.3(typescript@5.8.3)
       wesl:
         specifier: workspace:*
         version: link:../wesl
@@ -434,7 +440,7 @@ importers:
         version: link:../../../random_wgsl
       thimbleberry:
         specifier: ^0.2.9
-        version: 0.2.9
+        version: 0.2.10
       webgpu:
         specifier: ^0.2.12
         version: 0.2.12
@@ -456,7 +462,7 @@ importers:
         version: link:../../../random_wgsl
       thimbleberry:
         specifier: ^0.2.9
-        version: 0.2.9
+        version: 0.2.10
       webgpu:
         specifier: ^0.2.12
         version: 0.2.12
@@ -481,7 +487,7 @@ importers:
         version: link:../../../random_wgsl
       thimbleberry:
         specifier: ^0.2.9
-        version: 0.2.9
+        version: 0.2.10
       webgpu:
         specifier: ^0.2.12
         version: 0.2.12
@@ -503,7 +509,7 @@ importers:
         version: link:../../../random_wgsl
       thimbleberry:
         specifier: ^0.2.9
-        version: 0.2.9
+        version: 0.2.10
       webgpu:
         specifier: ^0.2.12
         version: 0.2.12
@@ -4552,6 +4558,11 @@ packages:
       '@oxc-project/runtime':
         optional: true
 
+  rollup-plugin-string-import@1.2.5:
+    resolution: {integrity: sha512-soVwp0sWcAaN1tFthAGGBx5eQy94iAo2xozYVxyKH/WNHZiN2dJjUTlfdJkZWNXQY5e4333/lbImapski70tdA==}
+    peerDependencies:
+      rollup: 4.20.0
+
   rollup-plugin-visualizer@5.14.0:
     resolution: {integrity: sha512-VlDXneTDaKsHIw8yzJAFWtrzguoJ/LnQ+lMpoVfYJ3jJF4Ihe5oYLAqLklIK/35lgUY+1yEzCkHyZ1j4A5w5fA==}
     engines: {node: '>=18'}
@@ -4994,9 +5005,6 @@ packages:
 
   thimbleberry@0.2.10:
     resolution: {integrity: sha512-sWQIKq9FdqYZbsUfw7l7/HqxNmvze0e6/FUlgjBkwYtfd5A30cjfY2M+mHUGlO0+bGZro5J0c7lfeHJ1Zu7/JQ==}
-
-  thimbleberry@0.2.9:
-    resolution: {integrity: sha512-m1vB5d3VunjmaoDFk5e7YDm+EI1GIHdWyJgh9ELbfGuArb49mr3mXqARoEbUKwKEMnIs+Kc+aikIfgQ2VQKeYg==}
 
   through2@2.0.5:
     resolution: {integrity: sha512-/mrRod8xqpA+IHSLyGCQ2s8SPHiCDEeQJSep1jqLYeEUClOFG2Qsh+4FU6G9VeqpZnGW/Su8LQGc4YKni5rYSQ==}
@@ -10051,6 +10059,11 @@ snapshots:
       '@rolldown/binding-win32-ia32-msvc': 1.0.0-beta.8-commit.05b3e10
       '@rolldown/binding-win32-x64-msvc': 1.0.0-beta.8-commit.05b3e10
 
+  rollup-plugin-string-import@1.2.5(rollup@4.40.2):
+    dependencies:
+      '@rollup/pluginutils': 5.1.4(rollup@4.40.2)
+      rollup: 4.40.2
+
   rollup-plugin-visualizer@5.14.0(rollup@4.40.2):
     dependencies:
       open: 8.4.2
@@ -10582,14 +10595,6 @@ snapshots:
       any-promise: 1.3.0
 
   thimbleberry@0.2.10:
-    dependencies:
-      '@petamoriken/float16': 3.9.2
-      '@reactively/core': 0.0.8
-      '@reactively/decorate': 0.0.4
-      berry-pretty: 0.0.4
-      fast-deep-equal: 3.1.3
-
-  thimbleberry@0.2.9:
     dependencies:
       '@petamoriken/float16': 3.9.2
       '@reactively/core': 0.0.8
