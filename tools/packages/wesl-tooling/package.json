@@ -13,7 +13,7 @@
     "test": "FORCE_COLOR=1 vitest",
     "test:once": "vitest run"
   },
-  "files": [ "dist" ],
+  "files": ["dist"],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,8 +23,7 @@
   },
   "devDependencies": {
     "dependent_package": "workspace:x",
-    "tsdown": "^0.11.3",
-    "wesl": "workspace:*"
+    "tsdown": "^0.11.3"
   },
   "peerDependencies": {
     "wesl": "workspace:^"
