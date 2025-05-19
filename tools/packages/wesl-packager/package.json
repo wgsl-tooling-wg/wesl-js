@@ -26,13 +26,13 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@types/diff": "^7.0.2",
-    "@types/node": "^22.15.17",
+    "@types/diff": "^8.0.0",
+    "@types/node": "^22.15.19",
     "dependent_package": "workspace:x",
-    "diff": "^7.0.0",
+    "diff": "^8.0.1",
     "dir-compare": "^5.0.0",
     "picocolors": "^1.1.1",
-    "rollup": "^4.40.2",
+    "rollup": "^4.41.0",
     "tsdown": "^0.11.12"
   }
 }

@@ -15,7 +15,7 @@
     "wesl-plugin": "workspace:*"
   },
   "dependencies": {
-    "random_wgsl": "0.6.1",
+    "random_wgsl": "0.6.2",
     "wesl": "workspace:*"
   },
   "packageManager": "pnpm@10.2.0"

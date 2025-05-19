@@ -13,7 +13,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "thimbleberry": "^0.2.9",
+    "thimbleberry": "^0.2.10",
     "wesl": "workspace:*"
   },
   "devDependencies": {

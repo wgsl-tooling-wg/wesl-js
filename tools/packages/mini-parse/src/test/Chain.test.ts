@@ -72,8 +72,7 @@ test("chain with error reporting", () => {
       : T // R is empty, so we've succeeded..
     : T; // no elements
 
-  function chain<T extends Elem[]>(...args: ChainOK<T>): void {
-  }
+  function chain<T extends Elem[]>(...args: ChainOK<T>): void {}
   const ns: ChainElem<number, string> = { in: 1, out: "s" };
   const sn: ChainElem<string, number> = { in: "i", out: 9 };
   const nn: ChainElem<number, number> = { in: 4, out: 3 };

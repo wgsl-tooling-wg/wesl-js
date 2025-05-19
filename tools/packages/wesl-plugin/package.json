@@ -14,17 +14,17 @@
   "dependencies": {
     "import-meta-resolve": "^4.1.0",
     "toml": "^3.0.0",
-    "unplugin": "^2.3.2",
+    "unplugin": "^2.3.4",
     "wesl": "workspace:*"
   },
   "devDependencies": {
-    "@nuxt/kit": "^3.17.2",
-    "@nuxt/schema": "^3.17.2",
-    "bumpp": "^10.1.0",
+    "@nuxt/kit": "^3.17.3",
+    "@nuxt/schema": "^3.17.3",
+    "bumpp": "^10.1.1",
     "chalk": "^5.4.1",
     "nodemon": "^3.1.10",
     "rollup": "^4.41.0",
-    "tsup": "^8.4.0",
+    "tsup": "^8.5.0",
     "webpack": "^5.99.8"
   },
   "packageManager": "pnpm@10.2.0",

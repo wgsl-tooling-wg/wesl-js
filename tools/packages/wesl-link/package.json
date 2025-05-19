@@ -18,8 +18,8 @@
   "files": ["bin"],
   "bin": "bin/wesl-link",
   "dependencies": {
-    "@types/diff": "^7.0.2",
-    "diff": "^7.0.0",
+    "@types/diff": "^8.0.0",
+    "diff": "^8.0.1",
     "wesl": "workspace:*"
   },
   "devDependencies": {

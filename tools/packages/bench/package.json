@@ -16,9 +16,9 @@
   },
   "devDependencies": {
     "0x": "^5.8.0",
-    "@types/diff": "^7.0.2",
+    "@types/diff": "^8.0.0",
     "@use-gpu/shader": "^0.14.0",
-    "diff": "^7.0.0",
-    "wgsl_reflect": "^1.2.0"
+    "diff": "^8.0.1",
+    "wgsl_reflect": "^1.2.1"
   }
 }

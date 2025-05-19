@@ -43,11 +43,11 @@
     "ncp": "^2.0.0",
     "random_wgsl": "workspace:*",
     "rollup-plugin-visualizer": "^5.14.0",
-    "terser": "^5.39.0",
+    "terser": "^5.39.2",
     "typedoc": "^0.28.4",
     "typedoc-theme-hierarchy": "^6.0.0",
-    "vite-plugin-dts": "^4.5.3",
-    "wrangler": "^4.14.4"
+    "vite-plugin-dts": "^4.5.4",
+    "wrangler": "^4.15.2"
   },
   "keywords": ["webgpu", "wgsl", "wesl"]
 }
