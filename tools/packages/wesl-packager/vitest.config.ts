@@ -1,4 +1,4 @@
-import { configDefaults, ViteUserConfig } from "vitest/config";
+import { configDefaults, type ViteUserConfig } from "vitest/config";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const config: ViteUserConfig = {
