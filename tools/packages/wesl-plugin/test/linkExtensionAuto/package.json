@@ -1,0 +1,25 @@
+{
+  "name": "link-extension-auto-test",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "echo": "echo",
+    "typecheck": "tsc",
+    "format": "prettier . --write",
+    "lint": "eslint src",
+    "organize": "organize-imports-cli tsconfig.json",
+    "prepublishOnly": "run-s build",
+    "test": "nodemon --config nodemon-vitest.json"
+  },
+  "dependencies": {
+    "mini-parse": "workspace:*",
+    "random_wgsl": "workspace:*",
+    "thimbleberry": "^0.2.10",
+    "webgpu": "^0.2.12",
+    "multi_pkg": "workspace:*",
+    "wesl-plugin": "workspace:*"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

@@ -15,7 +15,8 @@
     "import-meta-resolve": "^4.1.0",
     "toml": "^3.0.0",
     "unplugin": "^2.3.4",
-    "wesl": "workspace:*"
+    "wesl": "workspace:*",
+    "wesl-tooling": "workspace:*"
   },
   "devDependencies": {
     "@nuxt/kit": "^3.17.3",
@@ -57,17 +58,10 @@
   },
   "typesVersions": {
     "*": {
-      "*": [
-        "./dist/plugins/*",
-        "./dist/*",
-        "./*"
-      ]
+      "*": ["./dist/plugins/*", "./dist/*", "./*"]
     }
   },
-  "files": [
-    "src",
-    "dist"
-  ],
+  "files": ["src", "dist"],
   "peerDependencies": {
     "@farmfe/core": ">=1",
     "@nuxt/kit": "^3",
