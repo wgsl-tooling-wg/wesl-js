@@ -29,4 +29,5 @@ export interface PluginExtensionApi {
   weslSrc: () => Promise<Record<string, string>>;
   weslRegistry: () => Promise<ParsedRegistry>;
   weslMain: (baseId: string) => Promise<string>;
+  weslDependencies: () => Promise<string[]>;
 }

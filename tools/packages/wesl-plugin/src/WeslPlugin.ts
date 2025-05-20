@@ -20,6 +20,7 @@ import {
 } from "wesl";
 import type { PluginExtension, PluginExtensionApi } from "./PluginExtension.js";
 import type { WeslPluginOptions } from "./WeslPluginOptions.js";
+import { parseDependencies } from "wesl-tooling";
 
 /** loaded (or synthesized) info from .toml */
 export interface WeslToml {
@@ -213,6 +214,7 @@ function buildApi(
     weslSrc: async () => loadWesl(context, unpluginCtx),
     weslRegistry: async () => getRegistry(context, unpluginCtx),
     weslMain: makeGetWeslMain(context, unpluginCtx),
+    weslDependencies: async() => findDependencies(context, unpluginCtx),
   };
 }
 
@@ -361,6 +363,26 @@ async function getRegistry(
 
   cache.registry = registry;
   return registry;
+}
+
+/** if the dependency list includes "auto", fill in the missing dependencies 
+ * by parsing the source files to find references to packages 
+ * @return the list of dependencies with "auto" replaced by the found dependencies
+*/
+async function findDependencies(
+  context: PluginContext,
+  unpluginCtx: UnpluginBuildContext & UnpluginContext,
+): Promise<string[]> {
+  const { toml, tomlDir: projectDir } = await getWeslToml(context, unpluginCtx);
+  const weslSrc = await loadWesl(context, unpluginCtx);
+  const { dependencies = [] } = toml;
+  const hasAuto = dependencies.includes("auto");
+  if (!hasAuto) return dependencies;
+
+  const base = dependencies.filter(dep => dep !== "auto");
+  const deps = parseDependencies(weslSrc, projectDir);
+  const combined = new Set([...base, ...deps]);
+  return [...combined];
 }
 
 function makeGetWeslMain(
