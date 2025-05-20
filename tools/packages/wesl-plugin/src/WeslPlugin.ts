@@ -234,8 +234,9 @@ function buildLoader(context: PluginContext): Loader {
       const plugin = pluginsMap[matched.pluginName];
       const { baseId, importParams } = matched;
       const conditions = importParamsToConditions(importParams);
-      const shaderPath = baseId.startsWith(resolvedPrefix)
-        ? baseId.slice(resolvedPrefix.length)
+      const shaderPath =
+        baseId.startsWith(resolvedPrefix) ?
+          baseId.slice(resolvedPrefix.length)
         : baseId;
 
       return await plugin.emitFn(shaderPath, buildPluginApi, conditions);
