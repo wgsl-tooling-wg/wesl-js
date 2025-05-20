@@ -4,6 +4,7 @@ import type {
   PluginExtension,
   PluginExtensionApi,
 } from "../PluginExtension.ts";
+import { parseDependencies } from "wesl-tooling";
 
 export const linkBuildExtension: PluginExtension = {
   extensionName: "link",
@@ -26,9 +27,11 @@ async function emitLinkJs(
   const tomlRelative = path.relative(tomlDir, resolvedWeslRoot);
   const debugWeslRoot = tomlRelative.replaceAll(path.sep, "/");
 
-  const sanitizedDeps = dependencies.map(dep => dep.replaceAll("/", "_"));
+  const autoDeps = fillAutoDependencies(dependencies, tomlDir, weslSrc);
 
-  const bundleImports = dependencies
+  const sanitizedDeps = autoDeps.map(dep => dep.replaceAll("/", "_"));
+
+  const bundleImports = autoDeps
     .map((p, i) => `import ${sanitizedDeps[i]} from "${p}";`)
     .join("\n");
 
@@ -60,4 +63,21 @@ function serializeFields(record: Record<string, any>) {
   return Object.entries(record)
     .map(([k, v]) => `    ${k}: ${JSON.stringify(v, null, 2)}`)
     .join(",\n");
+}
+
+/** if the dependency list includes "auto", fill in the missing dependencies 
+ * by parsing the source files to find references to packages 
+ * @return the list of dependencies with "auto" replaced by the found dependencies
+*/
+function fillAutoDependencies(
+  dependencies: string[],
+  projectDir: string,
+  weslSrc: Record<string, string>,
+): string[] {
+  const hasAuto = dependencies.includes("auto");
+  if (!hasAuto) return dependencies;
+
+  const base = dependencies.filter(dep => dep !== "auto");
+  const deps = parseDependencies(weslSrc, projectDir);
+  return [...base, ...deps];
 }
