@@ -1,16 +1,9 @@
-import { glob } from "glob";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { glob } from "glob";
 import toml from "toml";
-import type {
-  UnpluginBuildContext,
-  UnpluginContext
-} from "unplugin";
-import {
-  type ParsedRegistry,
-  parseIntoRegistry,
-  parsedRegistry
-} from "wesl";
+import type { UnpluginBuildContext, UnpluginContext } from "unplugin";
+import { type ParsedRegistry, parseIntoRegistry, parsedRegistry } from "wesl";
 import { parseDependencies } from "wesl-tooling";
 import type { PluginExtensionApi } from "./PluginExtension.js";
 import type { PluginContext, WeslToml, WeslTomlInfo } from "./WeslPlugin.js";
@@ -24,7 +17,7 @@ export function buildApi(
     weslSrc: async () => loadWesl(context, unpluginCtx),
     weslRegistry: async () => getRegistry(context, unpluginCtx),
     weslMain: makeGetWeslMain(context, unpluginCtx),
-    weslDependencies: async() => findDependencies(context, unpluginCtx),
+    weslDependencies: async () => findDependencies(context, unpluginCtx),
   };
 }
 
@@ -117,10 +110,10 @@ async function getRegistry(
   return registry;
 }
 
-/** if the dependency list includes "auto", fill in the missing dependencies 
- * by parsing the source files to find references to packages 
+/** if the dependency list includes "auto", fill in the missing dependencies
+ * by parsing the source files to find references to packages
  * @return the list of dependencies with "auto" replaced by the found dependencies
-*/
+ */
 async function findDependencies(
   context: PluginContext,
   unpluginCtx: UnpluginBuildContext & UnpluginContext,
