@@ -1,9 +1,5 @@
 import { type WgslElementType, copyBuffer, elementStride } from "thimbleberry";
-import {
-  type VirtualLibraryFn,
-  link,
-  requestWeslDevice,
-} from "wesl";
+import { type VirtualLibraryFn, link, requestWeslDevice } from "wesl";
 import { dependencyBundles } from "./ParseDependencies.ts";
 
 const resultBufferSize = 16; // 4x4 bytes

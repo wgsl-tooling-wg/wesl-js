@@ -9,7 +9,7 @@ import type {
   SimpleMemberRef,
   StructElem,
   SyntheticElem,
-  TypeTemplateParameter
+  TypeTemplateParameter,
 } from "./AbstractElems.ts";
 import type { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { visitAst } from "./LinkerUtil.ts";

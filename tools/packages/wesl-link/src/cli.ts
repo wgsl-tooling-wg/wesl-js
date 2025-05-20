@@ -101,7 +101,6 @@ function toUnixPath(p: string): string {
   }
 }
 
-
 // oxlint-disable-next-line eslint(no-unused-vars)
 function externalDefines(): Record<string, string> {
   if (!argv.define) return {};
