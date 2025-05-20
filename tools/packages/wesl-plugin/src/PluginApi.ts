@@ -28,8 +28,6 @@ export function buildApi(
   };
 }
 
-export const defaultTomlMessage = `no wesl.toml found: assuming .wesl files are in ./shaders`;
-
 /** load the wesl.toml  */
 export async function getWeslToml(
   context: PluginContext,
@@ -62,7 +60,6 @@ export async function getWeslToml(
     tomlDir = path.dirname(tomlFile);
     context.weslToml = tomlFile;
   } else {
-    console.log(defaultTomlMessage);
     parsedToml = defaultWeslToml;
     tomlDir = process.cwd();
   }

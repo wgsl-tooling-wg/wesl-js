@@ -3,7 +3,6 @@ import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import util from "node:util";
 import { expect, test } from "vitest";
-import { defaultTomlMessage } from "../../src/WeslPlugin.js";
 const exec = util.promisify((process as any).exec); // not sure why @types/node for child_process.exec is wrong (nodeExec vs exec)
 
 const testDir = dirname(fileURLToPath(import.meta.url));
@@ -15,10 +14,9 @@ test("verify ?link", async () => {
   });
   const outFile = path.join("dist", "autoMain.cjs");
   if (buildResult.stderr) {
-    console.error("buildResult", buildResult.stderr);
-    console.log("buildResult", buildResult.stdout);
+    console.error("buildResult.err", buildResult.stderr);
+    console.log("buildResult.out", buildResult.stdout);
   }
-  expect(buildResult.stdout).includes(defaultTomlMessage);
 
   // run a test program that logs the ?link output to the console for verification
   const result = await exec(`pnpm node ${outFile}`, {
