@@ -319,6 +319,7 @@ async function getWeslToml(
 const defaultWeslToml: WeslToml = {
   weslFiles: ["shaders/**/*.w[eg]sl"],
   weslRoot: "shaders",
+  dependencies: ["auto"],
 };
 
 /**
