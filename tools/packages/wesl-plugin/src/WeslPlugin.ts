@@ -96,7 +96,7 @@ export function weslPlugin(
     name: "wesl-plugin",
     resolveId: buildResolver(options, context),
     load: buildLoader(context),
-    watchChange(id, change) {
+    watchChange(id, _change) {
       if (id.endsWith("wesl.toml")) {
         // The cache is shared for multiple imports
         cache.weslToml = undefined;

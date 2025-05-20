@@ -40,7 +40,7 @@ test("WeslDevice doesn't conflict with uncapturederror", async () => {
       resolve(ev.error);
     });
   });
-  const shader = device.createShaderModule({
+  device.createShaderModule({
     code: "🐈",
   });
 

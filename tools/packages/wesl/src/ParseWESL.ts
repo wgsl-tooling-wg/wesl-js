@@ -3,7 +3,6 @@ import {
   ParseError,
   type ParserInit,
   type Span,
-  type SrcMap,
 } from "mini-parse";
 import type {
   ConstAssertElem,
@@ -87,7 +86,7 @@ export class WeslParseError extends Error {
 }
 
 /** Parse a WESL file. Throws on error. */
-export function parseSrcModule(srcModule: SrcModule, srcMap?: SrcMap): WeslAST {
+export function parseSrcModule(srcModule: SrcModule): WeslAST {
   const stream = new WeslStream(srcModule.src);
 
   const appState = blankWeslParseState(srcModule);

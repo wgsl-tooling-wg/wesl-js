@@ -510,7 +510,7 @@ export const memberRefCollect = collectElem(
 );
 
 export function nameCollect(cc: CollectContext): NameElem {
-  const { start, end, src, app } = cc;
+  const { start, end, src } = cc;
   const name = src.slice(start, end);
   const elem: NameElem = { kind: "name", start, end, name };
   addToOpenElem(cc, elem);
@@ -647,6 +647,7 @@ function coverWithText(cc: CollectContext, elem: ContainerElem): GrammarElem[] {
 }
 
 /** for debugging */
+// oxlint-disable-next-line eslint(no-unused-vars)
 function collectLog(cc: CollectContext, ...messages: any[]): void {
   const { src, start, end } = cc;
   srcLog(src, [start, end], ...messages);

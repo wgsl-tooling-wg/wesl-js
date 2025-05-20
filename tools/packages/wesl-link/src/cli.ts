@@ -101,6 +101,8 @@ function toUnixPath(p: string): string {
   }
 }
 
+
+// oxlint-disable-next-line eslint(no-unused-vars)
 function externalDefines(): Record<string, string> {
   if (!argv.define) return {};
   const pairs = argv.define.map(d => d.toString().split("="));
@@ -116,6 +118,7 @@ function externalDefines(): Record<string, string> {
   // return Object.fromEntries(withParsedValues);
 }
 
+// oxlint-disable-next-line eslint(no-unused-vars)
 function parseDefineValue(value: string): string | number | boolean {
   const v = value.toLowerCase();
   if (v === "true") return true;
@@ -126,6 +129,7 @@ function parseDefineValue(value: string): string | number | boolean {
   return value;
 }
 
+// oxlint-disable-next-line eslint(no-unused-vars)
 function printDiff(modulePath: string, src: string, linked: string): void {
   if (src !== linked) {
     const patch = createTwoFilesPatch(modulePath, "linked", src, linked);

@@ -82,7 +82,7 @@ function unboundToDependency(
 function tryResolve(path: string, importerURL: string): string | undefined {
   try {
     return resolve(path, importerURL); // resolve() throws if the path is not resolvable.
-  } catch (e) {
+  } catch {
     return undefined;
   }
 }

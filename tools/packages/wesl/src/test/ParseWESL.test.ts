@@ -1094,7 +1094,7 @@ test(`import a::{ b, c::{d, e}, f };`, ctx => {
   `);
 });
 
-test(`parse ptr`, ctx => {
+test(`parse ptr`, () => {
   const src = `
     var particles: ptr<storage, f32, read_write>;
   `;
@@ -1127,7 +1127,7 @@ test(`parse ptr`, ctx => {
   `);
 });
 
-test(`parse ptr with internal array`, ctx => {
+test(`parse ptr with internal array`, () => {
   const src = `
     var particles: ptr<storage, array<f32>, read_write>;
   `;
@@ -1164,7 +1164,7 @@ test(`parse ptr with internal array`, ctx => {
   `);
 });
 
-test(`parse binding struct`, ctx => {
+test(`parse binding struct`, () => {
   const src = `
     struct Bindings {
       @group(0) @binding(0) particles: ptr<storage, array<f32>, read_write>, 

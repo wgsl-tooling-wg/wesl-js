@@ -8,9 +8,8 @@ import type {
   ModuleElem,
   SimpleMemberRef,
   StructElem,
-  StructMemberElem,
   SyntheticElem,
-  TypeTemplateParameter,
+  TypeTemplateParameter
 } from "./AbstractElems.ts";
 import type { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { visitAst } from "./LinkerUtil.ts";
@@ -168,7 +167,7 @@ export function transformBindingStruct(
     const attributes =
       member.attributes?.map(attributeToString).join(" ") ?? "";
     const varTypes =
-      lowerPtrMember(member, typeName, typeParameters, varName) ??
+      lowerPtrMember(typeName, typeParameters) ??
       lowerStdTypeMember(typeName, typeParameters) ??
       lowerStorageTextureMember(typeName, typeParameters);
     if (!varTypes) {
@@ -187,10 +186,8 @@ interface LoweredVarTypes {
 }
 
 function lowerPtrMember(
-  member: StructMemberElem,
   typeName: RefIdent,
   typeParameters: TypeTemplateParameter[] | undefined,
-  varName: string,
 ): LoweredVarTypes | undefined {
   if (typeName.originalName === "ptr") {
     const origParams = typeParameters ?? [];

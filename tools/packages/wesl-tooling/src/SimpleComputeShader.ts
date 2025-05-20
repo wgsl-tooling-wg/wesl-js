@@ -1,7 +1,6 @@
 import { type WgslElementType, copyBuffer, elementStride } from "thimbleberry";
 import {
   type VirtualLibraryFn,
-  type WeslDevice,
   link,
   requestWeslDevice,
 } from "wesl";
