@@ -1,3 +1,3 @@
-main() {
+fn main() {
    package::other();
 }

@@ -26,7 +26,7 @@ test("verify ?link", async () => {
       "rootModuleName": "app",
       "weslSrc": {
         "other.wesl": "fn other() { }",
-        "app.wesl": "main() {\\n   package::other();\\n}"
+        "app.wesl": "fn main() {\\n   package::other();\\n}"
       },
       "debugWeslRoot": "shaders",
       "libs": []
