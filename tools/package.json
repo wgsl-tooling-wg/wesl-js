@@ -43,6 +43,7 @@
     "nodemon": "^3.1.10",
     "npm-run-all": "^4.1.5",
     "organize-imports-cli": "^0.10.0",
+    "oxlint": "^0.16.11",
     "prettier": "^3.5.3",
     "rimraf": "^6.0.1",
     "syncpack": "^13.0.4",
