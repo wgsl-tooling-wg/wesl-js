@@ -163,7 +163,7 @@ function runAndCollectAfter<I, T>(
   return result;
 }
 
-function queueCollectFn<T>(
+function queueCollectFn(
   ctx: ParserContext,
   origStart: number,
   collectFn: CollectFn<any>,

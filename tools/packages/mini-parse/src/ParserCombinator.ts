@@ -438,7 +438,7 @@ type RepeatWhileResult<A extends CombinatorArg> = OptParserResult<
   SeqValues<A[]>
 >;
 
-function repeatWhileFilter<T, A extends CombinatorArg>(
+function repeatWhileFilter<A extends CombinatorArg>(
   p: ParserFromArg<A>,
   filterFn: ResultFilterFn<ResultFromArg<A>> = () => true,
 ): (ctx: ParserContext) => RepeatWhileResult<A> {

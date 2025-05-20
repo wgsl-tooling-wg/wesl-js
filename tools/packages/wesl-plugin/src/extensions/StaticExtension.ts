@@ -28,7 +28,7 @@ async function emitStaticJs(
   api: PluginExtensionApi,
   conditions?: Conditions,
 ): Promise<string> {
-  const { resolvedWeslRoot, toml, tomlDir } = await api.weslToml();
+  const { resolvedWeslRoot, tomlDir } = await api.weslToml();
 
   // resolve import module relative to the root of the shader project
   const parentModule = url

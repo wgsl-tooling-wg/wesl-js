@@ -150,7 +150,7 @@ export function findUnboundIdents(registry: ParsedRegistry): string[][] {
     dontFollowDecls: true,
   };
 
-  Object.entries(registry.modules).map(([module, ast]) => {
+  Object.entries(registry.modules).map(([_module, ast]) => {
     const rootDecls = findValidRootDecls(ast.rootScope, {});
     const declEntries = rootDecls.map(d => [d.originalName, d] as const);
     const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };

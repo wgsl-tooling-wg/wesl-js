@@ -256,7 +256,7 @@ export function terminalParser<T>(
   return parser(traceName, parserFn, true);
 }
 
-function runParserWithTracing<I, T>(
+function runParserWithTracing<T>(
   debugName: string,
   fn: ParseFn<T>,
   context: ParserContext,
@@ -305,8 +305,6 @@ function runParserWithTracing<I, T>(
     return result;
   }
 }
-
-type ParserMapFn<T, U> = (results: ExtendedResult<T>) => U | null;
 
 /** return a parser that maps the current results */
 function map<I, T, U>(p: Parser<I, T>, fn: (value: T) => U): Parser<I, U> {

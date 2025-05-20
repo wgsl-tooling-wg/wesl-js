@@ -64,7 +64,7 @@ test("WeslDevice doesn't conflict with popErrorsScope", async () => {
   const device = makeWeslDevice(new GPUDeviceMock() as any);
   const createShaderModuleSpy = vi.spyOn(device, "createShaderModule");
   device.pushErrorScope("validation");
-  const shader = device.createShaderModule({
+  device.createShaderModule({
     code: "🐈",
   });
   const errorPromise = new Promise<GPUError | null>((resolve, reject) => {
