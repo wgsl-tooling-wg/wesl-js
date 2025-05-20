@@ -4,8 +4,8 @@
   "version": "0.6.2",
   "scripts": {
     "echo": "echo",
-    "build": "tsup",
-    "dev": "tsup --watch src --watch ../wesl/dist",
+    "build": "tsdown",
+    "dev": "tsdown --watch src --watch ../wesl/dist",
     "lint": "eslint .",
     "play": "npm -C playground run dev",
     "prepublishOnly": "run-s build",
@@ -24,7 +24,7 @@
     "chalk": "^5.4.1",
     "nodemon": "^3.1.10",
     "rollup": "^4.41.0",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.11.12",
     "webpack": "^5.99.8"
   },
   "packageManager": "pnpm@10.2.0",
@@ -57,10 +57,17 @@
   },
   "typesVersions": {
     "*": {
-      "*": ["./dist/plugins/*", "./dist/*", "./*"]
+      "*": [
+        "./dist/plugins/*",
+        "./dist/*",
+        "./*"
+      ]
     }
   },
-  "files": ["src", "dist"],
+  "files": [
+    "src",
+    "dist"
+  ],
   "peerDependencies": {
     "@farmfe/core": ">=1",
     "@nuxt/kit": "^3",

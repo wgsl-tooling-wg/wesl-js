@@ -1,4 +1,4 @@
-import type { Options } from "tsup";
+import type { Options } from "tsdown";
 
 export default (<Options>{
   entry: ["src/plugins/*.ts", "src/pluginIndex.ts"],
