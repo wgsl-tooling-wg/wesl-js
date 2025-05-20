@@ -79,5 +79,6 @@ function fillAutoDependencies(
 
   const base = dependencies.filter(dep => dep !== "auto");
   const deps = parseDependencies(weslSrc, projectDir);
-  return [...base, ...deps];
+  const combined = new Set([...base, ...deps]);
+  return [...combined];
 }
