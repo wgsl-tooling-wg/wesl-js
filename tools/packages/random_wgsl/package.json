@@ -2,10 +2,7 @@
   "name": "random_wgsl",
   "version": "0.6.6",
   "type": "module",
-  "files": [
-    "src",
-    "dist"
-  ],
+  "files": ["src", "dist"],
   "scripts": {
     "echo": "echo",
     "build": "wesl-packager"
