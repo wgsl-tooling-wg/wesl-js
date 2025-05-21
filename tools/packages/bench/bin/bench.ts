@@ -231,5 +231,5 @@ export function parseWESL(src: string): WeslAST {
     src,
   };
 
-  return parseSrcModule(srcModule, undefined);
+  return parseSrcModule(srcModule);
 }

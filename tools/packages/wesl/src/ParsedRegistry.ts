@@ -71,7 +71,7 @@ export function parseIntoRegistry(
     },
   );
   srcModules.forEach(mod => {
-    const parsed = parseSrcModule(mod, undefined);
+    const parsed = parseSrcModule(mod);
     if (registry.modules[mod.modulePath]) {
       throw new Error(`duplicate module path: '${mod.modulePath}'`);
     }

@@ -29,7 +29,7 @@ export function parseWESL(src: string): WeslAST {
     src,
   };
 
-  return parseSrcModule(srcModule, undefined);
+  return parseSrcModule(srcModule);
 }
 
 /** parse a single wesl file, returning the parse state as well as the WeslAST */ // LATER get rid of this
