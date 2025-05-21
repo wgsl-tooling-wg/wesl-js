@@ -1,6 +1,6 @@
 {
   "name": "wesl-link",
-  "version": "0.6.2",
+  "version": "0.6.6",
   "type": "module",
   "scripts": {
     "echo": "echo",
@@ -15,7 +15,9 @@
   },
   "repository": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli",
   "homepage": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli#readme",
-  "files": ["bin"],
+  "files": [
+    "bin"
+  ],
   "bin": "bin/wesl-link",
   "dependencies": {
     "@types/diff": "^8.0.0",

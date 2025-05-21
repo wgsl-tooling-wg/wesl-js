@@ -1,7 +1,7 @@
 {
   "name": "wesl-plugin",
   "type": "module",
-  "version": "0.6.2",
+  "version": "0.6.6",
   "scripts": {
     "echo": "echo",
     "build": "tsdown",
@@ -58,10 +58,17 @@
   },
   "typesVersions": {
     "*": {
-      "*": ["./dist/plugins/*", "./dist/*", "./*"]
+      "*": [
+        "./dist/plugins/*",
+        "./dist/*",
+        "./*"
+      ]
     }
   },
-  "files": ["src", "dist"],
+  "files": [
+    "src",
+    "dist"
+  ],
   "peerDependencies": {
     "@farmfe/core": ">=1",
     "@nuxt/kit": "^3",
