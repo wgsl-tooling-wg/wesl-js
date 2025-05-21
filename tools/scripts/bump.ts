@@ -36,8 +36,13 @@ async function setPackageVersions(version: string): Promise<void> {
   packages.forEach(packagePath => {
     const pkgString = fs.readFileSync(packagePath, { encoding: "utf8" });
     const packageJson = JSON.parse(pkgString);
-    packageJson.version = version;
-    fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + "\n");
+    if (!packageJson.private) {
+      packageJson.version = version;
+      fs.writeFileSync(
+        packagePath,
+        JSON.stringify(packageJson, null, 2) + "\n",
+      );
+    }
   });
 }
 
