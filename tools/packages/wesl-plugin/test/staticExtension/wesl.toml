@@ -1,0 +1,4 @@
+# blank wesl.toml
+
+# We want a file so that we can explicitly set a path in vitest.config.ts
+# so that tests work even when run from the root /tools directory
