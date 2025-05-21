@@ -7,7 +7,10 @@ import viteWesl from "wesl-plugin/vite";
 const weslToml = fileURLToPath(new URL("./wesl.toml", import.meta.url));
 
 const config: UserConfig = {
-  plugins: [tsconfigPaths(), viteWesl({ weslToml, extensions: [staticBuildExtension] })],
+  plugins: [
+    tsconfigPaths(),
+    viteWesl({ weslToml, extensions: [staticBuildExtension] }),
+  ],
 };
 
 export default config;
