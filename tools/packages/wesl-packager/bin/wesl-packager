@@ -7,7 +7,7 @@ import path from "node:path";
 import { Biome, Distribution } from "@biomejs/js-api";
 import { glob } from "glob";
 import { noSuffix } from "wesl";
-import { parseDependencies } from "wesl-tooling";
+import { parseDependencies, versionFromPackageJson } from "wesl-tooling";
 
 //#region \0raw:/Users/lee/wesl-js/tools/packages/wesl/src/WeslBundle.ts
 var WeslBundle_default = "export interface WeslBundle {\n  /** name of the package, e.g. random_wgsl */\n  name: string;\n\n  /** wesl edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of wesl/wgsl modules:\n   *    keys are file paths, relative to package root (e.g. \"./lib.wgsl\")\n   *    values are wgsl/wesl code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n";
@@ -163,7 +163,8 @@ async function packagerCli(rawArgs$1) {
 	await packageWgsl(cliArgs);
 }
 async function parseArgs(args) {
-	const appVersion = await versionFromPackageJson();
+	const projectDir = path.join(import.meta.url, "..");
+	const appVersion = await versionFromPackageJson(projectDir);
 	return yargs(args).command("$0", "create an npm package from WGSL/WESL files").version(appVersion).option("src", {
 		type: "string",
 		default: "./shaders/*.w[eg]sl",
@@ -193,12 +194,6 @@ async function parseArgs(args) {
 		default: "dist",
 		describe: "where to put bundled output files (relative to projectDir)"
 	}).help().parse();
-}
-async function versionFromPackageJson() {
-	const pkgJsonPath = new URL("../package.json", import.meta.url);
-	const pkgModule = await import(pkgJsonPath.href, { with: { type: "json" } });
-	const version = pkgModule.default.version;
-	return version;
 }
 
 //#endregion

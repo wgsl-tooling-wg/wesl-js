@@ -1,5 +1,7 @@
 import yargs from "yargs";
 import { packageWgsl } from "./PackageWesl.js";
+import { versionFromPackageJson } from "wesl-tooling";
+import path from "node:path";
 
 export type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 let cliArgs: CliArgs;
@@ -10,7 +12,8 @@ export async function packagerCli(rawArgs: string[]): Promise<void> {
 }
 
 async function parseArgs(args: string[]) {
-  const appVersion = await versionFromPackageJson();
+  const projectDir = path.join(import.meta.url, "..");
+  const appVersion = await versionFromPackageJson(projectDir);
   return yargs(args)
     .command("$0", "create an npm package from WGSL/WESL files")
     .version(appVersion)
@@ -52,11 +55,4 @@ async function parseArgs(args: string[]) {
     })
     .help()
     .parse();
-}
-
-async function versionFromPackageJson(): Promise<string> {
-  const pkgJsonPath = new URL("../package.json", import.meta.url);
-  const pkgModule = await import(pkgJsonPath.href, { with: { type: "json" } });
-  const version = pkgModule.default.version;
-  return version as string;
 }
