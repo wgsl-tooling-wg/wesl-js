@@ -8,22 +8,26 @@ import {
   parseIntoRegistry,
   parsedRegistry,
 } from "../../wesl/src/ParsedRegistry.js"; // LATER fix import
+import { versionFromPackageJson } from "wesl-tooling";
 
-type CliArgs = ReturnType<typeof parseArgs>;
+type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 let argv: CliArgs;
 
 export async function cli(rawArgs: string[]): Promise<void> {
   enableTracing(); // so we get more debug info
-  argv = parseArgs(rawArgs);
+  argv = await parseArgs(rawArgs);
   const files = argv.files as string[];
   linkNormally(files);
 }
 
-function parseArgs(args: string[]) {
+async function parseArgs(args: string[]) {
+  const projectDir = path.join(import.meta.url, "..");
+  const appVersion = await versionFromPackageJson(projectDir);
   return yargs(args)
+    .version(appVersion)
     .command(
       "$0 <files...>",
-      "root wgsl file followed by any library wgsl files",
+      "root shader file followed by any other wgsl files",
     )
     .option("define", {
       type: "array",
@@ -32,7 +36,12 @@ function parseArgs(args: string[]) {
     .option("baseDir", {
       requiresArg: true,
       type: "string",
-      describe: "rm common prefix from file paths",
+      describe: "root directory for shaders",
+    })
+    .option("projectDir", {
+      requiresArg: true,
+      type: "string",
+      describe: "directory containing package.json",
     })
     .option("details", {
       type: "boolean",
@@ -53,7 +62,7 @@ function parseArgs(args: string[]) {
       describe: "emit linked result",
     })
     .help()
-    .parseSync();
+    .parse();
 }
 
 async function linkNormally(paths: string[]): Promise<void> {

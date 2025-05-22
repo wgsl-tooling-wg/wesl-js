@@ -327,6 +327,9 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
+      wesl-tooling:
+        specifier: workspace:*
+        version: link:../wesl-tooling
     devDependencies:
       mini-parse:
         specifier: workspace:*

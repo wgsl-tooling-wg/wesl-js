@@ -20,7 +20,8 @@
   "dependencies": {
     "@types/diff": "^8.0.0",
     "diff": "^8.0.1",
-    "wesl": "workspace:*"
+    "wesl": "workspace:*",
+    "wesl-tooling": "workspace:*"
   },
   "devDependencies": {
     "mini-parse": "workspace:*"
