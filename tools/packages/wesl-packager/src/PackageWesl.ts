@@ -2,9 +2,8 @@
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { Biome, Distribution } from "@biomejs/js-api";
-import { glob } from "glob";
 import { type WeslBundle, noSuffix } from "wesl";
-import { parseDependencies } from "wesl-tooling";
+import { loadModules, parseDependencies, zip } from "wesl-tooling";
 import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
 import type { CliArgs } from "./PackagerCli.ts";
 
@@ -12,8 +11,8 @@ const biome = await setupBiome();
 
 /** write weslBundle .js and .d.ts files for this shader */
 export async function packageWgsl(args: CliArgs): Promise<void> {
-  const { projectDir, outDir, multiBundle } = args;
-  const modules = await loadModules(args);
+  const { projectDir, outDir, multiBundle, baseDir, src } = args;
+  const modules = await loadModules(baseDir, src);
   if (Object.entries(modules).length === 0) {
     console.error("no WGSL/WESL files found in", args.src);
     throw new Error("no WGSL/WESL files found");
@@ -144,25 +143,6 @@ function bundleToJsString(bundle: WeslBundle, dependencies: string[]): string {
   } else {
     return jsonString;
   }
-}
-
-/** load the wesl/wgsl shader sources */
-async function loadModules(args: CliArgs): Promise<Record<string, string>> {
-  const { rootDir, baseDir = rootDir } = args;
-  const shaderFiles = await glob(`${args.src}`, {
-    ignore: "node_modules/**",
-  });
-  const promisedSrcs = shaderFiles.map(f =>
-    fs.readFile(f, { encoding: "utf8" }),
-  );
-  const src = await Promise.all(promisedSrcs);
-  const relativePaths = shaderFiles.map(p => path.relative(baseDir, p));
-  const moduleEntries = zip(relativePaths, src);
-  return Object.fromEntries(moduleEntries);
-}
-
-function zip<A, B>(as: A[], bs: B[]): [A, B][] {
-  return as.map((a, i) => [a, bs[i]]);
 }
 
 interface PkgFields {
