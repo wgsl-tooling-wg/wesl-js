@@ -23,9 +23,16 @@ async function parseArgs(args: string[]) {
       describe: "WGSL/WESL files to bundle in the package (glob syntax)",
     })
     .option("rootDir", {
+      deprecated: true,
       type: "string",
       default: "./shaders",
-      describe: "base directory of WGSL/WESL files",
+      describe: "use --baseDir instead",
+    })
+    .option("baseDir", {
+      deprecated: true,
+      type: "string",
+      default: "./shaders",
+      describe: "root directory for shaders",
     })
     .option("projectDir", {
       type: "string",

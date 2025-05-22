@@ -122,11 +122,11 @@ function bundleToJsString(bundle, dependencies) {
 }
 /** load the wesl/wgsl shader sources */
 async function loadModules(args) {
-	const { rootDir } = args;
+	const { rootDir, baseDir = rootDir } = args;
 	const shaderFiles = await glob(`${args.src}`, { ignore: "node_modules/**" });
 	const promisedSrcs = shaderFiles.map((f) => fs.readFile(f, { encoding: "utf8" }));
 	const src = await Promise.all(promisedSrcs);
-	const relativePaths = shaderFiles.map((p) => path.relative(rootDir, p));
+	const relativePaths = shaderFiles.map((p) => path.relative(baseDir, p));
 	const moduleEntries = zip(relativePaths, src);
 	return Object.fromEntries(moduleEntries);
 }
@@ -170,9 +170,15 @@ async function parseArgs(args) {
 		default: "./shaders/*.w[eg]sl",
 		describe: "WGSL/WESL files to bundle in the package (glob syntax)"
 	}).option("rootDir", {
+		deprecated: true,
 		type: "string",
 		default: "./shaders",
-		describe: "base directory of WGSL/WESL files"
+		describe: "use --baseDir instead"
+	}).option("baseDir", {
+		deprecated: true,
+		type: "string",
+		default: "./shaders",
+		describe: "root directory for shaders"
 	}).option("projectDir", {
 		type: "string",
 		default: ".",

@@ -148,7 +148,7 @@ function bundleToJsString(bundle: WeslBundle, dependencies: string[]): string {
 
 /** load the wesl/wgsl shader sources */
 async function loadModules(args: CliArgs): Promise<Record<string, string>> {
-  const { rootDir } = args;
+  const { rootDir, baseDir = rootDir } = args;
   const shaderFiles = await glob(`${args.src}`, {
     ignore: "node_modules/**",
   });
@@ -156,7 +156,7 @@ async function loadModules(args: CliArgs): Promise<Record<string, string>> {
     fs.readFile(f, { encoding: "utf8" }),
   );
   const src = await Promise.all(promisedSrcs);
-  const relativePaths = shaderFiles.map(p => path.relative(rootDir, p));
+  const relativePaths = shaderFiles.map(p => path.relative(baseDir, p));
   const moduleEntries = zip(relativePaths, src);
   return Object.fromEntries(moduleEntries);
 }

@@ -17,7 +17,7 @@ test("package two wgsl files into one bundle", async () => {
   await mkdir(distDir);
   await packageCli(
     `--projectDir ${projectDir} 
-     --rootDir ${srcDir} 
+     --baseDir ${srcDir} 
      --updatePackageJson false
      --src ${srcDir}/*.w[eg]sl
      --outDir ${distDir}`,
@@ -69,7 +69,7 @@ test("package multi ", async () => {
       --src ${workDir}/shaders/**/*.wesl
       --updatePackageJson
       --multiBundle
-      --rootDir ${workDir}/shaders
+      --baseDir ${workDir}/shaders
       --outDir ${distDir}`,
     );
 
