@@ -19,7 +19,7 @@ export function logCatch(): LogCatcher {
 
 export function withLogSpy(fn: () => void): string {
   const catcher = logCatch();
-  withLogger(c => catcher.log(c), fn);
+  withLogger(catcher.log, fn);
   return catcher.logged();
 }
 
@@ -27,6 +27,6 @@ export async function withLogSpyAsync(
   fn: () => Promise<void>,
 ): Promise<string> {
   const catcher = logCatch();
-  await withLoggerAsync(c => catcher.log(c), fn);
+  await withLoggerAsync(catcher.log, fn);
   return catcher.logged();
 }
