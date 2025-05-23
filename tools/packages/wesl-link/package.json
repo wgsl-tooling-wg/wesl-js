@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "echo": "echo",
-    "build": "esbuild --bundle --platform=node --format=esm --outfile=bin/wesl-link src/main.ts",
+    "build": "tsdown",
     "format": "prettier . --write",
     "lint": "eslint src",
     "typecheck": "tsc",
@@ -20,10 +20,11 @@
   "dependencies": {
     "@types/diff": "^8.0.0",
     "diff": "^8.0.1",
+    "mini-parse": "workspace:*",
     "wesl": "workspace:*",
     "wesl-tooling": "workspace:*"
   },
   "devDependencies": {
-    "mini-parse": "workspace:*"
+    "tsdown": "^0.11.12"
   }
 }

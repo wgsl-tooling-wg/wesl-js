@@ -18,11 +18,12 @@
     "noEmit": true,
     "paths": {
       "wesl": ["../wesl/src"],
+      "wesl-tooling": ["../wesl-tooling/src"],
       "mini-parse": ["../mini-parse/src"],
       "mini-parse/test-util": ["../mini-parse/src/test-util"],
       "mini-parse/vitest-util": ["../mini-parse/src/vitest-util"]
     }
   },
-  "include": ["src/**/*", "src/viteTypes.d.ts"],
+  "include": ["src/**/*", "src/viteTypes.d.ts", "test"],
   "exclude": ["node_modules"]
 }
