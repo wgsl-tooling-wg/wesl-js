@@ -34,7 +34,8 @@
         "noUnnecessaryContinue": "off"
       },
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noFocusedTests": "off"
       }
     }
   },
