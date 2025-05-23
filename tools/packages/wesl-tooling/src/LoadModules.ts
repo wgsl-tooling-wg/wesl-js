@@ -1,6 +1,6 @@
-import { glob } from "glob";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { glob } from "glob";
 
 /** load the wesl/wgsl shader sources */
 export async function loadModules(
@@ -21,7 +21,9 @@ export async function loadModules(
     throw new Error(`no WGSL/WESL files found in ${srcGlob}`);
   }
   const baseDirAbs = path.resolve(projectDir, baseDir);
-  const relativePaths = shaderFiles.map(p => path.relative(baseDirAbs, path.resolve(p)));
+  const relativePaths = shaderFiles.map(p =>
+    path.relative(baseDirAbs, path.resolve(p)),
+  );
   const moduleEntries = zip(relativePaths, src);
   return Object.fromEntries(moduleEntries);
 }

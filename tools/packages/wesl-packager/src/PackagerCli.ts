@@ -1,7 +1,7 @@
+import path from "node:path";
+import { versionFromPackageJson } from "wesl-tooling";
 import yargs from "yargs";
 import { packageWgsl } from "./PackageWesl.js";
-import { versionFromPackageJson } from "wesl-tooling";
-import path from "node:path";
 
 export type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 let cliArgs: CliArgs;

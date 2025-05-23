@@ -1,14 +1,13 @@
-import fs from "node:fs";
 import path from "node:path";
 import { createTwoFilesPatch } from "diff";
 import { enableTracing, log } from "mini-parse";
-import { astToString, link, noSuffix, scopeToString } from "wesl";
+import { astToString, link, scopeToString } from "wesl";
+import { loadModules, versionFromPackageJson } from "wesl-tooling";
 import yargs from "yargs";
 import {
   parseIntoRegistry,
   parsedRegistry,
 } from "../../wesl/src/ParsedRegistry.js"; // LATER fix import
-import { loadModules, versionFromPackageJson } from "wesl-tooling";
 
 type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 
@@ -103,6 +102,7 @@ async function linkNormally(argv: CliArgs): Promise<void> {
   // if (argv.diff) printDiff(srcPath, origWgsl, linked);
 }
 
+// oxlint-disable-next-line eslint(no-unused-vars)
 function toUnixPath(p: string): string {
   if (path.sep !== "/") {
     return p.replaceAll(path.sep, "/");
