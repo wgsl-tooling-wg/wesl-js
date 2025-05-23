@@ -12,7 +12,7 @@ export async function loadModules(
     cwd: projectDir,
     ignore: "node_modules/**",
   });
-  const shaderFiles = foundFiles.map(f => path.join(projectDir, f));
+  const shaderFiles = foundFiles.map(f => path.resolve(projectDir, f));
   const promisedSrcs = shaderFiles.map(f =>
     fs.readFile(f, { encoding: "utf8" }),
   );
