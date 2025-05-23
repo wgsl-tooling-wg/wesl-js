@@ -8,27 +8,31 @@ import {
   parseIntoRegistry,
   parsedRegistry,
 } from "../../wesl/src/ParsedRegistry.js"; // LATER fix import
-import { versionFromPackageJson } from "wesl-tooling";
+import { loadModules, versionFromPackageJson } from "wesl-tooling";
 
 type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
-let argv: CliArgs;
 
 export async function cli(rawArgs: string[]): Promise<void> {
   enableTracing(); // so we get more debug info
-  argv = await parseArgs(rawArgs);
-  const files = argv.files as string[];
-  linkNormally(files);
+  const argv = await parseArgs(rawArgs);
+  await linkNormally(argv);
 }
 
 async function parseArgs(args: string[]) {
-  const projectDir = path.join(import.meta.url, "..");
-  const appVersion = await versionFromPackageJson(projectDir);
+  const toolDir = path.join(import.meta.url, "..");
+  const appVersion = await versionFromPackageJson(toolDir);
   return yargs(args)
     .version(appVersion)
-    .command(
-      "$0 <files...>",
-      "root shader file followed by any other wgsl files",
-    )
+    .option("src", {
+      type: "string",
+      default: "./shaders/*.w[eg]sl",
+      describe: "WGSL/WESL files to bundle in the package (glob syntax)",
+    })
+    .option("rootModule", {
+      type: "string",
+      default: "main",
+      describe: "start linking from this module name",
+    })
     .option("define", {
       type: "array",
       describe: "definitions for preprocessor and linking",
@@ -36,11 +40,13 @@ async function parseArgs(args: string[]) {
     .option("baseDir", {
       requiresArg: true,
       type: "string",
+      default: "./shaders",
       describe: "root directory for shaders",
     })
     .option("projectDir", {
       requiresArg: true,
       type: "string",
+      default: ".",
       describe: "directory containing package.json",
     })
     .option("details", {
@@ -65,22 +71,17 @@ async function parseArgs(args: string[]) {
     .parse();
 }
 
-async function linkNormally(paths: string[]): Promise<void> {
-  const weslRoot = getBaseDir();
-  const pathAndTexts = paths.map(f => {
-    const text = fs.readFileSync(f, { encoding: "utf8" });
-    const relativePath = path.relative(weslRoot, f);
-    return [toUnixPath(relativePath), text];
-  });
-  const rootModuleName = noSuffix(path.relative(weslRoot, paths[0]));
-  const weslSrc = Object.fromEntries(pathAndTexts);
-
+async function linkNormally(argv: CliArgs): Promise<void> {
+  const weslRoot = argv.baseDir || process.cwd();
+  const weslSrc = await loadModules(argv.projectDir, weslRoot, argv.src);
   // LATER conditions
   // LATER external defines
+
   if (argv.emit) {
-    const linked = await link({ weslSrc, rootModuleName });
-    if (argv.emit) log(linked.dest);
+    const linked = await link({ weslSrc, rootModuleName: argv.rootModule });
+    log(linked.dest);
   }
+
   if (argv.details) {
     const registry = parsedRegistry();
     try {
@@ -110,21 +111,21 @@ function toUnixPath(p: string): string {
   }
 }
 
-// oxlint-disable-next-line eslint(no-unused-vars)
-function externalDefines(): Record<string, string> {
-  if (!argv.define) return {};
-  const pairs = argv.define.map(d => d.toString().split("="));
+// // oxlint-disable-next-line eslint(no-unused-vars)
+// function externalDefines(): Record<string, string> {
+//   if (!argv.define) return {};
+//   const pairs = argv.define.map(d => d.toString().split("="));
 
-  const badPair = pairs.find(p => p.length !== 2);
-  if (badPair) {
-    console.error("invalid define", badPair);
-    return {};
-  }
+//   const badPair = pairs.find(p => p.length !== 2);
+//   if (badPair) {
+//     console.error("invalid define", badPair);
+//     return {};
+//   }
 
-  throw new Error("external defines Not implemented");
-  // const withParsedValues = pairs.map(([k, v]) => [k, parseDefineValue(v)]);
-  // return Object.fromEntries(withParsedValues);
-}
+//   throw new Error("external defines Not implemented");
+//   // const withParsedValues = pairs.map(([k, v]) => [k, parseDefineValue(v)]);
+//   // return Object.fromEntries(withParsedValues);
+// }
 
 // oxlint-disable-next-line eslint(no-unused-vars)
 function parseDefineValue(value: string): string | number | boolean {
@@ -145,8 +146,4 @@ function printDiff(modulePath: string, src: string, linked: string): void {
   } else {
     log(`${modulePath}: linked version matches original source`);
   }
-}
-
-function getBaseDir(): string {
-  return argv.baseDir || process.cwd();
 }
