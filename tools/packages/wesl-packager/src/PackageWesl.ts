@@ -12,11 +12,7 @@ const biome = await setupBiome();
 /** write weslBundle .js and .d.ts files for this shader */
 export async function packageWgsl(args: CliArgs): Promise<void> {
   const { projectDir, outDir, multiBundle, baseDir, src } = args;
-  const modules = await loadModules(baseDir, src);
-  if (Object.entries(modules).length === 0) {
-    console.error("no WGSL/WESL files found in", args.src);
-    throw new Error("no WGSL/WESL files found");
-  }
+  const modules = await loadModules(projectDir, baseDir, src);
   const pkgJsonPath = path.join(projectDir, "package.json");
   const { name } = await loadPackageFields(pkgJsonPath);
   const edition = "unstable_2025_1";
