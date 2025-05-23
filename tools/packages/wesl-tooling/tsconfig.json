@@ -18,7 +18,8 @@
     "noEmit": true,
     "paths": {
       "wesl": ["../wesl/src"],
-      "mini-parse": ["../mini-parse/src"]
+      "mini-parse": ["../mini-parse/src"],
+      "wesl-tooling": ["../wesl-tooling/src"]
     }
   },
   "include": ["src"],

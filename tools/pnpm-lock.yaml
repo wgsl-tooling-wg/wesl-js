@@ -324,6 +324,9 @@ importers:
       diff:
         specifier: ^8.0.1
         version: 8.0.1
+      mini-parse:
+        specifier: workspace:*
+        version: link:../mini-parse
       wesl:
         specifier: workspace:*
         version: link:../wesl
@@ -331,9 +334,9 @@ importers:
         specifier: workspace:*
         version: link:../wesl-tooling
     devDependencies:
-      mini-parse:
-        specifier: workspace:*
-        version: link:../mini-parse
+      tsdown:
+        specifier: ^0.11.12
+        version: 0.11.12(oxc-resolver@9.0.2)(typescript@5.8.3)
 
   packages/wesl-packager:
     dependencies:
