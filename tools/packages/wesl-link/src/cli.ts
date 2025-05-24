@@ -2,12 +2,17 @@ import path from "node:path";
 import { createTwoFilesPatch } from "diff";
 import { enableTracing, log } from "mini-parse";
 import { astToString, link, scopeToString } from "wesl";
-import { loadModules, versionFromPackageJson } from "wesl-tooling";
+import {
+  dependencyBundles,
+  loadModules,
+  versionFromPackageJson,
+} from "wesl-tooling";
 import yargs from "yargs";
 import {
   parseIntoRegistry,
   parsedRegistry,
 } from "../../wesl/src/ParsedRegistry.js"; // LATER fix import
+import { pathToFileURL } from "node:url";
 
 type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 
@@ -32,9 +37,9 @@ async function parseArgs(args: string[]) {
       default: "main",
       describe: "start linking from this module name",
     })
-    .option("define", {
+    .option("conditions", {
       type: "array",
-      describe: "definitions for preprocessor and linking",
+      describe: "settings for conditional compilation",
     })
     .option("baseDir", {
       requiresArg: true,
@@ -65,13 +70,17 @@ async function parseArgs(args: string[]) {
 }
 
 async function linkNormally(argv: CliArgs): Promise<void> {
-  const weslRoot = argv.baseDir || process.cwd();
-  const weslSrc = await loadModules(argv.projectDir, weslRoot, argv.src);
+  const { baseDir, projectDir, rootModule } = argv;
+  const weslRoot = baseDir || process.cwd();
+  const weslSrc = await loadModules(projectDir, weslRoot, argv.src);
+  const projectDirAbs = path.resolve(projectDir, "src.js");
+  const projectDirUrl = pathToFileURL(projectDirAbs);
+  const libs = await dependencyBundles(weslSrc, projectDirUrl.href);
+
   // LATER conditions
-  // LATER external defines
 
   if (argv.emit) {
-    const linked = await link({ weslSrc, rootModuleName: argv.rootModule });
+    const linked = await link({ weslSrc, rootModuleName: rootModule, libs });
     log(linked.dest);
   }
 
