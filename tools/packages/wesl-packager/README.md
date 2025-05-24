@@ -1,15 +1,9 @@
-# WGSL-Packager
+# WESL-Packager
 
 A command tool to bundle WGSL/WESL files into an npm package.
 
-## Usage
-
-Create a bundled package in the `dist` directory
-from sources in the `src/shaders` directory.
-
-```sh
-npx wesl-packager --rootDir src/shaders --outDir dist
-```
+See [Publishing Packages](https://wesl-lang.dev/docs/Publishing-Packages#wesl-packager-options)
+for documentation on how to use `wesl-packager`.
 
 ### Development
 
