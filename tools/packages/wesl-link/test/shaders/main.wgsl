@@ -4,6 +4,5 @@ fn main() {
   foo();
 }
 
-// TBD
-// @if EXTRA 
-// fn extra() { }
+@if(EXTRA)
+fn extra() { }

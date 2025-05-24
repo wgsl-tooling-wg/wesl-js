@@ -70,17 +70,18 @@ async function parseArgs(args: string[]) {
 }
 
 async function linkNormally(argv: CliArgs): Promise<void> {
-  const { baseDir, projectDir, rootModule } = argv;
+  const { baseDir, projectDir, rootModule: rootModuleName } = argv;
   const weslRoot = baseDir || process.cwd();
   const weslSrc = await loadModules(projectDir, weslRoot, argv.src);
   const projectDirAbs = path.resolve(projectDir, "src.js");
   const projectDirUrl = pathToFileURL(projectDirAbs);
   const libs = await dependencyBundles(weslSrc, projectDirUrl.href);
 
-  // LATER conditions
+  const conditionEntries = argv.conditions?.map(c => [c, true]) || [];
+  const conditions = Object.fromEntries(conditionEntries);
 
   if (argv.emit) {
-    const linked = await link({ weslSrc, rootModuleName: rootModule, libs });
+    const linked = await link({ weslSrc, rootModuleName, libs, conditions });
     log(linked.dest);
   }
 

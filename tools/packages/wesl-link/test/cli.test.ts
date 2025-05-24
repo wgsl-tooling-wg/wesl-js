@@ -19,9 +19,7 @@ test("simple link", async () => {
       foo();
     }
 
-    // TBD
-    // @if EXTRA 
-    // fn extra() { }
+
 
 
     fn foo() {
@@ -30,9 +28,9 @@ test("simple link", async () => {
   `);
 });
 
-test("link with definition", async () => {
-  const logged = await cliLine(`--projectDir ${testDir} --define EXTRA=true`);
-  expect(logged).toContain("fn extra()");
+test("link with condition", async () => {
+  const logged = await cliLine(`--projectDir ${testDir} --conditions EXTRA`);
+  expect(logged).contains("fn extra()");
 });
 
 /** run the CLI command and return the logged output */
