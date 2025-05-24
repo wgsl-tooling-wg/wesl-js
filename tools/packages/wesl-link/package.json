@@ -1,6 +1,6 @@
 {
   "name": "wesl-link",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "type": "module",
   "scripts": {
     "echo": "echo",
@@ -18,11 +18,10 @@
   "files": ["bin"],
   "bin": "bin/wesl-link",
   "dependencies": {
-    "@types/diff": "^8.0.0",
-    "diff": "^8.0.1",
     "mini-parse": "workspace:*",
     "wesl": "workspace:*",
-    "wesl-tooling": "workspace:*"
+    "wesl-tooling": "workspace:*",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "tsdown": "^0.11.12"
