@@ -3,8 +3,9 @@ import rawFileImporter from "./rollup-plugin-raw.ts";
 
 const toBin = "./bin/wesl-packager";
 
-// workaround - ignoreWatch doesn't seem to work with relative paths,
-// and loops forever unless we give a specific path
+// ignoreWatch doesn't seem to work with relative paths,
+// and watch mode rebuilds in a loop on changes to the binary
+// so we use an absolute path to the binary 
 const thisPath = import.meta.url;
 const binPath = new URL(toBin, thisPath).pathname;
 
