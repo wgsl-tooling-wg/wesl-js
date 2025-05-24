@@ -54,12 +54,6 @@ async function parseArgs(args: string[]) {
       hidden: true,
       describe: "show details about parsed files",
     })
-    .option("diff", {
-      type: "boolean",
-      default: false,
-      hidden: true,
-      describe: "show comparison with src file",
-    })
     .option("emit", {
       type: "boolean",
       default: true,
