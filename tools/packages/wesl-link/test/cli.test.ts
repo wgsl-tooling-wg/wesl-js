@@ -37,3 +37,9 @@ test("link with condition", async () => {
 async function cliLine(argsLine: string): Promise<string> {
   return await withLogSpyAsync(() => cli(argsLine.split(/\s+/)));
 }
+
+test("link with details", async () => {
+  const logged = await cliLine(`--projectDir ${testDir} --details --no-emit`);
+  expect(logged).includes("decl %foo")
+  expect(logged).includes("decl %main")
+});
