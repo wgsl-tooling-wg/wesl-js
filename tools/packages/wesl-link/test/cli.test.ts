@@ -40,6 +40,6 @@ async function cliLine(argsLine: string): Promise<string> {
 
 test("link with details", async () => {
   const logged = await cliLine(`--projectDir ${testDir} --details --no-emit`);
-  expect(logged).includes("decl %foo")
-  expect(logged).includes("decl %main")
+  expect(logged).includes("decl %foo");
+  expect(logged).includes("decl %main");
 });

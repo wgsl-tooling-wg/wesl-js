@@ -1,5 +1,5 @@
 import path from "node:path";
-import { createTwoFilesPatch } from "diff";
+import { pathToFileURL } from "node:url";
 import { enableTracing, log } from "mini-parse";
 import { astToString, link, scopeToString } from "wesl";
 import {
@@ -12,7 +12,6 @@ import {
   parseIntoRegistry,
   parsedRegistry,
 } from "../../wesl/src/ParsedRegistry.js"; // LATER fix import
-import { pathToFileURL } from "node:url";
 
 type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 
