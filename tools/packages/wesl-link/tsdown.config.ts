@@ -1,6 +1,6 @@
 import { defineConfig } from "tsdown";
 
-const toBin = "./bin/wesl-packager";
+const toBin = "./bin/wesl-link";
 
 // workaround - ignoreWatch doesn't seem to work with relative paths,
 // and loops forever unless we give a specific path
