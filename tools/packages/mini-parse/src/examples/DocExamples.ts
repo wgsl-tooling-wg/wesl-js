@@ -1,8 +1,8 @@
+/* eslint-disable */
+// oxlint-disable eslint(no-unused-vars)
 import { kind, or, repeat, seq } from "../ParserCombinator.js";
 import { RegexMatchers } from "../stream/MatchersStream.js";
 import { matchOneOf } from "../stream/RegexHelpers.js";
-
-// oxlint-disable eslint(no-unused-vars)
 
 export type SimpleTokenKinds = "number" | "symbol" | "ws";
 export const simpleTokens = new RegexMatchers<SimpleTokenKinds>({

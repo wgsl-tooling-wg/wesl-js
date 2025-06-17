@@ -3,6 +3,7 @@
  * and logs the layout entries to the console for verification by a test runner
  */
 
+// eslint-disable-next-line
 const { globals } = require("webgpu"); // include webgpu for the GPUShaderStage enum in the enum
 
 Object.assign(globalThis, globals);

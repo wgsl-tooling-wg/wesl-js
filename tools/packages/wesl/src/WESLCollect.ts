@@ -316,7 +316,7 @@ export const fnCollect = collectElem(
 
     // merge the header, return and body scopes into the one scope
     const mergedScope = headerScope;
-    returnScope && mergeScope(mergedScope, returnScope);
+    if (returnScope) mergeScope(mergedScope, returnScope);
     mergeScope(mergedScope, bodyScope);
 
     // rewrite scope contents to remove old scopes and add merged scope
@@ -450,7 +450,7 @@ export const collectAttribute = collectElem(
 
 export const typeRefCollect = collectElem(
   "type",
-  // @ts-ignore
+  // @ts-expect-error type mismatch
   (cc: CollectContext, openElem: PartElem<TypeRefElem>) => {
     const templateParamsTemp: any[] | undefined =
       cc.tags.templateParam?.flat(3);
@@ -462,7 +462,7 @@ export const typeRefCollect = collectElem(
       name,
       templateParams: templateParamsTemp as any[],
     };
-    // @ts-ignore
+    // @ts-expect-error type mismatch
     return withTextCover(partElem, cc);
   },
 );
@@ -648,6 +648,7 @@ function coverWithText(cc: CollectContext, elem: ContainerElem): GrammarElem[] {
 
 /** for debugging */
 // oxlint-disable-next-line eslint(no-unused-vars)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function collectLog(cc: CollectContext, ...messages: any[]): void {
   const { src, start, end } = cc;
   srcLog(src, [start, end], ...messages);

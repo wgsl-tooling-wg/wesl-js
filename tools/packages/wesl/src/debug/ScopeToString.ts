@@ -24,12 +24,12 @@ export function scopeToString(
     if (childScope(elem)) {
       const childScope: Scope = elem;
       const childBlock = scopeToString(childScope, indent + 2, shortIdents);
-      !lastWasScope && str.nl();
+      if (!lastWasScope) str.nl();
       str.addBlock(childBlock);
       lastWasScope = true;
       hasBlock = true;
     } else {
-      lastWasScope && str.add("  ");
+      if (lastWasScope) str.add("  ");
       lastWasScope = false;
       const ident: Ident = elem;
       if (shortIdents) {

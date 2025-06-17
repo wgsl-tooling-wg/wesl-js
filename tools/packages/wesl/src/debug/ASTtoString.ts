@@ -234,9 +234,7 @@ function addDirective(elem: DirectiveElem, str: LineWrapper) {
 function unknownExpressionToString(elem: UnknownExpressionElem): string {
   // LATER Temp hack while I clean up the expression parsing
   if ("contents" in elem) {
-    // @ts-ignore
     const contents = elem.contents
-      // @ts-ignore
       .map(e => {
         if (e.kind === "text") {
           return "'" + e.srcModule.src.slice(e.start, e.end) + "'";

@@ -12,7 +12,7 @@ export function assertThatDebug(
   condition: any,
   msg?: string,
 ): asserts condition {
-  tracing && assertThat(condition, msg);
+  if (tracing) assertThat(condition, msg);
 }
 
 /** when debug testing is enabled throw an error */

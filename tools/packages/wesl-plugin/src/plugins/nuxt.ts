@@ -4,7 +4,7 @@ import vite from "./vite";
 import webpack from "./webpack";
 import "@nuxt/schema";
 
-export interface ModuleOptions extends WeslPluginOptions {}
+type ModuleOptions = WeslPluginOptions;
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {

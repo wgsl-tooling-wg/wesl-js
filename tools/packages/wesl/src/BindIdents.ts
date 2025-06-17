@@ -251,7 +251,7 @@ function bindIdentsRecursive(
       if (!isRoot) liveDecls.decls.set(ident.originalName, ident);
     } else if (kind === "ref") {
       const newDecl = handleRef(child, liveDecls, bindContext);
-      newDecl && newGlobals.push(newDecl);
+      if (newDecl) newGlobals.push(newDecl);
     } else {
       const fromScope = handleScope(child, liveDecls, bindContext);
       if (fromScope) {

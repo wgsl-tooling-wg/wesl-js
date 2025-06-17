@@ -79,7 +79,7 @@ test("findRefsToBindingStructs", () => {
 
   const rootAst = parseTest(src);
   bindIdents({ rootAst, registry: parsedRegistry() });
-  markBindingStructs(rootAst.moduleElem)[0];
+  markBindingStructs(rootAst.moduleElem);
   const found = findRefsToBindingStructs(rootAst.moduleElem);
   expect(found.length).toBe(1);
   const foundAst = astToString(found[0].memberRef);

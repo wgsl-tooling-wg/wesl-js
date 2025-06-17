@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { link } from "wesl";
 
 const app = document.getElementById("app");
