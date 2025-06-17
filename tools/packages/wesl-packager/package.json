@@ -9,7 +9,7 @@
     "format": "prettier . --write",
     "lint": "eslint src",
     "organize": "organize-imports-cli tsconfig.json",
-    "typecheck": "tsc",
+    "typecheck": "tsgo",
     "prepublishOnly": "run-s build",
     "test": "FORCE_COLOR=1 vitest",
     "test:once": "vitest run"

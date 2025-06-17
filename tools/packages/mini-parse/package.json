@@ -9,7 +9,7 @@
     "build:test-util": "vite -c test-util.vite.config.ts build",
     "build:vitest-util": "vite -c vitest-util.vite.config.ts build",
     "build:minified": "vite -c minified.vite.config.ts build",
-    "typecheck": "tsc",
+    "typecheck": "tsgo",
     "format": "prettier . --write",
     "lint": "eslint src",
     "organize": "organize-imports-cli tsconfig.json",

@@ -13,7 +13,7 @@
     "build:size": "run-s build:sizetest build:brotli-size",
     "deploy:docsite": "run-s build:docs pages:deploy",
     "pages:deploy": "wrangler pages deploy --project-name wesl-js docs",
-    "typecheck": "tsc",
+    "typecheck": "tsgo",
     "format": "prettier . --write",
     "lint": "eslint src",
     "organize": "organize-imports-cli tsconfig.json",
