@@ -5,7 +5,6 @@
     "types": ["@webgpu/types"],
     "esModuleInterop": false,
     "downlevelIteration": true,
-    "importsNotUsedAsValues": "remove",
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
     "allowJs": false,

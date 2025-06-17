@@ -11,7 +11,7 @@
     "allowJs": false,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "importsNotUsedAsValues": "remove",
+
     "resolveJsonModule": true,
     "isolatedModules": true,
     "allowImportingTsExtensions": true,

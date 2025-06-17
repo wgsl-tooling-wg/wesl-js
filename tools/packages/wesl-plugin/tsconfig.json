@@ -3,7 +3,7 @@
     "target": "ESNext",
     "lib": ["esnext", "DOM"],
     "types": ["node", "@webgpu/types"],
-    "importsNotUsedAsValues": "remove",
+
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "node",
