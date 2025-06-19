@@ -2,7 +2,7 @@
   "version": "4",
   "specifiers": {
     "jsr:@std/webgpu@~0.224.7": "0.224.7",
-    "npm:wesl@~0.6.0-pre8": "0.6.0-pre8"
+    "npm:wesl@~0.6.7": "0.6.7"
   },
   "jsr": {
     "@std/webgpu@0.224.7": {
@@ -10,11 +10,11 @@
     }
   },
   "npm": {
-    "mini-parse@0.6.0-pre8": {
-      "integrity": "sha512-zc7WV2IwizguVbxZUNsrih6viY4fINORbE+UZhVoFl+oUnZq76M8gt5Ty0+A9+phU+yqMD25lrbCvcNqX8Z5Zg=="
+    "mini-parse@0.6.7": {
+      "integrity": "sha512-rxyTgJNp4GwmE0JGFx8DKLuJfdiMV7TRP/aonobpIdL0Fp4RxkEX16A/rFpGhD5B3UzEYJZ7S8EtbQbdJPWQew=="
     },
-    "wesl@0.6.0-pre8": {
-      "integrity": "sha512-sv9GU4F3SO9f9pLYfEgxEpy/zYH47kujeVVBUCcXLa97Vp6lrExE6s1cy9LCegmLetOhZRe5Xw3+7CiIWSVNng==",
+    "wesl@0.6.7": {
+      "integrity": "sha512-/T8KvIscZZnya1Xa6RoGM4RicgGNFrUIOzubz95Sz2ZhTJmJrV+jsdQNqvH3nBghR3yCIvA/H32GOjG1HG8XKA==",
       "dependencies": [
         "mini-parse"
       ]
@@ -29,7 +29,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/webgpu@~0.224.7",
-      "npm:wesl@~0.6.0-pre8"
+      "npm:wesl@~0.6.7"
     ]
   }
 }
