@@ -3,9 +3,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { type ParseArgsConfig, parseArgs } from "node:util";
 import glob from "fast-glob";
+import util from "node:util";
+import process from "node:child_process";
+const exec = util.promisify(process.exec);
 
 /*
- * update example package.json files to have the current version of wesl as dependencies
+ * copy the internal examples/ directory to separate projects in wesl-examples/ repo
+ * update example projects package.json files to reference the current version of wesl and wesl-plugin
  */
 
 interface Versions {
@@ -27,7 +31,13 @@ async function main() {
     versions = await weslVersion();
   }
 
-  setExampleVersions(versions);
+  const targetDir =
+    opts.targetDir || path.join(toolsPath, "../../wesl-examples");
+
+  const examplesSrc = path.join(toolsPath, "examples");
+  await copyDirectory(examplesSrc, targetDir, examplesIgnore);
+  await setExampleVersions(targetDir, versions);
+  await updatePkgLocks(targetDir);
 }
 
 function args(): Record<string, any> {
@@ -35,6 +45,10 @@ function args(): Record<string, any> {
     options: {
       workspace: {
         type: "boolean",
+      },
+      targetDir: {
+        type: "string",
+        short: "o",
       },
     },
   };
@@ -61,11 +75,39 @@ async function packageVersion(packageName: string): Promise<string> {
   return packageJson.version;
 }
 
+const examplesIgnore = [".git/", "/node_modules", "dist/", "package-lock.json"];
+
+/**
+ * Copy recursively,
+ * ignoring any paths that include any of the ignore strings.
+ */
+async function copyDirectory(
+  source: string,
+  destination: string,
+  ignore: string[] = [],
+): Promise<void> {
+  await fs.mkdir(destination, { recursive: true });
+  await fs.cp(source, destination, {
+    recursive: true,
+    preserveTimestamps: true,
+    dereference: true,
+    filter: src => {
+      const filtering = !ignore.some(skip => src.includes(skip));
+      if (!filtering) {
+        // console.log(`  copying: ${src}`);
+      }
+      return filtering;
+    },
+  });
+}
+
 /** rewrite the the example package.json dependencies to set the
  * wesl and wesl-plugin versions */
-async function setExampleVersions(versions: Versions): Promise<void> {
-  const toolsPathPosix = path.posix.normalize(toolsPath);
-  const examples = await glob(toolsPathPosix + "/examples/*/package.json");
+async function setExampleVersions(
+  targetDir: string,
+  versions: Versions,
+): Promise<void> {
+  const examples = await glob(targetDir + "/*/package.json");
 
   for (const packageJsonPath of examples) {
     const raw = await fs.readFile(packageJsonPath, { encoding: "utf8" });
@@ -78,7 +120,18 @@ async function setExampleVersions(versions: Versions): Promise<void> {
     if (json.devDependencies["wesl-plugin"]) {
       json.devDependencies["wesl-plugin"] = `${prefix}${weslPlugin}`;
     }
-    console.log(`Updating ${packageJsonPath}`);
     await fs.writeFile(packageJsonPath, JSON.stringify(json, null, 2) + "\n");
+  }
+}
+
+async function updatePkgLocks(targetDir: string): Promise<void> {
+  const pkgLocks = await glob(targetDir + "/**/pnpm-lock.yaml");
+  console.log(`Updating pnpm-lock.yaml files: ${pkgLocks.join(", ")}`);
+
+  for (const pkgLockPath of pkgLocks) {
+    const dir = path.dirname(pkgLockPath);
+    console.log(`Updating pnpm-lock in ${dir}`);
+    // run pnpm install in the directory to update the pnpm-lock.yaml
+    await exec(`pnpm install`, { cwd: dir });
   }
 }
