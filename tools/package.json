@@ -12,7 +12,6 @@
     "build:all": "run-s build:libs build:tools build:tests",
     "check:versions": "syncpack list-mismatches",
     "examples:prep": "tsx scripts/prep-examples.ts",
-    "examples:workspace": "tsx scripts/prep-examples.ts --workspace",
     "fix:all": "biome check --fix --unsafe",
     "lint:biome": "biome check",
     "lint:oxlint": "oxlint",

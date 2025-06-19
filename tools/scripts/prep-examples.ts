@@ -23,13 +23,7 @@ main();
 
 async function main() {
   const opts = args();
-  let versions: Versions;
-
-  if (opts.workspace) {
-    versions = { wesl: "workspace:*", weslPlugin: "workspace:*" };
-  } else {
-    versions = await weslVersion();
-  }
+  const versions = await weslVersion();
 
   const targetDir =
     opts.targetDir || path.join(toolsPath, "../../wesl-examples");
