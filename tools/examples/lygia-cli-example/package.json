@@ -1,0 +1,14 @@
+{
+	"name": "lygia-cli-example",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "wesl-link"
+	},
+	"dependencies": {
+		"lygia": "1.3.2"
+	},
+	"devDependencies": {
+		"wesl-link": "workspace:*"
+	}
+}
