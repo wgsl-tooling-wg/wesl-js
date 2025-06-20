@@ -1,9 +1,9 @@
-import type { Options } from "tsdown";
+import { defineConfig } from "tsdown";
 
-export default (<Options>{
+export default defineConfig({
   entry: ["src/plugins/*.ts", "src/pluginIndex.ts"],
   clean: true,
   format: ["esm"],
   dts: true,
-  splitting: true,
+  target: "node22",
 });
