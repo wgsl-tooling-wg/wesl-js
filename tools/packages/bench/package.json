@@ -4,8 +4,6 @@
   "type": "module",
   "scripts": {
     "echo": "echo",
-    "format": "prettier . --write",
-    "lint": "eslint src",
     "typecheck": "tsgo",
     "bench": "tsx bin/bench.ts  --bench"
   },
