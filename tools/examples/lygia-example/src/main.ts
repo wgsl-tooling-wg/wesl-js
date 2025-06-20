@@ -1,5 +1,5 @@
 /// <reference types="wesl-plugin/suffixes" />
-import { link, type LinkedWesl, requestWeslDevice } from "wesl";
+import { type LinkedWesl, link, requestWeslDevice } from "wesl";
 import appWesl from "../shaders/app.wesl?link";
 
 main();
