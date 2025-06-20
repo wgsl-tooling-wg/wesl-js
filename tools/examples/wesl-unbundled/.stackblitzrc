@@ -1,0 +1,3 @@
+{
+  "startCommand": "npx -y http-server"
+}
