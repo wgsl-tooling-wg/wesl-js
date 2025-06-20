@@ -1,7 +1,7 @@
 /// <reference types="vitest/config" />
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { UserConfig } from "vite";
+import type { Plugin, UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { linkBuildExtension } from "wesl-plugin";
 import viteWesl from "wesl-plugin/vite";
@@ -16,7 +16,7 @@ const config: UserConfig = {
     viteWesl({
       weslToml,
       extensions: [linkBuildExtension, bindingLayoutExtension],
-    }),
+    }) as Plugin,
   ],
   build: {
     // setup build for test that calls 'vite build'

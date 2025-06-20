@@ -1,4 +1,4 @@
-import type { UserConfig } from "vite";
+import type { Plugin, UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { linkBuildExtension } from "wesl-plugin";
 import viteWesl from "wesl-plugin/vite";
@@ -7,7 +7,10 @@ import viteWesl from "wesl-plugin/vite";
 // build and launch a the noTomlMain test driver
 
 const config: UserConfig = {
-  plugins: [tsconfigPaths(), viteWesl({ extensions: [linkBuildExtension] })],
+  plugins: [
+    tsconfigPaths() as Plugin,
+    viteWesl({ extensions: [linkBuildExtension] }),
+  ],
   build: {
     // setup build for test that calls 'vite build'
     lib: {
