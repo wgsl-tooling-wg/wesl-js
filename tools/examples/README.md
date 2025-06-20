@@ -1,15 +1,33 @@
 # WESL JS Shader Examples
 
-- **wesl-vite** - simple vite front end app.
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/wesl-vite?startScript=dev)
+Most examples are available as stackblitz demos that run in 
+the browser. Or use [degit](https://github.com/Rich-Harris/degit/tree/master) to make a convenient local copy.
 
-- **wesl-vite-minimal** - even simpler vite front end app.
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/wesl-vite-minimal?startScript=dev)
+**wesl-vite-minimal** - Minimal vite front end app, shows transpiled code.
+[Demo](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/wesl-vite-minimal?startScript=dev)
+  - `degit github:wgsl-tooling-wg/examples/wesl-rand`
 
-- **wesl-rand** - vite example, shows linked source and a random number field.
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/wesl-rand?startScript=dev)
+<br/>
 
-- **wesl-unbundled** - no bundler, dynamic linking.
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/wesl-unbundled)
+**wesl-vite** - simple vite front end app, shows Mandlebrot set.
+[Demo](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/wesl-vite?startScript=dev)
+  - `degit github:wgsl-tooling-wg/examples/wesl-rand`
 
-- **wesl-deno** - deno backend, creates a PNG file with WebGPU.
+<br/>
+
+**wesl-rand** - shows a random number field, using vite and an external library.
+[Demo](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/wesl-rand?startScript=dev)
+  - `degit github:wgsl-tooling-wg/examples/wesl-rand`
+
+<br/>
+
+**wesl-unbundled** - no bundler, dynamic linking.
+  [Demo](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/wesl-unbundled)
+  - `degit github:wgsl-tooling-wg/examples/wesl-unbundled`
+
+<br/>
+
+**wesl-deno** - deno backend, creates a PNG file with WebGPU.
+  - `degit github:wgsl-tooling-wg/examples/wesl-deno`
+
+<br/>
