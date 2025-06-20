@@ -15,6 +15,7 @@ const exec = util.promisify(process.exec);
 interface Versions {
   wesl: string;
   weslPlugin: string;
+  cli: string;
 }
 
 const toolsPath = path.join(fileURLToPath(import.meta.url), "../..");
@@ -53,10 +54,12 @@ function args(): Record<string, any> {
 async function weslVersion(): Promise<Versions> {
   const wesl = await packageVersion("wesl");
   const weslPlugin = await packageVersion("wesl-plugin");
-  console.log(`WESL version: ${wesl}`);
-  console.log(`WESL plugin version: ${weslPlugin}`);
+  const cli = await packageVersion("wesl-link");
+  console.log(`wesl version: ${wesl}`);
+  console.log(`wesl-plugin version: ${weslPlugin}`);
+  console.log(`wesl-link cli version: ${cli}`);
 
-  return { wesl, weslPlugin };
+  return { wesl, weslPlugin, cli };
 }
 
 /** load the version from a package.json file in the packages/ di */
@@ -106,13 +109,16 @@ async function setExampleVersions(
   for (const packageJsonPath of examples) {
     const raw = await fs.readFile(packageJsonPath, { encoding: "utf8" });
     const json = JSON.parse(raw);
-    const { wesl, weslPlugin } = versions;
+    const { wesl, weslPlugin, cli } = versions;
     const prefix = wesl.startsWith("workspace:") ? "" : "^";
     if (json.dependencies.wesl) {
       json.dependencies.wesl = `${prefix}${wesl}`;
     }
     if (json.devDependencies["wesl-plugin"]) {
       json.devDependencies["wesl-plugin"] = `${prefix}${weslPlugin}`;
+    }
+    if (json.devDependencies["wesl-link"]) {
+      json.devDependencies["wesl-link"] = `${prefix}${cli}`;
     }
     await fs.writeFile(packageJsonPath, JSON.stringify(json, null, 2) + "\n");
   }
