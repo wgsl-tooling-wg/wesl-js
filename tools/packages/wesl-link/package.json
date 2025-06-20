@@ -5,10 +5,7 @@
   "scripts": {
     "echo": "echo",
     "build": "tsdown",
-    "format": "prettier . --write",
-    "lint": "eslint src",
     "typecheck": "tsgo",
-    "organize": "organize-imports-cli tsconfig.json",
     "prepublishOnly": "run-s build",
     "test": "vitest",
     "test:once": "vitest run"

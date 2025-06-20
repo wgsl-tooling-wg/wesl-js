@@ -6,8 +6,6 @@
     "echo": "echo",
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "format": "prettier . --write",
-    "lint": "eslint src",
     "typecheck": "tsgo",
     "prepublishOnly": "run-s build",
     "test": "FORCE_COLOR=1 vitest",

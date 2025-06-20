@@ -6,7 +6,6 @@
     "echo": "echo",
     "format": "prettier . --write",
     "lint": "eslint src",
-    "organize": "organize-imports-cli tsconfig.json",
     "typecheck": "tsgo",
     "bench": "tsx bin/bench.ts  --bench"
   },
