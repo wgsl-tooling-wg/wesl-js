@@ -31,3 +31,23 @@ the browser. Or use [degit](https://github.com/Rich-Harris/degit/tree/master) to
   - `degit github:wgsl-tooling-wg/examples/wesl-deno`
 
 <br/>
+
+**lygia-cli-example** - link from the command line (e.g. for a custom build pipeline).
+  [Demo](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/lygia-cli-example)
+  - `degit github:wgsl-tooling-wg/examples/lygia-cli-example`
+
+<br/>
+
+
+**lygia-example** - minimal example using Lygia.
+  [Demo](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/lygia-example)
+  - `degit github:wgsl-tooling-wg/examples/lygia-example`
+
+<br/>
+
+**lygia-static-example** - static linking example, no runtime library needed.
+  [Demo](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/lygia-static-example)
+  - `degit github:wgsl-tooling-wg/examples/lygia-static-example`
+
+<br/>
+
