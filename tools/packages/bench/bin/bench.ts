@@ -4,8 +4,11 @@ import { WGSLLinker } from "@use-gpu/shader";
 import { type SrcModule, type WeslAST, link, parseSrcModule } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
-import { mapValues, mitataBench } from "../src/MitataBench.ts";
-import { link as baseLineLink } from "../_baseline/packages/wesl/src/index.ts";
+import {
+  type BenchResults,
+  mapValues,
+  mitataBench,
+} from "../src/MitataBench.ts";
 
 import { hideBin } from "yargs/helpers";
 
@@ -47,13 +50,14 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   const variant: ParserVariant = selectVariant(argv.variant);
 
   if (argv.profile) {
-    await profileMode(tests, variant);
+    await benchOnceOnly(tests, variant);
   } else {
-    await benchMode(tests, variant);
+    await benchAndReport(tests, variant);
   }
 }
 
-function profileMode(tests: BenchTest[], variant: ParserVariant): void {
+/** run the tests once to verify they run, or to attach a profiler */
+function benchOnceOnly(tests: BenchTest[], variant: ParserVariant): void {
   console.profile();
   for (const test of tests) {
     runOnce(variant, test);
@@ -61,30 +65,41 @@ function profileMode(tests: BenchTest[], variant: ParserVariant): void {
   console.profileEnd();
 }
 
-async function benchMode(
+const baselineLink = await import("../_baseline/packages/wesl/src/index.ts")
+  .then(x => x.link)
+  .catch(() => undefined);
+
+/** run the tests and report results */
+async function benchAndReport(
   tests: BenchTest[],
   variant: ParserVariant,
 ): Promise<void> {
-  for (const file of tests) {
-    const benchName = `${variant} ${file.name}`;
-    const oldResult = await mitataBench(() => runBaseline(file), benchName);
-    console.log("baseline", oldResult);
-
-    const result = await mitataBench(() => runOnce(variant, file), benchName);
-    const codeLines = getCodeLines(file);
-
-    const median = result.time.p50;
-    const min = result.time.min;
-    const locSec = mapValues({ median, min }, x => codeLines / (x / 1000));
-    const locStr = mapValues(locSec, x =>
-      new Intl.NumberFormat("en-US").format(Math.round(x)),
-    );
-    console.log("raw Time:", min);
-    console.log("runs:", result.samples);
-    console.log(
-      `${result.name} LOC/sec: ${locStr.min} (min)  ${locStr.median} (median)`,
-    );
+  for (const t of tests) {
+    const benchName = `${variant} ${t.name}`;
+    const oldResult = baselineLink && (await mitataBench(() => runBaseline(t)));
+    const result = await mitataBench(() => runOnce(variant, t), benchName);
+    reportResults(t, result, oldResult);
   }
+}
+
+function reportResults(
+  file: BenchTest,
+  result: BenchResults,
+  baseline?: BenchResults,
+): void {
+  const codeLines = getCodeLines(file);
+  const median = result.time.p50;
+  const min = result.time.min;
+  const locSec = mapValues({ median, min }, x => codeLines / (x / 1000));
+  const locStr = mapValues(locSec, x =>
+    new Intl.NumberFormat("en-US").format(Math.round(x)),
+  );
+  console.log(
+    `${result.name} LOC/sec: ${locStr.min} (min)  ${locStr.median} (median)`,
+  );
+  
+  console.log("raw Time:", min);
+  console.log("runs:", result.samples);
 }
 
 function selectVariant(variant: string): ParserVariant {
@@ -95,8 +110,6 @@ function selectVariant(variant: string): ParserVariant {
   }
   throw new Error("NYI parser variant: " + variant);
 }
-
-/** run benchmark with mitata */
 
 interface BenchTest {
   name: string;
@@ -155,12 +168,12 @@ async function loadAllFiles(): Promise<BenchTest[]> {
   );
   return [
     reduceBuffer,
-    // particle,
-    // rasterize,
-    // boat,
-    // imports_only,
-    // bevy_deferred_lighting,
-    // bevy_linking,
+    particle,
+    rasterize,
+    boat,
+    imports_only,
+    bevy_deferred_lighting,
+    bevy_linking,
   ];
 }
 
@@ -204,8 +217,9 @@ function runOnce(parserVariant: ParserVariant, test: BenchTest): void {
   }
 }
 
-function runBaseline(test: BenchTest) {
-  baseLineLink({
+function runBaseline(test: BenchTest): void {
+  if (!baselineLink) return;
+  baselineLink({
     weslSrc: Object.fromEntries(test.files.entries()),
     rootModuleName: test.mainFile,
   });
