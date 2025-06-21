@@ -4,7 +4,7 @@ import { WGSLLinker } from "@use-gpu/shader";
 import { type SrcModule, type WeslAST, link, parseSrcModule } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
-import { mitataBench } from "../src/MitataBench.ts";
+import { mapValues, mitataBench } from "../src/MitataBench.ts";
 
 import { hideBin } from "yargs/helpers";
 
@@ -46,23 +46,40 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   const variant: ParserVariant = selectVariant(argv.variant);
 
   if (argv.profile) {
-    console.profile();
-    for (const test of tests) {
-      runOnce(variant, test);
-    }
-    console.profileEnd();
+    await profileMode(tests, variant);
   } else {
-    for (const file of tests) {
-      const benchName = `${variant} ${file.name}`;
-      await mitataBench(() => runOnce(variant, file), benchName)
-      const codeLines = getCodeLines(file);
+    await benchMode(tests, variant);
+  }
+}
 
-      // const locSec = codeLines / ms;
-      // const locSecStr = new Intl.NumberFormat("en-US").format(
-      //   Math.round(locSec),
-      // );
-      // console.log(`${variant} ${file.name} LOC/sec: ${locSecStr}`);
-    }
+function profileMode(tests: BenchTest[], variant: ParserVariant): void {
+  console.profile();
+  for (const test of tests) {
+    runOnce(variant, test);
+  }
+  console.profileEnd();
+}
+
+async function benchMode(
+  tests: BenchTest[],
+  variant: ParserVariant,
+): Promise<void> {
+  for (const file of tests) {
+    const benchName = `${variant} ${file.name}`;
+    const result = await mitataBench(() => runOnce(variant, file), benchName);
+    const codeLines = getCodeLines(file);
+
+    const median = result.time.p50;
+    const min = result.time.min;
+    const locSec = mapValues({ median, min }, x => codeLines / (x / 1000));
+    const locStr = mapValues(locSec, x =>
+      new Intl.NumberFormat("en-US").format(Math.round(x)),
+    );
+    console.log("raw Time:", min);
+    console.log("runs:", result.samples);
+    console.log(
+      `${result.name} LOC/sec: ${locStr.min} (min)  ${locStr.median} (median)`,
+    );
   }
 }
 
