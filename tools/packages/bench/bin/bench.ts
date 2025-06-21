@@ -5,6 +5,7 @@ import { type SrcModule, type WeslAST, link, parseSrcModule } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
 import { mapValues, mitataBench } from "../src/MitataBench.ts";
+import { link as baseLineLink } from "../_baseline/packages/wesl/src/index.ts";
 
 import { hideBin } from "yargs/helpers";
 
@@ -66,6 +67,9 @@ async function benchMode(
 ): Promise<void> {
   for (const file of tests) {
     const benchName = `${variant} ${file.name}`;
+    const oldResult = await mitataBench(() => runBaseline(file), benchName);
+    console.log("baseline", oldResult);
+
     const result = await mitataBench(() => runOnce(variant, file), benchName);
     const codeLines = getCodeLines(file);
 
@@ -198,6 +202,13 @@ function runOnce(parserVariant: ParserVariant, test: BenchTest): void {
   } else {
     throw new Error("NYI parser variant: " + parserVariant);
   }
+}
+
+function runBaseline(test: BenchTest) {
+  baseLineLink({
+    weslSrc: Object.fromEntries(test.files.entries()),
+    rootModuleName: test.mainFile,
+  });
 }
 
 function wgslReflectParse(_filePath: string, text: string): void {
