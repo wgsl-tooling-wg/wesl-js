@@ -3,9 +3,9 @@ declare module "@mitata/counters" {
   function deinit(): void;
   function after(): void;
   function before(): void;
-  function translate(batch?: number, samples?: number): CounterResults | undefined;
+  function translate(batch?: number, samples?: number): CpuCounts | undefined;
 
-  interface CounterResults {
+  interface CpuCounts {
     // macOS (darwin) specific
     l1?: {
       miss_loads?: CounterStats | null;
