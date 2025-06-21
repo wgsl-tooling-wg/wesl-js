@@ -1,11 +1,23 @@
+import { getHeapStatistics } from "node:v8";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { WGSLLinker } from "@use-gpu/shader";
 import { type SrcModule, type WeslAST, link, parseSrcModule } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
+import * as counters from "@mitata/counters";
+import { mitataBench } from "../src/MitataBench.ts";
 
 import { hideBin } from "yargs/helpers";
+import {
+  summary,
+  barplot,
+  boxplot,
+  measure,
+  bench,
+  run,
+  lineplot,
+} from "mitata";
 
 type ParserVariant =
   | "wgsl-linker"
@@ -21,16 +33,11 @@ main(rawArgs);
 
 async function main(args: string[]): Promise<void> {
   const argv = parseArgs(args);
-  await bench(argv);
+  await runBenchmarks(argv);
 }
 
 function parseArgs(args: string[]) {
   return yargs(args)
-    .option("bench", {
-      type: "boolean",
-      default: false,
-      describe: "run a benchmark, collecting timings",
-    })
     .option("variant", {
       choices: ["wgsl-linker", "wgsl_reflect", "use-gpu", "wesl-link"] as const,
       default: "wgsl-linker" as const,
@@ -45,21 +52,9 @@ function parseArgs(args: string[]) {
     .parseSync();
 }
 
-async function bench(argv: CliArgs): Promise<void> {
+async function runBenchmarks(argv: CliArgs): Promise<void> {
   const tests = await loadAllFiles();
   const variant: ParserVariant = selectVariant(argv.variant);
-
-  if (argv.bench) {
-    for (const file of tests) {
-      const ms = runBench(variant, file);
-      const codeLines = getCodeLines(file);
-      const locSec = codeLines / ms;
-      const locSecStr = new Intl.NumberFormat("en-US").format(
-        Math.round(locSec),
-      );
-      console.log(`${variant} ${file.name} LOC/sec: ${locSecStr}`);
-    }
-  }
 
   if (argv.profile) {
     console.profile();
@@ -67,6 +62,17 @@ async function bench(argv: CliArgs): Promise<void> {
       runOnce(variant, test);
     }
     console.profileEnd();
+  } else {
+    for (const file of tests) {
+      await measureBench(variant, file);
+      const codeLines = getCodeLines(file);
+
+      // const locSec = codeLines / ms;
+      // const locSecStr = new Intl.NumberFormat("en-US").format(
+      //   Math.round(locSec),
+      // );
+      // console.log(`${variant} ${file.name} LOC/sec: ${locSecStr}`);
+    }
   }
 }
 
@@ -79,27 +85,79 @@ function selectVariant(variant: string): ParserVariant {
   throw new Error("NYI parser variant: " + variant);
 }
 
-function runBench(variant: ParserVariant, file: BenchTest): number {
-  const warmupIterations = 5;
-  const benchIterations = 20;
+/** run benchmark with mitata */
+async function runBench(
+  variant: ParserVariant,
+  file: BenchTest,
+): Promise<void> {
+  const benchName = `${variant} - ${file.name}`;
 
-  // LATER try a bench library, e.g. Deno.bench
+  lineplot(() => {
+    const b = bench(benchName, () => runOnce(variant, file)).baseline(true);
+    bench(benchName + "2", () => runOnce(variant, file)).baseline(false);
+  });
 
-  /* warmup */
-  runNTimes(warmupIterations, variant, file);
-
-  /* test */
-  const start = performance.now();
-  runNTimes(benchIterations, variant, file);
-  const ns = performance.now() - start;
-  const ms = ns / benchIterations / 1000;
-  return ms;
+  const result = await run();
+  // console.log(result.context);
+  const { now, arch, version, runtime, cpu } = result.context;
+  const [a, b] = result.benchmarks;
+  const aStats = a.runs[0].stats;
+  const bStats = b.runs[0].stats;
+  console.log({ aStatsMin: aStats?.min });
+  console.log({ bStatsMin: bStats?.min });
 }
 
-function runNTimes(n: number, variant: ParserVariant, file: BenchTest): void {
-  for (let i = 0; i < n; i++) {
-    runOnce(variant, file);
-  }
+async function measureBench(
+  variant: ParserVariant,
+  file: BenchTest,
+): Promise<void> {
+  const benchName = `${variant} - ${file.name}`;
+
+  const heap = () => {
+    const stats = getHeapStatistics();
+    return stats.used_heap_size + stats.malloced_memory;
+  };
+
+  const stats = await measure(() => runOnce(variant, file), {
+    min_cpu_time: 500 * 1e6, // 500ms
+    inner_gc: true,
+    heap: heap,
+    $counters: counters, // 
+  } as any);
+
+  const {
+    gc,
+    heap: heapStats,
+    min,
+    max,
+    avg,
+    p75,
+    p99,
+    samples,
+    counters: cc,
+  } = stats;
+  console.log(`\n--- ${benchName} ---`);
+  console.log({
+    avg_ms: avg / 1e6,
+    min_ms: min / 1e6,
+    max_ms: max / 1e6,
+    samples: samples.length,
+    heap: heapStats
+      ? {
+          avg_kb: heapStats.avg / 1024,
+          min_kb: heapStats.min / 1024,
+          max_kb: heapStats.max / 1024,
+        }
+      : "disabled",
+    gc: gc
+      ? {
+          avg_ms: gc.avg / 1e6,
+          min_ms: gc.min / 1e6,
+          max_ms: gc.max / 1e6,
+        }
+      : "disabled (run with --expose-gc)",
+    counters: cc,
+  });
 }
 
 interface BenchTest {
@@ -159,12 +217,12 @@ async function loadAllFiles(): Promise<BenchTest[]> {
   );
   return [
     reduceBuffer,
-    particle,
-    rasterize,
-    boat,
-    imports_only,
-    bevy_deferred_lighting,
-    bevy_linking,
+    // particle,
+    // rasterize,
+    // boat,
+    // imports_only,
+    // bevy_deferred_lighting,
+    // bevy_linking,
   ];
 }
 
