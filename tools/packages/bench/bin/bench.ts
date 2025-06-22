@@ -83,22 +83,25 @@ async function benchAndReport(
 
     const current = await mitataBench(() => runOnce(variant, t), benchName);
 
-    reportResults(t, current, old);
+    reportResults({ benchTest: t, mainResult: current, baseline: old });
   }
 }
 
-function reportResults(
-  benchTest: BenchTest,
-  mainResult: MeasuredResults,
-  baseline?: MeasuredResults,
-): void {
+interface BenchmarkReport {
+  benchTest: BenchTest;
+  mainResult: MeasuredResults;
+  baseline?: MeasuredResults;
+}
+
+function reportResults(report: BenchmarkReport): void {
+  const { benchTest, mainResult, baseline } = report;
   const mainSelected = selectedStats(benchTest, mainResult);
   const mainReport = { name: mainResult.name, ...mainSelected };
   let baselineReports: TableRow[] = [];
   if (baseline) {
     const baselineSelected = selectedStats(benchTest, baseline);
-    const report = { ...baselineSelected, name: baseline.name };
-    baselineReports = [report];
+    const baselineReport = { ...baselineSelected, name: baseline.name };
+    baselineReports = [baselineReport];
   }
   const table = new TextTable();
   const result = table.report([mainReport, ...baselineReports]);
