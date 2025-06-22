@@ -1,18 +1,10 @@
-import {
-  summary,
-  barplot,
-  boxplot,
-  measure,
-  bench,
-  run,
-  lineplot,
-} from "mitata";
-import { getHeapStatistics } from "node:v8";
+import { measure } from "mitata";
+import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
 import type { CpuCounts } from "@mitata/counters";
 import * as mitataCounters from "@mitata/counters";
 
-/** all times in milliseconds */
-export interface BenchResults {
+/** times in milliseconds, sizes in kilobytes */
+export interface MeasuredResults {
   samples: number;
   /** time in milliseconds */
   time: {
@@ -43,18 +35,26 @@ type MeasureOptions = Parameters<typeof measure>[1] & {
   "&counters"?: typeof mitataCounters; // missing from published types
 };
 
+/** Run a function using mitata benchmarking, 
+ *  collecting time, gc, heap, and cpu counter statistics.
+ * @param fn - the function to benchmark
+ * @param name - optional name for the benchmark
+ * @param options - optional mitata measure options
+ * @returns the measured results, with time in milliseconds, and heap size in kilobytes
+ */
 export async function mitataBench(
   fn: () => Promise<void> | void,
   name = "",
   options?: MeasureOptions,
-): Promise<BenchResults> {
+): Promise<MeasuredResults> {
   const heapFn = () => {
     const stats = getHeapStatistics();
     return stats.used_heap_size + stats.malloced_memory;
   };
 
   const stats = await measure(fn, {
-    min_cpu_time: 500 * 1e6, // 500ms
+    // min_cpu_time: 500 * 1e6, // 500ms
+    min_cpu_time: 500 * 1e2,
     inner_gc: true,
     heap: heapFn,
     $counters: mitataCounters,

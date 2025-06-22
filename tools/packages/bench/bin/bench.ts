@@ -5,12 +5,16 @@ import { type SrcModule, type WeslAST, link, parseSrcModule } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
 import {
-  type BenchResults,
+  type MeasuredResults,
   mapValues,
   mitataBench,
 } from "../src/MitataBench.ts";
 
 import { hideBin } from "yargs/helpers";
+import { type TableRow, TextTable } from "../src/TextTable.ts";
+const baselineLink = await import("../_baseline/packages/wesl/src/index.ts")
+  .then(x => x.link)
+  .catch(() => undefined);
 
 type ParserVariant =
   | "wgsl-linker"
@@ -65,10 +69,6 @@ function benchOnceOnly(tests: BenchTest[], variant: ParserVariant): void {
   console.profileEnd();
 }
 
-const baselineLink = await import("../_baseline/packages/wesl/src/index.ts")
-  .then(x => x.link)
-  .catch(() => undefined);
-
 /** run the tests and report results */
 async function benchAndReport(
   tests: BenchTest[],
@@ -76,30 +76,52 @@ async function benchAndReport(
 ): Promise<void> {
   for (const t of tests) {
     const benchName = `${variant} ${t.name}`;
-    const oldResult = baselineLink && (await mitataBench(() => runBaseline(t)));
-    const result = await mitataBench(() => runOnce(variant, t), benchName);
-    reportResults(t, result, oldResult);
+
+    let old = undefined;
+    if (baselineLink)
+      old = await mitataBench(() => runBaseline(t), "->baseline");
+
+    const current = await mitataBench(() => runOnce(variant, t), benchName);
+
+    reportResults(t, current, old);
   }
 }
 
 function reportResults(
-  file: BenchTest,
-  result: BenchResults,
-  baseline?: BenchResults,
+  benchTest: BenchTest,
+  mainResult: MeasuredResults,
+  baseline?: MeasuredResults,
 ): void {
-  const codeLines = getCodeLines(file);
+  const mainSelected = selectedStats(benchTest, mainResult);
+  const mainReport = { name: mainResult.name, ...mainSelected };
+  let baselineReports: TableRow[] = [];
+  if (baseline) {
+    const baselineSelected = selectedStats(benchTest, baseline);
+    const report = { ...baselineSelected, name: baseline.name };
+    baselineReports = [report];
+  }
+  const table = new TextTable();
+  const result = table.report([mainReport, ...baselineReports]);
+  console.log(result + "\n");
+}
+
+interface SelectedStats {
+  median: string;
+  min: string;
+}
+
+function selectedStats(
+  benchTest: BenchTest,
+  result: MeasuredResults,
+): SelectedStats {
+  const codeLines = getCodeLines(benchTest);
   const median = result.time.p50;
   const min = result.time.min;
-  const locSec = mapValues({ median, min }, x => codeLines / (x / 1000));
-  const locStr = mapValues(locSec, x =>
+  const locPerSecond = mapValues({ median, min }, x => codeLines / (x / 1000));
+  const locStr = mapValues(locPerSecond, x =>
     new Intl.NumberFormat("en-US").format(Math.round(x)),
   );
-  console.log(
-    `${result.name} LOC/sec: ${locStr.min} (min)  ${locStr.median} (median)`,
-  );
-  
-  console.log("raw Time:", min);
-  console.log("runs:", result.samples);
+  return locStr;
 }
 
 function selectVariant(variant: string): ParserVariant {
@@ -172,8 +194,8 @@ async function loadAllFiles(): Promise<BenchTest[]> {
     rasterize,
     boat,
     imports_only,
-    bevy_deferred_lighting,
-    bevy_linking,
+    // bevy_deferred_lighting,
+    // bevy_linking,
   ];
 }
 
