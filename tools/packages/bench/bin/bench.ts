@@ -75,7 +75,7 @@ async function benchAndReport(
   variant: ParserVariant,
 ): Promise<void> {
   const reports: BenchmarkReport[] = [];
-  
+
   for (const t of tests) {
     const benchName = `${variant} ${t.name}`;
 
@@ -87,7 +87,7 @@ async function benchAndReport(
 
     reports.push({ benchTest: t, mainResult: current, baseline: old });
   }
-  
+
   reportResults(reports);
 }
 
@@ -99,28 +99,28 @@ interface BenchmarkReport {
 
 function reportResults(reports: BenchmarkReport[]): void {
   const allRows: TableRow[] = [];
-  
+
   for (const report of reports) {
     const { benchTest, mainResult, baseline } = report;
     const mainSelected = selectedStats(benchTest, mainResult);
     const mainReport = { name: mainResult.name, ...mainSelected };
     allRows.push(mainReport);
-    
+
     if (baseline) {
       const baselineSelected = selectedStats(benchTest, baseline);
       const baselineReport = { ...baselineSelected, name: baseline.name };
       allRows.push(baselineReport);
     }
   }
-  
+
   const table = new TextTable();
   const result = table.report(allRows);
   console.log(result + "\n");
 }
 
 interface SelectedStats {
-  median: string;
-  min: string;
+  "median LOC/sec": string;
+  "min LOC/sec": string;
 }
 
 function selectedStats(
@@ -134,7 +134,7 @@ function selectedStats(
   const locStr = mapValues(locPerSecond, x =>
     new Intl.NumberFormat("en-US").format(Math.round(x)),
   );
-  return locStr;
+  return { "median LOC/sec": locStr.median, "min LOC/sec": locStr.min };
 }
 
 function selectVariant(variant: string): ParserVariant {
