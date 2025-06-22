@@ -74,6 +74,8 @@ async function benchAndReport(
   tests: BenchTest[],
   variant: ParserVariant,
 ): Promise<void> {
+  const reports: BenchmarkReport[] = [];
+  
   for (const t of tests) {
     const benchName = `${variant} ${t.name}`;
 
@@ -83,8 +85,10 @@ async function benchAndReport(
 
     const current = await mitataBench(() => runOnce(variant, t), benchName);
 
-    reportResults({ benchTest: t, mainResult: current, baseline: old });
+    reports.push({ benchTest: t, mainResult: current, baseline: old });
   }
+  
+  reportResults(reports);
 }
 
 interface BenchmarkReport {
@@ -93,18 +97,24 @@ interface BenchmarkReport {
   baseline?: MeasuredResults;
 }
 
-function reportResults(report: BenchmarkReport): void {
-  const { benchTest, mainResult, baseline } = report;
-  const mainSelected = selectedStats(benchTest, mainResult);
-  const mainReport = { name: mainResult.name, ...mainSelected };
-  let baselineReports: TableRow[] = [];
-  if (baseline) {
-    const baselineSelected = selectedStats(benchTest, baseline);
-    const baselineReport = { ...baselineSelected, name: baseline.name };
-    baselineReports = [baselineReport];
+function reportResults(reports: BenchmarkReport[]): void {
+  const allRows: TableRow[] = [];
+  
+  for (const report of reports) {
+    const { benchTest, mainResult, baseline } = report;
+    const mainSelected = selectedStats(benchTest, mainResult);
+    const mainReport = { name: mainResult.name, ...mainSelected };
+    allRows.push(mainReport);
+    
+    if (baseline) {
+      const baselineSelected = selectedStats(benchTest, baseline);
+      const baselineReport = { ...baselineSelected, name: baseline.name };
+      allRows.push(baselineReport);
+    }
   }
+  
   const table = new TextTable();
-  const result = table.report([mainReport, ...baselineReports]);
+  const result = table.report(allRows);
   console.log(result + "\n");
 }
 
