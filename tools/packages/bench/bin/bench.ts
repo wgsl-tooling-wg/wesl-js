@@ -5,7 +5,7 @@ import { type SrcModule, type WeslAST, link, parseSrcModule } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
 import {
-  MeasureOptions,
+  type MeasureOptions,
   mitataBench,
 } from "../src/MitataBench.ts";
 
