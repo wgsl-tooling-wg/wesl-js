@@ -97,13 +97,18 @@ interface BenchmarkReport {
   baseline?: MeasuredResults;
 }
 
+const maxNameLength = 20;
+
 function reportResults(reports: BenchmarkReport[]): void {
   const allRows: TableRow[] = [];
 
   for (const report of reports) {
     const { benchTest, mainResult, baseline } = report;
     const mainSelected = selectedStats(benchTest, mainResult);
-    const mainReport = { name: mainResult.name, ...mainSelected };
+    const mainReport = {
+      name: mainResult.name.slice(0, maxNameLength),
+      ...mainSelected,
+    };
     allRows.push(mainReport);
 
     if (baseline) {
@@ -119,8 +124,8 @@ function reportResults(reports: BenchmarkReport[]): void {
 }
 
 interface SelectedStats {
-  "median LOC/sec": string;
-  "min LOC/sec": string;
+  "LOC/sec p50": string;
+  "LOC/sec min": string;
 }
 
 function selectedStats(
@@ -131,10 +136,10 @@ function selectedStats(
   const median = result.time.p50;
   const min = result.time.min;
   const locPerSecond = mapValues({ median, min }, x => codeLines / (x / 1000));
-  const locStr = mapValues(locPerSecond, x =>
+  const locFormatted = mapValues(locPerSecond, x =>
     new Intl.NumberFormat("en-US").format(Math.round(x)),
   );
-  return { "median LOC/sec": locStr.median, "min LOC/sec": locStr.min };
+  return { "LOC/sec p50": locFormatted.median, "LOC/sec min": locFormatted.min };
 }
 
 function selectVariant(variant: string): ParserVariant {
