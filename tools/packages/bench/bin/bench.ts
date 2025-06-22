@@ -139,7 +139,10 @@ function selectedStats(
   const locFormatted = mapValues(locPerSecond, x =>
     new Intl.NumberFormat("en-US").format(Math.round(x)),
   );
-  return { "LOC/sec p50": locFormatted.median, "LOC/sec min": locFormatted.min };
+  return {
+    "LOC/sec p50": locFormatted.median,
+    "LOC/sec min": locFormatted.min,
+  };
 }
 
 function selectVariant(variant: string): ParserVariant {
