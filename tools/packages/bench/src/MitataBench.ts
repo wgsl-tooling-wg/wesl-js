@@ -31,7 +31,7 @@ export interface MeasuredResults {
   name: string;
 }
 
-type MeasureOptions = Parameters<typeof measure>[1] & {
+export type MeasureOptions = Parameters<typeof measure>[1] & {
   "&counters"?: typeof mitataCounters; // missing from published types
 };
 

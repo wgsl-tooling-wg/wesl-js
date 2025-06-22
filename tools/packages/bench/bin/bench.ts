@@ -5,13 +5,12 @@ import { type SrcModule, type WeslAST, link, parseSrcModule } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
 import {
-  type MeasuredResults,
-  mapValues,
+  MeasureOptions,
   mitataBench,
 } from "../src/MitataBench.ts";
 
 import { hideBin } from "yargs/helpers";
-import { type TableRow, TextTable } from "../src/TextTable.ts";
+import { type BenchmarkReport, reportResults } from "../src/BenchResults.ts";
 const baselineLink = await import("../_baseline/packages/wesl/src/index.ts")
   .then(x => x.link)
   .catch(() => undefined);
@@ -76,73 +75,20 @@ async function benchAndReport(
 ): Promise<void> {
   const reports: BenchmarkReport[] = [];
 
+  const opts: MeasureOptions = { max_samples: 10} as any;
   for (const t of tests) {
     const benchName = `${variant} ${t.name}`;
 
     let old = undefined;
     if (baselineLink)
-      old = await mitataBench(() => runBaseline(t), "->baseline");
+      old = await mitataBench(() => runBaseline(t), "->baseline", opts);
 
-    const current = await mitataBench(() => runOnce(variant, t), benchName);
+    const current = await mitataBench(() => runOnce(variant, t), benchName, opts);
 
     reports.push({ benchTest: t, mainResult: current, baseline: old });
   }
 
   reportResults(reports);
-}
-
-interface BenchmarkReport {
-  benchTest: BenchTest;
-  mainResult: MeasuredResults;
-  baseline?: MeasuredResults;
-}
-
-const maxNameLength = 30;
-
-function reportResults(reports: BenchmarkReport[]): void {
-  const allRows: TableRow[] = [];
-
-  for (const report of reports) {
-    const { benchTest, mainResult, baseline } = report;
-    const mainSelected = selectedStats(benchTest, mainResult);
-    const mainReport = {
-      name: mainResult.name.slice(0, maxNameLength),
-      ...mainSelected,
-    };
-    allRows.push(mainReport);
-
-    if (baseline) {
-      const baselineSelected = selectedStats(benchTest, baseline);
-      const baselineReport = { ...baselineSelected, name: baseline.name };
-      allRows.push(baselineReport);
-    }
-  }
-
-  const table = new TextTable();
-  const result = table.report(allRows);
-  console.log(result + "\n");
-}
-
-interface SelectedStats {
-  "LOC/sec p50": string;
-  "LOC/sec min": string;
-}
-
-function selectedStats(
-  benchTest: BenchTest,
-  result: MeasuredResults,
-): SelectedStats {
-  const codeLines = getCodeLines(benchTest);
-  const median = result.time.p50;
-  const min = result.time.min;
-  const locPerSecond = mapValues({ median, min }, x => codeLines / (x / 1000));
-  const locFormatted = mapValues(locPerSecond, x =>
-    new Intl.NumberFormat("en-US").format(Math.round(x)),
-  );
-  return {
-    "LOC/sec p50": locFormatted.median,
-    "LOC/sec min": locFormatted.min,
-  };
 }
 
 function selectVariant(variant: string): ParserVariant {
@@ -154,7 +100,7 @@ function selectVariant(variant: string): ParserVariant {
   throw new Error("NYI parser variant: " + variant);
 }
 
-interface BenchTest {
+export interface BenchTest {
   name: string;
   /** Path to the main file */
   mainFile: string;
@@ -276,12 +222,6 @@ function useGpuParse(_filePath: string, text: string): void {
   WGSLLinker.loadModule(text);
 }
 
-function getCodeLines(benchTest: BenchTest) {
-  return benchTest.files
-    .values()
-    .map(text => text.split("\n").length)
-    .reduce((sum, v) => sum + v, 0);
-}
 
 /** parse a single wesl file */ // DRY with TestUtil
 export function parseWESL(src: string): WeslAST {
