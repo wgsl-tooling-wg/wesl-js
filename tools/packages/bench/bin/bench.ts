@@ -97,7 +97,7 @@ interface BenchmarkReport {
   baseline?: MeasuredResults;
 }
 
-const maxNameLength = 20;
+const maxNameLength = 30;
 
 function reportResults(reports: BenchmarkReport[]): void {
   const allRows: TableRow[] = [];
