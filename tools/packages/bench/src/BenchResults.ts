@@ -84,9 +84,9 @@ function getCodeLines(benchTest: BenchTest) {
 function formatStats(stats: NamedStats): StringStats {
   const { locSecP50, locSecMin, name } = stats;
   return {
+    name,
     "LOC/sec p50": formatNumber(locSecP50),
     "LOC/sec min": formatNumber(locSecMin),
-    name,
   };
 }
 
