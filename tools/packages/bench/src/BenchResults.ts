@@ -1,6 +1,7 @@
 import type { BenchTest } from "../bin/bench.ts";
 import { mapValues, type MeasuredResults } from "./MitataBench.ts";
 import { type TableRow, TextTable } from "./TextTable.ts";
+import pico from 'picocolors';
 
 export interface BenchmarkReport {
   benchTest: BenchTest;
@@ -58,9 +59,11 @@ function locSecDiff(
 ): Record<string, string> {
   const diff = current.locSecMin - base.locSecMin;
   const diffPercent = (diff / base.locSecMin) * 100;
-  const sign = diffPercent >= 0 ? "+" : "-";
+  const positive = diffPercent >= 0;
+  const sign = positive ? "+" : "-";
   const percentStr = `${sign}${Math.abs(diffPercent).toFixed(1)}%`;
-  return { "min %": percentStr };
+  const colored = positive ? pico.green(percentStr) : pico.red(percentStr);
+  return { "min %": colored };
 }
 
 function namedStats(
