@@ -30,27 +30,21 @@ export function reportResults(reports: BenchmarkReport[]): void {
 
   for (const report of reports) {
     const { benchTest, mainResult, baseline } = report;
-    const mainStats = selectedStats(benchTest, mainResult);
-    const mainNamedStats = {
-      name: mainResult.name.slice(0, maxNameLength),
-      ...mainStats,
-    };
 
-    const formatted = formatStats(mainNamedStats);
+    const codeLines = getCodeLines(benchTest);
+    const main = namedStats(codeLines, mainResult);
+    const mainFormatted = formatStats(main.namedStats);
+
     if (baseline) {
-      const withDiff = { ...formatted, "%": "+1.0%" };
+      const base = namedStats(codeLines, baseline);
+      const diffStr = locSecDiff(base.stats, main.stats);
+      const withDiff = { ...mainFormatted, ...diffStr };
       allRows.push(withDiff);
+      allRows.push(formatStats(base.namedStats));
     } else {
-      allRows.push(formatted);
+      allRows.push(mainFormatted);
     }
-
-    if (baseline) {
-      const baselineStats = selectedStats(benchTest, baseline);
-      const baselineNamedStats = { name: baseline.name, ...baselineStats, };
-
-      const formatted = formatStats(baselineNamedStats);
-      allRows.push(formatted);
-    }
+    allRows.push({}); // empty row between tests
   }
 
   const table = new TextTable();
@@ -58,12 +52,37 @@ export function reportResults(reports: BenchmarkReport[]): void {
   console.log(result + "\n");
 }
 
+function locSecDiff(
+  base: SelectedStats,
+  current: SelectedStats,
+): Record<string, string> {
+  const diff = current.locSecMin - base.locSecMin;
+  const diffPercent = (diff / base.locSecMin) * 100;
+  const sign = diffPercent >= 0 ? "+" : "-";
+  const percentStr = `${sign}${Math.abs(diffPercent).toFixed(1)}%`;
+  return { "min %": percentStr };
+}
+
+function namedStats(
+  codeLines: number,
+  measured: MeasuredResults,
+): {
+  stats: SelectedStats;
+  namedStats: NamedStats;
+} {
+  const stats = selectedStats(codeLines, measured);
+  const namedStats = {
+    name: measured.name.slice(0, maxNameLength),
+    ...stats,
+  };
+  return { stats, namedStats };
+}
+
 /** select and preprocess interesting stats for reporting  */
 function selectedStats(
-  benchTest: BenchTest,
+  codeLines: number,
   result: MeasuredResults,
 ): SelectedStats {
-  const codeLines = getCodeLines(benchTest);
   const median = result.time.p50;
   const min = result.time.min;
   const locPerSecond = mapValues({ median, min }, x => codeLines / (x / 1000));
