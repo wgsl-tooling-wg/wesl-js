@@ -18,9 +18,10 @@ interface ReportRow {
   locSecMax?: string;
   locSecMaxPercent?: string;
   locSecP50Percent?: string;
+  timeMean?: string;
   gcTimeMean?: string;
-  // gcTimePercent?: string;
-  // cpuCacheMiss?: string;
+  gcTimePercent?: string;
+  cpuCacheMiss?: string;
   heap?: string;
   runs?: string;
 }
@@ -36,6 +37,7 @@ interface SelectedStats {
   locSecP50: number;
   locSecMax: number;
   gcTimeMean?: number;
+  timeMean: number; 
   runs: number;
   cpuCacheMiss?: number;
   heap?: number;
@@ -89,15 +91,16 @@ function formatReport(main: NamedStats, base?: NamedStats): FullReportRow[] {
 function mostlyFullRow(stats: NamedStats): FullReportRow {
   return {
     name: stats.name,
+    timeMean: prettyFloat(stats.timeMean, 2),
     locSecMax: prettyInteger(stats.locSecMax),
     locSecP50: prettyInteger(stats.locSecP50),
     gcTimeMean: prettyFloat(stats.gcTimeMean, 2),
     runs: prettyInteger(stats.runs),
-    // cpuCacheMiss: prettyPercent(stats.cpuCacheMiss),
+    cpuCacheMiss: prettyPercent(stats.cpuCacheMiss),
     heap: prettyInteger(stats.heap),
     locSecMaxPercent: null,
     locSecP50Percent: null,
-    // gcTimePercent: null,
+    gcTimePercent: null,
   };
 }
 
@@ -123,13 +126,19 @@ function logTable(records: FullReportRow[]): void {
     r.locSecMaxPercent,
     r.locSecP50,
     r.locSecP50Percent,
+    r.timeMean,
     r.gcTimeMean,
-    // r.gcTimePercent,
+    r.gcTimePercent,
     r.heap,
-    // r.cpuCacheMiss,
+    r.cpuCacheMiss,
     r.runs,
   ]);
-  const rows = rawRows.map(row => row.map(cell => cell ?? ""));
+  const rows = rawRows.map(row =>
+    row.map(cell => {
+      if (cell === undefined || cell === null) return " "; // note table library hangs if all strings are ""
+      return cell;
+    }),
+  );
 
   const allRows = [...headerRows(rows[0].length), ...rows];
 
@@ -143,17 +152,19 @@ function headerRows(columns: number): string[][] {
     blankPad([bold("name"), bold("Lines / sec")], columns),
     blankPad([], columns),
     blankPad(
+      // biome-ignore format: 
       [
-        "",
-        bold("max"),
-        bold("%"),
-        bold("p50"),
-        bold("%"),
-        bold("gc time"),
-        // bold("%"),
-        bold("heap"),
-        // bold("L1 miss"),
-        bold("runs"),
+        "",              // 0 name 
+        bold("max"),     // 1
+        bold("%"),       // 2
+        bold("p50"),     // 3
+        bold("%"),       // 4
+        bold("time"),    // 5
+        bold("+gc"),     // 6
+        bold("%"),       // 7
+        bold("kb"),      // 8
+        bold("L1 miss"), // 9
+        bold("runs"),    // 10
       ],
       columns,
     ),
@@ -169,10 +180,11 @@ function tableConfig(): TableUserConfig {
     { row: 1, col: 1, colSpan: 3, alignment: "center" }, // blank under "Lines / sec"
     { row: 2, col: 1, colSpan: 1, alignment: "center" }, // "max" header
     { row: 2, col: 3, colSpan: 1, alignment: "center" }, // "p50" header
-    { row: 2, col: 4, colSpan: 1, alignment: "center" }, // "gc time" header
-    { row: 2, col: 6, colSpan: 1, alignment: "center" }, // "heap" header
-    // { row: 2, col: 7, colSpan: 1, alignment: "center" }, // "L1 miss" header
-    // { row: 2, col: 8, colSpan: 1, alignment: "center" }, // "runs" header
+    { row: 2, col: 5, colSpan: 1, alignment: "center" }, // "time" header
+    { row: 2, col: 4, colSpan: 1, alignment: "center" }, // "+gc" header
+    { row: 2, col: 6, colSpan: 1, alignment: "center" }, // "kb" header
+    { row: 2, col: 7, colSpan: 1, alignment: "center" }, // "L1 miss" header
+    { row: 2, col: 8, colSpan: 1, alignment: "center" }, // "runs" header
   ];
 
   const config: TableUserConfig = {
@@ -184,10 +196,11 @@ function tableConfig(): TableUserConfig {
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
       { alignment: "right" },                                 // loc/Sec p50
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
-      { alignment: "right" },                                 // gc time
-      // { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
-      // { alignment: "right" },                                 // heap
-      // { alignment: "right" },                                 // L1 miss
+      { alignment: "right" },                                 // time
+      { alignment: "right" },                                 // +gc
+      { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
+      { alignment: "right" },                                 // heap
+      { alignment: "right" },                                 // L1 miss
       { alignment: "right" },                                 // runs
     ],
     drawHorizontalLine: (index, size) => {
@@ -225,11 +238,10 @@ function selectedStats(
     { median, max: min }, // 'min' time becomes 'max' loc/sec
     x => codeLines / (x / 1000),
   );
-  // console.log(`time.avg: ${result.time.avg}`);
-  // console.log(`gcTimeAvg: ${result.gcTime?.avg}`);
   return {
     locSecP50: locPerSecond.median,
     locSecMax: locPerSecond.max,
+    timeMean: result.time?.avg,
     gcTimeMean: result.gcTime?.avg,
     runs: result.samples.length,
     heap: result.heapSize?.avg,
