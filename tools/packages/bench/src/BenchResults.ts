@@ -116,12 +116,11 @@ function tableConfig(): TableUserConfig {
   const config: TableUserConfig = {
     spanningCells,
     columns: [
-      { alignment: "left" },
-      { alignment: "right" },
-      { alignment: "left", paddingLeft: 0, paddingRight: 2 },
-      { alignment: "right" },
-      { alignment: "left", paddingLeft: 0 },
-      { alignment: "right" },
+      { alignment: "left" }, // name
+      { alignment: "right" }, // loc/Sec  min
+      { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // % 
+      { alignment: "right" }, // loc/Sec p50
+      { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
     ],
     drawHorizontalLine: (index, size) => {
       return index === 0 || index === 3 || index === size;
