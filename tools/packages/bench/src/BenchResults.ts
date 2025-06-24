@@ -63,7 +63,7 @@ function formatReport(main: NamedStats, base?: NamedStats): ReportRow[] {
   return results;
 }
 
-function percentString(numerator: number, total:number): string {
+function percentString(numerator: number, total: number): string {
   const diffPercent = (numerator / total) * 100;
   const positive = diffPercent >= 0;
   const sign = positive ? "+" : "-";
@@ -72,32 +72,40 @@ function percentString(numerator: number, total:number): string {
   return colored;
 }
 
+/** write the table to the console */
 function logTable(records: ReportRow[]): void {
   const rawRows = records.map(r => [
     r.name,
     r.locSecMin,
     r.locSecMinPercent,
     r.locSecP50,
+    // r.locSecP50Percent,
   ]);
   const rows = rawRows.map(row => row.map(cell => cell ?? ""));
 
-  const columnCount = rows[0].length;
-
-  const headerLines = [[pico.bold("name"), pico.bold("Lines / sec"), "", ""]];
-  const blankRow = filled("", columnCount);
   const allRows = [
-    ...headerLines,
-    blankRow,
-    ["", pico.bold("min"), pico.bold("%"), pico.bold("p50")],
+    ...headerRows(rows[0].length),
     ...rows,
   ];
 
+  console.log(table(allRows, tableConfig()));
+}
+function headerRows(columns:number): string[][] {
+  return [
+    [pico.bold("name"), pico.bold("Lines / sec"), "", ""],
+    filled("", columns),
+    ["", pico.bold("min"), pico.bold("%"), pico.bold("p50")],
+  ];
+}
+
+function tableConfig(): TableUserConfig {
   const spanningCells: SpanningCellConfig[] = [
     { row: 0, col: 1, colSpan: 3, alignment: "center" },
     { row: 1, col: 1, colSpan: 3, alignment: "center" },
     { row: 2, col: 1, colSpan: 1, alignment: "center" },
     { row: 2, col: 3, colSpan: 1, alignment: "center" },
   ];
+
   const config: TableUserConfig = {
     spanningCells,
     columns: [
@@ -115,7 +123,7 @@ function logTable(records: ReportRow[]): void {
       return index === 0 || index === 1 || index === size;
     },
   };
-  console.log(table(allRows, config));
+  return config;
 }
 
 function filled(element: string, count: number): string[] {
