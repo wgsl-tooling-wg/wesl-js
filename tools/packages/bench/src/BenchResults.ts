@@ -3,6 +3,8 @@ import { mapValues, type MeasuredResults } from "./MitataBench.ts";
 import pico from "picocolors";
 import { type SpanningCellConfig, table, type TableUserConfig } from "table";
 
+const {bold, red, green}  = pico; 
+
 export interface BenchmarkReport {
   benchTest: BenchTest;
   mainResult: MeasuredResults;
@@ -68,7 +70,7 @@ function percentString(numerator: number, total: number): string {
   const positive = diffPercent >= 0;
   const sign = positive ? "+" : "-";
   const percentStr = `${sign}${Math.abs(diffPercent).toFixed(1)}%`;
-  const colored = positive ? pico.green(percentStr) : pico.red(percentStr);
+  const colored = positive ? green(percentStr) : red(percentStr);
   return colored;
 }
 
@@ -79,7 +81,7 @@ function logTable(records: ReportRow[]): void {
     r.locSecMin,
     r.locSecMinPercent,
     r.locSecP50,
-    // r.locSecP50Percent,
+    r.locSecP50Percent,
   ]);
   const rows = rawRows.map(row => row.map(cell => cell ?? ""));
 
@@ -90,11 +92,12 @@ function logTable(records: ReportRow[]): void {
 
   console.log(table(allRows, tableConfig()));
 }
+
 function headerRows(columns:number): string[][] {
   return [
-    [pico.bold("name"), pico.bold("Lines / sec"), "", ""],
+    [bold("name"), bold("Lines / sec"), "", "", ""],
     filled("", columns),
-    ["", pico.bold("min"), pico.bold("%"), pico.bold("p50")],
+    ["", bold("min"), bold("%"), bold("p50"), bold("%")],
   ];
 }
 
@@ -128,16 +131,6 @@ function tableConfig(): TableUserConfig {
 
 function filled(element: string, count: number): string[] {
   return Array(count).fill(element);
-}
-
-function locSecDiff(base: SelectedStats, current: SelectedStats): ReportRow {
-  const diff = current.locSecMin - base.locSecMin;
-  const positive = diff >= 0;
-  const diffPercent = (diff / base.locSecMin) * 100;
-  const sign = positive ? "+" : "-";
-  const percentStr = `${sign}${Math.abs(diffPercent).toFixed(1)}%`;
-  const colored = positive ? pico.green(percentStr) : pico.red(percentStr);
-  return { locSecMinPercent: colored };
 }
 
 function namedStats(codeLines: number, measured: MeasuredResults): NamedStats {
