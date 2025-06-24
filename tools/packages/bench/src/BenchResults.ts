@@ -37,21 +37,39 @@ export function reportResults(reports: BenchmarkReport[]): void {
     const codeLines = getCodeLines(benchTest);
     const main = namedStats(codeLines, mainResult);
 
-    if (baseline) {
-      const base = namedStats(codeLines, baseline);
-      const diffStr = locSecDiff(base.stats, main.stats);
-      const mainFormatted = formatStats(main.namedStats);
-      const withDiff = { ...mainFormatted, ...diffStr };
-      allRows.push(withDiff);
-      allRows.push(formatStats(base.namedStats));
-      allRows.push({});
-    } else {
-      const mainFormatted = formatStats(main.namedStats);
-      allRows.push(mainFormatted);
-    }
+    const base = baseline && namedStats(codeLines, baseline);
+    const rows = formatReport(main, base);
+    allRows.push(...rows);
+    if (base) allRows.push({});
   }
 
   logTable(allRows);
+}
+
+function formatReport(main: NamedStats, base?: NamedStats): ReportRow[] {
+  const results: ReportRow[] = [];
+  if (base) {
+    const diff = main.locSecMin - base.locSecMin;
+    const locSecMinPercent = percentString(diff, base.locSecMin);
+    const formattedMain: ReportRow = {
+      name: main.name,
+      locSecMin: formatNumber(main.locSecMin),
+      locSecMinPercent,
+      locSecP50: formatNumber(main.locSecP50),
+    };
+    results.push(formattedMain);
+    results.push(formatStats(base));
+  }
+  return results;
+}
+
+function percentString(numerator: number, total:number): string {
+  const diffPercent = (numerator / total) * 100;
+  const positive = diffPercent >= 0;
+  const sign = positive ? "+" : "-";
+  const percentStr = `${sign}${Math.abs(diffPercent).toFixed(1)}%`;
+  const colored = positive ? pico.green(percentStr) : pico.red(percentStr);
+  return colored;
 }
 
 function logTable(records: ReportRow[]): void {
@@ -106,27 +124,21 @@ function filled(element: string, count: number): string[] {
 
 function locSecDiff(base: SelectedStats, current: SelectedStats): ReportRow {
   const diff = current.locSecMin - base.locSecMin;
+  const positive = diff >= 0;
   const diffPercent = (diff / base.locSecMin) * 100;
-  const positive = diffPercent >= 0;
   const sign = positive ? "+" : "-";
   const percentStr = `${sign}${Math.abs(diffPercent).toFixed(1)}%`;
   const colored = positive ? pico.green(percentStr) : pico.red(percentStr);
   return { locSecMinPercent: colored };
 }
 
-function namedStats(
-  codeLines: number,
-  measured: MeasuredResults,
-): {
-  stats: SelectedStats;
-  namedStats: NamedStats;
-} {
+function namedStats(codeLines: number, measured: MeasuredResults): NamedStats {
   const stats = selectedStats(codeLines, measured);
   const namedStats = {
     name: measured.name.slice(0, maxNameLength),
     ...stats,
   };
-  return { stats, namedStats };
+  return namedStats;
 }
 
 /** select and preprocess interesting stats for reporting  */
