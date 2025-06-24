@@ -158,10 +158,10 @@ async function loadAllFiles(): Promise<BenchTest[]> {
   );
   return [
     reduceBuffer,
-    // particle,
-    // rasterize,
+    particle,
+    rasterize,
     // boat,
-    // imports_only,
+    imports_only,
     // bevy_deferred_lighting,
     // bevy_linking,
   ];

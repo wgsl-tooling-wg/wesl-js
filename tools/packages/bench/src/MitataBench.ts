@@ -1,7 +1,7 @@
 import { measure } from "mitata";
 import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
 import type { CpuCounts } from "@mitata/counters";
-import * as mitataCounters from "@mitata/counters";
+// import * as mitataCounters from "@mitata/counters";
 
 /** times in milliseconds, sizes in kilobytes */
 export interface MeasuredResults {
@@ -32,7 +32,7 @@ export interface MeasuredResults {
 }
 
 export type MeasureOptions = Parameters<typeof measure>[1] & {
-  "&counters"?: typeof mitataCounters; // missing from published types
+  // "&counters"?: typeof mitataCounters; // missing from published types
 };
 
 /** Run a function using mitata benchmarking, 
@@ -57,7 +57,7 @@ export async function mitataBench(
     min_cpu_time: 500 * 1e2,
     inner_gc: true,
     heap: heapFn,
-    $counters: mitataCounters,
+    // $counters: mitataCounters,
     ...options,
   } as MeasureOptions);
 

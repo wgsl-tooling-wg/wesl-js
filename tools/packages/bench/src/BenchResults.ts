@@ -2,6 +2,7 @@ import type { BenchTest } from "../bin/bench.ts";
 import { mapValues, type MeasuredResults } from "./MitataBench.ts";
 import pico from "picocolors";
 import Table from "cli-table3";
+import { SpanningCellConfig, table, type TableUserConfig } from "table";
 
 export interface BenchmarkReport {
   benchTest: BenchTest;
@@ -50,26 +51,62 @@ export function reportResults(reports: BenchmarkReport[]): void {
     }
   }
 
-  const table = recordsToTable(allRows);
-  console.log(table.toString() + "\n");
+  logTable(allRows);
 }
 
-function recordsToTable(records: ReportRow[]): Table.Table {
-  const table = new Table();
-  table.push([
-    pico.bold("name"),
-    { colSpan: 3, hAlign: "center", content: pico.bold("Lines of Code / sec") },
-  ]);
-  table.push(["", pico.bold("min"), pico.bold("min %"), pico.bold("p50")]);
+function logTable(records: ReportRow[]): void {
   const rows = records.map(r => [
     r.name,
     r.locSecMin,
     r.locSecMinPercent,
     r.locSecP50,
   ]);
-  table.push(...rows);
-  return table;
+
+  const spanningCells: SpanningCellConfig[] = [
+    { col: 1, row: 0, colSpan: 3, alignment: "center" },
+    { col: 1, row: 1, colSpan: 3, alignment: "center" },
+  ];
+  const config: TableUserConfig = {
+    spanningCells,
+    drawHorizontalLine: (index, size) => {
+      return index === 0 || index === 3 || index === size;
+    },
+  };
+  const headerLines = [
+    [pico.bold("name"), pico.bold("Lines / sec"), "", ""],
+    ["", "", "", ""],
+  ];
+  const allRows = [
+    ...headerLines,
+    ["", pico.bold("min"), pico.bold("min %"), pico.bold("p50")],
+    ...rows,
+  ];
+  console.log(table(allRows, config));
 }
+
+// function recordsToTable(records: ReportRow[]): Table.Table {
+//   const table = new Table({
+//   chars: { 'top': '' , 'top-mid': '' , 'top-left': '' , 'top-right': ''
+//          , 'bottom': '' , 'bottom-mid': '' , 'bottom-left': '' , 'bottom-right': ''
+//          , 'left': '' , 'left-mid': '' , 'mid': '' , 'mid-mid': ''
+//          , 'right': '' , 'right-mid': '' , 'middle': ' ' },
+//   style: { 'padding-left': 0, 'padding-right': 0 }
+
+//   });
+//   table.push([
+//     pico.bold("name"),
+//     { colSpan: 3, hAlign: "center", content: pico.bold("Lines of Code / sec") },
+//   ]);
+//   table.push(["", pico.bold("min"), pico.bold("min %"), pico.bold("p50")]);
+//   const rows = records.map(r => [
+//     r.name,
+//     r.locSecMin,
+//     r.locSecMinPercent,
+//     r.locSecP50,
+//   ]);
+//   table.push(...rows);
+//   return table;
+// }
 
 function locSecDiff(base: SelectedStats, current: SelectedStats): ReportRow {
   const diff = current.locSecMin - base.locSecMin;
