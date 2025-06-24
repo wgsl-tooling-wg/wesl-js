@@ -103,7 +103,7 @@ function logTable(records: ReportRow[]): void {
     columns: [
       { alignment: "left" },
       { alignment: "right" },
-      { alignment: "left", paddingLeft: 0 },
+      { alignment: "left", paddingLeft: 0, paddingRight: 2 },
       { alignment: "right" },
       { alignment: "left", paddingLeft: 0 },
       { alignment: "right" },
