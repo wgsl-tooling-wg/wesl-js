@@ -5,6 +5,7 @@ import { type SpanningCellConfig, table, type TableUserConfig } from "table";
 
 const { bold, red, green } = pico;
 
+/** report of benchmark results, including baseline results if available  */
 export interface BenchmarkReport {
   benchTest: BenchTest;
   mainResult: MeasuredResults;
@@ -14,14 +15,18 @@ export interface BenchmarkReport {
 interface ReportRow {
   name?: string;
   locSecP50?: string;
-  locSecMin?: string;
-  locSecMinPercent?: string;
+  locSecMax?: string;
+  locSecMaxPercent?: string;
   locSecP50Percent?: string;
+  gcTimeMean?: string;
+  runs?: number; // not used in the report, but useful for debugging
+  cpuCacheMissRate?: number;
 }
 
 interface SelectedStats {
   locSecP50: number;
-  locSecMin: number;
+  locSecMax: number;
+  gcTimeMean?: number;
 }
 
 interface NamedStats extends SelectedStats {
@@ -50,30 +55,35 @@ export function reportResults(reports: BenchmarkReport[]): void {
 
 function formatReport(main: NamedStats, base?: NamedStats): ReportRow[] {
   const results: ReportRow[] = [];
+  const mainRow: ReportRow = {};
+
   if (base) {
-    const locDiff = main.locSecMin - base.locSecMin;
-    const locP50Diff = main.locSecP50 - base.locSecP50;
+    const { gcTimeMean, locSecMax, locSecP50 } = main;
+    const locDiff = locSecMax - base.locSecMax;
+    const locP50Diff = locSecP50 - base.locSecP50;
 
     const formattedMain: ReportRow = {
       name: main.name,
-      locSecMin: prettyInteger(main.locSecMin),
-      locSecMinPercent: percentString(locDiff, base.locSecMin),
-      locSecP50: prettyInteger(main.locSecP50),
-      locSecP50Percent: percentString(locP50Diff, base.locSecP50),
+      locSecMax: prettyInteger(locSecMax),
+      locSecMaxPercent: coloredPercent(locDiff, base.locSecMax),
+      locSecP50: prettyInteger(locSecP50),
+      locSecP50Percent: coloredPercent(locP50Diff, base.locSecP50),
+      gcTimeMean: prettyFloat(gcTimeMean, 2),
     };
     results.push(formattedMain);
 
     const formattedBase: ReportRow = {
       name: base.name,
-      locSecMin: prettyInteger(base.locSecMin),
+      locSecMax: prettyInteger(base.locSecMax),
       locSecP50: prettyInteger(base.locSecP50),
+      gcTimeMean: prettyFloat(base.gcTimeMean, 2),
     };
 
     results.push(formattedBase);
   } else {
     const formattedMain: ReportRow = {
       name: main.name,
-      locSecMin: prettyInteger(main.locSecMin),
+      locSecMax: prettyInteger(main.locSecMax),
       locSecP50: prettyInteger(main.locSecP50),
     };
     results.push(formattedMain);
@@ -81,23 +91,29 @@ function formatReport(main: NamedStats, base?: NamedStats): ReportRow[] {
   return results;
 }
 
-function percentString(numerator: number, total: number): string {
-  const diffPercent = (numerator / total) * 100;
-  const positive = diffPercent >= 0;
+function coloredPercent(numerator: number, total: number): string {
+  const fraction = numerator / total;
+  const positive = fraction >= 0;
   const sign = positive ? "+" : "-";
-  const percentStr = `${sign}${Math.abs(diffPercent).toFixed(1)}%`;
+  const percentStr = `${sign}${percentString(fraction)}`;
   const colored = positive ? green(percentStr) : red(percentStr);
   return colored;
+}
+
+function percentString(fraction?: number): string | undefined {
+  if (fraction === undefined) return undefined;
+  return `${Math.abs(fraction * 100).toFixed(1)}%`;
 }
 
 /** write the table to the console */
 function logTable(records: ReportRow[]): void {
   const rawRows = records.map(r => [
     r.name,
-    r.locSecMin,
-    r.locSecMinPercent,
+    r.locSecMax,
+    r.locSecMaxPercent,
     r.locSecP50,
     r.locSecP50Percent,
+    r.gcTimeMean,
   ]);
   const rows = rawRows.map(row => row.map(cell => cell ?? ""));
 
@@ -108,9 +124,9 @@ function logTable(records: ReportRow[]): void {
 
 function headerRows(columns: number): string[][] {
   return [
-    [bold("name"), bold("Lines / sec"), "", "", ""],
+    [bold("name"), bold("Lines / sec"), "", "", "", ""],
     filled("", columns),
-    ["", bold("min"), bold("%"), bold("p50"), bold("%")],
+    ["", bold("max"), bold("%"), bold("p50"), bold("%"), bold("gcTimeMean")],
   ];
 }
 
@@ -120,8 +136,9 @@ function tableConfig(): TableUserConfig {
     { row: 0, col: 0, colSpan: 1, alignment: "center" }, // "name" header
     { row: 0, col: 1, colSpan: 4, alignment: "center" }, // "Lines / sec" header
     { row: 1, col: 1, colSpan: 3, alignment: "center" }, // blank under "Lines / sec"
-    { row: 2, col: 1, colSpan: 1, alignment: "center" }, // "min" header
+    { row: 2, col: 1, colSpan: 1, alignment: "center" }, // "max" header
     { row: 2, col: 3, colSpan: 1, alignment: "center" }, // "p50" header
+    { row: 2, col: 4, colSpan: 1, alignment: "center" }, // "gcTime" header
   ];
 
   const config: TableUserConfig = {
@@ -129,10 +146,11 @@ function tableConfig(): TableUserConfig {
     // biome-ignore format:
     columns: [
       { alignment: "left" },                                  // name
-      { alignment: "right" },                                 // loc/Sec min
+      { alignment: "right" },                                 // loc/Sec max
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
       { alignment: "right" },                                 // loc/Sec p50
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
+      { alignment: "right" },                                 // gcTime
     ],
     drawHorizontalLine: (index, size) => {
       return index === 0 || index === 3 || index === size;
@@ -164,10 +182,18 @@ function selectedStats(
 ): SelectedStats {
   const median = result.time.p50;
   const min = result.time.min;
-  const locPerSecond = mapValues({ median, min }, x => codeLines / (x / 1000));
+  const locPerSecond = mapValues(
+    { median, max: min }, // 'min' time becomes 'max' loc/sec
+    x => codeLines / (x / 1000),
+  );
+  const gcTimeFraction = result.gcTime;
+  console.log(`time.avg: ${result.time.avg}`);
+  console.log(`gcTimeAvg: ${result.gcTime?.avg}`);
+  console.log(`gcTimeFraction: ${gcTimeFraction}`);
   return {
     locSecP50: locPerSecond.median,
-    locSecMin: locPerSecond.min,
+    locSecMax: locPerSecond.max,
+    gcTimeMean: result.gcTime?.avg,
   };
 }
 
@@ -181,4 +207,9 @@ function getCodeLines(benchTest: BenchTest) {
 
 function prettyInteger(x: number): string {
   return new Intl.NumberFormat("en-US").format(Math.round(x));
+}
+
+function prettyFloat(x: number|undefined, digits: number): string|undefined {
+  if (x === undefined) return undefined;
+  return x.toFixed(digits).replace(/\.?0+$/, "");
 }
