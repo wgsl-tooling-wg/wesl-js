@@ -37,7 +37,7 @@ interface SelectedStats {
   locSecP50: number;
   locSecMax: number;
   gcTimeMean?: number;
-  timeMean: number; 
+  timeMean: number;
   runs: number;
   cpuCacheMiss?: number;
   heap?: number;
@@ -78,6 +78,12 @@ function formatReport(main: NamedStats, base?: NamedStats): FullReportRow[] {
     const locP50Diff = main.locSecP50 - base.locSecP50;
     mainRow.locSecP50Percent = coloredPercent(locP50Diff, base.locSecP50);
     mainRow.locSecMaxPercent = coloredPercent(locDiff, base.locSecMax);
+
+    if (main.gcTimeMean && base.gcTimeMean) {
+      const gcDiff = main.gcTimeMean - base.gcTimeMean;
+      mainRow.gcTimePercent = coloredPercent(gcDiff, base.gcTimeMean);
+    }
+
     results.push(mainRow);
 
     const baseRow = mostlyFullRow(base);
@@ -147,12 +153,11 @@ function logTable(records: FullReportRow[]): void {
 
 /**  @return row content for the header */
 function headerRows(columns: number): string[][] {
-  console.log(`columns: ${columns}`);
   return [
     blankPad([bold("name"), bold("Lines / sec")], columns),
     blankPad([], columns),
     blankPad(
-      // biome-ignore format: 
+      // biome-ignore format:
       [
         "",              // 0 name 
         bold("max"),     // 1
@@ -207,7 +212,7 @@ function tableConfig(): TableUserConfig {
       return index === 0 || index === 3 || index === size;
     },
     drawVerticalLine: (index, size) => {
-      return index === 0 || index === 1 || index === size;
+      return index === 0 || index === 1 || index === 5 || index === size;
     },
   };
   return config;
@@ -245,7 +250,24 @@ function selectedStats(
     gcTimeMean: result.gcTime?.avg,
     runs: result.samples.length,
     heap: result.heapSize?.avg,
+    cpuCacheMiss: cpuCacheMiss(result),
   };
+}
+
+function cpuCacheMiss(result: MeasuredResults): number | undefined {
+  if (result.cpu?.l1) {
+    const { cpu } = result;
+    const { l1 } = cpu;
+    const total = cpu.instructions?.loads_and_stores?.avg;
+    const loadMiss = l1?.miss_loads?.avg;
+    const storeMiss = l1?.miss_stores?.avg;
+    if (total === undefined) return undefined;
+    if (loadMiss === undefined || storeMiss === undefined) return undefined;
+
+    const miss = loadMiss + storeMiss;
+    return miss / total;
+  }
+  return undefined;
 }
 
 /** count the number of lines of code in a bench test */
