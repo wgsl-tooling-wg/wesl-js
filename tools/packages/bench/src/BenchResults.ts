@@ -19,9 +19,9 @@ interface ReportRow {
   locSecMaxPercent?: string;
   locSecP50Percent?: string;
   gcTimeMean?: string;
-  gcTimePercent?: string;
-  cpuCacheMiss?: string;
-  heap?: string;
+  // gcTimePercent?: string;
+  // cpuCacheMiss?: string;
+  // heap?: string;
   runs?: string;
 }
 
@@ -93,11 +93,11 @@ function mostlyFullRow(stats: NamedStats): FullReportRow {
     locSecP50: prettyInteger(stats.locSecP50),
     gcTimeMean: prettyFloat(stats.gcTimeMean, 2),
     runs: prettyInteger(stats.runs),
-    cpuCacheMiss: prettyPercent(stats.cpuCacheMiss),
-    heap: prettyInteger(stats.heap),
+    // cpuCacheMiss: prettyPercent(stats.cpuCacheMiss),
+    // heap: prettyInteger(stats.heap),
     locSecMaxPercent: null,
     locSecP50Percent: null,
-    gcTimePercent: null,
+    // gcTimePercent: null,
   };
 }
 
@@ -124,9 +124,9 @@ function logTable(records: FullReportRow[]): void {
     r.locSecP50,
     r.locSecP50Percent,
     r.gcTimeMean,
-    r.gcTimePercent,
-    r.heap,
-    r.cpuCacheMiss,
+    // r.gcTimePercent,
+    // r.heap,
+    // r.cpuCacheMiss,
     r.runs,
   ]);
   const rows = rawRows.map(row => row.map(cell => cell ?? ""));
@@ -138,6 +138,7 @@ function logTable(records: FullReportRow[]): void {
 
 /**  @return row content for the header */
 function headerRows(columns: number): string[][] {
+  console.log(`columns: ${columns}`);
   return [
     blankPad([bold("name"), bold("Lines / sec")], columns),
     blankPad([], columns),
@@ -149,9 +150,9 @@ function headerRows(columns: number): string[][] {
         bold("p50"),
         bold("%"),
         bold("gc time"),
-        bold("%"),
-        bold("heap"),
-        bold("L1 miss"),
+        // bold("%"),
+        // bold("heap"),
+        // bold("L1 miss"),
         bold("runs"),
       ],
       columns,
@@ -170,8 +171,8 @@ function tableConfig(): TableUserConfig {
     { row: 2, col: 3, colSpan: 1, alignment: "center" }, // "p50" header
     { row: 2, col: 4, colSpan: 1, alignment: "center" }, // "gc time" header
     { row: 2, col: 6, colSpan: 1, alignment: "center" }, // "heap" header
-    { row: 2, col: 7, colSpan: 1, alignment: "center" }, // "L1 miss" header
-    { row: 2, col: 8, colSpan: 1, alignment: "center" }, // "runs" header
+    // { row: 2, col: 7, colSpan: 1, alignment: "center" }, // "L1 miss" header
+    // { row: 2, col: 8, colSpan: 1, alignment: "center" }, // "runs" header
   ];
 
   const config: TableUserConfig = {
@@ -184,9 +185,9 @@ function tableConfig(): TableUserConfig {
       { alignment: "right" },                                 // loc/Sec p50
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
       { alignment: "right" },                                 // gc time
-      { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
-      { alignment: "right" },                                 // heap
-      { alignment: "right" },                                 // L1 miss
+      // { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
+      // { alignment: "right" },                                 // heap
+      // { alignment: "right" },                                 // L1 miss
       { alignment: "right" },                                 // runs
     ],
     drawHorizontalLine: (index, size) => {
