@@ -19,7 +19,7 @@ interface ReportRow {
   locSecMaxPercent?: string;
   locSecP50Percent?: string;
   gcTimeMean?: string;
-  runs?: number; // not used in the report, but useful for debugging
+  runs?: number;
   cpuCacheMissRate?: number;
 }
 
@@ -27,6 +27,7 @@ interface SelectedStats {
   locSecP50: number;
   locSecMax: number;
   gcTimeMean?: number;
+  runs: number;
 }
 
 interface NamedStats extends SelectedStats {
@@ -61,9 +62,12 @@ function formatReport(main: NamedStats, base?: NamedStats): ReportRow[] {
     locSecMax: prettyInteger(main.locSecMax),
     locSecP50: prettyInteger(main.locSecP50),
     gcTimeMean: prettyFloat(gcTimeMean, 2),
+    runs: main.runs,
   };
 
-  if (base) {
+  if (!base) {
+    results.push(mainRow);
+  } else {
     const locDiff = locSecMax - base.locSecMax;
     const locP50Diff = locSecP50 - base.locSecP50;
 
@@ -80,14 +84,8 @@ function formatReport(main: NamedStats, base?: NamedStats): ReportRow[] {
     };
 
     results.push(baseRow);
-  } else {
-    const formattedMain: ReportRow = {
-      name: main.name,
-      locSecMax: prettyInteger(main.locSecMax),
-      locSecP50: prettyInteger(main.locSecP50),
-    };
-    results.push(formattedMain);
   }
+
   return results;
 }
 
@@ -186,14 +184,13 @@ function selectedStats(
     { median, max: min }, // 'min' time becomes 'max' loc/sec
     x => codeLines / (x / 1000),
   );
-  const gcTimeFraction = result.gcTime;
   // console.log(`time.avg: ${result.time.avg}`);
   // console.log(`gcTimeAvg: ${result.gcTime?.avg}`);
-  // console.log(`gcTimeFraction: ${gcTimeFraction}`);
   return {
     locSecP50: locPerSecond.median,
     locSecMax: locPerSecond.max,
     gcTimeMean: result.gcTime?.avg,
+    runs: result.samples.length,
   };
 }
 
