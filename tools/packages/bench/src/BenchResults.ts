@@ -69,8 +69,19 @@ function logTable(records: ReportRow[]): void {
   ];
   const config: TableUserConfig = {
     spanningCells,
+    columns: [
+      { alignment: "left" },
+      { alignment: "right", },
+      { alignment: "left", paddingLeft: 0 },
+      { alignment: "right" },
+      { alignment: "left", paddingLeft: 0 },
+      { alignment: "right" },
+    ],
     drawHorizontalLine: (index, size) => {
       return index === 0 || index === 3 || index === size;
+    },
+    drawVerticalLine: (index, size) => {
+      return index === 0 || index === 1 || index === size;
     },
   };
   const headerLines = [
@@ -79,7 +90,7 @@ function logTable(records: ReportRow[]): void {
   ];
   const allRows = [
     ...headerLines,
-    ["", pico.bold("min"), pico.bold("min %"), pico.bold("p50")],
+    ["", pico.bold("min"), pico.bold("%"), pico.bold("p50")],
     ...rows,
   ];
   console.log(table(allRows, config));

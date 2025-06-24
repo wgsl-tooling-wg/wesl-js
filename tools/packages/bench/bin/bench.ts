@@ -78,7 +78,7 @@ async function benchAndReport(
 
     let old = undefined;
     if (baselineLink)
-      old = await mitataBench(() => runBaseline(t), "->baseline", opts);
+      old = await mitataBench(() => runBaseline(t), "--> baseline", opts);
 
     const current = await mitataBench(
       () => runOnce(variant, t),
