@@ -3,7 +3,7 @@ import { mapValues, type MeasuredResults } from "./MitataBench.ts";
 import pico from "picocolors";
 import { type SpanningCellConfig, table, type TableUserConfig } from "table";
 
-const {bold, red, green}  = pico; 
+const { bold, red, green } = pico;
 
 export interface BenchmarkReport {
   benchTest: BenchTest;
@@ -60,7 +60,14 @@ function formatReport(main: NamedStats, base?: NamedStats): ReportRow[] {
       locSecP50: formatNumber(main.locSecP50),
     };
     results.push(formattedMain);
-    results.push(formatStats(base));
+
+    const formattedBase: ReportRow = {
+      name: base.name,
+      locSecMin: formatNumber(base.locSecMin),
+      locSecP50: formatNumber(base.locSecP50),
+    };
+
+    results.push(formattedBase);
   }
   return results;
 }
@@ -85,15 +92,12 @@ function logTable(records: ReportRow[]): void {
   ]);
   const rows = rawRows.map(row => row.map(cell => cell ?? ""));
 
-  const allRows = [
-    ...headerRows(rows[0].length),
-    ...rows,
-  ];
+  const allRows = [...headerRows(rows[0].length), ...rows];
 
   console.log(table(allRows, tableConfig()));
 }
 
-function headerRows(columns:number): string[][] {
+function headerRows(columns: number): string[][] {
   return [
     [bold("name"), bold("Lines / sec"), "", "", ""],
     filled("", columns),
@@ -162,15 +166,6 @@ function getCodeLines(benchTest: BenchTest) {
     .values()
     .map(text => text.split("\n").length)
     .reduce((sum, v) => sum + v, 0);
-}
-
-function formatStats(stats: NamedStats): ReportRow {
-  const { locSecP50, locSecMin, name } = stats;
-  return {
-    name,
-    locSecP50: formatNumber(locSecP50),
-    locSecMin: formatNumber(locSecMin),
-  };
 }
 
 function formatNumber(x: number): string {
