@@ -23,6 +23,12 @@ interface ReportRow {
   cpuCacheMissRate?: number;
 }
 
+type NullableValues<T> = {
+  [P in keyof T]: T[P] | null;
+};
+
+type FullReportRow = NullableValues<ReportRow>;
+
 interface SelectedStats {
   locSecP50: number;
   locSecMax: number;
@@ -37,7 +43,7 @@ interface NamedStats extends SelectedStats {
 const maxNameLength = 30;
 
 export function reportResults(reports: BenchmarkReport[]): void {
-  const allRows: ReportRow[] = [];
+  const allRows: FullReportRow[] = [];
 
   for (const report of reports) {
     const { benchTest, mainResult, baseline } = report;
@@ -48,16 +54,16 @@ export function reportResults(reports: BenchmarkReport[]): void {
     const base = baseline && namedStats(codeLines, baseline);
     const rows = formatReport(main, base);
     allRows.push(...rows);
-    if (base) allRows.push({});
+    if (base) allRows.push({}); // empty row for spacing
   }
 
   logTable(allRows);
 }
 
-function formatReport(main: NamedStats, base?: NamedStats): ReportRow[] {
-  const results: ReportRow[] = [];
+function formatReport(main: NamedStats, base?: NamedStats): FullReportRow[] {
+  const results: FullReportRow[] = [];
   const { gcTimeMean, locSecMax, locSecP50 } = main;
-  const mainRow: ReportRow = {
+  const mainRow: FullReportRow = {
     name: main.name,
     locSecMax: prettyInteger(main.locSecMax),
     locSecP50: prettyInteger(main.locSecP50),
@@ -104,7 +110,7 @@ function percentString(fraction?: number): string | undefined {
 }
 
 /** write the table to the console */
-function logTable(records: ReportRow[]): void {
+function logTable(records: FullReportRow[]): void {
   const rawRows = records.map(r => [
     r.name,
     r.locSecMax,
@@ -112,6 +118,8 @@ function logTable(records: ReportRow[]): void {
     r.locSecP50,
     r.locSecP50Percent,
     r.gcTimeMean,
+    r.runs,
+    r.cpuCacheMissRate,
   ]);
   const rows = rawRows.map(row => row.map(cell => cell ?? ""));
 
@@ -122,9 +130,21 @@ function logTable(records: ReportRow[]): void {
 
 function headerRows(columns: number): string[][] {
   return [
-    [bold("name"), bold("Lines / sec"), "", "", "", ""],
-    filled("", columns),
-    ["", bold("max"), bold("%"), bold("p50"), bold("%"), bold("gcTimeMean")],
+    blankPad([bold("name"), bold("Lines / sec")], columns),
+    blankPad([], columns),
+    blankPad(
+      [
+        "",
+        bold("max"),
+        bold("%"),
+        bold("p50"),
+        bold("%"),
+        bold("gcTimeMean"),
+        bold("runs"),
+        bold("cpuCacheMissRate"),
+      ],
+      columns,
+    ),
   ];
 }
 
@@ -162,6 +182,11 @@ function tableConfig(): TableUserConfig {
 
 function filled(element: string, count: number): string[] {
   return Array(count).fill(element);
+}
+
+function blankPad(arr: string[], length: number): string[] {
+  if (arr.length >= length) return arr;
+  return [...arr, ...Array(length - arr.length).fill("")];
 }
 
 function namedStats(codeLines: number, measured: MeasuredResults): NamedStats {
