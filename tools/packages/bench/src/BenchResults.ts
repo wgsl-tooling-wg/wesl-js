@@ -19,21 +19,26 @@ interface ReportRow {
   locSecMaxPercent?: string;
   locSecP50Percent?: string;
   gcTimeMean?: string;
-  runs?: number;
-  cpuCacheMissRate?: number;
+  gcTimePercent?: string;
+  cpuCacheMiss?: string;
+  heap?: string;
+  runs?: string;
 }
 
 type NullableValues<T> = {
   [P in keyof T]: T[P] | null;
 };
 
-type FullReportRow = NullableValues<ReportRow>;
+/** report row with all keys required, and values that may be null */
+type FullReportRow = NullableValues<Required<ReportRow>>;
 
 interface SelectedStats {
   locSecP50: number;
   locSecMax: number;
   gcTimeMean?: number;
   runs: number;
+  cpuCacheMiss?: number;
+  heap?: number;
 }
 
 interface NamedStats extends SelectedStats {
@@ -54,7 +59,7 @@ export function reportResults(reports: BenchmarkReport[]): void {
     const base = baseline && namedStats(codeLines, baseline);
     const rows = formatReport(main, base);
     allRows.push(...rows);
-    if (base) allRows.push({}); // empty row for spacing
+    if (base) allRows.push({} as FullReportRow); // empty row for spacing
   }
 
   logTable(allRows);
@@ -62,50 +67,51 @@ export function reportResults(reports: BenchmarkReport[]): void {
 
 function formatReport(main: NamedStats, base?: NamedStats): FullReportRow[] {
   const results: FullReportRow[] = [];
-  const { gcTimeMean, locSecMax, locSecP50 } = main;
-  const mainRow: FullReportRow = {
-    name: main.name,
-    locSecMax: prettyInteger(main.locSecMax),
-    locSecP50: prettyInteger(main.locSecP50),
-    gcTimeMean: prettyFloat(gcTimeMean, 2),
-    runs: main.runs,
-  };
+  const mainRow = mostlyFullRow(main);
 
   if (!base) {
     results.push(mainRow);
   } else {
-    const locDiff = locSecMax - base.locSecMax;
-    const locP50Diff = locSecP50 - base.locSecP50;
-
+    const locDiff = main.locSecMax - base.locSecMax;
+    const locP50Diff = main.locSecP50 - base.locSecP50;
     mainRow.locSecP50Percent = coloredPercent(locP50Diff, base.locSecP50);
     mainRow.locSecMaxPercent = coloredPercent(locDiff, base.locSecMax);
-
     results.push(mainRow);
 
-    const baseRow: ReportRow = {
-      name: base.name,
-      locSecMax: prettyInteger(base.locSecMax),
-      locSecP50: prettyInteger(base.locSecP50),
-      gcTimeMean: prettyFloat(base.gcTimeMean, 2),
-    };
-
+    const baseRow = mostlyFullRow(base);
     results.push(baseRow);
   }
 
   return results;
 }
 
+/** @return a report row with all properties set, but some values set to null */
+function mostlyFullRow(stats: NamedStats): FullReportRow {
+  return {
+    name: stats.name,
+    locSecMax: prettyInteger(stats.locSecMax),
+    locSecP50: prettyInteger(stats.locSecP50),
+    gcTimeMean: prettyFloat(stats.gcTimeMean, 2),
+    runs: prettyInteger(stats.runs),
+    cpuCacheMiss: prettyPercent(stats.cpuCacheMiss),
+    heap: prettyInteger(stats.heap),
+    locSecMaxPercent: null,
+    locSecP50Percent: null,
+    gcTimePercent: null,
+  };
+}
+
 function coloredPercent(numerator: number, total: number): string {
   const fraction = numerator / total;
   const positive = fraction >= 0;
   const sign = positive ? "+" : "-";
-  const percentStr = `${sign}${percentString(fraction)}`;
+  const percentStr = `${sign}${prettyPercent(fraction)}`;
   const colored = positive ? green(percentStr) : red(percentStr);
   return colored;
 }
 
-function percentString(fraction?: number): string | undefined {
-  if (fraction === undefined) return undefined;
+function prettyPercent(fraction?: number): string | null {
+  if (fraction === undefined) return null;
   return `${Math.abs(fraction * 100).toFixed(1)}%`;
 }
 
@@ -118,8 +124,10 @@ function logTable(records: FullReportRow[]): void {
     r.locSecP50,
     r.locSecP50Percent,
     r.gcTimeMean,
+    r.gcTimePercent,
+    r.heap,
+    r.cpuCacheMiss,
     r.runs,
-    r.cpuCacheMissRate,
   ]);
   const rows = rawRows.map(row => row.map(cell => cell ?? ""));
 
@@ -128,6 +136,7 @@ function logTable(records: FullReportRow[]): void {
   console.log(table(allRows, tableConfig()));
 }
 
+/**  @return row content for the header */
 function headerRows(columns: number): string[][] {
   return [
     blankPad([bold("name"), bold("Lines / sec")], columns),
@@ -139,15 +148,18 @@ function headerRows(columns: number): string[][] {
         bold("%"),
         bold("p50"),
         bold("%"),
-        bold("gcTimeMean"),
+        bold("gc time"),
+        bold("%"),
+        bold("heap"),
+        bold("L1 miss"),
         bold("runs"),
-        bold("cpuCacheMissRate"),
       ],
       columns,
     ),
   ];
 }
 
+/** @return configuration for the table header and separator lines */
 function tableConfig(): TableUserConfig {
   // biome-ignore format:
   const spanningCells: SpanningCellConfig[] = [
@@ -156,7 +168,10 @@ function tableConfig(): TableUserConfig {
     { row: 1, col: 1, colSpan: 3, alignment: "center" }, // blank under "Lines / sec"
     { row: 2, col: 1, colSpan: 1, alignment: "center" }, // "max" header
     { row: 2, col: 3, colSpan: 1, alignment: "center" }, // "p50" header
-    { row: 2, col: 4, colSpan: 1, alignment: "center" }, // "gcTime" header
+    { row: 2, col: 4, colSpan: 1, alignment: "center" }, // "gc time" header
+    { row: 2, col: 6, colSpan: 1, alignment: "center" }, // "heap" header
+    { row: 2, col: 7, colSpan: 1, alignment: "center" }, // "L1 miss" header
+    { row: 2, col: 8, colSpan: 1, alignment: "center" }, // "runs" header
   ];
 
   const config: TableUserConfig = {
@@ -168,7 +183,11 @@ function tableConfig(): TableUserConfig {
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
       { alignment: "right" },                                 // loc/Sec p50
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
-      { alignment: "right" },                                 // gcTime
+      { alignment: "right" },                                 // gc time
+      { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
+      { alignment: "right" },                                 // heap
+      { alignment: "right" },                                 // L1 miss
+      { alignment: "right" },                                 // runs
     ],
     drawHorizontalLine: (index, size) => {
       return index === 0 || index === 3 || index === size;
@@ -178,10 +197,6 @@ function tableConfig(): TableUserConfig {
     },
   };
   return config;
-}
-
-function filled(element: string, count: number): string[] {
-  return Array(count).fill(element);
 }
 
 function blankPad(arr: string[], length: number): string[] {
@@ -216,6 +231,7 @@ function selectedStats(
     locSecMax: locPerSecond.max,
     gcTimeMean: result.gcTime?.avg,
     runs: result.samples.length,
+    heap: result.heapSize?.avg,
   };
 }
 
@@ -227,14 +243,12 @@ function getCodeLines(benchTest: BenchTest) {
     .reduce((sum, v) => sum + v, 0);
 }
 
-function prettyInteger(x: number): string {
+function prettyInteger(x: number | undefined): string | null {
+  if (x === undefined) return null;
   return new Intl.NumberFormat("en-US").format(Math.round(x));
 }
 
-function prettyFloat(
-  x: number | undefined,
-  digits: number,
-): string | undefined {
-  if (x === undefined) return undefined;
+function prettyFloat(x: number | undefined, digits: number): string | null {
+  if (x === undefined) return null;
   return x.toFixed(digits).replace(/\.?0+$/, "");
 }
