@@ -75,21 +75,22 @@ async function benchAndReport(
   const secToNs = 1e9; 
   const opts: MeasureOptions = {
     inner_gc: true,
-    min_cpu_time: .5 * secToNs, 
+    min_cpu_time: 5 * secToNs, 
   } as any;
   for (const t of tests) {
     const benchName = `${variant} ${t.name}`;
-
-    let old = undefined;
-    if (baselineLink)
-      // old = await mitataBench(() => runBaseline(t), "--> baseline", opts);
-      old = await mitataBench(() => runOnce(variant, t), "--> baseline", opts);
 
     const current = await mitataBench(
       () => runOnce(variant, t),
       benchName,
       opts,
     );
+
+    let old = undefined;
+    if (baselineLink)
+      old = await mitataBench(() => runBaseline(t), "--> baseline", opts);
+      // old = await mitataBench(() => runOnce(variant, t), "--> baseline", opts);
+
 
     reports.push({ benchTest: t, mainResult: current, baseline: old });
   }
