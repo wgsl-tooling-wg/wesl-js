@@ -117,6 +117,7 @@ function headerRows(columns: number): string[][] {
 function tableConfig(): TableUserConfig {
   // biome-ignore format:
   const spanningCells: SpanningCellConfig[] = [
+    { row: 0, col: 0, colSpan: 1, alignment: "center" }, // "name" header
     { row: 0, col: 1, colSpan: 4, alignment: "center" }, // "Lines / sec" header
     { row: 1, col: 1, colSpan: 3, alignment: "center" }, // blank under "Lines / sec"
     { row: 2, col: 1, colSpan: 1, alignment: "center" }, // "min" header
