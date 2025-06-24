@@ -63,15 +63,28 @@ function logTable(records: ReportRow[]): void {
   ]);
   const rows = rawRows.map(row => row.map(cell => cell ?? ""));
 
+  const columnCount = rows[0].length;
+
+  const headerLines = [[pico.bold("name"), pico.bold("Lines / sec"), "", ""]];
+  const blankRow = filled("", columnCount);
+  const allRows = [
+    ...headerLines,
+    blankRow,
+    ["", pico.bold("min"), pico.bold("%"), pico.bold("p50")],
+    ...rows,
+  ];
+
   const spanningCells: SpanningCellConfig[] = [
-    { col: 1, row: 0, colSpan: 3, alignment: "center" },
-    { col: 1, row: 1, colSpan: 3, alignment: "center" },
+    { row: 0, col: 1, colSpan: 3, alignment: "center" },
+    { row: 1, col: 1, colSpan: 3, alignment: "center" },
+    { row: 2, col: 1, colSpan: 1, alignment: "center" },
+    { row: 2, col: 3, colSpan: 1, alignment: "center" },
   ];
   const config: TableUserConfig = {
     spanningCells,
     columns: [
       { alignment: "left" },
-      { alignment: "right", },
+      { alignment: "right" },
       { alignment: "left", paddingLeft: 0 },
       { alignment: "right" },
       { alignment: "left", paddingLeft: 0 },
@@ -84,16 +97,11 @@ function logTable(records: ReportRow[]): void {
       return index === 0 || index === 1 || index === size;
     },
   };
-  const headerLines = [
-    [pico.bold("name"), pico.bold("Lines / sec"), "", ""],
-    ["", "", "", ""],
-  ];
-  const allRows = [
-    ...headerLines,
-    ["", pico.bold("min"), pico.bold("%"), pico.bold("p50")],
-    ...rows,
-  ];
   console.log(table(allRows, config));
+}
+
+function filled(element: string, count: number): string[] {
+  return Array(count).fill(element);
 }
 
 function locSecDiff(base: SelectedStats, current: SelectedStats): ReportRow {
