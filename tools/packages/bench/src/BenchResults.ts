@@ -51,23 +51,32 @@ export function reportResults(reports: BenchmarkReport[]): void {
 function formatReport(main: NamedStats, base?: NamedStats): ReportRow[] {
   const results: ReportRow[] = [];
   if (base) {
-    const diff = main.locSecMin - base.locSecMin;
-    const locSecMinPercent = percentString(diff, base.locSecMin);
+    const locDiff = main.locSecMin - base.locSecMin;
+    const locP50Diff = main.locSecP50 - base.locSecP50;
+
     const formattedMain: ReportRow = {
       name: main.name,
-      locSecMin: formatNumber(main.locSecMin),
-      locSecMinPercent,
-      locSecP50: formatNumber(main.locSecP50),
+      locSecMin: prettyInteger(main.locSecMin),
+      locSecMinPercent: percentString(locDiff, base.locSecMin),
+      locSecP50: prettyInteger(main.locSecP50),
+      locSecP50Percent: percentString(locP50Diff, base.locSecP50),
     };
     results.push(formattedMain);
 
     const formattedBase: ReportRow = {
       name: base.name,
-      locSecMin: formatNumber(base.locSecMin),
-      locSecP50: formatNumber(base.locSecP50),
+      locSecMin: prettyInteger(base.locSecMin),
+      locSecP50: prettyInteger(base.locSecP50),
     };
 
     results.push(formattedBase);
+  } else {
+    const formattedMain: ReportRow = {
+      name: main.name,
+      locSecMin: prettyInteger(main.locSecMin),
+      locSecP50: prettyInteger(main.locSecP50),
+    };
+    results.push(formattedMain);
   }
   return results;
 }
@@ -106,11 +115,12 @@ function headerRows(columns: number): string[][] {
 }
 
 function tableConfig(): TableUserConfig {
+  // biome-ignore format:
   const spanningCells: SpanningCellConfig[] = [
-    { row: 0, col: 1, colSpan: 3, alignment: "center" },
-    { row: 1, col: 1, colSpan: 3, alignment: "center" },
-    { row: 2, col: 1, colSpan: 1, alignment: "center" },
-    { row: 2, col: 3, colSpan: 1, alignment: "center" },
+    { row: 0, col: 1, colSpan: 4, alignment: "center" }, // "Lines / sec" header
+    { row: 1, col: 1, colSpan: 3, alignment: "center" }, // blank under "Lines / sec"
+    { row: 2, col: 1, colSpan: 1, alignment: "center" }, // "min" header
+    { row: 2, col: 3, colSpan: 1, alignment: "center" }, // "p50" header
   ];
 
   const config: TableUserConfig = {
@@ -168,6 +178,6 @@ function getCodeLines(benchTest: BenchTest) {
     .reduce((sum, v) => sum + v, 0);
 }
 
-function formatNumber(x: number): string {
+function prettyInteger(x: number): string {
   return new Intl.NumberFormat("en-US").format(Math.round(x));
 }
