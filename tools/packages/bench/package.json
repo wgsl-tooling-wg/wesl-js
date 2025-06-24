@@ -9,6 +9,7 @@
     "bench:details": "sudo tsx --expose-gc --allow-natives-syntax bin/bench.ts"
   },
   "dependencies": {
+    "cli-table3": "^0.6.5",
     "picocolors": "^1.1.1",
     "wesl": "workspace:*"
   },

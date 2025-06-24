@@ -4,13 +4,10 @@ import { WGSLLinker } from "@use-gpu/shader";
 import { type SrcModule, type WeslAST, link, parseSrcModule } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
-import {
-  type MeasureOptions,
-  mitataBench,
-} from "../src/MitataBench.ts";
-
+import { type MeasureOptions, mitataBench } from "../src/MitataBench.ts";
 import { hideBin } from "yargs/helpers";
 import { type BenchmarkReport, reportResults } from "../src/BenchResults.ts";
+
 const baselineLink = await import("../_baseline/packages/wesl/src/index.ts")
   .then(x => x.link)
   .catch(() => undefined);
@@ -75,7 +72,7 @@ async function benchAndReport(
 ): Promise<void> {
   const reports: BenchmarkReport[] = [];
 
-  const opts: MeasureOptions = { max_samples: 10} as any;
+  const opts: MeasureOptions = { max_samples: 10 } as any;
   for (const t of tests) {
     const benchName = `${variant} ${t.name}`;
 
@@ -83,7 +80,11 @@ async function benchAndReport(
     if (baselineLink)
       old = await mitataBench(() => runBaseline(t), "->baseline", opts);
 
-    const current = await mitataBench(() => runOnce(variant, t), benchName, opts);
+    const current = await mitataBench(
+      () => runOnce(variant, t),
+      benchName,
+      opts,
+    );
 
     reports.push({ benchTest: t, mainResult: current, baseline: old });
   }
@@ -221,7 +222,6 @@ function wgslReflectParse(_filePath: string, text: string): void {
 function useGpuParse(_filePath: string, text: string): void {
   WGSLLinker.loadModule(text);
 }
-
 
 /** parse a single wesl file */ // DRY with TestUtil
 export function parseWESL(src: string): WeslAST {

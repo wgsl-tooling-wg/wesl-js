@@ -1,7 +1,7 @@
 import type { BenchTest } from "../bin/bench.ts";
 import { mapValues, type MeasuredResults } from "./MitataBench.ts";
-import { type TableRow, TextTable } from "./TextTable.ts";
-import pico from 'picocolors';
+import pico from "picocolors";
+import Table from "cli-table3";
 
 export interface BenchmarkReport {
   benchTest: BenchTest;
@@ -9,10 +9,12 @@ export interface BenchmarkReport {
   baseline?: MeasuredResults;
 }
 
-interface StringStats extends TableRow {
-  "LOC/sec p50": string;
-  "LOC/sec min": string;
-  name: string;
+interface ReportRow {
+  name?: string;
+  locSecP50?: string;
+  locSecMin?: string;
+  locSecMinPercent?: string;
+  locSecP50Percent?: string;
 }
 
 interface SelectedStats {
@@ -27,7 +29,7 @@ interface NamedStats extends SelectedStats {
 const maxNameLength = 30;
 
 export function reportResults(reports: BenchmarkReport[]): void {
-  const allRows: TableRow[] = [];
+  const allRows: ReportRow[] = [];
 
   for (const report of reports) {
     const { benchTest, mainResult, baseline } = report;
@@ -48,22 +50,30 @@ export function reportResults(reports: BenchmarkReport[]): void {
     allRows.push({}); // empty row between tests
   }
 
-  const table = new TextTable();
-  const result = table.report(allRows);
-  console.log(result + "\n");
+  const table = recordsToTable(allRows);
+  console.log(table.toString() + "\n");
+}
+
+function recordsToTable(records: ReportRow[]): Table.Table {
+  const table = new Table();
+  table.push(["name", { colSpan: 3, hAlign: "center", content: "LOC/sec" }]);
+  table.push(["", pico.bold("min"), pico.bold("min %"), pico.bold("p50")]);
+  const rows = records.map(r => [r.name, r.locSecMin, r.locSecMinPercent, r.locSecP50]);
+  table.push(...rows);
+  return table;
 }
 
 function locSecDiff(
   base: SelectedStats,
   current: SelectedStats,
-): Record<string, string> {
+): ReportRow{
   const diff = current.locSecMin - base.locSecMin;
   const diffPercent = (diff / base.locSecMin) * 100;
   const positive = diffPercent >= 0;
   const sign = positive ? "+" : "-";
   const percentStr = `${sign}${Math.abs(diffPercent).toFixed(1)}%`;
   const colored = positive ? pico.green(percentStr) : pico.red(percentStr);
-  return { "min %": colored };
+  return { locSecMinPercent: colored };
 }
 
 function namedStats(
@@ -103,12 +113,12 @@ function getCodeLines(benchTest: BenchTest) {
     .reduce((sum, v) => sum + v, 0);
 }
 
-function formatStats(stats: NamedStats): StringStats {
+function formatStats(stats: NamedStats): ReportRow {
   const { locSecP50, locSecMin, name } = stats;
   return {
     name,
-    "LOC/sec p50": formatNumber(locSecP50),
-    "LOC/sec min": formatNumber(locSecMin),
+    locSecP50: formatNumber(locSecP50),
+    locSecMin: formatNumber(locSecMin),
   };
 }
 
