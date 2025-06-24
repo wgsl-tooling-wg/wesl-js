@@ -36,18 +36,18 @@ export function reportResults(reports: BenchmarkReport[]): void {
 
     const codeLines = getCodeLines(benchTest);
     const main = namedStats(codeLines, mainResult);
-    const mainFormatted = formatStats(main.namedStats);
 
     if (baseline) {
       const base = namedStats(codeLines, baseline);
       const diffStr = locSecDiff(base.stats, main.stats);
+      const mainFormatted = formatStats(main.namedStats);
       const withDiff = { ...mainFormatted, ...diffStr };
       allRows.push(withDiff);
       allRows.push(formatStats(base.namedStats));
     } else {
+      const mainFormatted = formatStats(main.namedStats);
       allRows.push(mainFormatted);
     }
-    allRows.push({}); // empty row between tests
   }
 
   const table = recordsToTable(allRows);
@@ -56,17 +56,22 @@ export function reportResults(reports: BenchmarkReport[]): void {
 
 function recordsToTable(records: ReportRow[]): Table.Table {
   const table = new Table();
-  table.push(["name", { colSpan: 3, hAlign: "center", content: "LOC/sec" }]);
+  table.push([
+    pico.bold("name"),
+    { colSpan: 3, hAlign: "center", content: pico.bold("Lines of Code / sec") },
+  ]);
   table.push(["", pico.bold("min"), pico.bold("min %"), pico.bold("p50")]);
-  const rows = records.map(r => [r.name, r.locSecMin, r.locSecMinPercent, r.locSecP50]);
+  const rows = records.map(r => [
+    r.name,
+    r.locSecMin,
+    r.locSecMinPercent,
+    r.locSecP50,
+  ]);
   table.push(...rows);
   return table;
 }
 
-function locSecDiff(
-  base: SelectedStats,
-  current: SelectedStats,
-): ReportRow{
+function locSecDiff(base: SelectedStats, current: SelectedStats): ReportRow {
   const diff = current.locSecMin - base.locSecMin;
   const diffPercent = (diff / base.locSecMin) * 100;
   const positive = diffPercent >= 0;
