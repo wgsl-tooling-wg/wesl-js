@@ -21,7 +21,7 @@ interface ReportRow {
   gcTimeMean?: string;
   // gcTimePercent?: string;
   // cpuCacheMiss?: string;
-  // heap?: string;
+  heap?: string;
   runs?: string;
 }
 
@@ -94,7 +94,7 @@ function mostlyFullRow(stats: NamedStats): FullReportRow {
     gcTimeMean: prettyFloat(stats.gcTimeMean, 2),
     runs: prettyInteger(stats.runs),
     // cpuCacheMiss: prettyPercent(stats.cpuCacheMiss),
-    // heap: prettyInteger(stats.heap),
+    heap: prettyInteger(stats.heap),
     locSecMaxPercent: null,
     locSecP50Percent: null,
     // gcTimePercent: null,
@@ -125,7 +125,7 @@ function logTable(records: FullReportRow[]): void {
     r.locSecP50Percent,
     r.gcTimeMean,
     // r.gcTimePercent,
-    // r.heap,
+    r.heap,
     // r.cpuCacheMiss,
     r.runs,
   ]);
@@ -151,7 +151,7 @@ function headerRows(columns: number): string[][] {
         bold("%"),
         bold("gc time"),
         // bold("%"),
-        // bold("heap"),
+        bold("heap"),
         // bold("L1 miss"),
         bold("runs"),
       ],
