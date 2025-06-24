@@ -55,31 +55,31 @@ export function reportResults(reports: BenchmarkReport[]): void {
 
 function formatReport(main: NamedStats, base?: NamedStats): ReportRow[] {
   const results: ReportRow[] = [];
-  const mainRow: ReportRow = {};
+  const { gcTimeMean, locSecMax, locSecP50 } = main;
+  const mainRow: ReportRow = {
+    name: main.name,
+    locSecMax: prettyInteger(main.locSecMax),
+    locSecP50: prettyInteger(main.locSecP50),
+    gcTimeMean: prettyFloat(gcTimeMean, 2),
+  };
 
   if (base) {
-    const { gcTimeMean, locSecMax, locSecP50 } = main;
     const locDiff = locSecMax - base.locSecMax;
     const locP50Diff = locSecP50 - base.locSecP50;
 
-    const formattedMain: ReportRow = {
-      name: main.name,
-      locSecMax: prettyInteger(locSecMax),
-      locSecMaxPercent: coloredPercent(locDiff, base.locSecMax),
-      locSecP50: prettyInteger(locSecP50),
-      locSecP50Percent: coloredPercent(locP50Diff, base.locSecP50),
-      gcTimeMean: prettyFloat(gcTimeMean, 2),
-    };
-    results.push(formattedMain);
+    mainRow.locSecP50Percent = coloredPercent(locP50Diff, base.locSecP50);
+    mainRow.locSecMaxPercent = coloredPercent(locDiff, base.locSecMax);
 
-    const formattedBase: ReportRow = {
+    results.push(mainRow);
+
+    const baseRow: ReportRow = {
       name: base.name,
       locSecMax: prettyInteger(base.locSecMax),
       locSecP50: prettyInteger(base.locSecP50),
       gcTimeMean: prettyFloat(base.gcTimeMean, 2),
     };
 
-    results.push(formattedBase);
+    results.push(baseRow);
   } else {
     const formattedMain: ReportRow = {
       name: main.name,
@@ -187,9 +187,9 @@ function selectedStats(
     x => codeLines / (x / 1000),
   );
   const gcTimeFraction = result.gcTime;
-  console.log(`time.avg: ${result.time.avg}`);
-  console.log(`gcTimeAvg: ${result.gcTime?.avg}`);
-  console.log(`gcTimeFraction: ${gcTimeFraction}`);
+  // console.log(`time.avg: ${result.time.avg}`);
+  // console.log(`gcTimeAvg: ${result.gcTime?.avg}`);
+  // console.log(`gcTimeFraction: ${gcTimeFraction}`);
   return {
     locSecP50: locPerSecond.median,
     locSecMax: locPerSecond.max,
@@ -209,7 +209,10 @@ function prettyInteger(x: number): string {
   return new Intl.NumberFormat("en-US").format(Math.round(x));
 }
 
-function prettyFloat(x: number|undefined, digits: number): string|undefined {
+function prettyFloat(
+  x: number | undefined,
+  digits: number,
+): string | undefined {
   if (x === undefined) return undefined;
   return x.toFixed(digits).replace(/\.?0+$/, "");
 }
