@@ -1,8 +1,7 @@
 import type { BenchTest } from "../bin/bench.ts";
 import { mapValues, type MeasuredResults } from "./MitataBench.ts";
 import pico from "picocolors";
-import Table from "cli-table3";
-import { SpanningCellConfig, table, type TableUserConfig } from "table";
+import { type SpanningCellConfig, table, type TableUserConfig } from "table";
 
 export interface BenchmarkReport {
   benchTest: BenchTest;
@@ -45,6 +44,7 @@ export function reportResults(reports: BenchmarkReport[]): void {
       const withDiff = { ...mainFormatted, ...diffStr };
       allRows.push(withDiff);
       allRows.push(formatStats(base.namedStats));
+      allRows.push({});
     } else {
       const mainFormatted = formatStats(main.namedStats);
       allRows.push(mainFormatted);
@@ -55,12 +55,13 @@ export function reportResults(reports: BenchmarkReport[]): void {
 }
 
 function logTable(records: ReportRow[]): void {
-  const rows = records.map(r => [
+  const rawRows = records.map(r => [
     r.name,
     r.locSecMin,
     r.locSecMinPercent,
     r.locSecP50,
   ]);
+  const rows = rawRows.map(row => row.map(cell => cell ?? ""));
 
   const spanningCells: SpanningCellConfig[] = [
     { col: 1, row: 0, colSpan: 3, alignment: "center" },
@@ -83,30 +84,6 @@ function logTable(records: ReportRow[]): void {
   ];
   console.log(table(allRows, config));
 }
-
-// function recordsToTable(records: ReportRow[]): Table.Table {
-//   const table = new Table({
-//   chars: { 'top': '' , 'top-mid': '' , 'top-left': '' , 'top-right': ''
-//          , 'bottom': '' , 'bottom-mid': '' , 'bottom-left': '' , 'bottom-right': ''
-//          , 'left': '' , 'left-mid': '' , 'mid': '' , 'mid-mid': ''
-//          , 'right': '' , 'right-mid': '' , 'middle': ' ' },
-//   style: { 'padding-left': 0, 'padding-right': 0 }
-
-//   });
-//   table.push([
-//     pico.bold("name"),
-//     { colSpan: 3, hAlign: "center", content: pico.bold("Lines of Code / sec") },
-//   ]);
-//   table.push(["", pico.bold("min"), pico.bold("min %"), pico.bold("p50")]);
-//   const rows = records.map(r => [
-//     r.name,
-//     r.locSecMin,
-//     r.locSecMinPercent,
-//     r.locSecP50,
-//   ]);
-//   table.push(...rows);
-//   return table;
-// }
 
 function locSecDiff(base: SelectedStats, current: SelectedStats): ReportRow {
   const diff = current.locSecMin - base.locSecMin;
