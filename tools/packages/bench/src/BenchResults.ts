@@ -135,6 +135,8 @@ function prettyPercent(fraction?: number): string | null {
 
 /** write the table to the console */
 function logTable(records: FullReportRow[]): void {
+  const { headerRows, config } = tablePrep();
+
   const rawRows = records.map(r => [
     r.name,
     r.locSecMax,
@@ -152,13 +154,11 @@ function logTable(records: FullReportRow[]): void {
   const rows = rawRows.map(row =>
     row.map(cell => {
       if (cell === undefined || cell === null) return " "; // note table library hangs if all strings are ""
-      return cell;
+      else return cell;
     }),
   );
 
-  const { headerRows, config } = tablePrep();
   const allRows = [...headerRows, ...rows];
-
   console.log(table(allRows, config));
 }
 
@@ -183,53 +183,6 @@ function tablePrep(): TableSetup {
   return tableSetup(groups);
 }
 
-/** @return configuration for the table header and separator lines */
-function tableConfig(): TableUserConfig {
-  // biome-ignore format:
-  const spanningCells: SpanningCellConfig[] = [
-    { row: 0, col: 0, colSpan: 1, alignment: "center" }, // "name" header
-    { row: 0, col: 1, colSpan: 4, alignment: "center" }, // "Lines / sec" header
-    { row: 1, col: 1, colSpan: 3, alignment: "center" }, // blank under "Lines / sec"
-    { row: 2, col: 1, colSpan: 1, alignment: "center" }, // "max" header
-    { row: 2, col: 3, colSpan: 1, alignment: "center" }, // "p50" header
-    { row: 2, col: 5, colSpan: 1, alignment: "center" }, // "time" header
-    { row: 2, col: 6, colSpan: 1, alignment: "center" }, // "gc" header
-    { row: 2, col: 8, colSpan: 1, alignment: "center" }, // "kb" header
-    { row: 2, col: 9, colSpan: 1, alignment: "center" }, // "L1 miss" header
-    { row: 2, col: 10, colSpan: 1, alignment: "center" }, // "runs" header
-  ];
-
-  const config: TableUserConfig = {
-    spanningCells,
-    // biome-ignore format:
-    columns: [
-      { alignment: "left" },                                  // name
-      { alignment: "right" },                                 // loc/Sec max
-      { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
-      { alignment: "right" },                                 // loc/Sec p50
-      { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
-      { alignment: "right" },                                 // time
-      { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
-      { alignment: "right" },                                 // gc
-      { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
-      { alignment: "right" },                                 // heap
-      { alignment: "right", width: "L1 miss".length },        // L1 miss
-      { alignment: "right"},                                  // runs
-    ],
-    drawHorizontalLine: (index, size) => {
-      return index === 0 || index === 3 || index === size;
-    },
-    drawVerticalLine: (index, size) => {
-      return index === 0 || index === 1 || index === 5 || index === size;
-    },
-  };
-  return config;
-}
-
-function blankPad(arr: string[], length: number): string[] {
-  if (arr.length >= length) return arr;
-  return [...arr, ...Array(length - arr.length).fill("")];
-}
 
 function namedStats(codeLines: number, measured: MeasuredResults): NamedStats {
   const stats = selectedStats(codeLines, measured);
