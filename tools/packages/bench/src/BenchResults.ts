@@ -2,6 +2,11 @@ import type { BenchTest } from "../bin/bench.ts";
 import { mapValues, type MeasuredResults } from "./MitataBench.ts";
 import pico from "picocolors";
 import { type SpanningCellConfig, table, type TableUserConfig } from "table";
+import {
+  type ColumnGroup,
+  tableSetup,
+  type TableSetup,
+} from "./TableReport.ts";
 
 const { bold, red, green } = pico;
 
@@ -151,35 +156,31 @@ function logTable(records: FullReportRow[]): void {
     }),
   );
 
-  const allRows = [...headerRows(rows[0].length), ...rows];
+  const { headerRows, config } = tablePrep();
+  const allRows = [...headerRows, ...rows];
 
-  console.log(table(allRows, tableConfig()));
+  console.log(table(allRows, config));
 }
 
-/**  @return row content for the header */
-function headerRows(columns: number): string[][] {
-  return [
-    blankPad([bold("name"), bold("Lines / sec")], columns),
-    blankPad([], columns),
-    blankPad(
-      // biome-ignore format:
-      [
-        "",              // 0 name 
-        bold("max"),     // 1
-        bold("Δ%"),      // 2
-        bold("p50"),     // 3
-        bold("Δ%"),      // 4
-        bold("time"),    // 5
-        bold("Δ%"),      // 6
-        bold("gc"),      // 7
-        bold("Δ%"),      // 8
-        bold("kb"),      // 9
-        bold("L1 miss"), // 10
-        bold("N"),       // 11
+function tablePrep(): TableSetup {
+  const groups: ColumnGroup[] = [
+    { columns: [{ title: "name" }] },
+    {
+      groupTitle: "lines / sec",
+      columns: [
+        { title: "max" },
+        { title: "Δ%" },
+        { title: "p50" },
+        { title: "Δ%" },
       ],
-      columns,
-    ),
+    },
+    { groupTitle: "time", columns: [{ title: "mean" }, { title: "Δ%" }] },
+    { groupTitle: "gc", columns: [{ title: "mean" }, { title: "Δ%" }] },
+    {
+      columns: [{ title: "kb" }, { title: "L1 miss" }, { title: "N" }],
+    },
   ];
+  return tableSetup(groups);
 }
 
 /** @return configuration for the table header and separator lines */
