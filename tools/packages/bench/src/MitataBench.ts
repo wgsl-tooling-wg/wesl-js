@@ -1,11 +1,10 @@
-import { bench, measure } from "mitata";
-import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
 import type { CpuCounts } from "@mitata/counters";
 import * as mitataCounters from "@mitata/counters";
+import { measure } from "mitata";
 import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
-import { Node } from "wgsl_reflect";
+import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
 
-const defaultMaxSamples = 1e9; // from mitata's default
+const maxGcRecords = 1000; 
 
 /** gc time mesured by nodes' performance hooks */
 export interface NodeGCTime {
@@ -78,8 +77,7 @@ export async function mitataBench(
     const stats = getHeapStatistics();
     return stats.used_heap_size + stats.malloced_memory;
   };
-  const maxSamples = options?.max_samples ?? defaultMaxSamples;
-  const gcRecords = new Array<PerformanceEntry>(maxSamples);
+  const gcRecords = new Array<PerformanceEntry>(maxGcRecords);
   let numRecords = 0;
   const obs = new PerformanceObserver(items => {
     for (const item of items.getEntries()) {
@@ -91,7 +89,6 @@ export async function mitataBench(
     }
   });
   obs.observe({ entryTypes: ["gc"] });
-  const times: number[] = new Array(maxSamples);
   let benchStart = 0;
   let benchEnd = 0;
 
@@ -106,17 +103,9 @@ export async function mitataBench(
     $counters: mitataCounters,
     ...options,
   } as MeasureOptions);
-  await new Promise(resolve => setTimeout(resolve, 10));
-  const records = obs.takeRecords();
-  records.forEach(record => {
-    if (record.entryType === "gc") {
-      console.log("straggler gc record", record);
-      gcRecords[numRecords++] = record;
-    } else {
-      console.log("other record", record);
-    }
-  });
-  obs.disconnect();
+
+  await new Promise(resolve => setTimeout(resolve, 10)); // wait for gc observer to collect
+  gcRecords.push(...finishObserver(obs));
 
   const nodeGcTime = analyzeGCEntries(gcRecords.slice(0, numRecords), [
     benchStart,
@@ -133,6 +122,15 @@ export async function mitataBench(
 
   const heapSize = heap && mapValues(heap, x => x / 1024);
   return { name, time, gcTime, samples, heapSize, cpu, nodeGcTime };
+}
+
+/** finish the observer and return any straggler gc records (unlikely in practice) */
+function finishObserver(obs: PerformanceObserver): PerformanceEntry[] {
+  const records = obs.takeRecords?.(); // not avail in deno
+  obs.disconnect();
+  if (!records) return [];
+
+  return records.filter(record => record.entryType === "gc");
 }
 
 /** return an array partitioned into possibly overlapping groups */
