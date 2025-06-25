@@ -188,7 +188,7 @@ function prettyPercent(fraction?: number): string | null {
   return `${Math.abs(fraction * 100).toFixed(1)}%`;
 }
 
-
+/** convert Record style rows to an array of string[], suitable for the table library */
 function recordsToRows(records: FullReportRow[]): string[][] {
   // biome-ignore format:
   const rawRows = records.map(r => [
@@ -199,6 +199,7 @@ function recordsToRows(records: FullReportRow[]): string[][] {
   return rawRows.map(row => row.map(cell => cell ?? " "));
 }
 
+/** configuration for table column and section headers */
 function tablePrep(): TableSetup {
   const groups: ColumnGroup[] = [
     { columns: [{ title: "name" }] },
@@ -221,27 +222,31 @@ function tablePrep(): TableSetup {
   return tableSetup(groups);
 }
 
+/** return the CPU L1 cache miss rate */
 function cpuCacheMiss(result: MeasuredResults): number | undefined {
   if (result.cpu?.l1) {
     const { cpu } = result;
     const { l1 } = cpu;
     const total = cpu.instructions?.loads_and_stores?.avg;
     const loadMiss = l1?.miss_loads?.avg;
-    const storeMiss = l1?.miss_stores?.avg;
+    const storeMiss = l1?.miss_stores?.avg; // LATER do store misses cause stalls too?
     if (total === undefined) return undefined;
     if (loadMiss === undefined || storeMiss === undefined) return undefined;
 
     const miss = loadMiss + storeMiss;
     return miss / total;
   }
+  // TBD linux is also supported in @mitata/counters
   return undefined;
 }
 
+/** format an integer with commas between thousands */
 function prettyInteger(x: number | undefined): string | null {
   if (x === undefined) return null;
   return new Intl.NumberFormat("en-US").format(Math.round(x));
 }
 
+/** format a float to a specified precision with trailing zeros dropped */
 function prettyFloat(x: number | undefined, digits: number): string | null {
   if (x === undefined) return null;
   return x.toFixed(digits).replace(/\.?0+$/, "");
