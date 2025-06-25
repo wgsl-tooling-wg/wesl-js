@@ -136,30 +136,19 @@ function prettyPercent(fraction?: number): string | null {
 /** write the table to the console */
 function logTable(records: FullReportRow[]): void {
   const { headerRows, config } = tablePrep();
-
-  const rawRows = records.map(r => [
-    r.name,
-    r.locSecMax,
-    r.locSecMaxPercent,
-    r.locSecP50,
-    r.locSecP50Percent,
-    r.timeMean,
-    r.timeMeanPercent,
-    r.gcTimeMean,
-    r.gcTimePercent,
-    r.heap,
-    r.cpuCacheMiss,
-    r.runs,
-  ]);
-  const rows = rawRows.map(row =>
-    row.map(cell => {
-      if (cell === undefined || cell === null) return " "; // note table library hangs if all strings are ""
-      else return cell;
-    }),
-  );
-
-  const allRows = [...headerRows, ...rows];
+  const dataRows = recordsToRows(records);
+  const allRows = [...headerRows, ...dataRows];
   console.log(table(allRows, config));
+}
+
+function recordsToRows(records: FullReportRow[]): string[][] {
+  // biome-ignore format:
+  const rawRows = records.map(r => [
+    r.name, r.locSecMax, r.locSecMaxPercent, r.locSecP50,
+    r.locSecP50Percent, r.timeMean, r.timeMeanPercent, r.gcTimeMean,
+    r.gcTimePercent, r.heap, r.cpuCacheMiss, r.runs
+  ]);
+  return rawRows.map(row => row.map(cell => cell ?? " "));
 }
 
 function tablePrep(): TableSetup {
@@ -175,14 +164,14 @@ function tablePrep(): TableSetup {
       ],
     },
     { groupTitle: "time", columns: [{ title: "mean" }, { title: "Δ%" }] },
-    { groupTitle: "gc", columns: [{ title: "mean" }, { title: "Δ%" }] },
+    { groupTitle: "gc time", columns: [{ title: "mean" }, { title: "Δ%" }] },
     {
-      columns: [{ title: "kb" }, { title: "L1 miss" }, { title: "N" }],
+      groupTitle: "misc",
+      columns: [{ title: "heap kb" }, { title: "L1 miss" }, { title: "N" }],
     },
   ];
   return tableSetup(groups);
 }
-
 
 function namedStats(codeLines: number, measured: MeasuredResults): NamedStats {
   const stats = selectedStats(codeLines, measured);
