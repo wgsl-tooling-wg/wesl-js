@@ -1,10 +1,10 @@
+import pico from "picocolors";
 import type {
   Alignment,
   ColumnUserConfig,
   SpanningCellConfig,
   TableUserConfig,
 } from "table";
-import pico from "picocolors";
 
 const { bold, red, green } = pico;
 
@@ -14,11 +14,11 @@ export interface Column {
   title?: string;
 }
 
-/** 
- * A group of columns. 
- * 
- * If any ColumnGroup has a groupTitle, tableSetup() will insert a row for titles. 
- * 
+/**
+ * A group of columns.
+ *
+ * If any ColumnGroup has a groupTitle, tableSetup() will insert a row for titles.
+ *
  */
 export interface ColumnGroup {
   groupTitle?: string;

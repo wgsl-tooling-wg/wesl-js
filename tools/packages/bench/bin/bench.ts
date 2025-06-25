@@ -1,23 +1,23 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { WGSLLinker } from "@use-gpu/shader";
+import * as mitata from "mitata";
 import {
   type SrcModule,
   type WeslAST,
-  link,
   _linkSync,
+  link,
   parseSrcModule,
 } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
-import { type MeasureOptions, mitataBench } from "../src/MitataBench.ts";
 import { hideBin } from "yargs/helpers";
 import {
   type BenchmarkReport,
   coloredPercent,
   reportResults,
 } from "../src/BenchResults.ts";
-import * as mitata from "mitata";
+import { type MeasureOptions, mitataBench } from "../src/MitataBench.ts";
 
 const baselineLink = await import("../_baseline/packages/wesl/src/index.ts")
   .then(x => x.link)

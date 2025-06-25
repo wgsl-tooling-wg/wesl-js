@@ -1,11 +1,11 @@
-import type { BenchTest } from "../bin/bench.ts";
-import { mapValues, type MeasuredResults } from "./MitataBench.ts";
 import pico from "picocolors";
-import { type SpanningCellConfig, table, type TableUserConfig } from "table";
+import { type SpanningCellConfig, type TableUserConfig, table } from "table";
+import type { BenchTest } from "../bin/bench.ts";
+import { type MeasuredResults, mapValues } from "./MitataBench.ts";
 import {
   type ColumnGroup,
-  tableSetup,
   type TableSetup,
+  tableSetup,
 } from "./TableReport.ts";
 
 const { bold, red, green } = pico;

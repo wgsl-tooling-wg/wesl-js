@@ -14,17 +14,21 @@ declare module "@mitata/counters" {
     cycles?: CounterStats & {
       stalls?: CounterStats;
     };
-    branches?: CounterStats & {
-      mispredicted?: CounterStats;
-    } | null;
+    branches?:
+      | (CounterStats & {
+          mispredicted?: CounterStats;
+        })
+      | null;
     instructions?: CounterStats & {
       loads_and_stores?: CounterStats | null;
     };
 
     // Linux specific
-    cache?: CounterStats & {
-      misses?: CounterStats | null;
-    } | null;
+    cache?:
+      | (CounterStats & {
+          misses?: CounterStats | null;
+        })
+      | null;
     _bmispred?: CounterStats | null;
   }
 

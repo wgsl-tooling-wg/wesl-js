@@ -1,10 +1,10 @@
+import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
+import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
 import type { CpuCounts } from "@mitata/counters";
 import * as mitataCounters from "@mitata/counters";
 import { measure } from "mitata";
-import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
-import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
 
-const maxGcRecords = 1000; 
+const maxGcRecords = 1000;
 
 /** gc time mesured by nodes' performance hooks */
 export interface NodeGCTime {

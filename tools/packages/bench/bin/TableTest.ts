@@ -1,4 +1,4 @@
-import { type SpanningCellConfig, table, type TableUserConfig } from "table";
+import { type SpanningCellConfig, type TableUserConfig, table } from "table";
 import { type ColumnGroup, tableSetup } from "../src/TableReport.ts";
 
 main();
@@ -17,7 +17,8 @@ function main(): void {
     },
     { groupTitle: "time", columns: [{ title: "mean" }, { title: "Δ%" }] },
     { groupTitle: "gc time", columns: [{ title: "mean" }, { title: "Δ%" }] },
-    { groupTitle: "misc",
+    {
+      groupTitle: "misc",
       columns: [{ title: "heap kb" }, { title: "L1 miss" }, { title: "N" }],
     },
   ];
@@ -37,7 +38,7 @@ function main(): void {
     "546",
   ];
   const rows = [...headerRows, content];
-  const newConfig = { ...config, };
+  const newConfig = { ...config };
 
   console.log(table(rows, newConfig));
   // console.log(config);
@@ -62,7 +63,7 @@ function mainX(): void {
         colSpan: 2,
         alignment: "center",
       },
-    ]
+    ],
   };
   console.log(table(rows, config));
 }
