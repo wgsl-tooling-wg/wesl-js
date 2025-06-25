@@ -16,7 +16,7 @@ import {
   type BenchmarkReport,
   coloredPercent,
   reportResults,
-} from "../src/BenchResults.ts";
+} from "../src/BenchmarkReport.ts";
 import { type MeasureOptions, mitataBench } from "../src/MitataBench.ts";
 
 /** load the link() function from the baseline repo  */
