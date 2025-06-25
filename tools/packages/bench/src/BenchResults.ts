@@ -166,13 +166,13 @@ function headerRows(columns: number): string[][] {
       [
         "",              // 0 name 
         bold("max"),     // 1
-        bold("%"),       // 2
+        bold("Δ%"),      // 2
         bold("p50"),     // 3
-        bold("%"),       // 4
+        bold("Δ%"),      // 4
         bold("time"),    // 5
-        bold("%"),       // 6
+        bold("Δ%"),      // 6
         bold("gc"),      // 7
-        bold("%"),       // 8
+        bold("Δ%"),      // 8
         bold("kb"),      // 9
         bold("L1 miss"), // 10
         bold("N"),       // 11
