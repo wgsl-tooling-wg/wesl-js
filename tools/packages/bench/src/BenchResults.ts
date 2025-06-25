@@ -1,5 +1,5 @@
 import pico from "picocolors";
-import { type SpanningCellConfig, type TableUserConfig, table } from "table";
+import { table } from "table";
 import type { BenchTest } from "../bin/bench.ts";
 import { type MeasuredResults, mapValues } from "./MitataBench.ts";
 import {
@@ -8,7 +8,9 @@ import {
   tableSetup,
 } from "./TableReport.ts";
 
-const { bold, red, green } = pico;
+const { red, green } = pico;
+
+const maxNameLength = 30;
 
 /** report of benchmark results, including baseline results if available  */
 export interface BenchmarkReport {
@@ -39,7 +41,9 @@ type NullableValues<T> = {
 /** report row with all keys required, and values that may be null */
 type FullReportRow = NullableValues<Required<ReportRow>>;
 
+/** preprocessed statistics for reporting */
 interface SelectedStats {
+  name: string;
   locSecP50: number;
   locSecMax: number;
   gcTimeMean?: number;
@@ -49,12 +53,7 @@ interface SelectedStats {
   heap?: number;
 }
 
-interface NamedStats extends SelectedStats {
-  name: string;
-}
-
-const maxNameLength = 30;
-
+/** log a table of benchmark results  */
 export function reportResults(reports: BenchmarkReport[]): void {
   const allRows: FullReportRow[] = [];
 
@@ -62,47 +61,90 @@ export function reportResults(reports: BenchmarkReport[]): void {
     const { benchTest, mainResult, baseline } = report;
 
     const codeLines = getCodeLines(benchTest);
-    const main = namedStats(codeLines, mainResult);
+    const main = selectedStats(codeLines, mainResult);
 
-    const base = baseline && namedStats(codeLines, baseline);
-    const rows = formatReport(main, base);
+    const base = baseline && selectedStats(codeLines, baseline);
+    const rows = generateDataRows(main, base);
     allRows.push(...rows);
-    if (base) allRows.push({} as FullReportRow); // empty row for spacing
   }
 
   logTable(allRows);
 }
 
-function formatReport(main: NamedStats, base?: NamedStats): FullReportRow[] {
-  const results: FullReportRow[] = [];
-  const mainRow = mostlyFullRow(main);
+/** count the number of lines of code in a bench test */
+function getCodeLines(benchTest: BenchTest) {
+  return benchTest.files
+    .values()
+    .map(text => text.split("\n").length)
+    .reduce((sum, v) => sum + v, 0);
+}
 
-  if (!base) {
-    results.push(mainRow);
-  } else {
-    const locDiff = main.locSecMax - base.locSecMax;
-    const locP50Diff = main.locSecP50 - base.locSecP50;
-    mainRow.locSecP50Percent = coloredPercent(locP50Diff, base.locSecP50);
-    mainRow.locSecMaxPercent = coloredPercent(locDiff, base.locSecMax);
-    const timeDiff = main.timeMean - base.timeMean;
-    mainRow.timeMeanPercent = coloredPercent(timeDiff, base.timeMean);
+/** select and preprocess interesting stats for reporting  */
+function selectedStats(
+  codeLines: number,
+  result: MeasuredResults,
+): SelectedStats {
+  const median = result.time.p50;
+  const min = result.time.min;
+  const locPerSecond = mapValues(
+    { median, max: min }, // 'min' time becomes 'max' loc/sec
+    x => codeLines / (x / 1000),
+  );
 
-    if (main.gcTimeMean && base.gcTimeMean) {
-      const gcDiff = main.gcTimeMean - base.gcTimeMean;
-      mainRow.gcTimePercent = coloredPercent(gcDiff, base.gcTimeMean);
-    }
-
-    results.push(mainRow);
-
-    const baseRow = mostlyFullRow(base);
-    results.push(baseRow);
+  let gcTimeMean: number | undefined = undefined;
+  const { nodeGcTime } = result;
+  if (nodeGcTime) {
+    gcTimeMean = nodeGcTime.inRun / result.samples.length;
   }
 
-  return results;
+  return {
+    locSecP50: locPerSecond.median,
+    locSecMax: locPerSecond.max,
+    timeMean: result.time?.avg,
+    gcTimeMean,
+    runs: result.samples.length,
+    heap: result.heapSize?.avg,
+    cpuCacheMiss: cpuCacheMiss(result),
+    name: result.name.slice(0, maxNameLength),
+  };
+}
+
+/** @return formatted table data for the selected statistics */
+function generateDataRows(
+  main: SelectedStats,
+  base?: SelectedStats,
+): FullReportRow[] {
+  if (base) {
+    return mainAndBaseRows(main, base);
+  } else {
+    return [mostlyFullRow(main)];
+  }
+}
+
+function mainAndBaseRows(
+  main: SelectedStats,
+  base: SelectedStats,
+): FullReportRow[] {
+  const mainRow = mostlyFullRow(main);
+  const locDiff = main.locSecMax - base.locSecMax;
+  const locP50Diff = main.locSecP50 - base.locSecP50;
+  mainRow.locSecP50Percent = coloredPercent(locP50Diff, base.locSecP50);
+  mainRow.locSecMaxPercent = coloredPercent(locDiff, base.locSecMax);
+  const timeDiff = main.timeMean - base.timeMean;
+  mainRow.timeMeanPercent = coloredPercent(timeDiff, base.timeMean);
+
+  if (main.gcTimeMean && base.gcTimeMean) {
+    const gcDiff = main.gcTimeMean - base.gcTimeMean;
+    mainRow.gcTimePercent = coloredPercent(gcDiff, base.gcTimeMean);
+  }
+
+  const blankRow = {} as FullReportRow;
+  const baseRow = mostlyFullRow(base);
+  return [mainRow, baseRow, blankRow];
 }
 
 /** @return a report row with all properties set, but some values set to null */
-function mostlyFullRow(stats: NamedStats): FullReportRow {
+function mostlyFullRow(stats: SelectedStats): FullReportRow {
   return {
     name: stats.name,
     timeMean: prettyFloat(stats.timeMean, 2),
@@ -173,44 +215,6 @@ function tablePrep(): TableSetup {
   return tableSetup(groups);
 }
 
-function namedStats(codeLines: number, measured: MeasuredResults): NamedStats {
-  const stats = selectedStats(codeLines, measured);
-  const namedStats = {
-    name: measured.name.slice(0, maxNameLength),
-    ...stats,
-  };
-  return namedStats;
-}
-
-/** select and preprocess interesting stats for reporting  */
-function selectedStats(
-  codeLines: number,
-  result: MeasuredResults,
-): SelectedStats {
-  const median = result.time.p50;
-  const min = result.time.min;
-  const locPerSecond = mapValues(
-    { median, max: min }, // 'min' time becomes 'max' loc/sec
-    x => codeLines / (x / 1000),
-  );
-
-  let gcTimeMean: number | undefined = undefined;
-  const { nodeGcTime } = result;
-  if (nodeGcTime) {
-    gcTimeMean = nodeGcTime.inRun / result.samples.length;
-  }
-
-  return {
-    locSecP50: locPerSecond.median,
-    locSecMax: locPerSecond.max,
-    timeMean: result.time?.avg,
-    gcTimeMean,
-    runs: result.samples.length,
-    heap: result.heapSize?.avg,
-    cpuCacheMiss: cpuCacheMiss(result),
-  };
-}
-
 function cpuCacheMiss(result: MeasuredResults): number | undefined {
   if (result.cpu?.l1) {
     const { cpu } = result;
@@ -225,14 +229,6 @@ function cpuCacheMiss(result: MeasuredResults): number | undefined {
     return miss / total;
   }
   return undefined;
-}
-
-/** count the number of lines of code in a bench test */
-function getCodeLines(benchTest: BenchTest) {
-  return benchTest.files
-    .values()
-    .map(text => text.split("\n").length)
-    .reduce((sum, v) => sum + v, 0);
 }
 
 function prettyInteger(x: number | undefined): string | null {
