@@ -197,9 +197,7 @@ function selectedStats(
   let gcTimeMean: number | undefined = undefined;
   const { nodeGcTime } = result;
   if (nodeGcTime) {
-    const { inRun, betweenRuns } = nodeGcTime;
-    const total = inRun + betweenRuns;
-    gcTimeMean = total / result.samples.length;
+    gcTimeMean = nodeGcTime.inRun / result.samples.length;
   }
 
   return {

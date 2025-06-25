@@ -10,8 +10,8 @@ const defaultMaxSamples = 1e9; // from mitata's default
 /** gc time mesured by nodes' performance hooks */
 export interface NodeGCTime {
   inRun: number;
-  betweenRuns: number;
-  beforeAfterRuns: number;
+  before: number;
+  after: number;
   total: number;
 }
 
@@ -118,10 +118,10 @@ export async function mitataBench(
   });
   obs.disconnect();
 
-  const nodeGcTime = analyzeGCEntries(
-    gcRecords.slice(0, numRecords),
-    [benchStart, benchEnd],
-  );
+  const nodeGcTime = analyzeGCEntries(gcRecords.slice(0, numRecords), [
+    benchStart,
+    benchEnd,
+  ]);
 
   const { gc, heap, min, max, avg } = stats;
   const { p25, p50, p75, p99, p999 } = stats;
@@ -151,18 +151,19 @@ function analyzeGCEntries(
 ): NodeGCTime {
   const [start, end] = benchTime;
   let inRun = 0;
-  const betweenRuns = 0;
-  let beforeAfterRuns = 0;
+  let before = 0;
+  let after = 0;
   gcRecords.forEach(record => {
     const { duration, startTime } = record;
-    if (startTime < start || startTime > end) {
-      beforeAfterRuns += duration;
+    if (startTime < start) before += duration;
+    else if (startTime > end) {
+      after += duration;
     } else {
       inRun += duration;
     }
   });
-  const total = inRun + betweenRuns + beforeAfterRuns;
-  return { inRun, betweenRuns, beforeAfterRuns, total };
+  const total = inRun + before + after;
+  return { inRun, before, after, total };
 }
 
 /** apply a map() on the values in a Record.
