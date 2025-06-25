@@ -124,7 +124,7 @@ function benchManually(tests: BenchTest[]): void {
         const time = process.hrtime.bigint() - start;
         times[i] = time;
       }
-      baselineTime = meanTime(times);
+      baselineTime = medianTime(times);
     }
 
     for (let i = 0; i < warmups; i++) {
@@ -139,7 +139,7 @@ function benchManually(tests: BenchTest[]): void {
       const time = process.hrtime.bigint() - start;
       times[i] = time;
     }
-    const mainTime = meanTime(times);
+    const mainTime = medianTime(times);
 
     const diff = coloredPercent(baselineTime - mainTime, baselineTime);
     console.log(`main: ${mainTime}ms, baseline: ${baselineTime}ms, ${diff}`);
@@ -266,11 +266,11 @@ async function loadAllFiles(): Promise<BenchTest[]> {
   );
   return [
     reduceBuffer,
-    particle,
-    rasterize,
-    boat,
-    imports_only,
-    bevy_deferred_lighting,
+    // particle,
+    // rasterize,
+    // boat,
+    // imports_only,
+    // bevy_deferred_lighting,
     // bevy_linking,
   ];
 }
