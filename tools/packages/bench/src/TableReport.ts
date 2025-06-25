@@ -8,21 +8,51 @@ import pico from "picocolors";
 
 const { bold, red, green } = pico;
 
+/** a single data column  */
 export interface Column {
   alignment?: Alignment;
   title?: string;
 }
 
+/** 
+ * A group of columns. 
+ * 
+ * If any ColumnGroup has a groupTitle, tableSetup() will insert a row for titles. 
+ * 
+ */
 export interface ColumnGroup {
   groupTitle?: string;
   columns: Column[];
 }
 
+/** results of table preparation, ready to include in a call to `table`, like this:
+ * `table([...headerRows, myDataRows], config)` */
 export interface TableSetup {
   headerRows: string[][];
   config: TableUserConfig;
 }
 
+/** 
+ * Create a stylish table configuration with groups of columns using the 'table' npm library.
+ * 
+ * Columns are can optionally grouped into sections, and vertical bars
+ * are drawn between sections. Column and section headers are bolded.
+ *
+ * Here's an example table:
+ 
+╔═══════════════════════════════╤══════════════════════════════╤═══════════════╤═══════════════╤══════════════════════╗
+║                               │         lines / sec          │     time      │      gc       │                      ║
+║                               │                              │               │               │                      ║
+║ name                          │ max     Δ%     p50     Δ%    │ mean    Δ%    │ mean   Δ%     │ kb      L1 miss  N   ║
+╟───────────────────────────────┼──────────────────────────────┼───────────────┼───────────────┼──────────────────────╢
+║ reduceBuffer                  │ 77,045  -0.5%  74,351  -0.9% │ 1.28    +1.9% │ 0.03   +23.2% │ 2,044   1.6%     545 ║
+║ --> baseline                  │ 77,463         75,044        │ 1.25          │ 0.02          │ 2,026   1.6%     556 ║
+║                               │                              │               │               │                      ║
+║ unity_webgpu_0000026E5689B260 │ 33,448  -1.4%  31,819  -3.9% │ 130.08  +2.8% │ 26.93  +6.7%  │ 67,895  2.1%     12  ║
+║ --> baseline                  │ 33,925         33,107        │ 126.51        │ 25.24         │ 69,808  2.0%     12  ║
+║                               │                              │               │               │                      ║
+╚═══════════════════════════════╧══════════════════════════════╧═══════════════╧═══════════════╧══════════════════════╝
+ */
 export function tableSetup(groups: ColumnGroup[]): TableSetup {
   const titles = columnTitles(groups);
   const numColumns = titles.length;
@@ -123,17 +153,4 @@ function columnTitles(groups: ColumnGroup[]): string[] {
 function blankPad(arr: string[], length: number): string[] {
   if (arr.length >= length) return arr;
   return [...arr, ...Array(length - arr.length).fill(" ")];
-}
-
-export function prettyInteger(x: number | undefined): string | null {
-  if (x === undefined) return null;
-  return new Intl.NumberFormat("en-US").format(Math.round(x));
-}
-
-export function prettyFloat(
-  x: number | undefined,
-  digits: number,
-): string | null {
-  if (x === undefined) return null;
-  return x.toFixed(digits).replace(/\.?0+$/, "");
 }
