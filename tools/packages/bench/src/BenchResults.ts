@@ -171,7 +171,7 @@ function headerRows(columns: number): string[][] {
         bold("%"),       // 4
         bold("time"),    // 5
         bold("%"),       // 6
-        bold("+gc"),     // 7
+        bold("gc"),      // 7
         bold("%"),       // 8
         bold("kb"),      // 9
         bold("L1 miss"), // 10
@@ -192,7 +192,7 @@ function tableConfig(): TableUserConfig {
     { row: 2, col: 1, colSpan: 1, alignment: "center" }, // "max" header
     { row: 2, col: 3, colSpan: 1, alignment: "center" }, // "p50" header
     { row: 2, col: 5, colSpan: 1, alignment: "center" }, // "time" header
-    { row: 2, col: 6, colSpan: 1, alignment: "center" }, // "+gc" header
+    { row: 2, col: 6, colSpan: 1, alignment: "center" }, // "gc" header
     { row: 2, col: 8, colSpan: 1, alignment: "center" }, // "kb" header
     { row: 2, col: 9, colSpan: 1, alignment: "center" }, // "L1 miss" header
     { row: 2, col: 10, colSpan: 1, alignment: "center" }, // "runs" header
@@ -209,7 +209,7 @@ function tableConfig(): TableUserConfig {
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
       { alignment: "right" },                                 // time
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
-      { alignment: "right" },                                 // +gc
+      { alignment: "right" },                                 // gc
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
       { alignment: "right" },                                 // heap
       { alignment: "right", width: "L1 miss".length },        // L1 miss
@@ -250,11 +250,20 @@ function selectedStats(
     { median, max: min }, // 'min' time becomes 'max' loc/sec
     x => codeLines / (x / 1000),
   );
+
+  let gcTimeMean: number | undefined = undefined;
+  const { nodeGcTime } = result;
+  if (nodeGcTime) {
+    const { inRun, betweenRuns } = nodeGcTime;
+    const total = inRun + betweenRuns;
+    gcTimeMean = total / result.samples.length;
+  }
+
   return {
     locSecP50: locPerSecond.median,
     locSecMax: locPerSecond.max,
     timeMean: result.time?.avg,
-    gcTimeMean: result.gcTime?.avg,
+    gcTimeMean,
     runs: result.samples.length,
     heap: result.heapSize?.avg,
     cpuCacheMiss: cpuCacheMiss(result),

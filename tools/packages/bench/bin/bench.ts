@@ -268,7 +268,7 @@ async function loadAllFiles(): Promise<BenchTest[]> {
     reduceBuffer,
     // particle,
     // rasterize,
-    // boat,
+    boat,
     // imports_only,
     // bevy_deferred_lighting,
     // bevy_linking,

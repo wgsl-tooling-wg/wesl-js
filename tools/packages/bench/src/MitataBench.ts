@@ -122,7 +122,6 @@ export async function mitataBench(
     gcRecords.slice(0, numRecords),
     times.slice(0, i),
   );
-  console.log("node gc time", nodeGcTime);
 
   const { gc, heap, min, max, avg } = stats;
   const { p25, p50, p75, p99, p999 } = stats;
