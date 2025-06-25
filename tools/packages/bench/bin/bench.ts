@@ -19,6 +19,7 @@ import {
 } from "../src/BenchResults.ts";
 import { type MeasureOptions, mitataBench } from "../src/MitataBench.ts";
 
+/** load the link() function from the baseline repo  */
 const baselineLink = await import("../_baseline/packages/wesl/src/index.ts")
   .then(x => x.link)
   .catch(() => undefined);
@@ -68,7 +69,6 @@ function parseArgs(args: string[]) {
 
 async function runBenchmarks(argv: CliArgs): Promise<void> {
   const tests = await loadAllFiles();
-  const variant: ParserVariant = selectVariant(argv.variant);
 
   if (argv.manual) {
     benchManually(tests);

@@ -121,6 +121,17 @@ function generateDataRows(
   }
 }
 
+/** write table records to the console */
+function logTable(records: FullReportRow[]): void {
+  const { headerRows, config } = tablePrep();
+  const dataRows = recordsToRows(records);
+  const allRows = [...headerRows, ...dataRows];
+  console.log(table(allRows, config));
+}
+
+/** 
+ * @return formatted table data for a main row with comparision % values inserted 
+ * and a baseline row */
 function mainAndBaseRows(
   main: SelectedStats,
   base: SelectedStats,
@@ -161,8 +172,9 @@ function mostlyFullRow(stats: SelectedStats): FullReportRow {
   };
 }
 
-export function coloredPercent(numerator: number, total: number): string {
-  const fraction = numerator / total;
+/** @return format a fraction as a colored +/- percentage */
+export function coloredPercent(numerator: number, denominator: number): string {
+  const fraction = numerator / denominator;
   const positive = fraction >= 0;
   const sign = positive ? "+" : "-";
   const percentStr = `${sign}${prettyPercent(fraction)}`;
@@ -170,18 +182,12 @@ export function coloredPercent(numerator: number, total: number): string {
   return colored;
 }
 
+/** format a number like .473 as a percentage like 47.3% */
 function prettyPercent(fraction?: number): string | null {
   if (fraction === undefined) return null;
   return `${Math.abs(fraction * 100).toFixed(1)}%`;
 }
 
-/** write the table to the console */
-function logTable(records: FullReportRow[]): void {
-  const { headerRows, config } = tablePrep();
-  const dataRows = recordsToRows(records);
-  const allRows = [...headerRows, ...dataRows];
-  console.log(table(allRows, config));
-}
 
 function recordsToRows(records: FullReportRow[]): string[][] {
   // biome-ignore format:
