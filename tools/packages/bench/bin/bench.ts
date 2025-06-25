@@ -1,12 +1,23 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { WGSLLinker } from "@use-gpu/shader";
-import { type SrcModule, type WeslAST, link, parseSrcModule } from "wesl";
+import {
+  type SrcModule,
+  type WeslAST,
+  link,
+  _linkSync,
+  parseSrcModule,
+} from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
 import { type MeasureOptions, mitataBench } from "../src/MitataBench.ts";
 import { hideBin } from "yargs/helpers";
-import { type BenchmarkReport, reportResults } from "../src/BenchResults.ts";
+import {
+  type BenchmarkReport,
+  coloredPercent,
+  reportResults,
+} from "../src/BenchResults.ts";
+import * as mitata from "mitata";
 
 const baselineLink = await import("../_baseline/packages/wesl/src/index.ts")
   .then(x => x.link)
@@ -41,6 +52,16 @@ function parseArgs(args: string[]) {
       default: false,
       describe: "run once, for attaching a profiler",
     })
+    .option("manual", {
+      type: "boolean",
+      default: false,
+      describe: "run using manual profiler",
+    })
+    .option("mitata", {
+      type: "boolean",
+      default: false,
+      describe: "run using vanilla mitata profiler",
+    })
     .help()
     .parseSync();
 }
@@ -49,49 +70,131 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   const tests = await loadAllFiles();
   const variant: ParserVariant = selectVariant(argv.variant);
 
-  if (argv.profile) {
-    await benchOnceOnly(tests, variant);
+  if (argv.manual) {
+    benchManually(tests);
+  } else if (argv.profile) {
+    await benchOnceOnly(tests);
+  } else if (argv.mitata) {
+    simpleMitataBench(tests);
   } else {
-    await benchAndReport(tests, variant);
+    await benchAndReport(tests);
   }
+}
+
+function benchOnceOnly(tests: BenchTest[]): Promise<any> {
+  return link({
+    weslSrc: Object.fromEntries(tests[0].files.entries()),
+    rootModuleName: tests[0].mainFile,
+  });
+}
+
+function simpleMitataBench(tests: BenchTest[]): void {
+  for (const test of tests) {
+    const weslSrc = Object.fromEntries(test.files.entries());
+    const rootModuleName = test.mainFile;
+
+    mitata.bench("--> baseline " + test.name, () =>
+      baselineLink!({ weslSrc, rootModuleName }),
+    );
+    mitata.bench(test.name, () => _linkSync({ weslSrc, rootModuleName }));
+  }
+  mitata.run();
 }
 
 /** run the tests once to verify they run, or to attach a profiler */
-function benchOnceOnly(tests: BenchTest[], variant: ParserVariant): void {
-  console.profile();
+function benchManually(tests: BenchTest[]): void {
+  const gc = globalThis.gc || (() => {});
+  console.log("gc is", globalThis.gc ? "enabled" : "disabled");
   for (const test of tests) {
-    runOnce(variant, test);
+    const weslSrc = Object.fromEntries(test.files.entries());
+    const rootModuleName = test.mainFile;
+    const warmups = 400;
+    const runs = 200;
+    const times = new Array<bigint>(runs).fill(0n);
+    let baselineTime = 0;
+
+    if (baselineLink) {
+      for (let i = 0; i < warmups; i++) {
+        baselineLink({ weslSrc, rootModuleName });
+      }
+      for (let i = 0; i < runs; i++) {
+        gc();
+        const start = process.hrtime.bigint();
+        baselineLink({ weslSrc, rootModuleName });
+        const time = process.hrtime.bigint() - start;
+        times[i] = time;
+      }
+      baselineTime = meanTime(times);
+    }
+
+    for (let i = 0; i < warmups; i++) {
+      // simpleTest(weslSrc);
+      _linkSync({ weslSrc, rootModuleName });
+    }
+
+    for (let i = 0; i < runs; i++) {
+      gc();
+      const start = process.hrtime.bigint();
+      _linkSync({ weslSrc, rootModuleName });
+      const time = process.hrtime.bigint() - start;
+      times[i] = time;
+    }
+    const mainTime = meanTime(times);
+
+    const diff = coloredPercent(baselineTime - mainTime, baselineTime);
+    console.log(`main: ${mainTime}ms, baseline: ${baselineTime}ms, ${diff}`);
   }
-  console.profileEnd();
+}
+
+function meanTime(times: bigint[]): number {
+  const total = times.reduce((acc, time) => acc + Number(time), 0);
+  return total / times.length / 1e6;
+}
+
+function medianTime(times: bigint[]): number {
+  const sorted = [...times].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const mid = Math.floor(sorted.length / 2);
+  return Number(sorted[mid]) / 1e6;
+}
+
+function simpleTest(weslSrc: Record<string, string>): number {
+  let sum = 0;
+  for (const [_, text] of Object.entries(weslSrc)) {
+    for (const c of text) {
+      sum += c.charCodeAt(0);
+    }
+  }
+  return sum;
 }
 
 /** run the tests and report results */
-async function benchAndReport(
-  tests: BenchTest[],
-  variant: ParserVariant,
-): Promise<void> {
+async function benchAndReport(tests: BenchTest[]): Promise<void> {
   const reports: BenchmarkReport[] = [];
 
-  const secToNs = 1e9; 
+  const secToNs = 1e9;
   const opts: MeasureOptions = {
-    inner_gc: true,
-    min_cpu_time: .5 * secToNs, 
+    // inner_gc: true,
+    // min_cpu_time: 0.5 * secToNs,
   } as any;
-  for (const t of tests) {
-    const benchName = `${variant} ${t.name}`;
+  for (const test of tests) {
+    const weslSrc = Object.fromEntries(test.files.entries());
+    const rootModuleName = test.mainFile;
 
     const current = await mitataBench(
-      () => runOnce(variant, t),
-      benchName,
+      () => _linkSync({ weslSrc, rootModuleName }),
+      test.name,
       opts,
     );
 
     let old = undefined;
     if (baselineLink)
-      old = await mitataBench(() => runBaseline(t), "--> baseline", opts);
+      old = await mitataBench(
+        () => baselineLink({ weslSrc, rootModuleName }),
+        "--> baseline",
+        opts,
+      );
 
-
-    reports.push({ benchTest: t, mainResult: current, baseline: old });
+    reports.push({ benchTest: test, mainResult: current, baseline: old });
   }
 
   reportResults(reports);
@@ -162,12 +265,12 @@ async function loadAllFiles(): Promise<BenchTest[]> {
     ],
   );
   return [
-    // reduceBuffer,
-    // particle,
-    // rasterize,
-    // boat,
+    reduceBuffer,
+    particle,
+    rasterize,
+    boat,
     imports_only,
-    // bevy_deferred_lighting,
+    bevy_deferred_lighting,
     // bevy_linking,
   ];
 }

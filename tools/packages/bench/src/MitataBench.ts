@@ -56,7 +56,7 @@ export type MeasureOptions = Parameters<typeof measure>[1] & {
  * @returns the measured results, with time in milliseconds, and heap size in kilobytes
  */
 export async function mitataBench(
-  fn: () => Promise<void> | void,
+  fn: () => any,
   name = "",
   options?: MeasureOptions,
 ): Promise<MeasuredResults> {

@@ -19,6 +19,7 @@ interface ReportRow {
   locSecMaxPercent?: string;
   locSecP50Percent?: string;
   timeMean?: string;
+  timeMeanPercent?: string;
   gcTimeMean?: string;
   gcTimePercent?: string;
   cpuCacheMiss?: string;
@@ -78,6 +79,8 @@ function formatReport(main: NamedStats, base?: NamedStats): FullReportRow[] {
     const locP50Diff = main.locSecP50 - base.locSecP50;
     mainRow.locSecP50Percent = coloredPercent(locP50Diff, base.locSecP50);
     mainRow.locSecMaxPercent = coloredPercent(locDiff, base.locSecMax);
+    const timeDiff = main.timeMean - base.timeMean;
+    mainRow.timeMeanPercent = coloredPercent(timeDiff, base.timeMean);
 
     if (main.gcTimeMean && base.gcTimeMean) {
       const gcDiff = main.gcTimeMean - base.gcTimeMean;
@@ -107,10 +110,11 @@ function mostlyFullRow(stats: NamedStats): FullReportRow {
     locSecMaxPercent: null,
     locSecP50Percent: null,
     gcTimePercent: null,
+    timeMeanPercent: null,
   };
 }
 
-function coloredPercent(numerator: number, total: number): string {
+export function coloredPercent(numerator: number, total: number): string {
   const fraction = numerator / total;
   const positive = fraction >= 0;
   const sign = positive ? "+" : "-";
@@ -133,6 +137,7 @@ function logTable(records: FullReportRow[]): void {
     r.locSecP50,
     r.locSecP50Percent,
     r.timeMean,
+    r.timeMeanPercent,
     r.gcTimeMean,
     r.gcTimePercent,
     r.heap,
@@ -165,11 +170,12 @@ function headerRows(columns: number): string[][] {
         bold("p50"),     // 3
         bold("%"),       // 4
         bold("time"),    // 5
-        bold("+gc"),     // 6
-        bold("%"),       // 7
-        bold("kb"),      // 8
-        bold("L1 miss"), // 9
-        bold("N"),       // 10
+        bold("%"),       // 6
+        bold("+gc"),     // 7
+        bold("%"),       // 8
+        bold("kb"),      // 9
+        bold("L1 miss"), // 10
+        bold("N"),       // 11
       ],
       columns,
     ),
@@ -202,6 +208,7 @@ function tableConfig(): TableUserConfig {
       { alignment: "right" },                                 // loc/Sec p50
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
       { alignment: "right" },                                 // time
+      { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
       { alignment: "right" },                                 // +gc
       { alignment: "left", paddingLeft: 0, paddingRight: 2 }, // %
       { alignment: "right" },                                 // heap
