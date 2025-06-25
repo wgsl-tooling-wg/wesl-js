@@ -1,4 +1,4 @@
-import { measure } from "mitata";
+import { bench, measure } from "mitata";
 import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
 import type { CpuCounts } from "@mitata/counters";
 import * as mitataCounters from "@mitata/counters";
@@ -92,13 +92,13 @@ export async function mitataBench(
   });
   obs.observe({ entryTypes: ["gc"] });
   const times: number[] = new Array(maxSamples);
+  let benchStart = 0;
+  let benchEnd = 0;
 
-  let i = 0;
   const newFn = () => {
-    times[i++] = performance.now();
+    if (!benchStart) benchStart = performance.now();
     fn();
-    times[i++] = performance.now();
-    // globalThis.gc?.(); // trigger gc if available
+    benchEnd = performance.now();
   };
 
   const stats = await measure(newFn, {
@@ -120,7 +120,7 @@ export async function mitataBench(
 
   const nodeGcTime = analyzeGCEntries(
     gcRecords.slice(0, numRecords),
-    times.slice(0, i),
+    [benchStart, benchEnd],
   );
 
   const { gc, heap, min, max, avg } = stats;
@@ -144,34 +144,19 @@ export function grouped<T>(a: T[], size: number, stride = size): T[][] {
   return groups;
 }
 
-
 /** correlate the node perf gc events from hooks with the function timing results */
 function analyzeGCEntries(
   gcRecords: PerformanceEntry[],
-  times: number[],
+  benchTime: [number, number],
 ): NodeGCTime {
+  const [start, end] = benchTime;
   let inRun = 0;
-  let betweenRuns = 0;
+  const betweenRuns = 0;
   let beforeAfterRuns = 0;
-  const runs = grouped(times, 2);
-  let runDex = 0;
-  let currentRun = runs[runDex];
   gcRecords.forEach(record => {
     const { duration, startTime } = record;
-    // advance currentRun until we find a run that contains the record or comes after the record
-    while (runDex < runs.length && startTime > currentRun[1]) {
-      runDex++;
-      currentRun = runs[runDex];
-    }
-
-    if (runDex >= runs.length) {
+    if (startTime < start || startTime > end) {
       beforeAfterRuns += duration;
-    } else if (startTime < currentRun[0]) {
-      if (runDex === 0) {
-        beforeAfterRuns += duration;
-      } else {
-        betweenRuns += duration;
-      }
     } else {
       inRun += duration;
     }
