@@ -98,6 +98,16 @@ export async function link(params: LinkParams): Promise<LinkedWesl> {
   return new LinkedWesl(srcMap);
 }
 
+/** linker api for benchmarking */
+export function _linkSync(params: LinkParams): LinkedWesl {
+  const { weslSrc, debugWeslRoot, libs = [] } = params;
+  const registry = parsedRegistry();
+  parseIntoRegistry(weslSrc, registry, "package", debugWeslRoot);
+  parseLibsIntoRegistry(libs, registry);
+  const srcMap = linkRegistry({ registry, ...params });
+  return new LinkedWesl(srcMap);
+}
+
 export interface LinkRegistryParams
   extends Pick<
     LinkParams,
