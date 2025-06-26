@@ -1,4 +1,3 @@
-import pico from "picocolors";
 import type { BenchTest } from "../bin/bench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
 import {
@@ -12,7 +11,6 @@ import {
 } from "./table-util/TableReport.ts";
 import { mapValues } from "./mitata-util/Util.ts";
 
-const { red, green } = pico;
 
 const maxNameLength = 30;
 
