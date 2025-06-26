@@ -22,9 +22,10 @@ export interface TypedColumn<T> {
   formatter?: (value: any) => string | null;
   alignment?: Alignment;
   width?: number;
-  /** If true, adds a comparison percentage column after this column when baseline data is available */
-  showDiff?: boolean;
-  /** Key for the column that stores the comparison percentage (used with showDiff) */
+  /** if set, this column holds a synthesized comparison value
+   * comparing the value in selected by the diffKey against the 
+   * corresponding baseline value.
+   */
   diffKey?: keyof T;
 }
 
@@ -174,7 +175,10 @@ export function prettyInteger(x: number | undefined): string | null {
 }
 
 /** format a float to a specified precision with trailing zeros dropped */
-export function prettyFloat(x: number | undefined, digits: number): string | null {
+export function prettyFloat(
+  x: number | undefined,
+  digits: number,
+): string | null {
   if (x === undefined) return null;
   return x.toFixed(digits).replace(/\.?0+$/, "");
 }
@@ -198,16 +202,17 @@ export function coloredPercent(numerator: number, denominator: number): string {
 export const formatters = {
   /** Format integers with thousand separators */
   integer: (x: number | undefined) => prettyInteger(x),
-  
+
   /** Format floats with 2 decimal places */
   float: (x: number | undefined) => prettyFloat(x, 2),
-  
+
   /** Format floats with custom precision */
-  floatPrecision: (precision: number) => (x: number | undefined) => prettyFloat(x, precision),
-  
+  floatPrecision: (precision: number) => (x: number | undefined) =>
+    prettyFloat(x, precision),
+
   /** Format as percentage */
   percent: (x: number | undefined) => prettyPercent(x),
-  
+
   /** Format duration in milliseconds */
   duration: (ms: number | undefined) => {
     if (ms === undefined) return null;
@@ -215,28 +220,28 @@ export const formatters = {
     if (ms < 1000) return `${ms.toFixed(2)}ms`;
     return `${(ms / 1000).toFixed(2)}s`;
   },
-  
+
   /** Format bytes with appropriate units */
   bytes: (bytes: number | undefined) => {
     if (bytes === undefined) return null;
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const units = ["B", "KB", "MB", "GB", "TB"];
     let size = bytes;
     let unitIndex = 0;
-    
+
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
       unitIndex++;
     }
-    
+
     return `${size.toFixed(1)}${units[unitIndex]}`;
   },
-  
+
   /** Format as a rate (value per unit) */
   rate: (unit: string) => (value: number | undefined) => {
     if (value === undefined) return null;
     return `${prettyInteger(value)}/${unit}`;
   },
-  
+
   /** Truncate string to max length */
   truncate: (maxLength: number) => (str: string | undefined) => {
     if (str === undefined) return null;
@@ -247,11 +252,9 @@ export const formatters = {
 /** convert Record style rows to an array of string[], suitable for the table library */
 export function recordsToRows<T extends Record<string, any>>(
   records: T[],
-  columnOrder: (keyof T)[]
+  columnOrder: (keyof T)[],
 ): string[][] {
-  const rawRows = records.map(record => 
-    columnOrder.map(key => record[key])
-  );
+  const rawRows = records.map(record => columnOrder.map(key => record[key]));
   return rawRows.map(row => row.map(cell => cell ?? " "));
 }
 
@@ -264,34 +267,34 @@ export function typedTableSetup<T>(groups: TypedColumnGroup<T>[]): TableSetup {
       alignment: col.alignment,
     })),
   }));
-  
+
   return tableSetup(untypedGroups);
 }
 
 /** Convert typed records to formatted string rows using typed column definitions */
 export function typedRecordsToRows<T extends Record<string, any>>(
   records: T[],
-  groups: TypedColumnGroup<T>[]
+  groups: TypedColumnGroup<T>[],
 ): string[][] {
   const allColumns = groups.flatMap(group => group.columns);
-  
-  const rawRows = records.map(record => 
+
+  const rawRows = records.map(record =>
     allColumns.map(col => {
       const value = record[col.key];
       if (col.formatter) {
         return col.formatter(value);
       }
       return value;
-    })
+    }),
   );
-  
+
   return rawRows.map(row => row.map(cell => cell ?? " "));
 }
 
 /** Complete typed table builder */
 export function buildTypedTable<T extends Record<string, any>>(
   groups: TypedColumnGroup<T>[],
-  records: T[]
+  records: T[],
 ): string {
   const { headerRows, config } = typedTableSetup(groups);
   const dataRows = typedRecordsToRows(records, groups);
@@ -303,21 +306,27 @@ export function buildTypedTable<T extends Record<string, any>>(
 function addComparisons<T extends Record<string, any>>(
   groups: TypedColumnGroup<T>[],
   mainRecord: T,
-  baselineRecord: T
+  baselineRecord: T,
 ): T {
-  const comparisonColumns = groups.flatMap(g => g.columns).filter(col => col.diffKey);
+  const comparisonColumns = groups
+    .flatMap(g => g.columns)
+    .filter(col => col.diffKey);
   const updatedMain = { ...mainRecord };
-  
+
   for (const col of comparisonColumns) {
     const mainValue = Number(mainRecord[col.diffKey!]);
     const baselineValue = Number(baselineRecord[col.diffKey!]);
-    
-    if (!Number.isNaN(mainValue) && !Number.isNaN(baselineValue) && baselineValue !== 0) {
+
+    if (
+      !Number.isNaN(mainValue) &&
+      !Number.isNaN(baselineValue) &&
+      baselineValue !== 0
+    ) {
       const diff = mainValue - baselineValue;
       (updatedMain as any)[col.key] = coloredPercent(diff, baselineValue);
     }
   }
-  
+
   return updatedMain;
 }
 
@@ -326,27 +335,27 @@ export function buildComparisonTable<T extends Record<string, any>>(
   groups: TypedColumnGroup<T>[],
   mainRecords: T[],
   baselineRecords?: T[],
-  nameKey: keyof T = "name" as keyof T
+  nameKey: keyof T = "name" as keyof T,
 ): string {
   let allRecords: T[];
-  
+
   if (baselineRecords && baselineRecords.length > 0) {
     // Interleave main and baseline records
     allRecords = [];
     for (let i = 0; i < mainRecords.length; i++) {
       const mainRecord = mainRecords[i];
       const baselineRecord = baselineRecords[i];
-      
+
       if (baselineRecord) {
         const updatedMain = addComparisons(groups, mainRecord, baselineRecord);
-        
+
         allRecords.push(updatedMain);
-        
+
         // Add baseline record with modified name
         const updatedBaseline = { ...baselineRecord };
         (updatedBaseline as any)[nameKey] = `--> baseline`;
         allRecords.push(updatedBaseline);
-        
+
         // Add blank row for separation (except for the last group)
         if (i < mainRecords.length - 1) {
           allRecords.push({} as T);
@@ -359,10 +368,10 @@ export function buildComparisonTable<T extends Record<string, any>>(
     // No baseline data, use main records as-is (but filter out diff columns)
     const filteredGroups = groups.map(group => ({
       ...group,
-      columns: group.columns.filter(col => !col.diffKey)
+      columns: group.columns.filter(col => !col.diffKey),
     }));
     return buildTypedTable(filteredGroups, mainRecords);
   }
-  
+
   return buildTypedTable(groups, allRecords);
 }
