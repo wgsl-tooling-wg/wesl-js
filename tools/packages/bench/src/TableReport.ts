@@ -1,4 +1,5 @@
 import pico from "picocolors";
+import { table } from "table";
 import type {
   Alignment,
   ColumnUserConfig,
@@ -145,3 +146,60 @@ function blankPad(arr: string[], length: number): string[] {
   if (arr.length >= length) return arr;
   return [...arr, ...Array(length - arr.length).fill(" ")];
 }
+
+/** Formatting utilities for table data */
+
+/** format an integer with commas between thousands */
+export function prettyInteger(x: number | undefined): string | null {
+  if (x === undefined) return null;
+  return new Intl.NumberFormat("en-US").format(Math.round(x));
+}
+
+/** format a float to a specified precision with trailing zeros dropped */
+export function prettyFloat(x: number | undefined, digits: number): string | null {
+  if (x === undefined) return null;
+  return x.toFixed(digits).replace(/\.?0+$/, "");
+}
+
+/** format a number like .473 as a percentage like 47.3% */
+export function prettyPercent(fraction?: number): string | null {
+  if (fraction === undefined) return null;
+  return `${Math.abs(fraction * 100).toFixed(1)}%`;
+}
+
+/** format a fraction as a colored +/- percentage */
+export function coloredPercent(numerator: number, denominator: number): string {
+  const fraction = numerator / denominator;
+  const positive = fraction >= 0;
+  const sign = positive ? "+" : "-";
+  const percentStr = `${sign}${prettyPercent(fraction)}`;
+  return positive ? green(percentStr) : red(percentStr);
+}
+
+/** convert Record style rows to an array of string[], suitable for the table library */
+export function recordsToRows<T extends Record<string, any>>(
+  records: T[],
+  columnOrder: (keyof T)[]
+): string[][] {
+  const rawRows = records.map(record => 
+    columnOrder.map(key => record[key])
+  );
+  return rawRows.map(row => row.map(cell => cell ?? " "));
+}
+
+/** Complete table builder that combines setup, data, and rendering */
+export function buildTable<T extends Record<string, any>>(
+  groups: ColumnGroup[],
+  records: T[],
+  columnOrder: (keyof T)[]
+): string {
+  const { headerRows, config } = tableSetup(groups);
+  const dataRows = recordsToRows(records, columnOrder);
+  const allRows = [...headerRows, ...dataRows];
+  return table(allRows, config);
+}
+
+/** Helper type for records with nullable values */
+export type NullableValues<T> = {
+  [P in keyof T]: T[P] | null;
+};

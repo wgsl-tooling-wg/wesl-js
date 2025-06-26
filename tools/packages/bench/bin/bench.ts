@@ -9,10 +9,10 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import {
   type BenchmarkReport,
-  coloredPercent,
   reportResults,
 } from "../src/BenchmarkReport.ts";
 import { type MeasureOptions, mitataBench } from "../src/MitataBench.ts";
+import { coloredPercent } from "../src/TableReport.ts";
 
 /** load the link() function from the baseline repo  */
 const baselineLink = await import("../_baseline/packages/wesl/src/index.ts")

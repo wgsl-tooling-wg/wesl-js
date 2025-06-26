@@ -1,11 +1,14 @@
 import pico from "picocolors";
-import { table } from "table";
 import type { BenchTest } from "../bin/bench.ts";
 import { type MeasuredResults, mapValues } from "./MitataBench.ts";
 import {
   type ColumnGroup,
-  type TableSetup,
-  tableSetup,
+  type NullableValues,
+  buildTable,
+  coloredPercent,
+  prettyFloat,
+  prettyInteger,
+  prettyPercent,
 } from "./TableReport.ts";
 
 const { red, green } = pico;
@@ -34,10 +37,6 @@ interface ReportRow {
   heap?: string;
   runs?: string;
 }
-
-type NullableValues<T> = {
-  [P in keyof T]: T[P] | null;
-};
 
 /** report row with all keys required, and values that may be null */
 type FullReportRow = NullableValues<Required<ReportRow>>;
@@ -124,10 +123,15 @@ function generateDataRows(
 
 /** write table records to the console */
 function logTable(records: FullReportRow[]): void {
-  const { headerRows, config } = tablePrep();
-  const dataRows = recordsToRows(records);
-  const allRows = [...headerRows, ...dataRows];
-  console.log(table(allRows, config));
+  const columnOrder: (keyof FullReportRow)[] = [
+    "name", "locSecMax", "locSecMaxPercent", "locSecP50", 
+    "locSecP50Percent", "timeMean", "timeMeanPercent", "gcTimeMean",
+    "gcTimePercent", "heap", "cpuCacheMiss", "runs"
+  ];
+  
+  const groups = getColumnGroups();
+  const tableStr = buildTable(groups, records, columnOrder);
+  console.log(tableStr);
 }
 
 /** 
@@ -173,36 +177,9 @@ function mostlyFullRow(stats: SelectedStats): FullReportRow {
   };
 }
 
-/** @return format a fraction as a colored +/- percentage */
-export function coloredPercent(numerator: number, denominator: number): string {
-  const fraction = numerator / denominator;
-  const positive = fraction >= 0;
-  const sign = positive ? "+" : "-";
-  const percentStr = `${sign}${prettyPercent(fraction)}`;
-  const colored = positive ? green(percentStr) : red(percentStr);
-  return colored;
-}
-
-/** format a number like .473 as a percentage like 47.3% */
-function prettyPercent(fraction?: number): string | null {
-  if (fraction === undefined) return null;
-  return `${Math.abs(fraction * 100).toFixed(1)}%`;
-}
-
-/** convert Record style rows to an array of string[], suitable for the table library */
-function recordsToRows(records: FullReportRow[]): string[][] {
-  // biome-ignore format:
-  const rawRows = records.map(r => [
-    r.name, r.locSecMax, r.locSecMaxPercent, r.locSecP50,
-    r.locSecP50Percent, r.timeMean, r.timeMeanPercent, r.gcTimeMean,
-    r.gcTimePercent, r.heap, r.cpuCacheMiss, r.runs
-  ]);
-  return rawRows.map(row => row.map(cell => cell ?? " "));
-}
-
 /** configuration for table column and section headers */
-function tablePrep(): TableSetup {
-  const groups: ColumnGroup[] = [
+function getColumnGroups(): ColumnGroup[] {
+  return [
     { columns: [{ title: "name" }] },
     {
       groupTitle: "lines / sec",
@@ -220,7 +197,6 @@ function tablePrep(): TableSetup {
       columns: [{ title: "heap kb" }, { title: "L1 miss" }, { title: "N" }],
     },
   ];
-  return tableSetup(groups);
 }
 
 /** return the CPU L1 cache miss rate */
@@ -239,16 +215,4 @@ function cpuCacheMiss(result: MeasuredResults): number | undefined {
   }
   // TBD linux is also supported in @mitata/counters
   return undefined;
-}
-
-/** format an integer with commas between thousands */
-function prettyInteger(x: number | undefined): string | null {
-  if (x === undefined) return null;
-  return new Intl.NumberFormat("en-US").format(Math.round(x));
-}
-
-/** format a float to a specified precision with trailing zeros dropped */
-function prettyFloat(x: number | undefined, digits: number): string | null {
-  if (x === undefined) return null;
-  return x.toFixed(digits).replace(/\.?0+$/, "");
 }
