@@ -1,6 +1,6 @@
 import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
 import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
-import type { CpuCounts } from "@mitata/counters"; 
+import type { CpuCounts } from "@mitata/counters";
 import * as mitataCounters from "@mitata/counters"; // TODO load dynamically
 import { measure } from "mitata";
 import { mapValues } from "./Util.ts";
@@ -55,6 +55,8 @@ export interface MeasuredResults {
   cpu?: CpuCounts;
   name: string;
 
+  cpuCacheMiss?: number;
+
   nodeGcTime?: NodeGCTime; // time spent in garbage collection as measure by node's performance hooks
 }
 
@@ -108,10 +110,8 @@ export async function mitataBench(
   await new Promise(resolve => setTimeout(resolve, 10)); // wait for gc observer to collect
   gcRecords.push(...finishObserver(obs));
 
-  const nodeGcTime = analyzeGCEntries(gcRecords.slice(0, numRecords), [
-    benchStart,
-    benchEnd,
-  ]);
+  const gcEntries = gcRecords.slice(0, numRecords);
+  const nodeGcTime = analyzeGCEntries(gcEntries, [benchStart, benchEnd]);
 
   const { gc, heap, min, max, avg } = stats;
   const { p25, p50, p75, p99, p999 } = stats;
@@ -122,7 +122,17 @@ export async function mitataBench(
   const gcTime = gc && mapValues(gc, x => x / 1e6);
 
   const heapSize = heap && mapValues(heap, x => x / 1024);
-  return { name, time, gcTime, samples, heapSize, cpu, nodeGcTime };
+  const cpuCacheMiss = cacheMissRate(cpu);
+  return {
+    name,
+    time,
+    gcTime,
+    samples,
+    heapSize,
+    cpu,
+    cpuCacheMiss,
+    nodeGcTime,
+  };
 }
 
 /** finish the observer and return any straggler gc records (unlikely in practice) */
@@ -133,7 +143,6 @@ function finishObserver(obs: PerformanceObserver): PerformanceEntry[] {
 
   return records.filter(record => record.entryType === "gc");
 }
-
 
 /** correlate the node perf gc events from hooks with the function timing results */
 function analyzeGCEntries(
@@ -155,4 +164,22 @@ function analyzeGCEntries(
   });
   const total = inRun + before + after;
   return { inRun, before, after, total };
+}
+
+/** return the CPU L1 cache miss rate */
+function cacheMissRate(cpu: any): number | undefined {
+  if (cpu?.l1) {
+    const { l1 } = cpu;
+    const total = cpu.instructions?.loads_and_stores?.avg;
+    const loadMiss = l1?.miss_loads?.avg;
+    const storeMiss = l1?.miss_stores?.avg; // LATER do store misses cause stalls too?
+    if (total === undefined) return undefined;
+    if (loadMiss === undefined || storeMiss === undefined) return undefined;
+
+    const miss = loadMiss + storeMiss;
+    return miss / total;
+  } else if (cpu.cache) { // linux (TODO untested)
+    return cpu.cache.misses.avg / cpu.counters.cache.avg;
+  }
+  return undefined;
 }
