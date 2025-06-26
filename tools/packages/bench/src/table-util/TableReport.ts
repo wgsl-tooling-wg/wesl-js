@@ -9,12 +9,6 @@ import type {
 
 const { bold, red, green } = pico;
 
-/** a single data column  */
-export interface Column {
-  alignment?: Alignment;
-  title?: string;
-}
-
 /** A typed column that knows about the data structure it's displaying */
 export interface TypedColumn<T> {
   key: keyof T;
@@ -23,7 +17,7 @@ export interface TypedColumn<T> {
   alignment?: Alignment;
   width?: number;
   /** if set, this column holds a synthesized comparison value
-   * comparing the value in selected by the diffKey against the 
+   * comparing the value in selected by the diffKey against the
    * corresponding baseline value.
    */
   diffKey?: keyof T;
@@ -33,16 +27,6 @@ export interface TypedColumn<T> {
 export interface TypedColumnGroup<T> {
   groupTitle?: string;
   columns: TypedColumn<T>[];
-}
-
-/**
- * A group of columns.
- *
- * If any ColumnGroup has a groupTitle, tableSetup() will insert a row for titles.
- */
-export interface ColumnGroup {
-  groupTitle?: string;
-  columns: Column[];
 }
 
 /** results of table preparation, ready to include in a call to `table`, like this:
@@ -73,7 +57,7 @@ export interface TableSetup {
 ║                               │                              │               │               │                      ║
 ╚═══════════════════════════════╧══════════════════════════════╧═══════════════╧═══════════════╧══════════════════════╝
  */
-export function tableSetup(groups: ColumnGroup[]): TableSetup {
+export function tableSetup<T>(groups: TypedColumnGroup<T>[]): TableSetup {
   const titles = columnTitles(groups);
   const numColumns = titles.length;
 
@@ -87,7 +71,10 @@ export function tableSetup(groups: ColumnGroup[]): TableSetup {
 }
 
 /** @return a full row of header elements with blanks in between */
-function groupHeaders(groups: ColumnGroup[], numColumns: number): string[][] {
+function groupHeaders<T>(
+  groups: TypedColumnGroup<T>[],
+  numColumns: number,
+): string[][] {
   const hasHeader = groups.find(g => g.groupTitle);
   if (!hasHeader) return [];
 
@@ -110,7 +97,7 @@ interface LineFunctions {
   drawVerticalLine: (index: number, size: number) => boolean;
 }
 
-function lineFunctions(groups: ColumnGroup[]): LineFunctions {
+function lineFunctions<T>(groups: TypedColumnGroup<T>[]): LineFunctions {
   const sectionBorders: number[] = [];
   const groupTitles = groups.map(g => g.groupTitle);
   let headerBottom = 1;
@@ -135,7 +122,10 @@ function lineFunctions(groups: ColumnGroup[]): LineFunctions {
 /** @return spanning cells to configure for the main columns
  * currently unused due to upstream issue: https://github.com/gajus/table/issues/234
  */
-function columnSpanning(groups: ColumnGroup[], row = 0): SpanningCellConfig[] {
+function _columnSpanning<T>(
+  groups: TypedColumnGroup<T>[],
+  row = 0,
+): SpanningCellConfig[] {
   const columns = groups.flatMap(g => g.columns);
   const colSpan = 1;
   return columns.map((c, col) => {
@@ -143,7 +133,9 @@ function columnSpanning(groups: ColumnGroup[], row = 0): SpanningCellConfig[] {
   });
 }
 
-function sectionSpanning(groups: ColumnGroup[]): SpanningCellConfig[] {
+function sectionSpanning<T>(
+  groups: TypedColumnGroup<T>[],
+): SpanningCellConfig[] {
   let col = 0;
   const row = 0;
   const alignment: Alignment = "center";
@@ -157,7 +149,7 @@ function sectionSpanning(groups: ColumnGroup[]): SpanningCellConfig[] {
   return spans;
 }
 
-function columnTitles(groups: ColumnGroup[]): string[] {
+function columnTitles<T>(groups: TypedColumnGroup<T>[]): string[] {
   return groups.flatMap(g => g.columns.map(c => bold(c.title || " ")));
 }
 
@@ -258,19 +250,6 @@ export function recordsToRows<T extends Record<string, any>>(
   return rawRows.map(row => row.map(cell => cell ?? " "));
 }
 
-/** Create a table setup using typed column definitions */
-export function typedTableSetup<T>(groups: TypedColumnGroup<T>[]): TableSetup {
-  const untypedGroups: ColumnGroup[] = groups.map(group => ({
-    groupTitle: group.groupTitle,
-    columns: group.columns.map(col => ({
-      title: col.title,
-      alignment: col.alignment,
-    })),
-  }));
-
-  return tableSetup(untypedGroups);
-}
-
 /** Convert typed records to formatted string rows using typed column definitions */
 export function typedRecordsToRows<T extends Record<string, any>>(
   records: T[],
@@ -296,7 +275,7 @@ export function buildTypedTable<T extends Record<string, any>>(
   groups: TypedColumnGroup<T>[],
   records: T[],
 ): string {
-  const { headerRows, config } = typedTableSetup(groups);
+  const { headerRows, config } = tableSetup(groups);
   const dataRows = typedRecordsToRows(records, groups);
   const allRows = [...headerRows, ...dataRows];
   return table(allRows, config);
