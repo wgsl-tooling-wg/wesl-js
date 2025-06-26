@@ -178,7 +178,7 @@ function cacheMissRate(cpu: any): number | undefined {
 
     const miss = loadMiss + storeMiss;
     return miss / total;
-  } else if (cpu.cache) { // linux (TODO untested)
+  } else if (cpu?.cache) { // linux (TODO untested)
     return cpu.cache.misses.avg / cpu.counters.cache.avg;
   }
   return undefined;
