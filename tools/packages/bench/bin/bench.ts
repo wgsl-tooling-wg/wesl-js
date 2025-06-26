@@ -1,15 +1,10 @@
+import * as mitata from "mitata";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { WGSLLinker } from "@use-gpu/shader";
-import * as mitata from "mitata";
 import {
-  type SrcModule,
-  type WeslAST,
   _linkSync,
-  link,
-  parseSrcModule,
+  link
 } from "wesl";
-import { WgslReflect } from "wgsl_reflect";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import {
