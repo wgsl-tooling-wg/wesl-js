@@ -300,7 +300,7 @@ export function buildTypedTable<T extends Record<string, any>>(
 }
 
 /** Compute diff values for comparison columns and add to main record */
-function addComparisonValues<T extends Record<string, any>>(
+function addComparisons<T extends Record<string, any>>(
   groups: TypedColumnGroup<T>[],
   mainRecord: T,
   baselineRecord: T
@@ -338,7 +338,7 @@ export function buildComparisonTable<T extends Record<string, any>>(
       const baselineRecord = baselineRecords[i];
       
       if (baselineRecord) {
-        const updatedMain = addComparisonValues(groups, mainRecord, baselineRecord);
+        const updatedMain = addComparisons(groups, mainRecord, baselineRecord);
         
         allRecords.push(updatedMain);
         
