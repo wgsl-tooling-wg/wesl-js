@@ -299,6 +299,28 @@ export function buildTypedTable<T extends Record<string, any>>(
   return table(allRows, config);
 }
 
+/** Compute diff values for comparison columns and add to main record */
+function computeDiffValues<T extends Record<string, any>>(
+  groups: TypedColumnGroup<T>[],
+  mainRecord: T,
+  baselineRecord: T
+): T {
+  const comparisonColumns = groups.flatMap(g => g.columns).filter(col => col.diffKey);
+  const updatedMain = { ...mainRecord };
+  
+  for (const col of comparisonColumns) {
+    const mainValue = Number(mainRecord[col.diffKey!]);
+    const baselineValue = Number(baselineRecord[col.diffKey!]);
+    
+    if (!Number.isNaN(mainValue) && !Number.isNaN(baselineValue) && baselineValue !== 0) {
+      const diff = mainValue - baselineValue;
+      (updatedMain as any)[col.key] = coloredPercent(diff, baselineValue);
+    }
+  }
+  
+  return updatedMain;
+}
+
 /** Build a comparison table with automatic diff percentage calculation */
 export function buildComparisonTable<T extends Record<string, any>>(
   groups: TypedColumnGroup<T>[],
@@ -316,19 +338,7 @@ export function buildComparisonTable<T extends Record<string, any>>(
       const baselineRecord = baselineRecords[i];
       
       if (baselineRecord) {
-        // Compute diff values for comparison columns and add to main record
-        const comparisonColumns = groups.flatMap(g => g.columns).filter(col => col.diffKey);
-        const updatedMain = { ...mainRecord };
-        
-        for (const col of comparisonColumns) {
-          const mainValue = Number(mainRecord[col.diffKey!]);
-          const baselineValue = Number(baselineRecord[col.diffKey!]);
-          
-          if (!Number.isNaN(mainValue) && !Number.isNaN(baselineValue) && baselineValue !== 0) {
-            const diff = mainValue - baselineValue;
-            (updatedMain as any)[col.key] = coloredPercent(diff, baselineValue);
-          }
-        }
+        const updatedMain = computeDiffValues(groups, mainRecord, baselineRecord);
         
         allRecords.push(updatedMain);
         
