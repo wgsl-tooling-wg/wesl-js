@@ -54,8 +54,8 @@ interface SelectedStats {
 
 /** log a table of benchmark results  */
 export function reportResults(reports: BenchmarkReport[]): void {
-  const allMainRows: FullReportRow[] = [];
-  const allBaselineRows: FullReportRow[] = [];
+  const mainRows: FullReportRow[] = [];
+  const baselineRows: FullReportRow[] = [];
 
   for (const report of reports) {
     const { benchTest, mainResult, baseline } = report;
@@ -64,15 +64,14 @@ export function reportResults(reports: BenchmarkReport[]): void {
     const main = selectedStats(codeLines, mainResult);
 
     const base = baseline && selectedStats(codeLines, baseline);
-    const { mainRows, baselineRows } = generateDataRows(main, base);
     
-    allMainRows.push(...mainRows);
-    if (baselineRows) {
-      allBaselineRows.push(...baselineRows);
+    mainRows.push(mostlyFullRow(main));
+    if (base) {
+      baselineRows.push(mostlyFullRow(base));
     }
   }
 
-  logTable(allMainRows, allBaselineRows.length > 0 ? allBaselineRows : undefined);
+  logTable(mainRows, baselineRows.length > 0 ? baselineRows : undefined);
 }
 
 /** count the number of lines of code in a bench test */
@@ -113,16 +112,6 @@ function selectedStats(
   };
 }
 
-/** @return formatted table data for the selected statistics */
-function generateDataRows(
-  main: SelectedStats,
-  base?: SelectedStats,
-): { mainRows: FullReportRow[]; baselineRows?: FullReportRow[] } {
-  const mainRows: FullReportRow[] = [mostlyFullRow(main)];
-  const baselineRows: FullReportRow[] | undefined = base ? [mostlyFullRow(base)] : undefined;
-  
-  return { mainRows, baselineRows };
-}
 
 /** write table records to the console */
 function logTable(mainRows: FullReportRow[], baselineRows?: FullReportRow[]): void {
