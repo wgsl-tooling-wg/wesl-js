@@ -3,6 +3,7 @@ import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
 import type { CpuCounts } from "@mitata/counters"; 
 import * as mitataCounters from "@mitata/counters"; // TODO load dynamically
 import { measure } from "mitata";
+import { mapValues } from "./Util.ts";
 
 const maxGcRecords = 1000;
 
@@ -133,14 +134,6 @@ function finishObserver(obs: PerformanceObserver): PerformanceEntry[] {
   return records.filter(record => record.entryType === "gc");
 }
 
-/** return an array partitioned into possibly overlapping groups */
-export function grouped<T>(a: T[], size: number, stride = size): T[][] {
-  const groups = [];
-  for (let i = 0; i < a.length; i += stride) {
-    groups.push(a.slice(i, i + size));
-  }
-  return groups;
-}
 
 /** correlate the node perf gc events from hooks with the function timing results */
 function analyzeGCEntries(
@@ -162,19 +155,4 @@ function analyzeGCEntries(
   });
   const total = inRun + before + after;
   return { inRun, before, after, total };
-}
-
-/** apply a map() on the values in a Record.
- * @return a new Record.  */
-export function mapValues<K extends string | number | symbol, T, U>(
-  obj: Record<K, T>,
-  fn: (v: T) => U,
-): Record<K, U> {
-  const result = {} as Record<K, U>;
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      result[key] = fn(obj[key]);
-    }
-  }
-  return result;
 }

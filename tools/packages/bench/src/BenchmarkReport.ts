@@ -1,6 +1,6 @@
 import pico from "picocolors";
 import type { BenchTest } from "../bin/bench.ts";
-import { type MeasuredResults, mapValues } from "./mitata-util/MitataBench.ts";
+import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
 import {
   type ColumnGroup,
   type NullableValues,
@@ -10,6 +10,7 @@ import {
   prettyInteger,
   prettyPercent,
 } from "./table-util/TableReport.ts";
+import { mapValues } from "./mitata-util/Util.ts";
 
 const { red, green } = pico;
 
@@ -124,18 +125,27 @@ function generateDataRows(
 /** write table records to the console */
 function logTable(records: FullReportRow[]): void {
   const columnOrder: (keyof FullReportRow)[] = [
-    "name", "locSecMax", "locSecMaxPercent", "locSecP50", 
-    "locSecP50Percent", "timeMean", "timeMeanPercent", "gcTimeMean",
-    "gcTimePercent", "heap", "cpuCacheMiss", "runs"
+    "name",
+    "locSecMax",
+    "locSecMaxPercent",
+    "locSecP50",
+    "locSecP50Percent",
+    "timeMean",
+    "timeMeanPercent",
+    "gcTimeMean",
+    "gcTimePercent",
+    "heap",
+    "cpuCacheMiss",
+    "runs",
   ];
-  
+
   const groups = getColumnGroups();
   const tableStr = buildTable(groups, records, columnOrder);
   console.log(tableStr);
 }
 
-/** 
- * @return formatted table data for a main row with comparision % values inserted 
+/**
+ * @return formatted table data for a main row with comparision % values inserted
  * and a baseline row */
 function mainAndBaseRows(
   main: SelectedStats,
