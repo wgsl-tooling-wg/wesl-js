@@ -299,162 +299,60 @@ export function buildTypedTable<T extends Record<string, any>>(
   return table(allRows, config);
 }
 
-/** Configuration for comparison tables with baseline data */
-export interface ComparisonTableOptions<T> {
-  /** Main data to display */
-  mainData: T[];
-  /** Optional baseline data for comparison */
-  baselineData?: T[];
-  /** Function to compute comparison values for columns with showDiff: true */
-  computeDiff?: (mainValue: number, baselineValue: number) => string;
-  /** Column groups configuration */
-  columnGroups: TypedColumnGroup<T>[];
-  /** Optional prefix for baseline rows (default: "--> baseline") */
-  baselinePrefix?: string;
-  /** Key of the column to use as the identifier (for adding baseline prefix) */
-  nameKey?: keyof T;
-}
-
-/** Build a comparison table with main data and optional baseline comparisons */
+/** Build a comparison table with automatic diff percentage calculation */
 export function buildComparisonTable<T extends Record<string, any>>(
-  options: ComparisonTableOptions<T>
+  groups: TypedColumnGroup<T>[],
+  mainRecords: T[],
+  baselineRecords?: T[],
+  nameKey: keyof T = "name" as keyof T
 ): string {
-  const {
-    mainData,
-    baselineData,
-    computeDiff = (main, baseline) => coloredPercent(main - baseline, baseline),
-    columnGroups,
-    baselinePrefix = "--> baseline",
-    nameKey,
-  } = options;
-
-  if (!baselineData || baselineData.length === 0) {
-    // No baseline data, just build a regular table
-    return buildTypedTable(columnGroups, mainData);
-  }
-
-  // Build comparison data
-  const comparisonRows: T[] = [];
+  let allRecords: T[];
   
-  for (let i = 0; i < mainData.length; i++) {
-    const main = mainData[i];
-    const baseline = baselineData[i];
-    
-    if (!baseline) {
-      // No baseline for this row, just add the main row
-      comparisonRows.push(main);
-      continue;
-    }
-
-    // Create main row with comparison percentages
-    const mainRowWithComparisons = { ...main } as T;
-    
-    // Process columns with showDiff: true
-    for (const group of columnGroups) {
-      for (const col of group.columns) {
-        if (col.showDiff && col.diffKey) {
-          const mainValue = main[col.key] as number;
-          const baselineValue = baseline[col.key] as number;
+  if (baselineRecords && baselineRecords.length > 0) {
+    // Interleave main and baseline records
+    allRecords = [];
+    for (let i = 0; i < mainRecords.length; i++) {
+      const mainRecord = mainRecords[i];
+      const baselineRecord = baselineRecords[i];
+      
+      if (baselineRecord) {
+        // Compute diff values for comparison columns and add to main record
+        const comparisonColumns = groups.flatMap(g => g.columns).filter(col => col.diffKey);
+        const updatedMain = { ...mainRecord };
+        
+        for (const col of comparisonColumns) {
+          const mainValue = Number(mainRecord[col.diffKey!]);
+          const baselineValue = Number(baselineRecord[col.diffKey!]);
           
-          if (typeof mainValue === 'number' && typeof baselineValue === 'number') {
-            (mainRowWithComparisons as any)[col.diffKey] = computeDiff(mainValue, baselineValue);
+          if (!Number.isNaN(mainValue) && !Number.isNaN(baselineValue) && baselineValue !== 0) {
+            const diff = mainValue - baselineValue;
+            (updatedMain as any)[col.key] = coloredPercent(diff, baselineValue);
           }
         }
+        
+        allRecords.push(updatedMain);
+        
+        // Add baseline record with modified name
+        const updatedBaseline = { ...baselineRecord };
+        (updatedBaseline as any)[nameKey] = `--> baseline`;
+        allRecords.push(updatedBaseline);
+        
+        // Add blank row for separation (except for the last group)
+        if (i < mainRecords.length - 1) {
+          allRecords.push({} as T);
+        }
+      } else {
+        allRecords.push(mainRecord);
       }
     }
-    
-    // Create baseline row with prefix
-    const baselineRow = { ...baseline } as T;
-    if (nameKey) {
-      (baselineRow as any)[nameKey] = `${baselinePrefix} ${baseline[nameKey]}`;
-    }
-    
-    // Add main row, baseline row, and blank separator
-    comparisonRows.push(mainRowWithComparisons);
-    comparisonRows.push(baselineRow);
-    
-    // Add blank row as separator (except for last item)
-    if (i < mainData.length - 1) {
-      const blankRow = {} as T;
-      comparisonRows.push(blankRow);
-    }
+  } else {
+    // No baseline data, use main records as-is (but filter out diff columns)
+    const filteredGroups = groups.map(group => ({
+      ...group,
+      columns: group.columns.filter(col => !col.diffKey)
+    }));
+    return buildTypedTable(filteredGroups, mainRecords);
   }
-
-  return buildTypedTable(columnGroups, comparisonRows);
+  
+  return buildTypedTable(groups, allRecords);
 }
-
-/* Example usage for BenchmarkReport:
-
-// Define typed column groups for benchmark data
-const benchmarkColumnGroups: TypedColumnGroup<FullReportRow>[] = [
-  { columns: [{ key: "name", title: "name" }] },
-  {
-    groupTitle: "lines / sec",
-    columns: [
-      { 
-        key: "locSecMax", 
-        title: "max", 
-        formatter: formatters.integer,
-        showDiff: true,
-        diffKey: "locSecMaxPercent"
-      },
-      { key: "locSecMaxPercent", title: "Δ%" },
-      { 
-        key: "locSecP50", 
-        title: "p50", 
-        formatter: formatters.integer,
-        showDiff: true,
-        diffKey: "locSecP50Percent"
-      },
-      { key: "locSecP50Percent", title: "Δ%" },
-    ],
-  },
-  { 
-    groupTitle: "time", 
-    columns: [
-      { 
-        key: "timeMean", 
-        title: "mean", 
-        formatter: formatters.floatPrecision(2),
-        showDiff: true,
-        diffKey: "timeMeanPercent"
-      },
-      { key: "timeMeanPercent", title: "Δ%" }
-    ] 
-  },
-  { 
-    groupTitle: "gc time", 
-    columns: [
-      { 
-        key: "gcTimeMean", 
-        title: "mean", 
-        formatter: formatters.floatPrecision(2),
-        showDiff: true,
-        diffKey: "gcTimePercent"
-      },
-      { key: "gcTimePercent", title: "Δ%" }
-    ] 
-  },
-  {
-    groupTitle: "misc",
-    columns: [
-      { key: "heap", title: "heap kb", formatter: formatters.integer },
-      { key: "cpuCacheMiss", title: "L1 miss" },
-      { key: "runs", title: "N", formatter: formatters.integer }
-    ],
-  },
-];
-
-// Usage in BenchmarkReport:
-// const tableStr = buildTypedTable(benchmarkColumnGroups, allRows);
-// console.log(tableStr);
-
-// Or for comparison tables:
-// const tableStr = buildComparisonTable({
-//   mainData: mainRows,
-//   baselineData: baselineRows,
-//   columnGroups: benchmarkColumnGroups,
-//   nameKey: "name",  // explicitly specify which column is the identifier
-// });
-
-*/

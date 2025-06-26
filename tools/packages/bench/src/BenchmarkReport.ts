@@ -2,12 +2,8 @@ import type { BenchTest } from "../bin/bench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
 import {
   type TypedColumnGroup,
-  buildTypedTable,
+  buildComparisonTable,
   formatters,
-  coloredPercent,
-  prettyFloat,
-  prettyInteger,
-  prettyPercent,
 } from "./table-util/TableReport.ts";
 import { mapValues } from "./mitata-util/Util.ts";
 
@@ -58,7 +54,8 @@ interface SelectedStats {
 
 /** log a table of benchmark results  */
 export function reportResults(reports: BenchmarkReport[]): void {
-  const allRows: FullReportRow[] = [];
+  const allMainRows: FullReportRow[] = [];
+  const allBaselineRows: FullReportRow[] = [];
 
   for (const report of reports) {
     const { benchTest, mainResult, baseline } = report;
@@ -67,11 +64,15 @@ export function reportResults(reports: BenchmarkReport[]): void {
     const main = selectedStats(codeLines, mainResult);
 
     const base = baseline && selectedStats(codeLines, baseline);
-    const rows = generateDataRows(main, base);
-    allRows.push(...rows);
+    const { mainRows, baselineRows } = generateDataRows(main, base);
+    
+    allMainRows.push(...mainRows);
+    if (baselineRows) {
+      allBaselineRows.push(...baselineRows);
+    }
   }
 
-  logTable(allRows);
+  logTable(allMainRows, allBaselineRows.length > 0 ? allBaselineRows : undefined);
 }
 
 /** count the number of lines of code in a bench test */
@@ -116,44 +117,18 @@ function selectedStats(
 function generateDataRows(
   main: SelectedStats,
   base?: SelectedStats,
-): FullReportRow[] {
-  if (base) {
-    return mainAndBaseRows(main, base);
-  } else {
-    return [mostlyFullRow(main)];
-  }
+): { mainRows: FullReportRow[]; baselineRows?: FullReportRow[] } {
+  const mainRows: FullReportRow[] = [mostlyFullRow(main)];
+  const baselineRows: FullReportRow[] | undefined = base ? [mostlyFullRow(base)] : undefined;
+  
+  return { mainRows, baselineRows };
 }
 
 /** write table records to the console */
-function logTable(records: FullReportRow[]): void {
+function logTable(mainRows: FullReportRow[], baselineRows?: FullReportRow[]): void {
   const groups = getBenchmarkColumns();
-  const tableStr = buildTypedTable(groups, records);
+  const tableStr = buildComparisonTable(groups, mainRows, baselineRows, "name");
   console.log(tableStr);
-}
-
-/**
- * @return formatted table data for a main row with comparision % values inserted
- * and a baseline row */
-function mainAndBaseRows(
-  main: SelectedStats,
-  base: SelectedStats,
-): FullReportRow[] {
-  const mainRow = mostlyFullRow(main);
-  const locDiff = main.locSecMax - base.locSecMax;
-  const locP50Diff = main.locSecP50 - base.locSecP50;
-  mainRow.locSecP50Percent = coloredPercent(locP50Diff, base.locSecP50);
-  mainRow.locSecMaxPercent = coloredPercent(locDiff, base.locSecMax);
-  const timeDiff = main.timeMean - base.timeMean;
-  mainRow.timeMeanPercent = coloredPercent(timeDiff, base.timeMean);
-
-  if (main.gcTimeMean && base.gcTimeMean) {
-    const gcDiff = main.gcTimeMean - base.gcTimeMean;
-    mainRow.gcTimePercent = coloredPercent(gcDiff, base.gcTimeMean);
-  }
-
-  const blankRow = {} as FullReportRow;
-  const baseRow = mostlyFullRow(base);
-  return [mainRow, baseRow, blankRow];
 }
 
 /** @return a report row with all properties set, but some values set to null */
@@ -186,23 +161,23 @@ function getBenchmarkColumns(): TypedColumnGroup<FullReportRow>[] {
       groupTitle: "lines / sec",
       columns: [
         { key: "locSecMax", title: "max", formatter: formatters.integer },
-        { key: "locSecMaxPercent", title: "Δ%" },
+        { key: "locSecMaxPercent", title: "Δ%", diffKey: "locSecMax" },
         { key: "locSecP50", title: "p50", formatter: formatters.integer },
-        { key: "locSecP50Percent", title: "Δ%" },
+        { key: "locSecP50Percent", title: "Δ%", diffKey: "locSecP50" },
       ],
     },
     { 
       groupTitle: "time", 
       columns: [
         { key: "timeMean", title: "mean", formatter: formatters.floatPrecision(2) },
-        { key: "timeMeanPercent", title: "Δ%" }
+        { key: "timeMeanPercent", title: "Δ%", diffKey: "timeMean" }
       ] 
     },
     { 
       groupTitle: "gc time", 
       columns: [
         { key: "gcTimeMean", title: "mean", formatter: formatters.floatPrecision(2) },
-        { key: "gcTimePercent", title: "Δ%" }
+        { key: "gcTimePercent", title: "Δ%", diffKey: "gcTimeMean" }
       ] 
     },
     {
