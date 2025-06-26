@@ -61,17 +61,17 @@ export function reportResults(reports: BenchmarkReport[]): void {
     const { benchTest, mainResult, baseline } = report;
 
     const codeLines = getCodeLines(benchTest);
-    const main = selectedStats(codeLines, mainResult);
 
-    const base = baseline && selectedStats(codeLines, baseline);
-    
+    const main = selectedStats(codeLines, mainResult);
     mainRows.push(mostlyFullRow(main));
-    if (base) {
+
+    if (baseline) {
+      const base = selectedStats(codeLines, baseline);
       baselineRows.push(mostlyFullRow(base));
     }
   }
 
-  logTable(mainRows, baselineRows.length > 0 ? baselineRows : undefined);
+  logTable(mainRows, baselineRows);
 }
 
 /** count the number of lines of code in a bench test */
@@ -112,9 +112,11 @@ function selectedStats(
   };
 }
 
-
 /** write table records to the console */
-function logTable(mainRows: FullReportRow[], baselineRows?: FullReportRow[]): void {
+function logTable(
+  mainRows: FullReportRow[],
+  baselineRows?: FullReportRow[],
+): void {
   const groups = getBenchmarkColumns();
   const tableStr = buildComparisonTable(groups, mainRows, baselineRows, "name");
   console.log(tableStr);
@@ -141,10 +143,8 @@ function mostlyFullRow(stats: SelectedStats): FullReportRow {
 /** configuration for table column and section headers */
 function getBenchmarkColumns(): TypedColumnGroup<FullReportRow>[] {
   return [
-    { 
-      columns: [
-        { key: "name", title: "name" }
-      ] 
+    {
+      columns: [{ key: "name", title: "name" }],
     },
     {
       groupTitle: "lines / sec",
@@ -155,26 +155,38 @@ function getBenchmarkColumns(): TypedColumnGroup<FullReportRow>[] {
         { key: "locSecP50Percent", title: "Δ%", diffKey: "locSecP50" },
       ],
     },
-    { 
-      groupTitle: "time", 
+    {
+      groupTitle: "time",
       columns: [
-        { key: "timeMean", title: "mean", formatter: formatters.floatPrecision(2) },
-        { key: "timeMeanPercent", title: "Δ%", diffKey: "timeMean" }
-      ] 
+        {
+          key: "timeMean",
+          title: "mean",
+          formatter: formatters.floatPrecision(2),
+        },
+        { key: "timeMeanPercent", title: "Δ%", diffKey: "timeMean" },
+      ],
     },
-    { 
-      groupTitle: "gc time", 
+    {
+      groupTitle: "gc time",
       columns: [
-        { key: "gcTimeMean", title: "mean", formatter: formatters.floatPrecision(2) },
-        { key: "gcTimePercent", title: "Δ%", diffKey: "gcTimeMean" }
-      ] 
+        {
+          key: "gcTimeMean",
+          title: "mean",
+          formatter: formatters.floatPrecision(2),
+        },
+        { key: "gcTimePercent", title: "Δ%", diffKey: "gcTimeMean" },
+      ],
     },
     {
       groupTitle: "misc",
       columns: [
         { key: "heap", title: "heap kb", formatter: formatters.integer },
-        { key: "cpuCacheMiss", title: "L1 miss", formatter: formatters.percent },
-        { key: "runs", title: "N", formatter: formatters.integer }
+        {
+          key: "cpuCacheMiss",
+          title: "L1 miss",
+          formatter: formatters.percent,
+        },
+        { key: "runs", title: "N", formatter: formatters.integer },
       ],
     },
   ];
