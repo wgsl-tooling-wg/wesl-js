@@ -173,8 +173,8 @@ async function benchAndReport(tests: BenchTest[]): Promise<void> {
 
   const secToNs = 1e9;
   const opts: MeasureOptions = {
-    // inner_gc: true,
-    // min_cpu_time: 0.5 * secToNs,
+    inner_gc: true,
+    min_cpu_time: 0.5 * secToNs,
   } as any;
   for (const test of tests) {
     const weslSrc = Object.fromEntries(test.files.entries());
@@ -292,52 +292,33 @@ async function loadBench(
   return { name, mainFile, files };
 }
 
-function runOnce(parserVariant: ParserVariant, test: BenchTest): void {
-  if (parserVariant === "wgsl-linker") {
-    for (const [_, text] of test.files) {
-      parseWESL(text);
-    }
-  } else if (parserVariant === "wesl-link") {
-    link({
-      weslSrc: Object.fromEntries(test.files.entries()),
-      rootModuleName: test.mainFile,
-    });
-  } else if (parserVariant === "wgsl_reflect") {
-    for (const [path, text] of test.files) {
-      wgslReflectParse(path, text);
-    }
-  } else if (parserVariant === "use-gpu") {
-    for (const [path, text] of test.files) {
-      useGpuParse(path, text);
-    }
-  } else {
-    throw new Error("NYI parser variant: " + parserVariant);
-  }
-}
+// function runOnce(parserVariant: ParserVariant, test: BenchTest): void {
+//   if (parserVariant === "wgsl-linker") {
+//     for (const [_, text] of test.files) {
+//       parseWESL(text);
+//     }
+//   } else if (parserVariant === "wesl-link") {
+//     link({
+//       weslSrc: Object.fromEntries(test.files.entries()),
+//       rootModuleName: test.mainFile,
+//     });
+//   } else if (parserVariant === "wgsl_reflect") {
+//     for (const [path, text] of test.files) {
+//       wgslReflectParse(path, text);
+//     }
+//   } else if (parserVariant === "use-gpu") {
+//     for (const [path, text] of test.files) {
+//       useGpuParse(path, text);
+//     }
+//   } else {
+//     throw new Error("NYI parser variant: " + parserVariant);
+//   }
+// }
 
-function runBaseline(test: BenchTest): void {
-  if (!baselineLink) return;
-  baselineLink({
-    weslSrc: Object.fromEntries(test.files.entries()),
-    rootModuleName: test.mainFile,
-  });
-}
+// function wgslReflectParse(_filePath: string, text: string): void {
+//   new WgslReflect(text);
+// }
 
-function wgslReflectParse(_filePath: string, text: string): void {
-  new WgslReflect(text);
-}
-
-function useGpuParse(_filePath: string, text: string): void {
-  WGSLLinker.loadModule(text);
-}
-
-/** parse a single wesl file */ // DRY with TestUtil
-export function parseWESL(src: string): WeslAST {
-  const srcModule: SrcModule = {
-    modulePath: "package::test", // TODO this ought not be used outside of tests
-    debugFilePath: "./test.wesl",
-    src,
-  };
-
-  return parseSrcModule(srcModule);
-}
+// function useGpuParse(_filePath: string, text: string): void {
+//   WGSLLinker.loadModule(text);
+// }

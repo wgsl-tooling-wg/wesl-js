@@ -19,6 +19,7 @@ export interface BenchmarkReport {
   baseline?: MeasuredResults;
 }
 
+/** benchmark data to report in each row */
 interface ReportRow {
   name?: string;
   locSecP50?: string;
