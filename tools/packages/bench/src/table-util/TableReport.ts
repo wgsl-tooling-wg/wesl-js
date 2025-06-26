@@ -19,7 +19,6 @@ export interface Column {
  * A group of columns.
  *
  * If any ColumnGroup has a groupTitle, tableSetup() will insert a row for titles.
- *
  */
 export interface ColumnGroup {
   groupTitle?: string;
