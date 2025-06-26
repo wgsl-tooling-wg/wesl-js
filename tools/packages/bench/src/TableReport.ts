@@ -123,15 +123,6 @@ function columnSpanning(groups: ColumnGroup[], row = 0): SpanningCellConfig[] {
   });
 }
 
-/** @return spanning cells to configure for the main columns */
-function columnAlign(groups: ColumnGroup[], row = 0): ColumnUserConfig[] {
-  const columns = groups.flatMap(g => g.columns);
-  const colSpan = 1;
-  return columns.map((c, col) => {
-    return { row, col, colSpan, alignment: c.alignment };
-  });
-}
-
 function sectionSpanning(groups: ColumnGroup[]): SpanningCellConfig[] {
   let col = 0;
   const row = 0;
