@@ -1,6 +1,6 @@
 import pico from "picocolors";
 import type { BenchTest } from "../bin/bench.ts";
-import { type MeasuredResults, mapValues } from "./MitataBench.ts";
+import { type MeasuredResults, mapValues } from "./mitata-util/MitataBench.ts";
 import {
   type ColumnGroup,
   type NullableValues,

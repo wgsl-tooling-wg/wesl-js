@@ -1,7 +1,7 @@
 import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
 import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
-import type { CpuCounts } from "@mitata/counters";
-import * as mitataCounters from "@mitata/counters";
+import type { CpuCounts } from "@mitata/counters"; 
+import * as mitataCounters from "@mitata/counters"; // TODO load dynamically
 import { measure } from "mitata";
 
 const maxGcRecords = 1000;
@@ -19,7 +19,7 @@ export interface MeasuredResults {
   /** raw execution time samples, in case you want to to do fancier statistics */
   samples: number[];
 
-  /** Execution time in milliseconds. Measurement overhead is not carefully excluded by mitata. */
+  /** Execution time in milliseconds. Measurement overhead is carefully excluded by mitata. */
   time: {
     min: number;
     max: number;

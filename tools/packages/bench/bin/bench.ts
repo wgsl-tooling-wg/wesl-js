@@ -10,7 +10,7 @@ import {
   type BenchmarkReport,
   reportResults,
 } from "../src/BenchmarkReport.ts";
-import { type MeasureOptions, mitataBench } from "../src/MitataBench.ts";
+import { type MeasureOptions, mitataBench } from "../src/mitata-util/MitataBench.ts";
 import { benchManually } from "../src/experiments/BenchManually.ts";
 import { simpleMitataBench } from "../src/experiments/VanillaMitata.ts";
 
