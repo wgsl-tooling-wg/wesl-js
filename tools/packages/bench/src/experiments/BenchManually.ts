@@ -1,6 +1,6 @@
 import { _linkSync, type link } from "wesl";
 import type { BenchTest } from "../../bin/bench.ts";
-import { coloredPercent } from "../TableReport.ts";
+import { coloredPercent } from "../table-util/TableReport.ts";
 
 /** manual benchmark testing w/o mitata */
 export function benchManually(

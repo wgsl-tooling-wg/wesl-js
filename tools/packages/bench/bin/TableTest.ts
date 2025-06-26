@@ -1,5 +1,5 @@
 import { type SpanningCellConfig, type TableUserConfig, table } from "table";
-import { type ColumnGroup, tableSetup } from "../src/TableReport.ts";
+import { type ColumnGroup, tableSetup } from "../src/table-util/TableReport.ts";
 
 main();
 

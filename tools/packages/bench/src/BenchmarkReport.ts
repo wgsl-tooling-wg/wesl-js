@@ -9,7 +9,7 @@ import {
   prettyFloat,
   prettyInteger,
   prettyPercent,
-} from "./TableReport.ts";
+} from "./table-util/TableReport.ts";
 
 const { red, green } = pico;
 
