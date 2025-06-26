@@ -1,4 +1,3 @@
-import * as mitata from "mitata";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -13,6 +12,7 @@ import {
 } from "../src/BenchmarkReport.ts";
 import { type MeasureOptions, mitataBench } from "../src/MitataBench.ts";
 import { benchManually } from "../src/experiments/BenchManually.ts";
+import { simpleMitataBench } from "../src/experiments/VanillaMitata.ts";
 
 export interface BenchTest {
   name: string;
@@ -78,7 +78,7 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   } else if (argv.profile) {
     await benchOnceOnly(tests);
   } else if (argv.mitata) {
-    simpleMitataBench(tests);
+    simpleMitataBench(tests, baselineLink as any);
   } else {
     await benchAndReport(tests);
   }
@@ -89,19 +89,6 @@ function benchOnceOnly(tests: BenchTest[]): Promise<any> {
     weslSrc: Object.fromEntries(tests[0].files.entries()),
     rootModuleName: tests[0].mainFile,
   });
-}
-
-function simpleMitataBench(tests: BenchTest[]): void {
-  for (const test of tests) {
-    const weslSrc = Object.fromEntries(test.files.entries());
-    const rootModuleName = test.mainFile;
-
-    mitata.bench("--> baseline " + test.name, () =>
-      baselineLink!({ weslSrc, rootModuleName }),
-    );
-    mitata.bench(test.name, () => _linkSync({ weslSrc, rootModuleName }));
-  }
-  mitata.run();
 }
 
 
