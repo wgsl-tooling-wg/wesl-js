@@ -99,7 +99,7 @@ async function benchAndReport(tests: BenchTest[]): Promise<void> {
   const secToNs = 1e9;
   const opts: MeasureOptions = {
     // inner_gc: true,
-    min_cpu_time: 3 * secToNs,
+    min_cpu_time: .1 * secToNs,
   } as any;
   for (const test of tests) {
     const weslSrc = Object.fromEntries(test.files.entries());
@@ -185,7 +185,7 @@ async function loadAllFiles(): Promise<BenchTest[]> {
     reduceBuffer,
     // particle,
     // rasterize,
-    boat,
+    // boat,
     // imports_only,
     // bevy_deferred_lighting,
     // bevy_linking,

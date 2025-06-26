@@ -31,6 +31,7 @@ export interface MeasuredResults {
     p99: number;
     p999: number;
   };
+
   /** Increate in heap size during the test run, in kilobytes */
   heapSize?: {
     avg: number;
@@ -51,17 +52,38 @@ export interface MeasuredResults {
     max: number;
   };
 
-  /** CPU counter measurement stats (min, max, avg), including e.g. cache hit rate. */
+  /** CPU counter measurement stats (min, max, avg) produced by @mitata/counters.
+   *
+   * only available if run with root, @mitata/counter is available, and option cpuCounters is true
+   * (default: false)
+   */
   cpu?: CpuCounts;
+
+  /** name fo thye cache  */
   name: string;
 
+  /** L1 cache miss rate  */
   cpuCacheMiss?: number;
 
-  nodeGcTime?: NodeGCTime; // time spent in garbage collection as measure by node's performance hooks
+  /** milliseconds spent in garbage collection as measured by node's performance hooks 
+   * These collection times measure the 'stop the world' time that blocks the main
+   * javascript thread. 
+
+   * Only enabled if option `nodeObserveGC` is true (default: true)
+   * 
+   * The reported time doesn't reflect the time spent in parallel collection threads,
+   * nor account for non stop-the-world slowdowns on the main thread.
+   * The main thread is also slowed by collection activity on parallel threads (due
+   * to locking, cache impacts, etc.) which is not captured by this metric.
+   * 
+   */
+  nodeGcTime?: NodeGCTime;
 }
 
 export type MeasureOptions = Parameters<typeof measure>[1] & {
   "&counters"?: typeof mitataCounters; // missing from published types
+  cpuCounters?: boolean;
+  nodeObserveGC?: boolean;
 };
 
 /** Run a function using mitata benchmarking,
@@ -122,7 +144,7 @@ export async function mitataBench(
   const gcTime = gc && mapValues(gc, x => x / 1e6);
 
   const heapSize = heap && mapValues(heap, x => x / 1024);
-  const cpuCacheMiss = cacheMissRate(cpu);
+  const cpuCacheMiss = cacheMissRate(cpu as CpuCounts | undefined);
   return {
     name,
     time,
@@ -167,7 +189,7 @@ function analyzeGCEntries(
 }
 
 /** return the CPU L1 cache miss rate */
-function cacheMissRate(cpu: any): number | undefined {
+function cacheMissRate(cpu?: CpuCounts): number | undefined {
   if (cpu?.l1) {
     const { l1 } = cpu;
     const total = cpu.instructions?.loads_and_stores?.avg;
@@ -178,8 +200,9 @@ function cacheMissRate(cpu: any): number | undefined {
 
     const miss = loadMiss + storeMiss;
     return miss / total;
-  } else if (cpu?.cache) { // linux (TODO untested)
-    return cpu.cache.misses.avg / cpu.counters.cache.avg;
+  } else if (cpu?.cache?.misses) {
+    // linux (TODO untested)
+    return cpu.cache.misses.avg / cpu.cache.avg;
   }
   return undefined;
 }
