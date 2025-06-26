@@ -1,9 +1,9 @@
 import type { BenchTest } from "../bin/bench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
 import {
-  type ColumnGroup,
-  type NullableValues,
-  buildTable,
+  type TypedColumnGroup,
+  buildTypedTable,
+  formatters,
   coloredPercent,
   prettyFloat,
   prettyInteger,
@@ -11,8 +11,12 @@ import {
 } from "./table-util/TableReport.ts";
 import { mapValues } from "./mitata-util/Util.ts";
 
-
 const maxNameLength = 30;
+
+/** Helper type for records with nullable values */
+type NullableValues<T> = {
+  [P in keyof T]: T[P] | null;
+};
 
 /** report of benchmark results, including baseline results if available  */
 export interface BenchmarkReport {
@@ -24,17 +28,17 @@ export interface BenchmarkReport {
 /** benchmark data to report in each row */
 interface ReportRow {
   name?: string;
-  locSecP50?: string;
-  locSecMax?: string;
+  locSecP50?: number;
+  locSecMax?: number;
   locSecMaxPercent?: string;
   locSecP50Percent?: string;
-  timeMean?: string;
+  timeMean?: number;
   timeMeanPercent?: string;
-  gcTimeMean?: string;
+  gcTimeMean?: number;
   gcTimePercent?: string;
-  cpuCacheMiss?: string;
-  heap?: string;
-  runs?: string;
+  cpuCacheMiss?: number;
+  heap?: number;
+  runs?: number;
 }
 
 /** report row with all keys required, and values that may be null */
@@ -103,7 +107,7 @@ function selectedStats(
     gcTimeMean,
     runs: result.samples.length,
     heap: result.heapSize?.avg,
-    cpuCacheMiss: result.cpuCacheMiss,
+    cpuCacheMiss: cpuCacheMiss(result),
     name: result.name.slice(0, maxNameLength),
   };
 }
@@ -122,23 +126,8 @@ function generateDataRows(
 
 /** write table records to the console */
 function logTable(records: FullReportRow[]): void {
-  const columnOrder: (keyof FullReportRow)[] = [
-    "name",
-    "locSecMax",
-    "locSecMaxPercent",
-    "locSecP50",
-    "locSecP50Percent",
-    "timeMean",
-    "timeMeanPercent",
-    "gcTimeMean",
-    "gcTimePercent",
-    "heap",
-    "cpuCacheMiss",
-    "runs",
-  ];
-
-  const groups = getColumnGroups();
-  const tableStr = buildTable(groups, records, columnOrder);
+  const groups = getBenchmarkColumns();
+  const tableStr = buildTypedTable(groups, records);
   console.log(tableStr);
 }
 
@@ -171,13 +160,13 @@ function mainAndBaseRows(
 function mostlyFullRow(stats: SelectedStats): FullReportRow {
   return {
     name: stats.name,
-    timeMean: prettyFloat(stats.timeMean, 2),
-    locSecMax: prettyInteger(stats.locSecMax),
-    locSecP50: prettyInteger(stats.locSecP50),
-    gcTimeMean: prettyFloat(stats.gcTimeMean, 2),
-    runs: prettyInteger(stats.runs),
-    cpuCacheMiss: prettyPercent(stats.cpuCacheMiss),
-    heap: prettyInteger(stats.heap),
+    timeMean: stats.timeMean,
+    locSecMax: stats.locSecMax,
+    locSecP50: stats.locSecP50,
+    gcTimeMean: stats.gcTimeMean ?? null,
+    runs: stats.runs,
+    cpuCacheMiss: stats.cpuCacheMiss ?? null,
+    heap: stats.heap ?? null,
     locSecMaxPercent: null,
     locSecP50Percent: null,
     gcTimePercent: null,
@@ -186,23 +175,61 @@ function mostlyFullRow(stats: SelectedStats): FullReportRow {
 }
 
 /** configuration for table column and section headers */
-function getColumnGroups(): ColumnGroup[] {
+function getBenchmarkColumns(): TypedColumnGroup<FullReportRow>[] {
   return [
-    { columns: [{ title: "name" }] },
+    { 
+      columns: [
+        { key: "name", title: "name" }
+      ] 
+    },
     {
       groupTitle: "lines / sec",
       columns: [
-        { title: "max" },
-        { title: "Δ%" },
-        { title: "p50" },
-        { title: "Δ%" },
+        { key: "locSecMax", title: "max", formatter: formatters.integer },
+        { key: "locSecMaxPercent", title: "Δ%" },
+        { key: "locSecP50", title: "p50", formatter: formatters.integer },
+        { key: "locSecP50Percent", title: "Δ%" },
       ],
     },
-    { groupTitle: "time", columns: [{ title: "mean" }, { title: "Δ%" }] },
-    { groupTitle: "gc time", columns: [{ title: "mean" }, { title: "Δ%" }] },
+    { 
+      groupTitle: "time", 
+      columns: [
+        { key: "timeMean", title: "mean", formatter: formatters.floatPrecision(2) },
+        { key: "timeMeanPercent", title: "Δ%" }
+      ] 
+    },
+    { 
+      groupTitle: "gc time", 
+      columns: [
+        { key: "gcTimeMean", title: "mean", formatter: formatters.floatPrecision(2) },
+        { key: "gcTimePercent", title: "Δ%" }
+      ] 
+    },
     {
       groupTitle: "misc",
-      columns: [{ title: "heap kb" }, { title: "L1 miss" }, { title: "N" }],
+      columns: [
+        { key: "heap", title: "heap kb", formatter: formatters.integer },
+        { key: "cpuCacheMiss", title: "L1 miss", formatter: formatters.percent },
+        { key: "runs", title: "N", formatter: formatters.integer }
+      ],
     },
   ];
+}
+
+/** return the CPU L1 cache miss rate */
+function cpuCacheMiss(result: MeasuredResults): number | undefined {
+  if (result.cpu?.l1) {
+    const { cpu } = result;
+    const { l1 } = cpu;
+    const total = cpu.instructions?.loads_and_stores?.avg;
+    const loadMiss = l1?.miss_loads?.avg;
+    const storeMiss = l1?.miss_stores?.avg; // LATER do store misses cause stalls too?
+    if (total === undefined) return undefined;
+    if (loadMiss === undefined || storeMiss === undefined) return undefined;
+
+    const miss = loadMiss + storeMiss;
+    return miss / total;
+  }
+  // TBD linux is also supported in @mitata/counters
+  return undefined;
 }

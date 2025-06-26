@@ -15,6 +15,25 @@ export interface Column {
   title?: string;
 }
 
+/** A typed column that knows about the data structure it's displaying */
+export interface TypedColumn<T> {
+  key: keyof T;
+  title: string;
+  formatter?: (value: any) => string | null;
+  alignment?: Alignment;
+  width?: number;
+  /** If true, adds a comparison percentage column after this column when baseline data is available */
+  showDiff?: boolean;
+  /** Key for the column that stores the comparison percentage (used with showDiff) */
+  diffKey?: keyof T;
+}
+
+/** A group of typed columns */
+export interface TypedColumnGroup<T> {
+  groupTitle?: string;
+  columns: TypedColumn<T>[];
+}
+
 /**
  * A group of columns.
  *
@@ -175,6 +194,56 @@ export function coloredPercent(numerator: number, denominator: number): string {
   return positive ? green(percentStr) : red(percentStr);
 }
 
+/** Common formatters for table columns */
+export const formatters = {
+  /** Format integers with thousand separators */
+  integer: (x: number | undefined) => prettyInteger(x),
+  
+  /** Format floats with 2 decimal places */
+  float: (x: number | undefined) => prettyFloat(x, 2),
+  
+  /** Format floats with custom precision */
+  floatPrecision: (precision: number) => (x: number | undefined) => prettyFloat(x, precision),
+  
+  /** Format as percentage */
+  percent: (x: number | undefined) => prettyPercent(x),
+  
+  /** Format duration in milliseconds */
+  duration: (ms: number | undefined) => {
+    if (ms === undefined) return null;
+    if (ms < 1) return `${(ms * 1000).toFixed(1)}μs`;
+    if (ms < 1000) return `${ms.toFixed(2)}ms`;
+    return `${(ms / 1000).toFixed(2)}s`;
+  },
+  
+  /** Format bytes with appropriate units */
+  bytes: (bytes: number | undefined) => {
+    if (bytes === undefined) return null;
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let size = bytes;
+    let unitIndex = 0;
+    
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+    
+    return `${size.toFixed(1)}${units[unitIndex]}`;
+  },
+  
+  /** Format as a rate (value per unit) */
+  rate: (unit: string) => (value: number | undefined) => {
+    if (value === undefined) return null;
+    return `${prettyInteger(value)}/${unit}`;
+  },
+  
+  /** Truncate string to max length */
+  truncate: (maxLength: number) => (str: string | undefined) => {
+    if (str === undefined) return null;
+    return str.length > maxLength ? `${str.slice(0, maxLength - 3)}...` : str;
+  },
+} as const;
+
 /** convert Record style rows to an array of string[], suitable for the table library */
 export function recordsToRows<T extends Record<string, any>>(
   records: T[],
@@ -186,19 +255,206 @@ export function recordsToRows<T extends Record<string, any>>(
   return rawRows.map(row => row.map(cell => cell ?? " "));
 }
 
-/** Complete table builder that combines setup, data, and rendering */
-export function buildTable<T extends Record<string, any>>(
-  groups: ColumnGroup[],
+/** Create a table setup using typed column definitions */
+export function typedTableSetup<T>(groups: TypedColumnGroup<T>[]): TableSetup {
+  const untypedGroups: ColumnGroup[] = groups.map(group => ({
+    groupTitle: group.groupTitle,
+    columns: group.columns.map(col => ({
+      title: col.title,
+      alignment: col.alignment,
+    })),
+  }));
+  
+  return tableSetup(untypedGroups);
+}
+
+/** Convert typed records to formatted string rows using typed column definitions */
+export function typedRecordsToRows<T extends Record<string, any>>(
   records: T[],
-  columnOrder: (keyof T)[]
+  groups: TypedColumnGroup<T>[]
+): string[][] {
+  const allColumns = groups.flatMap(group => group.columns);
+  
+  const rawRows = records.map(record => 
+    allColumns.map(col => {
+      const value = record[col.key];
+      if (col.formatter) {
+        return col.formatter(value);
+      }
+      return value;
+    })
+  );
+  
+  return rawRows.map(row => row.map(cell => cell ?? " "));
+}
+
+/** Complete typed table builder */
+export function buildTypedTable<T extends Record<string, any>>(
+  groups: TypedColumnGroup<T>[],
+  records: T[]
 ): string {
-  const { headerRows, config } = tableSetup(groups);
-  const dataRows = recordsToRows(records, columnOrder);
+  const { headerRows, config } = typedTableSetup(groups);
+  const dataRows = typedRecordsToRows(records, groups);
   const allRows = [...headerRows, ...dataRows];
   return table(allRows, config);
 }
 
-/** Helper type for records with nullable values */
-export type NullableValues<T> = {
-  [P in keyof T]: T[P] | null;
-};
+/** Configuration for comparison tables with baseline data */
+export interface ComparisonTableOptions<T> {
+  /** Main data to display */
+  mainData: T[];
+  /** Optional baseline data for comparison */
+  baselineData?: T[];
+  /** Function to compute comparison values for columns with showDiff: true */
+  computeDiff?: (mainValue: number, baselineValue: number) => string;
+  /** Column groups configuration */
+  columnGroups: TypedColumnGroup<T>[];
+  /** Optional prefix for baseline rows (default: "--> baseline") */
+  baselinePrefix?: string;
+  /** Key of the column to use as the identifier (for adding baseline prefix) */
+  nameKey?: keyof T;
+}
+
+/** Build a comparison table with main data and optional baseline comparisons */
+export function buildComparisonTable<T extends Record<string, any>>(
+  options: ComparisonTableOptions<T>
+): string {
+  const {
+    mainData,
+    baselineData,
+    computeDiff = (main, baseline) => coloredPercent(main - baseline, baseline),
+    columnGroups,
+    baselinePrefix = "--> baseline",
+    nameKey,
+  } = options;
+
+  if (!baselineData || baselineData.length === 0) {
+    // No baseline data, just build a regular table
+    return buildTypedTable(columnGroups, mainData);
+  }
+
+  // Build comparison data
+  const comparisonRows: T[] = [];
+  
+  for (let i = 0; i < mainData.length; i++) {
+    const main = mainData[i];
+    const baseline = baselineData[i];
+    
+    if (!baseline) {
+      // No baseline for this row, just add the main row
+      comparisonRows.push(main);
+      continue;
+    }
+
+    // Create main row with comparison percentages
+    const mainRowWithComparisons = { ...main } as T;
+    
+    // Process columns with showDiff: true
+    for (const group of columnGroups) {
+      for (const col of group.columns) {
+        if (col.showDiff && col.diffKey) {
+          const mainValue = main[col.key] as number;
+          const baselineValue = baseline[col.key] as number;
+          
+          if (typeof mainValue === 'number' && typeof baselineValue === 'number') {
+            (mainRowWithComparisons as any)[col.diffKey] = computeDiff(mainValue, baselineValue);
+          }
+        }
+      }
+    }
+    
+    // Create baseline row with prefix
+    const baselineRow = { ...baseline } as T;
+    if (nameKey) {
+      (baselineRow as any)[nameKey] = `${baselinePrefix} ${baseline[nameKey]}`;
+    }
+    
+    // Add main row, baseline row, and blank separator
+    comparisonRows.push(mainRowWithComparisons);
+    comparisonRows.push(baselineRow);
+    
+    // Add blank row as separator (except for last item)
+    if (i < mainData.length - 1) {
+      const blankRow = {} as T;
+      comparisonRows.push(blankRow);
+    }
+  }
+
+  return buildTypedTable(columnGroups, comparisonRows);
+}
+
+/* Example usage for BenchmarkReport:
+
+// Define typed column groups for benchmark data
+const benchmarkColumnGroups: TypedColumnGroup<FullReportRow>[] = [
+  { columns: [{ key: "name", title: "name" }] },
+  {
+    groupTitle: "lines / sec",
+    columns: [
+      { 
+        key: "locSecMax", 
+        title: "max", 
+        formatter: formatters.integer,
+        showDiff: true,
+        diffKey: "locSecMaxPercent"
+      },
+      { key: "locSecMaxPercent", title: "Δ%" },
+      { 
+        key: "locSecP50", 
+        title: "p50", 
+        formatter: formatters.integer,
+        showDiff: true,
+        diffKey: "locSecP50Percent"
+      },
+      { key: "locSecP50Percent", title: "Δ%" },
+    ],
+  },
+  { 
+    groupTitle: "time", 
+    columns: [
+      { 
+        key: "timeMean", 
+        title: "mean", 
+        formatter: formatters.floatPrecision(2),
+        showDiff: true,
+        diffKey: "timeMeanPercent"
+      },
+      { key: "timeMeanPercent", title: "Δ%" }
+    ] 
+  },
+  { 
+    groupTitle: "gc time", 
+    columns: [
+      { 
+        key: "gcTimeMean", 
+        title: "mean", 
+        formatter: formatters.floatPrecision(2),
+        showDiff: true,
+        diffKey: "gcTimePercent"
+      },
+      { key: "gcTimePercent", title: "Δ%" }
+    ] 
+  },
+  {
+    groupTitle: "misc",
+    columns: [
+      { key: "heap", title: "heap kb", formatter: formatters.integer },
+      { key: "cpuCacheMiss", title: "L1 miss" },
+      { key: "runs", title: "N", formatter: formatters.integer }
+    ],
+  },
+];
+
+// Usage in BenchmarkReport:
+// const tableStr = buildTypedTable(benchmarkColumnGroups, allRows);
+// console.log(tableStr);
+
+// Or for comparison tables:
+// const tableStr = buildComparisonTable({
+//   mainData: mainRows,
+//   baselineData: baselineRows,
+//   columnGroups: benchmarkColumnGroups,
+//   nameKey: "name",  // explicitly specify which column is the identifier
+// });
+
+*/
