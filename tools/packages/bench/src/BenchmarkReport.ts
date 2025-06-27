@@ -1,11 +1,8 @@
 import type { BenchTest } from "../bin/bench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
-import {
-  type ColumnGroup,
-  buildTable,
-  Formatters,
-} from "./table-util/TableReport.ts";
+import { type ColumnGroup, buildTable } from "./table-util/TableReport.ts";
 import { mapValues } from "./mitata-util/Util.ts";
+import { Formatters } from "./table-util/Formatters.ts";
 
 const maxNameLength = 30;
 
