@@ -1,11 +1,25 @@
 import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
 import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
 import type { CpuCounts } from "@mitata/counters";
-import * as mitataCounters from "@mitata/counters"; // TODO load dynamically
+import type * as mitataCountersType from "@mitata/counters";
 import { measure } from "mitata";
 import { mapValues } from "./Util.ts";
 
 const maxGcRecords = 1000;
+
+/** Load mitataCounters dynamically if cpuCounters is enabled, otherwise return undefined */
+async function loadMitataCounters(options?: MeasureOptions): Promise<typeof mitataCountersType | undefined> {
+  if (!options?.cpuCounters) {
+    return undefined;
+  }
+  
+  try {
+    return await import("@mitata/counters");
+  } catch (error) {
+    console.warn("Failed to load @mitata/counters:", error);
+    return undefined;
+  }
+}
 
 /** gc time mesured by nodes' performance hooks */
 export interface NodeGCTime {
@@ -81,9 +95,9 @@ export interface MeasuredResults {
 }
 
 export type MeasureOptions = Parameters<typeof measure>[1] & {
-  "&counters"?: typeof mitataCounters; // missing from published types
-  cpuCounters?: boolean;
-  nodeObserveGC?: boolean;
+  "$counters"?: typeof mitataCountersType; // missing from published types, loaded dynamically
+  cpuCounters?: boolean; // default: false
+  nodeObserveGC?: boolean; // default: true
 };
 
 /** Run a function using mitata benchmarking,
@@ -123,11 +137,13 @@ export async function mitataBench(
     benchEnd = performance.now();
   };
 
-  const stats = await measure(newFn, {
+  const measureOptions: MeasureOptions = {
     heap: heapFn,
-    $counters: mitataCounters,
+    $counters: await loadMitataCounters(options),
     ...options,
-  } as MeasureOptions);
+  };
+
+  const stats = await measure(newFn, measureOptions);
 
   await new Promise(resolve => setTimeout(resolve, 10)); // wait for gc observer to collect
   gcRecords.push(...finishObserver(obs));
