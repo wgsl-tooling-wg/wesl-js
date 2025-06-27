@@ -1,6 +1,6 @@
 import { _linkSync, type link } from "wesl";
 import type { BenchTest } from "../../bin/bench.ts";
-import { coloredPercent } from "../table-util/Formatters.ts";
+import { diffPercent } from "../table-util/Formatters.ts";
 
 /** manual benchmark testing w/o mitata */
 export function benchManually(
@@ -45,7 +45,7 @@ export function benchManually(
     }
     const mainTime = medianTime(times);
 
-    const diff = coloredPercent(baselineTime - mainTime, baselineTime);
+    const diff = diffPercent(mainTime, baselineTime);
     console.log(`main: ${mainTime}ms, baseline: ${baselineTime}ms, ${diff}`);
   }
 }

@@ -1,21 +1,18 @@
 import pico from "picocolors";
 const { red, green } = pico;
 
-
 /** Formatting utilities for table data */
 
-
 /** format a float to a specified precision with trailing zeros dropped */
-export function float(
-  x: number | undefined,
-  digits = 2
-): string | null {
+export function float(x: number | undefined, digits = 2): string | null {
   if (x === undefined || x === null) return null;
   return x.toFixed(digits).replace(/\.?0+$/, "");
 }
 
 /** @return a function that formats floats with custom precision */
-export function floatPrecision(precision: number): (x: number | undefined) => string | null {
+export function floatPrecision(
+  precision: number,
+): (x: number | undefined) => string | null {
   return (x: number | undefined) => float(x, precision);
 }
 
@@ -62,14 +59,24 @@ export function percent(fraction?: number): string | null {
   return `${Math.abs(fraction * 100).toFixed(1)}%`;
 }
 
+export function diffPercent(main: number, base: number): string {
+  const diff = main - base;
+  return coloredPercent(diff, base);
+}
+
+export function diffPercentNegative(main: number, base: number): string {
+  const diff = main - base;
+  return coloredPercent(diff, base, false);
+}
+
 /**
  * format a fraction as a colored +/- percentage
  * @param positiveIsGreen whether a positive difference is good (green) or bad (red)
  */
-export function coloredPercent(
+function coloredPercent(
   numerator: number,
   denominator: number,
-  positiveIsGreen = true
+  positiveIsGreen = true,
 ): string {
   const fraction = numerator / denominator;
   const positive = fraction >= 0;

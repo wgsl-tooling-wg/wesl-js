@@ -1,7 +1,12 @@
 import type { BenchTest } from "../bin/bench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
 import { mapValues } from "./mitata-util/Util.ts";
-import { integer, floatPrecision, percent } from "./table-util/Formatters.ts";
+import {
+  diffPercentNegative,
+  floatPrecision,
+  integer,
+  percent
+} from "./table-util/Formatters.ts";
 import { type ColumnGroup, buildTable } from "./table-util/TableReport.ts";
 
 const maxNameLength = 30;
@@ -160,7 +165,12 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
       groupTitle: "lines / sec",
       columns: [
         { key: "locSecMax", title: "max", formatter: integer },
-        { key: "locSecMaxPercent", title: "Δ%", diffKey: "locSecMax" },
+        {
+          key: "locSecMaxPercent",
+          title: "Δ%",
+          diffKey: "locSecMax",
+          diffFormatter: diffPercentNegative,
+        },
         { key: "locSecP50", title: "p50", formatter: integer },
         { key: "locSecP50Percent", title: "Δ%", diffKey: "locSecP50" },
       ],

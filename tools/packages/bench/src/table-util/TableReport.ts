@@ -1,7 +1,7 @@
 import pico from "picocolors";
 import type { Alignment, SpanningCellConfig, TableUserConfig } from "table";
 import { table } from "table";
-import { coloredPercent } from "./Formatters.ts";
+import { diffPercent } from "./Formatters.ts";
 
 const { bold } = pico;
 
@@ -13,7 +13,7 @@ export interface Column<T> extends ColumnFormat<T> {
 
 /** a difference column in the table that compares */
 export interface DiffColumn<T> extends ColumnFormat<T> {
-  diffFormatter?: (value: T, baseline: T) => string | null;
+  diffFormatter?: (value: any, baseline: any) => string | null;
   formatter?: undefined;
 
   /** if set, this column holds a synthesized comparison value
@@ -242,11 +242,6 @@ function addComparisons<T extends Record<string, any>>(
   }
 
   return updatedMain;
-}
-
-function diffPercent(main: number, base: number): string {
-  const diff = main - base;
-  return coloredPercent(diff, base);
 }
 
 function constructTable<T extends Record<string, any>>(
