@@ -78,7 +78,7 @@ function parseArgs(args: string[]) {
 }
 
 async function runBenchmarks(argv: CliArgs): Promise<void> {
-  const tests = await loadAllFiles();
+  const tests = await loadBenchmarkFiles();
   const baselineLink = argv.baseline ? await loadBaselineLink() : undefined;
 
   if (argv.manual) {
@@ -142,7 +142,7 @@ function selectVariant(variant: string): ParserVariant {
   throw new Error("NYI parser variant: " + variant);
 }
 
-async function loadAllFiles(): Promise<BenchTest[]> {
+async function loadBenchmarkFiles(): Promise<BenchTest[]> {
   const examplesDir = "./src/examples";
   const reduceBuffer = await loadBench(
     "reduceBuffer",
