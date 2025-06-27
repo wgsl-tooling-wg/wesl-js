@@ -62,11 +62,19 @@ export function percent(fraction?: number): string | null {
   return `${Math.abs(fraction * 100).toFixed(1)}%`;
 }
 
-/** format a fraction as a colored +/- percentage */
-export function coloredPercent(numerator: number, denominator: number): string {
+/**
+ * format a fraction as a colored +/- percentage
+ * @param positiveIsGreen whether a positive difference is good (green) or bad (red)
+ */
+export function coloredPercent(
+  numerator: number,
+  denominator: number,
+  positiveIsGreen = true
+): string {
   const fraction = numerator / denominator;
   const positive = fraction >= 0;
   const sign = positive ? "+" : "-";
   const percentStr = `${sign}${percent(fraction)}`;
-  return positive ? green(percentStr) : red(percentStr);
+  const isGood = positive === positiveIsGreen;
+  return isGood ? green(percentStr) : red(percentStr);
 }
