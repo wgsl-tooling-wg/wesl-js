@@ -51,11 +51,11 @@ export async function loadBenchmarkFiles(): Promise<BenchTest[]> {
   );
   return [
     reduceBuffer,
-    // particle,
-    // rasterize,
-    // boat,
-    // imports_only,
-    // bevy_deferred_lighting,
+    particle,
+    rasterize,
+    boat,
+    imports_only,
+    bevy_deferred_lighting,
     // bevy_linking,
   ];
 }

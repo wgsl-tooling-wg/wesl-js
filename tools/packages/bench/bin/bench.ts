@@ -84,14 +84,20 @@ function parseArgs(args: string[]) {
       default: false,
       describe: "run using vanilla mitata profiler",
     })
+    .option("filter", {
+      type: "string",
+      describe: "run only benchmarks matching this regex or substring (case-insensitive)",
+    })
     .help()
     .parseSync();
 }
 
 /** run the selected benchmark variants */
 async function runBenchmarks(argv: CliArgs): Promise<void> {
-  const tests = await loadBenchmarkFiles();
+  const loadedTests = await loadBenchmarkFiles();
   const baselineLink = argv.baseline ? await loadBaselineLink() : undefined;
+
+  const tests = filterBenchmarks(loadedTests, argv.filter);
 
   if (argv.profile) {
     await benchOnceOnly(tests);
@@ -161,6 +167,24 @@ function selectVariant(variant: string): ParserVariant {
     return variant as ParserVariant;
   }
   throw new Error("NYI parser variant: " + variant);
+}
+
+/** select which tests to run */
+function filterBenchmarks(tests: BenchTest[], pattern?: string): BenchTest[] {
+  if (!pattern) return tests;
+  let regex: RegExp;
+  try {
+    regex = new RegExp(pattern, "i");
+  } catch {
+    // fallback to substring match if invalid regex
+    regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+  }
+  const filtered = tests.filter(test => regex.test(test.name));
+  if (filtered.length === 0) {
+    console.error(`No benchmarks matched pattern: ${pattern}`);
+    process.exit(1);
+  }
+  return filtered;
 }
 
 // function runOnce(parserVariant: ParserVariant, test: BenchTest): void {
