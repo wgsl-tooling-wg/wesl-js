@@ -186,8 +186,6 @@ function blankPad(arr: string[], length: number): string[] {
   return [...arr, ...Array(length - arr.length).fill(" ")];
 }
 
-
-
 /** convert Record style rows to an array of string[], suitable for the table library */
 export function recordsToRows<T extends Record<string, any>>(
   records: T[],
@@ -220,20 +218,19 @@ function addComparisons<T extends Record<string, any>>(
   const updatedMain = { ...mainRecord };
 
   for (const col of comparisonColumns) {
-    const mainValue = Number(mainRecord[col.diffKey!]);
-    const baselineValue = Number(baselineRecord[col.diffKey!]);
-
-    if (
-      !Number.isNaN(mainValue) &&
-      !Number.isNaN(baselineValue) &&
-      baselineValue !== 0
-    ) {
-      const diff = mainValue - baselineValue;
-      (updatedMain as any)[col.key] = coloredPercent(diff, baselineValue);
-    }
+    const diffKey = col.diffKey!;
+    const mainValue = mainRecord[diffKey];
+    const baselineValue = baselineRecord[diffKey];
+    const diffStr = diffPercent(mainValue, baselineValue);
+    (updatedMain as any)[col.key] = diffStr;
   }
 
   return updatedMain;
+}
+
+function diffPercent(main: number, base: number): string {
+  const diff = main - base;
+  return coloredPercent(diff, base);
 }
 
 function constructTable<T extends Record<string, any>>(
