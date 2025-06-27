@@ -5,7 +5,7 @@ import {
   diffPercentNegative,
   floatPrecision,
   integer,
-  percent
+  percent,
 } from "./table-util/Formatters.ts";
 import { type ColumnGroup, buildTable } from "./table-util/TableReport.ts";
 
@@ -169,7 +169,6 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
           key: "locSecMaxPercent",
           title: "Δ%",
           diffKey: "locSecMax",
-          diffFormatter: diffPercentNegative,
         },
         { key: "locSecP50", title: "p50", formatter: integer },
         { key: "locSecP50Percent", title: "Δ%", diffKey: "locSecP50" },
@@ -183,7 +182,12 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
           title: "mean",
           formatter: floatPrecision(2),
         },
-        { key: "timeMeanPercent", title: "Δ%", diffKey: "timeMean" },
+        {
+          key: "timeMeanPercent",
+          title: "Δ%",
+          diffKey: "timeMean",
+          diffFormatter: diffPercentNegative,
+        },
       ],
     },
     {
@@ -194,7 +198,9 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
           title: "mean",
           formatter: floatPrecision(2),
         },
-        { key: "gcTimePercent", title: "Δ%", diffKey: "gcTimeMean" },
+        { key: "gcTimePercent", title: "Δ%", diffKey: "gcTimeMean",
+          diffFormatter: diffPercentNegative
+         },
       ],
     },
     {
