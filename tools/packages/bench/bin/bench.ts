@@ -9,6 +9,7 @@ import {
   type MeasureOptions,
   mitataBench,
 } from "../src/mitata-util/MitataBench.ts";
+import path from "node:path";
 
 export interface BenchTest {
   name: string;
@@ -18,9 +19,12 @@ export interface BenchTest {
   files: Map<string, string>;
 }
 
+const baselineDir = "../../../../_baseline";
+
 /** load the link() function from the baseline repo  */
 async function loadBaselineLink(): Promise<typeof link | undefined> {
-  return import("../../../../_baseline/packages/wesl/src/index.ts")
+  const baselinePath = path.join(baselineDir, "packages/wesl/src/index.ts");
+  return import(baselinePath)
     .then(x => x.link as unknown as typeof link)
     .catch(() => undefined);
 }
