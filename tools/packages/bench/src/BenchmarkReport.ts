@@ -6,16 +6,23 @@ import { Formatters } from "./table-util/Formatters.ts";
 
 const maxNameLength = 30;
 
-/** Helper type for records with nullable values */
-type NullableValues<T> = {
-  [P in keyof T]: T[P] | null;
-};
-
 /** report of benchmark results, including baseline results if available  */
 export interface BenchmarkReport {
   benchTest: BenchTest;
   mainResult: MeasuredResults;
   baseline?: MeasuredResults;
+}
+
+/** preprocessed statistics for reporting */
+interface SelectedStats {
+  name: string;
+  locSecP50: number;
+  locSecMax: number;
+  gcTimeMean?: number;
+  timeMean: number;
+  runs: number;
+  cpuCacheMiss?: number;
+  heap?: number;
 }
 
 /** benchmark data to report in each row */
@@ -34,41 +41,58 @@ interface ReportRow {
   runs?: number;
 }
 
+/** Helper type for records with nullable values */
+type NullableValues<T> = {
+  [P in keyof T]: T[P] | null;
+};
+
+
 /** report row with all keys required, and values that may be null */
 type FullReportRow = NullableValues<Required<ReportRow>>;
 
-/** preprocessed statistics for reporting */
-interface SelectedStats {
-  name: string;
-  locSecP50: number;
-  locSecMax: number;
-  gcTimeMean?: number;
-  timeMean: number;
-  runs: number;
-  cpuCacheMiss?: number;
-  heap?: number;
+/** test data to report, results along with baseline if available */
+interface ReportRows {
+  main: FullReportRow[];
+  baseline?: FullReportRow[];
 }
 
 /** log a table of benchmark results  */
 export function reportResults(reports: BenchmarkReport[]): void {
-  const mainRows: FullReportRow[] = [];
-  const baselineRows: FullReportRow[] = [];
+  const { main, baseline } = reportsToRows(reports);
+  logTable(main, baseline);
+}
 
-  for (const report of reports) {
+function reportsToRows(reports: BenchmarkReport[]): ReportRows {
+  const mainRows: FullReportRow[] = [];
+  const baselineRows: FullReportRow[] = []; // only if any baseline exists
+
+  reports.forEach(report => {
     const { benchTest, mainResult, baseline } = report;
 
     const codeLines = getCodeLines(benchTest);
 
-    const main = selectedStats(codeLines, mainResult);
-    mainRows.push(mostlyFullRow(main));
+    const mainStats = selectedStats(codeLines, mainResult);
+    mainRows.push(mostlyFullRow(mainStats));
 
     if (baseline) {
-      const base = selectedStats(codeLines, baseline);
-      baselineRows.push(mostlyFullRow(base));
+      const baseStats = selectedStats(codeLines, baseline);
+      baselineRows.push(mostlyFullRow(baseStats));
     }
-  }
+  });
 
-  logTable(mainRows, baselineRows);
+  return {
+    main: mainRows,
+    baseline: baselineRows.length > 0 ? baselineRows : undefined,
+  };
+}
+
+/** write table records to the console */
+function logTable(
+  mainRows: FullReportRow[],
+  baselineRows?: FullReportRow[],
+): void {
+  const tableStr = buildTable(tableConfig(), mainRows, baselineRows, "name");
+  console.log(tableStr);
 }
 
 /** count the number of lines of code in a bench test */
@@ -109,15 +133,6 @@ function selectedStats(
   };
 }
 
-/** write table records to the console */
-function logTable(
-  mainRows: FullReportRow[],
-  baselineRows?: FullReportRow[],
-): void {
-  const groups = getBenchmarkColumns();
-  const tableStr = buildTable(groups, mainRows, baselineRows, "name");
-  console.log(tableStr);
-}
 
 /** @return a report row with all properties set, but some values set to null */
 function mostlyFullRow(stats: SelectedStats): FullReportRow {
@@ -137,8 +152,8 @@ function mostlyFullRow(stats: SelectedStats): FullReportRow {
   };
 }
 
-/** configuration for table column and section headers */
-function getBenchmarkColumns(): ColumnGroup<FullReportRow>[] {
+/** configuration for table columns and sections */
+function tableConfig(): ColumnGroup<FullReportRow>[] {
   return [
     {
       columns: [{ key: "name", title: "name" }],
