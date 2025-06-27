@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import { _linkSync, link } from "wesl";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
@@ -73,21 +75,24 @@ function parseArgs(args: string[]) {
     .parseSync();
 }
 
+/** run the selected benchmark variants */
 async function runBenchmarks(argv: CliArgs): Promise<void> {
   const tests = await loadBenchmarkFiles();
   const baselineLink = argv.baseline ? await loadBaselineLink() : undefined;
 
-  if (argv.manual) {
-    benchManually(tests, baselineLink as any);
-  } else if (argv.profile) {
+  if (argv.profile) {
     await benchOnceOnly(tests);
   } else if (argv.mitata) {
     simpleMitataBench(tests, baselineLink as any);
+  } else if (argv.manual) {
+    benchManually(tests, baselineLink as any);
   } else {
     await benchAndReport(tests, baselineLink);
   }
 }
 
+/** run the the first selected benchmark, once, without any data collection.
+ * useful for attaching the profiler, or for continuous integration */
 function benchOnceOnly(tests: BenchTest[]): Promise<any> {
   return link({
     weslSrc: Object.fromEntries(tests[0].files.entries()),
