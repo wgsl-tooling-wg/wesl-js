@@ -65,13 +65,13 @@ export function prettyFloat(
   x: number | undefined,
   digits: number,
 ): string | null {
-  if (x === undefined) return null;
+  if (x === undefined || x === null) return null;
   return x.toFixed(digits).replace(/\.?0+$/, "");
 }
 
 /** format a number like .473 as a percentage like 47.3% */
 export function prettyPercent(fraction?: number): string | null {
-  if (fraction === undefined) return null;
+  if (fraction === undefined || fraction === null) return null;
   return `${Math.abs(fraction * 100).toFixed(1)}%`;
 }
 
