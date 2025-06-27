@@ -106,7 +106,7 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   } else if (argv.manual) {
     benchManually(tests, baselineLink as any);
   } else {
-    await benchAndReport(tests, baselineLink, argv.benchTime, argv.cpu, argv.observeGc);
+    await benchAndReport(tests, baselineLink, argv.time, argv.cpu, argv.observeGc);
   }
 }
 
