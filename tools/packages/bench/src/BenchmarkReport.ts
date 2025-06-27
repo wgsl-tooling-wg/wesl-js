@@ -1,7 +1,7 @@
 import type { BenchTest } from "../bin/bench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
 import { mapValues } from "./mitata-util/Util.ts";
-import { Formatters } from "./table-util/Formatters.ts";
+import { integer, floatPrecision, percent } from "./table-util/Formatters.ts";
 import { type ColumnGroup, buildTable } from "./table-util/TableReport.ts";
 
 const maxNameLength = 30;
@@ -159,9 +159,9 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
     {
       groupTitle: "lines / sec",
       columns: [
-        { key: "locSecMax", title: "max", formatter: Formatters.integer },
+        { key: "locSecMax", title: "max", formatter: integer },
         { key: "locSecMaxPercent", title: "Δ%", diffKey: "locSecMax" },
-        { key: "locSecP50", title: "p50", formatter: Formatters.integer },
+        { key: "locSecP50", title: "p50", formatter: integer },
         { key: "locSecP50Percent", title: "Δ%", diffKey: "locSecP50" },
       ],
     },
@@ -171,7 +171,7 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
         {
           key: "timeMean",
           title: "mean",
-          formatter: Formatters.floatPrecision(2),
+          formatter: floatPrecision(2),
         },
         { key: "timeMeanPercent", title: "Δ%", diffKey: "timeMean" },
       ],
@@ -182,7 +182,7 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
         {
           key: "gcTimeMean",
           title: "mean",
-          formatter: Formatters.floatPrecision(2),
+          formatter: floatPrecision(2),
         },
         { key: "gcTimePercent", title: "Δ%", diffKey: "gcTimeMean" },
       ],
@@ -190,13 +190,13 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
     {
       groupTitle: "misc",
       columns: [
-        { key: "heap", title: "heap kb", formatter: Formatters.integer },
+        { key: "heap", title: "heap kb", formatter: integer },
         {
           key: "cpuCacheMiss",
           title: "L1 miss",
-          formatter: Formatters.percent,
+          formatter: percent,
         },
-        { key: "runs", title: "N", formatter: Formatters.integer },
+        { key: "runs", title: "N", formatter: integer },
       ],
     },
   ];

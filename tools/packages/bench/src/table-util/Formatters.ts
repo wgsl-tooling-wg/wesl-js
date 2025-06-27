@@ -1,52 +1,49 @@
 import pico from "picocolors";
 const { red, green } = pico;
 
-/** Common formatters for table columns */
-export const Formatters = {
-  /** Format integers with thousand separators */
-  integer: (x: number | undefined) => integer(x),
-
-  /** Format floats with 2 decimal places */
-  float: (x: number | undefined) => float(x, 2),
-
-  /** Format floats with custom precision */
-  floatPrecision: (precision: number) => (x: number | undefined) =>
-    float(x, precision),
-
-  /** Format as percentage */
-  percent: (x: number | undefined) => percent(x),
-
-  /** Format duration in milliseconds */
-  duration: (ms: number | undefined) => {
-    if (ms === undefined) return null;
-    if (ms < 1) return `${(ms * 1000).toFixed(1)}μs`;
-    if (ms < 1000) return `${ms.toFixed(2)}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
-  },
-
-  /** Format bytes with appropriate units */
-  bytes: (bytes: number | undefined) => {
-    if (bytes === undefined) return null;
-    const units = ["b", "kb", "mb", "gb", "tb"];
-    let size = bytes;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-
-    return `${size.toFixed(1)}${units[unitIndex]}`;
-  },
-
-  /** Format as a rate (value per unit) */
-  rate: (unit: string) => (value: number | undefined) => {
-    if (value === undefined) return null;
-    return `${integer(value)}/${unit}`;
-  },
-} as const;
 
 /** Formatting utilities for table data */
+
+/** Format floats with 2 decimal places */
+export function floatDefault(x: number | undefined): string | null {
+  return float(x, 2);
+}
+
+/** Format floats with custom precision */
+export function floatPrecision(precision: number) {
+  return (x: number | undefined) => float(x, precision);
+}
+
+/** Format duration in milliseconds */
+export function duration(ms: number | undefined): string | null {
+  if (ms === undefined) return null;
+  if (ms < 1) return `${(ms * 1000).toFixed(1)}μs`;
+  if (ms < 1000) return `${ms.toFixed(2)}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
+}
+
+/** Format bytes with appropriate units */
+export function bytes(bytes: number | undefined): string | null {
+  if (bytes === undefined) return null;
+  const units = ["b", "kb", "mb", "gb", "tb"];
+  let size = bytes;
+  let unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+
+  return `${size.toFixed(1)}${units[unitIndex]}`;
+}
+
+/** Format as a rate (value per unit) */
+export function rate(unit: string) {
+  return (value: number | undefined) => {
+    if (value === undefined) return null;
+    return `${integer(value)}/${unit}`;
+  };
+}
 
 /** format an integer with commas between thousands */
 export function integer(x: number | undefined): string | null {
