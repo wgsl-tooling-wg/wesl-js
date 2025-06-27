@@ -99,7 +99,7 @@ export interface MeasuredResults {
 export type MeasureOptions = Parameters<typeof measure>[1] & {
   $counters?: typeof mitataCountersType; // missing from published types, loaded dynamically
   cpuCounters?: boolean; // default: false
-  nodeObserveGC?: boolean; // default: true
+  observeGC?: boolean; // default: true
 };
 
 /** Run a function using mitata benchmarking,
@@ -118,18 +118,26 @@ export async function mitataBench(
     const stats = getHeapStatistics();
     return stats.used_heap_size + stats.malloced_memory;
   };
+
+  // Only set up GC observation if observeGC is enabled (default: true)
+  const shouldObserveGC = options?.observeGC !== false;
   const gcRecords = new Array<PerformanceEntry>(maxGcRecords);
   let numRecords = 0;
-  const obs = new PerformanceObserver(items => {
-    for (const item of items.getEntries()) {
-      if (item.name === "gc") {
-        gcRecords[numRecords++] = item;
-      } else {
-        console.log("other", item);
+  let obs: PerformanceObserver | undefined;
+
+  if (shouldObserveGC) {
+    obs = new PerformanceObserver(items => {
+      for (const item of items.getEntries()) {
+        if (item.name === "gc") {
+          gcRecords[numRecords++] = item;
+        } else {
+          console.log("other", item);
+        }
       }
-    }
-  });
-  obs.observe({ entryTypes: ["gc"] });
+    });
+    obs.observe({ entryTypes: ["gc"] });
+  }
+
   let benchStart = 0;
   let benchEnd = 0;
 
@@ -147,11 +155,15 @@ export async function mitataBench(
 
   const stats = await measure(newFn, measureOptions);
 
-  await new Promise(resolve => setTimeout(resolve, 10)); // wait for gc observer to collect
-  gcRecords.push(...finishObserver(obs));
+  if (obs) {
+    await new Promise(resolve => setTimeout(resolve, 10)); // wait for gc observer to collect
+    gcRecords.push(...finishObserver(obs));
+  }
 
   const gcEntries = gcRecords.slice(0, numRecords);
-  const nodeGcTime = analyzeGCEntries(gcEntries, [benchStart, benchEnd]);
+  const nodeGcTime = shouldObserveGC
+    ? analyzeGCEntries(gcEntries, [benchStart, benchEnd])
+    : undefined;
 
   const { gc, heap, min, max, avg } = stats;
   const { p25, p50, p75, p99, p999 } = stats;
@@ -171,7 +183,7 @@ export async function mitataBench(
     heapSize,
     cpu,
     cpuCacheMiss,
-    nodeGcTime,
+    nodeGcTime: nodeGcTime || undefined,
   };
 }
 
