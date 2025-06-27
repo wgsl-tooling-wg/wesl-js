@@ -54,10 +54,10 @@ function parseArgs(args: string[]) {
       default: true,
       describe: "run baseline comparison using _baseline directory",
     })
-    .option("bench-time", {
+    .option("time", {
       type: "number",
       default: 0.5,
-      describe: "benchmark duration in seconds",
+      describe: "benchmark test duration in seconds",
     })
     .option("cpu", {
       type: "boolean",
