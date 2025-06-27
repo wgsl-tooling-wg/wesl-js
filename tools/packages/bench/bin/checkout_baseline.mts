@@ -47,9 +47,9 @@ execSync(`git archive ${version} tools -o "${tarPath}"`, { stdio: "inherit" });
 
 console.log("Extracting archive and transforming path (removing 'tools/' prefix)...");
 execSync(`tar --transform='s,^tools/,,' -xf "${tarPath}" -C "${baselineDir}"`, { stdio: "inherit" });
-// rmSync(tarPath);
+rmSync(tarPath);
 
 console.log("Running pnpm install in baseline directory...");
 execSync("pnpm install", { cwd: baselineDir, stdio: "inherit" });
 
-console.log("Baseline checkout complete.");
+console.log("Baseline copy complete.");
