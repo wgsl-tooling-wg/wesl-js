@@ -2,7 +2,7 @@ import type { BenchTest } from "../bin/bench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
 import {
   type ColumnGroup,
-  buildComparisonTable,
+  buildTable,
   formatters,
 } from "./table-util/TableReport.ts";
 import { mapValues } from "./mitata-util/Util.ts";
@@ -118,7 +118,7 @@ function logTable(
   baselineRows?: FullReportRow[],
 ): void {
   const groups = getBenchmarkColumns();
-  const tableStr = buildComparisonTable(groups, mainRows, baselineRows, "name");
+  const tableStr = buildTable(groups, mainRows, baselineRows, "name");
   console.log(tableStr);
 }
 

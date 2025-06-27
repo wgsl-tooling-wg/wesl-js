@@ -291,7 +291,7 @@ function addComparisons<T extends Record<string, any>>(
 }
 
 /** Build a comparison table with automatic diff percentage calculation */
-export function buildComparisonTable<T extends Record<string, any>>(
+export function buildTable<T extends Record<string, any>>(
   groups: ColumnGroup<T>[],
   mainRecords: T[],
   baselineRecords?: T[],
@@ -330,13 +330,13 @@ export function buildComparisonTable<T extends Record<string, any>>(
       ...group,
       columns: group.columns.filter(col => !col.diffKey),
     }));
-    return buildTable(filteredGroups, mainRecords);
+    return constructTable(filteredGroups, mainRecords);
   }
 
-  return buildTable(groups, allRecords);
+  return constructTable(groups, allRecords);
 }
 
-function buildTable<T extends Record<string, any>>(
+function constructTable<T extends Record<string, any>>(
   groups: ColumnGroup<T>[],
   records: T[],
 ): string {
