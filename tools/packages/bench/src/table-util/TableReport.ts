@@ -5,6 +5,21 @@ import { diffPercent } from "./Formatters.ts";
 
 const { bold } = pico;
 
+/** A table is defined by an array of ColumnGroups (which specify 
+ * the Columns in the table).
+ * 
+ * Users call buildTable() with an array of ColumnGroups and an array
+ * of data records (objects with named fields).
+ */
+
+/** A ColumnGroup is a group of related columns */
+export interface ColumnGroup<T> {
+  groupTitle?: string;
+  columns: AnyColumn<T>[];
+}
+
+type AnyColumn<T> = Column<T> | DiffColumn<T>;
+
 /** a column of data in the table, with optional metadata  for formatting */
 export interface Column<T> extends ColumnFormat<T> {
   formatter?: (value: any) => string | null;
@@ -38,14 +53,6 @@ interface ColumnFormat<T> {
   width?: number;
 }
 
-type AnyColumn<T> = Column<T> | DiffColumn<T>;
-
-/** A group of typed columns */
-export interface ColumnGroup<T> {
-  groupTitle?: string;
-  columns: AnyColumn<T>[];
-}
-
 /** results of table preparation, ready to include in a call to `table`, like this:
  * `table([...headerRows, myDataRows], config)` */
 export interface TableSetup {
@@ -59,6 +66,9 @@ export interface TableSetup {
  * Columns are can optionally grouped into sections, and vertical bars
  * are drawn between sections. Column and section headers are bolded.
  * Difference columns are added if baseline data is provided.
+ * 
+ * Users provide table data as an array of records (objects with named fields).
+ * Table configuration specifies how to extract and format fields from the records into a table.
  *
  * Here's an example table:
  *
@@ -104,6 +114,7 @@ export function buildTable<T extends Record<string, any>>(
         allRecords.push({} as T);
       }
     }
+    return constructTable(groups, allRecords);
   } else {
     // No baseline data, use main records as-is (but filter out diff columns)
     const filteredGroups = groups.map(group => ({
@@ -112,9 +123,19 @@ export function buildTable<T extends Record<string, any>>(
     }));
     return constructTable(filteredGroups, mainRecords);
   }
-
-  return constructTable(groups, allRecords);
 }
+
+/** construct the table from the column definitions and the user records of table data */
+function constructTable<T extends Record<string, any>>(
+  groups: ColumnGroup<T>[],
+  records: T[],
+): string {
+  const { headerRows, config } = tableSetup(groups);
+  const dataRows = recordsToRows(records, groups);
+  const allRows = [...headerRows, ...dataRows];
+  return table(allRows, config);
+}
+
 
 /** @return a full row of header elements with blanks in between */
 function groupHeaders<T>(
@@ -246,16 +267,7 @@ function addComparisons<T extends Record<string, any>>(
   return updatedMain;
 }
 
-function constructTable<T extends Record<string, any>>(
-  groups: ColumnGroup<T>[],
-  records: T[],
-): string {
-  const { headerRows, config } = tableSetup(groups);
-  const dataRows = recordsToRows(records, groups);
-  const allRows = [...headerRows, ...dataRows];
-  return table(allRows, config);
-}
-
+/** @return header rows and configuration for calling the table library */
 function tableSetup<T>(groups: ColumnGroup<T>[]): TableSetup {
   const titles = columnTitles(groups);
   const numColumns = titles.length;
