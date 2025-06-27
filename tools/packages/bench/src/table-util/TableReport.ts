@@ -1,33 +1,49 @@
 import pico from "picocolors";
+import type { Alignment, SpanningCellConfig, TableUserConfig } from "table";
 import { table } from "table";
-import type {
-  Alignment,
-  ColumnUserConfig,
-  SpanningCellConfig,
-  TableUserConfig,
-} from "table";
 import { coloredPercent } from "./Formatters.ts";
 
-const { bold, red, green } = pico;
+const { bold } = pico;
 
-/** A typed column that knows about the data structure it's displaying */
-export interface Column<T> {
-  key: keyof T;
-  title: string;
+/** a column of data in the table, with optional metadata  for formatting */
+export interface Column<T> extends ColumnFormat<T> {
   formatter?: (value: any) => string | null;
-  alignment?: Alignment;
-  width?: number;
+  diffKey?: undefined;
+}
+
+/** a difference column in the table that compares */
+export interface DiffColumn<T> extends ColumnFormat<T> {
+  diffFormatter?: (value: T, baseline: T) => string | null;
+  formatter?: undefined;
+
   /** if set, this column holds a synthesized comparison value
    * comparing the value in selected by the diffKey against the
    * corresponding baseline value.
    */
-  diffKey?: keyof T;
+  diffKey: keyof T;
 }
+
+/** metadata fields for table columns */
+interface ColumnFormat<T> {
+  /** key to fetch an element from the user provided data records */
+  key: keyof T;
+
+  /** title to show in the table header */
+  title: string;
+
+  /** alignment of the column */
+  alignment?: Alignment;
+
+  /** fixed width for the column */
+  width?: number;
+}
+
+type AnyColumn<T> = Column<T> | DiffColumn<T>;
 
 /** A group of typed columns */
 export interface ColumnGroup<T> {
   groupTitle?: string;
-  columns: Column<T>[];
+  columns: AnyColumn<T>[];
 }
 
 /** results of table preparation, ready to include in a call to `table`, like this:
