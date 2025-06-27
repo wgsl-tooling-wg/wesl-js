@@ -95,6 +95,7 @@ export interface MeasuredResults {
    */
   nodeGcTime?: NodeGCTime;
 }
+type MeasureResult = Awaited<ReturnType<typeof measure>>;
 
 export type MeasureOptions = Parameters<typeof measure>[1] & {
   $counters?: typeof mitataCountersType; // missing from published types, loaded dynamically
@@ -126,17 +127,26 @@ export async function mitataBench(
   } as MeasureOptions;
 
   const observeGC = options?.observeGC ?? true;
-  const result = await withObserveGC(fn, measureOptions, observeGC);
+  const result = await measureWithObserveGC(fn, measureOptions, observeGC);
   const { nodeGcTime, stats } = result;
+  return processStats(stats, name, nodeGcTime);
+}
 
+/** convert stats to standard form, milliseconds and kilobytes */
+function processStats(
+  stats: MeasureResult,
+  name: string,
+  nodeGcTime: NodeGCTime | undefined,
+): MeasuredResults {
   const { gc, heap, min, max, avg } = stats;
   const { p25, p50, p75, p99, p999 } = stats;
   const { samples, counters: cpu } = stats;
 
-  const rawTime = { min, max, avg, p25, p50, p75, p99, p999 };
-  const time = mapValues(rawTime, x => x / 1e6);
+  const time = mapValues(
+    { min, max, avg, p25, p50, p75, p99, p999 },
+    x => x / 1e6,
+  );
   const gcTime = gc && mapValues(gc, x => x / 1e6);
-
   const heapSize = heap && mapValues(heap, x => x / 1024);
   const cpuCacheMiss = cacheMissRate(cpu as CpuCounts | undefined);
   return {
@@ -147,11 +157,12 @@ export async function mitataBench(
     heapSize,
     cpu,
     cpuCacheMiss,
-    nodeGcTime: nodeGcTime || undefined,
+    nodeGcTime
   };
 }
 
-async function withObserveGC(
+/** measure a function with mitata, collecting GC stats if enabled */
+async function measureWithObserveGC(
   fn: () => any,
   measureOptions: MeasureOptions,
   enableObserveGC: boolean,
