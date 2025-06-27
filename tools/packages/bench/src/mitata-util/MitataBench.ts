@@ -1,5 +1,4 @@
 import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
-import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
 import type { CpuCounts } from "@mitata/counters";
 import type * as mitataCountersType from "@mitata/counters";
 import { measure } from "mitata";
@@ -116,10 +115,7 @@ export async function mitataBench(
   options?: MeasureOptions,
 ): Promise<MeasuredResults> {
   verifyGcExposed();
-  const heapFn = () => {
-    const stats = getHeapStatistics();
-    return stats.used_heap_size + stats.malloced_memory;
-  };
+  const heapFn = await getHeapFn();
 
   const measureOptions = {
     heap: heapFn,
@@ -233,6 +229,29 @@ function analyzeGCEntries(
   });
   const total = inRun + before + after;
   return { inRun, before, after, total };
+}
+
+async function getHeapFn(): Promise<() => number> {
+  if ((globalThis as any).Bun?.version) {
+    // @ts-expect-error: bun:jsc is only available in Bun runtime
+    const { memoryUsage } = await import("bun:jsc");
+    return () => {
+      const m = memoryUsage();
+      return m.current;
+    };
+  }
+
+  try {
+    const { getHeapStatistics } = await import("node:v8");
+    getHeapStatistics();
+    return () => {
+      const m = getHeapStatistics();
+      return m.used_heap_size + m.malloced_memory;
+    };
+  } catch {}
+
+  console.warn("no heap statistics available");
+  return () => 0;
 }
 
 /** return the CPU L1 cache miss rate */
