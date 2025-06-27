@@ -8,11 +8,13 @@ import { mapValues } from "./Util.ts";
 const maxGcRecords = 1000;
 
 /** Load mitataCounters dynamically if cpuCounters is enabled, otherwise return undefined */
-async function loadMitataCounters(options?: MeasureOptions): Promise<typeof mitataCountersType | undefined> {
+async function loadMitataCounters(
+  options?: MeasureOptions,
+): Promise<typeof mitataCountersType | undefined> {
   if (!options?.cpuCounters) {
     return undefined;
   }
-  
+
   try {
     return await import("@mitata/counters");
   } catch (error) {
@@ -95,7 +97,7 @@ export interface MeasuredResults {
 }
 
 export type MeasureOptions = Parameters<typeof measure>[1] & {
-  "$counters"?: typeof mitataCountersType; // missing from published types, loaded dynamically
+  $counters?: typeof mitataCountersType; // missing from published types, loaded dynamically
   cpuCounters?: boolean; // default: false
   nodeObserveGC?: boolean; // default: true
 };
@@ -137,11 +139,11 @@ export async function mitataBench(
     benchEnd = performance.now();
   };
 
-  const measureOptions: MeasureOptions = {
+  const measureOptions = {
     heap: heapFn,
     $counters: await loadMitataCounters(options),
     ...options,
-  };
+  } as MeasureOptions;
 
   const stats = await measure(newFn, measureOptions);
 
