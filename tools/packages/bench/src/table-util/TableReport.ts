@@ -238,8 +238,9 @@ function addComparisons<T extends Record<string, any>>(
     const diffKey = dcol.diffKey;
     const mainValue = mainRecord[diffKey];
     const baselineValue = baselineRecord[diffKey];
-    const diffFormatterFn = dcol.diffFormatter ?? diffPercent;
-    (updatedMain as any)[col.key] = diffFormatterFn(mainValue, baselineValue);
+    const diffFormat = dcol.diffFormatter ?? diffPercent;
+    const diffStr = diffFormat(mainValue, baselineValue);
+    (updatedMain as any)[col.key] = diffStr;
   }
 
   return updatedMain;
