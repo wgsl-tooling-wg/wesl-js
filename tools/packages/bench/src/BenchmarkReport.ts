@@ -104,7 +104,7 @@ function selectedStats(
     gcTimeMean,
     runs: result.samples.length,
     heap: result.heapSize?.avg,
-    cpuCacheMiss: cpuCacheMiss(result),
+    cpuCacheMiss: result.cpuCacheMiss,
     name: result.name.slice(0, maxNameLength),
   };
 }
@@ -187,22 +187,4 @@ function getBenchmarkColumns(): ColumnGroup<FullReportRow>[] {
       ],
     },
   ];
-}
-
-/** return the CPU L1 cache miss rate */
-function cpuCacheMiss(result: MeasuredResults): number | undefined {
-  if (result.cpu?.l1) {
-    const { cpu } = result;
-    const { l1 } = cpu;
-    const total = cpu.instructions?.loads_and_stores?.avg;
-    const loadMiss = l1?.miss_loads?.avg;
-    const storeMiss = l1?.miss_stores?.avg; // LATER do store misses cause stalls too?
-    if (total === undefined) return undefined;
-    if (loadMiss === undefined || storeMiss === undefined) return undefined;
-
-    const miss = loadMiss + storeMiss;
-    return miss / total;
-  }
-  // TBD linux is also supported in @mitata/counters
-  return undefined;
 }
