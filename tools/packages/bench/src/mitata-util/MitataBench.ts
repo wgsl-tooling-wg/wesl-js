@@ -119,51 +119,21 @@ export async function mitataBench(
     return stats.used_heap_size + stats.malloced_memory;
   };
 
-  // Only set up GC observation if observeGC is enabled (default: true)
-  const shouldObserveGC = options?.observeGC !== false;
-  const gcRecords = new Array<PerformanceEntry>(maxGcRecords);
-  let numRecords = 0;
-  let obs: PerformanceObserver | undefined;
-
-  if (shouldObserveGC) {
-    obs = new PerformanceObserver(items => {
-      for (const item of items.getEntries()) {
-        if (item.name === "gc") {
-          gcRecords[numRecords++] = item;
-        } else {
-          console.log("other", item);
-        }
-      }
-    });
-    obs.observe({ entryTypes: ["gc"] });
-  }
-
-  let benchStart = 0;
-  let benchEnd = 0;
-
-  const newFn = () => {
-    if (!benchStart) benchStart = performance.now();
-    fn();
-    benchEnd = performance.now();
-  };
-
   const measureOptions = {
     heap: heapFn,
     $counters: await loadMitataCounters(options),
     ...options,
   } as MeasureOptions;
 
-  const stats = await measure(newFn, measureOptions);
-
-  if (obs) {
-    await new Promise(resolve => setTimeout(resolve, 10)); // wait for gc observer to collect
-    gcRecords.push(...finishObserver(obs));
+  let stats: Awaited<ReturnType<typeof measure>>;
+  let nodeGcTime: NodeGCTime | undefined = undefined;
+  if (!options?.observeGC) {
+    stats = await measure(fn, measureOptions);
+  } else {
+    const result = await withObserveGC(fn, measureOptions);
+    stats = result.stats;
+    nodeGcTime = result.nodeGcTime;
   }
-
-  const gcEntries = gcRecords.slice(0, numRecords);
-  const nodeGcTime = shouldObserveGC
-    ? analyzeGCEntries(gcEntries, [benchStart, benchEnd])
-    : undefined;
 
   const { gc, heap, min, max, avg } = stats;
   const { p25, p50, p75, p99, p999 } = stats;
@@ -185,6 +155,41 @@ export async function mitataBench(
     cpuCacheMiss,
     nodeGcTime: nodeGcTime || undefined,
   };
+}
+
+async function withObserveGC(
+  fn: () => any,
+  measureOptions: MeasureOptions,
+): Promise<{
+  nodeGcTime: NodeGCTime;
+  stats: Awaited<ReturnType<typeof measure>>;
+}> {
+  const gcRecords = new Array<PerformanceEntry>(maxGcRecords);
+  let numRecords = 0;
+  const obs = new PerformanceObserver(items => {
+    for (const item of items.getEntries()) {
+      if (item.name === "gc") {
+        gcRecords[numRecords++] = item;
+      } else {
+        console.log("other", item);
+      }
+    }
+  });
+  obs.observe({ entryTypes: ["gc"] });
+  let benchStart = 0;
+  let benchEnd = 0;
+  const wrappedFn = () => {
+    if (!benchStart) benchStart = performance.now();
+    fn();
+    benchEnd = performance.now();
+  };
+  const stats = await measure(wrappedFn, measureOptions);
+
+  await new Promise(resolve => setTimeout(resolve, 10)); // wait for gc observer to collect
+  gcRecords.push(...finishObserver(obs));
+  const gcEntries = gcRecords.slice(0, numRecords);
+  const nodeGcTime = analyzeGCEntries(gcEntries, [benchStart, benchEnd]);
+  return { nodeGcTime, stats };
 }
 
 /** finish the observer and return any straggler gc records (unlikely in practice) */

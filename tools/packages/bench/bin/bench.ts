@@ -64,6 +64,11 @@ function parseArgs(args: string[]) {
       default: false,
       describe: "enable CPU counter measurements (requires root)",
     })
+    .option("observe-gc", {
+      type: "boolean",
+      default: true,
+      describe: "enable garbage collection observation",
+    })
     .option("profile", {
       type: "boolean",
       default: false,
@@ -95,7 +100,7 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   } else if (argv.manual) {
     benchManually(tests, baselineLink as any);
   } else {
-    await benchAndReport(tests, baselineLink, argv.benchTime, argv.cpu);
+    await benchAndReport(tests, baselineLink, argv.benchTime, argv.cpu, argv.observeGc);
   }
 }
 
@@ -114,6 +119,7 @@ async function benchAndReport(
   baselineLink?: typeof link,
   benchTimeSeconds = 0.5,
   cpuCounters = false,
+  observeGc = true,
 ): Promise<void> {
   const reports: BenchmarkReport[] = [];
 
@@ -122,6 +128,7 @@ async function benchAndReport(
     // inner_gc: true,
     min_cpu_time: benchTimeSeconds * secToNs,
     cpuCounters,
+    observeGC: observeGc,
   } as any;
   for (const test of tests) {
     const weslSrc = Object.fromEntries(test.files.entries());

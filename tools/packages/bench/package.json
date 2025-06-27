@@ -5,7 +5,7 @@
   "scripts": {
     "echo": "echo",
     "typecheck": "tsgo",
-    "bench": "tsx bin/bench.ts",
+    "bench": "tsx --expose-gc --allow-natives-syntax bin/bench.ts",
     "bench:details": "sudo tsx --expose-gc --allow-natives-syntax bin/bench.ts --cpu"
   },
   "dependencies": {
