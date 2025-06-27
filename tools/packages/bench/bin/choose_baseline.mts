@@ -22,7 +22,7 @@ import path from "node:path";
  * after the contents are in place
  * run `pnpm install` in the _baseline directory
  */
-const [, , version] = process.argv;
+const version = process.argv[2];
 
 if (!version) {
   const scriptName = process.argv[1]
@@ -31,8 +31,12 @@ if (!version) {
   console.error(`Usage: ${scriptName} <version>`);
   process.exit(1);
 }
+console.log("version:", version);
 
-const baselineDir = path.resolve(__dirname, "../../../_baseline");
+const __filename = new URL(import.meta.url).pathname;
+const __dirname = path.dirname(__filename);
+process.chdir(path.resolve(__dirname, "../../../../"));
+const baselineDir = path.resolve("_baseline");
 
 if (existsSync(baselineDir)) {
   console.log(`Removing existing baseline directory: ${baselineDir}`);
@@ -45,9 +49,14 @@ console.log(`Archiving tools directory from version ${version}...`);
 const tarPath = path.join(baselineDir, "tools.tar");
 execSync(`git archive ${version} tools -o "${tarPath}"`, { stdio: "inherit" });
 
-console.log("Extracting archive and transforming path (removing 'tools/' prefix)...");
-execSync(`tar --transform='s,^tools/,,' -xf "${tarPath}" -C "${baselineDir}"`, { stdio: "inherit" });
+console.log("Extracting archive...");
+
+execSync(`tar -xf "${tarPath}" -C "${baselineDir}"`, { stdio: "inherit" });
 rmSync(tarPath);
+
+const toolsDir = path.join(baselineDir, "tools");
+execSync(`mv "${toolsDir}"/* "${baselineDir}/"`, { stdio: "inherit" });
+rmSync(toolsDir, { recursive: true, force: true });
 
 console.log("Running pnpm install in baseline directory...");
 execSync("pnpm install", { cwd: baselineDir, stdio: "inherit" });
