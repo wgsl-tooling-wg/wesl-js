@@ -86,7 +86,8 @@ function parseArgs(args: string[]) {
     })
     .option("filter", {
       type: "string",
-      describe: "run only benchmarks matching this regex or substring (case-insensitive)",
+      describe:
+        "run only benchmarks matching this regex or substring (case-insensitive)",
     })
     .help()
     .parseSync();
@@ -106,7 +107,8 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   } else if (argv.manual) {
     benchManually(tests, baselineLink as any);
   } else {
-    await benchAndReport(tests, baselineLink, argv.time, argv.cpu, argv.observeGc);
+    const { time, cpu, observeGc } = argv;
+    await benchAndReport(tests, baselineLink, time, cpu, observeGc);
   }
 }
 

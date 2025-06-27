@@ -5,9 +5,9 @@ import { diffPercent } from "./Formatters.ts";
 
 const { bold } = pico;
 
-/** A table is defined by an array of ColumnGroups (which specify 
+/** A table is defined by an array of ColumnGroups (which specify
  * the Columns in the table).
- * 
+ *
  * Users call buildTable() with an array of ColumnGroups and an array
  * of data records (objects with named fields).
  */
@@ -135,7 +135,6 @@ function constructTable<T extends Record<string, any>>(
   const allRows = [...headerRows, ...dataRows];
   return table(allRows, config);
 }
-
 
 /** @return a full row of header elements with blanks in between */
 function groupHeaders<T>(

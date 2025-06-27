@@ -198,9 +198,12 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
           title: "mean",
           formatter: floatPrecision(2),
         },
-        { key: "gcTimePercent", title: "Δ%", diffKey: "gcTimeMean",
-          diffFormatter: diffPercentNegative
-         },
+        {
+          key: "gcTimePercent",
+          title: "Δ%",
+          diffKey: "gcTimeMean",
+          diffFormatter: diffPercentNegative,
+        },
       ],
     },
     {
