@@ -10,7 +10,7 @@ import type {
 const { bold, red, green } = pico;
 
 /** A typed column that knows about the data structure it's displaying */
-export interface TypedColumn<T> {
+export interface Column<T> {
   key: keyof T;
   title: string;
   formatter?: (value: any) => string | null;
@@ -24,9 +24,9 @@ export interface TypedColumn<T> {
 }
 
 /** A group of typed columns */
-export interface TypedColumnGroup<T> {
+export interface ColumnGroup<T> {
   groupTitle?: string;
-  columns: TypedColumn<T>[];
+  columns: Column<T>[];
 }
 
 /** results of table preparation, ready to include in a call to `table`, like this:
@@ -57,7 +57,7 @@ export interface TableSetup {
 ║                               │                              │               │               │                      ║
 ╚═══════════════════════════════╧══════════════════════════════╧═══════════════╧═══════════════╧══════════════════════╝
  */
-export function tableSetup<T>(groups: TypedColumnGroup<T>[]): TableSetup {
+export function tableSetup<T>(groups: ColumnGroup<T>[]): TableSetup {
   const titles = columnTitles(groups);
   const numColumns = titles.length;
 
@@ -72,7 +72,7 @@ export function tableSetup<T>(groups: TypedColumnGroup<T>[]): TableSetup {
 
 /** @return a full row of header elements with blanks in between */
 function groupHeaders<T>(
-  groups: TypedColumnGroup<T>[],
+  groups: ColumnGroup<T>[],
   numColumns: number,
 ): string[][] {
   const hasHeader = groups.find(g => g.groupTitle);
@@ -97,7 +97,7 @@ interface LineFunctions {
   drawVerticalLine: (index: number, size: number) => boolean;
 }
 
-function lineFunctions<T>(groups: TypedColumnGroup<T>[]): LineFunctions {
+function lineFunctions<T>(groups: ColumnGroup<T>[]): LineFunctions {
   const sectionBorders: number[] = [];
   const groupTitles = groups.map(g => g.groupTitle);
   let headerBottom = 1;
@@ -123,7 +123,7 @@ function lineFunctions<T>(groups: TypedColumnGroup<T>[]): LineFunctions {
  * currently unused due to upstream issue: https://github.com/gajus/table/issues/234
  */
 function _columnSpanning<T>(
-  groups: TypedColumnGroup<T>[],
+  groups: ColumnGroup<T>[],
   row = 0,
 ): SpanningCellConfig[] {
   const columns = groups.flatMap(g => g.columns);
@@ -134,7 +134,7 @@ function _columnSpanning<T>(
 }
 
 function sectionSpanning<T>(
-  groups: TypedColumnGroup<T>[],
+  groups: ColumnGroup<T>[],
 ): SpanningCellConfig[] {
   let col = 0;
   const row = 0;
@@ -149,7 +149,7 @@ function sectionSpanning<T>(
   return spans;
 }
 
-function columnTitles<T>(groups: TypedColumnGroup<T>[]): string[] {
+function columnTitles<T>(groups: ColumnGroup<T>[]): string[] {
   return groups.flatMap(g => g.columns.map(c => bold(c.title || " ")));
 }
 
@@ -244,16 +244,7 @@ export const formatters = {
 /** convert Record style rows to an array of string[], suitable for the table library */
 export function recordsToRows<T extends Record<string, any>>(
   records: T[],
-  columnOrder: (keyof T)[],
-): string[][] {
-  const rawRows = records.map(record => columnOrder.map(key => record[key]));
-  return rawRows.map(row => row.map(cell => cell ?? " "));
-}
-
-/** Convert typed records to formatted string rows using typed column definitions */
-export function typedRecordsToRows<T extends Record<string, any>>(
-  records: T[],
-  groups: TypedColumnGroup<T>[],
+  groups: ColumnGroup<T>[],
 ): string[][] {
   const allColumns = groups.flatMap(group => group.columns);
 
@@ -270,20 +261,10 @@ export function typedRecordsToRows<T extends Record<string, any>>(
   return rawRows.map(row => row.map(cell => cell ?? " "));
 }
 
-/** Complete typed table builder */
-export function buildTypedTable<T extends Record<string, any>>(
-  groups: TypedColumnGroup<T>[],
-  records: T[],
-): string {
-  const { headerRows, config } = tableSetup(groups);
-  const dataRows = typedRecordsToRows(records, groups);
-  const allRows = [...headerRows, ...dataRows];
-  return table(allRows, config);
-}
 
 /** Compute diff values for comparison columns and add to main record */
 function addComparisons<T extends Record<string, any>>(
-  groups: TypedColumnGroup<T>[],
+  groups: ColumnGroup<T>[],
   mainRecord: T,
   baselineRecord: T,
 ): T {
@@ -311,7 +292,7 @@ function addComparisons<T extends Record<string, any>>(
 
 /** Build a comparison table with automatic diff percentage calculation */
 export function buildComparisonTable<T extends Record<string, any>>(
-  groups: TypedColumnGroup<T>[],
+  groups: ColumnGroup<T>[],
   mainRecords: T[],
   baselineRecords?: T[],
   nameKey: keyof T = "name" as keyof T,
@@ -349,8 +330,18 @@ export function buildComparisonTable<T extends Record<string, any>>(
       ...group,
       columns: group.columns.filter(col => !col.diffKey),
     }));
-    return buildTypedTable(filteredGroups, mainRecords);
+    return buildTable(filteredGroups, mainRecords);
   }
 
-  return buildTypedTable(groups, allRecords);
+  return buildTable(groups, allRecords);
+}
+
+function buildTable<T extends Record<string, any>>(
+  groups: ColumnGroup<T>[],
+  records: T[],
+): string {
+  const { headerRows, config } = tableSetup(groups);
+  const dataRows = recordsToRows(records, groups);
+  const allRows = [...headerRows, ...dataRows];
+  return table(allRows, config);
 }

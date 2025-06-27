@@ -1,7 +1,7 @@
 import type { BenchTest } from "../bin/bench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
 import {
-  type TypedColumnGroup,
+  type ColumnGroup,
   buildComparisonTable,
   formatters,
 } from "./table-util/TableReport.ts";
@@ -141,7 +141,7 @@ function mostlyFullRow(stats: SelectedStats): FullReportRow {
 }
 
 /** configuration for table column and section headers */
-function getBenchmarkColumns(): TypedColumnGroup<FullReportRow>[] {
+function getBenchmarkColumns(): ColumnGroup<FullReportRow>[] {
   return [
     {
       columns: [{ key: "name", title: "name" }],
