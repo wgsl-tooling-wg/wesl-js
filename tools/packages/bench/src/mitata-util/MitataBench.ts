@@ -2,7 +2,7 @@ import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
 import { getHeapStatistics } from "node:v8"; // TODO support other runtimes
 import type { CpuCounts } from "@mitata/counters";
 import type * as mitataCountersType from "@mitata/counters";
-import { gc, measure } from "mitata";
+import { measure } from "mitata";
 import { mapValues } from "./Util.ts";
 
 const maxGcRecords = 1000;
@@ -115,9 +115,7 @@ export async function mitataBench(
   name = "",
   options?: MeasureOptions,
 ): Promise<MeasuredResults> {
-  if (!gc) {
-    console.warn("MitataBench: gc() not available, run node/bun with --expose-gc");
-  }
+  verifyGcExposed();
   const heapFn = () => {
     const stats = getHeapStatistics();
     return stats.used_heap_size + stats.malloced_memory;
@@ -160,7 +158,7 @@ function processStats(
     heapSize,
     cpu,
     cpuCacheMiss,
-    nodeGcTime
+    nodeGcTime,
   };
 }
 
@@ -254,4 +252,12 @@ function cacheMissRate(cpu?: CpuCounts): number | undefined {
     return cpu.cache.misses.avg / cpu.cache.avg;
   }
   return undefined;
+}
+
+function verifyGcExposed(): void {
+  if (globalThis.gc) return;
+  if ((globalThis as any).__gc) return;
+  console.warn(
+    "MitataBench: gc() not available, run node/bun with --expose-gc",
+  );
 }

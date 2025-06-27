@@ -67,7 +67,7 @@ function parseArgs(args: string[]) {
     .option("observe-gc", {
       type: "boolean",
       default: true,
-      describe: "enable garbage collection observation",
+      describe: "enable garbage collection observation via perf_hooks",
     })
     .option("profile", {
       type: "boolean",

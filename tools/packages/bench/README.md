@@ -17,3 +17,13 @@ See instructions [here](https://developer.chrome.com/docs/devtools/performance/n
 ```sh
 pnpm tsx bin/bench.ts  --bench
 ```
+
+
+## other js engines
+```sh
+# works?
+bun --expose-gc bin/bench.ts
+
+# doesn't find baseline, or collect gc perf data
+deno --allow-all --v8-flags="--expose-gc" bin/bench.ts
+```
