@@ -23,9 +23,11 @@ export interface BenchTest {
 }
 
 /** load the link() function from the baseline repo  */
-const baselineLink = await import("../_baseline/packages/wesl/src/index.ts")
-  .then(x => x.link)
-  .catch(() => undefined);
+async function loadBaselineLink(): Promise<typeof link | undefined> {
+  return import("../_baseline/packages/wesl/src/index.ts")
+    .then(x => x.link as unknown as typeof link)
+    .catch(() => undefined);
+}
 
 type ParserVariant =
   | "wgsl-linker"
@@ -51,6 +53,11 @@ function parseArgs(args: string[]) {
       default: "wgsl-linker" as const,
       describe: "select parser to test",
     })
+    .option("baseline", {
+      type: "boolean",
+      default: true,
+      describe: "run baseline comparison using _baseline directory",
+    })
     .option("profile", {
       type: "boolean",
       default: false,
@@ -72,6 +79,7 @@ function parseArgs(args: string[]) {
 
 async function runBenchmarks(argv: CliArgs): Promise<void> {
   const tests = await loadAllFiles();
+  const baselineLink = argv.baseline ? await loadBaselineLink() : undefined;
 
   if (argv.manual) {
     benchManually(tests, baselineLink as any);
@@ -80,7 +88,7 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   } else if (argv.mitata) {
     simpleMitataBench(tests, baselineLink as any);
   } else {
-    await benchAndReport(tests);
+    await benchAndReport(tests, baselineLink);
   }
 }
 
@@ -93,7 +101,7 @@ function benchOnceOnly(tests: BenchTest[]): Promise<any> {
 
 
 /** run the tests and report results */
-async function benchAndReport(tests: BenchTest[]): Promise<void> {
+async function benchAndReport(tests: BenchTest[], baselineLink?: typeof link): Promise<void> {
   const reports: BenchmarkReport[] = [];
 
   const secToNs = 1e9;
