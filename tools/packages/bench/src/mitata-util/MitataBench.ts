@@ -125,15 +125,9 @@ export async function mitataBench(
     ...options,
   } as MeasureOptions;
 
-  let stats: Awaited<ReturnType<typeof measure>>;
-  let nodeGcTime: NodeGCTime | undefined = undefined;
-  if (!options?.observeGC) {
-    stats = await measure(fn, measureOptions);
-  } else {
-    const result = await withObserveGC(fn, measureOptions);
-    stats = result.stats;
-    nodeGcTime = result.nodeGcTime;
-  }
+  const observeGC = options?.observeGC ?? true;
+  const result = await withObserveGC(fn, measureOptions, observeGC);
+  const { nodeGcTime, stats } = result;
 
   const { gc, heap, min, max, avg } = stats;
   const { p25, p50, p75, p99, p999 } = stats;
@@ -160,10 +154,16 @@ export async function mitataBench(
 async function withObserveGC(
   fn: () => any,
   measureOptions: MeasureOptions,
+  enableObserveGC: boolean,
 ): Promise<{
-  nodeGcTime: NodeGCTime;
+  nodeGcTime: NodeGCTime | undefined;
   stats: Awaited<ReturnType<typeof measure>>;
 }> {
+  if (!enableObserveGC) {
+    fn();
+    return { nodeGcTime: undefined, stats: await measure(fn, measureOptions) };
+  }
+
   const gcRecords = new Array<PerformanceEntry>(maxGcRecords);
   let numRecords = 0;
   const obs = new PerformanceObserver(items => {
