@@ -19,14 +19,18 @@ export interface BenchTest {
   files: Map<string, string>;
 }
 
-const baselineDir = "../../../../_baseline";
+const baselineDir = "../../../_baseline";
 
 /** load the link() function from the baseline repo  */
 async function loadBaselineLink(): Promise<typeof link | undefined> {
   const baselinePath = path.join(baselineDir, "packages/wesl/src/index.ts");
+  console.log("Loading baseline link from:", baselinePath);
   return import(baselinePath)
     .then(x => x.link as unknown as typeof link)
-    .catch(() => undefined);
+    .catch(() => {
+      console.log("Failed to load baseline link");
+      return undefined;
+    });
 }
 
 type ParserVariant =
@@ -43,6 +47,9 @@ main(rawArgs);
 
 async function main(args: string[]): Promise<void> {
   const argv = parseArgs(args);
+  if (argv.profile) {
+    argv.baseline = false; // no baseline comparison in profile mode
+  }
   await runBenchmarks(argv);
 }
 
