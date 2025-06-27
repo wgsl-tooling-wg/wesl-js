@@ -61,6 +61,11 @@ function parseArgs(args: string[]) {
       default: 0.1,
       describe: "benchmark duration in seconds",
     })
+    .option("cpu", {
+      type: "boolean",
+      default: false,
+      describe: "enable CPU counter measurements (requires root)",
+    })
     .option("profile", {
       type: "boolean",
       default: false,
@@ -92,7 +97,7 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   } else if (argv.manual) {
     benchManually(tests, baselineLink as any);
   } else {
-    await benchAndReport(tests, baselineLink, argv.benchTime);
+    await benchAndReport(tests, baselineLink, argv.benchTime, argv.cpu);
   }
 }
 
@@ -110,6 +115,7 @@ async function benchAndReport(
   tests: BenchTest[],
   baselineLink?: typeof link,
   benchTimeSeconds = 0.5,
+  cpuCounters = false,
 ): Promise<void> {
   const reports: BenchmarkReport[] = [];
 
@@ -117,6 +123,7 @@ async function benchAndReport(
   const opts: MeasureOptions = {
     // inner_gc: true,
     min_cpu_time: benchTimeSeconds * secToNs,
+    cpuCounters,
   } as any;
   for (const test of tests) {
     const weslSrc = Object.fromEntries(test.files.entries());
