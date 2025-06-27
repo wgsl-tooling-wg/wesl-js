@@ -234,11 +234,12 @@ function addComparisons<T extends Record<string, any>>(
   const updatedMain = { ...mainRecord };
 
   for (const col of comparisonColumns) {
-    const diffKey = col.diffKey!;
+    const dcol = col as DiffColumn<T>; // we know from filter above that diffKey is set
+    const diffKey = dcol.diffKey;
     const mainValue = mainRecord[diffKey];
     const baselineValue = baselineRecord[diffKey];
-    const diffStr = diffPercent(mainValue, baselineValue);
-    (updatedMain as any)[col.key] = diffStr;
+    const diffFormatterFn = dcol.diffFormatter ?? diffPercent;
+    (updatedMain as any)[col.key] = diffFormatterFn(mainValue, baselineValue);
   }
 
   return updatedMain;
