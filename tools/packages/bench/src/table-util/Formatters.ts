@@ -4,13 +4,18 @@ const { red, green } = pico;
 
 /** Formatting utilities for table data */
 
-/** Format floats with 2 decimal places */
-export function floatDefault(x: number | undefined): string | null {
-  return float(x, 2);
+
+/** format a float to a specified precision with trailing zeros dropped */
+export function float(
+  x: number | undefined,
+  digits = 2
+): string | null {
+  if (x === undefined || x === null) return null;
+  return x.toFixed(digits).replace(/\.?0+$/, "");
 }
 
-/** Format floats with custom precision */
-export function floatPrecision(precision: number) {
+/** @return a function that formats floats with custom precision */
+export function floatPrecision(precision: number): (x: number | undefined) => string | null {
   return (x: number | undefined) => float(x, precision);
 }
 
@@ -49,15 +54,6 @@ export function rate(unit: string) {
 export function integer(x: number | undefined): string | null {
   if (x === undefined) return null;
   return new Intl.NumberFormat("en-US").format(Math.round(x));
-}
-
-/** format a float to a specified precision with trailing zeros dropped */
-export function float(
-  x: number | undefined,
-  digits: number,
-): string | null {
-  if (x === undefined || x === null) return null;
-  return x.toFixed(digits).replace(/\.?0+$/, "");
 }
 
 /** format a number like .473 as a percentage like 47.3% */
