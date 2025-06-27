@@ -162,7 +162,7 @@ async function benchAndReport(
   reportResults(reports);
 }
 
-function selectVariant(variant: string): ParserVariant {
+function _selectVariant(variant: string): ParserVariant {
   if (
     ["wesl-link", "wgsl-linker", "wgsl_reflect", "use-gpu"].includes(variant)
   ) {

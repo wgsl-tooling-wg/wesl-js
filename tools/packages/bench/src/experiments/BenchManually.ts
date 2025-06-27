@@ -14,7 +14,7 @@ export function benchManually(
     const rootModuleName = test.mainFile;
     const warmups = 10;
     const runs = 12;
-    const times = new Array<bigint>(runs).fill(0n);
+    const times = Array<bigint>(runs).fill(0n);
     let baselineTime = 0;
 
     if (baselineLink) {
@@ -50,7 +50,7 @@ export function benchManually(
   }
 }
 
-function meanTime(times: bigint[]): number {
+function _meanTime(times: bigint[]): number {
   const total = times.reduce((acc, time) => acc + Number(time), 0);
   return total / times.length / 1e6;
 }
@@ -61,7 +61,7 @@ function medianTime(times: bigint[]): number {
   return Number(sorted[mid]) / 1e6;
 }
 
-function simpleTest(weslSrc: Record<string, string>): number {
+function _simpleTest(weslSrc: Record<string, string>): number {
   let sum = 0;
   for (const [_, text] of Object.entries(weslSrc)) {
     for (const c of text) {

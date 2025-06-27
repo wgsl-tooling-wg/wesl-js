@@ -172,7 +172,7 @@ async function measureWithObserveGC(
     return { nodeGcTime: undefined, stats: await measure(fn, measureOptions) };
   }
 
-  const gcRecords = new Array<PerformanceEntry>(maxGcRecords);
+  const gcRecords = Array<PerformanceEntry>(maxGcRecords).fill(null as any);
   let numRecords = 0;
   const obs = new PerformanceObserver(items => {
     for (const item of items.getEntries()) {

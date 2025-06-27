@@ -30,7 +30,8 @@ export async function loadBenchmarkFiles(): Promise<BenchTest[]> {
     "./src/examples/bevy",
     "./bevy_generated_deferred_lighting.wgsl",
   );
-  const bevy_linking = await loadBench(
+  // fails to wesl compile
+  const _bevy_linking = await loadBench(
     "bevy_linking",
     "./src/examples/naga_oil_example",
     "./pbr.wgsl",
