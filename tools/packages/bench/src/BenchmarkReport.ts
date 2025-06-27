@@ -3,7 +3,7 @@ import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
 import {
   type ColumnGroup,
   buildTable,
-  formatters,
+  Formatters,
 } from "./table-util/TableReport.ts";
 import { mapValues } from "./mitata-util/Util.ts";
 
@@ -149,9 +149,9 @@ function getBenchmarkColumns(): ColumnGroup<FullReportRow>[] {
     {
       groupTitle: "lines / sec",
       columns: [
-        { key: "locSecMax", title: "max", formatter: formatters.integer },
+        { key: "locSecMax", title: "max", formatter: Formatters.integer },
         { key: "locSecMaxPercent", title: "Δ%", diffKey: "locSecMax" },
-        { key: "locSecP50", title: "p50", formatter: formatters.integer },
+        { key: "locSecP50", title: "p50", formatter: Formatters.integer },
         { key: "locSecP50Percent", title: "Δ%", diffKey: "locSecP50" },
       ],
     },
@@ -161,7 +161,7 @@ function getBenchmarkColumns(): ColumnGroup<FullReportRow>[] {
         {
           key: "timeMean",
           title: "mean",
-          formatter: formatters.floatPrecision(2),
+          formatter: Formatters.floatPrecision(2),
         },
         { key: "timeMeanPercent", title: "Δ%", diffKey: "timeMean" },
       ],
@@ -172,7 +172,7 @@ function getBenchmarkColumns(): ColumnGroup<FullReportRow>[] {
         {
           key: "gcTimeMean",
           title: "mean",
-          formatter: formatters.floatPrecision(2),
+          formatter: Formatters.floatPrecision(2),
         },
         { key: "gcTimePercent", title: "Δ%", diffKey: "gcTimeMean" },
       ],
@@ -180,13 +180,13 @@ function getBenchmarkColumns(): ColumnGroup<FullReportRow>[] {
     {
       groupTitle: "misc",
       columns: [
-        { key: "heap", title: "heap kb", formatter: formatters.integer },
+        { key: "heap", title: "heap kb", formatter: Formatters.integer },
         {
           key: "cpuCacheMiss",
           title: "L1 miss",
-          formatter: formatters.percent,
+          formatter: Formatters.percent,
         },
-        { key: "runs", title: "N", formatter: formatters.integer },
+        { key: "runs", title: "N", formatter: Formatters.integer },
       ],
     },
   ];

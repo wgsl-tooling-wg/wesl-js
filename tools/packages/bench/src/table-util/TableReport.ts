@@ -66,29 +66,25 @@ export function buildTable<T extends Record<string, any>>(
 ): string {
   let allRecords: T[];
 
-  if (baselineRecords && baselineRecords.length > 0) {
+  if (baselineRecords) {
+    console.assert(baselineRecords.length === mainRecords.length);
     // Interleave main and baseline records
     allRecords = [];
     for (let i = 0; i < mainRecords.length; i++) {
-      const mainRecord = mainRecords[i];
-      const baselineRecord = baselineRecords[i];
+      const main = mainRecords[i];
+      const baseline = baselineRecords[i];
 
-      if (baselineRecord) {
-        const updatedMain = addComparisons(groups, mainRecord, baselineRecord);
+      const updatedMain = addComparisons(groups, main, baseline);
+      allRecords.push(updatedMain);
 
-        allRecords.push(updatedMain);
+      // Add baseline record with modified name
+      const updatedBaseline = { ...baseline };
+      (updatedBaseline as any)[nameKey] = `--> baseline`;
+      allRecords.push(updatedBaseline);
 
-        // Add baseline record with modified name
-        const updatedBaseline = { ...baselineRecord };
-        (updatedBaseline as any)[nameKey] = `--> baseline`;
-        allRecords.push(updatedBaseline);
-
-        // Add blank row for separation (except for the last group)
-        if (i < mainRecords.length - 1) {
-          allRecords.push({} as T);
-        }
-      } else {
-        allRecords.push(mainRecord);
+      // Add blank row for separation (except for the last group)
+      if (i < mainRecords.length - 1) {
+        allRecords.push({} as T);
       }
     }
   } else {
@@ -166,9 +162,7 @@ function _columnSpanning<T>(
   });
 }
 
-function sectionSpanning<T>(
-  groups: ColumnGroup<T>[],
-): SpanningCellConfig[] {
+function sectionSpanning<T>(groups: ColumnGroup<T>[]): SpanningCellConfig[] {
   let col = 0;
   const row = 0;
   const alignment: Alignment = "center";
@@ -224,7 +218,7 @@ export function coloredPercent(numerator: number, denominator: number): string {
 }
 
 /** Common formatters for table columns */
-export const formatters = {
+export const Formatters = {
   /** Format integers with thousand separators */
   integer: (x: number | undefined) => prettyInteger(x),
 
@@ -249,7 +243,7 @@ export const formatters = {
   /** Format bytes with appropriate units */
   bytes: (bytes: number | undefined) => {
     if (bytes === undefined) return null;
-    const units = ["B", "KB", "MB", "GB", "TB"];
+    const units = ["b", "kb", "mb", "gb", "tb"];
     let size = bytes;
     let unitIndex = 0;
 
@@ -294,7 +288,6 @@ export function recordsToRows<T extends Record<string, any>>(
   return rawRows.map(row => row.map(cell => cell ?? " "));
 }
 
-
 /** Compute diff values for comparison columns and add to main record */
 function addComparisons<T extends Record<string, any>>(
   groups: ColumnGroup<T>[],
@@ -322,7 +315,6 @@ function addComparisons<T extends Record<string, any>>(
 
   return updatedMain;
 }
-
 
 function constructTable<T extends Record<string, any>>(
   groups: ColumnGroup<T>[],
