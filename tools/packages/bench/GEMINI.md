@@ -1,0 +1,1 @@
+This project is a benchmarking tool for the `wesl` project. It uses `mitata` to run benchmarks and provides performance metrics. It can be run using `pnpm bench`, and also supports profiling and detailed CPU metrics. The tool is written in TypeScript and is designed to be run with `tsx`. It includes various WGSL shader examples for benchmarking purposes.
