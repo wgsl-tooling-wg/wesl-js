@@ -1,4 +1,3 @@
-
 /** return an array partitioned into possibly overlapping groups */
 export function grouped<T>(a: T[], size: number, stride = size): T[][] {
   const groups = [];

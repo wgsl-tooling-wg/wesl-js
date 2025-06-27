@@ -1,6 +1,6 @@
 import * as mitata from "mitata";
-import type { BenchTest } from "../../bin/bench.ts";
 import { _linkSync, type link } from "wesl";
+import type { BenchTest } from "../../bin/bench.ts";
 
 export function simpleMitataBench(
   tests: BenchTest[],

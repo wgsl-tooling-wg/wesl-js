@@ -1,8 +1,8 @@
 import type { BenchTest } from "../bin/bench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
-import { type ColumnGroup, buildTable } from "./table-util/TableReport.ts";
 import { mapValues } from "./mitata-util/Util.ts";
 import { Formatters } from "./table-util/Formatters.ts";
+import { type ColumnGroup, buildTable } from "./table-util/TableReport.ts";
 
 const maxNameLength = 30;
 
@@ -45,7 +45,6 @@ interface ReportRow {
 type NullableValues<T> = {
   [P in keyof T]: T[P] | null;
 };
-
 
 /** report row with all keys required, and values that may be null */
 type FullReportRow = NullableValues<Required<ReportRow>>;
@@ -132,7 +131,6 @@ function selectedStats(
     name: result.name.slice(0, maxNameLength),
   };
 }
-
 
 /** @return a report row with all properties set, but some values set to null */
 function mostlyFullRow(stats: SelectedStats): FullReportRow {
