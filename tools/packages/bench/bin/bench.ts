@@ -20,7 +20,7 @@ export interface BenchTest {
 
 /** load the link() function from the baseline repo  */
 async function loadBaselineLink(): Promise<typeof link | undefined> {
-  return import("../_baseline/packages/wesl/src/index.ts")
+  return import("../../../../_baseline/packages/wesl/src/index.ts")
     .then(x => x.link as unknown as typeof link)
     .catch(() => undefined);
 }
