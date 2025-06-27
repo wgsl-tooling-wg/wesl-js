@@ -4,17 +4,17 @@ const { red, green } = pico;
 /** Common formatters for table columns */
 export const Formatters = {
   /** Format integers with thousand separators */
-  integer: (x: number | undefined) => prettyInteger(x),
+  integer: (x: number | undefined) => integer(x),
 
   /** Format floats with 2 decimal places */
-  float: (x: number | undefined) => prettyFloat(x, 2),
+  float: (x: number | undefined) => float(x, 2),
 
   /** Format floats with custom precision */
   floatPrecision: (precision: number) => (x: number | undefined) =>
-    prettyFloat(x, precision),
+    float(x, precision),
 
   /** Format as percentage */
-  percent: (x: number | undefined) => prettyPercent(x),
+  percent: (x: number | undefined) => percent(x),
 
   /** Format duration in milliseconds */
   duration: (ms: number | undefined) => {
@@ -42,26 +42,20 @@ export const Formatters = {
   /** Format as a rate (value per unit) */
   rate: (unit: string) => (value: number | undefined) => {
     if (value === undefined) return null;
-    return `${prettyInteger(value)}/${unit}`;
-  },
-
-  /** Truncate string to max length */
-  truncate: (maxLength: number) => (str: string | undefined) => {
-    if (str === undefined) return null;
-    return str.length > maxLength ? `${str.slice(0, maxLength - 3)}...` : str;
+    return `${integer(value)}/${unit}`;
   },
 } as const;
 
 /** Formatting utilities for table data */
 
 /** format an integer with commas between thousands */
-export function prettyInteger(x: number | undefined): string | null {
+export function integer(x: number | undefined): string | null {
   if (x === undefined) return null;
   return new Intl.NumberFormat("en-US").format(Math.round(x));
 }
 
 /** format a float to a specified precision with trailing zeros dropped */
-export function prettyFloat(
+export function float(
   x: number | undefined,
   digits: number,
 ): string | null {
@@ -70,7 +64,7 @@ export function prettyFloat(
 }
 
 /** format a number like .473 as a percentage like 47.3% */
-export function prettyPercent(fraction?: number): string | null {
+export function percent(fraction?: number): string | null {
   if (fraction === undefined || fraction === null) return null;
   return `${Math.abs(fraction * 100).toFixed(1)}%`;
 }
@@ -80,6 +74,6 @@ export function coloredPercent(numerator: number, denominator: number): string {
   const fraction = numerator / denominator;
   const positive = fraction >= 0;
   const sign = positive ? "+" : "-";
-  const percentStr = `${sign}${prettyPercent(fraction)}`;
+  const percentStr = `${sign}${percent(fraction)}`;
   return positive ? green(percentStr) : red(percentStr);
 }
