@@ -56,6 +56,11 @@ function parseArgs(args: string[]) {
       default: true,
       describe: "run baseline comparison using _baseline directory",
     })
+    .option("benchTime", {
+      type: "number",
+      default: 0.1,
+      describe: "benchmark duration in seconds",
+    })
     .option("profile", {
       type: "boolean",
       default: false,
@@ -87,7 +92,7 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   } else if (argv.manual) {
     benchManually(tests, baselineLink as any);
   } else {
-    await benchAndReport(tests, baselineLink);
+    await benchAndReport(tests, baselineLink, argv.benchTime);
   }
 }
 
@@ -104,13 +109,14 @@ function benchOnceOnly(tests: BenchTest[]): Promise<any> {
 async function benchAndReport(
   tests: BenchTest[],
   baselineLink?: typeof link,
+  benchTimeSeconds = 0.5,
 ): Promise<void> {
   const reports: BenchmarkReport[] = [];
 
   const secToNs = 1e9;
   const opts: MeasureOptions = {
     // inner_gc: true,
-    min_cpu_time: 0.1 * secToNs,
+    min_cpu_time: benchTimeSeconds * secToNs,
   } as any;
   for (const test of tests) {
     const weslSrc = Object.fromEntries(test.files.entries());
