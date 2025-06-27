@@ -41,33 +41,66 @@ export interface TableSetup {
  * 
  * Columns are can optionally grouped into sections, and vertical bars
  * are drawn between sections. Column and section headers are bolded.
+ * Difference columns are added if baseline data is provided.
  *
  * Here's an example table:
- 
-╔═══════════════════════════════╤══════════════════════════════╤═══════════════╤═══════════════╤══════════════════════╗
-║                               │         lines / sec          │     time      │      gc       │                      ║
-║                               │                              │               │               │                      ║
-║ name                          │ max     Δ%     p50     Δ%    │ mean    Δ%    │ mean   Δ%     │ kb      L1 miss  N   ║
-╟───────────────────────────────┼──────────────────────────────┼───────────────┼───────────────┼──────────────────────╢
-║ reduceBuffer                  │ 77,045  -0.5%  74,351  -0.9% │ 1.28    +1.9% │ 0.03   +23.2% │ 2,044   1.6%     545 ║
-║ --> baseline                  │ 77,463         75,044        │ 1.25          │ 0.02          │ 2,026   1.6%     556 ║
-║                               │                              │               │               │                      ║
-║ unity_webgpu_0000026E5689B260 │ 33,448  -1.4%  31,819  -3.9% │ 130.08  +2.8% │ 26.93  +6.7%  │ 67,895  2.1%     12  ║
-║ --> baseline                  │ 33,925         33,107        │ 126.51        │ 25.24         │ 69,808  2.0%     12  ║
-║                               │                              │               │               │                      ║
-╚═══════════════════════════════╧══════════════════════════════╧═══════════════╧═══════════════╧══════════════════════╝
+ *
+        ╔═══════════════════════════════╤══════════════════════════════╤═══════════════╤═══════════════╤══════════════════════╗
+        ║                               │         lines / sec          │     time      │      gc       │                      ║
+        ║                               │                              │               │               │                      ║
+        ║ name                          │ max     Δ%     p50     Δ%    │ mean    Δ%    │ mean   Δ%     │ kb      L1 miss  N   ║
+        ╟───────────────────────────────┼──────────────────────────────┼───────────────┼───────────────┼──────────────────────╢
+        ║ reduceBuffer                  │ 77,045  -0.5%  74,351  -0.9% │ 1.28    +1.9% │ 0.03   +23.2% │ 2,044   1.6%     545 ║
+        ║ --> baseline                  │ 77,463         75,044        │ 1.25          │ 0.02          │ 2,026   1.6%     556 ║
+        ║                               │                              │               │               │                      ║
+        ║ unity_webgpu_0000026E5689B260 │ 33,448  -1.4%  31,819  -3.9% │ 130.08  +2.8% │ 26.93  +6.7%  │ 67,895  2.1%     12  ║
+        ║ --> baseline                  │ 33,925         33,107        │ 126.51        │ 25.24         │ 69,808  2.0%     12  ║
+        ║                               │                              │               │               │                      ║
+        ╚═══════════════════════════════╧══════════════════════════════╧═══════════════╧═══════════════╧══════════════════════╝
  */
-export function tableSetup<T>(groups: ColumnGroup<T>[]): TableSetup {
-  const titles = columnTitles(groups);
-  const numColumns = titles.length;
+export function buildTable<T extends Record<string, any>>(
+  groups: ColumnGroup<T>[],
+  mainRecords: T[],
+  baselineRecords?: T[],
+  nameKey: keyof T = "name" as keyof T,
+): string {
+  let allRecords: T[];
 
-  const sectionRows = groupHeaders(groups, numColumns);
-  const headerRows = [...sectionRows, titles];
+  if (baselineRecords && baselineRecords.length > 0) {
+    // Interleave main and baseline records
+    allRecords = [];
+    for (let i = 0; i < mainRecords.length; i++) {
+      const mainRecord = mainRecords[i];
+      const baselineRecord = baselineRecords[i];
 
-  const spanningCells = [...sectionSpanning(groups)];
-  const config: TableUserConfig = { spanningCells, ...lineFunctions(groups) };
+      if (baselineRecord) {
+        const updatedMain = addComparisons(groups, mainRecord, baselineRecord);
 
-  return { headerRows, config };
+        allRecords.push(updatedMain);
+
+        // Add baseline record with modified name
+        const updatedBaseline = { ...baselineRecord };
+        (updatedBaseline as any)[nameKey] = `--> baseline`;
+        allRecords.push(updatedBaseline);
+
+        // Add blank row for separation (except for the last group)
+        if (i < mainRecords.length - 1) {
+          allRecords.push({} as T);
+        }
+      } else {
+        allRecords.push(mainRecord);
+      }
+    }
+  } else {
+    // No baseline data, use main records as-is (but filter out diff columns)
+    const filteredGroups = groups.map(group => ({
+      ...group,
+      columns: group.columns.filter(col => !col.diffKey),
+    }));
+    return constructTable(filteredGroups, mainRecords);
+  }
+
+  return constructTable(groups, allRecords);
 }
 
 /** @return a full row of header elements with blanks in between */
@@ -290,51 +323,6 @@ function addComparisons<T extends Record<string, any>>(
   return updatedMain;
 }
 
-/** Build a comparison table with automatic diff percentage calculation */
-export function buildTable<T extends Record<string, any>>(
-  groups: ColumnGroup<T>[],
-  mainRecords: T[],
-  baselineRecords?: T[],
-  nameKey: keyof T = "name" as keyof T,
-): string {
-  let allRecords: T[];
-
-  if (baselineRecords && baselineRecords.length > 0) {
-    // Interleave main and baseline records
-    allRecords = [];
-    for (let i = 0; i < mainRecords.length; i++) {
-      const mainRecord = mainRecords[i];
-      const baselineRecord = baselineRecords[i];
-
-      if (baselineRecord) {
-        const updatedMain = addComparisons(groups, mainRecord, baselineRecord);
-
-        allRecords.push(updatedMain);
-
-        // Add baseline record with modified name
-        const updatedBaseline = { ...baselineRecord };
-        (updatedBaseline as any)[nameKey] = `--> baseline`;
-        allRecords.push(updatedBaseline);
-
-        // Add blank row for separation (except for the last group)
-        if (i < mainRecords.length - 1) {
-          allRecords.push({} as T);
-        }
-      } else {
-        allRecords.push(mainRecord);
-      }
-    }
-  } else {
-    // No baseline data, use main records as-is (but filter out diff columns)
-    const filteredGroups = groups.map(group => ({
-      ...group,
-      columns: group.columns.filter(col => !col.diffKey),
-    }));
-    return constructTable(filteredGroups, mainRecords);
-  }
-
-  return constructTable(groups, allRecords);
-}
 
 function constructTable<T extends Record<string, any>>(
   groups: ColumnGroup<T>[],
@@ -344,4 +332,17 @@ function constructTable<T extends Record<string, any>>(
   const dataRows = recordsToRows(records, groups);
   const allRows = [...headerRows, ...dataRows];
   return table(allRows, config);
+}
+
+function tableSetup<T>(groups: ColumnGroup<T>[]): TableSetup {
+  const titles = columnTitles(groups);
+  const numColumns = titles.length;
+
+  const sectionRows = groupHeaders(groups, numColumns);
+  const headerRows = [...sectionRows, titles];
+
+  const spanningCells = [...sectionSpanning(groups)];
+  const config: TableUserConfig = { spanningCells, ...lineFunctions(groups) };
+
+  return { headerRows, config };
 }
