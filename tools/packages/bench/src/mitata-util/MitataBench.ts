@@ -45,7 +45,7 @@ export async function mitataBench(
   name = "",
   options?: MeasureOptions,
 ): Promise<MeasuredResults> {
-  verifyGcExposed();
+  gcFunction(); // warn if gc() not available
   const heapFn = await getHeapFn();
 
   const measureOptions = {
@@ -112,23 +112,16 @@ async function measureWithObserveGC(
   return { nodeGcTime, stats };
 }
 
+/** allocate what we can in advance, and run a gc() so that our collection metrics are as pristine as possible */
 async function clearGarbage(fn: () => any): Promise<void> {
-  const gc = globalThis.gc || (() => {});
-  if (!gc) {
-    console.warn("GC is not enabled, use --expose-gc");
-  }
+  const gc = gcFunction();
 
   fn();
-  makeGarbage();
   // mysteriously, calling gc() multiple times with a wait in between seems to help on v8
   gc();
-  await wait(1000);
+  await wait(900); // mysteriously, 800 is not enough. try pnpm bench --simple someAllocation and look at heap kb
   gc();
   await wait();
-}
-
-function makeGarbage() {
-  new Array(100000).fill(Math.random());
 }
 
 /** finish the observer and return any straggler gc records (unlikely in practice) */
@@ -162,12 +155,14 @@ async function getHeapFn(): Promise<() => number> {
   return () => 0;
 }
 
-function verifyGcExposed(): void {
-  if (globalThis.gc) return;
-  if ((globalThis as any).__gc) return;
+/** fetch the runtime's function to call gc() manually */
+function gcFunction(): () => void {
+  const gc = globalThis.gc || (globalThis as any).__gc;
+  if (gc) return gc;
   console.warn(
     "MitataBench: gc() not available, run node/bun with --expose-gc",
   );
+  return () => {};
 }
 
 /** correlate the node perf gc events from hooks with the function timing results */
