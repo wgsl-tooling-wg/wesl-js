@@ -72,7 +72,7 @@ function parseArgs(args: string[]) {
     })
     .option("time", {
       type: "number",
-      default: 0.5,
+      default: 0.642,
       describe: "benchmark test duration in seconds",
     })
     .option("cpu", {

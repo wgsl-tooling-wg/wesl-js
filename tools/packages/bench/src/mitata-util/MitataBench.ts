@@ -2,7 +2,12 @@ import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
 import type { CpuCounts } from "@mitata/counters";
 import type * as mitataCountersType from "@mitata/counters";
 import { measure } from "mitata";
-import { mitataStats, type MeasuredResults, type NodeGCTime } from "./MitataStats.ts";
+import {
+  mitataStats,
+  type MeasuredResults,
+  type NodeGCTime,
+} from "./MitataStats.ts";
+import { clear } from "node:console";
 
 export type MeasureResult = Awaited<ReturnType<typeof measure>>;
 const maxGcRecords = 1000;
@@ -71,32 +76,56 @@ async function measureWithObserveGC(
   }
 
   const gcRecords = Array<PerformanceEntry>(maxGcRecords).fill(null as any);
-  let numRecords = 0;
+  let numGC = 0;
   const obs = new PerformanceObserver(items => {
     for (const item of items.getEntries()) {
       if (item.name === "gc") {
-        gcRecords[numRecords++] = item;
-      } else {
-        console.log("other", item);
+        gcRecords[numGC++] = item;
       }
     }
   });
-  obs.observe({ entryTypes: ["gc"] });
-  let benchStart = 0;
-  let benchEnd = 0;
+
+  let benchStart: number;
+  let benchEnd: number;
   const wrappedFn = () => {
     if (!benchStart) benchStart = performance.now();
     fn();
     benchEnd = performance.now();
   };
-  
+  obs.observe({ entryTypes: ["gc"] });
+
+  /** allocate what we can in advance, and run a gc() so that our collection metrics are as pristine as possible */
+  clearGarbage(wrappedFn);
+  benchStart = 0;
+  benchEnd = 0;
+  numGC = 0;
+
   const stats = await measure(wrappedFn, measureOptions);
 
-  await new Promise(resolve => setTimeout(resolve, 10)); // wait for gc observer to collect
+  await wait(); // let any straggler gc events be delivered
   gcRecords.push(...finishObserver(obs));
-  const gcEntries = gcRecords.slice(0, numRecords);
+  const gcEntries = gcRecords.slice(0, numGC);
   const nodeGcTime = analyzeGCEntries(gcEntries, [benchStart, benchEnd]);
   return { nodeGcTime, stats };
+}
+
+async function clearGarbage(fn: () => any): Promise<void> {
+  const gc = globalThis.gc || (() => {});
+  if (!gc) {
+    console.warn("GC is not enabled, use --expose-gc");
+  }
+
+  fn();
+  makeGarbage();
+  // mysteriously, calling gc() multiple times with a wait in between seems to help on v8
+  gc();
+  await wait(1000);
+  gc();
+  await wait();
+}
+
+function makeGarbage() {
+  new Array(100000).fill(Math.random());
 }
 
 /** finish the observer and return any straggler gc records (unlikely in practice) */
@@ -138,7 +167,6 @@ function verifyGcExposed(): void {
   );
 }
 
-
 /** correlate the node perf gc events from hooks with the function timing results */
 function analyzeGCEntries(
   gcRecords: PerformanceEntry[],
@@ -159,4 +187,8 @@ function analyzeGCEntries(
   });
   const total = inRun + before + after;
   return { inRun, before, after, total };
+}
+
+async function wait(msec = 0): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, msec));
 }
