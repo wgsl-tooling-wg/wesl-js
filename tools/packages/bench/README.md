@@ -49,8 +49,33 @@ Copies an earlier version of the tools tree to `wesl-js/_baseline`.
 
 
 ### other js engines
-```sh
-# mostly works, uses js engine from safari/ios. (no gc time collection)
-bun --expose-gc bin/bench.ts
 
-```
+  ```sh
+  # mostly works, uses js engine from safari/ios. (no gc time collection)
+  bun --expose-gc bin/bench.ts
+  ```
+
+### other operating systems
+Note that cpu counters (via @mitata/counters) only work on macos and linux
+
+## Profiling advice
+
+Start by benchmarking against the current version to verify accuracy.
+
+  ```sh
+  pnpm bench:baseline HEAD      # copy HEAD verison of wesl-js/tools to _baseline
+  sudo pnpm bench:details       # run a detailed benchmark
+  ```
+
+Aim for results accurate to <1% on the p50 lines/second metric. 
+
+* Reduce benchmark distractions by turning off extra programs on your machine.
+* Increase the benchmark time to 30 seconds or more
+ (and filter to just one benchmark of interest.)
+* Re-run benchmarks multiple times to confirm results.
+* Use baseline mode, comparing against a run from a while ago is less accurate.
+
+## Future Work
+* investigate ways to get better accuracy. 1% accuracy makes it hard to see fine grained improvements
+* run benchmarks in a node isolate / webcontainer 
+* report on jit optimizing/deoptimizing 
