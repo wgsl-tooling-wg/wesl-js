@@ -4,6 +4,7 @@ import { hideBin } from "yargs/helpers";
 import { type BenchmarkReport, reportResults } from "../src/BenchmarkReport.ts";
 import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
 import { benchManually } from "../src/experiments/BenchManually.ts";
+import * as simpleTests from "../src/experiments/SimpleTests.ts";
 import { simpleMitataBench } from "../src/experiments/VanillaMitata.ts";
 import {
   type MeasureOptions,
@@ -24,10 +25,10 @@ const baselineDir = "../../../../_baseline";
 /** load the link() function from the baseline repo  */
 async function loadBaselineLink(): Promise<typeof link | undefined> {
   const baselinePath = path.join(baselineDir, "packages/wesl/src/index.ts");
-  
+
   return import(baselinePath)
     .then(x => x.link as unknown as typeof link)
-    .catch((e) => {
+    .catch(e => {
       console.log("Failed to load baseline link", e);
       return undefined;
     });
@@ -50,7 +51,11 @@ async function main(args: string[]): Promise<void> {
   if (argv.profile) {
     argv.baseline = false; // no baseline comparison in profile mode
   }
-  await runBenchmarks(argv);
+  if (argv.simple) {
+    await runSimpleBenchmarks(argv);
+  } else {
+    await runBenchmarks(argv);
+  }
 }
 
 function parseArgs(args: string[]) {
@@ -100,6 +105,10 @@ function parseArgs(args: string[]) {
       describe:
         "run only benchmarks matching this regex or substring (case-insensitive)",
     })
+    .option("simple", {
+      type: "string",
+      describe: "benchmark a simple function, selected from SimpleTests.ts by prefix",
+    })
     .help()
     .parseSync();
 }
@@ -121,6 +130,62 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
     const { time, cpu, observeGc } = argv;
     await benchAndReport(tests, baselineLink, time, cpu, observeGc);
   }
+}
+
+/** run a simple benchmark against itself */
+async function runSimpleBenchmarks(argv: CliArgs): Promise<void> {
+  const testNamePrefix = argv.simple;
+  if (!testNamePrefix) {
+    console.error("No test name prefix provided for --simple");
+    process.exit(1);
+  }
+
+  const testEntry = Object.entries(simpleTests).find(([name]) =>
+    name.startsWith(testNamePrefix),
+  );
+
+  if (!testEntry) {
+    console.error(`No test found with prefix '${testNamePrefix}' in SimpleTests.ts`);
+    console.error(`Available tests: ${Object.keys(simpleTests).join(", ")}`);
+    process.exit(1);
+  }
+
+  const [testName, testFn] = testEntry as [
+    string,
+    (weslSrc: Record<string, string>) => number,
+  ];
+
+  const loadedTests = await loadBenchmarkFiles();
+  // combine all files into one record
+  const weslSrc = Object.fromEntries(
+    loadedTests.flatMap(t => Array.from(t.files.entries())),
+  );
+
+  const { time, cpu, observeGc } = argv;
+  const secToNs = 1e9;
+  const opts: MeasureOptions = {
+    min_cpu_time: time * secToNs,
+    cpuCounters: cpu,
+    observeGC: observeGc,
+  } as any;
+
+  console.log(`Benching simple test: ${testName}`);
+
+  const current = await mitataBench(() => testFn(weslSrc), testName, opts);
+
+  const baseline = await mitataBench(
+    () => testFn(weslSrc),
+    "--> baseline",
+    opts,
+  );
+
+  const report: BenchmarkReport = {
+    benchTest: { name: testName, mainFile: "simple", files: new Map() },
+    mainResult: current,
+    baseline: baseline,
+  };
+
+  reportResults([report]);
 }
 
 /** run the the first selected benchmark, once, without any data collection.
@@ -190,7 +255,7 @@ function filterBenchmarks(tests: BenchTest[], pattern?: string): BenchTest[] {
     regex = new RegExp(pattern, "i");
   } catch {
     // fallback to substring match if invalid regex
-    regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    regex = new RegExp(pattern.replace(/[.*+?^${}()|[[\\]/g, "\\$&"), "i");
   }
   const filtered = tests.filter(test => regex.test(test.name));
   if (filtered.length === 0) {
