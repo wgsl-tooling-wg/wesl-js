@@ -74,8 +74,9 @@ function parseArgs(args: string[]) {
         "wgsl_reflect",
         "use-gpu",
       ] as const,
-      default: "link" as const,
-      describe: "select parser variant to test",
+      default: ["link"] as const,
+      describe: "select parser variant(s) to test (can be repeated)",
+      array: true,
     })
     .option("baseline", {
       type: "boolean",
@@ -161,7 +162,7 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
     benchManually(tests, baselineLink as any);
   } else {
     const opts = createBenchmarkOptions(argv);
-    await benchAndReport(tests, opts, argv.variant, argv.baseline);
+    await benchAndReport(tests, opts, [...argv.variant], argv.baseline);
   }
 }
 
@@ -221,34 +222,37 @@ function benchOnceOnly(tests: BenchTest[]): Promise<any> {
 async function benchAndReport(
   tests: BenchTest[],
   opts: MeasureOptions,
-  variant: ParserVariant,
+  variants: ParserVariant[],
   useBaseline: boolean,
 ): Promise<void> {
-  const reports: BenchmarkReport[] = [];
-  const variantFunctions = await createVariantFunction(variant, useBaseline);
+  const allReports: BenchmarkReport[] = [];
 
-  for (const test of tests) {
-    const weslSrc = Object.fromEntries(test.files.entries());
-    const rootModuleName = test.mainFile;
+  for (const variant of variants) {
+    const variantFunctions = await createVariantFunction(variant, useBaseline);
 
-    // Use baseline from variant functions if available, otherwise use baselineLink
-    const baselineFn = variantFunctions.baseline;
+    for (const test of tests) {
+      const weslSrc = Object.fromEntries(test.files.entries());
+      const rootModuleName = test.mainFile;
 
-    // Prefix test name with variant if it's not the default
-    const testName =
-      variant === "link" ? test.name : `(${variant}) ${test.name}`;
+      // Use baseline from variant functions if available, otherwise use baselineLink
+      const baselineFn = variantFunctions.baseline;
 
-    const { current, baseline } = await runBenchmarkPair(
-      () => variantFunctions.current({ weslSrc, rootModuleName }),
-      testName,
-      opts,
-      baselineFn && (() => baselineFn({ weslSrc, rootModuleName })),
-    );
+      // Prefix test name with variant if it's not the default
+      const testName =
+        variant === "link" ? test.name : `(${variant}) ${test.name}`;
 
-    reports.push({ benchTest: test, mainResult: current, baseline });
+      const { current, baseline } = await runBenchmarkPair(
+        () => variantFunctions.current({ weslSrc, rootModuleName }),
+        testName,
+        opts,
+        baselineFn && (() => baselineFn({ weslSrc, rootModuleName })),
+      );
+
+      allReports.push({ benchTest: test, mainResult: current, baseline });
+    }
   }
 
-  reportResults(reports, { cpu: opts.cpuCounters });
+  reportResults(allReports, { cpu: opts.cpuCounters });
 }
 
 /** select which tests to run */
