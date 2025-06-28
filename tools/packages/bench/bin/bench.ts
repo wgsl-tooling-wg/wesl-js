@@ -1,5 +1,6 @@
 import path from "node:path";
 import { _linkSync, link } from "wesl";
+import { parseIntoRegistry, parsedRegistry } from "wesl";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { type BenchmarkReport, reportResults } from "../src/BenchmarkReport.ts";
@@ -35,11 +36,11 @@ async function loadBaselineLink(): Promise<typeof link | undefined> {
 }
 
 type ParserVariant =
-  | "wgsl-linker"
-  | "wesl-link"
+  | "link"
+  | "parse"
+  | "tokenize"
   | "wgsl_reflect"
-  | "use-gpu"
-  | "all"; // NYI
+  | "use-gpu";
 
 type CliArgs = ReturnType<typeof parseArgs>;
 
@@ -61,9 +62,9 @@ async function main(args: string[]): Promise<void> {
 function parseArgs(args: string[]) {
   return yargs(args)
     .option("variant", {
-      choices: ["wgsl-linker", "wgsl_reflect", "use-gpu", "wesl-link"] as const,
-      default: "wgsl-linker" as const,
-      describe: "select parser to test",
+      choices: ["link", "parse", "tokenize", "wgsl_reflect", "use-gpu"] as const,
+      default: "link" as const,
+      describe: "select parser variant to test",
     })
     .option("baseline", {
       type: "boolean",
@@ -149,7 +150,7 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
     benchManually(tests, baselineLink as any);
   } else {
     const opts = createBenchmarkOptions(argv);
-    await benchAndReport(tests, opts, baselineLink);
+    await benchAndReport(tests, opts, baselineLink, argv.variant);
   }
 }
 
@@ -210,8 +211,10 @@ async function benchAndReport(
   tests: BenchTest[],
   opts: MeasureOptions,
   baselineLink?: typeof link,
+  variant: ParserVariant = "link",
 ): Promise<void> {
   const reports: BenchmarkReport[] = [];
+  const variantFn = createVariantFunction(variant);
 
   for (const test of tests) {
     const weslSrc = Object.fromEntries(test.files.entries());
@@ -222,7 +225,7 @@ async function benchAndReport(
       : undefined;
 
     const { current, baseline } = await runBenchmarkPair(
-      () => _linkSync({ weslSrc, rootModuleName }),
+      () => variantFn({ weslSrc, rootModuleName }),
       test.name,
       opts,
       baselineFn,
@@ -232,15 +235,6 @@ async function benchAndReport(
   }
 
   reportResults(reports);
-}
-
-function _selectVariant(variant: string): ParserVariant {
-  if (
-    ["wesl-link", "wgsl-linker", "wgsl_reflect", "use-gpu"].includes(variant)
-  ) {
-    return variant as ParserVariant;
-  }
-  throw new Error("NYI parser variant: " + variant);
 }
 
 /** select which tests to run */
@@ -261,33 +255,33 @@ function filterBenchmarks(tests: BenchTest[], pattern?: string): BenchTest[] {
   return filtered;
 }
 
-// function runOnce(parserVariant: ParserVariant, test: BenchTest): void {
-//   if (parserVariant === "wgsl-linker") {
-//     for (const [_, text] of test.files) {
-//       parseWESL(text);
-//     }
-//   } else if (parserVariant === "wesl-link") {
-//     link({
-//       weslSrc: Object.fromEntries(test.files.entries()),
-//       rootModuleName: test.mainFile,
-//     });
-//   } else if (parserVariant === "wgsl_reflect") {
-//     for (const [path, text] of test.files) {
-//       wgslReflectParse(path, text);
-//     }
-//   } else if (parserVariant === "use-gpu") {
-//     for (const [path, text] of test.files) {
-//       useGpuParse(path, text);
-//     }
-//   } else {
-//     throw new Error("NYI parser variant: " + parserVariant);
-//   }
-// }
+/** create a benchmark function based on the selected variant */
+function createVariantFunction(variant: ParserVariant) {
+  switch (variant) {
+    case "link":
+      return ({ weslSrc, rootModuleName }: { weslSrc: Record<string, string>; rootModuleName: string }) =>
+        _linkSync({ weslSrc, rootModuleName });
 
-// function wgslReflectParse(_filePath: string, text: string): void {
-//   new WgslReflect(text);
-// }
+    case "parse":
+      return ({ weslSrc }: { weslSrc: Record<string, string> }) => {
+        const registry = parsedRegistry();
+        parseIntoRegistry(weslSrc, registry, "package");
+        return registry;
+      };
 
-// function useGpuParse(_filePath: string, text: string): void {
-//   WGSLLinker.loadModule(text);
-// }
+    case "tokenize":
+      // TODO: implement tokenize variant
+      throw new Error("tokenize variant not yet implemented");
+
+    case "wgsl_reflect":
+      // TODO: implement wgsl_reflect variant  
+      throw new Error("wgsl_reflect variant not yet implemented");
+
+    case "use-gpu":
+      // TODO: implement use-gpu variant
+      throw new Error("use-gpu variant not yet implemented");
+
+    default:
+      throw new Error(`Unknown variant: ${variant}`);
+  }
+}
