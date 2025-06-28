@@ -8,6 +8,7 @@ import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
 import { loadSimpleFiles, loadSimpleTest } from "../src/LoadSimpleTest.ts";
 import { benchManually } from "../src/experiments/BenchManually.ts";
 import { simpleMitataBench } from "../src/experiments/VanillaMitata.ts";
+import { WgslReflect } from "wgsl_reflect";
 import {
   type MeasureOptions,
   mitataBench,
@@ -301,8 +302,7 @@ async function createVariantFunction(
       return tokenizeFns(baselineImports);
 
     case "wgsl_reflect":
-      // TODO: implement wgsl_reflect variant
-      throw new Error("wgsl_reflect variant not yet implemented");
+      return wgslReflectFns();
 
     case "use-gpu":
       // TODO: implement use-gpu variant
@@ -356,5 +356,14 @@ function makeTokenize(streamClass: typeof WeslStream): BenchFunction {
       tokens.push(token);
     }
     return tokens;
+  };
+}
+
+function wgslReflectFns(): FnAndBaseline {
+  return {
+    current: ({ weslSrc }) => {
+      const allText = Object.values(weslSrc).join("\n");
+      return new WgslReflect(allText);
+    },
   };
 }
