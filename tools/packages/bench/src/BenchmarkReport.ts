@@ -8,7 +8,11 @@ import {
   percent,
   percentPrecision,
 } from "./table-util/Formatters.ts";
-import { type ColumnGroup, buildTable } from "./table-util/TableReport.ts";
+import {
+  Column,
+  type ColumnGroup,
+  buildTable,
+} from "./table-util/TableReport.ts";
 
 const maxNameLength = 30;
 
@@ -66,9 +70,12 @@ interface ReportRows {
 }
 
 /** log a table of benchmark results  */
-export function reportResults(reports: BenchmarkReport[]): void {
+export function reportResults(
+  reports: BenchmarkReport[],
+  options: LogOptions,
+): void {
   const { main, baseline } = reportsToRows(reports);
-  logTable(main, baseline);
+  logTable(main, options, baseline);
 }
 
 function reportsToRows(reports: BenchmarkReport[]): ReportRows {
@@ -95,12 +102,22 @@ function reportsToRows(reports: BenchmarkReport[]): ReportRows {
   };
 }
 
+export interface LogOptions {
+  cpu?: boolean; // whether to include cpu columns
+}
+
 /** write table records to the console */
 function logTable(
   mainRows: FullReportRow[],
+  options: LogOptions = {},
   baselineRows?: FullReportRow[],
 ): void {
-  const tableStr = buildTable(tableConfig(), mainRows, baselineRows, "name");
+  const tableStr = buildTable(
+    tableConfig(options?.cpu),
+    mainRows,
+    baselineRows,
+    "name",
+  );
   console.log(tableStr);
 }
 
@@ -165,7 +182,25 @@ function mostlyFullRow(stats: SelectedStats): FullReportRow {
 }
 
 /** configuration for table columns and sections */
-function tableConfig(): ColumnGroup<FullReportRow>[] {
+function tableConfig(cpu?: boolean): ColumnGroup<FullReportRow>[] {
+  const cpuGroup: ColumnGroup<FullReportRow> = {
+    groupTitle: "cpu",
+    columns: [
+      {
+        key: "cpuCacheMiss",
+        title: "L1 miss",
+        formatter: percent,
+      },
+      {
+        key: "cpuStall",
+        title: "stalls",
+        formatter: percentPrecision(2),
+      },
+    ],
+  };
+
+  const showCpuColumns = cpu ? [cpuGroup] : [];
+
   return [
     {
       columns: [{ key: "name", title: "name" }],
@@ -211,21 +246,7 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
         },
       ],
     },
-    {
-      groupTitle: "cpu",
-      columns: [
-        {
-          key: "cpuCacheMiss",
-          title: "L1 miss",
-          formatter: percent,
-        },
-        {
-          key: "cpuStall",
-          title: "stalls",
-          formatter: percentPrecision(2),
-        },
-      ],
-    },
+    ...showCpuColumns,
     {
       groupTitle: "misc",
       columns: [

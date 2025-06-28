@@ -188,7 +188,7 @@ async function runSimpleBenchmarks(argv: CliArgs): Promise<void> {
     baseline: baseline,
   };
 
-  reportResults([report]);
+  reportResults([report], { cpu: argv.cpu });
 }
 
 /** run a benchmark with current and optional baseline implementations */
@@ -248,7 +248,7 @@ async function benchAndReport(
     reports.push({ benchTest: test, mainResult: current, baseline });
   }
 
-  reportResults(reports);
+  reportResults(reports, { cpu: opts.cpuCounters });
 }
 
 /** select which tests to run */
