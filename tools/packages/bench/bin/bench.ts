@@ -335,6 +335,7 @@ function parseFns(baselineImports: any): FnAndBaseline {
   return { current, baseline };
 }
 
+/** return benchmark functions for "tokenize" variant  */
 function tokenizeFns(baselineImports: any): FnAndBaseline {
   let baseline = undefined;
   if (baselineImports?.WeslStream) {
