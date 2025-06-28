@@ -215,7 +215,7 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
           title: "L1 miss",
           formatter: percent,
         },
-        { key: "runs", title: "N", formatter: integer },
+        { key: "runs", title: "runs", formatter: integer },
       ],
     },
   ];
