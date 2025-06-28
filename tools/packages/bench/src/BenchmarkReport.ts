@@ -1,5 +1,5 @@
 import type { BenchTest } from "../bin/bench.ts";
-import type { MeasuredResults } from "./mitata-util/MitataBench.ts";
+import type { MeasuredResults } from "./mitata-util/MitataStats.ts";
 import { mapValues } from "./mitata-util/Util.ts";
 import {
   diffPercentNegative,
