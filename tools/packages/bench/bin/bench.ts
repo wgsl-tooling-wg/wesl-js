@@ -113,6 +113,34 @@ function parseArgs(args: string[]) {
     .parseSync();
 }
 
+/** create benchmark options from CLI arguments */
+function createBenchmarkOptions(argv: CliArgs): MeasureOptions {
+  const { time, cpu, observeGc } = argv;
+  const secToNs = 1e9;
+  return {
+    min_cpu_time: time * secToNs,
+    cpuCounters: cpu,
+    observeGC: observeGc,
+  } as any;
+}
+
+/** run a benchmark with current and optional baseline implementations */
+async function runBenchmarkPair(
+  currentFn: () => any,
+  testName: string,
+  opts: MeasureOptions,
+  baselineFn?: () => any,
+): Promise<{ current: any; baseline?: any }> {
+  const current = await mitataBench(currentFn, testName, opts);
+  
+  let baseline = undefined;
+  if (baselineFn) {
+    baseline = await mitataBench(baselineFn, "--> baseline", opts);
+  }
+  
+  return { current, baseline };
+}
+
 /** run the selected benchmark variants */
 async function runBenchmarks(argv: CliArgs): Promise<void> {
   const loadedTests = await loadBenchmarkFiles();
@@ -127,8 +155,8 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   } else if (argv.manual) {
     benchManually(tests, baselineLink as any);
   } else {
-    const { time, cpu, observeGc } = argv;
-    await benchAndReport(tests, baselineLink, time, cpu, observeGc);
+    const opts = createBenchmarkOptions(argv);
+    await benchAndReport(tests, opts, baselineLink);
   }
 }
 
@@ -161,22 +189,15 @@ async function runSimpleBenchmarks(argv: CliArgs): Promise<void> {
     loadedTests.flatMap(t => Array.from(t.files.entries())),
   );
 
-  const { time, cpu, observeGc } = argv;
-  const secToNs = 1e9;
-  const opts: MeasureOptions = {
-    min_cpu_time: time * secToNs,
-    cpuCounters: cpu,
-    observeGC: observeGc,
-  } as any;
+  const opts = createBenchmarkOptions(argv);
 
   console.log(`Benching simple test: ${testName}`);
 
-  const current = await mitataBench(() => testFn(weslSrc), testName, opts);
-
-  const baseline = await mitataBench(
+  const { current, baseline } = await runBenchmarkPair(
     () => testFn(weslSrc),
-    "--> baseline",
+    testName,
     opts,
+    () => testFn(weslSrc), // baseline uses same function for simple tests
   );
 
   const report: BenchmarkReport = {
@@ -200,39 +221,27 @@ function benchOnceOnly(tests: BenchTest[]): Promise<any> {
 /** run the tests and report results */
 async function benchAndReport(
   tests: BenchTest[],
+  opts: MeasureOptions,
   baselineLink?: typeof link,
-  benchTimeSeconds = 0.5,
-  cpuCounters = false,
-  observeGc = true,
 ): Promise<void> {
   const reports: BenchmarkReport[] = [];
 
-  const secToNs = 1e9;
-  const opts: MeasureOptions = {
-    // inner_gc: true,
-    min_cpu_time: benchTimeSeconds * secToNs,
-    cpuCounters,
-    observeGC: observeGc,
-  } as any;
   for (const test of tests) {
     const weslSrc = Object.fromEntries(test.files.entries());
     const rootModuleName = test.mainFile;
 
-    const current = await mitataBench(
+    const baselineFn = baselineLink 
+      ? () => baselineLink({ weslSrc, rootModuleName })
+      : undefined;
+
+    const { current, baseline } = await runBenchmarkPair(
       () => _linkSync({ weslSrc, rootModuleName }),
       test.name,
       opts,
+      baselineFn,
     );
 
-    let old = undefined;
-    if (baselineLink)
-      old = await mitataBench(
-        () => baselineLink({ weslSrc, rootModuleName }),
-        "--> baseline",
-        opts,
-      );
-
-    reports.push({ benchTest: test, mainResult: current, baseline: old });
+    reports.push({ benchTest: test, mainResult: current, baseline });
   }
 
   reportResults(reports);
