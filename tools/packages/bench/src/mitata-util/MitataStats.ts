@@ -52,6 +52,9 @@ export interface MeasuredResults {
   /** L1 cache miss rate  */
   cpuCacheMiss?: number;
 
+  /** CPU stall rate (on macos) */
+  cpuStall?: number;
+
   /** milliseconds spent in garbage collection as measured by node's performance hooks 
    * These collection times measure the 'stop the world' time that blocks the main
    * javascript thread. 
@@ -93,6 +96,7 @@ export function mitataStats(
   const gcTime = gc && mapValues(gc, x => x / 1e6);
   const heapSize = heap && mapValues(heap, x => x / 1024);
   const cpuCacheMiss = cacheMissRate(cpu as CpuCounts | undefined);
+  const cpuStall = cpuStallRate(cpu as CpuCounts | undefined);
   return {
     name,
     time,
@@ -101,6 +105,7 @@ export function mitataStats(
     heapSize,
     cpu,
     cpuCacheMiss,
+    cpuStall,
     nodeGcTime,
   };
 }
@@ -122,4 +127,12 @@ function cacheMissRate(cpu?: CpuCounts): number | undefined {
     return cpu.cache.misses.avg / cpu.cache.avg;
   }
   return undefined;
+}
+
+function cpuStallRate(cpu?: CpuCounts): number | undefined {
+  const stalls = cpu?.cycles?.stalls?.avg;
+  const cycles = cpu?.cycles?.avg;
+  if (stalls === undefined || !cycles) return undefined;
+
+  return stalls / cycles;
 }

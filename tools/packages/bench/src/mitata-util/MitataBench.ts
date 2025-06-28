@@ -1,5 +1,4 @@
 import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
-import type { CpuCounts } from "@mitata/counters";
 import type * as mitataCountersType from "@mitata/counters";
 import { measure } from "mitata";
 import {
