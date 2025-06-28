@@ -2,7 +2,7 @@
 /** simple benchmark functions for calibrating bencharmking */
 
 /** runs a loop without memory allocation */
-export function tightLoop(weslSrc: Record<string, string>): number {
+export function loopTightly(weslSrc: Record<string, string>): number {
   let sum = 0;
   for (const [_, text] of Object.entries(weslSrc)) {
     for (const c of text) {
