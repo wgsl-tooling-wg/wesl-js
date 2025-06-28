@@ -107,7 +107,8 @@ function parseArgs(args: string[]) {
     })
     .option("simple", {
       type: "string",
-      describe: "benchmark a simple function, selected from SimpleTests.ts by prefix",
+      describe:
+        "benchmark a simple function, selected from SimpleTests.ts by prefix",
     })
     .help()
     .parseSync();
@@ -132,12 +133,12 @@ async function runBenchmarkPair(
   baselineFn?: () => any,
 ): Promise<{ current: any; baseline?: any }> {
   const current = await mitataBench(currentFn, testName, opts);
-  
+
   let baseline = undefined;
   if (baselineFn) {
     baseline = await mitataBench(baselineFn, "--> baseline", opts);
   }
-  
+
   return { current, baseline };
 }
 
@@ -162,51 +163,63 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
 
 /** run a simple benchmark against itself */
 async function runSimpleBenchmarks(argv: CliArgs): Promise<void> {
-  const testNamePrefix = argv.simple;
-  if (!testNamePrefix) {
-    console.error("No test name prefix provided for --simple");
-    process.exit(1);
-  }
-
-  const testEntry = Object.entries(simpleTests).find(([name]) =>
-    name.startsWith(testNamePrefix),
-  );
-
-  if (!testEntry) {
-    console.error(`No test found with prefix '${testNamePrefix}' in SimpleTests.ts`);
-    console.error(`Available tests: ${Object.keys(simpleTests).join(", ")}`);
-    process.exit(1);
-  }
-
-  const [testName, testFn] = testEntry as [
-    string,
-    (weslSrc: Record<string, string>) => number,
-  ];
-
-  const loadedTests = await loadBenchmarkFiles();
-  // combine all files into one record
-  const weslSrc = Object.fromEntries(
-    loadedTests.flatMap(t => Array.from(t.files.entries())),
-  );
-
+  const { fn, name } = loadSimpleTest(argv.simple);
   const opts = createBenchmarkOptions(argv);
 
-  console.log(`Benching simple test: ${testName}`);
+  const weslSrc = await loadSimpleFiles();
+  console.log(`Benching simple test: ${name}`);
 
   const { current, baseline } = await runBenchmarkPair(
-    () => testFn(weslSrc),
-    testName,
+    () => fn(weslSrc),
+    name,
     opts,
-    () => testFn(weslSrc), // baseline uses same function for simple tests
+    () => fn(weslSrc),
   );
 
+  const files = new Map(Object.entries(weslSrc));
+  const benchTest: BenchTest = { name, mainFile: "N/A", files };
   const report: BenchmarkReport = {
-    benchTest: { name: testName, mainFile: "simple", files: new Map() },
+    benchTest,
     mainResult: current,
     baseline: baseline,
   };
 
   reportResults([report]);
+}
+
+interface SimpleTest {
+  fn: (weslSrc: Record<string, string>) => any;
+  name: string;
+}
+
+function loadSimpleTest(simpleSelect: string | undefined): SimpleTest {
+  if (!simpleSelect) {
+    console.error("No test name prefix provided for --simple");
+    process.exit(1);
+  }
+
+  const testEntry = Object.entries(simpleTests).find(([name]) =>
+    name.startsWith(simpleSelect),
+  );
+
+  if (!testEntry) {
+    console.error(
+      `No test found with prefix '${simpleSelect}' in SimpleTests.ts`,
+    );
+    console.error(`Available tests: ${Object.keys(simpleTests).join(", ")}`);
+    process.exit(1);
+  }
+  const [name, fn] = testEntry;
+  return { name, fn };
+}
+
+async function loadSimpleFiles(): Promise<Record<string, string>> {
+  const loadedTests = await loadBenchmarkFiles();
+  // combine all files into one record
+  const weslSrc = Object.fromEntries(
+    loadedTests.flatMap(t => Array.from(t.files.entries())),
+  );
+  return weslSrc;
 }
 
 /** run the the first selected benchmark, once, without any data collection.
@@ -230,7 +243,7 @@ async function benchAndReport(
     const weslSrc = Object.fromEntries(test.files.entries());
     const rootModuleName = test.mainFile;
 
-    const baselineFn = baselineLink 
+    const baselineFn = baselineLink
       ? () => baselineLink({ weslSrc, rootModuleName })
       : undefined;
 
