@@ -79,6 +79,9 @@ function coloredPercent(
   positiveIsGreen = true,
 ): string {
   const fraction = numerator / denominator;
+  if (Number.isNaN(fraction) || !Number.isFinite(fraction)) {
+    return " ";
+  }
   const positive = fraction >= 0;
   const sign = positive ? "+" : "-";
   const percentStr = `${sign}${percent(fraction)}`;
