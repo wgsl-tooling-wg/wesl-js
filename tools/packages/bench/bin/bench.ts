@@ -238,9 +238,13 @@ async function benchAndReport(
         ? () => baselineLink({ weslSrc, rootModuleName })
         : undefined;
 
+    // Prefix test name with variant if it's not the default
+    const testName =
+      variant === "link" ? test.name : `(${variant}) ${test.name}`;
+
     const { current, baseline } = await runBenchmarkPair(
       () => variantFunctions.current({ weslSrc, rootModuleName }),
-      test.name,
+      testName,
       opts,
       baselineFn,
     );
