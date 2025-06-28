@@ -260,7 +260,7 @@ function createVariantFunction(variant: ParserVariant) {
   switch (variant) {
     case "link":
       return ({ weslSrc, rootModuleName }: { weslSrc: Record<string, string>; rootModuleName: string }) =>
-        _linkSync({ weslSrc, rootModuleName });
+        link({ weslSrc, rootModuleName });
 
     case "parse":
       return ({ weslSrc }: { weslSrc: Record<string, string> }) => {
