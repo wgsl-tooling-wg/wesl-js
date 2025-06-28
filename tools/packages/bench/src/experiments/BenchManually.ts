@@ -60,13 +60,3 @@ function medianTime(times: bigint[]): number {
   const mid = Math.floor(sorted.length / 2);
   return Number(sorted[mid]) / 1e6;
 }
-
-function _simpleTest(weslSrc: Record<string, string>): number {
-  let sum = 0;
-  for (const [_, text] of Object.entries(weslSrc)) {
-    for (const c of text) {
-      sum += c.charCodeAt(0);
-    }
-  }
-  return sum;
-}
