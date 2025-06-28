@@ -73,6 +73,7 @@ export interface NodeGCTime {
   before: number;
   after: number;
   total: number;
+  collects: number;
 }
 
 /** convert stats to standard form, milliseconds and kilobytes */

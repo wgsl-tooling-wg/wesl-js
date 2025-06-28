@@ -174,6 +174,7 @@ function analyzeGCEntries(
   let inRun = 0;
   let before = 0;
   let after = 0;
+  let collects = 0;
   gcRecords.forEach(record => {
     const { duration, startTime } = record;
     if (startTime < start) before += duration;
@@ -181,10 +182,11 @@ function analyzeGCEntries(
       after += duration;
     } else {
       inRun += duration;
+      collects++;
     }
   });
   const total = inRun + before + after;
-  return { inRun, before, after, total };
+  return { inRun, before, after, total, collects };
 }
 
 async function wait(msec = 0): Promise<void> {

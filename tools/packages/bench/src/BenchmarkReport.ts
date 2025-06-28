@@ -28,6 +28,7 @@ interface SelectedStats {
   runs: number;
   cpuCacheMiss?: number;
   heap?: number;
+  gcCollects?: number;
 }
 
 /** benchmark data to report in each row */
@@ -44,6 +45,7 @@ interface ReportRow {
   cpuCacheMiss?: number;
   heap?: number;
   runs?: number;
+  gcCollects?: number;
 }
 
 /** Helper type for records with nullable values */
@@ -133,6 +135,7 @@ function selectedStats(
     runs: result.samples.length,
     heap: result.heapSize?.avg,
     cpuCacheMiss: result.cpuCacheMiss,
+    gcCollects: result.nodeGcTime?.collects,
     name: result.name.slice(0, maxNameLength),
   };
 }
@@ -148,6 +151,7 @@ function mostlyFullRow(stats: SelectedStats): FullReportRow {
     runs: stats.runs,
     cpuCacheMiss: stats.cpuCacheMiss ?? null,
     heap: stats.heap ?? null,
+    gcCollects: stats.gcCollects ?? null,
     locSecMaxPercent: null,
     locSecP50Percent: null,
     gcTimePercent: null,
@@ -215,6 +219,7 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
           title: "L1 miss",
           formatter: percent,
         },
+        { key: "gcCollects", title: "collects", formatter: integer },
         { key: "runs", title: "runs", formatter: integer },
       ],
     },
