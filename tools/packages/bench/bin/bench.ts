@@ -1,5 +1,5 @@
 import path from "node:path";
-import { _linkSync, link } from "wesl";
+import { _linkSync, link, WeslStream } from "wesl";
 import { parseIntoRegistry, parsedRegistry } from "wesl";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
@@ -298,8 +298,7 @@ async function createVariantFunction(
       return parseFns(baselineImports);
 
     case "tokenize":
-      // TODO: implement tokenize variant
-      throw new Error("tokenize variant not yet implemented");
+      return tokenizeFns(baselineImports);
 
     case "wgsl_reflect":
       // TODO: implement wgsl_reflect variant
@@ -316,6 +315,12 @@ async function createVariantFunction(
 
 /** return benchmark functions for "parse" variant  */
 function parseFns(baselineImports: any): FnAndBaseline {
+  function current(args: { weslSrc: Record<string, string> }): any {
+    const registry = parsedRegistry();
+    parseIntoRegistry(args.weslSrc, registry, "package");
+    return registry;
+  }
+
   const basedParseIntoRegistry = baselineImports?.parseIntoRegistry;
   const basedParsedRegistry = baselineImports?.parsedRegistry;
   let baseline: BenchFunction | undefined = undefined;
@@ -327,12 +332,36 @@ function parseFns(baselineImports: any): FnAndBaseline {
     };
   }
 
-  return {
-    current: ({ weslSrc }) => {
-      const registry = parsedRegistry();
-      parseIntoRegistry(weslSrc, registry, "package");
-      return registry;
-    },
-    baseline,
-  };
+  return { current, baseline };
+}
+
+function tokenizeFns(baselineImports: any): FnAndBaseline {
+  function current(args: { weslSrc: Record<string, string> }): any {
+    const allText = Object.values(args.weslSrc).join("\n");
+    const stream = new WeslStream(allText);
+    const tokens = [];
+    while (true) {
+      const token = stream.nextToken();
+      if (token === null) break;
+      tokens.push(token);
+    }
+    return tokens;
+  }
+
+  let baseline: BenchFunction | undefined = undefined;
+  if (baselineImports?.WeslStream) {
+    baseline = ({ weslSrc }) => {
+      const allText = Object.values(weslSrc).join("\n");
+      const stream = new baselineImports.WeslStream(allText);
+      const tokens = [];
+      while (true) {
+        const token = stream.nextToken();
+        if (token === null) break;
+        tokens.push(token);
+      }
+      return tokens;
+    };
+  }
+
+  return { current, baseline };
 }
