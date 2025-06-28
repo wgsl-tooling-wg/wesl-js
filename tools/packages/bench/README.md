@@ -67,15 +67,18 @@ Start by benchmarking against the current version to verify accuracy.
   sudo pnpm bench:details       # run a detailed benchmark
   ```
 
-Aim for results accurate to <1% on the p50 lines/second metric. 
+Aim for results stable to <1% on the p50 lines/second metric. 
 
 * Reduce benchmark distractions by turning off extra programs on your machine.
-* Increase the benchmark time to 30 seconds or more
+* Increase the benchmark time to 5 or 30 seconds or more
  (and filter to just one benchmark of interest.)
 * Re-run benchmarks multiple times to confirm results.
-* Use baseline mode, comparing against a run from a while ago is less accurate.
+* Use baseline mode (comparing against a run from a while ago is less accurate).
 
 ## Future Work
 * investigate ways to get better accuracy. 1% accuracy makes it hard to see fine grained improvements
 * run benchmarks in a node isolate / webcontainer 
 * report on jit optimizing/deoptimizing 
+* sometimes --mitata is more accurate, investigate. (it does more warmup, and its run loop is
+perhaps less vulnerable to jit/de-jit)
+* run in CI?
