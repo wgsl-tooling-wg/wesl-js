@@ -4,13 +4,13 @@ import { hideBin } from "yargs/helpers";
 import { type BenchmarkReport, reportResults } from "../src/BenchmarkReport.ts";
 import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
 import { benchManually } from "../src/experiments/BenchManually.ts";
-import * as simpleTests from "../src/experiments/SimpleTests.ts";
 import { simpleMitataBench } from "../src/experiments/VanillaMitata.ts";
 import {
   type MeasureOptions,
   mitataBench,
 } from "../src/mitata-util/MitataBench.ts";
 import path from "node:path";
+import { loadSimpleFiles, loadSimpleTest } from "../src/LoadSimpleTest.ts";
 
 export interface BenchTest {
   name: string;
@@ -80,10 +80,15 @@ function parseArgs(args: string[]) {
       default: false,
       describe: "enable CPU counter measurements (requires root)",
     })
+    .option("collect", {
+      type: "boolean",
+      default: false,
+      describe: "force a garbage collection after each test",
+    })
     .option("observe-gc", {
       type: "boolean",
       default: true,
-      describe: "enable garbage collection observation via perf_hooks",
+      describe: "observe garbage collection via perf_hooks",
     })
     .option("profile", {
       type: "boolean",
@@ -124,23 +129,6 @@ function createBenchmarkOptions(argv: CliArgs): MeasureOptions {
     cpuCounters: cpu,
     observeGC: observeGc,
   } as any;
-}
-
-/** run a benchmark with current and optional baseline implementations */
-async function runBenchmarkPair(
-  currentFn: () => any,
-  testName: string,
-  opts: MeasureOptions,
-  baselineFn?: () => any,
-): Promise<{ current: any; baseline?: any }> {
-  const current = await mitataBench(currentFn, testName, opts);
-
-  let baseline = undefined;
-  if (baselineFn) {
-    baseline = await mitataBench(baselineFn, "--> baseline", opts);
-  }
-
-  return { current, baseline };
 }
 
 /** run the selected benchmark variants */
@@ -188,39 +176,21 @@ async function runSimpleBenchmarks(argv: CliArgs): Promise<void> {
   reportResults([report]);
 }
 
-interface SimpleTest {
-  fn: (weslSrc: Record<string, string>) => any;
-  name: string;
-}
+/** run a benchmark with current and optional baseline implementations */
+async function runBenchmarkPair(
+  currentFn: () => any,
+  testName: string,
+  opts: MeasureOptions,
+  baselineFn?: () => any,
+): Promise<{ current: any; baseline?: any }> {
+  const current = await mitataBench(currentFn, testName, opts);
 
-function loadSimpleTest(simpleSelect: string | undefined): SimpleTest {
-  if (!simpleSelect) {
-    console.error("No test name prefix provided for --simple");
-    process.exit(1);
+  let baseline = undefined;
+  if (baselineFn) {
+    baseline = await mitataBench(baselineFn, "--> baseline", opts);
   }
 
-  const testEntry = Object.entries(simpleTests).find(([name]) =>
-    name.startsWith(simpleSelect),
-  );
-
-  if (!testEntry) {
-    console.error(
-      `No test found with prefix '${simpleSelect}' in SimpleTests.ts`,
-    );
-    console.error(`Available tests: ${Object.keys(simpleTests).join(", ")}`);
-    process.exit(1);
-  }
-  const [name, fn] = testEntry;
-  return { name, fn };
-}
-
-async function loadSimpleFiles(): Promise<Record<string, string>> {
-  const loadedTests = await loadBenchmarkFiles();
-  // combine all files into one record
-  const weslSrc = Object.fromEntries(
-    loadedTests.flatMap(t => Array.from(t.files.entries())),
-  );
-  return weslSrc;
+  return { current, baseline };
 }
 
 /** run the the first selected benchmark, once, without any data collection.
