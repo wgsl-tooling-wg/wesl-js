@@ -10,10 +10,11 @@ export function simpleMitataBench(
     const weslSrc = Object.fromEntries(test.files.entries());
     const rootModuleName = test.mainFile;
 
+    // no way to pass options to mitata.bench, unfortunately
+    mitata.bench(test.name, () => _linkSync({ weslSrc, rootModuleName }));
     mitata.bench("--> baseline " + test.name, () =>
       baselineLink({ weslSrc, rootModuleName }),
     );
-    mitata.bench(test.name, () => _linkSync({ weslSrc, rootModuleName }));
   }
   mitata.run();
 }
