@@ -173,14 +173,10 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
     {
       groupTitle: "lines / sec",
       columns: [
-        { key: "locSecMax", title: "max", formatter: integer },
-        {
-          key: "locSecMaxPercent",
-          title: "Δ%",
-          diffKey: "locSecMax",
-        },
         { key: "locSecP50", title: "p50", formatter: integer },
         { key: "locSecP50Percent", title: "Δ%", diffKey: "locSecP50" },
+        { key: "locSecMax", title: "max", formatter: integer },
+        { key: "locSecMaxPercent", title: "Δ%", diffKey: "locSecMax" },
       ],
     },
     {
@@ -216,9 +212,8 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
       ],
     },
     {
-      groupTitle: "misc",
+      groupTitle: "cpu",
       columns: [
-        { key: "heap", title: "heap kb", formatter: integer },
         {
           key: "cpuCacheMiss",
           title: "L1 miss",
@@ -229,6 +224,12 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
           title: "stalls",
           formatter: percentPrecision(2),
         },
+      ],
+    },
+    {
+      groupTitle: "misc",
+      columns: [
+        { key: "heap", title: "heap kb", formatter: integer },
         { key: "gcCollects", title: "collects", formatter: integer },
         { key: "runs", title: "runs", formatter: integer },
       ],
