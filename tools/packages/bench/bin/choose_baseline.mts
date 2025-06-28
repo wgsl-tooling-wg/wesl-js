@@ -1,7 +1,7 @@
 #! /usr/bin/env -S node --disable-warning=ExperimentalWarning
 
 import { execSync } from "node:child_process";
-import { existsSync, rmSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
 
 /**

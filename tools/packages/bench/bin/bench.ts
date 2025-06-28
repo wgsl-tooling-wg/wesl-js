@@ -1,16 +1,16 @@
+import path from "node:path";
 import { _linkSync, link } from "wesl";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { type BenchmarkReport, reportResults } from "../src/BenchmarkReport.ts";
 import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
+import { loadSimpleFiles, loadSimpleTest } from "../src/LoadSimpleTest.ts";
 import { benchManually } from "../src/experiments/BenchManually.ts";
 import { simpleMitataBench } from "../src/experiments/VanillaMitata.ts";
 import {
   type MeasureOptions,
   mitataBench,
 } from "../src/mitata-util/MitataBench.ts";
-import path from "node:path";
-import { loadSimpleFiles, loadSimpleTest } from "../src/LoadSimpleTest.ts";
 
 export interface BenchTest {
   name: string;

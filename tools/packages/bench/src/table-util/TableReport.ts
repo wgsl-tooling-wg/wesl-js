@@ -204,7 +204,7 @@ function sectionSpanning<T>(groups: ColumnGroup<T>[]): SpanningCellConfig[] {
   const row = 0;
   const alignment: Alignment = "center";
 
-  const spans = groups.map((g) => {
+  const spans = groups.map(g => {
     const colSpan = g.columns.length;
     const cellConfig = { row, col, colSpan, alignment };
     col += colSpan;

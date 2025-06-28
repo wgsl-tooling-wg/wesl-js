@@ -1,4 +1,3 @@
-
 /** simple benchmark functions for calibrating bencharmking */
 
 /** runs a loop without memory allocation */

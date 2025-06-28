@@ -1,6 +1,5 @@
-import * as simpleTests from "../src/experiments/SimpleTests.ts";
 import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
-
+import * as simpleTests from "../src/experiments/SimpleTests.ts";
 
 export interface SimpleTest {
   fn: (weslSrc: Record<string, string>) => any;

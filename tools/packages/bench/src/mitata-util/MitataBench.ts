@@ -3,9 +3,9 @@ import type { CpuCounts } from "@mitata/counters";
 import type * as mitataCountersType from "@mitata/counters";
 import { measure } from "mitata";
 import {
-  mitataStats,
   type MeasuredResults,
   type NodeGCTime,
+  mitataStats,
 } from "./MitataStats.ts";
 
 export type MeasureResult = Awaited<ReturnType<typeof measure>>;
