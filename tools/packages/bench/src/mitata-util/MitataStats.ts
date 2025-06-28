@@ -1,8 +1,6 @@
-
-import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
 import type { CpuCounts } from "@mitata/counters";
-import { mapValues } from "./Util.ts";
 import type { MeasureResult } from "./MitataBench.ts";
+import { mapValues } from "./Util.ts";
 
 /** Mitata benchmark results: times in milliseconds, sizes in kilobytes */
 export interface MeasuredResults {
