@@ -95,7 +95,7 @@ async function measureWithObserveGC(
   obs.observe({ entryTypes: ["gc"] });
 
   /** allocate what we can in advance, and run a gc() so that our collection metrics are as pristine as possible */
-  clearGarbage(wrappedFn);
+  await clearGarbage(wrappedFn);
   benchStart = 0;
   benchEnd = 0;
   numGC = 0;
