@@ -73,6 +73,7 @@ function parseArgs(args: string[]) {
     .option("time", {
       type: "number",
       default: 0.642,
+      requiresArg: true,
       describe: "benchmark test duration in seconds",
     })
     .option("cpu", {
@@ -107,6 +108,7 @@ function parseArgs(args: string[]) {
     })
     .option("filter", {
       type: "string",
+      requiresArg: true,
       describe:
         "run only benchmarks matching this regex or substring (case-insensitive)",
     })
