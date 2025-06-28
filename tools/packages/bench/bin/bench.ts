@@ -35,12 +35,17 @@ async function loadBaselineLink(): Promise<typeof link | undefined> {
     });
 }
 
-type ParserVariant =
-  | "link"
-  | "parse"
-  | "tokenize"
-  | "wgsl_reflect"
-  | "use-gpu";
+type ParserVariant = "link" | "parse" | "tokenize" | "wgsl_reflect" | "use-gpu";
+
+type BenchFunction = (params: {
+  weslSrc: Record<string, string>;
+  rootModuleName: string;
+}) => any;
+
+type FnAndBaseline = {
+  current: BenchFunction;
+  baseline?: BenchFunction;
+};
 
 type CliArgs = ReturnType<typeof parseArgs>;
 
@@ -62,7 +67,13 @@ async function main(args: string[]): Promise<void> {
 function parseArgs(args: string[]) {
   return yargs(args)
     .option("variant", {
-      choices: ["link", "parse", "tokenize", "wgsl_reflect", "use-gpu"] as const,
+      choices: [
+        "link",
+        "parse",
+        "tokenize",
+        "wgsl_reflect",
+        "use-gpu",
+      ] as const,
       default: "link" as const,
       describe: "select parser variant to test",
     })
@@ -214,18 +225,21 @@ async function benchAndReport(
   variant: ParserVariant = "link",
 ): Promise<void> {
   const reports: BenchmarkReport[] = [];
-  const variantFn = createVariantFunction(variant);
+  const variantFunctions = await createVariantFunction(variant);
 
   for (const test of tests) {
     const weslSrc = Object.fromEntries(test.files.entries());
     const rootModuleName = test.mainFile;
 
-    const baselineFn = baselineLink
-      ? () => baselineLink({ weslSrc, rootModuleName })
-      : undefined;
+    // Use baseline from variant functions if available, otherwise use baselineLink
+    const baselineFn = variantFunctions.baseline
+      ? () => variantFunctions.baseline!({ weslSrc, rootModuleName })
+      : baselineLink
+        ? () => baselineLink({ weslSrc, rootModuleName })
+        : undefined;
 
     const { current, baseline } = await runBenchmarkPair(
-      () => variantFn({ weslSrc, rootModuleName }),
+      () => variantFunctions.current({ weslSrc, rootModuleName }),
       test.name,
       opts,
       baselineFn,
@@ -255,26 +269,34 @@ function filterBenchmarks(tests: BenchTest[], pattern?: string): BenchTest[] {
   return filtered;
 }
 
-/** create a benchmark function based on the selected variant */
-function createVariantFunction(variant: ParserVariant) {
+/** create benchmark functions based on the selected variant */
+async function createVariantFunction(
+  variant: ParserVariant,
+): Promise<FnAndBaseline> {
+  let baselineImports: any;
+
+  // Try to load baseline functions
+  try {
+    const baselinePath = path.join(baselineDir, "packages/wesl/src/index.ts");
+    baselineImports = await import(baselinePath);
+  } catch (e) {
+    console.log("Failed to load baseline functions for variant", variant, e);
+    baselineImports = null;
+  }
+
   switch (variant) {
     case "link":
-      return ({ weslSrc, rootModuleName }: { weslSrc: Record<string, string>; rootModuleName: string }) =>
-        link({ weslSrc, rootModuleName });
+      return { current: link, baseline: baselineImports?.link };
 
     case "parse":
-      return ({ weslSrc }: { weslSrc: Record<string, string> }) => {
-        const registry = parsedRegistry();
-        parseIntoRegistry(weslSrc, registry, "package");
-        return registry;
-      };
+      return parseFns(baselineImports);
 
     case "tokenize":
       // TODO: implement tokenize variant
       throw new Error("tokenize variant not yet implemented");
 
     case "wgsl_reflect":
-      // TODO: implement wgsl_reflect variant  
+      // TODO: implement wgsl_reflect variant
       throw new Error("wgsl_reflect variant not yet implemented");
 
     case "use-gpu":
@@ -284,4 +306,27 @@ function createVariantFunction(variant: ParserVariant) {
     default:
       throw new Error(`Unknown variant: ${variant}`);
   }
+}
+
+/** return benchmark functions for "parse" variant  */
+function parseFns(baselineImports: any): FnAndBaseline {
+  const basedParseIntoRegistry = baselineImports?.parseIntoRegistry;
+  const basedParsedRegistry = baselineImports?.parsedRegistry;
+  let baseline: BenchFunction | undefined = undefined;
+  if (basedParseIntoRegistry && basedParsedRegistry) {
+    baseline = ({ weslSrc }) => {
+      const registry = basedParsedRegistry();
+      basedParseIntoRegistry(weslSrc, registry, "package");
+      return registry;
+    };
+  }
+
+  return {
+    current: ({ weslSrc }) => {
+      const registry = parsedRegistry();
+      parseIntoRegistry(weslSrc, registry, "package");
+      return registry;
+    },
+    baseline,
+  };
 }
