@@ -124,12 +124,13 @@ function parseArgs(args: string[]) {
 
 /** create benchmark options from CLI arguments */
 function createBenchmarkOptions(argv: CliArgs): MeasureOptions {
-  const { time, cpu, observeGc } = argv;
+  const { time, cpu, observeGc, collect } = argv;
   const secToNs = 1e9;
   return {
     min_cpu_time: time * secToNs,
     cpuCounters: cpu,
     observeGC: observeGc,
+    inner_gc: collect,
   } as any;
 }
 

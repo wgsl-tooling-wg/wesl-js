@@ -15,7 +15,8 @@ to track garbage collection time during the benchmark run.
 **`mitataBench()`** exposes useful configuration options like `min_cpu_time`.  
   - some more configuration options are available internally in `mitata`,
     but they're hard to use externally because of the undocumented setup required
-    for garbage collection and cpu counters.
+    for garbage collection and cpu counters on `mitata.measure()`
+    and the lack of configurability in `mitata.bench()`.
 
 **cpu counters on demand** - 
 **`mitataBench()`** loads @mitata/counters on demand rather than statically.
