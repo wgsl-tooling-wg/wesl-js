@@ -336,9 +336,18 @@ function parseFns(baselineImports: any): FnAndBaseline {
 }
 
 function tokenizeFns(baselineImports: any): FnAndBaseline {
-  function current(args: { weslSrc: Record<string, string> }): any {
-    const allText = Object.values(args.weslSrc).join("\n");
-    const stream = new WeslStream(allText);
+  let baseline = undefined;
+  if (baselineImports?.WeslStream) {
+    baseline = makeTokenize(baselineImports.WeslStream);
+  }
+
+  return { current: makeTokenize(WeslStream), baseline };
+}
+
+function makeTokenize(streamClass: typeof WeslStream): BenchFunction {
+  return ({ weslSrc }) => {
+    const allText = Object.values(weslSrc).join("\n");
+    const stream = new streamClass(allText);
     const tokens = [];
     while (true) {
       const token = stream.nextToken();
@@ -346,22 +355,5 @@ function tokenizeFns(baselineImports: any): FnAndBaseline {
       tokens.push(token);
     }
     return tokens;
-  }
-
-  let baseline: BenchFunction | undefined = undefined;
-  if (baselineImports?.WeslStream) {
-    baseline = ({ weslSrc }) => {
-      const allText = Object.values(weslSrc).join("\n");
-      const stream = new baselineImports.WeslStream(allText);
-      const tokens = [];
-      while (true) {
-        const token = stream.nextToken();
-        if (token === null) break;
-        tokens.push(token);
-      }
-      return tokens;
-    };
-  }
-
-  return { current, baseline };
+  };
 }
