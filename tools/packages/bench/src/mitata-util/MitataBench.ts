@@ -98,7 +98,8 @@ async function measureWithObserveGC(
   obs.observe({ entryTypes: ["gc"] });
 
   /** allocate what we can in advance, and run a gc() so that our collection metrics are as pristine as possible */
-  await clearGarbage(wrappedFn);
+  wrappedFn();
+  await clearGarbage();
   benchStart = 0;
   benchEnd = 0;
   numGC = 0;
@@ -113,13 +114,12 @@ async function measureWithObserveGC(
 }
 
 /** allocate what we can in advance, and run a gc() so that our collection metrics are as pristine as possible */
-async function clearGarbage(fn: () => any): Promise<void> {
+async function clearGarbage(): Promise<void> {
   const gc = gcFunction();
 
-  fn();
   // mysteriously, calling gc() multiple times with a wait in between seems to help on v8
   gc();
-  await wait(900); // mysteriously, 800 is not enough. try pnpm bench --simple someAllocation and look at heap kb
+  await wait(1000); // mysteriously, 800 is not enough. try pnpm bench --simple someAllocation and look at heap kb
   gc();
   await wait();
 }
