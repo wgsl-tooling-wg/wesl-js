@@ -7,6 +7,11 @@ pnpm bench
 ```
 
 ### Variations
+- See options:
+  ```sh
+  pnpm bench --help
+  ```
+
 - Include metrics from the internal cpu counter (requires root):
   ```sh
   pnpm bench:details
@@ -45,9 +50,7 @@ Copies an earlier version of the tools tree to `wesl-js/_baseline`.
 
 ### other js engines
 ```sh
-# works?
+# mostly works, uses js engine from safari/ios. (no gc time collection)
 bun --expose-gc bin/bench.ts
 
-# doesn't find baseline, or collect gc perf data
-deno --allow-all --v8-flags="--expose-gc" bin/bench.ts
 ```
