@@ -16,6 +16,13 @@ export function floatPrecision(
   return (x: number | undefined) => float(x, precision);
 }
 
+/** @return a function that formats percentages with custom precision */
+export function percentPrecision(
+  precision: number,
+): (x: number | undefined) => string | null {
+  return (x: number | undefined) => percent(x, precision);
+}
+
 /** Format duration in milliseconds */
 export function duration(ms: number | undefined): string | null {
   if (ms === undefined) return null;
@@ -54,9 +61,9 @@ export function integer(x: number | undefined): string | null {
 }
 
 /** format a number like .473 as a percentage like 47.3% */
-export function percent(fraction?: number): string | null {
+export function percent(fraction?: number, precision = 1): string | null {
   if (fraction === undefined || fraction === null) return null;
-  return `${Math.abs(fraction * 100).toFixed(1)}%`;
+  return `${Math.abs(fraction * 100).toFixed(precision)}%`;
 }
 
 export function diffPercent(main: number, base: number): string {

@@ -6,6 +6,7 @@ import {
   floatPrecision,
   integer,
   percent,
+  percentPrecision,
 } from "./table-util/Formatters.ts";
 import { type ColumnGroup, buildTable } from "./table-util/TableReport.ts";
 
@@ -29,6 +30,7 @@ interface SelectedStats {
   cpuCacheMiss?: number;
   heap?: number;
   gcCollects?: number;
+  cpuStall?: number;
 }
 
 /** benchmark data to report in each row */
@@ -46,6 +48,7 @@ interface ReportRow {
   heap?: number;
   runs?: number;
   gcCollects?: number;
+  cpuStall?: number;
 }
 
 /** Helper type for records with nullable values */
@@ -136,6 +139,7 @@ function selectedStats(
     heap: result.heapSize?.avg,
     cpuCacheMiss: result.cpuCacheMiss,
     gcCollects: result.nodeGcTime?.collects,
+    cpuStall: result.cpuStall,
     name: result.name.slice(0, maxNameLength),
   };
 }
@@ -152,6 +156,7 @@ function mostlyFullRow(stats: SelectedStats): FullReportRow {
     cpuCacheMiss: stats.cpuCacheMiss ?? null,
     heap: stats.heap ?? null,
     gcCollects: stats.gcCollects ?? null,
+    cpuStall: stats.cpuStall ?? null,
     locSecMaxPercent: null,
     locSecP50Percent: null,
     gcTimePercent: null,
@@ -218,6 +223,11 @@ function tableConfig(): ColumnGroup<FullReportRow>[] {
           key: "cpuCacheMiss",
           title: "L1 miss",
           formatter: percent,
+        },
+        {
+          key: "cpuStall",
+          title: "stalls",
+          formatter: percentPrecision(2),
         },
         { key: "gcCollects", title: "collects", formatter: integer },
         { key: "runs", title: "runs", formatter: integer },
