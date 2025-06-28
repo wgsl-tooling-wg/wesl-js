@@ -161,7 +161,7 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
     benchManually(tests, baselineLink as any);
   } else {
     const opts = createBenchmarkOptions(argv);
-    await benchAndReport(tests, opts, baselineLink, argv.variant);
+    await benchAndReport(tests, opts, argv.variant, argv.baseline);
   }
 }
 
@@ -221,22 +221,18 @@ function benchOnceOnly(tests: BenchTest[]): Promise<any> {
 async function benchAndReport(
   tests: BenchTest[],
   opts: MeasureOptions,
-  baselineLink?: typeof link,
-  variant: ParserVariant = "link",
+  variant: ParserVariant,
+  useBaseline: boolean,
 ): Promise<void> {
   const reports: BenchmarkReport[] = [];
-  const variantFunctions = await createVariantFunction(variant);
+  const variantFunctions = await createVariantFunction(variant, useBaseline);
 
   for (const test of tests) {
     const weslSrc = Object.fromEntries(test.files.entries());
     const rootModuleName = test.mainFile;
 
     // Use baseline from variant functions if available, otherwise use baselineLink
-    const baselineFn = variantFunctions.baseline
-      ? () => variantFunctions.baseline!({ weslSrc, rootModuleName })
-      : baselineLink
-        ? () => baselineLink({ weslSrc, rootModuleName })
-        : undefined;
+    const baselineFn = variantFunctions.baseline;
 
     // Prefix test name with variant if it's not the default
     const testName =
@@ -246,7 +242,7 @@ async function benchAndReport(
       () => variantFunctions.current({ weslSrc, rootModuleName }),
       testName,
       opts,
-      baselineFn,
+      baselineFn && (() => baselineFn({ weslSrc, rootModuleName })),
     );
 
     reports.push({ benchTest: test, mainResult: current, baseline });
@@ -276,16 +272,18 @@ function filterBenchmarks(tests: BenchTest[], pattern?: string): BenchTest[] {
 /** create benchmark functions based on the selected variant */
 async function createVariantFunction(
   variant: ParserVariant,
+  useBaseline: boolean,
 ): Promise<FnAndBaseline> {
-  let baselineImports: any;
+  let baselineImports: any = undefined;
 
-  // Try to load baseline functions
-  try {
-    const baselinePath = path.join(baselineDir, "packages/wesl/src/index.ts");
-    baselineImports = await import(baselinePath);
-  } catch (e) {
-    console.log("Failed to load baseline functions for variant", variant, e);
-    baselineImports = null;
+  if (useBaseline) {
+    // Try to load baseline functions
+    try {
+      const baselinePath = path.join(baselineDir, "packages/wesl/src/index.ts");
+      baselineImports = await import(baselinePath);
+    } catch (e) {
+      console.log("Failed to load baseline functions for variant", variant, e);
+    }
   }
 
   switch (variant) {
