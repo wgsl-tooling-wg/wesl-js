@@ -7,6 +7,7 @@
     "typecheck": "tsgo",
     "bench": "tsx --expose-gc --allow-natives-syntax bin/bench.ts",
     "bench:baseline": "bin/choose_baseline.mts",
+    "bench:bun": "bun --expose-gc --allow-natives-syntax bin/bench.ts",
     "bench:details": "sudo tsx --expose-gc --allow-natives-syntax bin/bench.ts --cpu",
     "bench:validate": "tsx bin/bench.ts --profile",
     "bench:profile": "tsx --inspect-brk bin/bench.ts --profile"

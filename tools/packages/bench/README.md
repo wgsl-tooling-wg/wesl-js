@@ -51,8 +51,8 @@ Copies an earlier version of the tools tree to `wesl-js/_baseline`.
 ### other js engines
 
   ```sh
-  # mostly works, uses js engine from safari/ios. (no gc time collection)
-  bun --expose-gc bin/bench.ts
+  # mostly works, uses webkit engine from safari/ios. (no gc time collection)
+  pnpm bench:bun
   ```
 
 ### other operating systems

@@ -7,7 +7,6 @@ import {
   type MeasuredResults,
   type NodeGCTime,
 } from "./MitataStats.ts";
-import { clear } from "node:console";
 
 export type MeasureResult = Awaited<ReturnType<typeof measure>>;
 const maxGcRecords = 1000;
@@ -70,8 +69,12 @@ async function measureWithObserveGC(
   nodeGcTime: NodeGCTime | undefined;
   stats: Awaited<ReturnType<typeof measure>>;
 }> {
-  if (!enableObserveGC) {
-    fn();
+  // Only observe GC if enabled and running under Node.js (only node gives gc perf events)
+  const isNode =
+    typeof process !== "undefined" &&
+    process.versions?.node &&
+    !process.versions?.bun;
+  if (!enableObserveGC || !isNode) {
     return { nodeGcTime: undefined, stats: await measure(fn, measureOptions) };
   }
 
