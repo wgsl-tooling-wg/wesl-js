@@ -112,7 +112,7 @@ function parseArgs(args: string[]) {
     })
     .option("simple", {
       type: "string",
-      default: "someAllocation",
+      requiresArg: true,
       describe:
         "benchmark a simple function, selected from SimpleTests.ts by prefix",
     })
