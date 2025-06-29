@@ -17,9 +17,12 @@ import {
 } from "../src/mitata-util/MitataBench.ts";
 
 export interface BenchTest {
+  /** name of the test */
   name: string;
+
   /** Path to the main file */
   mainFile: string;
+
   /** All relevant files (file paths and their contents) */
   files: Map<string, string>;
 }
