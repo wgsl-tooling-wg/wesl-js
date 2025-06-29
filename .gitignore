@@ -11,3 +11,6 @@
 node_modules
 
 vite.config.ts.timestamp-*.mjs
+
+# previous rev of tools for benchmark comparisons
+_baseline
