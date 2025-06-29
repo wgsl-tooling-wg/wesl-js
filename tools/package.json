@@ -5,6 +5,7 @@
   "scripts": {
     "echo:all": "pnpm --filter \"**\" echo",
     "bench": "pnpm --filter \"bench\" bench",
+    "bench:validate": "pnpm --filter \"bench\" bench:validate",
     "bump": "tsx scripts/bump.ts --version",
     "build:libs": "pnpm --filter \"mini-parse\" --filter \"wesl\" build",
     "build:tools": "pnpm --filter \"wesl-link\" --filter \"wesl-packager\" --filter \"wesl-plugin\" build",
@@ -20,7 +21,7 @@
     "preinstall": "git submodule update --init --recursive",
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
     "publish:all": "pnpm --filter \"./packages/**\" publish",
-    "prepush": "run-s fix:all lint:all build:all test:all bench typecheck:all",
+    "prepush": "run-s fix:all lint:all build:all test:all bench:validate typecheck:all",
     "test": "FORCE_COLOR=1 vitest",
     "test:all": "vitest --run",
     "test:linkExtension": "nodemon --config nodemon-link-extension.json",

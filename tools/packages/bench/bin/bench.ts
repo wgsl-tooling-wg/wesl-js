@@ -1,18 +1,45 @@
-import fs from "node:fs/promises";
 import path from "node:path";
-import { WGSLLinker } from "@use-gpu/shader";
-import { type SrcModule, type WeslAST, link, parseSrcModule } from "wesl";
-import { WgslReflect } from "wgsl_reflect";
+import { link } from "wesl";
 import yargs from "yargs";
-
 import { hideBin } from "yargs/helpers";
+import {
+  type ParserVariant,
+  createVariantFunction,
+} from "../src/BenchVariations.ts";
+import { type BenchmarkReport, reportResults } from "../src/BenchmarkReport.ts";
+import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
+import { loadSimpleFiles, loadSimpleTest } from "../src/LoadSimpleTest.ts";
+import { benchManually } from "../src/experiments/BenchManually.ts";
+import { simpleMitataBench } from "../src/experiments/VanillaMitata.ts";
+import {
+  type MeasureOptions,
+  mitataBench,
+} from "../src/mitata-util/MitataBench.ts";
 
-type ParserVariant =
-  | "wgsl-linker"
-  | "wesl-link"
-  | "wgsl_reflect"
-  | "use-gpu"
-  | "all"; // NYI
+export interface BenchTest {
+  /** name of the test */
+  name: string;
+
+  /** Path to the main file */
+  mainFile: string;
+
+  /** All relevant files (file paths and their contents) */
+  files: Map<string, string>;
+}
+
+export const baselineDir = "../../../../_baseline";
+
+/** load the link() function from the baseline repo  */
+async function loadBaselineLink(): Promise<typeof link | undefined> {
+  const baselinePath = path.join(baselineDir, "packages/wesl/src/index.ts");
+
+  return import(baselinePath)
+    .then(x => x.link as unknown as typeof link)
+    .catch(e => {
+      console.log("Failed to load baseline link", e);
+      return undefined;
+    });
+}
 
 type CliArgs = ReturnType<typeof parseArgs>;
 
@@ -21,215 +48,221 @@ main(rawArgs);
 
 async function main(args: string[]): Promise<void> {
   const argv = parseArgs(args);
-  await bench(argv);
+  if (argv.profile) {
+    argv.baseline = false; // no baseline comparison in profile mode
+  }
+  if (argv.simple) {
+    await runSimpleBenchmarks(argv);
+  } else {
+    await runBenchmarks(argv);
+  }
 }
 
 function parseArgs(args: string[]) {
   return yargs(args)
-    .option("bench", {
+    .option("variant", {
+      choices: [
+        "link",
+        "parse",
+        "tokenize",
+        "wgsl_reflect",
+        "use-gpu",
+      ] as const,
+      default: ["link"] as const,
+      describe: "select parser variant(s) to test (can be repeated)",
+      array: true,
+    })
+    .option("baseline", {
+      type: "boolean",
+      default: true,
+      describe: "run baseline comparison using _baseline directory",
+    })
+    .option("time", {
+      type: "number",
+      default: 0.642,
+      requiresArg: true,
+      describe: "benchmark test duration in seconds",
+    })
+    .option("cpu", {
       type: "boolean",
       default: false,
-      describe: "run a benchmark, collecting timings",
+      describe: "enable CPU counter measurements (requires root)",
     })
-    .option("variant", {
-      choices: ["wgsl-linker", "wgsl_reflect", "use-gpu", "wesl-link"] as const,
-      default: "wgsl-linker" as const,
-      describe: "select parser to test",
+    .option("collect", {
+      type: "boolean",
+      default: false,
+      describe: "force a garbage collection after each test",
+    })
+    .option("observe-gc", {
+      type: "boolean",
+      default: true,
+      describe: "observe garbage collection via perf_hooks",
     })
     .option("profile", {
       type: "boolean",
       default: false,
       describe: "run once, for attaching a profiler",
     })
+    .option("manual", {
+      type: "boolean",
+      default: false,
+      describe: "run using manual profiler",
+    })
+    .option("mitata", {
+      type: "boolean",
+      default: false,
+      describe: "run using vanilla mitata profiler",
+    })
+    .option("filter", {
+      type: "string",
+      requiresArg: true,
+      describe:
+        "run only benchmarks matching this regex or substring (case-insensitive)",
+    })
+    .option("simple", {
+      type: "string",
+      requiresArg: true,
+      describe:
+        "benchmark a simple function, selected from SimpleTests.ts by prefix",
+    })
     .help()
     .parseSync();
 }
 
-async function bench(argv: CliArgs): Promise<void> {
-  const tests = await loadAllFiles();
-  const variant: ParserVariant = selectVariant(argv.variant);
+/** create benchmark options from CLI arguments */
+function createBenchmarkOptions(argv: CliArgs): MeasureOptions {
+  const { time, cpu, observeGc, collect } = argv;
+  const secToNs = 1e9;
+  return {
+    min_cpu_time: time * secToNs,
+    cpuCounters: cpu,
+    observeGC: observeGc,
+    inner_gc: collect,
+  } as any;
+}
 
-  if (argv.bench) {
-    for (const file of tests) {
-      const ms = runBench(variant, file);
-      const codeLines = getCodeLines(file);
-      const locSec = codeLines / ms;
-      const locSecStr = new Intl.NumberFormat("en-US").format(
-        Math.round(locSec),
-      );
-      console.log(`${variant} ${file.name} LOC/sec: ${locSecStr}`);
-    }
-  }
+/** run the selected benchmark variants */
+async function runBenchmarks(argv: CliArgs): Promise<void> {
+  const loadedTests = await loadBenchmarkFiles();
+  const baselineLink = argv.baseline ? await loadBaselineLink() : undefined;
+
+  const tests = filterBenchmarks(loadedTests, argv.filter);
 
   if (argv.profile) {
-    console.profile();
-    for (const test of tests) {
-      runOnce(variant, test);
-    }
-    console.profileEnd();
-  }
-}
-
-function selectVariant(variant: string): ParserVariant {
-  if (
-    ["wesl-link", "wgsl-linker", "wgsl_reflect", "use-gpu"].includes(variant)
-  ) {
-    return variant as ParserVariant;
-  }
-  throw new Error("NYI parser variant: " + variant);
-}
-
-function runBench(variant: ParserVariant, file: BenchTest): number {
-  const warmupIterations = 5;
-  const benchIterations = 20;
-
-  // LATER try a bench library, e.g. Deno.bench
-
-  /* warmup */
-  runNTimes(warmupIterations, variant, file);
-
-  /* test */
-  const start = performance.now();
-  runNTimes(benchIterations, variant, file);
-  const ns = performance.now() - start;
-  const ms = ns / benchIterations / 1000;
-  return ms;
-}
-
-function runNTimes(n: number, variant: ParserVariant, file: BenchTest): void {
-  for (let i = 0; i < n; i++) {
-    runOnce(variant, file);
-  }
-}
-
-interface BenchTest {
-  name: string;
-  /** Path to the main file */
-  mainFile: string;
-  /** All relevant files (file paths and their contents) */
-  files: Map<string, string>;
-}
-
-async function loadAllFiles(): Promise<BenchTest[]> {
-  const examplesDir = "./src/examples";
-  const reduceBuffer = await loadBench(
-    "reduceBuffer",
-    examplesDir,
-    "./reduceBuffer.wgsl",
-  );
-  const particle = await loadBench("particle", examplesDir, "./particle.wgsl");
-  const rasterize = await loadBench(
-    "rasterize",
-    examplesDir,
-    "./rasterize_05_fine.wgsl",
-  );
-  const boat = await loadBench(
-    "unity_webgpu_0000026E5689B260",
-    examplesDir,
-    "./unity_webgpu_000002B8376A5020.fs.wgsl",
-  );
-  const imports_only = await loadBench(
-    "imports_only",
-    examplesDir,
-    "./imports_only.wgsl",
-  );
-  const bevy_deferred_lighting = await loadBench(
-    "bevy_deferred_lighting",
-    "./src/examples/bevy",
-    "./bevy_generated_deferred_lighting.wgsl",
-  );
-  const bevy_linking = await loadBench(
-    "bevy_linking",
-    "./src/examples/naga_oil_example",
-    "./pbr.wgsl",
-    [
-      "./clustered_forward.wgsl",
-      "./mesh_bindings.wgsl",
-      "./mesh_types.wgsl",
-      "./mesh_vertex_output.wgsl",
-      "./mesh_view_bindings.wgsl",
-      "./mesh_view_types.wgsl",
-      "./pbr_bindings.wgsl",
-      "./pbr_functions.wgsl",
-      "./pbr_lighting.wgsl",
-      "./pbr_types.wgsl",
-      "./shadows.wgsl",
-      "./utils.wgsl",
-    ],
-  );
-  return [
-    reduceBuffer,
-    particle,
-    rasterize,
-    boat,
-    imports_only,
-    bevy_deferred_lighting,
-    bevy_linking,
-  ];
-}
-
-async function loadBench(
-  name: string,
-  cwd: string,
-  mainFile: string,
-  extraFiles: string[] = [],
-): Promise<BenchTest> {
-  const files = new Map<string, string>();
-  const addFile = async (p: string) =>
-    files.set(p, await fs.readFile(path.join(cwd, p), { encoding: "utf8" }));
-
-  await addFile(mainFile);
-  for (const path of extraFiles) {
-    await addFile(path);
-  }
-  return { name, mainFile, files };
-}
-
-function runOnce(parserVariant: ParserVariant, test: BenchTest): void {
-  if (parserVariant === "wgsl-linker") {
-    for (const [_, text] of test.files) {
-      parseWESL(text);
-    }
-  } else if (parserVariant === "wesl-link") {
-    link({
-      weslSrc: Object.fromEntries(test.files.entries()),
-      rootModuleName: test.mainFile,
-    });
-  } else if (parserVariant === "wgsl_reflect") {
-    for (const [path, text] of test.files) {
-      wgslReflectParse(path, text);
-    }
-  } else if (parserVariant === "use-gpu") {
-    for (const [path, text] of test.files) {
-      useGpuParse(path, text);
-    }
+    await benchOnceOnly(tests);
+  } else if (argv.mitata) {
+    await simpleMitataBench(tests, [...argv.variant], argv.baseline);
+  } else if (argv.manual) {
+    benchManually(tests, baselineLink as any);
   } else {
-    throw new Error("NYI parser variant: " + parserVariant);
+    const opts = createBenchmarkOptions(argv);
+    await benchAndReport(tests, opts, [...argv.variant], argv.baseline);
   }
 }
 
-function wgslReflectParse(_filePath: string, text: string): void {
-  new WgslReflect(text);
-}
+/** run a simple benchmark against itself */
+async function runSimpleBenchmarks(argv: CliArgs): Promise<void> {
+  const { fn, name } = loadSimpleTest(argv.simple);
+  const opts = createBenchmarkOptions(argv);
 
-function useGpuParse(_filePath: string, text: string): void {
-  WGSLLinker.loadModule(text);
-}
+  const weslSrc = await loadSimpleFiles();
+  console.log(`Benching simple test: ${name}`);
 
-function getCodeLines(benchTest: BenchTest) {
-  return benchTest.files
-    .values()
-    .map(text => text.split("\n").length)
-    .reduce((sum, v) => sum + v, 0);
-}
+  const { current, baseline } = await runBenchmarkPair(
+    () => fn(weslSrc),
+    name,
+    opts,
+    () => fn(weslSrc),
+  );
 
-/** parse a single wesl file */ // DRY with TestUtil
-export function parseWESL(src: string): WeslAST {
-  const srcModule: SrcModule = {
-    modulePath: "package::test", // TODO this ought not be used outside of tests
-    debugFilePath: "./test.wesl",
-    src,
+  const files = new Map(Object.entries(weslSrc));
+  const benchTest: BenchTest = { name, mainFile: "N/A", files };
+  const report: BenchmarkReport = {
+    benchTest,
+    mainResult: current,
+    baseline: baseline,
   };
 
-  return parseSrcModule(srcModule);
+  reportResults([report], { cpu: argv.cpu });
+}
+
+/** run a benchmark with current and optional baseline implementations */
+async function runBenchmarkPair(
+  currentFn: () => any,
+  testName: string,
+  opts: MeasureOptions,
+  baselineFn?: () => any,
+): Promise<{ current: any; baseline?: any }> {
+  const current = await mitataBench(currentFn, testName, opts);
+
+  let baseline = undefined;
+  if (baselineFn) {
+    baseline = await mitataBench(baselineFn, "--> baseline", opts);
+  }
+
+  return { current, baseline };
+}
+
+/** run the the first selected benchmark, once, without any data collection.
+ * useful for attaching the profiler, or for continuous integration */
+function benchOnceOnly(tests: BenchTest[]): Promise<any> {
+  return link({
+    weslSrc: Object.fromEntries(tests[0].files.entries()),
+    rootModuleName: tests[0].mainFile,
+  });
+}
+
+/** run the tests and report results */
+async function benchAndReport(
+  tests: BenchTest[],
+  opts: MeasureOptions,
+  variants: ParserVariant[],
+  useBaseline: boolean,
+): Promise<void> {
+  const allReports: BenchmarkReport[] = [];
+
+  for (const variant of variants) {
+    const variantFunctions = await createVariantFunction(variant, useBaseline);
+
+    for (const test of tests) {
+      const weslSrc = Object.fromEntries(test.files.entries());
+      const rootModuleName = test.mainFile;
+
+      // Use baseline from variant functions if available
+      const baselineFn = variantFunctions.baseline;
+
+      // Prefix test name with variant if it's not the default
+      const testName =
+        variant === "link" ? test.name : `(${variant}) ${test.name}`;
+
+      const { current, baseline } = await runBenchmarkPair(
+        () => variantFunctions.current({ weslSrc, rootModuleName }),
+        testName,
+        opts,
+        baselineFn && (() => baselineFn({ weslSrc, rootModuleName })),
+      );
+
+      allReports.push({ benchTest: test, mainResult: current, baseline });
+    }
+  }
+
+  reportResults(allReports, { cpu: opts.cpuCounters });
+}
+
+/** select which tests to run */
+function filterBenchmarks(tests: BenchTest[], pattern?: string): BenchTest[] {
+  if (!pattern) return tests;
+  let regex: RegExp;
+  try {
+    regex = new RegExp(pattern, "i");
+  } catch {
+    // fallback to substring match if invalid regex
+    regex = new RegExp(pattern.replace(/[.*+?^${}()|[[\\]/g, "\\$&"), "i");
+  }
+  const filtered = tests.filter(test => regex.test(test.name));
+  if (filtered.length === 0) {
+    console.error(`No benchmarks matched pattern: ${pattern}`);
+    process.exit(1);
+  }
+  return filtered;
 }
