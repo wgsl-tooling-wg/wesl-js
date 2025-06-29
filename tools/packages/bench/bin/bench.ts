@@ -158,7 +158,7 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   if (argv.profile) {
     await benchOnceOnly(tests);
   } else if (argv.mitata) {
-    await simpleMitataBench(tests, [...argv.variant], argv.baseline, forEachVariantTest);
+    await simpleMitataBench(tests, [...argv.variant], argv.baseline);
   } else if (argv.manual) {
     benchManually(tests, baselineLink as any);
   } else {
@@ -228,15 +228,14 @@ async function benchAndReport(
 ): Promise<void> {
   const allReports: BenchmarkReport[] = [];
 
-  await forEachVariantTest(
-    tests,
-    variants,
-    useBaseline,
-    async (test, variant, variantFunctions) => {
+  for (const variant of variants) {
+    const variantFunctions = await createVariantFunction(variant, useBaseline);
+
+    for (const test of tests) {
       const weslSrc = Object.fromEntries(test.files.entries());
       const rootModuleName = test.mainFile;
 
-      // Use baseline from variant functions if available, otherwise use baselineLink
+      // Use baseline from variant functions if available
       const baselineFn = variantFunctions.baseline;
 
       // Prefix test name with variant if it's not the default
@@ -251,30 +250,10 @@ async function benchAndReport(
       );
 
       allReports.push({ benchTest: test, mainResult: current, baseline });
-    },
-  );
-
-  reportResults(allReports, { cpu: opts.cpuCounters });
-}
-
-/** Common function to iterate over variants and tests */
-async function forEachVariantTest(
-  tests: BenchTest[],
-  variants: ParserVariant[],
-  useBaseline: boolean,
-  callback: (
-    test: BenchTest,
-    variant: ParserVariant,
-    variantFunctions: FnAndBaseline,
-  ) => Promise<void>,
-): Promise<void> {
-  for (const variant of variants) {
-    const variantFunctions = await createVariantFunction(variant, useBaseline);
-
-    for (const test of tests) {
-      await callback(test, variant, variantFunctions);
     }
   }
+
+  reportResults(allReports, { cpu: opts.cpuCounters });
 }
 
 /** select which tests to run */
