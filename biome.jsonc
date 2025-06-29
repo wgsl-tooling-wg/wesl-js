@@ -58,6 +58,15 @@
           }
         }
       }
+    },
+    {
+      "include": ["**/tsconfig.*json"],
+      "json": {
+        "parser": {
+          "allowComments": true,
+          "allowTrailingCommas": true
+        }
+      }
     }
   ]
 }

@@ -4,6 +4,6 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types"],
     "moduleResolution": "bundler",
-    "moduleDetection": "force",
+    "moduleDetection": "force"
   }
 }
