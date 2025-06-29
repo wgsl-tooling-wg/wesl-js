@@ -1,16 +1,26 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ESNext", // move to ES2023?
     "lib": ["ESNext"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
+
+    "noEmit": true, // we don't transpile with tsc (we just typecheck)
+
+    /** convenient importing of .json and .js (unused at the moment) */
     "resolveJsonModule": true,
-    "isolatedModules": true,
+    "allowJs": true,
+
+    /** modules */
+    "module": "preserve", // leave module syntax alone for the bundler
     "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "allowJs": false
+    "verbatimModuleSyntax": true, // use `import type` for transpiler,
+    "isolatedModules": true, // disallow TS features that are difficult for transpilers
+    "skipLibCheck": true, // performance win, also what do we do if a library has an error?
+    "forceConsistentCasingInFileNames": true,
+
+    /* strictness in TypeScript */
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
   },
   "exclude": ["node_modules"]
 }
