@@ -1,26 +1,15 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
     "lib": ["ESNext", "DOM"],
     "types": ["node", "@webgpu/types"],
-    "module": "ESNext",
     "moduleResolution": "bundler",
     "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
-    "allowJs": false,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
     "paths": {
       "wesl": ["../wesl/src"],
       "wesl-plugin": ["../wesl-plugin/src"]
     }
   },
-  "include": ["vitest.config.ts", "src/**/*", "generated/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["vitest.config.ts", "src/**/*", "generated/**/*"]
 }

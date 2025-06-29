@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node", "@webgpu/types"],
+    "moduleResolution": "Node",
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true
+  }
+}

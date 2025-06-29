@@ -1,21 +1,11 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["ESNext"],
     "types": ["node", "@webgpu/types"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
-    "allowJs": false,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
     "paths": {
       "wesl": ["../wesl/src"],
       "mini-parse": ["../mini-parse/src"],
@@ -23,6 +13,5 @@
       "wesl-testsuite": ["../../../wesl-testsuite/src"]
     }
   },
-  "include": ["src/**/*", "src/viteTypes.d.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*", "src/viteTypes.d.ts"]
 }

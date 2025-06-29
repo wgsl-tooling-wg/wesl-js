@@ -1,22 +1,15 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
     "lib": ["esnext", "DOM"],
     "types": ["node", "@webgpu/types"],
-
-    "skipLibCheck": true,
-    "module": "ESNext",
     "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "strict": true,
-    "strictNullChecks": true,
     "esModuleInterop": true,
-    "allowImportingTsExtensions": true,
+    "strictNullChecks": true,
     "paths": {
       "wesl": ["../wesl/src"],
       "mini-parse": ["../mini-parse/src"]
-    },
-    "noEmit": true
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["dist", "node_modules"]
