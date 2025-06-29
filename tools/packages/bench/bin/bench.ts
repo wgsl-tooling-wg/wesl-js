@@ -158,7 +158,7 @@ async function runBenchmarks(argv: CliArgs): Promise<void> {
   if (argv.profile) {
     await benchOnceOnly(tests);
   } else if (argv.mitata) {
-    simpleMitataBench(tests, baselineLink as any);
+    await simpleMitataBench(tests, [...argv.variant], argv.baseline, forEachVariantTest);
   } else if (argv.manual) {
     benchManually(tests, baselineLink as any);
   } else {
@@ -228,10 +228,11 @@ async function benchAndReport(
 ): Promise<void> {
   const allReports: BenchmarkReport[] = [];
 
-  for (const variant of variants) {
-    const variantFunctions = await createVariantFunction(variant, useBaseline);
-
-    for (const test of tests) {
+  await forEachVariantTest(
+    tests,
+    variants,
+    useBaseline,
+    async (test, variant, variantFunctions) => {
       const weslSrc = Object.fromEntries(test.files.entries());
       const rootModuleName = test.mainFile;
 
@@ -250,10 +251,30 @@ async function benchAndReport(
       );
 
       allReports.push({ benchTest: test, mainResult: current, baseline });
-    }
-  }
+    },
+  );
 
   reportResults(allReports, { cpu: opts.cpuCounters });
+}
+
+/** Common function to iterate over variants and tests */
+async function forEachVariantTest(
+  tests: BenchTest[],
+  variants: ParserVariant[],
+  useBaseline: boolean,
+  callback: (
+    test: BenchTest,
+    variant: ParserVariant,
+    variantFunctions: FnAndBaseline,
+  ) => Promise<void>,
+): Promise<void> {
+  for (const variant of variants) {
+    const variantFunctions = await createVariantFunction(variant, useBaseline);
+
+    for (const test of tests) {
+      await callback(test, variant, variantFunctions);
+    }
+  }
 }
 
 /** select which tests to run */
