@@ -1,11 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ESNext", "DOM"],
-    "types": ["node", "@webgpu/types"],
-    "moduleResolution": "bundler",
-    "esModuleInterop": false,
-    "allowSyntheticDefaultImports": true,
+    "types": ["@webgpu/types"],
     "paths": {
       "wesl": ["../wesl/src"],
       "wesl-plugin": ["../wesl-plugin/src"]
