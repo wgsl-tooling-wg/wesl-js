@@ -5830,7 +5830,7 @@ snapshots:
       concat-stream: 2.0.0
       d3-fg: 6.14.0
       debounce: 1.2.1
-      debug: 4.4.1
+      debug: 4.4.1(supports-color@5.5.0)
       end-of-stream: 1.4.4
       env-string: 1.0.1
       escape-string-regexp: 4.0.0
@@ -8177,10 +8177,6 @@ snapshots:
   debounce@1.2.1: {}
 
   debug@3.2.7:
-    dependencies:
-      ms: 2.1.3
-
-  debug@4.4.1:
     dependencies:
       ms: 2.1.3
 
