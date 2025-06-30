@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2024",
+    "target": "ES2024", // we can expect a modern version with WebGPU (but we want stablility, so not "esnext") 
     "lib": ["ES2024"],
 
-    "noEmit": true, // we don't transpile with tsc (we just typecheck)
+    "noEmit": true, // we don't transpile with tsgo, we just typecheck
 
     /** convenient importing of .json and .js (unused at the moment) */
     "resolveJsonModule": true,
     "allowJs": true,
 
     /** modules */
-    "module": "preserve",
+    "module": "preserve", // import syntax passes through to bundler/node unchanged
     // "moduleResolution": "bundler", // implied by module:preserve
     "allowImportingTsExtensions": true,
     "forceConsistentCasingInFileNames": true,
