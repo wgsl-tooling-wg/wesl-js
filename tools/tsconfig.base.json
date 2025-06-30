@@ -11,6 +11,7 @@
 
     /** modules */
     "module": "preserve", // leave module syntax alone for the bundler
+    "moduleResolution": "nodenext", // libraries work for both node and browser bundling
     "allowImportingTsExtensions": true,
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true, // use `import type` for transpiler,

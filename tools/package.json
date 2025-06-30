@@ -21,7 +21,7 @@
     "preinstall": "git submodule update --init --recursive",
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
     "publish:all": "pnpm --filter \"./packages/**\" publish",
-    "prepush": "run-s fix:all lint:all build:all test:all bench:validate typecheck:all",
+    "prepush": "run-s fix:all lint:all typecheck:all build:all test:all bench:validate",
     "test": "FORCE_COLOR=1 vitest",
     "test:all": "vitest --run",
     "test:linkExtension": "nodemon --config nodemon-link-extension.json",

@@ -2,7 +2,6 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
-    "types": ["@webgpu/types"],
-    "moduleResolution": "bundler"
+    "types": ["@webgpu/types"]
   }
 }
