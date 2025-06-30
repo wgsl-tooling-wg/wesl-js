@@ -1,18 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["DOM", "DOM.Iterable", "ESNext", "ESNext.AsyncIterable"],
-    "moduleResolution": "Node",
-    "esModuleInterop": false,
-    "downlevelIteration": true,
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
-    "allowSyntheticDefaultImports": true,
     "paths": {
       "mini-parse": ["./src"],
       "mini-parse/test-util": ["./src/test-util"]
     }
   },
-  "include": ["src/**/*"],
-  "references": [{ "path": "./tsconfig-node.json" }]
+  "include": ["src/**/*"]
 }
