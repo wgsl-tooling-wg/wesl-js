@@ -2,10 +2,8 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "types": ["node", "@webgpu/types"],
-    "target": "ESNext", // we assome that dev machines are up to date
+    "target": "ESNext", // we presume that dev machines are up to date
     "lib": ["ESNext"],
-    "moduleResolution": "Node",
-    "esModuleInterop": false
-    // "allowSyntheticDefaultImports": true  // convenient, but unused for now, and not sure which transpilers support it
+    "moduleResolution": "Node"
   }
 }
