@@ -9,8 +9,12 @@ const exec = util.promisify(process.exec);
 
 /*
  * copy the internal examples/ directory to separate projects in wesl-examples/ repo
- * updates the example projects package.json files to reference the current version of wesl and wesl-plugin
+ * - updates each example project's package.json file to reference the current version of wesl and wesl-plugin
+ * - runs `pnpm install` in each example project 
  */
+
+/** ignore these when copying examples */
+const examplesIgnore = [".git/", "/node_modules", "dist/", "package-lock.json"];
 
 interface Versions {
   wesl: string;
@@ -72,8 +76,6 @@ async function packageVersion(packageName: string): Promise<string> {
   return packageJson.version;
 }
 
-const examplesIgnore = [".git/", "/node_modules", "dist/", "package-lock.json"];
-
 /**
  * Copy recursively,
  * ignoring any paths that include any of the ignore strings.
@@ -124,6 +126,7 @@ async function setExampleVersions(
   }
 }
 
+/** run `pnpm install` to update example pnpm-lock.yaml files and download dependencies */
 async function updatePkgLocks(targetDir: string): Promise<void> {
   const pkgLocks = await glob(targetDir + "/**/pnpm-lock.yaml");
   console.log(`Updating pnpm-lock.yaml files: ${pkgLocks.join(", ")}`);
