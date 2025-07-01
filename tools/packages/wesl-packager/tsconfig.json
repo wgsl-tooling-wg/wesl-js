@@ -1,27 +1,11 @@
 {
+  "extends": "../../tsconfig.node.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["ESNext"],
-    "types": ["node", "@webgpu/types"],
-    "module": "ESNext",
-    "moduleResolution": "Node",
-    "esModuleInterop": false,
-    "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
-    "allowJs": false,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
     "paths": {
       "wesl": ["../wesl/src"],
       "mini-parse": ["../mini-parse/src"],
       "wesl-tooling": ["../wesl-tooling/src"]
     }
   },
-  "include": ["src/**/*", "src/viteTypes.d.ts", "rollup-plugin-raw.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*", "src/viteTypes.d.ts", "rollup-plugin-raw.ts"]
 }
