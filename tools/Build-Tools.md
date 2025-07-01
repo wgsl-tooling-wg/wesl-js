@@ -11,7 +11,9 @@
 - eslint is available to run manually, but is not required to pass for every main branch push.
 - rationale: biome has currently the best combination features and stability. oxlint is up and coming. eslint is obsolescent but still catches some things that other linters miss.
 
-### examples:prep
+### typecheck:watch
+- run typescript typechecking continuously in the terminal.
+
 - user example wesl-js projects are in the main wesl-js repo
 so that typechecking (and eventually testing) can help keep the examples up to date. 
 - the examples:prep script exports the examples 
