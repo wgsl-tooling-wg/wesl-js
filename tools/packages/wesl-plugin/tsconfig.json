@@ -1,11 +1,6 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.node.json",
   "compilerOptions": {
-    "lib": ["esnext", "DOM"],
-    "types": ["node", "@webgpu/types"],
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "strictNullChecks": true,
     "paths": {
       "wesl": ["../wesl/src"],
       "mini-parse": ["../mini-parse/src"]
