@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.node.json",
+  "extends": "../../tsconfig.browser.json",
   "compilerOptions": {
     "paths": {
       "wesl": ["../wesl/src"],
