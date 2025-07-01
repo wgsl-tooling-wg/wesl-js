@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "echo": "echo",
     "typecheck": "tsgo",
     "prepublishOnly": "run-s build",
     "dev": "nodemon --delay 350ms --watch '../wesl/dist/**/*.js' --watch '../wesl-plugin/dist/**/*.js' --ext cjs,ts,js --exec vite dev",

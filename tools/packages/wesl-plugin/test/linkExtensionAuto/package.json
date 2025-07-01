@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "echo": "echo",
     "typecheck": "tsgo",
     "prepublishOnly": "run-s build",
     "test": "nodemon --config nodemon-vitest.json"

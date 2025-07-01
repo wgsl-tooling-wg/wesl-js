@@ -3,7 +3,6 @@
   "version": "0.6.7",
   "type": "module",
   "scripts": {
-    "echo": "echo",
     "build": "tsdown",
     "build:watch": "tsdown --watch",
     "typecheck": "tsgo",

@@ -3,7 +3,6 @@
   "version": "0.6.7",
   "files": ["dist", "src"],
   "scripts": {
-    "echo": "echo",
     "build": "run-s build:main build:minified",
     "build:main": "vite build",
     "build:minified": "vite build --config minified.vite.config.js",

@@ -1,23 +1,6 @@
 {
+  "extends": "../../tsconfig.browser.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["DOM", "DOM.Iterable", "ESNext", "ESNext.AsyncIterable"],
-    "types": ["@webgpu/types"],
-    "esModuleInterop": false,
-    "downlevelIteration": true,
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
-    "allowJs": false,
-    "skipLibCheck": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
     "paths": {
       "mini-parse": ["../mini-parse/src"],
       "wesl": ["./src"],
@@ -26,7 +9,5 @@
       "wesl-testsuite": ["../../../wesl-testsuite/src"]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"],
-  "references": [{ "path": "./tsconfig-node.json" }]
+  "include": ["src/**/*"]
 }
