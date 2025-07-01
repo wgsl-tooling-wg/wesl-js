@@ -17,7 +17,6 @@
     "lint:biome": "biome check",
     "lint:oxlint": "oxlint",
     "lint:all": "run-s lint:biome lint:oxlint",
-    "organize:all": "pnpm --filter \"./packages/**\" organize",
     "preinstall": "git submodule update --init --recursive",
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
     "publish:all": "pnpm --filter \"./packages/**\" publish",
@@ -25,7 +24,7 @@
     "test": "FORCE_COLOR=1 vitest",
     "test:all": "vitest --run",
     "test:linkExtension": "nodemon --config nodemon-link-extension.json",
-    "typecheck:all": "pnpm --filter \"./packages/**\" typecheck",
+    "typecheck:all": "pnpm --filter \"./packages/**\" --filter \"./examples/**\" typecheck",
     "typecheck:watch": "nodemon --config nodemon-typecheck-watch.json"
   },
   "devDependencies": {
