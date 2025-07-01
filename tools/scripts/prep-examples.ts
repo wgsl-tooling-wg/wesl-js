@@ -9,7 +9,7 @@ const exec = util.promisify(process.exec);
 
 /*
  * copy the internal examples/ directory to separate projects in wesl-examples/ repo
- * update example projects package.json files to reference the current version of wesl and wesl-plugin
+ * updates the example projects package.json files to reference the current version of wesl and wesl-plugin
  */
 
 interface Versions {
