@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "echo:all": "pnpm --filter \"**\" echo",
+    "echo:all": "pnpm --filter \"**\" exec pwd",
     "bench": "pnpm --filter \"bench\" bench",
     "bench:validate": "pnpm --filter \"bench\" bench:validate",
     "bump": "tsx scripts/bump.ts --version",
