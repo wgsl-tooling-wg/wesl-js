@@ -9,8 +9,12 @@ const exec = util.promisify(process.exec);
 
 /*
  * copy the internal examples/ directory to separate projects in wesl-examples/ repo
- * update example projects package.json files to reference the current version of wesl and wesl-plugin
+ * - updates each example project's package.json file to reference the current version of wesl and wesl-plugin
+ * - runs `pnpm install` in each example project 
  */
+
+/** ignore these when copying examples */
+const examplesIgnore = [".git/", "/node_modules", "dist/", "package-lock.json"];
 
 interface Versions {
   wesl: string;
@@ -30,6 +34,7 @@ async function main() {
     opts.targetDir || path.join(toolsPath, "../../wesl-examples");
 
   const examplesSrc = path.join(toolsPath, "examples");
+  await cleanDirectory(targetDir);  
   await copyDirectory(examplesSrc, targetDir, examplesIgnore);
   await setExampleVersions(targetDir, versions);
   await updatePkgLocks(targetDir);
@@ -71,8 +76,6 @@ async function packageVersion(packageName: string): Promise<string> {
   const packageJson = JSON.parse(await fs.readFile(packagePath, "utf-8"));
   return packageJson.version;
 }
-
-const examplesIgnore = [".git/", "/node_modules", "dist/", "package-lock.json"];
 
 /**
  * Copy recursively,
@@ -124,6 +127,7 @@ async function setExampleVersions(
   }
 }
 
+/** run `pnpm install` to update example pnpm-lock.yaml files and download dependencies */
 async function updatePkgLocks(targetDir: string): Promise<void> {
   const pkgLocks = await glob(targetDir + "/**/pnpm-lock.yaml");
   console.log(`Updating pnpm-lock.yaml files: ${pkgLocks.join(", ")}`);
@@ -133,5 +137,22 @@ async function updatePkgLocks(targetDir: string): Promise<void> {
     console.log(`Updating pnpm-lock in ${dir}`);
     // run pnpm install in the directory to update the pnpm-lock.yaml
     await exec(`pnpm install`, { cwd: dir });
+  }
+}
+
+/** remove all files and directories except .git */
+async function cleanDirectory(targetDir: string): Promise<void> {
+  try {
+    const entries = await fs.readdir(targetDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === ".git") continue;
+      const entryPath = path.join(targetDir, entry.name);
+      await fs.rm(entryPath, { recursive: true, force: true });
+    }
+    console.log(`Cleaned directory (except .git): ${targetDir}`);
+  } catch (error: any) {
+    if (error.code !== "ENOENT") {
+      console.error(`Error cleaning directory ${targetDir}:`, error);
+    }
   }
 }

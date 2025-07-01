@@ -14,14 +14,15 @@
 ### typecheck:watch
 - run typescript typechecking continuously in the terminal.
 
+### prep:examples
 - user example wesl-js projects are in the main wesl-js repo
 so that typechecking (and eventually testing) can help keep the examples up to date. 
-- the examples:prep script exports the examples 
+- the prep:examples script exports the examples 
 to a separate git repo
 and rewrites their package.json files to depend on 
 the current published wesl packages.
 - The sepearate repo without workspace:* dependencies in package.json
 is useful so that visitors can have a clean version to copy from,
 and so that stackblitz examples will work.
-- examples:prep should be run after each new release, 
+- prep:examples should be run after each new release, 
 so that the examples use the latest version of wesl-js.
