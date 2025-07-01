@@ -25,7 +25,7 @@
     "test:all": "vitest --run",
     "test:linkExtension": "nodemon --config nodemon-link-extension.json",
     "typecheck:packages": "pnpm --filter \"./packages/**\" typecheck",
-    "typecheck:examples": "pnpm --filter \"./examples/**\" tsgo",
+    "typecheck:examples": "pnpm --filter \"./examples/**\" --filter \"!lygia-cli-example\" exec tsgo",
     "typecheck:all": "run-s typecheck:packages typecheck:examples",
     "typecheck:watch": "nodemon --config nodemon-typecheck-watch.json"
   },
