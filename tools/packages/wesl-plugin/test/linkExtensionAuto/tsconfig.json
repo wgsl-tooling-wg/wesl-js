@@ -8,5 +8,5 @@
       "wesl-plugin": ["../../../wesl-plugin"]
     }
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts"]
 }
