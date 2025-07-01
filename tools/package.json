@@ -16,7 +16,6 @@
     "lint:biome": "biome check",
     "lint:oxlint": "oxlint",
     "lint:all": "run-s lint:biome lint:oxlint",
-    "organize:all": "pnpm --filter \"./packages/**\" organize",
     "preinstall": "git submodule update --init --recursive",
     "prep:examples": "tsx scripts/prep-examples.ts",
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
