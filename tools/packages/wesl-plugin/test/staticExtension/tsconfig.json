@@ -13,6 +13,5 @@
       "wesl-plugin": ["../../../wesl-plugin"]
     }
   },
-  "include": ["**/*.ts"],
-  "exclude": ["dist", "node_modules"]
+  "include": ["**/*.ts"]
 }

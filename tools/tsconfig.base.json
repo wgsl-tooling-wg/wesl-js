@@ -25,5 +25,5 @@
     "noUncheckedSideEffectImports": true
     // "noUncheckedIndexedAccess": true // maybe later, some lint to fix first
   },
-  "exclude": ["node_modules"]
+  "exclude": ["**/node_modules", "**/dist"]
 }

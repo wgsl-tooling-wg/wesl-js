@@ -9,5 +9,4 @@
     }
   },
   "include": ["**/*.ts"],
-  "exclude": ["dist", "node_modules"]
 }
