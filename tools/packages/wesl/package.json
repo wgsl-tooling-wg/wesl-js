@@ -1,7 +1,10 @@
 {
   "name": "wesl",
-  "version": "0.6.7",
-  "files": ["dist", "src"],
+  "version": "0.6.9",
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "run-s build:main build:minified",
     "build:main": "vite build",
@@ -45,5 +48,9 @@
     "vite-plugin-dts": "^4.5.4",
     "wrangler": "^4.15.2"
   },
-  "keywords": ["webgpu", "wgsl", "wesl"]
+  "keywords": [
+    "webgpu",
+    "wgsl",
+    "wesl"
+  ]
 }
