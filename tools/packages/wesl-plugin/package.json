@@ -3,7 +3,6 @@
   "type": "module",
   "version": "0.6.7",
   "scripts": {
-    "echo": "echo",
     "build": "tsdown",
     "dev": "tsdown --watch src --watch ../wesl/dist",
     "lint": "eslint .",

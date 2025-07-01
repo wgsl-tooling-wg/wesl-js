@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "echo": "echo",
     "typecheck": "tsgo",
     "test": "vitest",
     "test:once": "vitest run",
