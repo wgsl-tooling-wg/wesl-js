@@ -24,8 +24,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true, 
-    "noUnusedParameters": true, 
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "exclude": ["**/node_modules", "**/dist"],
   "include": ["src"]
