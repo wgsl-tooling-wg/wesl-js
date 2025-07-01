@@ -10,7 +10,7 @@ const exec = util.promisify(process.exec);
 /*
  * copy the internal examples/ directory to separate projects in wesl-examples/ repo
  * - updates each example project's package.json file to reference the current version of wesl and wesl-plugin
- * - runs `pnpm install` in each example project 
+ * - runs `pnpm install` in each example project
  */
 
 /** ignore these when copying examples */
@@ -34,7 +34,7 @@ async function main() {
     opts.targetDir || path.join(toolsPath, "../../wesl-examples");
 
   const examplesSrc = path.join(toolsPath, "examples");
-  await cleanDirectory(targetDir);  
+  await cleanDirectory(targetDir);
   await copyDirectory(examplesSrc, targetDir, examplesIgnore);
   await setExampleVersions(targetDir, versions);
   await updatePkgLocks(targetDir);
