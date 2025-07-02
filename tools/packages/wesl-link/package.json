@@ -11,9 +11,7 @@
   },
   "repository": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli",
   "homepage": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli#readme",
-  "files": [
-    "bin"
-  ],
+  "files": ["bin"],
   "bin": "bin/wesl-link",
   "dependencies": {
     "mini-parse": "workspace:*",
