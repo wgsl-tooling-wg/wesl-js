@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from "@playwright/test";
 
-test('random image', async ({ page }) => {
-  await page.goto('/');
+test("random image", async ({ page }) => {
+  await page.goto("/");
 
-  const canvas = await page.$('canvas');
+  const canvas = await page.$("canvas");
   expect(canvas).not.toBeNull();
   const snapshot = await canvas!.screenshot();
-  expect(snapshot).toMatchSnapshot('random.png');
+  expect(snapshot).toMatchSnapshot("random.png");
 });

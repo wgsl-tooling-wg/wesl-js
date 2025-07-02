@@ -1,10 +1,7 @@
 {
   "name": "mini-parse",
   "version": "0.6.9",
-  "files": [
-    "dist",
-    "src"
-  ],
+  "files": ["dist", "src"],
   "scripts": {
     "build": "run-s build:main build:test-util build:minified",
     "build:main": "vite build",
