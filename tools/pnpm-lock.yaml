@@ -140,12 +140,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/wesl
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.53.2
+        version: 1.53.2
       '@webgpu/types':
-        specifier: ^0.1.60
-        version: 0.1.61
+        specifier: ^0.1.63
+        version: 0.1.63
       vite:
-        specifier: ^6.3.5
-        version: 6.3.5(@types/node@24.0.10)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
+        specifier: ^7.0.0
+        version: 7.0.0(@types/node@24.0.10)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
       wesl-plugin:
         specifier: workspace:*
         version: link:../../packages/wesl-plugin
@@ -11052,7 +11055,7 @@ snapshots:
   terser@5.43.1:
     dependencies:
       '@jridgewell/source-map': 0.3.6
-      acorn: 8.14.1
+      acorn: 8.15.0
       commander: 2.20.3
       source-map-support: 0.5.21
 

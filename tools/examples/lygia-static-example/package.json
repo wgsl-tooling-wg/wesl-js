@@ -5,15 +5,17 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "playwright test --reporter=list"
   },
   "dependencies": {
     "lygia": "1.3.2",
     "wesl": "workspace:*"
   },
   "devDependencies": {
-    "@webgpu/types": "^0.1.60",
-    "vite": "^6.3.5",
+    "@playwright/test": "^1.53.2",
+    "@webgpu/types": "^0.1.63",
+    "vite": "^7.0.0",
     "wesl-plugin": "workspace:*"
   }
 }
