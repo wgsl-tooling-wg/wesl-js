@@ -11,7 +11,7 @@
     "mini-parse": "workspace:*",
     "random_wgsl": "workspace:*",
     "thimbleberry": "^0.2.10",
-    "webgpu": "^0.2.12",
+    "webgpu": "^0.3.0",
     "wesl-plugin": "workspace:*"
   },
   "devDependencies": {
