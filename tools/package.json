@@ -23,6 +23,7 @@
     "prepush": "run-s fix:all lint:all typecheck:all build:all test:all bench:validate",
     "test": "FORCE_COLOR=1 vitest",
     "test:all": "vitest --run",
+    "test:examples": "pnpm --filter \"./examples/**\" test",
     "test:linkExtension": "nodemon --config nodemon-link-extension.json",
     "typecheck:packages": "pnpm --filter \"./packages/**\" typecheck",
     "typecheck:examples": "pnpm --filter \"./examples/**\" --filter \"!lygia-cli-example\" exec tsgo",
