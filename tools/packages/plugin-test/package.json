@@ -11,7 +11,7 @@
   "dependencies": {
     "mini-parse": "workspace:*",
     "thimbleberry": "^0.2.10",
-    "webgpu": "^0.2.12",
+    "webgpu": "^0.3.0",
     "wesl": "workspace:*",
     "wesl-plugin": "workspace:*"
   },
