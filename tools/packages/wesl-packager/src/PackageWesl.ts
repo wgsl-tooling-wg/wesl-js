@@ -7,7 +7,7 @@ import { loadModules, parseDependencies, zip } from "wesl-tooling";
 import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
 import type { CliArgs } from "./PackagerCli.ts";
 
-const biome = await setupBiome();
+const { biome, projectKey: biomeKey } = await setupBiome();
 
 /** write weslBundle .js and .d.ts files for this shader */
 export async function packageWgsl(args: CliArgs): Promise<void> {
@@ -108,7 +108,9 @@ async function writeJsBundle(
   `;
 
   const outPath = path.join(outDir, "weslBundle.js");
-  const formatted = biome.formatContent(outString, { filePath: "b.js" });
+  const formatted = biome.formatContent(biomeKey, outString, {
+    filePath: "b.js",
+  });
   await fs.writeFile(outPath, formatted.content);
 }
 
@@ -120,7 +122,9 @@ async function writeTypeScriptDts(outDir: string): Promise<void> {
     export default weslBundle;
   `;
   const declText = weslBundleDecl + constDecl;
-  const formatted = biome.formatContent(declText, { filePath: "t.d.ts" });
+  const formatted = biome.formatContent(biomeKey, declText, {
+    filePath: "t.d.ts",
+  });
 
   const outPath = path.join(outDir, "weslBundle.d.ts");
   await fs.writeFile(outPath, formatted.content);
@@ -163,12 +167,13 @@ async function loadPackageFields(pkgJsonPath: string): Promise<PkgFields> {
 }
 
 /** setup biome to use as a formatter */
-async function setupBiome(): Promise<Biome> {
+async function setupBiome(): Promise<{ biome: Biome; projectKey: number }> {
   const biome = await Biome.create({
     distribution: Distribution.NODE,
   });
-  biome.applyConfiguration({
+  const { projectKey } = biome.openProject();
+  biome.applyConfiguration(projectKey, {
     formatter: { indentStyle: "space" },
   });
-  return biome;
+  return { biome, projectKey };
 }
