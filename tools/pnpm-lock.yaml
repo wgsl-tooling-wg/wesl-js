@@ -174,6 +174,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/wesl
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.53.2
+        version: 1.53.2
       '@webgpu/types':
         specifier: ^0.1.63
         version: 0.1.63
