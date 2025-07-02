@@ -224,21 +224,24 @@ importers:
   examples/wesl-vite-minimal:
     dependencies:
       random_wgsl:
-        specifier: 0.6.2
-        version: 0.6.2
+        specifier: 0.6.9
+        version: 0.6.9
       wesl:
         specifier: workspace:*
         version: link:../../packages/wesl
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.53.2
+        version: 1.53.2
       '@webgpu/types':
-        specifier: ^0.1.60
-        version: 0.1.61
+        specifier: ^0.1.63
+        version: 0.1.63
       typescript:
         specifier: ~5.8.3
         version: 5.8.3
       vite:
-        specifier: ^6.3.5
-        version: 6.3.5(@types/node@24.0.10)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
+        specifier: ^7.0.0
+        version: 7.0.0(@types/node@24.0.10)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
       wesl-plugin:
         specifier: workspace:*
         version: link:../../packages/wesl-plugin
@@ -4810,9 +4813,6 @@ packages:
 
   queue-tick@1.0.1:
     resolution: {integrity: sha512-kJt5qhMxoszgU/62PLP1CJytzd2NKetjSRnyuj31fDd3Rlcz3fzlFdFLD1SItunPwyqEOkca6GbV612BWfaBag==}
-
-  random_wgsl@0.6.2:
-    resolution: {integrity: sha512-j6wxQF2+8rtsSiNNh3yFCJbjx1cyD2Dz31ND32rwbuXWEzj+rUrS21pGNdGHt2cWHzfakhF72ekfhl/tmgQu2g==}
 
   random_wgsl@0.6.9:
     resolution: {integrity: sha512-ES8cLlXzS0cgjXa4ZMo2q7N0rTtnUr11oIvPYUgHlNREjqFwwlJdZCTVqLIFP8J3ojWWy1wvlmfnjDDPxjsVPg==}
@@ -10383,8 +10383,6 @@ snapshots:
   queue-microtask@1.2.3: {}
 
   queue-tick@1.0.1: {}
-
-  random_wgsl@0.6.2: {}
 
   random_wgsl@0.6.9: {}
 
