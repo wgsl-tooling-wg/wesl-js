@@ -4,7 +4,7 @@
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types"],
 
-    "noEmit": true, // we don't transpile with tsgo, we just typecheck
+    "noEmit": true, // we don't transpile with tsgo/tsc, we just typecheck
 
     /** convenient importing of .json and .js (unused at the moment) */
     "resolveJsonModule": true,
@@ -28,5 +28,5 @@
     "noUnusedParameters": true
   },
   "exclude": ["**/node_modules", "**/dist"],
-  "include": ["src"]
+  "include": ["src", "*.ts", "../playwright.config.ts"]
 }

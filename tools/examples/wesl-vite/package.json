@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsgo && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "playwright test --reporter=list"
   },
   "devDependencies": {
     "@playwright/test": "^1.53.2",
