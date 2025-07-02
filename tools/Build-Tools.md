@@ -28,10 +28,13 @@ and so that stackblitz examples will work.
 so that the examples use the latest version of wesl-js.
 
 ### tools/_baseline
-Holds a flat copy of the tools/ directory for benchmark comparisons.
+- Holds a flat copy of the tools/ directory for benchmark comparisons.
 `_baseline` is git-ignored.
 The copy is likely a different version than the current tree 
-(see `bench:baseline` for setup)
+(see `bench:baseline` to set it up at particular version)
+
+- if you use the vitest vscode plugin, disable it for _baseline
+<img width="539" alt="image" src="https://github.com/user-attachments/assets/84e3a309-108a-4b6a-b05e-c31acc6f3dc2" />
 
 ### tsconfig 
 - most of the tsconfig files extend from base config files in `tools/`.
