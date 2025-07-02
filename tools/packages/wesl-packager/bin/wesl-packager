@@ -13,7 +13,7 @@ var WeslBundle_default = "export interface WeslBundle {\n  /** name of the packa
 
 //#endregion
 //#region src/PackageWesl.ts
-const biome = await setupBiome();
+const { biome, projectKey: biomeKey } = await setupBiome();
 /** write weslBundle .js and .d.ts files for this shader */
 async function packageWgsl(args) {
 	const { projectDir, outDir, multiBundle, baseDir, src } = args;
@@ -84,7 +84,7 @@ async function writeJsBundle(weslBundle, dependencies, outDir) {
     export default weslBundle;
   `;
 	const outPath = path.join(outDir, "weslBundle.js");
-	const formatted = biome.formatContent(outString, { filePath: "b.js" });
+	const formatted = biome.formatContent(biomeKey, outString, { filePath: "b.js" });
 	await fs.writeFile(outPath, formatted.content);
 }
 /** Write weslBundle.d.ts containing the type definitions for a WeslBundle */
@@ -94,7 +94,7 @@ async function writeTypeScriptDts(outDir) {
     export default weslBundle;
   `;
 	const declText = WeslBundle_default + constDecl;
-	const formatted = biome.formatContent(declText, { filePath: "t.d.ts" });
+	const formatted = biome.formatContent(biomeKey, declText, { filePath: "t.d.ts" });
 	const outPath = path.join(outDir, "weslBundle.d.ts");
 	await fs.writeFile(outPath, formatted.content);
 }
@@ -133,8 +133,12 @@ async function loadPackageFields(pkgJsonPath) {
 /** setup biome to use as a formatter */
 async function setupBiome() {
 	const biome$1 = await Biome.create({ distribution: Distribution.NODE });
-	biome$1.applyConfiguration({ formatter: { indentStyle: "space" } });
-	return biome$1;
+	const { projectKey } = biome$1.openProject();
+	biome$1.applyConfiguration(projectKey, { formatter: { indentStyle: "space" } });
+	return {
+		biome: biome$1,
+		projectKey
+	};
 }
 
 //#endregion

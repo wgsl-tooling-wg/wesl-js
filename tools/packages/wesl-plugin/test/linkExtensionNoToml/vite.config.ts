@@ -9,7 +9,7 @@ import viteWesl from "wesl-plugin/vite";
 const config: UserConfig = {
   plugins: [
     tsconfigPaths() as Plugin,
-    viteWesl({ extensions: [linkBuildExtension] }),
+    viteWesl({ extensions: [linkBuildExtension] }) as Plugin,
   ],
   build: {
     // setup build for test that calls 'vite build'

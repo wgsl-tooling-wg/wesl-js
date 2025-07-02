@@ -14,7 +14,7 @@ const config: UserConfig = {
     viteWesl({
       weslToml,
       extensions: [linkBuildExtension],
-    }),
+    }) as Plugin,
   ],
 };
 
