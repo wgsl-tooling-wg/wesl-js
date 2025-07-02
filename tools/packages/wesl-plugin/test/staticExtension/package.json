@@ -4,7 +4,6 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsgo",
-    "prepublishOnly": "run-s build",
     "test": "nodemon --config nodemon-vitest.json"
   },
   "dependencies": {
