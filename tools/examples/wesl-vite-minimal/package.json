@@ -8,15 +8,15 @@
     "preview": "vite preview",
     "test": "playwright test --reporter=list"
   },
+  "dependencies": {
+    "random_wgsl": "0.6.9",
+    "wesl": "workspace:*"
+  },
   "devDependencies": {
     "@playwright/test": "^1.53.2",
     "@webgpu/types": "^0.1.63",
     "typescript": "~5.8.3",
     "vite": "^7.0.0",
     "wesl-plugin": "workspace:*"
-  },
-  "dependencies": {
-    "random_wgsl": "0.6.9",
-    "wesl": "workspace:*"
   }
 }
