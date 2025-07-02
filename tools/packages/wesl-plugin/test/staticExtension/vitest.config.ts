@@ -9,7 +9,7 @@ const weslToml = fileURLToPath(new URL("./wesl.toml", import.meta.url));
 const config: UserConfig = {
   plugins: [
     tsconfigPaths() as Plugin,
-    viteWesl({ weslToml, extensions: [staticBuildExtension] }),
+    viteWesl({ weslToml, extensions: [staticBuildExtension] }) as Plugin,
   ],
 };
 
