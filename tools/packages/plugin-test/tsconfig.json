@@ -3,6 +3,7 @@
   "compilerOptions": {
     "paths": {
       "wesl": ["../wesl/src"],
+      "mini-parse": ["../mini-parse/src"],
       "wesl-plugin": ["../wesl-plugin"],
       "mini-parse/vitest-util": ["../mini-parse/src/vitest-util"]
     }
