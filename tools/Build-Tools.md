@@ -50,3 +50,7 @@ The copy is likely a different version than the current tree
     - `publishConfig` is worth trying. We're using pnpm and 
       seems easier to maintain than `paths`.
     
+### syncpack
+- sorts package.json fields via `fix:pkgJsonFormat` 
+(but then biome needs to run for for final formatting for e.g. multiline vs oneline arrays).
+- fixes inconsistent package dependencies via `fix:syncpack`.
