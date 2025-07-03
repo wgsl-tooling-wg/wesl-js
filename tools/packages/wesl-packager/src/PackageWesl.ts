@@ -43,19 +43,42 @@ async function updatePackageJson(
   const distDir = path.relative(projectDir, outDir);
   if (multiBundle) {
     exports["./*"] = {
-      import: `./${distDir}/*/weslBundle.js`,
       types: `./${distDir}/weslBundle.d.ts`,
+      import: `./${distDir}/*/weslBundle.js`,
     };
   } else {
     exports["."] = {
-      import: `./${distDir}/weslBundle.js`,
       types: `./${distDir}/weslBundle.d.ts`,
+      import: `./${distDir}/weslBundle.js`,
     };
   }
 
-  pkgJson.exports = exports;
-  const jsonString = JSON.stringify(pkgJson, null, 2).concat("\n");
+  const newPkgJson = insertExports(pkgJson, exports);
+  const jsonString = JSON.stringify(newPkgJson, null, 2).concat("\n");
   await fs.writeFile(pkgJsonPath, jsonString);
+}
+
+/** insert the exports field into the package.json */
+function insertExports(pkgJson: any, exports: Record<string, any>): any {
+  // insert the export entries into the existing package.json, after these fields (for a clean format)
+  const exportsAfter = [
+    "name",
+    "description",
+    "version",
+    "private",
+    "author",
+    "type",
+    "bin",
+    "files",
+    "repository",
+    "homepage",
+    "scripts",
+  ];
+  const entries = Object.entries(pkgJson);
+  const index = entries.findLastIndex(([key]) => exportsAfter.includes(key));
+
+  entries.splice(index + 1, 0, ["exports", exports]);
+  return Object.fromEntries(entries);
 }
 
 /** create one bundle per source module */

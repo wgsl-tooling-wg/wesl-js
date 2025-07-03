@@ -2,9 +2,6 @@
   "name": "wesl-tooling",
   "version": "0.6.9",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "files": ["dist"],
   "scripts": {
     "build": "tsdown",
@@ -14,6 +11,9 @@
     "test:once": "vitest run",
     "typecheck": "tsgo"
   },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "glob": "^11.0.3",
     "import-meta-resolve": "^4.1.0",

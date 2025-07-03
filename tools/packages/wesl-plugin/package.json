@@ -1,7 +1,10 @@
 {
   "name": "wesl-plugin",
-  "type": "module",
+  "description": "",
   "version": "0.6.9",
+  "type": "module",
+  "files": ["src", "dist"],
+  "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch src --watch ../wesl/dist",
@@ -9,6 +12,22 @@
     "play": "npm -C playground run dev",
     "prepublishOnly": "run-s build",
     "typecheck": "tsgo"
+  },
+  "exports": {
+    ".": "./dist/pluginIndex.js",
+    "./suffixes": {
+      "types": "./src/defaultSuffixTypes.d.ts"
+    },
+    "./astro": "./dist/plugins/astro.js",
+    "./rspack": "./dist/plugins/rspack.js",
+    "./vite": "./dist/plugins/vite.js",
+    "./webpack": "./dist/plugins/webpack.js",
+    "./rollup": "./dist/plugins/rollup.js",
+    "./esbuild": "./dist/plugins/esbuild.js",
+    "./nuxt": "./dist/plugins/nuxt.js",
+    "./farm": "./dist/plugins/farm.js",
+    "./types": "./dist/plugins/types.js",
+    "./*": "./*"
   },
   "dependencies": {
     "import-meta-resolve": "^4.1.0",
@@ -26,40 +45,6 @@
     "rollup": "^4.44.1",
     "webpack": "^5.99.9"
   },
-  "packageManager": "pnpm@10.2.0",
-  "description": "",
-  "repository": "github:wgsl-tooling-wg/wesl-js",
-  "keywords": [
-    "wesl",
-    "wgsl",
-    "webgpu",
-    "vite",
-    "webpack",
-    "rollup",
-    "unplugin"
-  ],
-  "exports": {
-    ".": "./dist/pluginIndex.js",
-    "./suffixes": {
-      "types": "./src/defaultSuffixTypes.d.ts"
-    },
-    "./astro": "./dist/plugins/astro.js",
-    "./rspack": "./dist/plugins/rspack.js",
-    "./vite": "./dist/plugins/vite.js",
-    "./webpack": "./dist/plugins/webpack.js",
-    "./rollup": "./dist/plugins/rollup.js",
-    "./esbuild": "./dist/plugins/esbuild.js",
-    "./nuxt": "./dist/plugins/nuxt.js",
-    "./farm": "./dist/plugins/farm.js",
-    "./types": "./dist/plugins/types.js",
-    "./*": "./*"
-  },
-  "typesVersions": {
-    "*": {
-      "*": ["./dist/plugins/*", "./dist/*", "./*"]
-    }
-  },
-  "files": ["src", "dist"],
   "peerDependencies": {
     "@farmfe/core": ">=1",
     "@nuxt/kit": "^3",
@@ -69,6 +54,16 @@
     "vite": ">=3",
     "webpack": "^4 || ^5"
   },
+  "keywords": [
+    "rollup",
+    "unplugin",
+    "vite",
+    "webgpu",
+    "webpack",
+    "wesl",
+    "wgsl"
+  ],
+  "packageManager": "pnpm@10.2.0",
   "peerDependenciesMeta": {
     "@farmfe/core": {
       "optional": true
@@ -90,6 +85,11 @@
     },
     "webpack": {
       "optional": true
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": ["./dist/plugins/*", "./dist/*", "./*"]
     }
   }
 }
