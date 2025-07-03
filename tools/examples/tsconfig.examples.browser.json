@@ -28,5 +28,5 @@
     "noUnusedParameters": true
   },
   "exclude": ["**/node_modules", "**/dist"],
-  "include": ["src", "*.ts", "../playwright.config.ts"]
+  "include": ["src", "*.ts"]
 }
