@@ -1,6 +1,9 @@
 ### commits
-- all pushes to the main branch shared repository should pass all tests, lint/formatting rules, commenting standards
-- interim commits needn't pass all the quality rules and encouraged to increase clarity for future readers. Best to put interim fixes on a branch or prefix with `interim:`.
+- all pushes and merges to the main branch shared repository should pass all tests, lint/formatting rules, commenting standards
+- interim commits are encouraged to increase clarity for future readers.
+Interim commits needn't pass all the quality rules. 
+Best to put interim commits on a branch that's merged to main
+(or prefix with `interim:`.)
 
 ### prepush script
 - the `pnpm prepush` script verifies tests, linting, formatting before pushing to the main branch of the shared repository
@@ -54,3 +57,9 @@ The copy is likely a different version than the current tree
 - sorts package.json fields via `fix:pkgJsonFormat` 
 (but then biome needs to run for for final formatting for e.g. multiline vs oneline arrays).
 - fixes inconsistent package dependencies via `fix:syncpack`.
+
+### dependencies in the monorepo
+- each package package.json declares its own regular and peer dependencies
+- shared devDependencies are moved to the root package for convenient mgmt
+- examples package.json files are intended to be read standalone by 
+  users, and so declare all of their own dependencies.
