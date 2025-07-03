@@ -16,7 +16,7 @@
     "@playwright/test": "^1.53.2",
     "@types/node": "^24.0.10",
     "@webgpu/types": "^0.1.63",
-    "typescript": "~5.8.3",
+    "typescript": "^5.8.3",
     "vite": "^7.0.0",
     "wesl-plugin": "workspace:*"
   },
