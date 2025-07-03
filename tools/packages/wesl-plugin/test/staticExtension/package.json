@@ -12,8 +12,5 @@
     "thimbleberry": "^0.2.10",
     "webgpu": "^0.3.0",
     "wesl-plugin": "workspace:*"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
   }
 }

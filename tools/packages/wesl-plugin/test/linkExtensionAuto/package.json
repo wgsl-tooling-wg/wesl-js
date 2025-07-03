@@ -4,7 +4,6 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsgo",
-    "prepublishOnly": "run-s build",
     "test": "nodemon --config nodemon-vitest.json"
   },
   "dependencies": {
@@ -14,8 +13,5 @@
     "thimbleberry": "^0.2.10",
     "webgpu": "^0.3.0",
     "wesl-plugin": "workspace:*"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
   }
 }

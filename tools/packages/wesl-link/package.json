@@ -18,8 +18,5 @@
     "wesl": "workspace:*",
     "wesl-tooling": "workspace:*",
     "yargs": "^18.0.0"
-  },
-  "devDependencies": {
-    "tsdown": "^0.12.9"
   }
 }
