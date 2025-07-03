@@ -3,10 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsgo",
-    "prepublishOnly": "run-s build",
     "build": "echo NYI",
-    "test": "nodemon --config nodemon-vitest.json"
+    "prepublishOnly": "run-s build",
+    "test": "nodemon --config nodemon-vitest.json",
+    "typecheck": "tsgo"
   },
   "dependencies": {
     "wesl-plugin": "workspace:*"

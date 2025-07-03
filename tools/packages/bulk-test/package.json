@@ -3,10 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsgo",
+    "bulk-test": "vitest run",
     "test": "vitest",
     "test:once": "vitest run",
-    "bulk-test": "vitest run"
+    "typecheck": "tsgo"
   },
   "dependencies": {
     "wesl": "workspace:*"

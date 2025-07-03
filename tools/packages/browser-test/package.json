@@ -3,10 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsgo",
-    "prepublishOnly": "run-s build",
     "dev": "vite dev",
-    "test": "vitest"
+    "prepublishOnly": "run-s build",
+    "test": "vitest",
+    "typecheck": "tsgo"
   },
   "dependencies": {
     "thimbleberry": "^0.2.10",

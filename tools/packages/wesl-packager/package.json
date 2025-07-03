@@ -2,16 +2,16 @@
   "name": "wesl-packager",
   "version": "0.6.9",
   "type": "module",
+  "bin": "bin/wesl-packager",
+  "files": ["bin"],
   "scripts": {
     "build": "tsdown",
     "build:watch": "tsdown --watch",
-    "typecheck": "tsgo",
     "prepublishOnly": "run-s build",
     "test": "FORCE_COLOR=1 vitest",
-    "test:once": "vitest run"
+    "test:once": "vitest run",
+    "typecheck": "tsgo"
   },
-  "files": ["bin"],
-  "bin": "bin/wesl-packager",
   "dependencies": {
     "@biomejs/js-api": "^1.0.0",
     "@biomejs/wasm-nodejs": "^2.0.6",

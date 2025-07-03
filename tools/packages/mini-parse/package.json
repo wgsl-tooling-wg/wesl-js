@@ -1,20 +1,20 @@
 {
   "name": "mini-parse",
   "version": "0.6.9",
+  "type": "module",
   "files": ["dist", "src"],
+  "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "run-s build:main build:test-util build:minified",
     "build:main": "vite build",
+    "build:minified": "vite -c minified.vite.config.ts build",
     "build:test-util": "vite -c test-util.vite.config.ts build",
     "build:vitest-util": "vite -c vitest-util.vite.config.ts build",
-    "build:minified": "vite -c minified.vite.config.ts build",
-    "typecheck": "tsgo",
     "prepublishOnly": "run-s build",
     "test": "vitest",
-    "test:once": "vitest run"
+    "test:once": "vitest run",
+    "typecheck": "tsgo"
   },
-  "type": "module",
-  "repository": "github:wgsl-tooling-wg/wesl-js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

@@ -1,25 +1,27 @@
 {
   "name": "wesl",
   "version": "0.6.9",
+  "type": "module",
   "files": ["dist", "src"],
+  "main": "dist/index.js",
+  "repository": "github:wgsl-tooling-wg/wesl-js",
+  "license": "MIT",
+  "keywords": ["webgpu", "wgsl", "wesl"],
   "scripts": {
     "build": "run-s build:main build:minified",
-    "build:main": "vite build",
-    "build:minified": "vite build --config minified.vite.config.js",
-    "build:sizetest": "vite build --config sizetest.vite.config.js",
     "build:brotli-size": "tsx ./scripts/brotli.ts dist/sized.cjs",
     "build:docs": "typedoc --plugin typedoc-theme-hierarchy --entryPoints ./src/index.ts --entryPointStrategy expand --out ./docs",
+    "build:main": "vite build",
+    "build:minified": "vite build --config minified.vite.config.js",
     "build:size": "run-s build:sizetest build:brotli-size",
+    "build:sizetest": "vite build --config sizetest.vite.config.js",
     "deploy:docsite": "run-s build:docs pages:deploy",
     "pages:deploy": "wrangler pages deploy --project-name wesl-js docs",
-    "typecheck": "tsgo",
     "prepublishOnly": "run-s build",
     "test": "vitest",
-    "test:once": "vitest run"
+    "test:once": "vitest run",
+    "typecheck": "tsgo"
   },
-  "type": "module",
-  "repository": "github:wgsl-tooling-wg/wesl-js",
-  "main": "dist/index.js",
   "exports": {
     ".": {
       "types": "./dist/tools/packages/wesl/src/index.d.ts",
@@ -33,7 +35,6 @@
   "dependencies": {
     "mini-parse": "workspace:*"
   },
-  "license": "MIT",
   "devDependencies": {
     "multi_pkg": "workspace:^",
     "ncp": "^2.0.0",
@@ -44,6 +45,5 @@
     "typedoc-theme-hierarchy": "^6.0.0",
     "vite-plugin-dts": "^4.5.4",
     "wrangler": "^4.22.0"
-  },
-  "keywords": ["webgpu", "wgsl", "wesl"]
+  }
 }
