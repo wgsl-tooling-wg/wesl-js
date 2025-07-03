@@ -26,9 +26,15 @@ export default {
   versionGroups: [
     { label: "plugin is weird", packages: ["wesl-plugin"], isIgnored: true },
     {
-      label: "Use workspace protocol when developing local packages",
+      label: "Use workspace:^ for peer dependencies on local packages",
       dependencies: ["$LOCAL"],
-      dependencyTypes: ["dev", "prod", "peer"],
+      dependencyTypes: ["peer"],
+      pinVersion: "workspace:^",
+    },
+    {
+      label: "Use workspace:* for dev/prod dependencies on local packages",
+      dependencies: ["$LOCAL"],
+      dependencyTypes: ["dev", "prod"],
       pinVersion: "workspace:*",
     },
   ],
