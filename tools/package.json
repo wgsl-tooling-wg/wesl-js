@@ -35,6 +35,7 @@
     "typecheck:watch": "nodemon --config nodemon-typecheck-watch.json"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.0.6",
     "@eslint/js": "^9.30.1",
     "@types/node": "^24.0.10",
     "@types/yargs": "^17.0.33",
@@ -71,8 +72,13 @@
   },
   "packageManager": "pnpm@10.12.4",
   "pnpm": {
-    "ignoredBuiltDependencies": ["es5-ext"],
-    "onlyBuiltDependencies": ["core-js", "esbuild"],
+    "ignoredBuiltDependencies": [
+      "es5-ext"
+    ],
+    "onlyBuiltDependencies": [
+      "core-js",
+      "esbuild"
+    ],
     "overrides": {}
   }
 }

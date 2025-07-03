@@ -1,22 +1,26 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
   "vcs": {
-    "enabled": false,
+    "enabled": true,
     "clientKind": "git",
-    "useIgnoreFile": false
+    "useIgnoreFile": true
   },
   "files": {
     "ignoreUnknown": false,
-    "include": ["tools", "package.json", "biome.jsonc"],
-    "ignore": ["assets", "dist", ".vscode/*"]
+    "includes": [
+      "**/tools/**",
+      "**/package.json",
+      "**/biome.jsonc",
+      "!**/assets",
+      "!**/dist",
+      "!**/.vscode/**/*"
+    ]
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space"
   },
-  "organizeImports": {
-    "enabled": true
-  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
@@ -25,14 +29,21 @@
         "useTemplate": "off",
         "noUselessElse": "off",
         "noUnusedTemplateLiteral": "off",
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "noParameterAssign": "error",
+        "useAsConstAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error"
       },
       "complexity": {
-        "noForEach": "off"
+        "noForEach": "off",
+        "noUselessContinue": "off"
       },
-      "correctness": {
-        "noUnnecessaryContinue": "off"
-      },
+      "correctness": {},
       "suspicious": {
         "noExplicitAny": "off",
         "noFocusedTests": "off"
@@ -47,24 +58,33 @@
   },
   "overrides": [
     {
-      "include": ["ClickableError.ts"],
+      "includes": ["**/ClickableError.ts"],
       "linter": {
         "rules": {
-          "style": {
-            "noCommaOperator": "off"
-          },
+          "style": {},
           "security": {
             "noGlobalEval": "off"
+          },
+          "complexity": {
+            "noCommaOperator": "off"
           }
         }
       }
     },
     {
-      "include": ["**/tsconfig.*json"],
+      "includes": ["**/tsconfig.*json"],
       "json": {
         "parser": {
           "allowComments": true,
           "allowTrailingCommas": true
+        }
+      }
+    },
+    {
+      "includes": ["**/package.json"],
+      "json": {
+        "formatter": {
+          "expand": "auto"
         }
       }
     }
