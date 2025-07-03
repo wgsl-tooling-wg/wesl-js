@@ -12,7 +12,7 @@
     "bump": "tsx scripts/bump.ts --version",
     "check:versions": "syncpack list-mismatches",
     "echo:all": "pnpm --filter \"**\" exec pwd",
-    "fix:all": "run-s fix:pkgJsonFormat fix:syncpack fix:biome ",
+    "fix:all": "run-s fix:pkgJsonFormat fix:syncpack fix:biome",
     "fix:biome": "biome check --fix --unsafe",
     "fix:pkgJsonFormat": "syncpack format",
     "fix:syncpack": "syncpack fix-mismatches",
