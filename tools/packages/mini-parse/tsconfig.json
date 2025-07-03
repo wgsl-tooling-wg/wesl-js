@@ -6,5 +6,5 @@
       "mini-parse/test-util": ["./src/test-util"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "*.ts"]
 }
