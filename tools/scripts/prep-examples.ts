@@ -18,9 +18,9 @@ const examplesIgnore = [".git/", "/node_modules", "dist/", "package-lock.json"];
 
 interface Versions {
   wesl: string;
-  weslPlugin: string;
-  cli: string;
-  random: string;
+  "wesl-plugin": string;
+  "wesl-link": string;
+  random_wgsl: string;
 }
 
 const toolsPath = path.join(fileURLToPath(import.meta.url), "../..");
@@ -61,13 +61,13 @@ async function weslVersion(): Promise<Versions> {
   const wesl = await packageVersion("wesl");
   const weslPlugin = await packageVersion("wesl-plugin");
   const cli = await packageVersion("wesl-link");
-  const random = await packageVersion("random_wgsl");
+  const random_wgsl = await packageVersion("random_wgsl");
   console.log(`wesl version: ${wesl}`);
   console.log(`wesl-plugin version: ${weslPlugin}`);
   console.log(`wesl-link cli version: ${cli}`);
-  console.log(`random_wgsl version: ${random}`);
+  console.log(`random_wgsl version: ${random_wgsl}`);
 
-  return { wesl, weslPlugin, cli, random };
+  return { wesl, "wesl-plugin": weslPlugin, "wesl-link": cli, random_wgsl };
 }
 
 /** load the version from a package.json file in the packages/ di */
@@ -115,21 +115,38 @@ async function setExampleVersions(
   for (const packageJsonPath of examples) {
     const raw = await fs.readFile(packageJsonPath, { encoding: "utf8" });
     const json = JSON.parse(raw);
-    const { wesl, weslPlugin, cli, random } = versions;
-    const prefix = wesl.startsWith("workspace:") ? "" : "^";
-    if (json.dependencies.wesl) {
-      json.dependencies.wesl = `${prefix}${wesl}`;
-    }
-    if (json.devDependencies["wesl-plugin"]) {
-      json.devDependencies["wesl-plugin"] = `${prefix}${weslPlugin}`;
-    }
-    if (json.devDependencies["wesl-link"]) {
-      json.devDependencies["wesl-link"] = `${prefix}${cli}`;
-    }
-    if (json.dependencies.random_wgsl) {
-      json.dependencies.random_wgsl = `${prefix}${random}`;
-    }
+    patchWorkspaceDependencies(json, versions);
     await fs.writeFile(packageJsonPath, JSON.stringify(json, null, 2) + "\n");
+  }
+}
+
+/** patch 'workspace:' dependencies in all package.json sections */
+function patchWorkspaceDependencies(pkgJson: any, versions: Versions): void {
+  const sectionNames = ["dependencies", "devDependencies", "peerDependencies"];
+  const sections = sectionNames.flatMap(s => (pkgJson[s] ? [pkgJson[s]] : []));
+  const name = pkgJson.name || "unknown-package";
+  sections.forEach(section => {
+    patchSectionDeps(section, versions, name);
+  });
+}
+
+/** patch workspace dependencies in one package.json dependencies section */
+function patchSectionDeps(
+  section: any,
+  versions: Versions,
+  name: string,
+): void {
+  for (const [dep, version] of Object.entries(section)) {
+    const versionStr = String(version);
+    if (versionStr.startsWith("workspace:")) {
+      if (versions[dep]) {
+        section[dep] = versions[dep];
+      } else {
+        console.warn(
+          `Warning: No version found for workspace dependency "${dep}" in ${name}.`,
+        );
+      }
+    }
   }
 }
 
