@@ -7,5 +7,5 @@
       "wesl-plugin": ["../wesl-plugin/src"]
     }
   },
-  "include": ["vitest.config.ts", "src/**/*", "generated/**/*"]
+  "include": ["*.ts", "src", "generated"]
 }

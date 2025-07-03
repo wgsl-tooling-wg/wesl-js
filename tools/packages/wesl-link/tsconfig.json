@@ -9,5 +9,5 @@
       "mini-parse/vitest-util": ["../mini-parse/src/vitest-util"]
     }
   },
-  "include": ["src/**/*", "src/viteTypes.d.ts", "test"]
+  "include": ["src", "test"]
 }

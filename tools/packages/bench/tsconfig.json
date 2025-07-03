@@ -6,5 +6,5 @@
       "mini-parse": ["../mini-parse/src"]
     }
   },
-  "include": ["src/**/*", "bin/**/*", "src/viteTypes.d.ts"]
+  "include": ["src", "bin"]
 }

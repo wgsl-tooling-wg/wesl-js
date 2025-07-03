@@ -12,5 +12,5 @@
       "wesl-tooling": ["../wesl-tooling/src"]
     }
   },
-  "include": ["main.ts", "vite.config.ts", "src/**/*"]
+  "include": ["*.ts", "src"]
 }

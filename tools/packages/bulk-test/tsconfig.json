@@ -8,5 +8,5 @@
       "wesl-testsuite": ["../../../wesl-testsuite/src"]
     }
   },
-  "include": ["src/**/*", "src/viteTypes.d.ts"]
+  "include": ["src"]
 }

@@ -7,5 +7,5 @@
       "wesl-tooling": ["../wesl-tooling/src"]
     }
   },
-  "include": ["src/**/*", "src/viteTypes.d.ts", "rollup-plugin-raw.ts"]
+  "include": ["src", "*.ts"]
 }
