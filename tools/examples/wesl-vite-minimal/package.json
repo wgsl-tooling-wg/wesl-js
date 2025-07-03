@@ -9,7 +9,7 @@
     "test": "playwright test --reporter=list"
   },
   "dependencies": {
-    "random_wgsl": "0.6.9",
+    "random_wgsl": "workspace:*",
     "wesl": "workspace:*"
   },
   "devDependencies": {

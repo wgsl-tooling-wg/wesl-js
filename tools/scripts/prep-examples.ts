@@ -20,6 +20,7 @@ interface Versions {
   wesl: string;
   weslPlugin: string;
   cli: string;
+  random: string;
 }
 
 const toolsPath = path.join(fileURLToPath(import.meta.url), "../..");
@@ -60,11 +61,13 @@ async function weslVersion(): Promise<Versions> {
   const wesl = await packageVersion("wesl");
   const weslPlugin = await packageVersion("wesl-plugin");
   const cli = await packageVersion("wesl-link");
+  const random = await packageVersion("random_wgsl");
   console.log(`wesl version: ${wesl}`);
   console.log(`wesl-plugin version: ${weslPlugin}`);
   console.log(`wesl-link cli version: ${cli}`);
+  console.log(`random_wgsl version: ${random}`);
 
-  return { wesl, weslPlugin, cli };
+  return { wesl, weslPlugin, cli, random };
 }
 
 /** load the version from a package.json file in the packages/ di */
@@ -112,7 +115,7 @@ async function setExampleVersions(
   for (const packageJsonPath of examples) {
     const raw = await fs.readFile(packageJsonPath, { encoding: "utf8" });
     const json = JSON.parse(raw);
-    const { wesl, weslPlugin, cli } = versions;
+    const { wesl, weslPlugin, cli, random } = versions;
     const prefix = wesl.startsWith("workspace:") ? "" : "^";
     if (json.dependencies.wesl) {
       json.dependencies.wesl = `${prefix}${wesl}`;
@@ -122,6 +125,9 @@ async function setExampleVersions(
     }
     if (json.devDependencies["wesl-link"]) {
       json.devDependencies["wesl-link"] = `${prefix}${cli}`;
+    }
+    if (json.dependencies.random_wgsl) {
+      json.dependencies.random_wgsl = `${prefix}${random}`;
     }
     await fs.writeFile(packageJsonPath, JSON.stringify(json, null, 2) + "\n");
   }
