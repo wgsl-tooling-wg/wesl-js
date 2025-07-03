@@ -1,7 +1,6 @@
 /// <reference types="vitest/config" />
 import { type LibraryOptions, defineConfig } from "vite";
 import { baseViteConfig } from "./base.vite.config.js";
-// import { visualizer } from "rollup-plugin-visualizer";
 
 // Note that this will include the debug tracing code, so
 // so the size estimate is an overestimate of production size

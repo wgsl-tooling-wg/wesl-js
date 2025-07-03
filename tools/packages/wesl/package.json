@@ -35,9 +35,7 @@
   },
   "devDependencies": {
     "multi_pkg": "workspace:*",
-    "ncp": "^2.0.0",
     "random_wgsl": "workspace:*",
-    "rollup-plugin-visualizer": "^6.0.3",
     "terser": "^5.43.1",
     "typedoc": "^0.28.7",
     "typedoc-theme-hierarchy": "^6.0.0",
