@@ -1,6 +1,9 @@
 {
   "extends": "../../tsconfig.browser.json",
   "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["@webgpu/types"],
     "paths": {
       "wesl": ["../wesl/src"],
       "mini-parse": ["../mini-parse/src"],
