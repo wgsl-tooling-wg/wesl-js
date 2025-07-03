@@ -9,5 +9,5 @@
       "wesl-testsuite": ["../../../wesl-testsuite/src"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "*.ts", "scripts/*.ts"]
 }

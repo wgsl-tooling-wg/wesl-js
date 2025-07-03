@@ -2,7 +2,10 @@
   "name": "wesl",
   "version": "0.6.9",
   "type": "module",
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "run-s build:main build:minified",
@@ -34,6 +37,7 @@
     "mini-parse": "workspace:*"
   },
   "devDependencies": {
+    "@types/brotli": "^1.3.4",
     "multi_pkg": "workspace:*",
     "random_wgsl": "workspace:*",
     "terser": "^5.43.1",
@@ -42,5 +46,9 @@
     "wrangler": "^4.22.0"
   },
   "license": "MIT",
-  "keywords": ["webgpu", "wesl", "wgsl"]
+  "keywords": [
+    "webgpu",
+    "wesl",
+    "wgsl"
+  ]
 }
