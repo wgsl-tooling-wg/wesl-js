@@ -25,12 +25,12 @@
       "import": "./dist/minified.js"
     },
     "./test-util": {
-      "import": "./dist/testUtil.js",
-      "types": "./dist/test-util/testUtil.d.ts"
+      "types": "./dist/test-util/testUtil.d.ts",
+      "import": "./dist/testUtil.js"
     },
     "./vitest-util": {
-      "import": "./dist/vitestUtil.js",
-      "types": "./dist/vitest-util/vitestUtil.d.ts"
+      "types": "./dist/vitest-util/vitestUtil.d.ts",
+      "import": "./dist/vitestUtil.js"
     }
   }
 }

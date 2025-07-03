@@ -1,0 +1,26 @@
+import type { RcFile } from "syncpack";
+export default {
+  sortFirst: [
+    "name",
+    "description",
+    "version",
+    "private",
+    "author",
+    "type",
+    "bin",
+    "files",
+    "repository",
+    "homepage",
+    "scripts",
+    "exports",
+    "main",
+    "module",
+    "types",
+    "dependencies",
+    "devDependencies",
+    "peerDependencies",
+    "license",
+    "keywords",
+    "packageManager",
+  ],
+} satisfies RcFile;

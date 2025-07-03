@@ -3,10 +3,7 @@
   "version": "0.6.9",
   "type": "module",
   "files": ["dist", "src"],
-  "main": "dist/index.js",
   "repository": "github:wgsl-tooling-wg/wesl-js",
-  "license": "MIT",
-  "keywords": ["webgpu", "wgsl", "wesl"],
   "scripts": {
     "build": "run-s build:main build:minified",
     "build:brotli-size": "tsx ./scripts/brotli.ts dist/sized.cjs",
@@ -32,6 +29,7 @@
       "import": "./dist/minified.js"
     }
   },
+  "main": "dist/index.js",
   "dependencies": {
     "mini-parse": "workspace:*"
   },
@@ -44,5 +42,7 @@
     "typedoc": "^0.28.7",
     "typedoc-theme-hierarchy": "^6.0.0",
     "wrangler": "^4.22.0"
-  }
+  },
+  "license": "MIT",
+  "keywords": ["webgpu", "wesl", "wgsl"]
 }

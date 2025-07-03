@@ -3,13 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsgo",
     "bench": "tsx --expose-gc --allow-natives-syntax bin/bench.ts",
     "bench:baseline": "bin/choose_baseline.mts",
     "bench:bun": "bun --expose-gc --allow-natives-syntax bin/bench.ts",
     "bench:details": "sudo tsx --expose-gc --allow-natives-syntax bin/bench.ts --cpu",
+    "bench:profile": "tsx --inspect-brk bin/bench.ts --profile",
     "bench:validate": "tsx bin/bench.ts --profile",
-    "bench:profile": "tsx --inspect-brk bin/bench.ts --profile"
+    "typecheck": "tsgo"
   },
   "dependencies": {
     "picocolors": "^1.1.1",
@@ -17,9 +17,9 @@
     "wesl": "workspace:*"
   },
   "devDependencies": {
-    "0x": "^5.8.0",
     "@mitata/counters": "^0.0.8",
     "@use-gpu/shader": "^0.15.0",
+    "0x": "^5.8.0",
     "mitata": "^1.0.34",
     "wgsl_reflect": "^1.2.1"
   }

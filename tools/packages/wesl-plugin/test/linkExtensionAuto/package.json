@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsgo",
-    "test": "nodemon --config nodemon-vitest.json"
+    "test": "nodemon --config nodemon-vitest.json",
+    "typecheck": "tsgo"
   },
   "dependencies": {
     "mini-parse": "workspace:*",
