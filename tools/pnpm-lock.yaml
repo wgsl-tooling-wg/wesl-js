@@ -134,7 +134,7 @@ importers:
         specifier: ^0.1.63
         version: 0.1.63
       typescript:
-        specifier: ~5.8.3
+        specifier: ^5.8.3
         version: 5.8.3
       vite:
         specifier: ^7.0.0
@@ -180,8 +180,8 @@ importers:
         specifier: ^2.20.1
         version: 2.20.1(@floating-ui/utils@0.2.10)(@types/react@19.1.0)
       random_wgsl:
-        specifier: 0.6.9
-        version: 0.6.9
+        specifier: workspace:*
+        version: link:../../packages/random_wgsl
       style-mod:
         specifier: ^4.1.2
         version: 4.1.2
@@ -211,8 +211,8 @@ importers:
   examples/wesl-vite:
     dependencies:
       random_wgsl:
-        specifier: 0.6.9
-        version: 0.6.9
+        specifier: workspace:*
+        version: link:../../packages/random_wgsl
       wesl:
         specifier: workspace:*
         version: link:../../packages/wesl
@@ -227,7 +227,7 @@ importers:
         specifier: ^0.1.63
         version: 0.1.63
       typescript:
-        specifier: ~5.8.3
+        specifier: ^5.8.3
         version: 5.8.3
       vite:
         specifier: ^7.0.0
@@ -239,8 +239,8 @@ importers:
   examples/wesl-vite-minimal:
     dependencies:
       random_wgsl:
-        specifier: 0.6.9
-        version: 0.6.9
+        specifier: workspace:*
+        version: link:../../packages/random_wgsl
       wesl:
         specifier: workspace:*
         version: link:../../packages/wesl
@@ -252,7 +252,7 @@ importers:
         specifier: ^0.1.63
         version: 0.1.63
       typescript:
-        specifier: ~5.8.3
+        specifier: ^5.8.3
         version: 5.8.3
       vite:
         specifier: ^7.0.0
@@ -4652,9 +4652,6 @@ packages:
 
   queue-tick@1.0.1:
     resolution: {integrity: sha512-kJt5qhMxoszgU/62PLP1CJytzd2NKetjSRnyuj31fDd3Rlcz3fzlFdFLD1SItunPwyqEOkca6GbV612BWfaBag==}
-
-  random_wgsl@0.6.9:
-    resolution: {integrity: sha512-ES8cLlXzS0cgjXa4ZMo2q7N0rTtnUr11oIvPYUgHlNREjqFwwlJdZCTVqLIFP8J3ojWWy1wvlmfnjDDPxjsVPg==}
 
   randombytes@2.1.0:
     resolution: {integrity: sha512-vYl3iOX+4CKUWuxGi9Ukhie6fsqXqS9FE2Zaic4tNFD2N2QQaXOMFbuKK4QmDHC0JO6B1Zp41J0LpT0oR68amQ==}
@@ -10144,8 +10141,6 @@ snapshots:
   queue-microtask@1.2.3: {}
 
   queue-tick@1.0.1: {}
-
-  random_wgsl@0.6.9: {}
 
   randombytes@2.1.0:
     dependencies:
