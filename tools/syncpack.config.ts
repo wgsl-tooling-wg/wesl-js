@@ -23,4 +23,13 @@ export default {
     "keywords",
     "packageManager",
   ],
+  versionGroups: [
+    { label: "plugin is weird", packages: ["wesl-plugin"], isIgnored: true },
+    {
+      label: "Use workspace protocol when developing local packages",
+      dependencies: ["$LOCAL"],
+      dependencyTypes: ["dev", "prod", "peer"],
+      pinVersion: "workspace:*",
+    },
+  ],
 } satisfies RcFile;
