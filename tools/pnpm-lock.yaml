@@ -11,9 +11,6 @@ importers:
       '@eslint/js':
         specifier: ^9.30.1
         version: 9.30.1
-      '@types/diff':
-        specifier: ^8.0.0
-        version: 8.0.0
       '@types/node':
         specifier: ^24.0.10
         version: 24.0.10
@@ -351,7 +348,7 @@ importers:
         version: link:../mini-parse
     devDependencies:
       multi_pkg:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../test_pkg/multi_pkg
       ncp:
         specifier: ^2.0.0
@@ -415,7 +412,7 @@ importers:
         version: 18.0.0
     devDependencies:
       dependent_package:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../test_pkg/dependent_package
       dir-compare:
         specifier: ^5.0.0
@@ -603,7 +600,7 @@ importers:
         version: link:../wesl
     devDependencies:
       dependent_package:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../test_pkg/dependent_package
 
 packages:
@@ -1878,10 +1875,6 @@ packages:
 
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
-
-  '@types/diff@8.0.0':
-    resolution: {integrity: sha512-o7jqJM04gfaYrdCecCVMbZhNdG6T1MHg/oQoRFdERLV+4d+V7FijhiEAbFu0Usww84Yijk9yH58U4Jk4HbtzZw==}
-    deprecated: This is a stub types definition. diff provides its own type definitions, so you do not need this installed.
 
   '@types/eslint-scope@3.7.7':
     resolution: {integrity: sha512-MzMFlSLBqNF2gcHWO0G1vP/YQyfvrxZ0bF+u7mzUdZ1/xK4A4sru+nraZz5i3iEIk1l1uyicaDVTB4QbbEkAYg==}
@@ -7039,10 +7032,6 @@ snapshots:
   '@types/command-line-args@5.2.3': {}
 
   '@types/deep-eql@4.0.2': {}
-
-  '@types/diff@8.0.0':
-    dependencies:
-      diff: 8.0.2
 
   '@types/eslint-scope@3.7.7':
     dependencies:
