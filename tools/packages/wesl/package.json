@@ -8,11 +8,10 @@
   ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "build": "run-s build:main build:minified",
+    "build": "run-s build:main build:size",
     "build:brotli-size": "tsx ./scripts/brotli.ts dist/sized.cjs",
     "build:docs": "typedoc --plugin typedoc-theme-hierarchy --entryPoints ./src/index.ts --entryPointStrategy expand --out ./docs",
     "build:main": "vite build",
-    "build:minified": "vite build --config minified.vite.config.js",
     "build:size": "run-s build:sizetest build:brotli-size",
     "build:sizetest": "vite build --config sizetest.vite.config.js",
     "deploy:docsite": "run-s build:docs pages:deploy",
@@ -26,10 +25,6 @@
     ".": {
       "types": "./dist/tools/packages/wesl/src/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./minified": {
-      "types": "./dist/tools/packages/wesl/src/index.d.ts",
-      "import": "./dist/minified.js"
     }
   },
   "main": "dist/index.js",
