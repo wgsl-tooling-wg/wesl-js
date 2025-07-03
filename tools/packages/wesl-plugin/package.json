@@ -24,7 +24,6 @@
     "chalk": "^5.4.1",
     "nodemon": "^3.1.10",
     "rollup": "^4.44.1",
-    "tsdown": "^0.12.9",
     "webpack": "^5.99.9"
   },
   "packageManager": "pnpm@10.2.0",

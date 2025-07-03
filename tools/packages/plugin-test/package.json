@@ -4,7 +4,6 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon --delay 350ms --watch '../wesl/dist/**/*.js' --watch '../wesl-plugin/dist/**/*.js' --ext cjs,ts,js --exec vite dev",
-    "prepublishOnly": "run-s build",
     "test": "nodemon --delay 350ms --watch '../wesl/dist/**/*.js' --watch '../wesl-plugin/dist/**/*.js' --ext cjs,ts,js --exec vitest",
     "typecheck": "tsgo"
   },
@@ -14,8 +13,5 @@
     "webgpu": "^0.3.0",
     "wesl": "workspace:*",
     "wesl-plugin": "workspace:*"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
   }
 }
