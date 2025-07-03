@@ -289,15 +289,6 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
 
-  packages/browser-test:
-    dependencies:
-      thimbleberry:
-        specifier: ^0.2.10
-        version: 0.2.10
-      wesl:
-        specifier: workspace:*
-        version: link:../wesl
-
   packages/bulk-test:
     dependencies:
       wesl:
