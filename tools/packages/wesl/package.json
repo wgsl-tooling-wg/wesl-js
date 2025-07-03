@@ -34,7 +34,7 @@
     "mini-parse": "workspace:*"
   },
   "devDependencies": {
-    "multi_pkg": "workspace:^",
+    "multi_pkg": "workspace:*",
     "ncp": "^2.0.0",
     "random_wgsl": "workspace:*",
     "rollup-plugin-visualizer": "^6.0.3",

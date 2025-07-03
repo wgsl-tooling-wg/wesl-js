@@ -22,7 +22,7 @@
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "dependent_package": "workspace:^",
+    "dependent_package": "workspace:*",
     "dir-compare": "^5.0.0",
     "picocolors": "^1.1.1",
     "rollup": "^4.44.1"
