@@ -2,10 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { diffChars, diffLines } from "diff";
 import {
+  compareSync,
   type Difference,
   type Options,
   type Result,
-  compareSync,
 } from "dir-compare";
 import pico from "picocolors";
 import { expect } from "vitest";

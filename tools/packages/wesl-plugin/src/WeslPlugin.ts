@@ -1,5 +1,6 @@
 import path from "node:path";
 import {
+  createUnplugin,
   type ExternalIdResult,
   type Thenable,
   type TransformResult,
@@ -7,7 +8,6 @@ import {
   type UnpluginContext,
   type UnpluginContextMeta,
   type UnpluginOptions,
-  createUnplugin,
 } from "unplugin";
 import type { Conditions, ParsedRegistry } from "wesl";
 import { buildApi } from "./PluginApi.js";

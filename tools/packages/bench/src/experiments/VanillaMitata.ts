@@ -1,8 +1,8 @@
 import * as mitata from "mitata";
 import type { BenchTest } from "../../bin/bench.ts";
 import {
-  type ParserVariant,
   createVariantFunction,
+  type ParserVariant,
 } from "../BenchVariations.ts";
 
 /** benchmark using the high level mitata.bench() api. */

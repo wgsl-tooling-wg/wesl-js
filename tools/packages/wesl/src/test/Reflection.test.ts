@@ -1,11 +1,11 @@
 import { expect, test } from "vitest";
 import type { BindingStructElem, StructElem } from "../AbstractElems.ts";
+import { astToString } from "../debug/ASTtoString.ts";
 import {
   bindingGroupLayoutTs,
   reportBindingStructsPlugin,
 } from "../Reflection.ts";
 import { bindingStructsPlugin } from "../TransformBindingStructs.ts";
-import { astToString } from "../debug/ASTtoString.ts";
 import { linkTestOpts } from "./TestUtil.ts";
 
 test("extract binding struct", () => {

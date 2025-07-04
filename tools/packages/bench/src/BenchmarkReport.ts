@@ -8,7 +8,7 @@ import {
   percent,
   percentPrecision,
 } from "./table-util/Formatters.ts";
-import { type ColumnGroup, buildTable } from "./table-util/TableReport.ts";
+import { buildTable, type ColumnGroup } from "./table-util/TableReport.ts";
 
 const maxNameLength = 30;
 
@@ -137,7 +137,7 @@ function selectedStats(
     x => codeLines / (x / 1000),
   );
 
-  let gcTimeMean: number | undefined = undefined;
+  let gcTimeMean: number | undefined;
   const { nodeGcTime } = result;
   if (nodeGcTime) {
     gcTimeMean = nodeGcTime.inRun / result.samples.length;

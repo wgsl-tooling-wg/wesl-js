@@ -1,4 +1,4 @@
-import { type TestContext, afterAll, test } from "vitest";
+import { afterAll, type TestContext, test } from "vitest";
 import { conditionalTranslationCases } from "wesl-testsuite";
 import { testFromCase, verifyCaseCoverage } from "./TestLink.js";
 

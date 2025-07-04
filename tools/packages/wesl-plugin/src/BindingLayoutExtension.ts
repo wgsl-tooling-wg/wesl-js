@@ -1,4 +1,4 @@
-import { type LinkConfig, bindAndTransform, bindingStructsPlugin } from "wesl";
+import { bindAndTransform, bindingStructsPlugin, type LinkConfig } from "wesl";
 import {
   bindingGroupLayoutTs,
   reportBindingStructsPlugin,

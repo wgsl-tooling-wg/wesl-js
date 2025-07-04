@@ -1,15 +1,15 @@
 import {
-  type Parser,
-  type Stream,
   collectArray,
   delimited,
   fn,
   opt,
   or,
+  type Parser,
   preceded,
   repeat,
   repeatPlus,
   req,
+  type Stream,
   seq,
   tagScope,
   tokenOf,
@@ -27,7 +27,7 @@ import {
   typeRefCollect,
 } from "../WESLCollect";
 import { number, qualified_ident, word } from "./WeslBaseGrammar";
-import { type WeslToken, templateClose, templateOpen } from "./WeslStream";
+import { templateClose, templateOpen, type WeslToken } from "./WeslStream";
 
 export const opt_template_list = opt(
   seq(

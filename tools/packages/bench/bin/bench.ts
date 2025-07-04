@@ -2,19 +2,20 @@ import path from "node:path";
 import { link } from "wesl";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import {
-  type ParserVariant,
-  createVariantFunction,
-} from "../src/BenchVariations.ts";
 import { type BenchmarkReport, reportResults } from "../src/BenchmarkReport.ts";
-import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
-import { loadSimpleFiles, loadSimpleTest } from "../src/LoadSimpleTest.ts";
+import {
+  createVariantFunction,
+  type ParserVariant,
+} from "../src/BenchVariations.ts";
 import { benchManually } from "../src/experiments/BenchManually.ts";
 import { simpleMitataBench } from "../src/experiments/VanillaMitata.ts";
+import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
+import { loadSimpleFiles, loadSimpleTest } from "../src/LoadSimpleTest.ts";
 import {
   type MeasureOptions,
   mitataBench,
 } from "../src/mitata-util/MitataBench.ts";
+import type { MeasuredResults } from "../src/mitata-util/MitataStats.ts";
 
 export interface BenchTest {
   /** name of the test */
@@ -195,7 +196,7 @@ async function runBenchmarkPair(
 ): Promise<{ current: any; baseline?: any }> {
   const current = await mitataBench(currentFn, testName, opts);
 
-  let baseline = undefined;
+  let baseline: MeasuredResults | undefined;
   if (baselineFn) {
     baseline = await mitataBench(baselineFn, "--> baseline", opts);
   }

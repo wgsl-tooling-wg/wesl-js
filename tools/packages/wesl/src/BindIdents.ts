@@ -2,24 +2,24 @@ import type { AbstractElem } from "./AbstractElems.ts";
 import { assertThatDebug, assertUnreachableSilent } from "./Assertions.ts";
 import { failIdent } from "./ClickableError.ts";
 import { elementValid, scopeValid } from "./Conditions.ts";
+import { identToString } from "./debug/ScopeToString.ts";
 import type { FlatImport } from "./FlattenTreeImport.ts";
 import type { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
 import { type LiveDecls, makeLiveDecls } from "./LiveDeclarations.ts";
 import { type ManglerFn, minimalMangle } from "./Mangler.ts";
-import { type WeslAST, flatImports, parseSrcModule } from "./ParseWESL.ts";
 import type { ParsedRegistry } from "./ParsedRegistry.ts";
+import { flatImports, parseSrcModule, type WeslAST } from "./ParseWESL.ts";
 import {
   type Conditions,
   type DeclIdent,
   type LexicalScope,
+  publicDecl,
   type RefIdent,
   type Scope,
   type SrcModule,
-  publicDecl,
 } from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last } from "./Util.ts";
-import { identToString } from "./debug/ScopeToString.ts";
 
 /**
   BindIdents pass

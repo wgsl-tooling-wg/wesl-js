@@ -3,8 +3,8 @@ import type * as mitataCountersType from "@mitata/counters";
 import { measure } from "mitata";
 import {
   type MeasuredResults,
-  type NodeGCTime,
   mitataStats,
+  type NodeGCTime,
 } from "./MitataStats.ts";
 
 export type MeasureResult = Awaited<ReturnType<typeof measure>>;

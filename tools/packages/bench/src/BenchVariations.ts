@@ -1,5 +1,5 @@
 import path from "node:path";
-import { WeslStream, link, parseIntoRegistry, parsedRegistry } from "wesl";
+import { link, parsedRegistry, parseIntoRegistry, WeslStream } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import { baselineDir } from "../bin/bench.ts";
 
@@ -25,7 +25,7 @@ export async function createVariantFunction(
   variant: ParserVariant,
   useBaseline: boolean,
 ): Promise<FnAndBaseline> {
-  let baselineImports: any = undefined;
+  let baselineImports: any;
 
   if (useBaseline) {
     // Try to load baseline functions
@@ -69,7 +69,7 @@ function parseFns(baselineImports: any): FnAndBaseline {
 
   const basedParseIntoRegistry = baselineImports?.parseIntoRegistry;
   const basedParsedRegistry = baselineImports?.parsedRegistry;
-  let baseline: BenchFunction | undefined = undefined;
+  let baseline: BenchFunction | undefined;
   if (basedParseIntoRegistry && basedParsedRegistry) {
     baseline = ({ weslSrc }) => {
       const registry = basedParsedRegistry();
@@ -83,7 +83,7 @@ function parseFns(baselineImports: any): FnAndBaseline {
 
 /** return benchmark functions for "tokenize" variant  */
 function tokenizeFns(baselineImports: any): FnAndBaseline {
-  let baseline = undefined;
+  let baseline: BenchFunction | undefined;
   if (baselineImports?.WeslStream) {
     baseline = makeTokenize(baselineImports.WeslStream);
   }

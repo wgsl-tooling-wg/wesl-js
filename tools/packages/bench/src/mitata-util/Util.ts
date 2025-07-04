@@ -15,7 +15,7 @@ export function mapValues<K extends string | number | symbol, T, U>(
 ): Record<K, U> {
   const result = {} as Record<K, U>;
   for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+    if (Object.hasOwn(obj, key)) {
       result[key] = fn(obj[key]);
     }
   }

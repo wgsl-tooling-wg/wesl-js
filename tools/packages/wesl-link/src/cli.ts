@@ -9,8 +9,8 @@ import {
 } from "wesl-tooling";
 import yargs from "yargs";
 import {
-  parseIntoRegistry,
   parsedRegistry,
+  parseIntoRegistry,
 } from "../../wesl/src/ParsedRegistry.js"; // LATER fix import
 
 type CliArgs = Awaited<ReturnType<typeof parseArgs>>;

@@ -3,7 +3,7 @@ import path from "node:path";
 import { glob } from "glob";
 import toml from "toml";
 import type { UnpluginBuildContext, UnpluginContext } from "unplugin";
-import { type ParsedRegistry, parseIntoRegistry, parsedRegistry } from "wesl";
+import { type ParsedRegistry, parsedRegistry, parseIntoRegistry } from "wesl";
 import { parseDependencies } from "wesl-tooling";
 import type { PluginExtensionApi } from "./PluginExtension.js";
 import type { PluginContext, WeslToml, WeslTomlInfo } from "./WeslPlugin.js";

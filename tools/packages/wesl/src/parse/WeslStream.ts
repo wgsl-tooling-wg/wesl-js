@@ -1,11 +1,11 @@
 import {
   CachingStream,
   MatchersStream,
+  matchOneOf,
   ParseError,
   RegexMatchers,
   type Stream,
   type TypedToken,
-  matchOneOf,
   withStreamAction,
 } from "mini-parse";
 import { keywords, reservedWords } from "./Keywords";

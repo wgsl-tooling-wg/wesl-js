@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseIntoRegistry, parsedRegistry, resetScopeIds } from "wesl";
+import { parsedRegistry, parseIntoRegistry, resetScopeIds } from "wesl";
 import { bindIdents } from "../BindIdents.ts";
 import { scopeToStringLong } from "../debug/ScopeToString.ts";
 import { bindTest } from "./TestUtil.ts";

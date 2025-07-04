@@ -24,10 +24,10 @@ import { quotedText, srcTrace } from "./ParserLogging.js";
 import { tracing } from "./ParserTracing.js";
 import type { Span } from "./Span.js";
 import {
+  peekToken,
   type Stream,
   type Token,
   type TypedToken,
-  peekToken,
 } from "./Stream.js";
 
 /** Parsing Combinators

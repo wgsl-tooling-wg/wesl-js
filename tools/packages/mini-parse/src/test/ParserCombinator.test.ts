@@ -1,6 +1,6 @@
 import {
-  type TestMatcherKind,
   logCatch,
+  type TestMatcherKind,
   testParse,
 } from "mini-parse/test-util";
 import { expect, test } from "vitest";

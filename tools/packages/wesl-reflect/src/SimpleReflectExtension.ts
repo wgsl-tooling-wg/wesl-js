@@ -36,7 +36,7 @@ function makeReflect(options: SimpleReflectOptions) {
   return emitReflect;
 
   async function emitReflect(
-    baseId: string,
+    _baseId: string,
     api: PluginExtensionApi,
   ): Promise<string> {
     const registry = await api.weslRegistry();

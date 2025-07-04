@@ -1,5 +1,5 @@
 import { expectTrimmedMatch, trimSrc } from "mini-parse/vitest-util";
-import { type RunnerTestSuite, expect } from "vitest";
+import { expect, type RunnerTestSuite } from "vitest";
 import type { WgslTestSrc } from "wesl-testsuite";
 import { link } from "../Linker.js";
 import { type ManglerFn, underscoreMangle } from "../Mangler.ts";

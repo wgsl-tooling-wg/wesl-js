@@ -1,5 +1,5 @@
 import tsconfigPaths from "vite-tsconfig-paths";
-import { type ViteUserConfig, configDefaults } from "vitest/config";
+import { configDefaults, type ViteUserConfig } from "vitest/config";
 
 const config: ViteUserConfig = {
   plugins: [tsconfigPaths()],

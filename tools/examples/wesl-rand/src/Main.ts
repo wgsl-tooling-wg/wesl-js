@@ -4,6 +4,7 @@ import { startApp } from "./App.ts";
 import "../styles.css";
 
 import { setBasePath } from "@shoelace-style/shoelace";
+
 setBasePath("/shoelace-assets");
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
