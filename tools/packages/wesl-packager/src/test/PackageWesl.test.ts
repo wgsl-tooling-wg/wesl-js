@@ -1,4 +1,5 @@
 import fs, { mkdir, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { rimraf } from "rimraf";
@@ -21,8 +22,9 @@ test("package two wgsl files into one bundle", async () => {
      --src ${srcDir}/*.w[eg]sl
      --outDir ${distDir}`,
   );
-  const result = await readFile(path.join(distDir, "weslBundle.js"), "utf8");
-  expect(result).toMatchInlineSnapshot(`
+  const contents = await readFile(path.join(distDir, "weslBundle.js"), "utf8");
+  const normalized = contents.replace(/\r\n/g, "\n"); // normalize line endings to LF
+  expect(normalized).toMatchInlineSnapshot(`
     "export const weslBundle = {
       name: "test-wesl-package",
       edition: "unstable_2025_1",
@@ -48,7 +50,9 @@ test("package multi ", async () => {
     await rimraf(workDir);
     await mkdir(workDir);
   } else {
-    workDir = await fs.mkdtemp("/tmp/wesl-packager-test-multi-");
+    workDir = await fs.mkdtemp(
+      path.join(tmpdir(), "wesl-packager-test-multi-"),
+    );
   }
 
   try {
@@ -91,6 +95,7 @@ async function replaceInFile(
   replacements: Record<string, string>,
 ): Promise<void> {
   let content = await readFile(filePath, "utf8");
+  // content = content.replace(/\r\n/g, "\n"); // normalize line endings to LF
   for (const [search, replace] of Object.entries(replacements)) {
     content = content.replaceAll(search, replace);
   }

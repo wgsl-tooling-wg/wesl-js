@@ -186,8 +186,9 @@ async function loadFiles(
 
   for (const fullPath of files) {
     const data = await fs.readFile(fullPath, "utf-8");
+    const normalized = data.replace(/\r\n/g, "\n"); // normalize line endings to LF
     const relativePath = path.relative(weslRoot, fullPath);
-    loaded.push([toUnixPath(relativePath), data]);
+    loaded.push([toUnixPath(relativePath), normalized]);
   }
   return Object.fromEntries(loaded);
 }

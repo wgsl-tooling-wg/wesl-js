@@ -24,7 +24,12 @@ export async function loadModules(
   const relativePaths = shaderFiles.map(p =>
     path.relative(baseDirAbs, path.resolve(p)),
   );
-  const moduleEntries = zip(relativePaths, src);
+
+  // Normalize Windows paths and line endings
+  const normalPaths = relativePaths.map(p => p.replace(/\\/g, "/"));
+  const normalSrc = src.map(s => s.replace(/\r\n/g, "\n"));
+
+  const moduleEntries = zip(normalPaths, normalSrc);
   return Object.fromEntries(moduleEntries);
 }
 

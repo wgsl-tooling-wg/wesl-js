@@ -13,6 +13,7 @@ import { expect } from "vitest";
 export const defaultOptions: Options = {
   compareContent: true,
   excludeFilter: "node_modules, .gitignore",
+  compareFileSync: normalizeCRLFCompare,
 };
 
 /**
@@ -99,4 +100,20 @@ function logFileDiff(resultPath: string, expectPath: string): void {
   } else {
     console.log(`'${resultPath}' and '${expectPath}' match`);
   }
+}
+
+/** compare but convert \r\n to \n on both path1 and path2 */
+function normalizeCRLFCompare(
+  path1: string,
+  stat1: fs.Stats,
+  path2: string,
+  stat2: fs.Stats,
+  _options: Options,
+): boolean {
+  if (stat1.isFile() && stat2.isFile()) {
+    const content1 = fs.readFileSync(path1, "utf8").replace(/\r\n/g, "\n");
+    const content2 = fs.readFileSync(path2, "utf8").replace(/\r\n/g, "\n");
+    return content1 === content2;
+  }
+  return false;
 }

@@ -196,7 +196,12 @@ async function setupBiome(): Promise<{ biome: Biome; projectKey: number }> {
   });
   const { projectKey } = biome.openProject();
   biome.applyConfiguration(projectKey, {
-    formatter: { indentStyle: "space" },
+    formatter: {
+      enabled: true,
+      indentStyle: "space",
+      lineEnding: "lf",
+      expand: "auto",
+    },
   });
   return { biome, projectKey };
 }
