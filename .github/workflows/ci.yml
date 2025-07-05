@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, lee/ci, stefnotch/ci]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    strategy:
+      matrix:
+       os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: tools
+        
+      - name: Run CI checks (macOS)
+        if: matrix.os == 'macos-latest'
+        run: pnpm ci:check
+        working-directory: tools
+        
+      - name: Run CI checks (Windows)
+        if: matrix.os == 'windows-latest'
+        run: pnpm ci:check-windows
+        working-directory: tools
