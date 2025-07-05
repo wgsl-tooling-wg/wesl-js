@@ -3,7 +3,7 @@ import path from "node:path";
 import { glob } from "glob";
 import toml from "toml";
 import type { UnpluginBuildContext, UnpluginContext } from "unplugin";
-import { type ParsedRegistry, parseIntoRegistry, parsedRegistry } from "wesl";
+import { type ParsedRegistry, parsedRegistry, parseIntoRegistry } from "wesl";
 import { parseDependencies } from "wesl-tooling";
 import type { PluginExtensionApi } from "./PluginExtension.js";
 import type { PluginContext, WeslToml, WeslTomlInfo } from "./WeslPlugin.js";
@@ -186,8 +186,9 @@ async function loadFiles(
 
   for (const fullPath of files) {
     const data = await fs.readFile(fullPath, "utf-8");
+    const normalized = data.replace(/\r\n/g, "\n"); // normalize line endings to LF
     const relativePath = path.relative(weslRoot, fullPath);
-    loaded.push([toUnixPath(relativePath), data]);
+    loaded.push([toUnixPath(relativePath), normalized]);
   }
   return Object.fromEntries(loaded);
 }

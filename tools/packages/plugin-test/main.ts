@@ -2,9 +2,9 @@
 /// <reference types="vite/client" />
 import { copyBuffer } from "thimbleberry";
 import {
+  bindingStructsPlugin,
   type LinkConfig,
   type LinkParams,
-  bindingStructsPlugin,
   link,
   makeWeslDevice,
 } from "wesl";

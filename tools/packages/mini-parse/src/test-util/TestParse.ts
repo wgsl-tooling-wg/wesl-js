@@ -1,13 +1,13 @@
 import {
   type AppState,
+  enableTracing,
   MatchersStream,
+  matchOneOf,
   type OptParserResult,
   type Parser,
   RegexMatchers,
   type Stream,
   type Token,
-  enableTracing,
-  matchOneOf,
   tracing,
   withLogger,
   withLoggerAsync,
@@ -68,7 +68,7 @@ export function testParseWithStream<T, C = any, S = any>(
 /** run a test function and expect that no error logs are produced */
 export function expectNoLog<T>(fn: () => T): T {
   const { log, logged } = logCatch();
-  let result: T | undefined = undefined;
+  let result: T | undefined;
 
   try {
     result = withLogger(log, fn);

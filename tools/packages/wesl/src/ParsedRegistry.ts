@@ -1,7 +1,7 @@
 import type { WeslBundle } from "wesl";
-import { type WeslAST, parseSrcModule } from "./ParseWESL.ts";
-import { noSuffix, normalize } from "./PathUtil.ts";
-import { type SrcModule, resetScopeIds } from "./Scope.ts";
+import { parseSrcModule, type WeslAST } from "./ParseWESL.ts";
+import { normalize, noSuffix } from "./PathUtil.ts";
+import { resetScopeIds, type SrcModule } from "./Scope.ts";
 
 export interface ParsedRegistry {
   modules: Record<string, WeslAST>; // key is module path, e.g. "rand_pkg::foo::bar"

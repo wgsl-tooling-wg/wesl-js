@@ -22,8 +22,8 @@ import {
 import { isGlobal } from "./BindIdents.ts";
 import { failIdentElem } from "./ClickableError.ts";
 import { elementValid } from "./Conditions.ts";
-import type { Conditions, DeclIdent, Ident } from "./Scope.ts";
 import { identToString } from "./debug/ScopeToString.ts";
+import type { Conditions, DeclIdent, Ident } from "./Scope.ts";
 
 /** passed to the emitters */
 interface EmitContext {

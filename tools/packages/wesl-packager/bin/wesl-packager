@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { exit } from "node:process";
 import { hideBin } from "yargs/helpers";
-import path from "node:path";
 import { loadModules, parseDependencies, versionFromPackageJson, zip } from "wesl-tooling";
 import yargs from "yargs";
 import fs, { mkdir } from "node:fs/promises";
+import path from "node:path";
 import { Biome, Distribution } from "@biomejs/js-api";
 import { noSuffix } from "wesl";
 
@@ -154,7 +154,12 @@ async function loadPackageFields(pkgJsonPath) {
 async function setupBiome() {
 	const biome$1 = await Biome.create({ distribution: Distribution.NODE });
 	const { projectKey } = biome$1.openProject();
-	biome$1.applyConfiguration(projectKey, { formatter: { indentStyle: "space" } });
+	biome$1.applyConfiguration(projectKey, { formatter: {
+		enabled: true,
+		indentStyle: "space",
+		lineEnding: "lf",
+		expand: "auto"
+	} });
 	return {
 		biome: biome$1,
 		projectKey
@@ -169,7 +174,7 @@ async function packagerCli(rawArgs$1) {
 	await packageWgsl(cliArgs);
 }
 async function parseArgs(args) {
-	const projectDir = path.join(import.meta.url, "..");
+	const projectDir = new URL("..", import.meta.url);
 	const appVersion = await versionFromPackageJson(projectDir);
 	return yargs(args).command("$0", "create an npm package from WGSL/WESL files").version(appVersion).option("src", {
 		type: "string",

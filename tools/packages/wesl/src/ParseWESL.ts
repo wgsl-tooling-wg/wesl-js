@@ -11,11 +11,11 @@ import type {
 } from "./AbstractElems.ts";
 import { throwClickableError } from "./ClickableError.ts";
 import { type FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
-import { type Scope, type SrcModule, emptyScope } from "./Scope.ts";
-import { errorHighlight, offsetToLineNumber } from "./Util.ts";
-import type { OpenElem } from "./WESLCollect.ts";
 import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
+import { emptyScope, type Scope, type SrcModule } from "./Scope.ts";
+import { errorHighlight, offsetToLineNumber } from "./Util.ts";
+import type { OpenElem } from "./WESLCollect.ts";
 
 /** result of a parse for one wesl module (e.g. one .wesl file)
  *

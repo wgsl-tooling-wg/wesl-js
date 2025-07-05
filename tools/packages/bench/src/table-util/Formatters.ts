@@ -1,4 +1,5 @@
 import pico from "picocolors";
+
 const { red, green } = pico;
 
 /** Formatting utilities for table data */

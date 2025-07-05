@@ -2,7 +2,7 @@
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { Biome, Distribution } from "@biomejs/js-api";
-import { type WeslBundle, noSuffix } from "wesl";
+import { noSuffix, type WeslBundle } from "wesl";
 import { loadModules, parseDependencies, zip } from "wesl-tooling";
 import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
 import type { CliArgs } from "./PackagerCli.ts";
@@ -196,7 +196,12 @@ async function setupBiome(): Promise<{ biome: Biome; projectKey: number }> {
   });
   const { projectKey } = biome.openProject();
   biome.applyConfiguration(projectKey, {
-    formatter: { indentStyle: "space" },
+    formatter: {
+      enabled: true,
+      indentStyle: "space",
+      lineEnding: "lf",
+      expand: "auto",
+    },
   });
   return { biome, projectKey };
 }

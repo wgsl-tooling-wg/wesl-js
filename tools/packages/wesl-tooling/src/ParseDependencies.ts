@@ -3,12 +3,12 @@ import { pathToFileURL } from "node:url";
 import { resolve } from "import-meta-resolve";
 import type { WeslBundle } from "wesl";
 import {
-  WeslParseError,
   filterMap,
-  parseIntoRegistry,
+  findUnboundIdents,
   parsedRegistry,
+  parseIntoRegistry,
+  WeslParseError,
 } from "wesl";
-import { findUnboundIdents } from "wesl";
 
 /**
  * Find the wesl package dependencies in a set of WESL files

@@ -6,9 +6,9 @@ import type {
   DirectiveElem,
   FnElem,
   StuffElem,
+  TypedDeclElem,
   TypeRefElem,
   TypeTemplateParameter,
-  TypedDeclElem,
   UnknownExpressionElem,
 } from "../AbstractElems.ts";
 import {

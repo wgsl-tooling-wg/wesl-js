@@ -35,12 +35,12 @@ export const taggedSum = seq(
 });
 
 export type QuoteTokenKinds = "quote" | "nonQuote";
-const quoteTokens = new RegexMatchers<QuoteTokenKinds>({
+const _quoteTokens = new RegexMatchers<QuoteTokenKinds>({
   quote: /"/,
   nonQuote: /[^"]+/,
 });
 
-const nonQuote = kind<QuoteTokenKinds>("nonQuote");
+const _nonQuote = kind<QuoteTokenKinds>("nonQuote");
 
 export type ASTElem = BinOpElem;
 

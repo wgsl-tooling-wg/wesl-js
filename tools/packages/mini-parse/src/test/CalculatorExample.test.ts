@@ -1,6 +1,5 @@
 import { testParse } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import type { Stream, Token } from "../Stream.js";
 import { calcMatcher, statement } from "../examples/CalculatorExample.js";
 import {
   simpleSum,
@@ -8,6 +7,7 @@ import {
   sumResults,
   taggedSum,
 } from "../examples/DocExamples.js";
+import type { Stream, Token } from "../Stream.js";
 import { FilterStream } from "../stream/FilterStream.js";
 import {
   MatchersStream,

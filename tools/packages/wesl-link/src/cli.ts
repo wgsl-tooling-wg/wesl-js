@@ -9,8 +9,8 @@ import {
 } from "wesl-tooling";
 import yargs from "yargs";
 import {
-  parseIntoRegistry,
   parsedRegistry,
+  parseIntoRegistry,
 } from "../../wesl/src/ParsedRegistry.js"; // LATER fix import
 
 type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
@@ -22,7 +22,7 @@ export async function cli(rawArgs: string[]): Promise<void> {
 }
 
 async function parseArgs(args: string[]) {
-  const toolDir = path.join(import.meta.url, "..");
+  const toolDir = new URL("..", import.meta.url);
   const appVersion = await versionFromPackageJson(toolDir);
   return yargs(args)
     .version(appVersion)

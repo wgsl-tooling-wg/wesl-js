@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import { dlog } from "berry-pretty";
 import {
   type DifferenceOptions,
-  type SavedText,
   differentText,
+  type SavedText,
   sortBySize,
 } from "../src/util/uniqueDocs.ts";
 

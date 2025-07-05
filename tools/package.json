@@ -11,12 +11,14 @@
     "build:tools": "pnpm --filter \"wesl-link\" --filter \"wesl-packager\" --filter \"wesl-plugin\" build",
     "bump": "tsx scripts/bump.ts --version",
     "check:versions": "syncpack list-mismatches",
+    "ci:check": "run-s lint:all build:all typecheck:all test:unit bench:validate",
+    "ci:check-windows": "run-s build:all test:unit bench:validate",
     "echo:all": "pnpm --filter \"**\" exec pwd",
     "fix:all": "run-s fix:pkgJsonFormat fix:syncpack fix:biome",
     "fix:biome": "biome check --fix --unsafe",
     "fix:pkgJsonFormat": "syncpack format",
     "fix:syncpack": "syncpack fix-mismatches",
-    "lint:all": "run-s lint:biome lint:oxlint",
+    "lint:all": "run-s lint:biome lint:oxlint check:versions",
     "lint:biome": "biome check",
     "lint:oxlint": "oxlint",
     "preinstall": "git submodule update --init --recursive",
@@ -35,6 +37,7 @@
     "typecheck:watch": "nodemon --config nodemon-typecheck-watch.json"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.0.6",
     "@eslint/js": "^9.30.1",
     "@types/node": "^24.0.10",
     "@types/yargs": "^17.0.33",

@@ -13,8 +13,8 @@ import type {
   ConstAssertElem,
   ConstElem,
   ContainerElem,
-  DeclIdentElem,
   DeclarationElem,
+  DeclIdentElem,
   DirectiveElem,
   DirectiveVariant,
   FnElem,
@@ -37,8 +37,8 @@ import type {
   StuffElem,
   SwitchClauseElem,
   TextElem,
-  TypeRefElem,
   TypedDeclElem,
+  TypeRefElem,
   UnknownExpressionElem,
   VarElem,
 } from "./AbstractElems.ts";
@@ -50,13 +50,13 @@ import type {
 } from "./ParseWESL.ts";
 import {
   type DeclIdent,
+  emptyScope,
   type Ident,
+  mergeScope,
+  nextIdentId,
   type PartialScope,
   type RefIdent,
   type Scope,
-  emptyScope,
-  mergeScope,
-  nextIdentId,
 } from "./Scope.ts";
 import { filterMap } from "./Util.ts";
 
@@ -649,7 +649,7 @@ function coverWithText(cc: CollectContext, elem: ContainerElem): GrammarElem[] {
 /** for debugging */
 // oxlint-disable-next-line eslint(no-unused-vars)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function collectLog(cc: CollectContext, ...messages: any[]): void {
+function _collectLog(cc: CollectContext, ...messages: any[]): void {
   const { src, start, end } = cc;
   srcLog(src, [start, end], ...messages);
 }

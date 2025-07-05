@@ -9,9 +9,9 @@ import {
   runCollection,
 } from "./ParserCollect.js";
 import {
+  parserLog,
   type TraceContext,
   type TraceOptions,
-  parserLog,
   tracing,
   withTraceLogging,
 } from "./ParserTracing.js";

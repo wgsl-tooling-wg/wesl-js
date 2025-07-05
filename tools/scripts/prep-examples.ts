@@ -2,9 +2,9 @@ import process from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { type ParseArgsConfig, parseArgs } from "node:util";
-import util from "node:util";
+import util, { type ParseArgsConfig, parseArgs } from "node:util";
 import glob from "fast-glob";
+
 const exec = util.promisify(process.exec);
 
 /*

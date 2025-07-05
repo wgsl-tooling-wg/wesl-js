@@ -2,9 +2,9 @@
 import { copyBuffer } from "thimbleberry";
 import { beforeAll, expect, test } from "vitest";
 import {
+  bindingStructsPlugin,
   type LinkConfig,
   type LinkParams,
-  bindingStructsPlugin,
   link,
 } from "wesl";
 
