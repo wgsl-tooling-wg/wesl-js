@@ -1,12 +1,20 @@
 ### commits
-- all pushes and merges to the main branch shared repository should pass all tests, lint/formatting rules, commenting standards
+- all pushes and merges to the main branch shared repository should 
+  pass all tests, lint/formatting rules, commenting standards
 - interim commits are encouraged to increase clarity for future readers.
-Interim commits needn't pass all the quality rules. 
-Best to put interim commits on a branch that's merged to main
-(or prefix with `interim:`.)
+  Interim commits needn't pass all the quality rules. 
+  Best to put interim commits on a branch that's merged to main.
 
 ### prepush script
-- the `pnpm prepush` script verifies tests, linting, formatting before pushing to the main branch of the shared repository
+- the `pnpm prepush` script verifies tests, linting, 
+  formatting before pushing to the main branch of the shared repository
+
+### continuous integration
+- we run CI on macos and windows.
+- tests currently include some use of dawn in headless mode, so no linux yet
+- playground tests of example projects are not run on ci and should be run 
+  locally before pushing to master.
+  Use `prepush` or at least `test:examples`
 
 ### linting
 - biomejs is the current primary linter/formatter.
