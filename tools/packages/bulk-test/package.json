@@ -9,6 +9,7 @@
     "typecheck": "tsgo"
   },
   "dependencies": {
+    "mini-parse": "workspace:*",
     "wesl": "workspace:*"
   }
 }
