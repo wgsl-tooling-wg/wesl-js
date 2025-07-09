@@ -9,6 +9,6 @@
     "lygia": "1.3.2"
   },
   "devDependencies": {
-    "wesl-link": "workspace:*"
+    "wesl-link": "workspace:x"
   }
 }

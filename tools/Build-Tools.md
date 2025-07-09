@@ -71,3 +71,8 @@ The copy is likely a different version than the current tree
 - shared devDependencies are moved to the root package for convenient mgmt
 - examples package.json files are intended to be read standalone by 
   users, and so declare all of their own dependencies.
+- for internal devDependencies to private packages, we use `workspace:x` rather than `workspace:*`. 
+  this puts a link in `node_modules` for the local test package so that tests can run.
+  The test packages don't need to be published, but `pnpm publish` fails
+  nonetheless to trying resolve these packages if they're marked as `workspace:*`
+  and don't have a version.

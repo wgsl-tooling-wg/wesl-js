@@ -26,15 +26,21 @@ export default {
   versionGroups: [
     { label: "plugin is weird", packages: ["wesl-plugin"], isIgnored: true },
     {
+      label: "Use workspace:x for dev dependencies on local packages",
+      dependencies: ["$LOCAL"],
+      dependencyTypes: ["dev"],
+      pinVersion: "workspace:x",
+    },
+    {
       label: "Use workspace:^ for peer dependencies on local packages",
       dependencies: ["$LOCAL"],
       dependencyTypes: ["peer"],
       pinVersion: "workspace:^",
     },
     {
-      label: "Use workspace:* for dev/prod dependencies on local packages",
+      label: "Use workspace:* for prod dependencies on local packages",
       dependencies: ["$LOCAL"],
-      dependencyTypes: ["dev", "prod"],
+      dependencyTypes: ["prod"],
       pinVersion: "workspace:*",
     },
   ],

@@ -18,7 +18,7 @@
     "@webgpu/types": "^0.1.63",
     "typescript": "^5.8.3",
     "vite": "^7.0.0",
-    "wesl-plugin": "workspace:*"
+    "wesl-plugin": "workspace:x"
   },
   "packageManager": "pnpm@10.2.0"
 }

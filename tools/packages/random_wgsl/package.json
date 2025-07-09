@@ -13,7 +13,7 @@
     }
   },
   "devDependencies": {
-    "wesl": "workspace:*",
-    "wesl-packager": "workspace:*"
+    "wesl": "workspace:x",
+    "wesl-packager": "workspace:x"
   }
 }
