@@ -3,14 +3,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "types": ["@webgpu/types"],
-    "paths": {
-      "wesl": ["../wesl/src"],
-      "mini-parse": ["../mini-parse/src"],
-      "wesl-plugin": ["../wesl-plugin"],
-      "mini-parse/vitest-util": ["../mini-parse/src/vitest-util"],
-      "wesl-tooling": ["../wesl-tooling/src"]
-    }
+    "types": ["@webgpu/types"]
   },
   "include": ["*.ts", "src"]
 }

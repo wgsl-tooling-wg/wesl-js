@@ -2,7 +2,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Plugin, UserConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { linkBuildExtension } from "wesl-plugin";
 import viteWesl from "wesl-plugin/vite";
 import { bindingLayoutExtension } from "../wesl-plugin/src/BindingLayoutExtension.ts";
@@ -12,7 +11,6 @@ const weslToml = path.join(path.dirname(thisPath), "wesl.toml");
 
 const config: UserConfig = {
   plugins: [
-    tsconfigPaths(),
     viteWesl({
       weslToml,
       extensions: [linkBuildExtension, bindingLayoutExtension],

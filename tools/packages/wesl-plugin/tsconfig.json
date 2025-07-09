@@ -1,11 +1,4 @@
 {
   "extends": "../../tsconfig.node.json",
-  "compilerOptions": {
-    "paths": {
-      "mini-parse": ["../mini-parse/src"],
-      "wesl": ["../wesl/src"],
-      "wesl-tooling": ["../wesl-tooling/src"]
-    }
-  },
   "include": ["src"]
 }

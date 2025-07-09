@@ -98,9 +98,6 @@ importers:
       vite-plugin-dts:
         specifier: ^4.5.4
         version: 4.5.4(@types/node@24.0.10)(rollup@4.44.1)(typescript@5.8.3)(vite@7.0.0(@types/node@24.0.10)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0))
-      vite-tsconfig-paths:
-        specifier: ^5.1.4
-        version: 5.1.4(typescript@5.8.3)(vite@7.0.0(@types/node@24.0.10)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0))
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.0.10)(@vitest/ui@3.2.4)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
@@ -294,6 +291,9 @@ importers:
 
   packages/bulk-test:
     dependencies:
+      mini-parse:
+        specifier: workspace:*
+        version: link:../mini-parse
       wesl:
         specifier: workspace:*
         version: link:../wesl
@@ -3502,9 +3502,6 @@ packages:
     resolution: {integrity: sha512-0Ia46fDOaT7k4og1PDW4YbodWWr3scS2vAr2lTbsplOt2WkKp0vQbkI9wKis/T5LV/dqPjO3bpS/z6GTJB82LA==}
     engines: {node: '>=18'}
 
-  globrex@0.1.2:
-    resolution: {integrity: sha512-uHJgbwAMwNFf5mLst7IWLNg14x1CkeqglJb/K3doi4dw6q2IvAAmM/Y81kevy83wP+Sst+nutFTYOGg3d1lsxg==}
-
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
@@ -5300,16 +5297,6 @@ packages:
   ts-toolbelt@9.6.0:
     resolution: {integrity: sha512-nsZd8ZeNUzukXPlJmTBwUAuABDe/9qtVDelJeT/qW0ow3ZS3BsQJtNkan1802aM9Uf68/Y8ljw86Hu0h5IUW3w==}
 
-  tsconfck@3.1.6:
-    resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
-    engines: {node: ^18 || >=20}
-    hasBin: true
-    peerDependencies:
-      typescript: ^5.0.0
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
   tsconfig@7.0.0:
     resolution: {integrity: sha512-vZXmzPrL+EmC4T/4rVlT2jNVMWCi/O4DIiSj3UHg1OE5kCKbk4mfrXc6dZksLgRM/TZlKnousKH9bbTazUWRRw==}
 
@@ -5545,14 +5532,6 @@ packages:
     peerDependencies:
       vite: ^5.0.0 || ^6.0.0 || ^7.0.0
 
-  vite-tsconfig-paths@5.1.4:
-    resolution: {integrity: sha512-cYj0LRuLV2c2sMqhqhGpaO3LretdtMn/BVX4cPLanIZuwwrkVl+lK84E/miEXkCHWXuq65rhNN4rXsBcOB3S4w==}
-    peerDependencies:
-      vite: '*'
-    peerDependenciesMeta:
-      vite:
-        optional: true
-
   vite@6.3.5:
     resolution: {integrity: sha512-cZn6NDFE7wdTpINgs++ZJ4N49W2vRp8LCKrn3Ob1kYNtOo21vfDoaV5GzBfLU4MovSAB8uNRm4jgzVQZ+mBzPQ==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
@@ -5693,9 +5672,6 @@ packages:
     peerDependenciesMeta:
       webpack-cli:
         optional: true
-
-  wesl-testsuite@file:../wesl-testsuite:
-    resolution: {directory: ../wesl-testsuite, type: directory}
 
   wgsl_reflect@1.2.1:
     resolution: {integrity: sha512-PY6MdLqLW1NFj/V6f5/9/Nb4ultwlAF7lCLyjKOAkdnlf7LlrGXNFXzHHEV7Okg1zy4C4TpBIcc/G3PXW4py8g==}
@@ -8988,8 +8964,6 @@ snapshots:
       slash: 5.1.0
       unicorn-magic: 0.3.0
 
-  globrex@0.1.2: {}
-
   gopd@1.2.0: {}
 
   graceful-fs@4.2.11: {}
@@ -10917,10 +10891,6 @@ snapshots:
 
   ts-toolbelt@9.6.0: {}
 
-  tsconfck@3.1.6(typescript@5.8.3):
-    optionalDependencies:
-      typescript: 5.8.3
-
   tsconfig@7.0.0:
     dependencies:
       '@types/strip-bom': 3.0.0
@@ -11234,17 +11204,6 @@ snapshots:
       tinyglobby: 0.2.14
       vite: 7.0.0(@types/node@24.0.10)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
 
-  vite-tsconfig-paths@5.1.4(typescript@5.8.3)(vite@7.0.0(@types/node@24.0.10)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)):
-    dependencies:
-      debug: 4.4.1(supports-color@5.5.0)
-      globrex: 0.1.2
-      tsconfck: 3.1.6(typescript@5.8.3)
-    optionalDependencies:
-      vite: 7.0.0(@types/node@24.0.10)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
-    transitivePeerDependencies:
-      - supports-color
-      - typescript
-
   vite@6.3.5(@types/node@24.0.10)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0):
     dependencies:
       esbuild: 0.25.5
@@ -11368,8 +11327,6 @@ snapshots:
       - '@swc/core'
       - esbuild
       - uglify-js
-
-  wesl-testsuite@file:../wesl-testsuite: {}
 
   wgsl_reflect@1.2.1: {}
 

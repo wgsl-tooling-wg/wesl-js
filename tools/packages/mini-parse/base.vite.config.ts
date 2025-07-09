@@ -1,12 +1,10 @@
 import { resolve } from "node:path";
 import type { UserConfig } from "vite";
 import dts from "vite-plugin-dts";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 export function baseViteConfig(): UserConfig {
   return {
     plugins: [
-      tsconfigPaths(),
       dts(), // generate .d.ts files
     ],
     build: {

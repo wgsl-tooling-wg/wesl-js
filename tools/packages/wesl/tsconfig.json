@@ -1,13 +1,4 @@
 {
   "extends": "../../tsconfig.browser.json",
-  "compilerOptions": {
-    "paths": {
-      "mini-parse": ["../mini-parse/src"],
-      "wesl": ["./src"],
-      "mini-parse/test-util": ["../mini-parse/src/test-util"],
-      "mini-parse/vitest-util": ["../mini-parse/src/vitest-util"],
-      "wesl-testsuite": ["../../../wesl-testsuite/src"]
-    }
-  },
   "include": ["src", "*.ts", "scripts"]
 }
