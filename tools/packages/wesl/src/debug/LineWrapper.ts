@@ -8,12 +8,12 @@ export class LineWrapper {
   #oneLine = true;
   #isHanging = false;
   #hangingSpc: string;
+  readonly maxWidth: number;
+  readonly indent: number;
 
-  constructor(
-    readonly indent = 0,
-    readonly maxWidth = 60,
-    readonly hangingIndent = 2,
-  ) {
+  constructor(indent = 0, maxWidth = 60, hangingIndent = 2) {
+    this.maxWidth = maxWidth;
+    this.indent = indent;
     this.#spc = " ".repeat(indent);
     this.#hangingSpc = " ".repeat(hangingIndent);
   }

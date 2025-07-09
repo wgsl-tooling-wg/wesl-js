@@ -18,6 +18,7 @@
     "isolatedModules": true, // disallow TS features that are difficult for transpilers
     "skipLibCheck": true, // performance win, also what do we do if a library has an error?
     "moduleDetection": "force", // always treat files as modules (not scripts)
+    "erasableSyntaxOnly": true,
 
     /* strictness in TypeScript */
     "strict": true,

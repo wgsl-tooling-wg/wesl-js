@@ -9,10 +9,14 @@ export class MatchersStream<Kind extends string>
   implements Stream<TypedToken<Kind>>
 {
   private position = 0;
-  constructor(
-    public text: string,
-    private matchers: RegexMatchers<Kind>,
-  ) {}
+  public text: string;
+  private matchers: RegexMatchers<Kind>;
+
+  constructor(text: string, matchers: RegexMatchers<Kind>) {
+    this.text = text;
+    this.matchers = matchers;
+  }
+
   checkpoint(): number {
     return this.position;
   }

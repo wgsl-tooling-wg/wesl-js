@@ -7,8 +7,11 @@ export class SrcMapBuilder {
   #fragments: string[] = [];
   #destLength = 0;
   #entries: SrcMapEntry[] = [];
+  source: SrcWithPath;
 
-  constructor(public source: SrcWithPath) {}
+  constructor(source: SrcWithPath) {
+    this.source = source;
+  }
 
   /** append a string fragment to the destination string */
   add(fragment: string, srcStart: number, srcEnd: number): void {

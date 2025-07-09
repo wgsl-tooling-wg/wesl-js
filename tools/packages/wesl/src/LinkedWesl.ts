@@ -36,7 +36,11 @@ export interface ExtendedGPUValidationError extends GPUValidationError {
  * to make the error reporting aware of the WESL code.
  */
 export class LinkedWesl {
-  constructor(public sourceMap: SrcMap) {}
+  sourceMap: SrcMap;
+
+  constructor(sourceMap: SrcMap) {
+    this.sourceMap = sourceMap;
+  }
 
   /**
    * Creates a {@link GPUShaderModule}.

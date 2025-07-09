@@ -2,11 +2,13 @@ import type { Stream, Token } from "../Stream.ts";
 
 /** Only lets tokens through that pass the filter */
 export class FilterStream<T extends Token> implements Stream<T> {
-  constructor(
-    private inner: Stream<T>,
-    /** Return true to keep a token */
-    private filterFn: (token: Token) => boolean,
-  ) {}
+  private inner: Stream<T>;
+  /** Return true to keep a token */
+  private filterFn: (token: Token) => boolean;
+  constructor(inner: Stream<T>, filterFn: (token: Token) => boolean) {
+    this.inner = inner;
+    this.filterFn = filterFn;
+  }
   checkpoint(): number {
     return this.inner.checkpoint();
   }

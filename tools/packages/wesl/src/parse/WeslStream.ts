@@ -86,7 +86,9 @@ export class WeslStream implements Stream<WeslToken> {
   private eolPattern = /[\n\v\f\u{0085}\u{2028}\u{2029}]|\r\n?/gu;
   /** Block comments */
   private blockCommentPattern = /\/\*|\*\//g;
-  constructor(public src: string) {
+  public src: string;
+  constructor(src: string) {
+    this.src = src;
     this.stream = new CachingStream(new MatchersStream(src, weslMatcher));
   }
   checkpoint(): number {

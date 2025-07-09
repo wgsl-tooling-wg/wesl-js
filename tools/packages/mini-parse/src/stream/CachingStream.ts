@@ -2,7 +2,10 @@ import type { Stream, Token } from "../Stream.ts";
 
 export class CachingStream<T extends Token> implements Stream<T> {
   private cache = new Cache<number, { token: T | null; checkpoint: number }>(5);
-  constructor(private inner: Stream<T>) {}
+  private inner: Stream<T>;
+  constructor(inner: Stream<T>) {
+    this.inner = inner;
+  }
   checkpoint(): number {
     return this.inner.checkpoint();
   }
@@ -29,8 +32,10 @@ export class CachingStream<T extends Token> implements Stream<T> {
 
 /** size limited key value cache */
 class Cache<K, V> extends Map<K, V> {
-  constructor(private readonly max: number) {
+  private readonly max: number;
+  constructor(max: number) {
     super();
+    this.max = max;
   }
 
   set(k: K, v: V): this {
