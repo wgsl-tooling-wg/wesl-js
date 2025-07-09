@@ -13,21 +13,36 @@
     "prepublishOnly": "run-s build",
     "typecheck": "tsgo"
   },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/pluginIndex.js",
+      "./suffixes": {
+        "types": "./src/defaultSuffixTypes.d.ts"
+      },
+      "./astro": "./dist/plugins/astro.js",
+      "./rspack": "./dist/plugins/rspack.js",
+      "./vite": "./dist/plugins/vite.js",
+      "./webpack": "./dist/plugins/webpack.js",
+      "./rollup": "./dist/plugins/rollup.js",
+      "./esbuild": "./dist/plugins/esbuild.js",
+      "./nuxt": "./dist/plugins/nuxt.js",
+      "./farm": "./dist/plugins/farm.js",
+      "./*": "./*"
+    }
+  },
   "exports": {
-    ".": "./dist/pluginIndex.js",
+    ".": "./src/pluginIndex.ts",
     "./suffixes": {
       "types": "./src/defaultSuffixTypes.d.ts"
     },
-    "./astro": "./dist/plugins/astro.js",
-    "./rspack": "./dist/plugins/rspack.js",
-    "./vite": "./dist/plugins/vite.js",
-    "./webpack": "./dist/plugins/webpack.js",
-    "./rollup": "./dist/plugins/rollup.js",
-    "./esbuild": "./dist/plugins/esbuild.js",
-    "./nuxt": "./dist/plugins/nuxt.js",
-    "./farm": "./dist/plugins/farm.js",
-    "./types": "./dist/plugins/types.js",
-    "./*": "./*"
+    "./astro": "./src/plugins/astro.js",
+    "./rspack": "./src/plugins/rspack.js",
+    "./vite": "./src/plugins/vite.js",
+    "./webpack": "./src/plugins/webpack.js",
+    "./rollup": "./src/plugins/rollup.js",
+    "./esbuild": "./src/plugins/esbuild.js",
+    "./nuxt": "./src/plugins/nuxt.js",
+    "./farm": "./src/plugins/farm.js"
   },
   "dependencies": {
     "import-meta-resolve": "^4.1.0",

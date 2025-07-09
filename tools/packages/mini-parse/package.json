@@ -14,18 +14,32 @@
     "test:once": "vitest run",
     "typecheck": "tsgo"
   },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./test-util": {
+        "types": "./dist/test-util/testUtil.d.ts",
+        "import": "./dist/testUtil.js"
+      },
+      "./vitest-util": {
+        "types": "./dist/vitest-util/vitestUtil.d.ts",
+        "import": "./dist/vitestUtil.js"
+      }
+    },
+    "main": "dist/index.js"
+  },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./src/index.ts"
     },
     "./test-util": {
-      "types": "./dist/test-util/testUtil.d.ts",
-      "import": "./dist/testUtil.js"
+      "import": "./src/test-util/index.ts"
     },
     "./vitest-util": {
-      "types": "./dist/vitest-util/vitestUtil.d.ts",
-      "import": "./dist/vitestUtil.js"
+      "import": "./src/vitest-util/index.ts"
     }
   }
 }

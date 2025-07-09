@@ -11,9 +11,16 @@
     "test:once": "vitest run",
     "typecheck": "tsgo"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "types": "./dist/index.d.ts",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.ts"
+    }
+  },
   "dependencies": {
     "glob": "^11.0.3",
     "import-meta-resolve": "^4.1.0",

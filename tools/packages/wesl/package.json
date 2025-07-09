@@ -18,13 +18,20 @@
     "test:once": "vitest run",
     "typecheck": "tsgo"
   },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/tools/packages/wesl/src/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    },
+    "main": "dist/index.js"
+  },
   "exports": {
     ".": {
-      "types": "./dist/tools/packages/wesl/src/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./src/index.ts"
     }
   },
-  "main": "dist/index.js",
   "dependencies": {
     "mini-parse": "workspace:*"
   },
