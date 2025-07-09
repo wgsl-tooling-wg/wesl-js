@@ -84,7 +84,7 @@ export class LinkedWesl {
         module,
       );
       // Error message cannot be null, since we're passing at least one message to it.
-      assertThat(errorMessage !== null);
+      assertThatDebug(errorMessage !== null);
       const error: ExtendedGPUValidationError = new GPUValidationError(
         errorMessage,
       );
