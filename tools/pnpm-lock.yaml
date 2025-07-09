@@ -105,8 +105,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.0.10)(@vitest/ui@3.2.4)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
       wesl-testsuite:
-        specifier: file:../wesl-testsuite
-        version: file:../wesl-testsuite
+        specifier: link:../wesl-testsuite
+        version: link:../wesl-testsuite
       yargs:
         specifier: ^18.0.0
         version: 18.0.0
