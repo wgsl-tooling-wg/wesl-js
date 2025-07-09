@@ -69,7 +69,7 @@ function unboundToDependency(
   importerURL: string,
 ): string | undefined {
   // return the longest subpath that can be resolved
-  return exportSubpaths(mPath).find(subPath =>
+  return [...exportSubpaths(mPath)].find(subPath =>
     // Note that we're not checking here that the resolved file exists.
     // The file (a weslBundle.js file somewhere in dist) may not have been built yet.
     // LATER we could do save these paths and check that the resolved files exist.
