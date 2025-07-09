@@ -50,16 +50,6 @@ The copy is likely a different version than the current tree
 ### tsconfig 
 - most of the tsconfig files extend from base config files in `tools/`.
   - the main exception is for example tsconfig files are intentially standalone
-- to allow tools like the TS language server
-  to give type errors w/o waiting for a build to `dist/`,
- currently we use tsconfig `"paths"` 
-  - ts-config-paths() in vite is needed for vite to follow the paths.
-  - alternate approaches:
-    - project `references` with `composite` look interesting to try eventually,
-    but they aren't yet supported with `tsgo` (which we're currently using for fast 
-    per-project typechecking). 
-    - `publishConfig` is worth trying. We're using pnpm and 
-      seems easier to maintain than `paths`.
     
 ### syncpack
 - sorts package.json fields via `fix:pkgJsonFormat` 
@@ -76,3 +66,26 @@ The copy is likely a different version than the current tree
   The test packages don't need to be published, but `pnpm publish` fails
   nonetheless to trying resolve these packages if they're marked as `workspace:*`
   and don't have a version.
+
+### publishConfig for package.json 'exports'
+- We now use pnpm's `publishConfig` feature. 
+  The package.json files for published packages like wesl and wesl-plugin 
+  now effectively have two sets of entry points (in `exports`),
+  one for internal wesl-js monorepo development 
+  and a separate one for external users of the packages using `publishConfig`.
+
+- The internal api uses typescript, 
+  the external api uses javascript + .d.ts files. 
+  The advantage is that internal tools like the typescript language server 
+  can work on the source w/o waiting for transpilation during development.
+
+- Since vanilla nodejs now understands typescript pretty well, 
+  most tools should just work. 
+  This makes build sequencing should be easier. 
+  You can typecheck or test a change w/o running our build step first.
+
+### TypeScript `erasableSyntaxOnly`
+- To make it easy for vanilla node tools to understand our sources, 
+  we limit use of TypeScript features that require TypeScript code generation,
+  notably attributes like 'public' or 'readonly' on class constructor 
+  function parameters. See [commit](https://github.com/wgsl-tooling-wg/wesl-js/tree/cd8dcc3c49fc0fa96174126980cd7e8127b6a073).
