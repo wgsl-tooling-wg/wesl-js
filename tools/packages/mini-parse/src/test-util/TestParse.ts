@@ -13,8 +13,8 @@ import {
   withLoggerAsync,
 } from "mini-parse";
 import { expect } from "vitest";
-import { FilterStream } from "../stream/FilterStream.js";
-import { logCatch } from "./LogCatcher.js";
+import { FilterStream } from "../stream/FilterStream.ts";
+import { logCatch } from "./LogCatcher.ts";
 
 const symbolSet =
   "& && -> @ / ! [ ] { } : , = == != > >= < << <= % - -- ' \"" +

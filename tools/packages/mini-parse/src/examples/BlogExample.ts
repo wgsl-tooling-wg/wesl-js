@@ -1,7 +1,7 @@
-import { kind, seq } from "../ParserCombinator.js";
-import { FilterStream } from "../stream/FilterStream.js";
-import { MatchersStream, RegexMatchers } from "../stream/MatchersStream.js";
-import { matchOneOf } from "../stream/RegexHelpers.js";
+import { kind, seq } from "../ParserCombinator.ts";
+import { FilterStream } from "../stream/FilterStream.ts";
+import { MatchersStream, RegexMatchers } from "../stream/MatchersStream.ts";
+import { matchOneOf } from "../stream/RegexHelpers.ts";
 
 const src = "fn foo()";
 

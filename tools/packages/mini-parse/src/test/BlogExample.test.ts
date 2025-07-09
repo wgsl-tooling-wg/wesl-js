@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { assertThat } from "../Assertions.js";
+import { assertThat } from "../Assertions.ts";
 import {
   kind,
   opt,
@@ -7,10 +7,10 @@ import {
   repeat,
   seq,
   seqObj,
-} from "../ParserCombinator.js";
-import { FilterStream } from "../stream/FilterStream.js";
-import { MatchersStream, RegexMatchers } from "../stream/MatchersStream.js";
-import { matchOneOf } from "../stream/RegexHelpers.js";
+} from "../ParserCombinator.ts";
+import { FilterStream } from "../stream/FilterStream.ts";
+import { MatchersStream, RegexMatchers } from "../stream/MatchersStream.ts";
+import { matchOneOf } from "../stream/RegexHelpers.ts";
 
 test("parse fn foo()", () => {
   const src = "fn foo()";

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import viteWesl from "../wesl-plugin/src/plugins/vite";
-import { simpleReflect } from "./src/SimpleReflectExtension.js";
+import { simpleReflect } from "./src/SimpleReflectExtension.ts";
 
 const thisPath = fileURLToPath(import.meta.url);
 const weslToml = path.join(path.dirname(thisPath), "wesl.toml");

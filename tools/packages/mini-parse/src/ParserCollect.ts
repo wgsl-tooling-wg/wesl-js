@@ -1,4 +1,4 @@
-import type { CombinatorArg, ResultFromArg } from "./CombinatorTypes.js";
+import type { CombinatorArg, ResultFromArg } from "./CombinatorTypes.ts";
 import {
   type AppState,
   type OptParserResult,
@@ -6,9 +6,9 @@ import {
   type ParserContext,
   type ParserStream,
   parser,
-} from "./Parser.js";
-import { parserArg } from "./ParserCombinator.js";
-import type { Stream, Token } from "./Stream.js";
+} from "./Parser.ts";
+import { parserArg } from "./ParserCombinator.ts";
+import type { Stream, Token } from "./Stream.ts";
 
 export type TagRecord = Record<string | symbol, any[] | undefined>;
 export type NoTags = Record<string | symbol, never>;

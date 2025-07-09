@@ -1,4 +1,4 @@
 import { createVitePlugin } from "unplugin";
-import { weslPlugin } from "../WeslPlugin.js";
+import { weslPlugin } from "../WeslPlugin.ts";
 
 export default createVitePlugin(weslPlugin);

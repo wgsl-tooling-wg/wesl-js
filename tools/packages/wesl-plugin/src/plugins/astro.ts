@@ -1,5 +1,5 @@
-import unplugin from "../WeslPlugin.js";
-import type { WeslPluginOptions } from "../WeslPluginOptions.js";
+import unplugin from "../WeslPlugin.ts";
+import type { WeslPluginOptions } from "../WeslPluginOptions.ts";
 
 export default (options: WeslPluginOptions): any => ({
   name: "wesl-plugin",

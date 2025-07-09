@@ -8,7 +8,7 @@ import type {
   SeqObjParser,
   SeqParser,
   SeqValues,
-} from "./CombinatorTypes.js";
+} from "./CombinatorTypes.ts";
 import {
   type OptParserResult,
   ParseError,
@@ -18,17 +18,17 @@ import {
   type ParserStream,
   parser,
   terminalParser,
-} from "./Parser.js";
-import { closeArray, pushOpenArray } from "./ParserCollect.js";
-import { quotedText, srcTrace } from "./ParserLogging.js";
-import { tracing } from "./ParserTracing.js";
-import type { Span } from "./Span.js";
+} from "./Parser.ts";
+import { closeArray, pushOpenArray } from "./ParserCollect.ts";
+import { quotedText, srcTrace } from "./ParserLogging.ts";
+import { tracing } from "./ParserTracing.ts";
+import type { Span } from "./Span.ts";
 import {
   peekToken,
   type Stream,
   type Token,
   type TypedToken,
-} from "./Stream.js";
+} from "./Stream.ts";
 
 /** Parsing Combinators
  *

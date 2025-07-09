@@ -4,7 +4,7 @@ import {
   testParse,
 } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import type { Parser } from "../Parser.js";
+import type { Parser } from "../Parser.ts";
 import {
   any,
   delimited,
@@ -21,10 +21,10 @@ import {
   span,
   text,
   withSep,
-} from "../ParserCombinator.js";
-import { enableTracing } from "../ParserTracing.js";
-import type { Stream, Token } from "../Stream.js";
-import { withLogger } from "../WrappedLog.js";
+} from "../ParserCombinator.ts";
+import { enableTracing } from "../ParserTracing.ts";
+import type { Stream, Token } from "../Stream.ts";
+import { withLogger } from "../WrappedLog.ts";
 
 const m: Record<TestMatcherKind, TestMatcherKind> = {
   attr: "attr",

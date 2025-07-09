@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { expect, test } from "vitest";
-import { link } from "../Linker.js";
+import { link } from "../Linker.ts";
 
 const wgsl1: Record<string, string> = import.meta.glob("./wgsl_1/*.wgsl", {
   query: "?raw",

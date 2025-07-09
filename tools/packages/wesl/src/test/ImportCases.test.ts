@@ -1,6 +1,6 @@
 import { afterAll, type TestContext, test } from "vitest";
 import { importCases } from "wesl-testsuite";
-import { testFromCase, verifyCaseCoverage } from "./TestLink.js";
+import { testFromCase, verifyCaseCoverage } from "./TestLink.ts";
 
 // wgsl example src, indexed by name
 const examplesByName = new Map(importCases.map(t => [t.name, t]));

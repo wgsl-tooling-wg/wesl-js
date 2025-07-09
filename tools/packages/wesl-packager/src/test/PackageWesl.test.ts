@@ -4,8 +4,8 @@ import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { rimraf } from "rimraf";
 import { expect, test } from "vitest";
-import { packagerCli } from "../PackagerCli.js";
-import { expectDirMatch } from "./ExpectDirMatch.js";
+import { packagerCli } from "../PackagerCli.ts";
+import { expectDirMatch } from "./ExpectDirMatch.ts";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 

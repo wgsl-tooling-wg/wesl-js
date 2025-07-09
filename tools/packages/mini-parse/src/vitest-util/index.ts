@@ -1,1 +1,1 @@
-export * from "./TrimmedMatch.js";
+export * from "./TrimmedMatch.ts";

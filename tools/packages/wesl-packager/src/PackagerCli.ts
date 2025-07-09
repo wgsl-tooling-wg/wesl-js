@@ -1,6 +1,6 @@
 import { versionFromPackageJson } from "wesl-tooling";
 import yargs from "yargs";
-import { packageWgsl } from "./PackageWesl.js";
+import { packageWgsl } from "./PackageWesl.ts";
 
 export type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 let cliArgs: CliArgs;

@@ -3,8 +3,8 @@ import type {
   ImportItem,
   ImportSegment,
   ImportStatement,
-} from "./AbstractElems";
-import { assertUnreachable } from "./Assertions";
+} from "./AbstractElems.ts";
+import { assertUnreachable } from "./Assertions.ts";
 
 export interface FlatImport {
   importPath: string[];

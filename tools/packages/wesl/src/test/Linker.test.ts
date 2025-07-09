@@ -1,6 +1,6 @@
 import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { test } from "vitest";
-import { linkTest } from "./TestUtil.js";
+import { linkTest } from "./TestUtil.ts";
 
 test("link global var", async () => {
   const src = `var x: i32 = 1;`;

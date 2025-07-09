@@ -1,6 +1,6 @@
-import { assertThat } from "./Assertions.js";
-import type { AnyParser, ParserContext, ParserTraceInfo } from "./Parser.js";
-import { log } from "./WrappedLog.js";
+import { assertThat } from "./Assertions.ts";
+import type { AnyParser, ParserContext, ParserTraceInfo } from "./Parser.ts";
+import { log } from "./WrappedLog.ts";
 
 /** true if parser tracing is enabled */
 export let tracing = false; // LATER use as generic debug build signal (perhaps rename to debug or DEBUG)

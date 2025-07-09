@@ -1,3 +1,3 @@
-export * from "./extensions/LinkExtension.js";
-export * from "./extensions/StaticExtension.js";
-export * from "./PluginExtension.js";
+export * from "./extensions/LinkExtension.ts";
+export * from "./extensions/StaticExtension.ts";
+export * from "./PluginExtension.ts";

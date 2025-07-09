@@ -10,9 +10,9 @@ import {
   type UnpluginOptions,
 } from "unplugin";
 import type { Conditions, ParsedRegistry } from "wesl";
-import { buildApi } from "./PluginApi.js";
-import type { PluginExtension } from "./PluginExtension.js";
-import type { WeslPluginOptions } from "./WeslPluginOptions.js";
+import { buildApi } from "./PluginApi.ts";
+import type { PluginExtension } from "./PluginExtension.ts";
+import type { WeslPluginOptions } from "./WeslPluginOptions.ts";
 
 /** loaded (or synthesized) info from .toml */
 export interface WeslToml {

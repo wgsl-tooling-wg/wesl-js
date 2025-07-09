@@ -12,14 +12,14 @@ import {
   parseIntoRegistry,
   type SrcModule,
 } from "wesl";
-import { bindAndTransform, type LinkParams, link } from "../Linker.js";
+import { bindAndTransform, type LinkParams, link } from "../Linker.ts";
 import {
   parseSrcModule,
   syntheticWeslParseState,
   type WeslAST,
-} from "../ParseWESL.js";
-import { WeslStream, type WeslToken } from "../parse/WeslStream.js";
-import { resetScopeIds } from "../Scope.js";
+} from "../ParseWESL.ts";
+import { WeslStream, type WeslToken } from "../parse/WeslStream.ts";
+import { resetScopeIds } from "../Scope.ts";
 
 /** parse a single wesl file */
 export function parseWESL(src: string): WeslAST {

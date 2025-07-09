@@ -1,14 +1,14 @@
 import { testParse } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import { calcMatcher } from "../examples/CalculatorExample.js";
+import { calcMatcher } from "../examples/CalculatorExample.ts";
 import {
   power,
   product,
   resultsStatement,
   sum,
-} from "../examples/CalculatorResultsExample.js";
-import type { Parser } from "../Parser.js";
-import type { Stream, Token } from "../Stream.js";
+} from "../examples/CalculatorResultsExample.ts";
+import type { Parser } from "../Parser.ts";
+import type { Stream, Token } from "../Stream.ts";
 
 test("power 2 ^ 4", () => {
   const { parsed } = testParse(power, "2 ^ 3", calcMatcher);

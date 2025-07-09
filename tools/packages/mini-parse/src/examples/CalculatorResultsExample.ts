@@ -1,4 +1,4 @@
-import type { Parser } from "../Parser.js";
+import type { Parser } from "../Parser.ts";
 import {
   delimited,
   fn,
@@ -8,15 +8,15 @@ import {
   repeat,
   seq,
   seqObj,
-} from "../ParserCombinator.js";
-import { tracing } from "../ParserTracing.js";
-import type { Stream, Token } from "../Stream.js";
+} from "../ParserCombinator.ts";
+import { tracing } from "../ParserTracing.ts";
+import type { Stream, Token } from "../Stream.ts";
 import {
   type CalcStream,
   mulDiv,
   num,
   plusMinus,
-} from "./CalculatorExample.js";
+} from "./CalculatorExample.ts";
 
 let expr: Parser<CalcStream, number> = null as any; // help TS with forward reference
 

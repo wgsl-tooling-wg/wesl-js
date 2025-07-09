@@ -1,6 +1,6 @@
 import { afterAll, type TestContext, test } from "vitest";
 import { conditionalTranslationCases } from "wesl-testsuite";
-import { testFromCase, verifyCaseCoverage } from "./TestLink.js";
+import { testFromCase, verifyCaseCoverage } from "./TestLink.ts";
 
 const examplesByName = new Map(
   conditionalTranslationCases.map(t => [t.name, t]),

@@ -1,6 +1,6 @@
 import type { SrcMap } from "mini-parse";
-import { assertThat } from "../../mini-parse/src/Assertions";
-import { errorHighlight, offsetToLineNumber } from "./Util";
+import { assertThatDebug } from "./Assertions.ts";
+import { errorHighlight, offsetToLineNumber } from "./Util.ts";
 import type { WeslDevice } from "./WeslDevice";
 
 /** Results of shader compilation. Has {@link WeslGPUCompilationMessage}

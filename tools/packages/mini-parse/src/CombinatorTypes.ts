@@ -1,4 +1,4 @@
-import type { Parser, ParserStream } from "./Parser.js";
+import type { Parser, ParserStream } from "./Parser.ts";
 
 /** Typescript types for parser combinators */
 

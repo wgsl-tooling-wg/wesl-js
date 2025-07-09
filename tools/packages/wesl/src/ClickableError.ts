@@ -1,7 +1,7 @@
 import { srcLog, tracing } from "mini-parse";
 import type { DeclIdentElem, RefIdent, RefIdentElem } from "wesl";
 import { offsetToLineNumber } from "./Util.ts";
-import { encodeVlq } from "./vlq/vlq";
+import { encodeVlq } from "./vlq/vlq.ts";
 
 export interface ClickableErrorParams {
   /** url of the source file (e.g. `shaders/app.wesl`) */

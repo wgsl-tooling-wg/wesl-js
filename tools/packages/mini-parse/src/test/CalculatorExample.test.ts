@@ -1,18 +1,18 @@
 import { testParse } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import { calcMatcher, statement } from "../examples/CalculatorExample.js";
+import { calcMatcher, statement } from "../examples/CalculatorExample.ts";
 import {
   simpleSum,
   simpleTokens,
   sumResults,
   taggedSum,
-} from "../examples/DocExamples.js";
-import type { Stream, Token } from "../Stream.js";
-import { FilterStream } from "../stream/FilterStream.js";
+} from "../examples/DocExamples.ts";
+import type { Stream, Token } from "../Stream.ts";
+import { FilterStream } from "../stream/FilterStream.ts";
 import {
   MatchersStream,
   type RegexMatchers,
-} from "../stream/MatchersStream.js";
+} from "../stream/MatchersStream.ts";
 
 test("parse 3 + 4", () => {
   const src = "3 + 4";

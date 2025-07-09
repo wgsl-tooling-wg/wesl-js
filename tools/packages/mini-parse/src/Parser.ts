@@ -1,4 +1,4 @@
-import { assertThat } from "./Assertions.js";
+import { assertThat } from "./Assertions.ts";
 import {
   type CollectFn,
   type CollectFnEntry,
@@ -7,16 +7,16 @@ import {
   ctag,
   ptag,
   runCollection,
-} from "./ParserCollect.js";
+} from "./ParserCollect.ts";
 import {
   parserLog,
   type TraceContext,
   type TraceOptions,
   tracing,
   withTraceLogging,
-} from "./ParserTracing.js";
-import type { Span } from "./Span.js";
-import type { Stream, Token, TypedToken } from "./Stream.js";
+} from "./ParserTracing.ts";
+import type { Span } from "./Span.ts";
+import type { Stream, Token, TypedToken } from "./Stream.ts";
 
 export interface AppState<C, S> {
   /**
@@ -87,11 +87,16 @@ interface ConstructArgs<T> extends ParserArgs {
 export type AnyParser = Parser<any, any>;
 
 export class ParserTraceInfo {
+  traceName: string | undefined;
+  traceEnabled: TraceOptions | undefined;
   constructor(
     /** name to use for trace logging */
-    public traceName: string | undefined = undefined,
-    public traceEnabled: TraceOptions | undefined = undefined,
-  ) {}
+    traceName: string | undefined = undefined,
+    traceEnabled: TraceOptions | undefined = undefined,
+  ) {
+    this.traceName = traceName;
+    this.traceEnabled = traceEnabled;
+  }
   /** true for elements without children like kind(), and text(),
    * (to avoid intro log statement while tracing) */
   traceIsTerminal = false;

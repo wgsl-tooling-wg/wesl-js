@@ -25,9 +25,9 @@ import {
   refIdent,
   stuffCollect,
   typeRefCollect,
-} from "../WESLCollect";
-import { number, qualified_ident, word } from "./WeslBaseGrammar";
-import { templateClose, templateOpen, type WeslToken } from "./WeslStream";
+} from "../WESLCollect.ts";
+import { number, qualified_ident, word } from "./WeslBaseGrammar.ts";
+import { templateClose, templateOpen, type WeslToken } from "./WeslStream.ts";
 
 export const opt_template_list = opt(
   seq(

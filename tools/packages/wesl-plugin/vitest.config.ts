@@ -1,4 +1,4 @@
-import type { ViteUserConfig } from "vitest/config.js";
+import type { ViteUserConfig } from "vitest/config.ts";
 
 const config: ViteUserConfig = {
   test: {

@@ -5,8 +5,8 @@ import toml from "toml";
 import type { UnpluginBuildContext, UnpluginContext } from "unplugin";
 import { type ParsedRegistry, parsedRegistry, parseIntoRegistry } from "wesl";
 import { parseDependencies } from "wesl-tooling";
-import type { PluginExtensionApi } from "./PluginExtension.js";
-import type { PluginContext, WeslToml, WeslTomlInfo } from "./WeslPlugin.js";
+import type { PluginExtensionApi } from "./PluginExtension.ts";
+import type { PluginContext, WeslToml, WeslTomlInfo } from "./WeslPlugin.ts";
 
 export function buildApi(
   context: PluginContext,

@@ -1,9 +1,9 @@
-import type { Parser } from "../Parser.js";
-import { kind, opt, or, repeat, seq } from "../ParserCombinator.js";
-import { tracing } from "../ParserTracing.js";
-import type { Stream, TypedToken } from "../Stream.js";
-import { RegexMatchers } from "../stream/MatchersStream.js";
-import { matchOneOf } from "../stream/RegexHelpers.js";
+import type { Parser } from "../Parser.ts";
+import { kind, opt, or, repeat, seq } from "../ParserCombinator.ts";
+import { tracing } from "../ParserTracing.ts";
+import type { Stream, TypedToken } from "../Stream.ts";
+import { RegexMatchers } from "../stream/MatchersStream.ts";
+import { matchOneOf } from "../stream/RegexHelpers.ts";
 
 export type CalcKind = "number" | "ws" | "mulDiv" | "plusMinus" | "symbol";
 export const calcMatcher = new RegexMatchers<CalcKind>({

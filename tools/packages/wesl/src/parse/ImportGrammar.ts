@@ -25,11 +25,11 @@ import type {
   ImportItem,
   ImportSegment,
   ImportStatement,
-} from "../AbstractElems.js";
-import { assertUnreachable } from "../Assertions.js";
-import { importElem } from "../WESLCollect.js";
-import { keyword, word } from "./WeslBaseGrammar.js";
-import type { WeslToken } from "./WeslStream.js";
+} from "../AbstractElems.ts";
+import { assertUnreachable } from "../Assertions.ts";
+import { importElem } from "../WESLCollect.ts";
+import { keyword, word } from "./WeslBaseGrammar.ts";
+import type { WeslToken } from "./WeslStream.ts";
 
 function makeStatement(
   segments: ImportSegment[],

@@ -1,8 +1,8 @@
 import { withLogSpy } from "mini-parse/test-util";
 import { expect, test } from "vitest";
 import { importSyntaxCases } from "wesl-testsuite";
-import { weslImports } from "../parse/ImportGrammar.js";
-import { testAppParse } from "./TestUtil.js";
+import { weslImports } from "../parse/ImportGrammar.ts";
+import { testAppParse } from "./TestUtil.ts";
 
 function expectParseFail(src: string): void {
   withLogSpy(() => {

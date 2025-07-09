@@ -11,7 +11,7 @@ import yargs from "yargs";
 import {
   parsedRegistry,
   parseIntoRegistry,
-} from "../../wesl/src/ParsedRegistry.js"; // LATER fix import
+} from "../../wesl/src/ParsedRegistry.ts"; // LATER fix import
 
 type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 

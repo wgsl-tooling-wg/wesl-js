@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { exit } from "node:process";
 import { hideBin } from "yargs/helpers";
-import { packagerCli } from "./PackagerCli.js";
+import { packagerCli } from "./PackagerCli.ts";
 
 const rawArgs = hideBin(process.argv);
 
