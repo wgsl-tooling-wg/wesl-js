@@ -12,6 +12,7 @@ export default {
     "repository",
     "homepage",
     "scripts",
+    "publishConfig",
     "exports",
     "main",
     "module",
