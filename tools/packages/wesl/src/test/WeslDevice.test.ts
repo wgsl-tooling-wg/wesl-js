@@ -1,8 +1,7 @@
-import { setTimeout } from "node:timers";
 import { SrcMap } from "mini-parse";
 import { expect, test, vi } from "vitest";
-import { LinkedWesl } from "../LinkedWesl";
-import { makeWeslDevice } from "../WeslDevice";
+import { LinkedWesl } from "../LinkedWesl.ts";
+import { makeWeslDevice } from "../WeslDevice.ts";
 
 test("WeslDevice doesn't conflict with uncapturederror", async () => {
   const GPUDeviceMock = vi.fn(function (this: GPUDevice) {
@@ -35,7 +34,7 @@ test("WeslDevice doesn't conflict with uncapturederror", async () => {
     const TIMEOUT = setTimeout(() => {
       reject();
     }, 1000);
-    device.addEventListener("uncapturederror", ev => {
+    device.addEventListener("uncapturederror", (ev: any) => {
       clearTimeout(TIMEOUT);
       resolve(ev.error);
     });
@@ -71,7 +70,7 @@ test("WeslDevice doesn't conflict with popErrorsScope", async () => {
     const TIMEOUT = setTimeout(() => {
       reject();
     }, 1000);
-    device.popErrorScope().then(v => {
+    device.popErrorScope().then((v: any) => {
       clearTimeout(TIMEOUT);
       resolve(v);
     });

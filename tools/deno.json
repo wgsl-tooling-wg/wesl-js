@@ -1,0 +1,29 @@
+{
+  "workspace": ["./packages/mini-parse", "./packages/wesl"],
+  "exclude": [
+    "dist",
+    "examples",
+    "lib",
+    "node_modules",
+    "scripts",
+    "packages/bench",
+    "packages/plugin-test",
+    "packages/random_wgsl",
+    "packages/test_pkg",
+    "packages/wesl-link",
+    "packages/wesl-packager",
+    "packages/wesl-plugin",
+    "packages/wesl-reflect",
+    "packages/wesl-tooling",
+    "**/dist/**"
+  ],
+  "compilerOptions": {
+    "lib": ["deno.window", "deno.unstable"],
+    "types": ["./global.d.ts"]
+  },
+  "lint": {
+    "rules": {
+      "exclude": ["no-explicit-any"]
+    }
+  }
+}

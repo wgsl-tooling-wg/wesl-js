@@ -1,7 +1,7 @@
 import type { SrcMap } from "mini-parse";
 import { assertThatDebug } from "./Assertions.ts";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
-import type { WeslDevice } from "./WeslDevice";
+import type { WeslDevice } from "./WeslDevice.ts";
 
 /** Results of shader compilation. Has {@link WeslGPUCompilationMessage}
  * which are aware of the WESL module that an error was thrown from. */
@@ -109,7 +109,6 @@ export class LinkedWesl {
     compilationInfo: GPUCompilationInfo,
   ): WeslGPUCompilationInfo {
     return {
-      __brand: compilationInfo.__brand,
       messages: compilationInfo.messages.map(v =>
         this.mapGPUCompilationMessage(v),
       ),
@@ -123,9 +122,9 @@ export class LinkedWesl {
     const srcPosition = srcMap.destToSrc(message.offset);
     // LATER what if this gets mapped to a completely different place?
     const srcEndPosition =
-      message.length > 0
-        ? srcMap.destToSrc(message.offset + message.length)
-        : srcPosition;
+      message.length > 0 ?
+        srcMap.destToSrc(message.offset + message.length)
+      : srcPosition;
     const length = srcEndPosition.position - srcPosition.position;
 
     const [lineNum, linePos] = offsetToLineNumber(
@@ -134,7 +133,6 @@ export class LinkedWesl {
     );
 
     return {
-      __brand: message.__brand,
       type: message.type,
       message: message.message,
       offset: srcPosition.position,
