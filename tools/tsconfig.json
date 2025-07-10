@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "outDir": "${configDir}/lib",
+    "incremental": true,
+    "declaration": true,
+    "declarationMap": true,
+    "composite": false,
+    "skipLibCheck": false,
+    "noEmit": true
+  },
+  "references": [
+    { "path": "./packages/mini-parse" },
+    { "path": "./packages/wesl" }
+  ]
+}

@@ -289,15 +289,6 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
 
-  packages/bulk-test:
-    dependencies:
-      mini-parse:
-        specifier: workspace:*
-        version: link:../mini-parse
-      wesl:
-        specifier: workspace:*
-        version: link:../wesl
-
   packages/mini-parse: {}
 
   packages/plugin-test:
