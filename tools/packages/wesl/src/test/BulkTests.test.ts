@@ -1,8 +1,10 @@
-import { describe, test, expect } from "vitest";
-import { fetchBulkTest, BaseDir } from "wesl-testsuite/fetch-bulk-tests";
-import bulkTests from "wesl-testsuite/test-cases-json/bulkTests" with { type: "json" };
 import fs from "node:fs/promises";
 import { expectNoLogAsync } from "mini-parse/test-util";
+import { describe, expect, test } from "vitest";
+import { BaseDir, fetchBulkTest } from "wesl-testsuite/fetch-bulk-tests";
+import bulkTests from "wesl-testsuite/test-cases-json/bulkTests" with {
+  type: "json",
+};
 import { link } from "../Linker.ts";
 import { stripWesl } from "./StripWesl.ts";
 
@@ -39,7 +41,7 @@ async function runBulkTest(baseDir: string, filePath: string): Promise<void> {
     },
   );
   const result = await expectNoLogAsync(() =>
-    link({ weslSrc: { ["main.wgsl"]: orig }, rootModuleName: "main" }),
+    link({ weslSrc: { "main.wgsl": orig }, rootModuleName: "main" }),
   );
   expect(stripWesl(result.dest)).toBe(stripWesl(orig));
 }
