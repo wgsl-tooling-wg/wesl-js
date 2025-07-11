@@ -1,5 +1,9 @@
 {
-  "workspace": ["./packages/wesl", "./packages/mini-parse"],
+  "workspace": [
+    "./packages/wesl",
+    "./packages/mini-parse",
+    "./packages/wesl-plugin"
+  ],
   "exclude": [
     "dist",
     "examples",
@@ -12,7 +16,6 @@
     "packages/test_pkg",
     "packages/wesl-link",
     "packages/wesl-packager",
-    "packages/wesl-plugin",
     "packages/wesl-reflect",
     "packages/wesl-tooling",
     "**/dist/**"

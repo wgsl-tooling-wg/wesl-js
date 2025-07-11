@@ -1,4 +1,4 @@
 import { createFarmPlugin } from "unplugin";
-import { weslPlugin } from "../WeslPlugin";
+import { weslPlugin } from "../WeslPlugin.ts";
 
 export default createFarmPlugin(weslPlugin);
