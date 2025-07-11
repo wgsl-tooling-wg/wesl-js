@@ -1,6 +1,6 @@
-import { WeslStream } from "wesl";
+import { WeslStream } from "../parse/WeslStream.ts";
 
-/** Remove extra bits from WGSL for test comparisons.
+/** Remove extra bits from WESL for test comparisons.
  *
  * removes:
  *  . extra whitespace,
