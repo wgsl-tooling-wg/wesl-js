@@ -1,5 +1,5 @@
 {
-  "workspace": ["./packages/mini-parse", "./packages/wesl"],
+  "workspace": ["./packages/wesl", "./packages/mini-parse"],
   "exclude": [
     "dist",
     "examples",
@@ -18,7 +18,7 @@
     "**/dist/**"
   ],
   "compilerOptions": {
-    "lib": ["deno.window", "deno.unstable"],
+    "lib": ["deno.window"],
     "types": ["./global.d.ts"]
   },
   "lint": {

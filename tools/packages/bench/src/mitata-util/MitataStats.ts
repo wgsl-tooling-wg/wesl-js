@@ -1,3 +1,4 @@
+// @ts-types="./Mitata.d.ts"
 import type { CpuCounts } from "@mitata/counters";
 import type { MeasureResult } from "./MitataBench.ts";
 import { mapValues } from "./Util.ts";

@@ -34,7 +34,7 @@ test("WeslDevice doesn't conflict with uncapturederror", async () => {
     const TIMEOUT = setTimeout(() => {
       reject();
     }, 1000);
-    device.addEventListener("uncapturederror", (ev: any) => {
+    device.addEventListener("uncapturederror", ev => {
       clearTimeout(TIMEOUT);
       resolve(ev.error);
     });
@@ -70,7 +70,7 @@ test("WeslDevice doesn't conflict with popErrorsScope", async () => {
     const TIMEOUT = setTimeout(() => {
       reject();
     }, 1000);
-    device.popErrorScope().then((v: any) => {
+    device.popErrorScope().then(v => {
       clearTimeout(TIMEOUT);
       resolve(v);
     });
