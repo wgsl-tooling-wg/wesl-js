@@ -1,11 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { LoadResult, Plugin, PluginContext } from "rollup";
 
 const rawSuffix = "?raw";
 // The \\0 prefix is a convention in Rollup to indicate that a module ID is virtual
 // or handled by a plugin and should not be resolved by other plugins or the default resolver.
 const virtualPrefix = "\\0raw:";
+
+// Get the directory of this plugin file
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default function rawFileImporter(): Plugin {
   return {
@@ -15,24 +19,28 @@ export default function rawFileImporter(): Plugin {
       if (sourceId.endsWith(rawSuffix)) {
         const actualPath = sourceId.slice(0, -rawSuffix.length);
         // If importer is undefined, it's an entry point or Rollup couldn't determine the importer.
-        const baseDir = importer ? path.dirname(importer) : process.cwd();
+        const baseDir = importer ? path.dirname(importer) : __dirname;
         const resolvedPath = path.resolve(baseDir, actualPath);
-        return `${virtualPrefix}${resolvedPath}`;
+        // Convert to relative path from the plugin directory to avoid absolute paths in output
+        const relativePath = path.relative(__dirname, resolvedPath);
+        return `${virtualPrefix}${relativePath}`;
       }
       return null;
     },
 
     async load(this: PluginContext, resolvedId: string): Promise<LoadResult> {
       if (resolvedId.startsWith(virtualPrefix)) {
-        const actualPath = resolvedId.slice(virtualPrefix.length);
+        const relativePath = resolvedId.slice(virtualPrefix.length);
+        // Convert relative path back to absolute for file reading
+        const absolutePath = path.resolve(__dirname, relativePath);
         try {
-          const fileContent = await fs.readFile(actualPath, "utf-8");
+          const fileContent = await fs.readFile(absolutePath, "utf-8");
           return {
             code: `export default ${JSON.stringify(fileContent)};`,
             map: { mappings: "" }, // empty sourcemap
           };
         } catch (error) {
-          let message = `Failed to load raw file: ${actualPath}`;
+          let message = `Failed to load raw file: ${absolutePath}`;
           if (error instanceof Error) {
             message = error.message;
           }
