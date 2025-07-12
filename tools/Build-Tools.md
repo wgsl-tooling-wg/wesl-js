@@ -18,7 +18,7 @@
 
 ### linting
 - biomejs is the current primary linter/formatter.
-- oxlint is run on the prepush script, and is expected to pass for every main branch push.
+- oxlint is run on the prepush script, and is enforced in ci.
 - eslint is available to run manually, but is not required to pass for every main branch push.
 - rationale: biome has currently the best combination features and stability. oxlint is up and coming. eslint is obsolescent but still catches some things that other linters miss.
 
