@@ -12,6 +12,7 @@ import {
   parsedRegistry,
   parseIntoRegistry,
 } from "../../wesl/src/ParsedRegistry.ts"; // LATER fix import
+import { cwd } from "node:process";
 
 type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 
@@ -70,7 +71,7 @@ async function parseArgs(args: string[]) {
 
 async function linkNormally(argv: CliArgs): Promise<void> {
   const { baseDir, projectDir, rootModule: rootModuleName } = argv;
-  const weslRoot = baseDir || process.cwd();
+  const weslRoot = baseDir || cwd();
   const weslSrc = await loadModules(projectDir, weslRoot, argv.src);
   const projectDirAbs = path.resolve(projectDir, "src.js");
   const projectDirUrl = pathToFileURL(projectDirAbs);

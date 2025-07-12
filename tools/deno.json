@@ -3,6 +3,7 @@
     "./packages/bench",
     "./packages/mini-parse",
     "./packages/wesl",
+    "./packages/wesl-link",
     "./packages/wesl-plugin"
   ],
   "exclude": [
@@ -11,7 +12,6 @@
     "packages/plugin-test",
     "packages/random_wgsl",
     "packages/test_pkg",
-    "packages/wesl-link",
     "packages/wesl-packager",
     "packages/wesl-reflect",
     "packages/wesl-tooling",
