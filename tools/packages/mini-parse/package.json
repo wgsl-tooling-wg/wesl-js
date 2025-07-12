@@ -19,14 +19,6 @@
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
-      },
-      "./test-util": {
-        "types": "./dist/test-util/testUtil.d.ts",
-        "import": "./dist/testUtil.js"
-      },
-      "./vitest-util": {
-        "types": "./dist/vitest-util/vitestUtil.d.ts",
-        "import": "./dist/vitestUtil.js"
       }
     },
     "main": "dist/index.js"
