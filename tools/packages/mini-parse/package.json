@@ -5,11 +5,8 @@
   "files": ["dist", "src"],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "build": "run-s build:main build:test-util",
-    "build:main": "vite build",
-    "build:test-util": "vite -c test-util.vite.config.ts build",
-    "build:vitest-util": "vite -c vitest-util.vite.config.ts build",
-    "prepublishOnly": "run-s build",
+    "build": "tsdown",
+    "prepublishOnly": "build",
     "test": "vitest",
     "test:once": "vitest run",
     "typecheck": "tsgo"
