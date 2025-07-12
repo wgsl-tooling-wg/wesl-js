@@ -26,7 +26,7 @@
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
     "prepush": "run-s fix:all lint:all build:all typecheck:all test:all bench:validate",
     "publish:all": "pnpm --filter \"./packages/**\" publish",
-    "test": "FORCE_COLOR=1 vitest",
+    "test": "cross-env FORCE_COLOR=1 vitest",
     "test:all": "run-s test:unit test:built test:examples",
     "test:built": "pnpm --filter built-test test:built",
     "test:examples": "pnpm --filter \"./examples/**\" test",
@@ -49,6 +49,7 @@
     "@webgpu/types": "^0.1.63",
     "berry-pretty": "^0.0.5",
     "brotli": "^1.3.3",
+    "cross-env": "^7.0.3",
     "diff": "^8.0.2",
     "esbuild": "^0.25.5",
     "eslint": "^9.30.1",
@@ -74,8 +75,13 @@
   },
   "packageManager": "pnpm@10.12.4",
   "pnpm": {
-    "ignoredBuiltDependencies": ["es5-ext"],
-    "onlyBuiltDependencies": ["core-js", "esbuild"],
+    "ignoredBuiltDependencies": [
+      "es5-ext"
+    ],
+    "onlyBuiltDependencies": [
+      "core-js",
+      "esbuild"
+    ],
     "overrides": {}
   }
 }
