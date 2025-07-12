@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { parseDependencies } from "../src/ParseDependencies.ts";
 
-const thisDir = import.meta.dirname;
+const thisDir = import.meta.dirname!;
 
 test("parseDepenencies finds non-root dependency", () => {
   const srcs = {
