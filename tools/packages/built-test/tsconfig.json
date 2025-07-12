@@ -1,0 +1,19 @@
+{
+  // This tsconfig is used outside the monorepo, in temp-built-test so doesn't inherit from base.
+  // (All files in tools/packages/built-test (including this tsconfig) are copied to temp-built-test
+  // by setup-built.mts to test the packed npm packages.)
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "esnext",
+    "lib": ["ES2024", "DOM"],
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["vitest/globals", "node", "@webgpu/types"]
+  }
+}
