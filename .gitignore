@@ -10,6 +10,7 @@
 # ignore node_modules when switching to pre-monorepo branches
 node_modules
 
+# vite temp files
 vite.config.ts.timestamp-*.mjs
 
 # previous rev of tools for benchmark comparisons
@@ -18,3 +19,7 @@ _baseline
 # test built packages
 temp-built-test
 temp-packages
+
+# local AI instructions
+copilot-instructions.md
+CLAUDE.md

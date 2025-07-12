@@ -12,9 +12,3 @@ dist
 
 # typescript build info cache files 
 *.tsbuildinfo
-
-# output file for esbuild meta.data for bundle size analysis
-meta.json
-
-# output file for rollup-plugin-visualizer
-stats.html
