@@ -14,3 +14,7 @@ vite.config.ts.timestamp-*.mjs
 
 # previous rev of tools for benchmark comparisons
 _baseline
+
+# test built packages
+temp-built-test
+temp-packages
