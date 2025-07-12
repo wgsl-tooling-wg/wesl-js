@@ -1,13 +1,13 @@
 {
   "workspace": [
-    "./packages/wesl",
+    "./packages/bench",
     "./packages/mini-parse",
+    "./packages/wesl",
     "./packages/wesl-plugin"
   ],
   "exclude": [
     "./examples",
     "./scripts",
-    "packages/bench",
     "packages/plugin-test",
     "packages/random_wgsl",
     "packages/test_pkg",

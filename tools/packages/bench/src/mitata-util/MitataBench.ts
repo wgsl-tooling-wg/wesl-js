@@ -6,6 +6,7 @@ import {
   mitataStats,
   type NodeGCTime,
 } from "./MitataStats.ts";
+import * as process from "node:process";
 
 export type MeasureResult = Awaited<ReturnType<typeof measure>>;
 const maxGcRecords = 1000;
@@ -156,7 +157,7 @@ async function getHeapFn(): Promise<() => number> {
 
 /** fetch the runtime's function to call gc() manually */
 function gcFunction(): () => void {
-  const gc = globalThis.gc || (globalThis as any).__gc;
+  const gc = (globalThis as any).gc || (globalThis as any).__gc;
   if (gc) return gc;
   console.warn(
     "MitataBench: gc() not available, run node/bun with --expose-gc",
@@ -188,6 +189,6 @@ function analyzeGCEntries(
   return { inRun, before, after, total, collects };
 }
 
-async function wait(msec = 0): Promise<void> {
+function wait(msec = 0): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, msec));
 }

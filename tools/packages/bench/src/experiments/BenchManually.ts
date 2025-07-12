@@ -1,14 +1,15 @@
 import { _linkSync, type link } from "wesl";
 import type { BenchTest } from "../../bin/bench.ts";
 import { diffPercent } from "../table-util/Formatters.ts";
+import * as process from "node:process";
 
 /** manual benchmark testing w/o mitata */
 export function benchManually(
   tests: BenchTest[],
   baselineLink: typeof link,
 ): void {
-  const gc = globalThis.gc || (() => {});
-  console.log("gc is", globalThis.gc ? "enabled" : "disabled");
+  const gc = (globalThis as any).gc || (() => {});
+  console.log("gc is", (globalThis as any).gc ? "enabled" : "disabled");
   for (const test of tests) {
     const weslSrc = Object.fromEntries(test.files.entries());
     const rootModuleName = test.mainFile;
@@ -56,7 +57,11 @@ function _meanTime(times: bigint[]): number {
 }
 
 function medianTime(times: bigint[]): number {
-  const sorted = [...times].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const sorted = [...times].sort((a, b) =>
+    a < b ? -1
+    : a > b ? 1
+    : 0,
+  );
   const mid = Math.floor(sorted.length / 2);
   return Number(sorted[mid]) / 1e6;
 }
