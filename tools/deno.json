@@ -4,6 +4,7 @@
     "./packages/mini-parse",
     "./packages/wesl",
     "./packages/wesl-link",
+    "./packages/wesl-packager",
     "./packages/wesl-plugin",
     "./packages/wesl-reflect",
     "./packages/wesl-tooling"
@@ -14,7 +15,6 @@
     "packages/plugin-test",
     "packages/random_wgsl",
     "packages/test_pkg",
-    "packages/wesl-packager",
     "**/dist/**"
   ],
   "compilerOptions": {
