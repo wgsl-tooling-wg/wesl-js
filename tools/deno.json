@@ -5,6 +5,7 @@
     "./packages/wesl",
     "./packages/wesl-link",
     "./packages/wesl-plugin",
+    "./packages/wesl-reflect",
     "./packages/wesl-tooling"
   ],
   "exclude": [
@@ -14,7 +15,6 @@
     "packages/random_wgsl",
     "packages/test_pkg",
     "packages/wesl-packager",
-    "packages/wesl-reflect",
     "**/dist/**"
   ],
   "compilerOptions": {
