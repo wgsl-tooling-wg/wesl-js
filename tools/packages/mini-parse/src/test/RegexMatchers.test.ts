@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { RegexMatchers } from "../stream/MatchersStream";
+import { RegexMatchers } from "../stream/MatchersStream.ts";
 
 test("token matcher", () => {
   const m = new RegexMatchers({

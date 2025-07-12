@@ -5,11 +5,8 @@
     "./packages/wesl-plugin"
   ],
   "exclude": [
-    "dist",
-    "examples",
-    "lib",
-    "node_modules",
-    "scripts",
+    "./examples",
+    "./scripts",
     "packages/bench",
     "packages/plugin-test",
     "packages/random_wgsl",
