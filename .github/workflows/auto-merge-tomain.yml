@@ -28,11 +28,12 @@ jobs:
       - name: Check if tomain is up-to-date with main
         id: check-status
         run: |
-          git fetch origin main:main
-          git fetch origin tomain:tomain
+          # Fetch without updating local branches
+          git fetch origin main
+          git fetch origin tomain
           
           # Check if tomain has all commits from main
-          BEHIND_COUNT=$(git rev-list --count tomain..main)
+          BEHIND_COUNT=$(git rev-list --count origin/tomain..origin/main)
           echo "behind_count=$BEHIND_COUNT" >> $GITHUB_OUTPUT
           
           if [ "$BEHIND_COUNT" -eq 0 ]; then
@@ -47,7 +48,7 @@ jobs:
         if: steps.check-status.outputs.up_to_date == 'true'
         run: |
           git checkout main
-          git merge --ff-only tomain
+          git merge --ff-only origin/tomain
           git push origin main
           
       - name: Report merge status
