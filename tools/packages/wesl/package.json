@@ -21,7 +21,7 @@
   "publishConfig": {
     "exports": {
       ".": {
-        "types": "./dist/tools/packages/wesl/src/index.d.ts",
+        "types": "./dist/wesl/src/index.d.ts",
         "import": "./dist/index.js"
       }
     },
