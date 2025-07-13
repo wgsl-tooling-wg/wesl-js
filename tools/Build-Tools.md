@@ -80,9 +80,8 @@ The copy is likely a different version than the current tree
   can work on the source w/o waiting for transpilation during development.
 
 - Since vanilla nodejs now understands typescript pretty well, 
-  most tools should just work. 
-  This makes build sequencing should be easier. 
-  You can typecheck or test a change w/o running our build step first.
+  most tools should just work and build sequencing should be easier. 
+  it should be ok to typecheck or test a change w/o running our build step first.
 
 ### TypeScript `erasableSyntaxOnly`
 - To make it easy for vanilla node tools to understand our sources, 
