@@ -79,9 +79,9 @@ The copy is likely a different version than the current tree
   The advantage is that internal tools like the typescript language server 
   can work on the source w/o waiting for transpilation during development.
 
-- Since vanilla nodejs now understands typescript pretty well, 
-  most tools should just work and build sequencing should be easier. 
-  it should be ok to typecheck or test a change w/o running our build step first.
+- Vanilla nodejs now understands typescript pretty well.
+  So most tools should just work with our sources and build sequencing should be easier. 
+  e.g. It should be ok to typecheck or test a change w/o running our build step first.
 
 ### TypeScript `erasableSyntaxOnly`
 - To make it easy for vanilla node tools to understand our sources, 
