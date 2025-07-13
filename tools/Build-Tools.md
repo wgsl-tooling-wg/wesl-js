@@ -63,8 +63,8 @@ The copy is likely a different version than the current tree
   users, and so declare all of their own dependencies.
 - for internal devDependencies to private packages, we use `workspace:x` rather than `workspace:*`. 
   this puts a link in `node_modules` for the local test package so that tests can run.
-  The test packages don't need to be published, but `pnpm publish` fails
-  nonetheless to trying resolve these packages if they're marked as `workspace:*`
+  The test packages aren't published, but `pnpm publish` fails
+  nonetheless to trying resolve these dependent packages if they're marked as `workspace:*`
   and don't have a version.
 
 ### publishConfig for package.json 'exports'
