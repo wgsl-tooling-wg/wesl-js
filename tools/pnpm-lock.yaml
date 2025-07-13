@@ -320,15 +320,6 @@ importers:
         specifier: workspace:x
         version: link:../wesl-plugin
 
-  packages/bulk-test:
-    dependencies:
-      mini-parse:
-        specifier: workspace:*
-        version: link:../mini-parse
-      wesl:
-        specifier: workspace:*
-        version: link:../wesl
-
   packages/mini-parse: {}
 
   packages/plugin-test:

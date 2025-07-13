@@ -1,251 +1,216 @@
 #!/usr/bin/env node
 import { exit } from "node:process";
 import { hideBin } from "yargs/helpers";
-import {
-  loadModules,
-  parseDependencies,
-  versionFromPackageJson,
-  zip,
-} from "wesl-tooling";
+import { loadModules, parseDependencies, versionFromPackageJson, zip } from "wesl-tooling";
 import yargs from "yargs";
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { Biome, Distribution } from "@biomejs/js-api";
 import { noSuffix } from "wesl";
 
-//#region \0raw:../wesl/src/WeslBundle.ts
-var WeslBundle_default =
-  'export interface WeslBundle {\n  /** name of the package, e.g. random_wgsl */\n  name: string;\n\n  /** wesl edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of wesl/wgsl modules:\n   *    keys are file paths, relative to package root (e.g. "./lib.wgsl")\n   *    values are wgsl/wesl code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n';
+//#region \0raw:..\wesl\src\WeslBundle.ts
+var WeslBundle_default = "export interface WeslBundle {\n  /** name of the package, e.g. random_wgsl */\n  name: string;\n\n  /** wesl edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of wesl/wgsl modules:\n   *    keys are file paths, relative to package root (e.g. \"./lib.wgsl\")\n   *    values are wgsl/wesl code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n";
 
 //#endregion
 //#region src/PackageWesl.ts
 const { biome, projectKey: biomeKey } = await setupBiome();
 /** write weslBundle .js and .d.ts files for this shader */
 async function packageWgsl(args) {
-  const { projectDir, outDir, multiBundle, baseDir, src } = args;
-  const modules = await loadModules(projectDir, baseDir, src);
-  const pkgJsonPath = path.join(projectDir, "package.json");
-  const { name } = await loadPackageFields(pkgJsonPath);
-  const edition = "unstable_2025_1";
-  if (args.multiBundle)
-    await writeMultiBundle(modules, name, edition, projectDir, outDir);
-  else {
-    const deps = parseDependencies(modules, projectDir);
-    await writeJsBundle(
-      {
-        name,
-        edition,
-        modules,
-      },
-      deps,
-      outDir,
-    );
-  }
-  await writeTypeScriptDts(outDir);
-  if (args.updatePackageJson)
-    await updatePackageJson(projectDir, outDir, multiBundle);
+	const { projectDir, outDir, multiBundle, baseDir, src } = args;
+	const modules = await loadModules(projectDir, baseDir, src);
+	const pkgJsonPath = path.join(projectDir, "package.json");
+	const { name } = await loadPackageFields(pkgJsonPath);
+	const edition = "unstable_2025_1";
+	if (args.multiBundle) await writeMultiBundle(modules, name, edition, projectDir, outDir);
+	else {
+		const deps = parseDependencies(modules, projectDir);
+		await writeJsBundle({
+			name,
+			edition,
+			modules
+		}, deps, outDir);
+	}
+	await writeTypeScriptDts(outDir);
+	if (args.updatePackageJson) await updatePackageJson(projectDir, outDir, multiBundle);
 }
 /** add an 'exports' entry to package.json for the wesl bundles */
 async function updatePackageJson(projectDir, outDir, multiBundle) {
-  const pkgJsonPath = path.join(projectDir, "package.json");
-  const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
-  const pkgJson = JSON.parse(pkgJsonString);
-  const exports = {};
-  const distDir = path.relative(projectDir, outDir);
-  if (multiBundle)
-    exports["./*"] = {
-      types: `./${distDir}/weslBundle.d.ts`,
-      import: `./${distDir}/*/weslBundle.js`,
-    };
-  else
-    exports["."] = {
-      types: `./${distDir}/weslBundle.d.ts`,
-      import: `./${distDir}/weslBundle.js`,
-    };
-  const newPkgJson = insertExports(pkgJson, exports);
-  const jsonString = JSON.stringify(newPkgJson, null, 2).concat("\n");
-  await fs.writeFile(pkgJsonPath, jsonString);
+	const pkgJsonPath = path.join(projectDir, "package.json");
+	const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
+	const pkgJson = JSON.parse(pkgJsonString);
+	const exports = {};
+	const distDir = path.relative(projectDir, outDir);
+	if (multiBundle) exports["./*"] = {
+		types: `./${distDir}/weslBundle.d.ts`,
+		import: `./${distDir}/*/weslBundle.js`
+	};
+	else exports["."] = {
+		types: `./${distDir}/weslBundle.d.ts`,
+		import: `./${distDir}/weslBundle.js`
+	};
+	const newPkgJson = insertExports(pkgJson, exports);
+	const jsonString = JSON.stringify(newPkgJson, null, 2).concat("\n");
+	await fs.writeFile(pkgJsonPath, jsonString);
 }
 /** insert the exports field into the package.json */
 function insertExports(pkgJson, exports) {
-  const exportsAfter = [
-    "name",
-    "description",
-    "version",
-    "private",
-    "author",
-    "type",
-    "bin",
-    "files",
-    "repository",
-    "homepage",
-    "scripts",
-  ];
-  const entries = Object.entries(pkgJson);
-  const index = entries.findLastIndex(([key]) => exportsAfter.includes(key));
-  entries.splice(index + 1, 0, ["exports", exports]);
-  return Object.fromEntries(entries);
+	const exportsAfter = [
+		"name",
+		"description",
+		"version",
+		"private",
+		"author",
+		"type",
+		"bin",
+		"files",
+		"repository",
+		"homepage",
+		"scripts"
+	];
+	const entries = Object.entries(pkgJson);
+	const index = entries.findLastIndex(([key]) => exportsAfter.includes(key));
+	entries.splice(index + 1, 0, ["exports", exports]);
+	return Object.fromEntries(entries);
 }
 /** create one bundle per source module */
 async function writeMultiBundle(modules, name, edition, projectDir, outDir) {
-  for (const [moduleName, moduleSrc] of Object.entries(modules)) {
-    const oneModule = { [moduleName]: moduleSrc };
-    const moduleBundle = {
-      name,
-      edition,
-      modules: oneModule,
-    };
-    const dependencies = parseDependencies(oneModule, projectDir);
-    const bundleDirRelative = noSuffix(moduleName);
-    const bundleDir = path.join(outDir, bundleDirRelative);
-    await writeJsBundle(moduleBundle, dependencies, bundleDir);
-  }
+	for (const [moduleName, moduleSrc] of Object.entries(modules)) {
+		const oneModule = { [moduleName]: moduleSrc };
+		const moduleBundle = {
+			name,
+			edition,
+			modules: oneModule
+		};
+		const dependencies = parseDependencies(oneModule, projectDir);
+		const bundleDirRelative = noSuffix(moduleName);
+		const bundleDir = path.join(outDir, bundleDirRelative);
+		await writeJsBundle(moduleBundle, dependencies, bundleDir);
+	}
 }
 /** Write a weslBundle.js containing the bundled shader sources */
 async function writeJsBundle(weslBundle, dependencies, outDir) {
-  await mkdir(outDir, { recursive: true });
-  const depNames = dependencies.map(dep => dep.replaceAll("/", "_"));
-  const depsWithNames = zip(dependencies, depNames);
-  const imports = depsWithNames
-    .map(([dep, depName]) => {
-      return `import ${depName} from "${dep}";`;
-    })
-    .join("\n");
-  const importsStr = imports ? `${imports}\n` : "";
-  const bundleString = bundleToJsString(weslBundle, depNames);
-  const outString = `
+	await mkdir(outDir, { recursive: true });
+	const depNames = dependencies.map((dep) => dep.replaceAll("/", "_"));
+	const depsWithNames = zip(dependencies, depNames);
+	const imports = depsWithNames.map(([dep, depName]) => {
+		return `import ${depName} from "${dep}";`;
+	}).join("\n");
+	const importsStr = imports ? `${imports}\n` : "";
+	const bundleString = bundleToJsString(weslBundle, depNames);
+	const outString = `
     ${importsStr}
     export const weslBundle = ${bundleString}
 
     export default weslBundle;
   `;
-  const outPath = path.join(outDir, "weslBundle.js");
-  const formatted = biome.formatContent(biomeKey, outString, {
-    filePath: "b.js",
-  });
-  await fs.writeFile(outPath, formatted.content);
+	const outPath = path.join(outDir, "weslBundle.js");
+	const formatted = biome.formatContent(biomeKey, outString, { filePath: "b.js" });
+	await fs.writeFile(outPath, formatted.content);
 }
 /** Write weslBundle.d.ts containing the type definitions for a WeslBundle */
 async function writeTypeScriptDts(outDir) {
-  const constDecl = `
+	const constDecl = `
     export declare const weslBundle: WeslBundle;
     export default weslBundle;
   `;
-  const declText = WeslBundle_default + constDecl;
-  const formatted = biome.formatContent(biomeKey, declText, {
-    filePath: "t.d.ts",
-  });
-  const outPath = path.join(outDir, "weslBundle.d.ts");
-  await fs.writeFile(outPath, formatted.content);
+	const declText = WeslBundle_default + constDecl;
+	const formatted = biome.formatContent(biomeKey, declText, { filePath: "t.d.ts" });
+	const outPath = path.join(outDir, "weslBundle.d.ts");
+	await fs.writeFile(outPath, formatted.content);
 }
 /** @return the bundle plus dependencies as a JavaScript string */
 function bundleToJsString(bundle, dependencies) {
-  const { name, edition, modules } = bundle;
-  const depsObj = dependencies.length ? { dependencies: 99 } : {};
-  const obj = {
-    name,
-    edition,
-    modules,
-    ...depsObj,
-  };
-  const jsonString = JSON.stringify(obj, null, 2);
-  if (dependencies.length) {
-    const dependenciesStr = `: [${dependencies.join(", ")}]`;
-    const result = jsonString.replace(": 99", dependenciesStr);
-    return result;
-  } else return jsonString;
+	const { name, edition, modules } = bundle;
+	const depsObj = dependencies.length ? { dependencies: 99 } : {};
+	const obj = {
+		name,
+		edition,
+		modules,
+		...depsObj
+	};
+	const jsonString = JSON.stringify(obj, null, 2);
+	if (dependencies.length) {
+		const dependenciesStr = `: [${dependencies.join(", ")}]`;
+		const result = jsonString.replace(": 99", dependenciesStr);
+		return result;
+	} else return jsonString;
 }
 /** parse and extract fields from package.json that we care about
- * (the name of the package) */
+* (the name of the package) */
 async function loadPackageFields(pkgJsonPath) {
-  const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
-  const pkgJson = JSON.parse(pkgJsonString);
-  const { name } = pkgJson;
-  verifyField("name", name);
-  function verifyField(field, value) {
-    if (value === void 0) {
-      console.error(`no '${field}' field found in "${pkgJsonPath}"`);
-      throw new Error("package.json incomplete");
-    }
-  }
-  return { name };
+	const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
+	const pkgJson = JSON.parse(pkgJsonString);
+	const { name } = pkgJson;
+	verifyField("name", name);
+	function verifyField(field, value) {
+		if (value === void 0) {
+			console.error(`no '${field}' field found in "${pkgJsonPath}"`);
+			throw new Error("package.json incomplete");
+		}
+	}
+	return { name };
 }
 /** setup biome to use as a formatter */
 async function setupBiome() {
-  const biome$1 = await Biome.create({ distribution: Distribution.NODE });
-  const { projectKey } = biome$1.openProject();
-  biome$1.applyConfiguration(projectKey, {
-    formatter: {
-      enabled: true,
-      indentStyle: "space",
-      lineEnding: "lf",
-      expand: "auto",
-    },
-  });
-  return {
-    biome: biome$1,
-    projectKey,
-  };
+	const biome$1 = await Biome.create({ distribution: Distribution.NODE });
+	const { projectKey } = biome$1.openProject();
+	biome$1.applyConfiguration(projectKey, { formatter: {
+		enabled: true,
+		indentStyle: "space",
+		lineEnding: "lf",
+		expand: "auto"
+	} });
+	return {
+		biome: biome$1,
+		projectKey
+	};
 }
 
 //#endregion
 //#region src/PackagerCli.ts
 let cliArgs;
 async function packagerCli(rawArgs$1) {
-  cliArgs = await parseArgs(rawArgs$1);
-  await packageWgsl(cliArgs);
+	cliArgs = await parseArgs(rawArgs$1);
+	await packageWgsl(cliArgs);
 }
 async function parseArgs(args) {
-  const projectDir = new URL("..", import.meta.url);
-  const appVersion = await versionFromPackageJson(projectDir);
-  return yargs(args)
-    .command("$0", "create an npm package from WGSL/WESL files")
-    .version(appVersion)
-    .option("src", {
-      type: "string",
-      default: "./shaders/*.w[eg]sl",
-      describe: "WGSL/WESL files to bundle in the package (glob syntax)",
-    })
-    .option("rootDir", {
-      deprecated: true,
-      type: "string",
-      default: "./shaders",
-      describe: "use --baseDir instead",
-    })
-    .option("baseDir", {
-      deprecated: true,
-      type: "string",
-      default: "./shaders",
-      describe: "root directory for shaders",
-    })
-    .option("projectDir", {
-      type: "string",
-      default: ".",
-      describe: "directory containing package.json",
-    })
-    .option("multiBundle", {
-      type: "boolean",
-      default: false,
-      describe: "make a shader bundle for each source file",
-    })
-    .option("exportName", {
-      type: "string",
-      default: ".",
-      describe:
-        "package.json export name for consolidated bundle (ignored for multiBundle)",
-    })
-    .option("updatePackageJson", {
-      type: "boolean",
-      default: false,
-      describe: "add 'exports' entries into package.json",
-    })
-    .option("outDir", {
-      type: "string",
-      default: "dist",
-      describe: "where to put bundled output files (relative to projectDir)",
-    })
-    .help()
-    .parse();
+	const projectDir = new URL("..", import.meta.url);
+	const appVersion = await versionFromPackageJson(projectDir);
+	return yargs(args).command("$0", "create an npm package from WGSL/WESL files").version(appVersion).option("src", {
+		type: "string",
+		default: "./shaders/*.w[eg]sl",
+		describe: "WGSL/WESL files to bundle in the package (glob syntax)"
+	}).option("rootDir", {
+		deprecated: true,
+		type: "string",
+		default: "./shaders",
+		describe: "use --baseDir instead"
+	}).option("baseDir", {
+		deprecated: true,
+		type: "string",
+		default: "./shaders",
+		describe: "root directory for shaders"
+	}).option("projectDir", {
+		type: "string",
+		default: ".",
+		describe: "directory containing package.json"
+	}).option("multiBundle", {
+		type: "boolean",
+		default: false,
+		describe: "make a shader bundle for each source file"
+	}).option("exportName", {
+		type: "string",
+		default: ".",
+		describe: "package.json export name for consolidated bundle (ignored for multiBundle)"
+	}).option("updatePackageJson", {
+		type: "boolean",
+		default: false,
+		describe: "add 'exports' entries into package.json"
+	}).option("outDir", {
+		type: "string",
+		default: "dist",
+		describe: "where to put bundled output files (relative to projectDir)"
+	}).help().parse();
 }
 
 //#endregion
@@ -253,14 +218,12 @@ async function parseArgs(args) {
 const rawArgs = hideBin(process.argv);
 const [major] = process.versions.node.split(".").map(Number);
 if (major < 22) {
-  console.error(
-    `Please upgrade node to version 22 or higher. (The current node version is ${process.version})`,
-  );
-  exit(1);
+	console.error(`Please upgrade node to version 22 or higher. (The current node version is ${process.version})`);
+	exit(1);
 }
-packagerCli(rawArgs).catch(e => {
-  console.error(e);
-  exit(1);
+packagerCli(rawArgs).catch((e) => {
+	console.error(e);
+	exit(1);
 });
 
 //#endregion
