@@ -48,5 +48,4 @@ WESL npm packages.
 
 ## Test Packages
 Supporting sources for tests are available as subprojects in the
-`/wesl-testsuite` directory
-and in the `/community-wgsl` directory.
+`/wesl-testsuite` directory.

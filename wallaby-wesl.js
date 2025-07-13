@@ -1,8 +1,7 @@
 const config = () => ({
   autoDetect: true,
   tests: {
-    override: filePatterns => {
-      filePatterns.push(`!**/bulk-test/**/parallelTest*`);
+    override: (filePatterns) => {
       filePatterns.push(`!**/plugin-test/**/*`);
       filePatterns.push(`!**/mini-parse/**/*`);
       filePatterns.push(`!**/wesl-packager/**/*`);
