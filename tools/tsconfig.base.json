@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2024", // we can expect a modern version with WebGPU (but we want stablility, so not "esnext")
-    "lib": ["ES2024"],
+    /* We're running in both in Node.js and browsers, but we have to pick one of them for type checking */
+    "lib": ["ES2024", "DOM"],
 
     "noEmit": true, // we don't transpile with tsgo, we just typecheck
 
@@ -26,5 +27,6 @@
     "noUncheckedSideEffectImports": true
     // "noUncheckedIndexedAccess": true // maybe later, some lint to fix first
   },
+  "include": [],
   "exclude": ["**/node_modules", "**/dist"]
 }

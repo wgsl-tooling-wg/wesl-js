@@ -109,6 +109,7 @@ export class LinkedWesl {
     compilationInfo: GPUCompilationInfo,
   ): WeslGPUCompilationInfo {
     return {
+      __brand: "GPUCompilationInfo",
       messages: compilationInfo.messages.map(v =>
         this.mapGPUCompilationMessage(v),
       ),
@@ -133,6 +134,7 @@ export class LinkedWesl {
     );
 
     return {
+      __brand: "GPUCompilationMessage",
       type: message.type,
       message: message.message,
       offset: srcPosition.position,

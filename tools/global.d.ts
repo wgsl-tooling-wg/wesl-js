@@ -55,3 +55,11 @@ interface GPUDevice {
     options?: boolean | EventListenerOptions,
   ): void;
 }
+
+interface GPUCompilationInfo {
+  __brand: "GPUCompilationInfo";
+}
+
+interface GPUCompilationMessage {
+  __brand: "GPUCompilationMessage";
+}
