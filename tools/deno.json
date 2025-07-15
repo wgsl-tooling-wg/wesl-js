@@ -18,8 +18,8 @@
     "**/dist/**"
   ],
   "compilerOptions": {
-    "lib": ["deno.window"],
-    "types": ["./global.d.ts"]
+    "lib": ["deno.ns", "dom"],
+    "types": ["@webgpu/types"]
   },
   "lint": {
     "rules": {

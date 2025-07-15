@@ -1,5 +1,1 @@
-{
-  "compilerOptions": {
-    "types": ["@types/node"]
-  }
-}
+{}

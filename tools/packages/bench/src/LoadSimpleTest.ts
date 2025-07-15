@@ -1,5 +1,6 @@
 import * as simpleTests from "../src/experiments/SimpleTests.ts";
 import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
+import { exit } from "node:process";
 
 export interface SimpleTest {
   fn: (weslSrc: Record<string, string>) => any;
@@ -9,7 +10,7 @@ export interface SimpleTest {
 export function loadSimpleTest(simpleSelect: string | undefined): SimpleTest {
   if (!simpleSelect) {
     console.error("No test name prefix provided for --simple");
-    process.exit(1);
+    exit(1);
   }
 
   const testEntry = Object.entries(simpleTests).find(([name]) =>
@@ -21,7 +22,7 @@ export function loadSimpleTest(simpleSelect: string | undefined): SimpleTest {
       `No test found with prefix '${simpleSelect}' in SimpleTests.ts`,
     );
     console.error(`Available tests: ${Object.keys(simpleTests).join(", ")}`);
-    process.exit(1);
+    exit(1);
   }
   const [name, fn] = testEntry;
   return { name, fn };

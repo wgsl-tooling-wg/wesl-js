@@ -3,6 +3,5 @@
   "compilerOptions": {
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types"]
-  },
-  "include": []
+  }
 }

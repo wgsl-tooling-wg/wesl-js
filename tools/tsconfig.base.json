@@ -24,9 +24,9 @@
     /* strictness in TypeScript */
     "strict": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
     // "noUncheckedIndexedAccess": true // maybe later, some lint to fix first
+    "types": []
   },
-  "include": [],
   "exclude": ["**/node_modules", "**/dist"]
 }
