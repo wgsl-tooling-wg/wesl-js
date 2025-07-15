@@ -8,7 +8,7 @@ import path from "node:path";
 import { Biome, Distribution } from "@biomejs/js-api";
 import { noSuffix } from "wesl";
 
-//#region \0raw:/Users/lee/wesl-js/tools/packages/wesl/src/WeslBundle.ts
+//#region \0raw:..\wesl\src\WeslBundle.ts
 var WeslBundle_default = "export interface WeslBundle {\n  /** name of the package, e.g. random_wgsl */\n  name: string;\n\n  /** wesl edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of wesl/wgsl modules:\n   *    keys are file paths, relative to package root (e.g. \"./lib.wgsl\")\n   *    values are wgsl/wesl code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n";
 
 //#endregion
