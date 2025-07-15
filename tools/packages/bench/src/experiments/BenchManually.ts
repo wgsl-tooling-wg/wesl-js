@@ -1,7 +1,7 @@
+import * as process from "node:process";
 import { _linkSync, type link } from "wesl";
 import type { BenchTest } from "../../bin/bench.ts";
 import { diffPercent } from "../table-util/Formatters.ts";
-import * as process from "node:process";
 
 /** manual benchmark testing w/o mitata */
 export function benchManually(
@@ -57,11 +57,7 @@ function _meanTime(times: bigint[]): number {
 }
 
 function medianTime(times: bigint[]): number {
-  const sorted = [...times].sort((a, b) =>
-    a < b ? -1
-    : a > b ? 1
-    : 0,
-  );
+  const sorted = [...times].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   const mid = Math.floor(sorted.length / 2);
   return Number(sorted[mid]) / 1e6;
 }

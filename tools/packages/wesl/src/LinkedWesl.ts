@@ -123,9 +123,9 @@ export class LinkedWesl {
     const srcPosition = srcMap.destToSrc(message.offset);
     // LATER what if this gets mapped to a completely different place?
     const srcEndPosition =
-      message.length > 0 ?
-        srcMap.destToSrc(message.offset + message.length)
-      : srcPosition;
+      message.length > 0
+        ? srcMap.destToSrc(message.offset + message.length)
+        : srcPosition;
     const length = srcEndPosition.position - srcPosition.position;
 
     const [lineNum, linePos] = offsetToLineNumber(

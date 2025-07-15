@@ -1,6 +1,6 @@
+import { exit } from "node:process";
 import * as simpleTests from "../src/experiments/SimpleTests.ts";
 import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
-import { exit } from "node:process";
 
 export interface SimpleTest {
   fn: (weslSrc: Record<string, string>) => any;

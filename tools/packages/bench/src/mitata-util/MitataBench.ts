@@ -1,4 +1,5 @@
 import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
+import * as process from "node:process";
 import type * as mitataCountersType from "@mitata/counters";
 import { measure } from "mitata";
 import {
@@ -6,7 +7,6 @@ import {
   mitataStats,
   type NodeGCTime,
 } from "./MitataStats.ts";
-import * as process from "node:process";
 
 export type MeasureResult = Awaited<ReturnType<typeof measure>>;
 const maxGcRecords = 1000;

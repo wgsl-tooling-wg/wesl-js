@@ -1,4 +1,5 @@
 import path from "node:path";
+import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { enableTracing, log } from "mini-parse";
 import { astToString, link, scopeToString } from "wesl";
@@ -12,7 +13,6 @@ import {
   parsedRegistry,
   parseIntoRegistry,
 } from "../../wesl/src/ParsedRegistry.ts"; // LATER fix import
-import { cwd } from "node:process";
 
 type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 
