@@ -713,50 +713,31 @@ function makeStandardAttribute([name, params]: [
   string,
   UnknownExpressionElem[],
 ]): StandardAttribute {
-  return {
-    kind: "@attribute",
-    name,
-    params,
-  };
+  return { kind: "@attribute", name, params };
 }
 
 function makeInterpolateAttribute(params: NameElem[]): InterpolateAttribute {
-  return {
-    kind: "@interpolate",
-    params,
-  };
+  return { kind: "@interpolate", params };
 }
 
 function makeBuiltinAttribute(param: NameElem): BuiltinAttribute {
-  return {
-    kind: "@builtin",
-    param,
-  };
+  return { kind: "@builtin", param };
 }
 
 function makeDiagnosticAttribute([severity, rule]: readonly [
   NameElem,
   [NameElem, NameElem | null],
 ]): DiagnosticAttribute {
-  return {
-    kind: "@diagnostic",
-    severity,
-    rule,
-  };
+  return { kind: "@diagnostic", severity, rule };
 }
 
 function makeIfAttribute(param: TranslateTimeExpressionElem): IfAttribute {
-  return {
-    kind: "@if",
-    param,
-  };
+  return { kind: "@if", param };
 }
 
 /** Create an ElseAttribute AST node */
 function makeElseAttribute(): ElseAttribute {
-  return {
-    kind: "@else",
-  };
+  return { kind: "@else" };
 }
 
 function makeTranslateTimeExpressionElem(args: {
@@ -807,28 +788,18 @@ function makeParenthesizedExpression(
 }
 
 function makeUnaryOperator(token: WeslToken<"symbol">): UnaryOperator {
-  return {
-    value: token.text as any,
-    span: token.span,
-  };
+  return { value: token.text as any, span: token.span };
 }
 
 function makeBinaryOperator(token: WeslToken<"symbol">): BinaryOperator {
-  return {
-    value: token.text as any,
-    span: token.span,
-  };
+  return { value: token.text as any, span: token.span };
 }
 
 function makeUnaryExpression([operator, expression]: [
   UnaryOperator,
   ExpressionElem,
 ]): UnaryExpression {
-  return {
-    kind: "unary-expression",
-    operator,
-    expression,
-  };
+  return { kind: "unary-expression", operator, expression };
 }
 
 /** A list of left-to-right associative binary expressions */
