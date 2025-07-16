@@ -511,7 +511,7 @@ function findQualifiedImport(
   virtuals: VirtualLibrarySet | undefined,
   unbound: string[][] | undefined,
 ): FoundDecl | undefined {
-  const flatImps = flatImports(refIdent.ast);
+  const flatImps = flatImports(refIdent.ast, conditions);
 
   const identParts = refIdent.originalName.split("::");
 

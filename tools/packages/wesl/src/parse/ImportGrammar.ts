@@ -20,6 +20,9 @@ import {
   yes,
 } from "mini-parse";
 import type {
+  AttributeElem,
+  ElseAttribute,
+  IfAttribute,
   ImportCollection,
   ImportElem,
   ImportItem,
@@ -28,6 +31,7 @@ import type {
 } from "../AbstractElems.ts";
 import { assertUnreachable } from "../Assertions.ts";
 import { importElem } from "../WESLCollect.ts";
+import { else_attribute_base, if_attribute_base } from "./AttributeGrammar.ts";
 import { keyword, word } from "./WeslBaseGrammar.ts";
 import type { WeslToken } from "./WeslStream.ts";
 
@@ -116,32 +120,54 @@ const import_relative = or(
   ),
 );
 
-const import_statement = span(
-  delimited(
-    "import",
-    seqObj({
-      relative: opt(import_relative),
-      collection_or_statement: req(
-        or(import_collection, import_path_or_item),
-        "invalid import, expected { or name",
-      ),
-    }).map(({ relative, collection_or_statement }): ImportStatement => {
-      if (collection_or_statement.kind === "import-statement") {
-        return prependSegments(relative ?? [], collection_or_statement);
-      } else {
-        return makeStatement(relative ?? [], collection_or_statement);
-      }
-    }),
-    req(";", "invalid import, expected ';'"),
-  ),
-).map(
-  (v): ImportElem => ({
-    kind: "import",
-    imports: v.value,
-    start: v.span[0],
-    end: v.span[1],
+const import_statement_base = delimited(
+  "import",
+  seqObj({
+    relative: opt(import_relative),
+    collection_or_statement: req(
+      or(import_collection, import_path_or_item),
+      "invalid import, expected { or name",
+    ),
+  }).map(({ relative, collection_or_statement }): ImportStatement => {
+    if (collection_or_statement.kind === "import-statement") {
+      return prependSegments(relative ?? [], collection_or_statement);
+    } else {
+      return makeStatement(relative ?? [], collection_or_statement);
+    }
   }),
+  req(";", "invalid import, expected ';'"),
 );
+
+function wrapAttributes(
+  rawAttributes: (IfAttribute | ElseAttribute)[],
+): AttributeElem[] {
+  return rawAttributes.map(attribute => ({
+    kind: "attribute",
+    attribute,
+    contents: [],
+    start: 0,
+    end: 0,
+  }));
+}
+
+const import_statement = span(
+  seq(
+    repeat(or(if_attribute_base, else_attribute_base)),
+    import_statement_base,
+  ),
+).map(({ value: [rawAttributes, imports], span }): ImportElem => {
+  const importElem: ImportElem = {
+    kind: "import",
+    imports,
+    start: span[0],
+    end: span[1],
+  };
+
+  if (rawAttributes.length > 0) {
+    return { ...importElem, attributes: wrapAttributes(rawAttributes) };
+  }
+  return importElem;
+});
 
 /** parse a WESL style wgsl import statement. */
 export const weslImports: Parser<Stream<WeslToken>, ImportElem[]> = tagScope(

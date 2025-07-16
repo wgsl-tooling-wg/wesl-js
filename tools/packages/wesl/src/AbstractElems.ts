@@ -122,7 +122,7 @@ export interface DeclIdentElem extends AbstractElemBase {
 }
 
 /** Holds an import statement, and has a span */
-export interface ImportElem extends AbstractElemBase {
+export interface ImportElem extends AbstractElemBase, HasAttributes {
   kind: "import";
   imports: ImportStatement;
 }

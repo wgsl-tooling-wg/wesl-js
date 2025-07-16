@@ -376,6 +376,44 @@ test("@else with struct member", () => {
   `);
 });
 
+test("@if with import", () => {
+  const src = `
+    @if(DEBUG) import package::debug;
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  // Expected output once grammar supports @if on imports:
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      import package::debug; @if
+      text '
+      '"
+  `);
+});
+
+test("@else with import", () => {
+  const src = `
+    @if(false) import package::a;
+    @else import package::b;
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  // Expected output once grammar supports @if/@else on imports:
+  expect(astString).toMatchInlineSnapshot(`
+    "module
+      text '
+        '
+      import package::a; @if
+      text '
+        '
+      import package::b; @else
+      text '
+      '"
+  `);
+});
+
 // test("", () => {
 //   const src = `
 //   `;

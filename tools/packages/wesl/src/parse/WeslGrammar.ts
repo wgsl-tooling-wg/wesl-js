@@ -9,7 +9,6 @@ import {
   repeat,
   repeatPlus,
   req,
-  type Span,
   type Stream,
   separated_pair,
   seq,
@@ -17,13 +16,10 @@ import {
   tagScope,
   terminated,
   text,
-  token,
   tokenKind,
-  tokenOf,
   tracing,
   withSep,
   withSepPlus,
-  yes,
 } from "mini-parse";
 import type {
   BinaryExpression,
@@ -31,20 +27,12 @@ import type {
   BuiltinAttribute,
   DiagnosticAttribute,
   DiagnosticDirective,
-  ElseAttribute,
   EnableDirective,
   ExpressionElem,
-  IfAttribute,
   InterpolateAttribute,
-  Literal,
   NameElem,
-  ParenthesizedExpression,
   RequiresDirective,
   StandardAttribute,
-  TranslateTimeExpressionElem,
-  TranslateTimeFeature,
-  UnaryExpression,
-  UnaryOperator,
   UnknownExpressionElem,
 } from "../AbstractElems.ts";
 import {
@@ -72,6 +60,7 @@ import {
   switchClauseCollect,
   typedDecl,
 } from "../WESLCollect.ts";
+import { else_attribute, if_attribute } from "./AttributeGrammar.ts";
 import { weslImports } from "./ImportGrammar.ts";
 import { qualified_ident, word } from "./WeslBaseGrammar.ts";
 import {
@@ -137,30 +126,7 @@ const special_attribute = tagScope(
   ).collect(specialAttribute),
 );
 
-// prettier-ignore
-const if_attribute = tagScope(
-  preceded(
-    seq("@", weslExtension("if")),
-    span(
-      delimited(
-        "(",
-        fn(() => attribute_if_expression),
-        seq(opt(","), ")"),
-      ),
-    ).map(makeTranslateTimeExpressionElem),
-  )
-    .map(makeIfAttribute)
-    .ptag("attr_variant")
-    .collect(specialAttribute),
-);
-
-// prettier-ignore
-const else_attribute = tagScope(
-  preceded(seq("@", weslExtension("else")), yes)
-    .map(makeElseAttribute)
-    .ptag("attr_variant")
-    .collect(specialAttribute),
-);
+// if_attribute and else_attribute are now imported from AttributeGrammar.ts
 
 // prettier-ignore
 const normal_attribute = tagScope(
@@ -218,7 +184,7 @@ const attribute_incl_if = or(
   normal_attribute,
 ).ctag("attribute");
 
-const opt_attributes = repeat(attribute_incl_if);
+export const opt_attributes = repeat(attribute_incl_if);
 
 const opt_attributes_no_if = repeat(attribute_no_if);
 
@@ -321,59 +287,7 @@ const global_variable_decl = seq(
   .collect(collectVarLike("gvar"))
   .collect(partialScopeCollect);
 
-const attribute_if_primary_expression: Parser<
-  Stream<WeslToken>,
-  Literal | ParenthesizedExpression | TranslateTimeFeature
-> = or(
-  tokenOf("keyword", ["true", "false"]).map(makeLiteral),
-  delimited(
-    token("symbol", "("),
-    fn(() => attribute_if_expression),
-    token("symbol", ")"),
-  ).map(makeParenthesizedExpression),
-  tokenKind("word").map(makeTranslateTimeFeature),
-);
-
-const attribute_if_unary_expression: Parser<
-  Stream<WeslToken>,
-  ExpressionElem
-> = or(
-  seq(
-    token("symbol", "!").map(makeUnaryOperator),
-    fn(() => attribute_if_unary_expression),
-  ).map(makeUnaryExpression),
-  attribute_if_primary_expression,
-);
-
-const attribute_if_expression: Parser<
-  Stream<WeslToken>,
-  ExpressionElem
-> = weslExtension(
-  seq(
-    attribute_if_unary_expression,
-    or(
-      repeatPlus(
-        seq(
-          token("symbol", "||").map(makeBinaryOperator),
-          req(
-            attribute_if_unary_expression,
-            "invalid expression, expected expression",
-          ),
-        ),
-      ),
-      repeatPlus(
-        seq(
-          token("symbol", "&&").map(makeBinaryOperator),
-          req(
-            attribute_if_unary_expression,
-            "invalid expression, expected expression",
-          ),
-        ),
-      ),
-      yes().map(() => []),
-    ),
-  ).map(makeRepeatingBinaryExpression),
-);
+// Expression parsers moved to AttributeGrammar.ts
 
 const unscoped_compound_statement = seq(
   opt_attributes,
@@ -731,25 +645,7 @@ function makeDiagnosticAttribute([severity, rule]: readonly [
   return { kind: "@diagnostic", severity, rule };
 }
 
-function makeIfAttribute(param: TranslateTimeExpressionElem): IfAttribute {
-  return { kind: "@if", param };
-}
-
-/** Create an ElseAttribute AST node */
-function makeElseAttribute(): ElseAttribute {
-  return { kind: "@else" };
-}
-
-function makeTranslateTimeExpressionElem(args: {
-  value: ExpressionElem;
-  span: Span;
-}): TranslateTimeExpressionElem {
-  return {
-    kind: "translate-time-expression",
-    expression: args.value,
-    span: args.span,
-  };
-}
+// Attribute helper functions moved to AttributeGrammar.ts
 
 function makeName(token: WeslToken<"word">): NameElem {
   return {
@@ -760,61 +656,9 @@ function makeName(token: WeslToken<"word">): NameElem {
   };
 }
 
-function makeLiteral(token: WeslToken<"keyword" | "number">): Literal {
-  return {
-    kind: "literal",
-    value: token.text,
-    span: token.span,
-  };
-}
+// Expression helper functions moved to AttributeGrammar.ts
 
-function makeTranslateTimeFeature(
-  token: WeslToken<"word">,
-): TranslateTimeFeature {
-  return {
-    kind: "translate-time-feature",
-    name: token.text,
-    span: token.span,
-  };
-}
-
-function makeParenthesizedExpression(
-  expression: ExpressionElem,
-): ParenthesizedExpression {
-  return {
-    kind: "parenthesized-expression",
-    expression,
-  };
-}
-
-function makeUnaryOperator(token: WeslToken<"symbol">): UnaryOperator {
-  return { value: token.text as any, span: token.span };
-}
-
-function makeBinaryOperator(token: WeslToken<"symbol">): BinaryOperator {
-  return { value: token.text as any, span: token.span };
-}
-
-function makeUnaryExpression([operator, expression]: [
-  UnaryOperator,
-  ExpressionElem,
-]): UnaryExpression {
-  return { kind: "unary-expression", operator, expression };
-}
-
-/** A list of left-to-right associative binary expressions */
-function makeRepeatingBinaryExpression([start, repeating]: [
-  ExpressionElem,
-  [BinaryOperator, ExpressionElem][],
-]): ExpressionElem {
-  let result: ExpressionElem = start;
-  for (const [op, left] of repeating) {
-    result = makeBinaryExpression([result, op, left]);
-  }
-  return result;
-}
-
-function makeBinaryExpression([left, operator, right]: [
+function _makeBinaryExpression([left, operator, right]: [
   ExpressionElem,
   BinaryOperator,
   ExpressionElem,
@@ -854,9 +698,6 @@ if (tracing) {
     fnParamList,
     local_variable_decl,
     global_variable_decl,
-    attribute_if_primary_expression,
-    attribute_if_unary_expression,
-    attribute_if_expression,
     unscoped_compound_statement,
     compound_statement,
     for_init,

@@ -102,6 +102,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     str.add(` '${elem.text}'`);
   } else if (kind === "import") {
     str.add(" " + importToString(elem.imports));
+    listAttributeElems(elem.attributes, str);
   } else if (kind === "ref") {
     str.add(" " + elem.ident.originalName);
   } else if (kind === "typeDecl") {
