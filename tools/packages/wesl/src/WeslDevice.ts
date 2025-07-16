@@ -1,5 +1,5 @@
 import { throwClickableError } from "./ClickableError.ts";
-import type { ExtendedGPUValidationError } from "./LinkedWesl";
+import type { ExtendedGPUValidationError } from "./LinkedWesl.ts";
 
 /**
  * We want the WebGPU compilation errors to point at WESL code.

@@ -1,0 +1,29 @@
+{
+  "workspace": [
+    "./packages/bench",
+    "./packages/mini-parse",
+    "./packages/wesl",
+    "./packages/wesl-link",
+    "./packages/wesl-packager",
+    "./packages/wesl-plugin",
+    "./packages/wesl-reflect",
+    "./packages/wesl-tooling"
+  ],
+  "exclude": [
+    "./examples",
+    "./scripts",
+    "packages/plugin-test",
+    "packages/random_wgsl",
+    "packages/test_pkg",
+    "**/dist/**"
+  ],
+  "compilerOptions": {
+    "lib": ["deno.ns", "dom"],
+    "types": ["@webgpu/types"]
+  },
+  "lint": {
+    "rules": {
+      "exclude": ["no-explicit-any"]
+    }
+  }
+}

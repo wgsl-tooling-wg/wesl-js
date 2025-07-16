@@ -1,8 +1,9 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node", "@webgpu/types"],
-    "target": "ESNext", // we presume that dev machines are up to date
-    "lib": ["ESNext"]
-  }
+    "lib": ["ESNext", "DOM"],
+    "types": ["@types/node", "@webgpu/types"],
+    "target": "ESNext" // we presume that dev machines are up to date
+  },
+  "include": []
 }

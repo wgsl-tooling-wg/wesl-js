@@ -1,5 +1,5 @@
 import { kind, or, withSepPlus } from "mini-parse";
-import type { WeslTokenKind } from "./WeslStream";
+import type { WeslTokenKind } from "./WeslStream.ts";
 
 export const word = kind<WeslTokenKind>("word");
 export const keyword = kind<WeslTokenKind>("keyword");

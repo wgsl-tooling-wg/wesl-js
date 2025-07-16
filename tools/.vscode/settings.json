@@ -4,7 +4,5 @@
     "inspector/promises",
     "inspector"
   ],
-  "files.watcherExclude": {
-    "**/node_modules/**": true,
-  },
+  "deno.enable": true
 }

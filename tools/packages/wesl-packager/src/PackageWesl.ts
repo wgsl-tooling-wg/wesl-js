@@ -4,6 +4,8 @@ import path from "node:path";
 import { Biome, Distribution } from "@biomejs/js-api";
 import { noSuffix, type WeslBundle } from "wesl";
 import { loadModules, parseDependencies, zip } from "wesl-tooling";
+// Ideally this would use an import attribute instead of this Vite+Deno bodge
+// @ts-types="vite/client"
 import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
 import type { CliArgs } from "./PackagerCli.ts";
 
