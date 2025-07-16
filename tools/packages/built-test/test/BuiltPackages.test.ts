@@ -20,5 +20,5 @@ test("verify link() function works with built packages", async () => {
 const externalTest = process.cwd().endsWith("temp-built-test");
 
 test.skipIf(!externalTest)("typecheck this test file", () => {
-  execSync(`pnpm tsgo`, { stdio: "pipe", encoding: "utf-8" });
+  execSync(`pnpm tsgo`, { stdio: "inherit" });
 });
