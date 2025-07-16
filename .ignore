@@ -1,0 +1,10 @@
+
+# allow opening these git ignored files with ctrl-p
+!.claude
+!copilot-instructions.md
+!CLAUDE.md
+!GEMINI.md
+!/agent-plan.md
+!/agent-progress.md
+!/temp-built-test/
+!temp-packages/

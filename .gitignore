@@ -17,9 +17,13 @@ vite.config.ts.timestamp-*.mjs
 _baseline
 
 # test built packages
-temp-built-test
-temp-packages
+/temp-built-test/
+/temp-packages/
 
-# local AI instructions
+# don't clutter the repo with ai
+.claude
 copilot-instructions.md
 CLAUDE.md
+GEMINI.md
+/agent-plan.md
+/agent-progress.md
