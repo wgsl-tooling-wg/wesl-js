@@ -149,6 +149,8 @@ function addAttributeFields(attr: Attribute, str: LineWrapper) {
     str.add("(");
     str.add(expressionToString(attr.param.expression));
     str.add(")");
+  } else if (kind === "@else") {
+    str.add(" @else");
   } else if (kind === "@interpolate") {
     str.add(` @interpolate(${attr.params.map(v => v.name).join(", ")})`);
   } else {

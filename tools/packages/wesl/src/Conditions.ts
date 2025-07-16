@@ -1,36 +1,27 @@
 import type {
+  AbstractElem,
   AttributeElem,
   ElemWithAttributes,
+  ElseAttribute,
   ExpressionElem,
   IfAttribute,
 } from "./AbstractElems.ts";
 import { assertThatDebug, assertUnreachable } from "./Assertions.ts";
 import type { Conditions, Scope } from "./Scope.ts";
-import { findMap } from "./Util.ts";
-
-/** @return true if the element is valid under current Conditions */
-export function elementValid(
-  elem: ElemWithAttributes,
-  conditions: Conditions,
-): boolean {
-  const attributes = elem.attributes;
-  if (!attributes) return true;
-  const ifAttr = findMap(attributes, extractIfAttribute);
-  return !ifAttr || evaluateIfAttribute(ifAttr, conditions);
-}
 
 /** @return true if the scope is valid under current conditions */
 export function scopeValid(scope: Scope, conditions: Conditions): boolean {
-  const { ifAttribute } = scope;
-  if (!ifAttribute) return true;
-  const result = evaluateIfAttribute(ifAttribute, conditions); // LATER cache?
-  return result;
-}
+  const { condAttribute } = scope;
+  if (!condAttribute) return true;
 
-/** @return return IfAttribute if AttributeElem contains an IfAttribute */
-function extractIfAttribute(elem: AttributeElem): IfAttribute | undefined {
-  const { attribute } = elem;
-  return attribute.kind === "@if" ? attribute : undefined;
+  // @if attributes are evaluated based on conditions
+  if (condAttribute.kind === "@if") {
+    const result = evaluateIfAttribute(condAttribute, conditions); // LATER cache?
+    return result;
+  }
+
+  // @else attributes are never valid on their own (need parent context)
+  return false;
 }
 
 /** @return true if the @if attribute is valid with current Conditions */
@@ -73,4 +64,86 @@ function evaluateIfExpression(
   } else {
     throw new Error(`unexpected @if expression ${JSON.stringify(expression)}`);
   }
+}
+
+/**
+ * Filter elements based on @if/@else conditional logic.
+ * This function processes elements sequentially to handle @if/@else chains correctly.
+ *
+ * @param elements Array of elements at the same scope level
+ * @param conditions Current conditional compilation settings
+ * @return Array of valid elements after applying @if/@else logic
+ */
+export function filterValidElements<T extends AbstractElem>(
+  elements: readonly T[],
+  conditions: Conditions,
+): T[] {
+  let elseValid = false;
+
+  return elements.flatMap(e => {
+    const attributes = (e as ElemWithAttributes).attributes;
+    const { valid, nextElseState } = validateAttributes(
+      attributes,
+      elseValid,
+      conditions,
+    );
+    elseValid = nextElseState;
+    return valid ? [e] : [];
+  });
+}
+
+export interface ConditionalResult {
+  valid: boolean;
+  nextElseState: boolean;
+}
+
+/**
+ * Core logic for validating conditional attributes and managing @if/@else state.
+ * @return valid: whether to process this element, nextElseState: state for next sibling
+ */
+export function validateConditional(
+  condAttribute: IfAttribute | ElseAttribute | undefined,
+  elseValid: boolean,
+  conditions: Conditions,
+): ConditionalResult {
+  if (!condAttribute) {
+    return { valid: true, nextElseState: elseValid };
+  }
+
+  if (condAttribute.kind === "@if") {
+    const valid = evaluateIfAttribute(condAttribute, conditions);
+    return { valid, nextElseState: !valid };
+  } else {
+    return { valid: elseValid, nextElseState: false };
+  }
+}
+
+/**
+ * Validate element based on attributes (or lack thereof).
+ * @return valid if the element is valid under current Conditions and the next elseValid state
+ * i.e. `@if(MOBILE) const x = 1;` is valid if MOBILE is true
+ * Note that only elements marked with an @if or @else attribute can be invalid
+ */
+export function validateAttributes(
+  attributes: AttributeElem[] | undefined,
+  elseValid: boolean,
+  conditions: Conditions,
+): ConditionalResult {
+  const condAttr = extractConditionalAttribute(attributes);
+  return validateConditional(condAttr, elseValid, conditions);
+}
+
+/** Extract @if or @else attribute from an array of attributes */
+function extractConditionalAttribute(
+  attributes: AttributeElem[] | undefined,
+): IfAttribute | ElseAttribute | undefined {
+  if (!attributes) return;
+
+  // Find first @if or @else attribute
+  for (const attr of attributes) {
+    if (attr.attribute.kind === "@if" || attr.attribute.kind === "@else") {
+      return attr.attribute;
+    }
+  }
+  return undefined;
 }

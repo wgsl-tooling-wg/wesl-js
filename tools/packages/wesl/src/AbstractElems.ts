@@ -201,7 +201,8 @@ export type Attribute =
   | InterpolateAttribute
   | BuiltinAttribute
   | DiagnosticAttribute
-  | IfAttribute;
+  | IfAttribute
+  | ElseAttribute;
 
 export interface StandardAttribute {
   kind: "@attribute";
@@ -228,6 +229,10 @@ export interface DiagnosticAttribute {
 export interface IfAttribute {
   kind: "@if";
   param: TranslateTimeExpressionElem;
+}
+
+export interface ElseAttribute {
+  kind: "@else";
 }
 
 /** a const_assert statement */

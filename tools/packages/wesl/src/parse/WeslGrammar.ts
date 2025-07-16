@@ -31,6 +31,7 @@ import type {
   BuiltinAttribute,
   DiagnosticAttribute,
   DiagnosticDirective,
+  ElseAttribute,
   EnableDirective,
   ExpressionElem,
   IfAttribute,
@@ -154,6 +155,14 @@ const if_attribute = tagScope(
 );
 
 // prettier-ignore
+const else_attribute = tagScope(
+  preceded(seq("@", weslExtension("else")), yes)
+    .map(makeElseAttribute)
+    .ptag("attr_variant")
+    .collect(specialAttribute),
+);
+
+// prettier-ignore
 const normal_attribute = tagScope(
   preceded(
     "@",
@@ -204,6 +213,7 @@ const attribute_no_if = or(special_attribute, normal_attribute).ctag(
 // prettier-ignore
 const attribute_incl_if = or(
   if_attribute,
+  else_attribute,
   special_attribute,
   normal_attribute,
 ).ctag("attribute");
@@ -742,6 +752,13 @@ function makeIfAttribute(param: TranslateTimeExpressionElem): IfAttribute {
   };
 }
 
+/** Create an ElseAttribute AST node */
+function makeElseAttribute(): ElseAttribute {
+  return {
+    kind: "@else",
+  };
+}
+
 function makeTranslateTimeExpressionElem(args: {
   value: ExpressionElem;
   span: Span;
@@ -847,6 +864,7 @@ if (tracing) {
     name_list,
     special_attribute,
     if_attribute,
+    else_attribute,
     normal_attribute,
     attribute_argument_list,
     attribute_no_if,

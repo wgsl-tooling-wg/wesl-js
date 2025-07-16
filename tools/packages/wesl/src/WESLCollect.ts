@@ -17,6 +17,7 @@ import type {
   DeclIdentElem,
   DirectiveElem,
   DirectiveVariant,
+  ElseAttribute,
   FnElem,
   FnParamElem,
   GlobalVarElem,
@@ -58,7 +59,6 @@ import {
   type RefIdent,
   type Scope,
 } from "./Scope.ts";
-import { filterMap } from "./Util.ts";
 
 export function importElem(cc: CollectContext) {
   const importElems = cc.tags.owo?.[0] as ImportElem[]; // LATER ts typing
@@ -203,25 +203,33 @@ function completeScopeInternal(cc: CollectContext, attachIfs: boolean): Scope {
     console.log("ERR: completeScope, no parent scope", completedScope.contents);
   }
   if (attachIfs) {
-    const ifAttributes = collectIfAttributes(cc);
-    completedScope.ifAttribute = ifAttributes?.[0];
+    const condAttribute = collectConditionalAttribute(cc);
+    completedScope.condAttribute = condAttribute;
   }
   return completedScope;
 }
 
-/** return @if attributes from the 'attribute' tag */
-function collectIfAttributes(cc: CollectContext): IfAttribute[] | undefined {
+/** return @if or @else attribute from the 'attribute' tag */
+function collectConditionalAttribute(
+  cc: CollectContext,
+): IfAttribute | ElseAttribute | undefined {
   const attributes = cc.tags.attribute as AttributeElem[] | undefined;
-  return filterIfAttributes(attributes);
+  return extractConditionalAttribute(attributes);
 }
 
-function filterIfAttributes(
-  attributes?: AttributeElem[],
-): IfAttribute[] | undefined {
+/** Extract @if or @else attribute from an array of attributes */
+function extractConditionalAttribute(
+  attributes: AttributeElem[] | undefined,
+): IfAttribute | ElseAttribute | undefined {
   if (!attributes) return;
-  return filterMap(attributes, a =>
-    a.attribute.kind === "@if" ? a.attribute : undefined,
-  );
+
+  // Find first @if or @else attribute
+  for (const attr of attributes) {
+    if (attr.attribute.kind === "@if" || attr.attribute.kind === "@else") {
+      return attr.attribute;
+    }
+  }
+  return undefined;
 }
 
 // prettier-ignore
@@ -311,8 +319,11 @@ export const fnCollect = collectElem(
 
     // --- setup the various scopes --
 
-    // attach ifAttributes to outermost partial scope
-    fnScope.ifAttribute = filterIfAttributes(attributes)?.[0];
+    // attach conditional attribute to outermost partial scope
+    const condAttribute = extractConditionalAttribute(attributes);
+    if (condAttribute) {
+      fnScope.condAttribute = condAttribute;
+    }
 
     // merge the header, return and body scopes into the one scope
     const mergedScope = headerScope;

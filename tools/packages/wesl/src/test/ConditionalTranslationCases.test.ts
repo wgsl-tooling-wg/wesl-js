@@ -54,3 +54,17 @@ test("conditional import of const_assert", ctx => caseTest(ctx));
 test("double conditional import of const_assert", ctx => caseTest(ctx));
 test("conditional transitive const", ctx => caseTest(ctx));
 test("conditional transitive fn", ctx => caseTest(ctx));
+
+test("@else basic test", ctx => caseTest(ctx));
+test("@if(true) @else", ctx => caseTest(ctx));
+test("@else with functions", ctx => caseTest(ctx));
+test("@else with struct members", ctx => caseTest(ctx));
+test("@else with statements", ctx => caseTest(ctx));
+test("@else with compound statements", ctx => caseTest(ctx));
+test("nested @if/@else", ctx => caseTest(ctx));
+test("multiple @if/@else chains", ctx => caseTest(ctx));
+test.skip("@else with conditional import", ctx => caseTest(ctx)); // TODO
+test("@else declaration shadowing", ctx => caseTest(ctx));
+test("@else with variable references", ctx => caseTest(ctx));
+test("@else with variable references false condition", ctx => caseTest(ctx));
+test("@else with package function reference", ctx => caseTest(ctx));
