@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsdown",
     "prepublishOnly": "run-s build",
-    "test": "vitest",
+    "test": "vitest --hideSkippedTests",
     "test:once": "vitest run",
     "typecheck": "tsgo"
   },

@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "prep:packed": "node scripts/setup-built.mts",
-    "test": "vitest",
+    "test": "vitest --hideSkippedTests",
     "test:built": "run-s prep:packed test:test-packed-version",
     "test:once": "vitest run",
     "test:test-packed-version": "cd ../../../temp-built-test && pnpm vitest run",

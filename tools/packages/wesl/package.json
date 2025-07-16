@@ -14,7 +14,7 @@
     "deploy:docsite": "run-s build:docs pages:deploy",
     "pages:deploy": "wrangler pages deploy --project-name wesl-js docs",
     "prepublishOnly": "run-s build",
-    "test": "vitest",
+    "test": "vitest --hideSkippedTests",
     "test:once": "vitest run",
     "typecheck": "tsgo"
   },
