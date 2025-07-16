@@ -202,6 +202,7 @@ export type Attribute =
   | BuiltinAttribute
   | DiagnosticAttribute
   | IfAttribute
+  | ElifAttribute
   | ElseAttribute;
 
 export interface StandardAttribute {
@@ -228,6 +229,11 @@ export interface DiagnosticAttribute {
 
 export interface IfAttribute {
   kind: "@if";
+  param: TranslateTimeExpressionElem;
+}
+
+export interface ElifAttribute {
+  kind: "@elif";
   param: TranslateTimeExpressionElem;
 }
 

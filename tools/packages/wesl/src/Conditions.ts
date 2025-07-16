@@ -2,6 +2,7 @@ import type {
   AbstractElem,
   AttributeElem,
   ElemWithAttributes,
+  ElifAttribute,
   ElseAttribute,
   ExpressionElem,
   IfAttribute,
@@ -20,6 +21,12 @@ export function scopeValid(scope: Scope, conditions: Conditions): boolean {
     return result;
   }
 
+  // @elif attributes are evaluated based on conditions
+  if (condAttribute.kind === "@elif") {
+    const result = evaluateElifAttribute(condAttribute, conditions);
+    return result;
+  }
+
   // @else attributes are never valid on their own (need parent context)
   return false;
 }
@@ -30,6 +37,14 @@ function evaluateIfAttribute(
   conditions: Conditions,
 ): boolean {
   return evaluateIfExpression(ifAttribute.param.expression, conditions);
+}
+
+/** @return true if the @elif attribute is valid with current Conditions */
+function evaluateElifAttribute(
+  elifAttribute: ElifAttribute,
+  conditions: Conditions,
+): boolean {
+  return evaluateIfExpression(elifAttribute.param.expression, conditions);
 }
 
 /** Evaluate an @if expression based on current runtime Conditions
@@ -98,11 +113,11 @@ export interface ConditionalResult {
 }
 
 /**
- * Core logic for validating conditional attributes and managing @if/@else state.
+ * Core logic for validating conditional attributes and managing @if/@elif/@else state.
  * @return valid: whether to process this element, nextElseState: state for next sibling
  */
 export function validateConditional(
-  condAttribute: IfAttribute | ElseAttribute | undefined,
+  condAttribute: IfAttribute | ElifAttribute | ElseAttribute | undefined,
   elseValid: boolean,
   conditions: Conditions,
 ): ConditionalResult {
@@ -113,7 +128,16 @@ export function validateConditional(
   if (condAttribute.kind === "@if") {
     const valid = evaluateIfAttribute(condAttribute, conditions);
     return { valid, nextElseState: !valid };
+  } else if (condAttribute.kind === "@elif") {
+    // @elif is only valid if no previous condition in the chain was true
+    if (!elseValid) {
+      // Previous condition was true, skip this @elif
+      return { valid: false, nextElseState: false };
+    }
+    const valid = evaluateElifAttribute(condAttribute, conditions);
+    return { valid, nextElseState: !valid };
   } else {
+    // @else
     return { valid: elseValid, nextElseState: false };
   }
 }
@@ -133,15 +157,16 @@ export function validateAttributes(
   return validateConditional(condAttr, elseValid, conditions);
 }
 
-/** Extract @if or @else attribute from an array of attributes */
+/** Extract @if, @elif, or @else attribute from an array of attributes */
 function extractConditionalAttribute(
   attributes: AttributeElem[] | undefined,
-): IfAttribute | ElseAttribute | undefined {
+): IfAttribute | ElifAttribute | ElseAttribute | undefined {
   if (!attributes) return;
 
-  // Find first @if or @else attribute
+  // Find first @if, @elif, or @else attribute
   for (const attr of attributes) {
-    if (attr.attribute.kind === "@if" || attr.attribute.kind === "@else") {
+    const kind = attr.attribute.kind;
+    if (kind === "@if" || kind === "@elif" || kind === "@else") {
       return attr.attribute;
     }
   }

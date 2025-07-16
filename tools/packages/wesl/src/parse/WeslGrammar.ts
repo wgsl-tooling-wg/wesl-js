@@ -60,7 +60,11 @@ import {
   switchClauseCollect,
   typedDecl,
 } from "../WESLCollect.ts";
-import { else_attribute, if_attribute } from "./AttributeGrammar.ts";
+import {
+  elif_attribute,
+  else_attribute,
+  if_attribute,
+} from "./AttributeGrammar.ts";
 import { weslImports } from "./ImportGrammar.ts";
 import { qualified_ident, word } from "./WeslBaseGrammar.ts";
 import {
@@ -179,6 +183,7 @@ const attribute_no_if = or(special_attribute, normal_attribute).ctag(
 // prettier-ignore
 const attribute_incl_if = or(
   if_attribute,
+  elif_attribute,
   else_attribute,
   special_attribute,
   normal_attribute,
@@ -679,6 +684,7 @@ if (tracing) {
     name_list,
     special_attribute,
     if_attribute,
+    elif_attribute,
     else_attribute,
     normal_attribute,
     attribute_argument_list,

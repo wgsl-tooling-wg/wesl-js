@@ -17,6 +17,7 @@ import type {
   DeclIdentElem,
   DirectiveElem,
   DirectiveVariant,
+  ElifAttribute,
   ElseAttribute,
   FnElem,
   FnParamElem,
@@ -209,23 +210,24 @@ function completeScopeInternal(cc: CollectContext, attachIfs: boolean): Scope {
   return completedScope;
 }
 
-/** return @if or @else attribute from the 'attribute' tag */
+/** return @if, @elif, or @else attribute from the 'attribute' tag */
 function collectConditionalAttribute(
   cc: CollectContext,
-): IfAttribute | ElseAttribute | undefined {
+): IfAttribute | ElifAttribute | ElseAttribute | undefined {
   const attributes = cc.tags.attribute as AttributeElem[] | undefined;
   return extractConditionalAttribute(attributes);
 }
 
-/** Extract @if or @else attribute from an array of attributes */
+/** Extract @if, @elif, or @else attribute from an array of attributes */
 function extractConditionalAttribute(
   attributes: AttributeElem[] | undefined,
-): IfAttribute | ElseAttribute | undefined {
+): IfAttribute | ElifAttribute | ElseAttribute | undefined {
   if (!attributes) return;
 
-  // Find first @if or @else attribute
+  // Find first @if, @elif, or @else attribute
   for (const attr of attributes) {
-    if (attr.attribute.kind === "@if" || attr.attribute.kind === "@else") {
+    const kind = attr.attribute.kind;
+    if (kind === "@if" || kind === "@elif" || kind === "@else") {
       return attr.attribute;
     }
   }

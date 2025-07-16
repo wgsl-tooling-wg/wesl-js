@@ -21,6 +21,7 @@ import {
 } from "mini-parse";
 import type {
   AttributeElem,
+  ElifAttribute,
   ElseAttribute,
   IfAttribute,
   ImportCollection,
@@ -31,7 +32,11 @@ import type {
 } from "../AbstractElems.ts";
 import { assertUnreachable } from "../Assertions.ts";
 import { importElem } from "../WESLCollect.ts";
-import { else_attribute_base, if_attribute_base } from "./AttributeGrammar.ts";
+import {
+  elif_attribute_base,
+  else_attribute_base,
+  if_attribute_base,
+} from "./AttributeGrammar.ts";
 import { keyword, word } from "./WeslBaseGrammar.ts";
 import type { WeslToken } from "./WeslStream.ts";
 
@@ -139,7 +144,7 @@ const import_statement_base = delimited(
 );
 
 function wrapAttributes(
-  rawAttributes: (IfAttribute | ElseAttribute)[],
+  rawAttributes: (IfAttribute | ElifAttribute | ElseAttribute)[],
 ): AttributeElem[] {
   return rawAttributes.map(attribute => ({
     kind: "attribute",
@@ -152,7 +157,7 @@ function wrapAttributes(
 
 const import_statement = span(
   seq(
-    repeat(or(if_attribute_base, else_attribute_base)),
+    repeat(or(if_attribute_base, elif_attribute_base, else_attribute_base)),
     import_statement_base,
   ),
 ).map(({ value: [rawAttributes, imports], span }): ImportElem => {

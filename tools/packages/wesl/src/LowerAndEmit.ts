@@ -296,6 +296,8 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
       e.start,
       e.end,
     );
+  } else if (kind === "@elif") {
+    // @elif is wesl only, dropped from wgsl
   } else if (kind === "@else") {
     // @else is wesl only, dropped from wgsl
   } else {

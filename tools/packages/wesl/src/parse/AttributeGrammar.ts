@@ -20,6 +20,7 @@ import {
 import type {
   BinaryExpression,
   BinaryOperator,
+  ElifAttribute,
   ElseAttribute,
   ExpressionElem,
   IfAttribute,
@@ -105,6 +106,21 @@ export const if_attribute_base = preceded(
   .map(makeIfAttribute)
   .ptag("attr_variant");
 
+/** Base parser for @elif attributes without collection - use in seq() compositions */
+// prettier-ignore
+export const elif_attribute_base = preceded(
+  seq("@", weslExtension("elif")),
+  span(
+    delimited(
+      "(",
+      fn(() => attribute_if_expression),
+      seq(opt(","), ")"),
+    ),
+  ).map(makeTranslateTimeExpressionElem),
+)
+  .map(makeElifAttribute)
+  .ptag("attr_variant");
+
 /** Base parser for @else attributes without collection - use in seq() compositions */
 // prettier-ignore
 export const else_attribute_base = preceded(
@@ -120,6 +136,12 @@ export const if_attribute = tagScope(
   if_attribute_base.collect(specialAttribute),
 );
 
+/** Collected parser for @elif attributes - use standalone, not in seq() */
+// prettier-ignore
+export const elif_attribute = tagScope(
+  elif_attribute_base.collect(specialAttribute),
+);
+
 /** Collected parser for @else attributes - use standalone, not in seq() */
 // prettier-ignore
 export const else_attribute = tagScope(
@@ -129,6 +151,10 @@ export const else_attribute = tagScope(
 // Helper functions
 function makeIfAttribute(param: TranslateTimeExpressionElem): IfAttribute {
   return { kind: "@if", param };
+}
+
+function makeElifAttribute(param: TranslateTimeExpressionElem): ElifAttribute {
+  return { kind: "@elif", param };
 }
 
 function makeElseAttribute(): ElseAttribute {

@@ -1,5 +1,6 @@
 import type {
   DeclarationElem,
+  ElifAttribute,
   ElseAttribute,
   IfAttribute,
   RefIdentElem,
@@ -99,7 +100,7 @@ interface ScopeBase {
   contents: (Ident | Scope)[];
 
   /** Conditional attribute (@if or @else) for this scope */
-  condAttribute?: IfAttribute | ElseAttribute;
+  condAttribute?: IfAttribute | ElifAttribute | ElseAttribute;
 }
 
 /** Combine two scope siblings.
