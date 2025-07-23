@@ -65,7 +65,7 @@ export async function setupWeslBenchmarks(
 /**
  * Load the baseline link function if available
  */
-async function loadBaselineLink(): Promise<typeof link | undefined> {
+async function _loadBaselineLink(): Promise<typeof link | undefined> {
   const baselinePath = path.join(baselineDir, "packages/wesl/src/index.ts");
 
   return import(baselinePath)
@@ -93,7 +93,7 @@ export function validateVariants(variants: string[]): ParserVariant[] {
 /**
  * Get variant display name
  */
-function getVariantDisplayName(variant: ParserVariant): string {
+function _getVariantDisplayName(variant: ParserVariant): string {
   switch (variant) {
     case "link":
       return "Full Link";

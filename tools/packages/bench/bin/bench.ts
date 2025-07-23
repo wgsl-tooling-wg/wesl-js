@@ -1,13 +1,16 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import type { BenchTest } from "../src/Benchmark.ts";
-import { type BenchmarkReport, reportResults} from "../src/BenchmarkReport.ts";
+import { type BenchmarkReport, reportResults } from "../src/BenchmarkReport.ts";
 import {
   type MeasureOptions,
   mitataBench,
 } from "../src/mitata-util/MitataBench.ts";
 import type { MeasuredResults } from "../src/mitata-util/MitataStats.ts";
-import { type RunBenchmarkOptions, runBenchmarks } from "../src/RunBenchmark.ts";
+import {
+  type RunBenchmarkOptions,
+  runBenchmarks,
+} from "../src/RunBenchmark.ts";
 import { vanillaMitataBatch } from "../src/runners/VanillaMitataBatch.ts";
 import type { ParserVariant } from "../src/wesl/BenchVariations.ts";
 import { loadSimpleFiles, loadSimpleTest } from "../src/wesl/LoadSimpleTest.ts";
@@ -17,7 +20,10 @@ import {
   type BenchTest as WeslBenchTest,
 } from "../src/wesl/WeslBenchmarks.ts";
 import { convertToWeslReports } from "../src/wesl/WeslReportConverter.ts";
-import { workerBenchAndReport, workerBenchSimple } from "../src/wesl/WeslWorkerBench.ts";
+import {
+  workerBenchAndReport,
+  workerBenchSimple,
+} from "../src/wesl/WeslWorkerBench.ts";
 
 /** Options specific to each runner implementation */
 interface RunnerSpecificOptions {

@@ -1,5 +1,4 @@
 import type { MeasuredResults } from "./mitata-util/MitataStats.ts";
-import { mapValues } from "./mitata-util/Util.ts";
 import {
   floatPrecision as floatPrecisionImpl,
   integer as integerImpl,
@@ -93,7 +92,11 @@ function reportsToRows(reports: BenchmarkReport[]): ReportRows {
   const baselineRecords: FullReportRow[] = [];
 
   for (const report of reports) {
-    const stats = makeStatsRow(report.mainResult.name, report.mainResult, report.metadata);
+    const stats = makeStatsRow(
+      report.mainResult.name,
+      report.mainResult,
+      report.metadata,
+    );
     mainRecords.push(mostlyFullRow(stats));
 
     if (report.baseline) {
@@ -108,10 +111,14 @@ function reportsToRows(reports: BenchmarkReport[]): ReportRows {
   return { mainRecords, baselineRecords };
 }
 
-function logTable(rows: ReportRows, columns: ColumnGroup<FullReportRow>[]): void {
+function logTable(
+  rows: ReportRows,
+  columns: ColumnGroup<FullReportRow>[],
+): void {
   const { mainRecords, baselineRecords } = rows;
   // Only pass baseline records if they exist and have the same length as main records
-  const baseline = baselineRecords.length === mainRecords.length ? baselineRecords : undefined;
+  const baseline =
+    baselineRecords.length === mainRecords.length ? baselineRecords : undefined;
   const tableString = buildTable(columns, mainRecords, baseline);
   console.log(tableString);
 }
@@ -122,13 +129,14 @@ function makeStatsRow(
   metadata?: Record<string, any>,
 ): SelectedStats {
   // Truncate long names
-  const displayName = name.length > maxNameLength
-    ? name.slice(0, maxNameLength - 3) + "..."
-    : name;
+  const displayName =
+    name.length > maxNameLength
+      ? name.slice(0, maxNameLength - 3) + "..."
+      : name;
 
   // Use metadata for lines info
   const lines = metadata?.linesOfCode || 0;
-  
+
   // Calculate ops/sec from time
   const kOps = results.time ? 1 / results.time.avg : undefined;
 
@@ -304,7 +312,7 @@ function tableConfig(cpu?: boolean): ColumnGroup<FullReportRow>[] {
 // Low-level utility functions at the bottom
 
 /** Convert simple results to MeasuredResults for unified display */
-function simpleBenchResultToMeasured(
+function _simpleBenchResultToMeasured(
   result: SimpleBenchResult,
 ): MeasuredResults {
   return {

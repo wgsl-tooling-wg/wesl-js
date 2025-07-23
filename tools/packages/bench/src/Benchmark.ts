@@ -35,4 +35,3 @@ export interface BenchTest<T = unknown> {
   /** Optional metadata for reporting (e.g., lines of code) */
   metadata?: Record<string, any>;
 }
-

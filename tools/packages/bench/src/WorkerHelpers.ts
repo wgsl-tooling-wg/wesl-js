@@ -1,9 +1,9 @@
-import { Worker, parentPort } from "node:worker_threads";
+import { parentPort, Worker } from "node:worker_threads";
+import { formatError } from "./BenchmarkErrors.ts";
 import type { MeasureOptions } from "./mitata-util/MitataBench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataStats.ts";
 import type { RunnerOptions } from "./runners/RunnerUtils.ts";
 import type { WorkerMessage, WorkerResult } from "./WorkerBench.ts";
-import { formatError } from "./BenchmarkErrors.ts";
 
 // Exports at the top
 

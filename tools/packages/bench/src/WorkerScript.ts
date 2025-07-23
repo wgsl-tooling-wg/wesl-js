@@ -1,5 +1,4 @@
 import { parentPort } from "node:worker_threads";
-import { formatError } from "./BenchmarkErrors.ts";
 import type { MeasuredResults } from "./mitata-util/MitataStats.ts";
 import { getRunner } from "./runners/RunnerFactory.ts";
 import type { RunnerOptions } from "./runners/RunnerUtils.ts";
