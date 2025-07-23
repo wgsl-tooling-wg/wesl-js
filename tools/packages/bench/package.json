@@ -3,12 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "bench": "tsx --expose-gc --allow-natives-syntax bin/bench.ts",
+    "bench": "node --expose-gc --allow-natives-syntax bin/bench.ts",
     "bench:baseline": "bin/choose_baseline.mts",
     "bench:bun": "bun --expose-gc --allow-natives-syntax bin/bench.ts",
-    "bench:details": "sudo tsx --expose-gc --allow-natives-syntax bin/bench.ts --cpu",
-    "bench:profile": "tsx --inspect-brk bin/bench.ts --profile",
-    "bench:validate": "tsx bin/bench.ts --profile",
+    "bench:details": "sudo node --expose-gc --allow-natives-syntax bin/bench.ts --cpu",
+    "bench:profile": "node --inspect-brk bin/bench.ts --profile",
+    "bench:validate": "node bin/bench.ts --profile",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck": "tsgo"
   },
   "dependencies": {
@@ -21,6 +22,7 @@
     "@use-gpu/shader": "^0.15.0",
     "0x": "^5.8.0",
     "mitata": "^1.0.34",
+    "tinybench": "^4.0.1",
     "wgsl_reflect": "^1.2.1"
   }
 }
