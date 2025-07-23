@@ -159,8 +159,10 @@ function reportsToRows(reports: BenchmarkReport[]): ReportRows {
 
 function logTable(rows: ReportRows, columns: ColumnGroup<FullReportRow>[]): void {
   const { mainRecords, baselineRecords } = rows;
-  const { text, lines } = buildTable(columns, mainRecords, baselineRecords);
-  lines.forEach(line => console.log(line));
+  // Only pass baseline records if they exist and have the same length as main records
+  const baseline = baselineRecords.length === mainRecords.length ? baselineRecords : undefined;
+  const tableString = buildTable(columns, mainRecords, baseline);
+  console.log(tableString);
 }
 
 function makeStatsRow(
@@ -169,7 +171,7 @@ function makeStatsRow(
   metadata?: Record<string, any>,
 ): SelectedStats {
   // Use metadata to determine ops/sec
-  const kOps = results.opsPerSec ? results.opsPerSec / 1000 : undefined;
+  const kOps = metadata?.opsPerSec ? metadata.opsPerSec / 1000 : undefined;
 
   // Use metadata for lines info
   const lines = metadata?.lines;
