@@ -32,6 +32,7 @@
     "test:built": "pnpm --filter built-test test:built",
     "test:examples": "pnpm --filter \"./examples/**\" test",
     "test:linkExtension": "nodemon --config nodemon-link-extension.json",
+    "test:integration": "pnpm --filter \"./packages/**\" test:integration",
     "test:unit": "vitest --run",
     "typecheck:all": "run-s typecheck:packages typecheck:examples",
     "typecheck:examples": "pnpm --filter \"./examples/**\" --filter \"!lygia-cli-example\" exec tsgo",
