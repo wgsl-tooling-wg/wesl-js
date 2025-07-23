@@ -7,7 +7,6 @@ import { runProfileMode } from "../src/ProfileMode.ts";
 import { runBenchmarks } from "../src/RunBenchmarkUnified.ts";
 import { cliArgs } from "../src/wesl/CliArgs.ts";
 
-// Entry point
 const rawArgs = hideBin(process.argv);
 main(rawArgs);
 
@@ -23,13 +22,9 @@ async function main(args: string[]): Promise<void> {
     process.exit(1);
   }
   
-  // Create unified configuration
   const config = createConfig(argv);
-  
-  // Load tests based on configuration
   const tests = await loadBenchTests(config);
   
-  // Run benchmarks based on mode
   if (config.mode === 'profile') {
     await runProfileMode(tests);
   } else {
