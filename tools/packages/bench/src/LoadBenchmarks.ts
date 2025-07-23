@@ -3,7 +3,7 @@ import path from "node:path";
 import type { BenchTest } from "../bin/bench.ts";
 
 export async function loadBenchmarkFiles(): Promise<BenchTest[]> {
-  const examplesDir = "./src/examples";
+  const examplesDir = "./src/wesl-examples";
   const reduceBuffer = await loadBench(
     "reduceBuffer",
     examplesDir,
@@ -27,13 +27,13 @@ export async function loadBenchmarkFiles(): Promise<BenchTest[]> {
   );
   const bevy_deferred_lighting = await loadBench(
     "bevy_deferred_lighting",
-    "./src/examples/bevy",
+    "./src/wesl-examples/bevy",
     "./bevy_generated_deferred_lighting.wgsl",
   );
   // fails to wesl compile
   const _bevy_linking = await loadBench(
     "bevy_linking",
-    "./src/examples/naga_oil_example",
+    "./src/wesl-examples/naga_oil_example",
     "./pbr.wgsl",
     [
       "./clustered_forward.wgsl",
