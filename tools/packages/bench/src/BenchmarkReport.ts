@@ -1,8 +1,5 @@
-import type { BenchTest } from "../bin/bench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataStats.ts";
-import { mapValues } from "./mitata-util/Util.ts";
 import {
-  diffPercentNegative,
   floatPrecision,
   integer,
   percent,
@@ -12,244 +9,290 @@ import { buildTable, type ColumnGroup } from "./table-util/TableReport.ts";
 
 const maxNameLength = 30;
 
-/** report of benchmark results, including baseline results if available  */
+/** Generic benchmark report */
 export interface BenchmarkReport {
-  benchTest: BenchTest;
+  name: string;
   mainResult: MeasuredResults;
   baseline?: MeasuredResults;
-}
-
-/** preprocessed statistics for reporting */
-interface SelectedStats {
-  name: string;
-  locSecP50: number;
-  locSecMax: number;
-  gcTimeMean?: number;
-  timeMean: number;
-  runs: number;
-  cpuCacheMiss?: number;
-  heap?: number;
-  gcCollects?: number;
-  cpuStall?: number;
-}
-
-/** benchmark data to report in each row */
-interface ReportRow {
-  name?: string;
-  locSecP50?: number;
-  locSecMax?: number;
-  locSecMaxPercent?: string;
-  locSecP50Percent?: string;
-  timeMean?: number;
-  timeMeanPercent?: string;
-  gcTimeMean?: number;
-  gcTimePercent?: string;
-  cpuCacheMiss?: number;
-  heap?: number;
-  runs?: number;
-  gcCollects?: number;
-  cpuStall?: number;
-}
-
-/** Helper type for records with nullable values */
-type NullableValues<T> = {
-  [P in keyof T]: T[P] | null;
-};
-
-/** report row with all keys required, and values that may be null */
-type FullReportRow = NullableValues<Required<ReportRow>>;
-
-/** test data to report, results along with baseline if available */
-interface ReportRows {
-  main: FullReportRow[];
-  baseline?: FullReportRow[];
-}
-
-/** log a table of benchmark results  */
-export function reportResults(
-  reports: BenchmarkReport[],
-  options: LogOptions,
-): void {
-  const { main, baseline } = reportsToRows(reports);
-  logTable(main, options, baseline);
-}
-
-function reportsToRows(reports: BenchmarkReport[]): ReportRows {
-  const mainRows: FullReportRow[] = [];
-  const baselineRows: FullReportRow[] = []; // only if any baseline exists
-
-  reports.forEach(report => {
-    const { benchTest, mainResult, baseline } = report;
-
-    const codeLines = getCodeLines(benchTest);
-
-    const mainStats = selectedStats(codeLines, mainResult);
-    mainRows.push(mostlyFullRow(mainStats));
-
-    if (baseline) {
-      const baseStats = selectedStats(codeLines, baseline);
-      baselineRows.push(mostlyFullRow(baseStats));
-    }
-  });
-
-  return {
-    main: mainRows,
-    baseline: baselineRows.length > 0 ? baselineRows : undefined,
-  };
+  metadata?: Record<string, any>;
 }
 
 export interface LogOptions {
-  cpu?: boolean; // whether to include cpu columns
+  cpu?: boolean;
 }
 
-/** write table records to the console */
-function logTable(
-  mainRows: FullReportRow[],
-  options: LogOptions = {},
-  baselineRows?: FullReportRow[],
+export function reportResults(
+  reports: BenchmarkReport[],
+  opts: LogOptions,
 ): void {
-  const tableStr = buildTable(
-    tableConfig(options?.cpu),
-    mainRows,
-    baselineRows,
-    "name",
-  );
-  console.log(tableStr);
+  const rows = reportsToRows(reports);
+  logTable(rows, tableConfig(opts.cpu));
 }
 
-/** count the number of lines of code in a bench test */
-function getCodeLines(benchTest: BenchTest) {
-  return benchTest.files
-    .values()
-    .map(text => text.split("\n").length)
-    .reduce((sum, v) => sum + v, 0);
+interface SelectedStats {
+  name: string;
+  mean?: number;
+  p50?: number;
+  p99?: number;
+  runs?: number;
+  lines?: number;
+  kOps?: number;
+  gc?: number;
+  cpuCacheMiss?: number;
+  cpuStall?: number;
+  locSecP50?: number;
+  locSecMax?: number;
 }
 
-/** select and preprocess interesting stats for reporting  */
-function selectedStats(
-  codeLines: number,
-  result: MeasuredResults,
+interface ReportRow {
+  name: string;
+  mean?: number;
+  p50?: number;
+  p99?: number;
+  runs?: number;
+  lines?: number;
+  kOps?: number;
+  gc?: number;
+  cpuCacheMiss?: number;
+  cpuStall?: number;
+  locSecP50?: number;
+  locSecMax?: number;
+  // Diff columns
+  locSecP50Diff?: string;
+  locSecMaxDiff?: string;
+  meanDiff?: string;
+  gcDiff?: string;
+}
+
+type NullableValues<T> = {
+  [K in keyof T]: T[K] | null;
+};
+
+type FullReportRow = NullableValues<Required<ReportRow>>;
+
+interface ReportRows {
+  mainRecords: FullReportRow[];
+  baselineRecords: FullReportRow[];
+}
+
+function reportsToRows(reports: BenchmarkReport[]): ReportRows {
+  const mainRecords: FullReportRow[] = [];
+  const baselineRecords: FullReportRow[] = [];
+
+  for (const report of reports) {
+    const stats = makeStatsRow(
+      report.mainResult.name,
+      report.mainResult,
+      report.metadata,
+    );
+    mainRecords.push(mostlyFullRow(stats));
+
+    if (report.baseline) {
+      const bStats = makeStatsRow(
+        report.baseline.name,
+        report.baseline,
+        report.metadata,
+      );
+      baselineRecords.push(mostlyFullRow(bStats));
+    }
+  }
+  return { mainRecords, baselineRecords };
+}
+
+function logTable(
+  rows: ReportRows,
+  columns: ColumnGroup<FullReportRow>[],
+): void {
+  const { mainRecords, baselineRecords } = rows;
+  // Only pass baseline records if they exist and have the same length as main records
+  const baseline =
+    baselineRecords.length === mainRecords.length ? baselineRecords : undefined;
+  const tableString = buildTable(columns, mainRecords, baseline);
+  console.log(tableString);
+}
+
+function makeStatsRow(
+  name: string,
+  results: MeasuredResults,
+  metadata?: Record<string, any>,
 ): SelectedStats {
-  const median = result.time.p50;
-  const min = result.time.min;
-  const locPerSecond = mapValues(
-    { median, max: min }, // 'min' time becomes 'max' loc/sec
-    x => codeLines / (x / 1000),
-  );
+  // Truncate long names
+  const displayName =
+    name.length > maxNameLength
+      ? name.slice(0, maxNameLength - 3) + "..."
+      : name;
 
-  let gcTimeMean: number | undefined;
-  const { nodeGcTime } = result;
-  if (nodeGcTime) {
-    gcTimeMean = nodeGcTime.inRun / result.samples.length;
+  // Use metadata for lines info
+  const lines = metadata?.linesOfCode || 0;
+
+  // Calculate ops/sec from time
+  const kOps = results.time ? 1 / results.time.avg : undefined;
+
+  // Calculate lines per second
+  const locSecP50 = results.time?.p50
+    ? lines / (results.time.p50 / 1000)
+    : undefined;
+  const locSecMax = results.time?.min
+    ? lines / (results.time.min / 1000)
+    : undefined; // min time = max throughput
+
+  // Calculate average GC time per run
+  let gcTime: number | undefined;
+  if (results.nodeGcTime) {
+    gcTime = results.nodeGcTime.inRun / results.samples.length;
   }
 
   return {
-    locSecP50: locPerSecond.median,
-    locSecMax: locPerSecond.max,
-    timeMean: result.time?.avg,
-    gcTimeMean,
-    runs: result.samples.length,
-    heap: result.heapSize?.avg,
-    cpuCacheMiss: result.cpuCacheMiss,
-    gcCollects: result.nodeGcTime?.collects,
-    cpuStall: result.cpuStall,
-    name: result.name.slice(0, maxNameLength),
+    name: displayName,
+    mean: results.time?.avg,
+    p50: results.time?.p50,
+    p99: results.time?.p99,
+    runs: results.samples.length,
+    lines,
+    kOps,
+    gc: gcTime,
+    cpuCacheMiss: results.cpuCacheMiss,
+    cpuStall: results.cpuStall,
+    locSecP50,
+    locSecMax,
   };
 }
 
-/** @return a report row with all properties set, but some values set to null */
 function mostlyFullRow(stats: SelectedStats): FullReportRow {
   return {
-    name: stats.name,
-    timeMean: stats.timeMean,
-    locSecMax: stats.locSecMax,
-    locSecP50: stats.locSecP50,
-    gcTimeMean: stats.gcTimeMean ?? null,
-    runs: stats.runs,
+    name: stats.name ?? null,
+    mean: stats.mean ?? null,
+    p50: stats.p50 ?? null,
+    p99: stats.p99 ?? null,
+    runs: stats.runs ?? null,
+    lines: stats.lines ?? null,
+    kOps: stats.kOps ?? null,
+    gc: stats.gc ?? null,
     cpuCacheMiss: stats.cpuCacheMiss ?? null,
-    heap: stats.heap ?? null,
-    gcCollects: stats.gcCollects ?? null,
     cpuStall: stats.cpuStall ?? null,
-    locSecMaxPercent: null,
-    locSecP50Percent: null,
-    gcTimePercent: null,
-    timeMeanPercent: null,
+    locSecP50: stats.locSecP50 ?? null,
+    locSecMax: stats.locSecMax ?? null,
+    // Diff columns will be filled by buildTable
+    locSecP50Diff: null,
+    locSecMaxDiff: null,
+    meanDiff: null,
+    gcDiff: null,
   };
 }
 
-/** configuration for table columns and sections */
-function tableConfig(cpu?: boolean): ColumnGroup<FullReportRow>[] {
-  const cpuGroup: ColumnGroup<FullReportRow> = {
+function createNameColumn(): ColumnGroup<FullReportRow> {
+  return {
+    columns: [{ key: "name" as keyof FullReportRow, title: "name" }],
+  };
+}
+
+function createLocColumns(): ColumnGroup<FullReportRow> {
+  return {
+    groupTitle: "lines / sec",
+    columns: [
+      {
+        key: "locSecP50" as keyof FullReportRow,
+        title: "p50",
+        formatter: integer,
+      },
+      {
+        key: "locSecP50Diff" as keyof FullReportRow,
+        title: "Δ%",
+        diffKey: "locSecP50" as keyof FullReportRow,
+      },
+      {
+        key: "locSecMax" as keyof FullReportRow,
+        title: "max",
+        formatter: integer,
+      },
+      {
+        key: "locSecMaxDiff" as keyof FullReportRow,
+        title: "Δ%",
+        diffKey: "locSecMax" as keyof FullReportRow,
+      },
+    ],
+  };
+}
+
+function createTimeColumns(): ColumnGroup<FullReportRow> {
+  return {
+    groupTitle: "time",
+    columns: [
+      {
+        key: "mean" as keyof FullReportRow,
+        title: "mean",
+        formatter: floatPrecision(2),
+      },
+      {
+        key: "meanDiff" as keyof FullReportRow,
+        title: "Δ%",
+        diffKey: "mean" as keyof FullReportRow,
+      },
+    ],
+  };
+}
+
+function createGcColumns(): ColumnGroup<FullReportRow> {
+  return {
+    groupTitle: "gc time",
+    columns: [
+      {
+        key: "gc" as keyof FullReportRow,
+        title: "mean",
+        formatter: percent,
+      },
+      {
+        key: "gcDiff" as keyof FullReportRow,
+        title: "Δ%",
+        diffKey: "gc" as keyof FullReportRow,
+      },
+    ],
+  };
+}
+
+function createMiscColumns(): ColumnGroup<FullReportRow> {
+  return {
+    groupTitle: "misc",
+    columns: [
+      {
+        key: "runs" as keyof FullReportRow,
+        title: "runs",
+        formatter: integer,
+      },
+    ],
+  };
+}
+
+function createCpuColumns(): ColumnGroup<FullReportRow> {
+  return {
     groupTitle: "cpu",
     columns: [
       {
-        key: "cpuCacheMiss",
+        key: "cpuCacheMiss" as keyof FullReportRow,
         title: "L1 miss",
         formatter: percent,
       },
       {
-        key: "cpuStall",
+        key: "cpuStall" as keyof FullReportRow,
         title: "stalls",
         formatter: percentPrecision(2),
       },
     ],
   };
+}
 
-  const showCpuColumns = cpu ? [cpuGroup] : [];
-
-  return [
-    {
-      columns: [{ key: "name", title: "name" }],
-    },
-    {
-      groupTitle: "lines / sec",
-      columns: [
-        { key: "locSecP50", title: "p50", formatter: integer },
-        { key: "locSecP50Percent", title: "Δ%", diffKey: "locSecP50" },
-        { key: "locSecMax", title: "max", formatter: integer },
-        { key: "locSecMaxPercent", title: "Δ%", diffKey: "locSecMax" },
-      ],
-    },
-    {
-      groupTitle: "time",
-      columns: [
-        {
-          key: "timeMean",
-          title: "mean",
-          formatter: floatPrecision(2),
-        },
-        {
-          key: "timeMeanPercent",
-          title: "Δ%",
-          diffKey: "timeMean",
-          diffFormatter: diffPercentNegative,
-        },
-      ],
-    },
-    {
-      groupTitle: "gc time",
-      columns: [
-        {
-          key: "gcTimeMean",
-          title: "mean",
-          formatter: floatPrecision(2),
-        },
-        {
-          key: "gcTimePercent",
-          title: "Δ%",
-          diffKey: "gcTimeMean",
-          diffFormatter: diffPercentNegative,
-        },
-      ],
-    },
-    ...showCpuColumns,
-    {
-      groupTitle: "misc",
-      columns: [
-        { key: "heap", title: "heap kb", formatter: integer },
-        { key: "gcCollects", title: "collects", formatter: integer },
-        { key: "runs", title: "runs", formatter: integer },
-      ],
-    },
+function tableConfig(cpu?: boolean): ColumnGroup<FullReportRow>[] {
+  const columns = [
+    createNameColumn(),
+    createLocColumns(),
+    createTimeColumns(),
+    createGcColumns(),
+    createMiscColumns(),
   ];
+
+  if (cpu) {
+    columns.push(createCpuColumns());
+  }
+
+  return columns;
 }
