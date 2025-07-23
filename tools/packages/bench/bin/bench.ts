@@ -106,10 +106,8 @@ async function runBenchmarksMain(argv: CliArgs): Promise<void> {
     // Profile mode - run first benchmark once without data collection
     await runProfileMode(tests);
   } else if (argv.worker) {
-    // Worker mode
     await runWorkerBenchmarks(argv, tests);
   } else {
-    // Use standard runner for benchmarks
     await runStandardBenchmarks(argv, tests);
   }
 }
@@ -193,10 +191,8 @@ async function runStandardBenchmarks(
     observeGc: argv.observeGc,
   };
 
-  // Run benchmarks
   const results = await runBenchmarks(tests, options);
 
-  // Report results
   reportResults(convertToWeslReports(results), { cpu: argv.cpu });
 }
 
