@@ -1,10 +1,13 @@
 import { parentPort } from "node:worker_threads";
 import { formatError } from "./BenchmarkErrors.ts";
-import type { MeasureOptions } from "./mitata-util/MitataBench.ts";
 import type { MeasuredResults } from "./mitata-util/MitataStats.ts";
 import { getRunner } from "./runners/RunnerFactory.ts";
-import type { RunnerOptions } from "./runners/RunnerUtils.ts";
 import type { WorkerMessage, WorkerResult } from "./WorkerBench.ts";
+import {
+  createRunnerOptions,
+  reconstructFunction,
+  sendErrorResult,
+} from "./WorkerHelpers.ts";
 
 if (!parentPort) {
   throw new Error("This script must be run in a worker thread");
@@ -95,18 +98,6 @@ async function executeGenericBenchmark(
 }
 
 // Utility functions
-function createRunnerOptions(
-  opts: MeasureOptions,
-  runnerOpts: RunnerOptions = {},
-): RunnerOptions {
-  return {
-    time: opts.min_cpu_time ? opts.min_cpu_time / 1e9 : 1,
-    cpuCounters: opts.cpuCounters,
-    observeGc: opts.observeGC,
-    ...runnerOpts,
-  };
-}
-
 function logBenchmarkStart(message: WorkerMessage, runner: string): void {
   const isBaseline = message.benchmarkSpec?.isBaseline ?? false;
   const benchInfo = isBaseline ? "baseline" : "main";
@@ -114,29 +105,4 @@ function logBenchmarkStart(message: WorkerMessage, runner: string): void {
   console.log(
     `[Worker] Running ${benchInfo} benchmark: ${message.testName} with ${runner} runner`,
   );
-}
-
-function sendErrorResult(error: unknown): void {
-  const result: WorkerResult = {
-    type: "result",
-    measured: {} as MeasuredResults,
-    error:
-      error instanceof Error
-        ? `${error.message}\n${error.stack}`
-        : String(error),
-  };
-  parentPort!.postMessage(result);
-}
-
-/** Safely reconstruct a function from its string representation */
-function reconstructFunction<T = unknown>(
-  fnString: string,
-): (params: T) => unknown {
-  try {
-    // Use Function constructor which is safer than eval
-    // It creates functions in global scope, not local scope
-    return new Function("return " + fnString)() as (params: T) => unknown;
-  } catch (error) {
-    throw new Error(`Failed to reconstruct function: ${formatError(error)}`);
-  }
 }
