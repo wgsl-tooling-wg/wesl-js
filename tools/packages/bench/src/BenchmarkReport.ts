@@ -1,9 +1,9 @@
 import type { MeasuredResults } from "./mitata-util/MitataStats.ts";
 import {
-  floatPrecision as floatPrecisionImpl,
-  integer as integerImpl,
-  percent as percentImpl,
-  percentPrecision as percentPrecisionImpl,
+  floatPrecision,
+  integer,
+  percent,
+  percentPrecision,
 } from "./table-util/Formatters.ts";
 import { buildTable, type ColumnGroup } from "./table-util/TableReport.ts";
 
@@ -307,45 +307,4 @@ function tableConfig(cpu?: boolean): ColumnGroup<FullReportRow>[] {
   }
 
   return columns;
-}
-
-// Low-level utility functions at the bottom
-
-/** Convert simple results to MeasuredResults for unified display */
-function _simpleBenchResultToMeasured(
-  result: SimpleBenchResult,
-): MeasuredResults {
-  return {
-    name: result.name,
-    samples: Array(result.samples).fill(result.meanMs), // Approximate samples
-    time: {
-      min: result.minMs,
-      max: result.maxMs,
-      avg: result.meanMs,
-      p25: result.meanMs, // Approximate percentiles
-      p50: result.p50 ?? result.meanMs,
-      p75: result.meanMs,
-      p99: result.meanMs,
-      p999: result.meanMs,
-    },
-  };
-}
-
-// Private wrapper functions to handle unknown types
-function percent(value: unknown): string | null {
-  return typeof value === "number" ? percentImpl(value) : null;
-}
-
-function percentPrecision(precision: number) {
-  return (value: unknown): string | null =>
-    typeof value === "number" ? percentPrecisionImpl(precision)(value) : null;
-}
-
-function integer(value: unknown): string | null {
-  return typeof value === "number" ? integerImpl(value) : null;
-}
-
-function floatPrecision(precision: number) {
-  return (value: unknown): string | null =>
-    typeof value === "number" ? floatPrecisionImpl(precision)(value) : null;
 }

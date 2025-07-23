@@ -7,9 +7,9 @@ const { red, green } = pico;
 /** @return a function that formats floats with custom precision */
 export function floatPrecision(
   precision: number,
-): (x: number | undefined) => string | null {
-  return (x: number | undefined) => {
-    if (x === undefined || x === null) return null;
+): (x: unknown) => string | null {
+  return (x: unknown) => {
+    if (typeof x !== "number") return null;
     return x.toFixed(precision).replace(/\.?0+$/, "");
   };
 }
@@ -17,13 +17,16 @@ export function floatPrecision(
 /** @return a function that formats percentages with custom precision */
 export function percentPrecision(
   precision: number,
-): (x: number | undefined) => string | null {
-  return (x: number | undefined) => percent(x, precision);
+): (x: unknown) => string | null {
+  return (x: unknown) => {
+    if (typeof x !== "number") return null;
+    return percent(x, precision);
+  };
 }
 
 /** Format duration in milliseconds */
-export function duration(ms: number | undefined): string | null {
-  if (ms === undefined) return null;
+export function duration(ms: unknown): string | null {
+  if (typeof ms !== "number") return null;
   if (ms < 1) return `${(ms * 1000).toFixed(1)}μs`;
   if (ms < 1000) return `${ms.toFixed(2)}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
@@ -31,25 +34,26 @@ export function duration(ms: number | undefined): string | null {
 
 /** Format as a rate (value per unit) */
 export function rate(unit: string) {
-  return (value: number | undefined) => {
-    if (value === undefined) return null;
+  return (value: unknown) => {
+    if (typeof value !== "number") return null;
     return `${integer(value)}/${unit}`;
   };
 }
 
 /** format an integer with commas between thousands */
-export function integer(x: number | undefined): string | null {
-  if (x === undefined) return null;
+export function integer(x: unknown): string | null {
+  if (typeof x !== "number") return null;
   return new Intl.NumberFormat("en-US").format(Math.round(x));
 }
 
 /** format a number like .473 as a percentage like 47.3% */
-export function percent(fraction?: number, precision = 1): string | null {
-  if (fraction === undefined || fraction === null) return null;
+export function percent(fraction: unknown, precision = 1): string | null {
+  if (typeof fraction !== "number") return null;
   return `${Math.abs(fraction * 100).toFixed(precision)}%`;
 }
 
-export function diffPercent(main: number, base: number): string {
+export function diffPercent(main: unknown, base: unknown): string {
+  if (typeof main !== "number" || typeof base !== "number") return " ";
   const diff = main - base;
   return coloredPercent(diff, base);
 }
