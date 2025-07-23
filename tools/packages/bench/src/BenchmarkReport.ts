@@ -34,8 +34,6 @@ export interface LogOptions {
   cpu?: boolean;
 }
 
-// Exports at the top
-
 export function reportResults(
   reports: BenchmarkReport[],
   opts: LogOptions,
@@ -43,8 +41,6 @@ export function reportResults(
   const rows = reportsToRows(reports);
   logTable(rows, tableConfig(opts.cpu));
 }
-
-// Intermediate types and functions
 
 interface SelectedStats {
   name: string;
@@ -92,50 +88,6 @@ interface ReportRows {
   baselineRecords: FullReportRow[];
 }
 
-// Private intermediate functions
-
-function groupResultsByType(results: SimpleBenchResult[]): {
-  standard: SimpleBenchResult[];
-  tinybench: SimpleBenchResult[];
-} {
-  const standard: SimpleBenchResult[] = [];
-  const tinybench: SimpleBenchResult[] = [];
-
-  for (const result of results) {
-    if (result.name.includes("tinybench")) {
-      tinybench.push(result);
-    } else {
-      standard.push(result);
-    }
-  }
-
-  return { standard, tinybench };
-}
-
-function createBenchmarkReports(
-  standard: SimpleBenchResult[],
-  tinybench: SimpleBenchResult[],
-): BenchmarkReport[] {
-  const reports: BenchmarkReport[] = [];
-
-  // Create reports for standard results, pairing with tinybench baselines
-  for (const result of standard) {
-    const baselineName = result.name.replace("standard", "tinybench");
-    const baseline = tinybench.find(t => t.name === baselineName);
-
-    reports.push({
-      name: result.name.replace(" (standard)", ""),
-      mainResult: simpleBenchResultToMeasured(result),
-      baseline: baseline ? simpleBenchResultToMeasured(baseline) : undefined,
-      metadata: {
-        mainFile: "simple.wgsl",
-      },
-    });
-  }
-
-  return reports;
-}
-
 function reportsToRows(reports: BenchmarkReport[]): ReportRows {
   const mainRecords: FullReportRow[] = [];
   const baselineRecords: FullReportRow[] = [];
@@ -153,7 +105,6 @@ function reportsToRows(reports: BenchmarkReport[]): ReportRows {
       baselineRecords.push(mostlyFullRow(bStats));
     }
   }
-
   return { mainRecords, baselineRecords };
 }
 
