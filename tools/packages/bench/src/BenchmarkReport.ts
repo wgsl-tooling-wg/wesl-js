@@ -141,12 +141,12 @@ function reportsToRows(reports: BenchmarkReport[]): ReportRows {
   const baselineRecords: FullReportRow[] = [];
 
   for (const report of reports) {
-    const stats = makeStatsRow(report.name, report.mainResult, report.metadata);
+    const stats = makeStatsRow(report.mainResult.name, report.mainResult, report.metadata);
     mainRecords.push(mostlyFullRow(stats));
 
     if (report.baseline) {
       const bStats = makeStatsRow(
-        report.name,
+        report.baseline.name,
         report.baseline,
         report.metadata,
       );
@@ -170,21 +170,24 @@ function makeStatsRow(
   results: MeasuredResults,
   metadata?: Record<string, any>,
 ): SelectedStats {
-  // Use metadata to determine ops/sec
-  const kOps = metadata?.opsPerSec ? metadata.opsPerSec / 1000 : undefined;
+  // Truncate long names
+  const displayName = name.length > maxNameLength
+    ? name.slice(0, maxNameLength - 3) + "..."
+    : name;
 
   // Use metadata for lines info
-  const lines = metadata?.lines;
+  const lines = metadata?.linesOfCode || 0;
+  
+  // Calculate ops/sec from time
+  const kOps = results.time ? 1 / results.time.avg : undefined;
 
-  // Calculate lines per second if both metrics are available
-  let locSecP50: number | undefined;
-  let locSecMax: number | undefined;
-  if (lines && results.time?.p50) {
-    locSecP50 = lines / (results.time.p50 / 1e3); // p50 is in ms
-  }
-  if (lines && results.time?.max) {
-    locSecMax = lines / (results.time.max / 1e3); // max is in ms
-  }
+  // Calculate lines per second
+  const locSecP50 = results.time?.p50
+    ? lines / (results.time.p50 / 1000)
+    : undefined;
+  const locSecMax = results.time?.min
+    ? lines / (results.time.min / 1000)
+    : undefined; // min time = max throughput
 
   // Calculate average GC time per run
   let gcTime: number | undefined;
@@ -193,7 +196,7 @@ function makeStatsRow(
   }
 
   return {
-    name,
+    name: displayName,
     mean: results.time?.avg,
     p50: results.time?.p50,
     p99: results.time?.p99,
