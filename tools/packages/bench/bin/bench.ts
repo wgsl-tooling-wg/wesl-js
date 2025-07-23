@@ -6,12 +6,14 @@ import {
   mitataBench,
 } from "../src/mitata-util/MitataBench.ts";
 import type { MeasuredResults } from "../src/mitata-util/MitataStats.ts";
+import { runProfileMode } from "../src/ProfileMode.ts";
 import {
   type RunBenchmarkOptions,
   runBenchmarks,
 } from "../src/RunBenchmark.ts";
 import { vanillaMitataBatch } from "../src/runners/VanillaMitataBatch.ts";
 import type { ParserVariant } from "../src/wesl/BenchVariations.ts";
+import { type CliArgs, cliArgs } from "../src/wesl/CliArgs.ts";
 import { loadSimpleFiles, loadSimpleTest } from "../src/wesl/LoadSimpleTest.ts";
 import {
   setupWeslBenchmarks,
@@ -23,7 +25,6 @@ import {
   workerBenchAndReport,
   workerBenchSimple,
 } from "../src/wesl/WeslWorkerBench.ts";
-import { cliArgs } from "../src/wesl/CliArgs.ts";
 
 /** Options specific to each runner implementation */
 interface RunnerSpecificOptions {
@@ -61,8 +62,6 @@ export const baselineDir = "../../../../../_baseline";
 const rawArgs = hideBin(process.argv);
 main(rawArgs);
 
-type CliArgs = ReturnType<typeof cliArgs>;
-
 async function main(args: string[]): Promise<void> {
   const argv = cliArgs(args);
 
@@ -85,7 +84,6 @@ async function main(args: string[]): Promise<void> {
     await runBenchmarksMain(argv);
   }
 }
-
 
 /** create benchmark options from CLI arguments */
 function createBenchmarkOptions(argv: CliArgs): MeasureOptions {
@@ -336,31 +334,6 @@ async function runBenchmarkPair(
   }
 
   return { current, baseline };
-}
-
-/** Run profile mode - execute first benchmark once without data collection
- * Useful for attaching the profiler or for continuous integration */
-async function runProfileMode(tests: BenchTest<any>[]): Promise<void> {
-  if (tests.length === 0) {
-    console.error("No benchmarks to profile");
-    return;
-  }
-
-  const firstTest = tests[0];
-  if (firstTest.benchmarks.length === 0) {
-    console.error("No benchmark specs in first test");
-    return;
-  }
-
-  // Setup test data if needed
-  const params = firstTest.setup ? await firstTest.setup() : {};
-
-  // Run the first benchmark function once
-  const firstBenchmark = firstTest.benchmarks[0];
-  const benchParams = firstBenchmark.params ?? params;
-
-  console.log(`Profiling: ${firstBenchmark.name}`);
-  firstBenchmark.fn(benchParams);
 }
 
 /** Get test name with variant prefix if needed */

@@ -8,6 +8,7 @@ const defaultSettings = {
   forceGc: false,
 } as const;
 
+export type CliArgs = ReturnType<typeof cliArgs>;
 /** parse command line arguments for wesl-bench */
 export function cliArgs(args: string[]) {
   return yargs(args)
