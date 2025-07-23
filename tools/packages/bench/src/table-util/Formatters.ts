@@ -4,17 +4,14 @@ const { red, green } = pico;
 
 /** Formatting utilities for table data */
 
-/** format a float to a specified precision with trailing zeros dropped */
-export function float(x: number | undefined, digits = 2): string | null {
-  if (x === undefined || x === null) return null;
-  return x.toFixed(digits).replace(/\.?0+$/, "");
-}
-
 /** @return a function that formats floats with custom precision */
 export function floatPrecision(
   precision: number,
 ): (x: number | undefined) => string | null {
-  return (x: number | undefined) => float(x, precision);
+  return (x: number | undefined) => {
+    if (x === undefined || x === null) return null;
+    return x.toFixed(precision).replace(/\.?0+$/, "");
+  };
 }
 
 /** @return a function that formats percentages with custom precision */
@@ -30,21 +27,6 @@ export function duration(ms: number | undefined): string | null {
   if (ms < 1) return `${(ms * 1000).toFixed(1)}μs`;
   if (ms < 1000) return `${ms.toFixed(2)}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
-}
-
-/** Format bytes with appropriate units */
-export function bytes(bytes: number | undefined): string | null {
-  if (bytes === undefined) return null;
-  const units = ["b", "kb", "mb", "gb", "tb"];
-  let size = bytes;
-  let unitIndex = 0;
-
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex++;
-  }
-
-  return `${size.toFixed(1)}${units[unitIndex]}`;
 }
 
 /** Format as a rate (value per unit) */
@@ -70,11 +52,6 @@ export function percent(fraction?: number, precision = 1): string | null {
 export function diffPercent(main: number, base: number): string {
   const diff = main - base;
   return coloredPercent(diff, base);
-}
-
-export function diffPercentNegative(main: number, base: number): string {
-  const diff = main - base;
-  return coloredPercent(diff, base, false);
 }
 
 /**

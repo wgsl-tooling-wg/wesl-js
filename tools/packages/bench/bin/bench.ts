@@ -1,61 +1,90 @@
-import path from "node:path";
-import { link } from "wesl";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { type BenchmarkReport, reportResults } from "../src/BenchmarkReport.ts";
-import {
-  createVariantFunction,
-  type ParserVariant,
-} from "../src/BenchVariations.ts";
-import { benchManually } from "../src/experiments/BenchManually.ts";
-import { simpleMitataBench } from "../src/experiments/VanillaMitata.ts";
-import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
-import { loadSimpleFiles, loadSimpleTest } from "../src/LoadSimpleTest.ts";
+import type { BenchTest } from "../src/Benchmark.ts";
+import { type BenchmarkReport, reportResults} from "../src/BenchmarkReport.ts";
 import {
   type MeasureOptions,
   mitataBench,
 } from "../src/mitata-util/MitataBench.ts";
 import type { MeasuredResults } from "../src/mitata-util/MitataStats.ts";
+import { type RunBenchmarkOptions, runBenchmarks } from "../src/RunBenchmark.ts";
+import { vanillaMitataBatch } from "../src/runners/VanillaMitataBatch.ts";
+import type { ParserVariant } from "../src/wesl/BenchVariations.ts";
+import { loadSimpleFiles, loadSimpleTest } from "../src/wesl/LoadSimpleTest.ts";
+import {
+  setupWeslBenchmarks,
+  validateVariants,
+  type BenchTest as WeslBenchTest,
+} from "../src/wesl/WeslBenchmarks.ts";
+import { convertToWeslReports } from "../src/wesl/WeslReportConverter.ts";
+import { workerBenchAndReport, workerBenchSimple } from "../src/wesl/WeslWorkerBench.ts";
 
-export interface BenchTest {
-  /** name of the test */
-  name: string;
-
-  /** Path to the main file */
-  mainFile: string;
-
-  /** All relevant files (file paths and their contents) */
-  files: Map<string, string>;
+/** Options specific to each runner implementation */
+interface RunnerSpecificOptions {
+  /** For tinybench and manual runners */
+  warmupTime?: number;
+  /** For tinybench and manual runners */
+  warmupRuns?: number;
+  /** For manual runner */
+  iterations?: number;
 }
 
-export const baselineDir = "../../../../_baseline";
-
-/** load the link() function from the baseline repo  */
-async function loadBaselineLink(): Promise<typeof link | undefined> {
-  const baselinePath = path.join(baselineDir, "packages/wesl/src/index.ts");
-
-  return import(baselinePath)
-    .then(x => x.link as unknown as typeof link)
-    .catch(e => {
-      console.log("Failed to load baseline link", e);
-      return undefined;
-    });
+/** Result of running a benchmark pair */
+interface BenchmarkPairResult {
+  current: MeasuredResults;
+  baseline?: MeasuredResults;
 }
 
-type CliArgs = ReturnType<typeof parseArgs>;
+/** Default benchmark settings */
+const defaultSettings = {
+  benchmarkTime: 0.642, // seconds, chosen for statistical significance
+  cpuCounters: false,
+  observeGc: true,
+  forceGc: false,
+} as const;
 
+/** Default benchmark runner options */
+const defaultRunnerOptions = {
+  tinybench: {
+    warmupTime: 100,
+    warmupRuns: 10,
+  },
+  manual: {
+    warmupRuns: 10,
+    iterations: 12,
+  },
+  standard: {},
+  "vanilla-mitata": {},
+} as const;
+
+export const baselineDir = "../../../../../_baseline";
+
+// Entry point
 const rawArgs = hideBin(process.argv);
 main(rawArgs);
 
+type CliArgs = ReturnType<typeof parseArgs>;
+
 async function main(args: string[]): Promise<void> {
   const argv = parseArgs(args);
+
+  // Validate that only one benchmark mode is selected (worker can be combined)
+  const benchModes = ["mitata", "tinybench", "manual"].filter(
+    mode => argv[mode],
+  );
+  if (benchModes.length > 1) {
+    console.error(`Cannot use --${benchModes.join(" and --")} together`);
+    process.exit(1);
+  }
+
   if (argv.profile) {
     argv.baseline = false; // no baseline comparison in profile mode
   }
+
   if (argv.simple) {
     await runSimpleBenchmarks(argv);
   } else {
-    await runBenchmarks(argv);
+    await runBenchmarksMain(argv);
   }
 }
 
@@ -80,23 +109,23 @@ function parseArgs(args: string[]) {
     })
     .option("time", {
       type: "number",
-      default: 0.642,
+      default: defaultSettings.benchmarkTime,
       requiresArg: true,
       describe: "benchmark test duration in seconds",
     })
     .option("cpu", {
       type: "boolean",
-      default: false,
+      default: defaultSettings.cpuCounters,
       describe: "enable CPU counter measurements (requires root)",
     })
     .option("collect", {
       type: "boolean",
-      default: false,
+      default: defaultSettings.forceGc,
       describe: "force a garbage collection after each test",
     })
     .option("observe-gc", {
       type: "boolean",
-      default: true,
+      default: defaultSettings.observeGc,
       describe: "observe garbage collection via perf_hooks",
     })
     .option("profile", {
@@ -114,6 +143,11 @@ function parseArgs(args: string[]) {
       default: false,
       describe: "run using vanilla mitata profiler",
     })
+    .option("tinybench", {
+      type: "boolean",
+      default: false,
+      describe: "run using tinybench library",
+    })
     .option("filter", {
       type: "string",
       requiresArg: true,
@@ -126,49 +160,206 @@ function parseArgs(args: string[]) {
       describe:
         "benchmark a simple function, selected from SimpleTests.ts by prefix",
     })
+    .option("worker", {
+      type: "boolean",
+      default: false,
+      describe: "run benchmarks in a worker thread for better isolation",
+    })
     .help()
+    .strict()
     .parseSync();
 }
 
 /** create benchmark options from CLI arguments */
 function createBenchmarkOptions(argv: CliArgs): MeasureOptions {
   const { time, cpu, observeGc, collect } = argv;
-  const secToNs = 1e9;
   return {
-    min_cpu_time: time * secToNs,
+    min_cpu_time: time * 1e9, // convert seconds to nanoseconds
     cpuCounters: cpu,
     observeGC: observeGc,
     inner_gc: collect,
-  } as any;
+  } as MeasureOptions;
 }
 
 /** run the selected benchmark variants */
-async function runBenchmarks(argv: CliArgs): Promise<void> {
-  const loadedTests = await loadBenchmarkFiles();
-  const baselineLink = argv.baseline ? await loadBaselineLink() : undefined;
-
-  const tests = filterBenchmarks(loadedTests, argv.filter);
+async function runBenchmarksMain(argv: CliArgs): Promise<void> {
+  // Setup WESL benchmarks
+  const variants = validateVariants(argv.variant as string[]);
+  const tests = await setupWeslBenchmarks(argv.filter, variants, argv.baseline);
 
   if (argv.profile) {
-    await benchOnceOnly(tests);
-  } else if (argv.mitata) {
-    await simpleMitataBench(tests, [...argv.variant], argv.baseline);
-  } else if (argv.manual) {
-    benchManually(tests, baselineLink as any);
+    // Profile mode - run first benchmark once without data collection
+    await runProfileMode(tests);
+  } else if (argv.worker) {
+    // Worker mode
+    await runWorkerBenchmarks(argv, tests);
   } else {
-    const opts = createBenchmarkOptions(argv);
-    await benchAndReport(tests, opts, [...argv.variant], argv.baseline);
+    // Use standard runner for benchmarks
+    await runStandardBenchmarks(argv, tests);
   }
+}
+
+/** Run benchmarks in worker mode */
+async function runWorkerBenchmarks(
+  argv: CliArgs,
+  tests: BenchTest<any>[],
+): Promise<void> {
+  const { runner, runnerOpts } = selectRunner(argv);
+
+  // Worker mode expects BenchTest objects
+  const reports: BenchmarkReport[] = [];
+
+  for (const test of tests) {
+    // Get the original BenchTest if available (for WESL benchmarks)
+    const benchTest = test.metadata?.weslBenchTest;
+    if (!benchTest) {
+      console.warn(
+        `Skipping test ${test.name} - no BenchTest metadata for worker mode`,
+      );
+      continue;
+    }
+
+    // Extract variants from benchmark names
+    const variants = new Set<string>();
+    for (const benchmark of test.benchmarks) {
+      const match = benchmark.name.match(/^(\w+):/);
+      if (match) {
+        variants.add(match[1]);
+      }
+    }
+
+    if (runner === "vanilla-mitata") {
+      // Use vanilla mitata batch mode
+      const batchReports = await vanillaMitataBatch([test], {
+        runner: "vanilla-mitata",
+        time: argv.time,
+        useBaseline: argv.baseline,
+      });
+
+      // Convert reports to WESL format
+      const converted = convertToWeslReports(batchReports);
+      reports.push(...converted);
+    } else {
+      // Use standard worker mode
+      const opts = createBenchmarkOptions(argv);
+      const workerReports = await workerBenchAndReport(
+        [benchTest],
+        opts,
+        Array.from(variants) as ParserVariant[],
+        argv.baseline,
+        runner,
+        runnerOpts,
+      );
+      reports.push(...workerReports);
+    }
+  }
+
+  reportResults(reports, { cpu: argv.cpu });
+}
+
+/** Run benchmarks using the standard infrastructure */
+async function runStandardBenchmarks(
+  argv: CliArgs,
+  tests: BenchTest<any>[],
+): Promise<void> {
+  const { runner, runnerOpts } = selectRunner(argv);
+
+  // Create options for the runner
+  const options: RunBenchmarkOptions = {
+    runner,
+    filter: argv.filter,
+    showCpu: argv.cpu,
+    useBaseline: argv.baseline,
+    time: argv.time,
+    warmupTime: runnerOpts.warmupTime,
+    warmupRuns: runnerOpts.warmupRuns,
+    iterations: runnerOpts.iterations,
+    cpuCounters: argv.cpu,
+    observeGc: argv.observeGc,
+  };
+
+  // Run benchmarks
+  const results = await runBenchmarks(tests, options);
+
+  // Report results
+  reportResults(convertToWeslReports(results), { cpu: argv.cpu });
+}
+
+/** Select runner based on CLI arguments */
+function selectRunner(argv: CliArgs): {
+  runner: "standard" | "tinybench" | "manual" | "vanilla-mitata";
+  runnerOpts: RunnerSpecificOptions;
+} {
+  if (argv.mitata) {
+    return {
+      runner: "vanilla-mitata",
+      runnerOpts: defaultRunnerOptions["vanilla-mitata"],
+    };
+  } else if (argv.tinybench) {
+    return {
+      runner: "tinybench",
+      runnerOpts: defaultRunnerOptions.tinybench,
+    };
+  } else if (argv.manual) {
+    return { runner: "manual", runnerOpts: defaultRunnerOptions.manual };
+  }
+  return { runner: "standard", runnerOpts: defaultRunnerOptions.standard };
+}
+
+/** Handle results from worker mode */
+function handleWorkerResults(
+  _runner: string,
+  reports: BenchmarkReport[],
+  showCpu: boolean,
+): void {
+  reportResults(reports, { cpu: showCpu });
 }
 
 /** run a simple benchmark against itself */
 async function runSimpleBenchmarks(argv: CliArgs): Promise<void> {
   const { fn, name } = loadSimpleTest(argv.simple);
-  const opts = createBenchmarkOptions(argv);
-
   const weslSrc = await loadSimpleFiles();
   console.log(`Benching simple test: ${name}`);
 
+  if (argv.worker) {
+    await runSimpleWorkerBenchmark(argv, name, fn, weslSrc);
+  } else if (argv.tinybench) {
+    throw new Error("--tinybench option no longer supported");
+  } else {
+    await runSimpleStandardBenchmark(argv, name, fn, weslSrc);
+  }
+}
+
+/** Run simple benchmark in worker mode */
+async function runSimpleWorkerBenchmark(
+  argv: CliArgs,
+  name: string,
+  fn: (weslSrc: Record<string, string>) => void,
+  weslSrc: Record<string, string>,
+): Promise<void> {
+  const opts = createBenchmarkOptions(argv);
+  const { runner, runnerOpts } = selectRunner(argv);
+
+  const report = await workerBenchSimple(
+    name,
+    fn,
+    weslSrc,
+    opts,
+    runner,
+    runnerOpts,
+  );
+
+  handleWorkerResults(runner, [report], argv.cpu);
+}
+
+/** Run simple benchmark in standard mode */
+async function runSimpleStandardBenchmark(
+  argv: CliArgs,
+  name: string,
+  fn: (weslSrc: Record<string, string>) => void,
+  weslSrc: Record<string, string>,
+): Promise<void> {
+  const opts = createBenchmarkOptions(argv);
   const { current, baseline } = await runBenchmarkPair(
     () => fn(weslSrc),
     name,
@@ -176,94 +367,86 @@ async function runSimpleBenchmarks(argv: CliArgs): Promise<void> {
     () => fn(weslSrc),
   );
 
-  const files = new Map(Object.entries(weslSrc));
-  const benchTest: BenchTest = { name, mainFile: "N/A", files };
-  const report: BenchmarkReport = {
-    benchTest,
-    mainResult: current,
-    baseline: baseline,
-  };
-
+  const report = createSimpleBenchmarkReport(name, weslSrc, current, baseline);
   reportResults([report], { cpu: argv.cpu });
+}
+
+/** Create benchmark report for simple tests */
+function createSimpleBenchmarkReport(
+  name: string,
+  weslSrc: Record<string, string>,
+  current: MeasuredResults,
+  baseline?: MeasuredResults,
+): BenchmarkReport {
+  const files = new Map(Object.entries(weslSrc));
+  const benchTest: WeslBenchTest = { name, mainFile: "N/A", files };
+  return {
+    name,
+    mainResult: current,
+    baseline,
+    metadata: {
+      benchTest,
+      linesOfCode: calculateLinesOfCode(weslSrc),
+    },
+  };
+}
+
+function calculateLinesOfCode(weslSrc: Record<string, string>): number {
+  return Object.values(weslSrc)
+    .map(code => code.split("\n").length)
+    .reduce((a, b) => a + b, 0);
 }
 
 /** run a benchmark with current and optional baseline implementations */
 async function runBenchmarkPair(
-  currentFn: () => any,
+  currentFn: () => void,
   testName: string,
   opts: MeasureOptions,
-  baselineFn?: () => any,
-): Promise<{ current: any; baseline?: any }> {
+  baselineFn?: () => void,
+): Promise<BenchmarkPairResult> {
+  // Use stderr to avoid mitata output capture
+  process.stderr.write(
+    `Running main benchmark: ${testName} with standard runner\n`,
+  );
   const current = await mitataBench(currentFn, testName, opts);
 
   let baseline: MeasuredResults | undefined;
   if (baselineFn) {
+    process.stderr.write(
+      `Running baseline benchmark: ${testName} with standard runner\n`,
+    );
     baseline = await mitataBench(baselineFn, "--> baseline", opts);
   }
 
   return { current, baseline };
 }
 
-/** run the the first selected benchmark, once, without any data collection.
- * useful for attaching the profiler, or for continuous integration */
-function benchOnceOnly(tests: BenchTest[]): Promise<any> {
-  return link({
-    weslSrc: Object.fromEntries(tests[0].files.entries()),
-    rootModuleName: tests[0].mainFile,
-  });
+/** Run profile mode - execute first benchmark once without data collection
+ * Useful for attaching the profiler or for continuous integration */
+async function runProfileMode(tests: BenchTest<any>[]): Promise<void> {
+  if (tests.length === 0) {
+    console.error("No benchmarks to profile");
+    return;
+  }
+
+  const firstTest = tests[0];
+  if (firstTest.benchmarks.length === 0) {
+    console.error("No benchmark specs in first test");
+    return;
+  }
+
+  // Setup test data if needed
+  const params = firstTest.setup ? await firstTest.setup() : {};
+
+  // Run the first benchmark function once
+  const firstBenchmark = firstTest.benchmarks[0];
+  const benchParams = firstBenchmark.params ?? params;
+
+  console.log(`Profiling: ${firstBenchmark.name}`);
+  firstBenchmark.fn(benchParams);
 }
 
-/** run the tests and report results */
-async function benchAndReport(
-  tests: BenchTest[],
-  opts: MeasureOptions,
-  variants: ParserVariant[],
-  useBaseline: boolean,
-): Promise<void> {
-  const allReports: BenchmarkReport[] = [];
-
-  for (const variant of variants) {
-    const variantFunctions = await createVariantFunction(variant, useBaseline);
-
-    for (const test of tests) {
-      const weslSrc = Object.fromEntries(test.files.entries());
-      const rootModuleName = test.mainFile;
-
-      // Use baseline from variant functions if available
-      const baselineFn = variantFunctions.baseline;
-
-      // Prefix test name with variant if it's not the default
-      const testName =
-        variant === "link" ? test.name : `(${variant}) ${test.name}`;
-
-      const { current, baseline } = await runBenchmarkPair(
-        () => variantFunctions.current({ weslSrc, rootModuleName }),
-        testName,
-        opts,
-        baselineFn && (() => baselineFn({ weslSrc, rootModuleName })),
-      );
-
-      allReports.push({ benchTest: test, mainResult: current, baseline });
-    }
-  }
-
-  reportResults(allReports, { cpu: opts.cpuCounters });
-}
-
-/** select which tests to run */
-function filterBenchmarks(tests: BenchTest[], pattern?: string): BenchTest[] {
-  if (!pattern) return tests;
-  let regex: RegExp;
-  try {
-    regex = new RegExp(pattern, "i");
-  } catch {
-    // fallback to substring match if invalid regex
-    regex = new RegExp(pattern.replace(/[.*+?^${}()|[[\\]/g, "\\$&"), "i");
-  }
-  const filtered = tests.filter(test => regex.test(test.name));
-  if (filtered.length === 0) {
-    console.error(`No benchmarks matched pattern: ${pattern}`);
-    process.exit(1);
-  }
-  return filtered;
+/** Get test name with variant prefix if needed */
+export function getTestName(variant: ParserVariant, testName: string): string {
+  return variant === "link" ? testName : `(${variant}) ${testName}`;
 }

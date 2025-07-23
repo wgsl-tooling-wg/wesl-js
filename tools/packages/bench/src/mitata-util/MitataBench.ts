@@ -8,7 +8,6 @@ import {
 } from "./MitataStats.ts";
 
 export type MeasureResult = Awaited<ReturnType<typeof measure>>;
-const maxGcRecords = 1000;
 
 /** Load mitataCounters dynamically if cpuCounters is enabled, otherwise return undefined */
 async function loadMitataCounters(
@@ -77,7 +76,7 @@ async function measureWithObserveGC(
     return { nodeGcTime: undefined, stats: await measure(fn, measureOptions) };
   }
 
-  const gcRecords = Array<PerformanceEntry>(maxGcRecords).fill(null as any);
+  const gcRecords: PerformanceEntry[] = [];
   let numGC = 0;
   const obs = new PerformanceObserver(items => {
     for (const item of items.getEntries()) {
@@ -118,7 +117,7 @@ async function clearGarbage(): Promise<void> {
 
   // mysteriously, calling gc() multiple times with a wait in between seems to help on v8
   gc();
-  await wait(1000); // mysteriously, 800 is not enough. try pnpm bench --simple someAllocation and look at heap kb
+  await wait(1000); // milliseconds, wait after GC. mysteriously, 800 is not enough. try pnpm bench --simple someAllocation and look at heap kb
   gc();
   await wait();
 }

@@ -1,7 +1,7 @@
-import * as simpleTests from "../src/experiments/SimpleTests.ts";
-import { loadBenchmarkFiles } from "../src/LoadBenchmarks.ts";
+import { loadWeslFiles } from "./LoadWeslFiles.ts";
+import * as simpleTests from "./SimpleTests.ts";
 
-export interface SimpleTest {
+interface SimpleTest {
   fn: (weslSrc: Record<string, string>) => any;
   name: string;
 }
@@ -28,7 +28,7 @@ export function loadSimpleTest(simpleSelect: string | undefined): SimpleTest {
 }
 
 export async function loadSimpleFiles(): Promise<Record<string, string>> {
-  const loadedTests = await loadBenchmarkFiles();
+  const loadedTests = await loadWeslFiles();
   const weslSrc = Object.fromEntries(
     loadedTests.flatMap(t => Array.from(t.files.entries())),
   );

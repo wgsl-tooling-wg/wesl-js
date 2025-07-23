@@ -1,7 +1,8 @@
 import path from "node:path";
+import type { ParsedRegistry } from "wesl";
 import { link, parsedRegistry, parseIntoRegistry, WeslStream } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
-import { baselineDir } from "../bin/bench.ts";
+import { baselineDir } from "./WeslBenchmarks.ts";
 
 export type ParserVariant =
   | "link"
@@ -13,19 +14,26 @@ export type ParserVariant =
 type BenchFunction = (params: {
   weslSrc: Record<string, string>;
   rootModuleName: string;
-}) => any;
+}) => unknown;
 
 type FnAndBaseline = {
   current: BenchFunction;
   baseline?: BenchFunction;
 };
 
+interface BaselineImports {
+  link?: typeof link;
+  parseIntoRegistry?: typeof parseIntoRegistry;
+  parsedRegistry?: typeof parsedRegistry;
+  WeslStream?: typeof WeslStream;
+}
+
 /** create benchmark functions based on the selected variant */
 export async function createVariantFunction(
   variant: ParserVariant,
   useBaseline: boolean,
 ): Promise<FnAndBaseline> {
-  let baselineImports: any;
+  let baselineImports: BaselineImports | undefined;
 
   if (useBaseline) {
     // Try to load baseline functions
@@ -51,7 +59,6 @@ export async function createVariantFunction(
       return wgslReflectFns();
 
     case "use-gpu":
-      // TODO: implement use-gpu variant
       throw new Error("use-gpu variant not yet implemented");
 
     default:
@@ -60,8 +67,8 @@ export async function createVariantFunction(
 }
 
 /** return benchmark functions for "parse" variant  */
-function parseFns(baselineImports: any): FnAndBaseline {
-  function current(args: { weslSrc: Record<string, string> }): any {
+function parseFns(baselineImports: BaselineImports | undefined): FnAndBaseline {
+  function current(args: { weslSrc: Record<string, string> }): ParsedRegistry {
     const registry = parsedRegistry();
     parseIntoRegistry(args.weslSrc, registry, "package");
     return registry;
@@ -82,7 +89,9 @@ function parseFns(baselineImports: any): FnAndBaseline {
 }
 
 /** return benchmark functions for "tokenize" variant  */
-function tokenizeFns(baselineImports: any): FnAndBaseline {
+function tokenizeFns(
+  baselineImports: BaselineImports | undefined,
+): FnAndBaseline {
   let baseline: BenchFunction | undefined;
   if (baselineImports?.WeslStream) {
     baseline = makeTokenize(baselineImports.WeslStream);

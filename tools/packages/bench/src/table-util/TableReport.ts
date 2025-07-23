@@ -21,14 +21,14 @@ export interface ColumnGroup<T> {
 type AnyColumn<T> = Column<T> | DiffColumn<T>;
 
 /** a column of data in the table, with optional metadata  for formatting */
-export interface Column<T> extends ColumnFormat<T> {
-  formatter?: (value: any) => string | null;
+interface Column<T> extends ColumnFormat<T> {
+  formatter?: (value: unknown) => string | null;
   diffKey?: undefined;
 }
 
 /** a difference column in the table that compares */
-export interface DiffColumn<T> extends ColumnFormat<T> {
-  diffFormatter?: (value: any, baseline: any) => string | null;
+interface DiffColumn<T> extends ColumnFormat<T> {
+  diffFormatter?: (value: unknown, baseline: unknown) => string | null;
   formatter?: undefined;
 
   /** if set, this column holds a synthesized comparison value
