@@ -1,4 +1,3 @@
-import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import type { BenchTest } from "../src/Benchmark.ts";
 import { type BenchmarkReport, reportResults } from "../src/BenchmarkReport.ts";
@@ -24,6 +23,7 @@ import {
   workerBenchAndReport,
   workerBenchSimple,
 } from "../src/wesl/WeslWorkerBench.ts";
+import { cliArgs } from "../src/wesl/CliArgs.ts";
 
 /** Options specific to each runner implementation */
 interface RunnerSpecificOptions {
@@ -40,14 +40,6 @@ interface BenchmarkPairResult {
   current: MeasuredResults;
   baseline?: MeasuredResults;
 }
-
-/** Default benchmark settings */
-const defaultSettings = {
-  benchmarkTime: 0.642, // seconds, chosen for statistical significance
-  cpuCounters: false,
-  observeGc: true,
-  forceGc: false,
-} as const;
 
 /** Default benchmark runner options */
 const defaultRunnerOptions = {
@@ -69,10 +61,10 @@ export const baselineDir = "../../../../../_baseline";
 const rawArgs = hideBin(process.argv);
 main(rawArgs);
 
-type CliArgs = ReturnType<typeof parseArgs>;
+type CliArgs = ReturnType<typeof cliArgs>;
 
 async function main(args: string[]): Promise<void> {
-  const argv = parseArgs(args);
+  const argv = cliArgs(args);
 
   // Validate that only one benchmark mode is selected (worker can be combined)
   const benchModes = ["mitata", "tinybench", "manual"].filter(
@@ -94,87 +86,6 @@ async function main(args: string[]): Promise<void> {
   }
 }
 
-function parseArgs(args: string[]) {
-  return yargs(args)
-    .option("variant", {
-      choices: [
-        "link",
-        "parse",
-        "tokenize",
-        "wgsl_reflect",
-        "use-gpu",
-      ] as const,
-      default: ["link"] as const,
-      describe: "select parser variant(s) to test (can be repeated)",
-      array: true,
-    })
-    .option("baseline", {
-      type: "boolean",
-      default: true,
-      describe: "run baseline comparison using _baseline directory",
-    })
-    .option("time", {
-      type: "number",
-      default: defaultSettings.benchmarkTime,
-      requiresArg: true,
-      describe: "benchmark test duration in seconds",
-    })
-    .option("cpu", {
-      type: "boolean",
-      default: defaultSettings.cpuCounters,
-      describe: "enable CPU counter measurements (requires root)",
-    })
-    .option("collect", {
-      type: "boolean",
-      default: defaultSettings.forceGc,
-      describe: "force a garbage collection after each test",
-    })
-    .option("observe-gc", {
-      type: "boolean",
-      default: defaultSettings.observeGc,
-      describe: "observe garbage collection via perf_hooks",
-    })
-    .option("profile", {
-      type: "boolean",
-      default: false,
-      describe: "run once, for attaching a profiler",
-    })
-    .option("manual", {
-      type: "boolean",
-      default: false,
-      describe: "run using manual profiler",
-    })
-    .option("mitata", {
-      type: "boolean",
-      default: false,
-      describe: "run using vanilla mitata profiler",
-    })
-    .option("tinybench", {
-      type: "boolean",
-      default: false,
-      describe: "run using tinybench library",
-    })
-    .option("filter", {
-      type: "string",
-      requiresArg: true,
-      describe:
-        "run only benchmarks matching this regex or substring (case-insensitive)",
-    })
-    .option("simple", {
-      type: "string",
-      requiresArg: true,
-      describe:
-        "benchmark a simple function, selected from SimpleTests.ts by prefix",
-    })
-    .option("worker", {
-      type: "boolean",
-      default: false,
-      describe: "run benchmarks in a worker thread for better isolation",
-    })
-    .help()
-    .strict()
-    .parseSync();
-}
 
 /** create benchmark options from CLI arguments */
 function createBenchmarkOptions(argv: CliArgs): MeasureOptions {

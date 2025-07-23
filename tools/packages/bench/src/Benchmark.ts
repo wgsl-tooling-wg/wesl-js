@@ -18,7 +18,6 @@ export interface BenchmarkSpec<T = unknown> {
   baseline?: {
     /** Baseline function to compare against */
     fn: BenchmarkFunction<T>;
-    // No separate params - uses same params as main function
   };
 }
 
