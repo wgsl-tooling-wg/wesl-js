@@ -34,6 +34,8 @@ export interface LogOptions {
   cpu?: boolean;
 }
 
+// Exports at the top
+
 export function reportResults(
   reports: BenchmarkReport[],
   opts: LogOptions,
@@ -41,6 +43,8 @@ export function reportResults(
   const rows = reportsToRows(reports);
   logTable(rows, tableConfig(opts.cpu));
 }
+
+// Intermediate types and functions
 
 interface SelectedStats {
   name: string;
@@ -88,26 +92,8 @@ interface ReportRows {
   baselineRecords: FullReportRow[];
 }
 
-// Private wrapper functions to handle unknown types
-function percent(value: unknown): string | null {
-  return typeof value === "number" ? percentImpl(value) : null;
-}
-
-function percentPrecision(precision: number) {
-  return (value: unknown): string | null =>
-    typeof value === "number" ? percentPrecisionImpl(precision)(value) : null;
-}
-
-function integer(value: unknown): string | null {
-  return typeof value === "number" ? integerImpl(value) : null;
-}
-
-function floatPrecision(precision: number) {
-  return (value: unknown): string | null =>
-    typeof value === "number" ? floatPrecisionImpl(precision)(value) : null;
-}
-
 // Private intermediate functions
+
 function groupResultsByType(results: SimpleBenchResult[]): {
   standard: SimpleBenchResult[];
   tinybench: SimpleBenchResult[];
@@ -151,52 +137,52 @@ function createBenchmarkReports(
 }
 
 function reportsToRows(reports: BenchmarkReport[]): ReportRows {
-  const mainRecords = reports.map(r => {
-    const s = selectedStats(r.mainResult, r);
-    return mostlyFullRow(s);
-  });
+  const mainRecords: FullReportRow[] = [];
+  const baselineRecords: FullReportRow[] = [];
 
-  const baselineRecords = reports.map(r => {
-    if (!r.baseline) {
-      return mapValues(mainRecords[0], () => null);
+  for (const report of reports) {
+    const stats = makeStatsRow(report.name, report.mainResult, report.metadata);
+    mainRecords.push(mostlyFullRow(stats));
+
+    if (report.baseline) {
+      const bStats = makeStatsRow(
+        report.name,
+        report.baseline,
+        report.metadata,
+      );
+      baselineRecords.push(mostlyFullRow(bStats));
     }
-    const s = selectedStats(r.baseline, r);
-    return mostlyFullRow(s);
-  });
+  }
 
   return { mainRecords, baselineRecords };
 }
 
-function logTable(
-  rows: ReportRows,
-  config: ColumnGroup<FullReportRow>[],
-): void {
-  const hasBaseline = rows.baselineRecords.some(r => r.name !== null);
-  const tableStr = hasBaseline
-    ? buildTable(config, rows.mainRecords, rows.baselineRecords)
-    : buildTable(config, rows.mainRecords);
-
-  console.log(tableStr);
+function logTable(rows: ReportRows, columns: ColumnGroup<FullReportRow>[]): void {
+  const { mainRecords, baselineRecords } = rows;
+  const { text, lines } = buildTable(columns, mainRecords, baselineRecords);
+  lines.forEach(line => console.log(line));
 }
 
-function selectedStats(
+function makeStatsRow(
+  name: string,
   results: MeasuredResults,
-  report: BenchmarkReport,
+  metadata?: Record<string, any>,
 ): SelectedStats {
-  const name =
-    results.name.length > maxNameLength
-      ? results.name.slice(0, maxNameLength - 3) + "..."
-      : results.name;
-  const lines = report.metadata?.linesOfCode || 0;
-  const kOps = results.time ? 1 / results.time.avg : undefined;
+  // Use metadata to determine ops/sec
+  const kOps = results.opsPerSec ? results.opsPerSec / 1000 : undefined;
 
-  // Calculate lines per second
-  const locSecP50 = results.time?.p50
-    ? lines / (results.time.p50 / 1000)
-    : undefined;
-  const locSecMax = results.time?.min
-    ? lines / (results.time.min / 1000)
-    : undefined; // min time = max throughput
+  // Use metadata for lines info
+  const lines = metadata?.lines;
+
+  // Calculate lines per second if both metrics are available
+  let locSecP50: number | undefined;
+  let locSecMax: number | undefined;
+  if (lines && results.time?.p50) {
+    locSecP50 = lines / (results.time.p50 / 1e3); // p50 is in ms
+  }
+  if (lines && results.time?.max) {
+    locSecMax = lines / (results.time.max / 1e3); // max is in ms
+  }
 
   // Calculate average GC time per run
   let gcTime: number | undefined;
@@ -359,7 +345,8 @@ function tableConfig(cpu?: boolean): ColumnGroup<FullReportRow>[] {
   return columns;
 }
 
-// Low-level utility functions
+// Low-level utility functions at the bottom
+
 /** Convert simple results to MeasuredResults for unified display */
 function simpleBenchResultToMeasured(
   result: SimpleBenchResult,
@@ -378,4 +365,23 @@ function simpleBenchResultToMeasured(
       p999: result.meanMs,
     },
   };
+}
+
+// Private wrapper functions to handle unknown types
+function percent(value: unknown): string | null {
+  return typeof value === "number" ? percentImpl(value) : null;
+}
+
+function percentPrecision(precision: number) {
+  return (value: unknown): string | null =>
+    typeof value === "number" ? percentPrecisionImpl(precision)(value) : null;
+}
+
+function integer(value: unknown): string | null {
+  return typeof value === "number" ? integerImpl(value) : null;
+}
+
+function floatPrecision(precision: number) {
+  return (value: unknown): string | null =>
+    typeof value === "number" ? floatPrecisionImpl(precision)(value) : null;
 }

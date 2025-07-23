@@ -5,51 +5,7 @@ import type { RunnerOptions } from "./runners/RunnerUtils.ts";
 import type { WorkerMessage, WorkerResult } from "./WorkerBench.ts";
 import { formatError } from "./BenchmarkErrors.ts";
 
-/** Create worker with proper configuration */
-function createWorker(workerScript: string): Worker {
-  return new Worker(workerScript, {
-    stdout: true,
-    stderr: true,
-  });
-}
-
-/** Setup stdout/stderr forwarding */
-function setupWorkerStreams(worker: Worker): void {
-  if (worker.stdout) {
-    worker.stdout.on("data", data => {
-      process.stdout.write(data);
-    });
-  }
-
-  if (worker.stderr) {
-    worker.stderr.on("data", data => {
-      process.stderr.write(data);
-    });
-  }
-}
-
-/** Setup worker event handlers */
-function setupWorkerHandlers(
-  worker: Worker,
-  resolve: (result: WorkerResult) => void,
-  reject: (error: Error) => void,
-): void {
-  worker.on("message", (result: WorkerResult) => {
-    worker.terminate();
-    resolve(result);
-  });
-
-  worker.on("error", error => {
-    worker.terminate();
-    reject(error);
-  });
-
-  worker.on("exit", code => {
-    if (code !== 0) {
-      reject(new Error(`Worker stopped with exit code ${code}`));
-    }
-  });
-}
+// Exports at the top
 
 /** Execute a message in a worker thread */
 export async function runInWorker<T>(
@@ -78,15 +34,6 @@ export async function runBenchmarkInWorkerThread(
   }
 
   return result.measured;
-}
-
-/** Benchmark runner configuration */
-export interface BenchmarkRunConfig {
-  name: string;
-  opts: MeasureOptions;
-  runner: WorkerMessage["runner"];
-  runnerOpts?: RunnerOptions;
-  isBaseline: boolean;
 }
 
 /** Create a unified message creator */
@@ -147,4 +94,61 @@ export function reconstructFunction<T = unknown>(
   } catch (error) {
     throw new Error(`Failed to reconstruct function: ${formatError(error)}`);
   }
+}
+
+/** Benchmark runner configuration */
+export interface BenchmarkRunConfig {
+  name: string;
+  opts: MeasureOptions;
+  runner: WorkerMessage["runner"];
+  runnerOpts?: RunnerOptions;
+  isBaseline: boolean;
+}
+
+// Private utilities at the bottom
+
+/** Create worker with proper configuration */
+function createWorker(workerScript: string): Worker {
+  return new Worker(workerScript, {
+    stdout: true,
+    stderr: true,
+  });
+}
+
+/** Setup stdout/stderr forwarding */
+function setupWorkerStreams(worker: Worker): void {
+  if (worker.stdout) {
+    worker.stdout.on("data", data => {
+      process.stdout.write(data);
+    });
+  }
+
+  if (worker.stderr) {
+    worker.stderr.on("data", data => {
+      process.stderr.write(data);
+    });
+  }
+}
+
+/** Setup worker event handlers */
+function setupWorkerHandlers(
+  worker: Worker,
+  resolve: (result: WorkerResult) => void,
+  reject: (error: Error) => void,
+): void {
+  worker.on("message", (result: WorkerResult) => {
+    worker.terminate();
+    resolve(result);
+  });
+
+  worker.on("error", error => {
+    worker.terminate();
+    reject(error);
+  });
+
+  worker.on("exit", code => {
+    if (code !== 0) {
+      reject(new Error(`Worker stopped with exit code ${code}`));
+    }
+  });
 }
