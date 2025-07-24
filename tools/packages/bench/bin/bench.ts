@@ -27,7 +27,6 @@ async function main(args: string[]): Promise<void> {
   const config = createWeslConfig(argv);
   const tests = await loadWeslTests(config);
 
-  // Run benchmarks based on mode
   if (config.mode === "profile") {
     await runProfileMode(tests);
   } else {
