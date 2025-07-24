@@ -1,6 +1,6 @@
 import type { BenchmarkReport as GenericReport } from "../BenchmarkReport.ts";
 import type { BenchmarkReport } from "../RunBenchmark.ts";
-import type { BenchTest as WeslBenchTest } from "./WeslBenchmarks.ts";
+import { calculateLinesOfCode } from "./LinesOfCode.ts";
 
 /**
  * Convert generic reports to WESL format for reporting
@@ -16,7 +16,7 @@ export function convertToWeslReports<T>(
       const linesOfCode =
         report.test.metadata?.linesOfCode ||
         (report.test.metadata?.weslBenchTest
-          ? calculateLinesFromWeslTest(report.test.metadata.weslBenchTest)
+          ? calculateLinesOfCode(report.test.metadata.weslBenchTest)
           : 0);
 
       weslReports.push({
@@ -34,8 +34,3 @@ export function convertToWeslReports<T>(
   return weslReports;
 }
 
-function calculateLinesFromWeslTest(benchTest: WeslBenchTest): number {
-  return [...benchTest.files.values()]
-    .map(code => code.split("\n").length)
-    .reduce((a, b) => a + b, 0);
-}

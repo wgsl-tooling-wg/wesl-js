@@ -1,5 +1,6 @@
 import type { BenchConfig } from "../BenchConfig.ts";
 import type { BenchmarkSpec, BenchTest } from "../Benchmark.ts";
+import { calculateLinesOfCodeFromFiles } from "./LinesOfCode.ts";
 import { loadSimpleFiles, loadSimpleTest } from "./LoadSimpleTest.ts";
 import type { BenchTest as WeslBenchTest } from "./WeslBenchmarks.ts";
 import { setupWeslBenchmarks } from "./WeslBenchmarks.ts";
@@ -63,15 +64,10 @@ async function loadSimpleBenchTests(
     benchmarks: [benchmarkSpec],
     metadata: {
       weslBenchTest,
-      linesOfCode: calculateLinesOfCode(weslSrc),
+      linesOfCode: calculateLinesOfCodeFromFiles(weslSrc),
     },
   };
 
   return [benchTest];
 }
 
-function calculateLinesOfCode(weslSrc: Record<string, string>): number {
-  return Object.values(weslSrc)
-    .map(code => code.split("\n").length)
-    .reduce((a, b) => a + b, 0);
-}

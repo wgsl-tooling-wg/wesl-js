@@ -10,6 +10,7 @@ import {
   runBenchmarkInWorkerThread,
 } from "../WorkerHelpers.ts";
 import type { ParserVariant } from "./BenchVariations.ts";
+import { calculateLinesOfCode, calculateLinesOfCodeFromFiles } from "./LinesOfCode.ts";
 import type { BenchTest as WeslBenchTest } from "./WeslBenchmarks.ts";
 
 /** Run benchmarks in worker threads for better isolation */
@@ -73,7 +74,7 @@ export async function workerBenchSimple(
     metadata: {
       mainFile: "N/A",
       files: weslSrc,
-      linesOfCode: calculateLinesOfCode(weslSrc),
+      linesOfCode: calculateLinesOfCodeFromFiles(weslSrc),
     },
   };
 }
@@ -125,7 +126,7 @@ async function runBenchmarkInWorker(
       baseline,
       metadata: {
         benchTest: test,
-        linesOfCode: calculateLinesOfCodeFromTest(test),
+        linesOfCode: calculateLinesOfCode(test),
       },
     };
   } catch (error) {
@@ -243,17 +244,6 @@ async function runSimpleBenchmark(
   );
 }
 
-function calculateLinesOfCode(weslSrc: Record<string, string>): number {
-  return Object.values(weslSrc)
-    .map(code => code.split("\n").length)
-    .reduce((a, b) => a + b, 0);
-}
-
-function calculateLinesOfCodeFromTest(test: WeslBenchTest): number {
-  return [...test.files.values()]
-    .map(code => code.split("\n").length)
-    .reduce((a, b) => a + b, 0);
-}
 
 function getTestName(variant: string, testName: string): string {
   return variant === "link" ? testName : `(${variant}) ${testName}`;

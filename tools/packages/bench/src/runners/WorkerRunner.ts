@@ -8,8 +8,9 @@ import type { MeasuredResults } from "../mitata-util/MitataStats.ts";
 import type { RunBenchmarkOptions } from "../RunBenchmark.ts";
 import { createWorkerMessage, type WorkerMessage } from "../WorkerBench.ts";
 import { runInWorker } from "../WorkerHelpers.ts";
-import type { BenchTest as WeslBenchTest } from "../wesl/WeslBenchmarks.ts";
 import { createMeasureOptions } from "./RunnerUtils.ts";
+
+export { calculateLinesOfCode } from "../wesl/LinesOfCode.ts";
 
 // Module constants
 const __filename = fileURLToPath(import.meta.url);
@@ -134,9 +135,3 @@ async function runSingleBenchmarkInWorker<T>(
   }
 }
 
-/** Helper to calculate lines of code from BenchTest */
-export function calculateLinesOfCode(benchTest: WeslBenchTest): number {
-  return [...benchTest.files.values()]
-    .map(code => code.split("\n").length)
-    .reduce((a, b) => a + b, 0);
-}

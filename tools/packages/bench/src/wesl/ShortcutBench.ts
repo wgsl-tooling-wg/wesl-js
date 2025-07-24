@@ -6,6 +6,7 @@ import type { MeasuredResults } from "../mitata-util/MitataStats.ts";
 import { runBenchmarks } from "../RunBenchmark.ts";
 import type { WorkerMessage } from "../WorkerBench.ts";
 import { runBenchmarkInWorkerThread } from "../WorkerHelpers.ts";
+import { calculateLinesOfCode } from "./LinesOfCode.ts";
 import type { BenchTest as WeslBenchTest } from "./WeslBenchmarks.ts";
 
 /** Simplified benchmark runner that supports only standard mode */
@@ -55,7 +56,7 @@ function convertShortcutReports(reports: any[]): BenchmarkReport[] {
       const linesOfCode =
         report.test.metadata?.linesOfCode ||
         (report.test.metadata?.weslBenchTest
-          ? calculateLinesOfCodeFromTest(report.test.metadata.weslBenchTest)
+          ? calculateLinesOfCode(report.test.metadata.weslBenchTest)
           : 0);
 
       return {
@@ -71,11 +72,6 @@ function convertShortcutReports(reports: any[]): BenchmarkReport[] {
   );
 }
 
-function calculateLinesOfCodeFromTest(benchTest: WeslBenchTest): number {
-  return [...benchTest.files.values()]
-    .map(code => code.split("\n").length)
-    .reduce((a, b) => a + b, 0);
-}
 
 /** Run benchmarks in worker threads */
 async function runShortcutWorkerBenchmarks(
@@ -174,8 +170,3 @@ async function runWorkerBenchmark(
   }
 }
 
-function calculateLinesOfCode(test: WeslBenchTest): number {
-  return [...test.files.values()]
-    .map(code => code.split("\n").length)
-    .reduce((a, b) => a + b, 0);
-}
