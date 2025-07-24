@@ -1,8 +1,3 @@
-// TODO: Move getTestName to a shared utility module
-function getTestName(variant: string, testName: string): string {
-  return variant === "link" ? testName : `(${variant}) ${testName}`;
-}
-
 import { handleWorkerError } from "../BenchmarkErrors.ts";
 import type { BenchmarkReport } from "../BenchmarkReport.ts";
 import type { MeasureOptions } from "../mitata-util/MitataBench.ts";
@@ -258,4 +253,8 @@ function calculateLinesOfCodeFromTest(test: WeslBenchTest): number {
   return [...test.files.values()]
     .map(code => code.split("\n").length)
     .reduce((a, b) => a + b, 0);
+}
+
+function getTestName(variant: string, testName: string): string {
+  return variant === "link" ? testName : `(${variant}) ${testName}`;
 }
