@@ -7,7 +7,7 @@ import { cliArgs } from "../src/wesl/CliArgs.ts";
 import { handleWeslWorkerBenchmarks } from "../src/wesl/WeslBenchmarkRunner.ts";
 import { createWeslConfig } from "../src/wesl/WeslConfig.ts";
 import { convertToWeslReports } from "../src/wesl/WeslReportConverter.ts";
-import { WeslTestLoader } from "../src/wesl/WeslTestLoader.ts";
+import { loadWeslTests } from "../src/wesl/WeslTestLoader.ts";
 
 // Entry point
 const rawArgs = hideBin(process.argv);
@@ -15,7 +15,7 @@ main(rawArgs);
 
 async function main(args: string[]): Promise<void> {
   const argv = cliArgs(args);
-  
+
   // Validate that only one benchmark mode is selected
   const benchModes = ["mitata", "tinybench", "manual"].filter(
     mode => argv[mode],
@@ -24,16 +24,15 @@ async function main(args: string[]): Promise<void> {
     console.error(`Cannot use --${benchModes.join(" and --")} together`);
     process.exit(1);
   }
-  
+
   // Create WESL-specific configuration
   const config = createWeslConfig(argv);
-  
+
   // Load tests using WESL test loader
-  const testLoader = new WeslTestLoader();
-  const tests = await testLoader.loadTests(config);
-  
+  const tests = await loadWeslTests(config);
+
   // Run benchmarks based on mode
-  if (config.mode === 'profile') {
+  if (config.mode === "profile") {
     await runProfileMode(tests);
   } else {
     const results = await runBenchmarks(tests, config, {
