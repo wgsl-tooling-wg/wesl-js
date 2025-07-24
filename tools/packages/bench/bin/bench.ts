@@ -14,7 +14,7 @@ main(rawArgs);
 
 async function main(args: string[]): Promise<void> {
   const argv = cliArgs(args);
-  
+
   // Validate that only one benchmark mode is selected
   const benchModes = ["mitata", "tinybench", "manual"].filter(
     mode => argv[mode],
@@ -23,12 +23,12 @@ async function main(args: string[]): Promise<void> {
     console.error(`Cannot use --${benchModes.join(" and --")} together`);
     process.exit(1);
   }
-  
+
   const config = createWeslConfig(argv);
   const tests = await loadWeslTests(config);
-  
+
   // Run benchmarks based on mode
-  if (config.mode === 'profile') {
+  if (config.mode === "profile") {
     await runProfileMode(tests);
   } else {
     const results = await runBenchmarks(tests, config, {

@@ -2,16 +2,19 @@
  * Unified benchmark runner that handles both worker and standard modes
  */
 
+import type { BenchConfig } from "./BenchConfig.ts";
 import type { BenchTest } from "./Benchmark.ts";
 import type { BenchmarkReport } from "./BenchmarkReport.ts";
-import type { BenchConfig } from "./BenchConfig.ts";
 import type { MeasureOptions } from "./mitata-util/MitataBench.ts";
-import { runBenchmarks as runStandardBenchmarks, type RunBenchmarkOptions } from "./RunBenchmark.ts";
+import {
+  type RunBenchmarkOptions,
+  runBenchmarks as runStandardBenchmarks,
+} from "./RunBenchmark.ts";
 
 /** Function to handle worker mode benchmarks */
 export type WorkerBenchmarkHandler = (
-  tests: BenchTest<any>[], 
-  config: BenchConfig
+  tests: BenchTest<any>[],
+  config: BenchConfig,
 ) => Promise<BenchmarkReport[]>;
 
 /** Function to convert benchmark results to reports */
@@ -31,7 +34,7 @@ export async function runBenchmarks(
   config: BenchConfig,
   options: UnifiedRunnerOptions = {},
 ): Promise<BenchmarkReport[]> {
-  if (config.mode === 'worker') {
+  if (config.mode === "worker") {
     if (!options.workerHandler) {
       throw new Error("Worker handler required for worker mode");
     }
@@ -60,14 +63,14 @@ async function runStandardBenchmarksUnified(
     cpuCounters: config.showCpu,
     observeGc: config.observeGc,
   };
-  
+
   const results = await runStandardBenchmarks(tests, options);
-  
+
   // Use provided converter or return results as-is
   if (reportConverter) {
     return reportConverter(results);
   }
-  
+
   // Default: treat results as BenchmarkReport[]
   return results as unknown as BenchmarkReport[];
 }

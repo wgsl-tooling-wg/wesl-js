@@ -1,11 +1,14 @@
+import type { BenchConfig } from "../BenchConfig.ts";
 import type { BenchTest } from "../Benchmark.ts";
 import type { BenchmarkReport } from "../BenchmarkReport.ts";
-import type { BenchConfig } from "../BenchConfig.ts";
-import { createMeasureOptions, extractRunnerOptions } from "../RunBenchmarkUnified.ts";
+import {
+  createMeasureOptions,
+  extractRunnerOptions,
+} from "../RunBenchmarkUnified.ts";
 import { vanillaMitataBatch } from "../runners/VanillaMitataBatch.ts";
+import type { ParserVariant } from "./BenchVariations.ts";
 import { convertToWeslReports } from "./WeslReportConverter.ts";
 import { workerBenchAndReport } from "./WeslWorkerBench.ts";
-import type { ParserVariant } from "./BenchVariations.ts";
 
 /** Handle WESL worker mode benchmarks */
 export async function handleWeslWorkerBenchmarks(
@@ -14,7 +17,7 @@ export async function handleWeslWorkerBenchmarks(
 ): Promise<BenchmarkReport[]> {
   const reports: BenchmarkReport[] = [];
   const opts = createMeasureOptions(config);
-  
+
   for (const test of tests) {
     // Get the original BenchTest if available (for WESL benchmarks)
     const benchTest = test.metadata?.weslBenchTest;
@@ -24,7 +27,7 @@ export async function handleWeslWorkerBenchmarks(
       );
       continue;
     }
-    
+
     // Extract variants from benchmark names
     const variants = new Set<string>();
     for (const benchmark of test.benchmarks) {
@@ -33,7 +36,7 @@ export async function handleWeslWorkerBenchmarks(
         variants.add(match[1]);
       }
     }
-    
+
     if (config.runner === "vanilla-mitata") {
       // Use vanilla mitata batch mode
       const batchReports = await vanillaMitataBatch([test], {
@@ -41,7 +44,7 @@ export async function handleWeslWorkerBenchmarks(
         time: config.time,
         useBaseline: config.useBaseline,
       });
-      
+
       // Convert reports to WESL format
       const converted = convertToWeslReports(batchReports);
       reports.push(...converted);
@@ -58,6 +61,6 @@ export async function handleWeslWorkerBenchmarks(
       reports.push(...workerReports);
     }
   }
-  
+
   return reports;
 }

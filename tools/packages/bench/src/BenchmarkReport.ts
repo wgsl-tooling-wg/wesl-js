@@ -9,18 +9,6 @@ import { buildTable, type ColumnGroup } from "./table-util/TableReport.ts";
 
 const maxNameLength = 30;
 
-/** Simple benchmark result for unified display */
-interface SimpleBenchResult {
-  name: string;
-  opsPerSec: number;
-  meanMs: number;
-  minMs: number;
-  maxMs: number;
-  samples: number;
-  rme?: number; // relative margin of error percentage
-  p50?: number; // median latency
-}
-
 /** Generic benchmark report */
 export interface BenchmarkReport {
   name: string;

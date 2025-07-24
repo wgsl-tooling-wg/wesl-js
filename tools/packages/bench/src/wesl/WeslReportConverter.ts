@@ -2,13 +2,6 @@ import type { BenchmarkReport as GenericReport } from "../BenchmarkReport.ts";
 import type { BenchmarkReport } from "../RunBenchmark.ts";
 import type { BenchTest as WeslBenchTest } from "./WeslBenchmarks.ts";
 
-/** WESL-specific benchmark report */
-interface WeslBenchmarkReport {
-  benchTest: WeslBenchTest;
-  mainResult: any; // MeasuredResults
-  baseline?: any; // MeasuredResults
-}
-
 /**
  * Convert generic reports to WESL format for reporting
  */
