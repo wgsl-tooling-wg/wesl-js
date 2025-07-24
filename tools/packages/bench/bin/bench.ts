@@ -4,6 +4,7 @@ import { reportResults } from "../src/BenchmarkReport.ts";
 import { runProfileMode } from "../src/ProfileMode.ts";
 import { runBenchmarks } from "../src/RunBenchmark.ts";
 import { cliArgs } from "../src/wesl/CliArgs.ts";
+import { shortcutBench } from "../src/wesl/ShortcutBench.ts";
 import { handleWeslWorkerBenchmarks } from "../src/wesl/WeslBenchmarkRunner.ts";
 import { createWeslConfig } from "../src/wesl/WeslConfig.ts";
 import { convertToWeslReports } from "../src/wesl/WeslReportConverter.ts";
@@ -26,6 +27,13 @@ async function main(args: string[]): Promise<void> {
 
   const config = createWeslConfig(argv);
   const tests = await loadWeslTests(config);
+
+  // Handle shortcut mode
+  if (argv.shortcut) {
+    const results = await shortcutBench(tests, config);
+    reportResults(results, { cpu: config.showCpu });
+    return;
+  }
 
   if (config.mode === "profile") {
     await runProfileMode(tests);

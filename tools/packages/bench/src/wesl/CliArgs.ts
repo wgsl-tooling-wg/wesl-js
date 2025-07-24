@@ -87,6 +87,11 @@ export function cliArgs(args: string[]) {
       default: false,
       describe: "run benchmarks in a worker thread for better isolation",
     })
+    .option("shortcut", {
+      type: "boolean",
+      default: false,
+      describe: "use simplified benchmark runner",
+    })
     .help()
     .strict()
     .parseSync();
