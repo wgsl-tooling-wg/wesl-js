@@ -1,11 +1,11 @@
 import type { BenchConfig } from "../BenchConfig.ts";
 import type { BenchTest } from "../Benchmark.ts";
 import type { BenchmarkReport } from "../BenchmarkReport.ts";
-import { runBenchmarks } from "../RunBenchmark.ts";
 import type { MeasureOptions } from "../mitata-util/MitataBench.ts";
 import type { MeasuredResults } from "../mitata-util/MitataStats.ts";
-import { runBenchmarkInWorkerThread } from "../WorkerHelpers.ts";
+import { runBenchmarks } from "../RunBenchmark.ts";
 import type { WorkerMessage } from "../WorkerBench.ts";
+import { runBenchmarkInWorkerThread } from "../WorkerHelpers.ts";
 import type { BenchTest as WeslBenchTest } from "./WeslBenchmarks.ts";
 
 /** Simplified benchmark runner that supports only standard mode */
@@ -50,13 +50,31 @@ async function runShortcutStandardBenchmarks(
 /** Convert benchmark results to the expected report format */
 function convertShortcutReports(reports: any[]): BenchmarkReport[] {
   return reports.flatMap(report =>
-    report.results.map((result: any) => ({
-      name: `${report.test.name}/${result.spec.name}`,
-      mainResult: result.mainResult,
-      baseline: result.baselineResult,
-      metadata: report.test.metadata,
-    })),
+    report.results.map((result: any) => {
+      // Extract lines of code from metadata if available
+      const linesOfCode =
+        report.test.metadata?.linesOfCode ||
+        (report.test.metadata?.weslBenchTest
+          ? calculateLinesOfCodeFromTest(report.test.metadata.weslBenchTest)
+          : 0);
+
+      return {
+        name: `${report.test.name}/${result.spec.name}`,
+        mainResult: result.mainResult,
+        baseline: result.baselineResult,
+        metadata: {
+          ...report.test.metadata,
+          linesOfCode,
+        },
+      };
+    }),
   );
+}
+
+function calculateLinesOfCodeFromTest(benchTest: WeslBenchTest): number {
+  return [...benchTest.files.values()]
+    .map(code => code.split("\n").length)
+    .reduce((a, b) => a + b, 0);
 }
 
 /** Run benchmarks in worker threads */
