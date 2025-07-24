@@ -45,7 +45,7 @@ async function runStandardBenchmarksUnified(
   config: BenchConfig,
   reportConverter?: ReportConverter,
 ): Promise<BenchmarkReport[]> {
-  // Create options for the runner
+
   const options: RunBenchmarkOptions = {
     runner: config.runner,
     filter: config.filter,
