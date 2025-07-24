@@ -1,14 +1,9 @@
 import type { RunnerType } from "./runners/RunnerFactory.ts";
-import type { ParserVariant } from "./wesl/BenchVariations.ts";
-import type { CliArgs } from "./wesl/CliArgs.ts";
 
 /** Unified configuration for all benchmark operations */
 export interface BenchConfig {
   // Test selection
   filter?: string;
-  variants: ParserVariant[];
-  testSource: 'wesl' | 'simple';
-  simpleTestName?: string;
   
   // Execution mode
   mode: 'standard' | 'worker' | 'profile';
@@ -25,10 +20,13 @@ export interface BenchConfig {
   showCpu: boolean;
   observeGc: boolean;
   collectGc: boolean;
+  
+  // Extension point for specific implementations
+  extension?: unknown;
 }
 
 /** Default benchmark runner options */
-const defaultRunnerOptions = {
+export const defaultRunnerOptions = {
   tinybench: {
     warmupTime: 100,
     warmupRuns: 10,
@@ -41,11 +39,8 @@ const defaultRunnerOptions = {
   "vanilla-mitata": {},
 } as const;
 
-/** Create a unified config from CLI arguments */
-export function createConfig(argv: CliArgs): BenchConfig {
-  // Determine test source
-  const testSource = argv.simple ? 'simple' : 'wesl';
-  
+/** Create base configuration from common CLI arguments */
+export function createBaseConfig(argv: any): Omit<BenchConfig, 'extension'> {
   // Determine execution mode
   let mode: BenchConfig['mode'] = 'standard';
   if (argv.profile) {
@@ -67,15 +62,9 @@ export function createConfig(argv: CliArgs): BenchConfig {
   // Get runner-specific options
   const runnerOpts = defaultRunnerOptions[runner];
   
-  // Validate variants
-  const variants = validateVariants(argv.variant as string[] || []);
-  
   return {
     // Test selection
     filter: argv.filter,
-    variants,
-    testSource,
-    simpleTestName: argv.simple,
     
     // Execution mode
     mode,
@@ -93,22 +82,4 @@ export function createConfig(argv: CliArgs): BenchConfig {
     observeGc: argv.observeGc,
     collectGc: argv.collect,
   };
-}
-
-/** Validate requested variants */
-function validateVariants(variants: string[]): ParserVariant[] {
-  const ALL_VARIANTS: ParserVariant[] = ["link", "parse", "tokenize", "wgsl_reflect"];
-  const DEFAULT_VARIANTS: ParserVariant[] = ["link"];
-  
-  const valid: ParserVariant[] = [];
-  
-  for (const variant of variants) {
-    if (ALL_VARIANTS.includes(variant as ParserVariant)) {
-      valid.push(variant as ParserVariant);
-    } else {
-      console.warn(`Unknown variant: ${variant}`);
-    }
-  }
-  
-  return valid.length > 0 ? valid : DEFAULT_VARIANTS;
 }
