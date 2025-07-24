@@ -1,7 +1,3 @@
-/**
- * Unified benchmark runner that handles both worker and standard modes
- */
-
 import type { BenchConfig } from "./BenchConfig.ts";
 import type { BenchTest } from "./Benchmark.ts";
 import type { BenchmarkReport } from "./BenchmarkReport.ts";
@@ -20,7 +16,6 @@ export type WorkerBenchmarkHandler = (
 /** Function to convert benchmark results to reports */
 export type ReportConverter = (results: any[]) => BenchmarkReport[];
 
-/** Options for configuring the unified benchmark runner */
 export interface UnifiedRunnerOptions {
   /** Handler for worker mode benchmarks */
   workerHandler?: WorkerBenchmarkHandler;
