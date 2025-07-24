@@ -107,6 +107,7 @@ export function filterValidElements<T extends AbstractElem>(
   });
 }
 
+/** @public */
 export interface ConditionalResult {
   valid: boolean;
   nextElseState: boolean;
