@@ -25,6 +25,7 @@ async function loadMitataCounters(
   }
 }
 
+/** options for mitata */
 export type MeasureOptions = Parameters<typeof measure>[1] & {
   $counters?: typeof mitataCountersType; // missing from published types, loaded dynamically
   cpuCounters?: boolean; // default: false
