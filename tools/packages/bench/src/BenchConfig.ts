@@ -21,6 +21,10 @@ export interface BenchConfig {
   observeGc: boolean;
   collectGc: boolean;
 
+  // Handlers - using any to avoid circular dependency
+  workerHandler?: any;
+  reportConverter?: any;
+
   // Extension point for specific implementations
   extension?: unknown;
 }

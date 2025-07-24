@@ -2,7 +2,7 @@
 import { hideBin } from "yargs/helpers";
 import { reportResults } from "../src/BenchmarkReport.ts";
 import { runProfileMode } from "../src/ProfileMode.ts";
-import { runBenchmarks } from "../src/RunBenchmarkUnified.ts";
+import { runBenchmarks } from "../src/RunBenchmark.ts";
 import { cliArgs } from "../src/wesl/CliArgs.ts";
 import { handleWeslWorkerBenchmarks } from "../src/wesl/WeslBenchmarkRunner.ts";
 import { createWeslConfig } from "../src/wesl/WeslConfig.ts";
@@ -30,10 +30,11 @@ async function main(args: string[]): Promise<void> {
   if (config.mode === "profile") {
     await runProfileMode(tests);
   } else {
-    const results = await runBenchmarks(tests, config, {
-      workerHandler: handleWeslWorkerBenchmarks,
-      reportConverter: convertToWeslReports,
-    });
+    // Add handlers to config
+    config.workerHandler = handleWeslWorkerBenchmarks;
+    config.reportConverter = convertToWeslReports;
+    
+    const results = await runBenchmarks(tests, config);
     reportResults(results, { cpu: config.showCpu });
   }
 }

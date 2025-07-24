@@ -4,7 +4,7 @@ import type { BenchmarkReport } from "../BenchmarkReport.ts";
 import {
   createMeasureOptions,
   extractRunnerOptions,
-} from "../RunBenchmarkUnified.ts";
+} from "../RunBenchmark.ts";
 import { vanillaMitataBatch } from "../runners/VanillaMitataBatch.ts";
 import type { ParserVariant } from "./BenchVariations.ts";
 import { convertToWeslReports } from "./WeslReportConverter.ts";
