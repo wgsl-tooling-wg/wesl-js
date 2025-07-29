@@ -1,4 +1,3 @@
-/// <reference types="vitest/config" />
 import { resolve } from "node:path";
 import type { UserConfig } from "vite";
 import dts from "vite-plugin-dts";

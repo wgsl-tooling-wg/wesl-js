@@ -16,6 +16,7 @@ import {
   mitataBench,
 } from "../src/mitata-util/MitataBench.ts";
 import type { MeasuredResults } from "../src/mitata-util/MitataStats.ts";
+import process from "node:process";
 
 export interface BenchTest {
   /** name of the test */

@@ -1,5 +1,4 @@
 import { resolve } from "node:path";
-/// <reference types="vitest/config" />
 import { defineConfig, type LibraryOptions } from "vite";
 import { baseViteConfig } from "./base.vite.config.ts";
 

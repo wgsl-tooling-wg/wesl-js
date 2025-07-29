@@ -28,5 +28,6 @@
     // "noUncheckedIndexedAccess": true // maybe later, some lint to fix first
     "types": []
   },
+  "include": [],
   "exclude": ["**/node_modules", "**/dist"]
 }

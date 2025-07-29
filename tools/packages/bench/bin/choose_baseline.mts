@@ -3,6 +3,7 @@
 import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
+import process from "node:process";
 
 /**
  * a node script get an earlier copy of the repo as a baseline for benchmark comparisons
@@ -25,9 +26,8 @@ import path from "node:path";
 const version = process.argv[2];
 
 if (!version) {
-  const scriptName = process.argv[1]
-    ? process.argv[1].split("/").pop()
-    : "checkout_baseline";
+  const scriptName =
+    process.argv[1] ? process.argv[1].split("/").pop() : "checkout_baseline";
   console.error(`Usage: ${scriptName} <version>`);
   process.exit(1);
 }
