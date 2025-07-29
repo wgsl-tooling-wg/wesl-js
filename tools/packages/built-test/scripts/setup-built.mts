@@ -80,39 +80,16 @@ function updatePackageJson(tempBuiltTest: string, timestamp: string) {
   const packageJsonPath = join(tempBuiltTest, "package.json");
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 
-  setPackedDependency(packageJson, "wesl", timestamp);
-  setPackedDependency(packageJson, "wesl-plugin", timestamp);
+  // Use pnpm overrides instead of modifying dependencies directly
+  if (!packageJson.pnpm) {
+    packageJson.pnpm = {};
+  }
+  packageJson.pnpm.overrides = {
+    wesl: `file:../temp-packages/wesl-${timestamp}.tgz`,
+    "wesl-plugin": `file:../temp-packages/wesl-plugin-${timestamp}.tgz`,
+  };
 
   writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-}
-
-function setPackedDependency(
-  packageJson: any,
-  depName: string,
-  version: string,
-) {
-  const fileDep = `file:../temp-packages/${depName}-${version}.tgz`;
-  setDependency(packageJson, depName, fileDep);
-}
-
-/**
- * Update a dependency version in package.json, preserving its original section
- * (dependencies, devDependencies, or optionalDependencies).
- */
-function setDependency(packageJson: any, depName: string, version: string) {
-  const sections = ["dependencies", "devDependencies", "optionalDependencies"];
-
-  for (const section of sections) {
-    if (packageJson[section]?.[depName]) {
-      packageJson[section][depName] = version;
-      return;
-    }
-  }
-
-  if (!packageJson.devDependencies) {
-    packageJson.devDependencies = {};
-  }
-  packageJson.devDependencies[depName] = version;
 }
 
 function getTimestamp() {

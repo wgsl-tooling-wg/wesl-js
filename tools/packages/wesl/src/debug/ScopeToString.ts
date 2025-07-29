@@ -9,10 +9,10 @@ export function scopeToString(
   indent = 0,
   shortIdents = true,
 ): string {
-  const { contents, kind, ifAttribute } = scope;
+  const { contents, kind, condAttribute } = scope;
 
   const str = new LineWrapper(indent);
-  const attrStrings = ifAttribute && attributeToString(ifAttribute);
+  const attrStrings = condAttribute && attributeToString(condAttribute);
   if (attrStrings) str.add(attrStrings + " ");
   if (kind === "partial") str.add("-");
   str.add("{ ");

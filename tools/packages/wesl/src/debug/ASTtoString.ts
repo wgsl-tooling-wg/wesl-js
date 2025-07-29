@@ -102,6 +102,7 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
     str.add(` '${elem.text}'`);
   } else if (kind === "import") {
     str.add(" " + importToString(elem.imports));
+    listAttributeElems(elem.attributes, str);
   } else if (kind === "ref") {
     str.add(" " + elem.ident.originalName);
   } else if (kind === "typeDecl") {
@@ -149,6 +150,13 @@ function addAttributeFields(attr: Attribute, str: LineWrapper) {
     str.add("(");
     str.add(expressionToString(attr.param.expression));
     str.add(")");
+  } else if (kind === "@elif") {
+    str.add(" @elif");
+    str.add("(");
+    str.add(expressionToString(attr.param.expression));
+    str.add(")");
+  } else if (kind === "@else") {
+    str.add(" @else");
   } else if (kind === "@interpolate") {
     str.add(` @interpolate(${attr.params.map(v => v.name).join(", ")})`);
   } else {

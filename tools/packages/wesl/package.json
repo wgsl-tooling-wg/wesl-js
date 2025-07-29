@@ -5,23 +5,22 @@
   "files": ["dist", "src"],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "build": "run-s build:main build:size",
+    "build": "tsdown",
     "build:brotli-size": "tsx ./scripts/brotli.ts dist/sized.cjs",
     "build:docs": "typedoc --plugin typedoc-theme-hierarchy --entryPoints ./src/index.ts --entryPointStrategy expand --out ./docs",
-    "build:main": "vite build",
     "build:size": "run-s build:sizetest build:brotli-size",
     "build:sizetest": "vite build --config sizetest.vite.config.js",
     "deploy:docsite": "run-s build:docs pages:deploy",
     "pages:deploy": "wrangler pages deploy --project-name wesl-js docs",
     "prepublishOnly": "run-s build",
-    "test": "vitest",
+    "test": "vitest --hideSkippedTests",
     "test:once": "vitest run",
     "typecheck": "tsgo"
   },
   "publishConfig": {
     "exports": {
       ".": {
-        "types": "./dist/wesl/src/index.d.ts",
+        "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
       }
     },
@@ -32,6 +31,7 @@
       "import": "./src/index.ts"
     }
   },
+  "types": "dist/index.d.ts",
   "dependencies": {
     "mini-parse": "workspace:*"
   },

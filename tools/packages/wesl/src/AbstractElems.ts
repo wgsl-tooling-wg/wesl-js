@@ -122,7 +122,7 @@ export interface DeclIdentElem extends AbstractElemBase {
 }
 
 /** Holds an import statement, and has a span */
-export interface ImportElem extends AbstractElemBase {
+export interface ImportElem extends AbstractElemBase, HasAttributes {
   kind: "import";
   imports: ImportStatement;
 }
@@ -201,7 +201,9 @@ export type Attribute =
   | InterpolateAttribute
   | BuiltinAttribute
   | DiagnosticAttribute
-  | IfAttribute;
+  | IfAttribute
+  | ElifAttribute
+  | ElseAttribute;
 
 export interface StandardAttribute {
   kind: "@attribute";
@@ -228,6 +230,15 @@ export interface DiagnosticAttribute {
 export interface IfAttribute {
   kind: "@if";
   param: TranslateTimeExpressionElem;
+}
+
+export interface ElifAttribute {
+  kind: "@elif";
+  param: TranslateTimeExpressionElem;
+}
+
+export interface ElseAttribute {
+  kind: "@else";
 }
 
 /** a const_assert statement */

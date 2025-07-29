@@ -1,5 +1,7 @@
 import type {
   DeclarationElem,
+  ElifAttribute,
+  ElseAttribute,
   IfAttribute,
   RefIdentElem,
 } from "./AbstractElems.ts";
@@ -74,9 +76,6 @@ export type Scope = LexicalScope | PartialScope;
 export interface LexicalScope extends ScopeBase {
   kind: "scope";
 
-  /** @if condition for conditionally translating this scope */
-  ifAttribute?: IfAttribute;
-
   /**
    * Efficient access to declarations in this scope.
    * constructed on demand, for module root scopes only */ // LATER consider make a special kind for root scopes
@@ -87,9 +86,6 @@ export interface LexicalScope extends ScopeBase {
  * PartialScope idents are considered to be in the wgsl lexical scope of their parent.  */
 export interface PartialScope extends ScopeBase {
   kind: "partial";
-
-  /** @if condition for conditionally translating this scope */
-  ifAttribute?: IfAttribute; // LATER this is required, consider changing type to reflect that
 }
 
 /** common scope elements  */
@@ -103,8 +99,8 @@ interface ScopeBase {
   /* Child scopes and idents in lexical order  */
   contents: (Ident | Scope)[];
 
-  /** @if conditions for conditionally translating this scope */
-  ifAttribute?: IfAttribute;
+  /** Conditional attribute (@if or @else) for this scope */
+  condAttribute?: IfAttribute | ElifAttribute | ElseAttribute;
 }
 
 /** Combine two scope siblings.
@@ -113,7 +109,7 @@ export function mergeScope(a: Scope, b: Scope | undefined): void {
   if (!b) return;
   assertThatDebug(a.kind === b.kind);
   assertThatDebug(a.parent === b.parent);
-  assertThatDebug(!b.ifAttribute);
+  assertThatDebug(!b.condAttribute);
   a.contents = a.contents.concat(b.contents);
 }
 
@@ -134,7 +130,7 @@ export function nextIdentId(): number {
 export function emptyScope(
   parent: Scope | null,
   kind: Scope["kind"] = "scope",
-): Omit<Scope, "ifAttribute"> {
+): Omit<Scope, "condAttribute"> {
   const id = scopeId++;
   return { id, kind, parent, contents: [] };
 }

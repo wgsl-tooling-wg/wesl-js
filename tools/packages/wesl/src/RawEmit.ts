@@ -39,6 +39,10 @@ export function attributeToString(e: AttributeElem): string {
     );
   } else if (kind === "@if") {
     return `@if(${expressionToString(e.attribute.param.expression)})`;
+  } else if (kind === "@elif") {
+    return `@elif(${expressionToString(e.attribute.param.expression)})`;
+  } else if (kind === "@else") {
+    return "@else";
   } else if (kind === "@interpolate") {
     return `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`;
   } else {

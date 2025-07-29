@@ -7,7 +7,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "prepublishOnly": "run-s build",
-    "test": "FORCE_COLOR=1 vitest",
+    "test": "cross-env FORCE_COLOR=1 vitest",
     "test:once": "vitest run",
     "typecheck": "tsgo"
   },

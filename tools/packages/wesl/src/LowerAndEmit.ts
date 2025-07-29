@@ -5,7 +5,6 @@ import type {
   ContainerElem,
   DeclIdentElem,
   DirectiveElem,
-  ElemWithAttributes,
   ExpressionElem,
   FnElem,
   NameElem,
@@ -14,14 +13,10 @@ import type {
   SyntheticElem,
   TextElem,
 } from "./AbstractElems.ts";
-import {
-  assertThatDebug,
-  assertUnreachable,
-  assertUnreachableSilent,
-} from "./Assertions.ts";
+import { assertThatDebug, assertUnreachable } from "./Assertions.ts";
 import { isGlobal } from "./BindIdents.ts";
 import { failIdentElem } from "./ClickableError.ts";
-import { elementValid } from "./Conditions.ts";
+import { filterValidElements } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import type { Conditions, DeclIdent, Ident } from "./Scope.ts";
 
@@ -35,18 +30,17 @@ interface EmitContext {
 /** traverse the AST, starting from root elements, emitting wgsl for each */
 export function lowerAndEmit(
   srcBuilder: SrcMapBuilder,
-  rootElems: AbstractElem[],
+  rootElems: readonly AbstractElem[],
   conditions: Conditions,
   extracting = true,
 ): void {
   const emitContext: EmitContext = { conditions, srcBuilder, extracting };
+  const validElements = filterValidElements(rootElems, conditions);
   // rootElems.forEach(r => console.log(astToString(r) + "\n"));
-  rootElems.forEach(e => lowerAndEmitElem(e, emitContext));
+  validElements.forEach(e => lowerAndEmitElem(e, emitContext));
 }
 
 export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
-  if (!conditionsValid(e, ctx.conditions)) return;
-
   switch (e.kind) {
     // import statements are dropped from from emitted text
     case "import":
@@ -147,9 +141,9 @@ export function emitFn(e: FnElem, ctx: EmitContext): void {
   emitDeclIdent(name, ctx);
 
   builder.appendNext("(");
-  const validParams = params.filter(p => conditionsValid(p, conditions));
+  const validParams = filterValidElements(params, conditions);
   validParams.forEach((p, i) => {
-    emitContentsNoWs(p, ctx);
+    emitContentsNoWs(p as ContainerElem, ctx);
     if (i < validParams.length - 1) {
       builder.appendNext(", ");
     }
@@ -179,9 +173,9 @@ function emitAttributes(
 /** emit structs explicitly so we can control commas between conditional members */
 export function emitStruct(e: StructElem, ctx: EmitContext): void {
   const { name, members, start, end } = e;
-  const { srcBuilder } = ctx;
+  const { srcBuilder, conditions } = ctx;
 
-  const validMembers = members.filter(m => conditionsValid(m, ctx.conditions));
+  const validMembers = filterValidElements(members, conditions);
   const validLength = validMembers.length;
 
   if (validLength === 0) {
@@ -194,14 +188,14 @@ export function emitStruct(e: StructElem, ctx: EmitContext): void {
 
   if (validLength === 1) {
     srcBuilder.add(" { ", name.end, members[0].start);
-    emitContentsNoWs(validMembers[0], ctx);
+    emitContentsNoWs(validMembers[0] as ContainerElem, ctx);
     srcBuilder.add(" }\n", end - 1, end);
   } else {
     srcBuilder.add(" {\n", name.end, members[0].start);
 
     validMembers.forEach(m => {
       srcBuilder.add("  ", m.start - 1, m.start);
-      emitContentsNoWs(m, ctx);
+      emitContentsNoWs(m as ContainerElem, ctx);
       srcBuilder.add(",", m.end, m.end + 1);
       srcBuilder.addNl();
     });
@@ -223,12 +217,16 @@ export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
 }
 
 export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
-  elem.contents.forEach(e => lowerAndEmitElem(e, ctx));
+  // elem.contents.forEach(e => console.log("orig", astToString(e)));
+  const validElements = filterValidElements(elem.contents, ctx.conditions);
+  // validElements.forEach(e => console.log("valid", astToString(e)));
+  validElements.forEach(e => lowerAndEmitElem(e, ctx));
 }
 
 /** emit contents w/o white space */
 function emitContentsNoWs(elem: ContainerElem, ctx: EmitContext): void {
-  elem.contents.forEach(e => {
+  const validElements = filterValidElements(elem.contents, ctx.conditions);
+  validElements.forEach(e => {
     if (e.kind === "text") {
       const { srcModule, start, end } = e;
       const text = srcModule.src.slice(start, end);
@@ -298,6 +296,10 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
       e.start,
       e.end,
     );
+  } else if (kind === "@elif") {
+    // @elif is wesl only, dropped from wgsl
+  } else if (kind === "@else") {
+    // @else is wesl only, dropped from wgsl
   } else {
     assertUnreachable(kind);
   }
@@ -389,34 +391,4 @@ export function findDecl(ident: Ident): DeclIdent {
 
   // TODO show source position if this can happen in a non buggy linker.
   throw new Error(`unresolved identifer: ${ident.originalName}`);
-}
-
-/** check if the element is visible with the current current conditional compilation settings */
-export function conditionsValid(
-  elem: AbstractElem,
-  conditions: Conditions,
-): true | false | undefined {
-  const attrElem = elem as ElemWithAttributes;
-  const { kind } = attrElem;
-
-  switch (kind) {
-    case "alias":
-    case "assert":
-    case "const":
-    case "directive":
-    case "member":
-    case "var":
-    case "let":
-    case "statement":
-    case "switch-clause":
-    case "override":
-    case "gvar":
-    case "fn":
-    case "struct":
-    case "param":
-      return elementValid(attrElem, conditions);
-    default:
-      assertUnreachableSilent(kind);
-  }
-  return true;
 }

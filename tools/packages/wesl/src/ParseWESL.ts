@@ -6,14 +6,21 @@ import {
 } from "mini-parse";
 import type {
   ConstAssertElem,
+  ImportElem,
   ImportStatement,
   ModuleElem,
 } from "./AbstractElems.ts";
 import { throwClickableError } from "./ClickableError.ts";
+import { filterValidElements } from "./Conditions.ts";
 import { type FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { weslRoot } from "./parse/WeslGrammar.ts";
 import { WeslStream } from "./parse/WeslStream.ts";
-import { emptyScope, type Scope, type SrcModule } from "./Scope.ts";
+import {
+  type Conditions,
+  emptyScope,
+  type Scope,
+  type SrcModule,
+} from "./Scope.ts";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
 import type { OpenElem } from "./WESLCollect.ts";
 
@@ -140,10 +147,29 @@ export function syntheticWeslParseState(): WeslParseState {
 }
 
 /** @return a flattened form of the import tree for convenience in binding idents. */
-export function flatImports(ast: BindingAST): FlatImport[] {
-  if (ast._flatImports) return ast._flatImports;
+export function flatImports(
+  ast: BindingAST,
+  conditions?: Conditions,
+): FlatImport[] {
+  // TODO cache per condition set?
+  if (ast._flatImports && !conditions) return ast._flatImports;
 
-  const flat = ast.imports.flatMap(flattenTreeImport);
-  ast._flatImports = flat;
+  // Get ImportElem elements from moduleElem contents
+  const importElems = ast.moduleElem.contents.filter(
+    (elem): elem is ImportElem => elem.kind === "import",
+  );
+
+  // Filter based on conditions if provided
+  const validImportElems = conditions
+    ? filterValidElements(importElems, conditions)
+    : importElems;
+
+  // Extract ImportStatement from valid ImportElem elements
+  const importStatements = validImportElems.map(elem => elem.imports);
+
+  const flat = importStatements.flatMap(flattenTreeImport);
+  if (!conditions) {
+    ast._flatImports = flat;
+  }
   return flat;
 }

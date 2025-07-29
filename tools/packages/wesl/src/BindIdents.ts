@@ -1,7 +1,7 @@
-import type { AbstractElem } from "./AbstractElems.ts";
-import { assertThatDebug, assertUnreachableSilent } from "./Assertions.ts";
+import type { AbstractElem, ElemWithAttributes } from "./AbstractElems.ts";
+import { assertThatDebug } from "./Assertions.ts";
 import { failIdent } from "./ClickableError.ts";
-import { elementValid, scopeValid } from "./Conditions.ts";
+import { validateAttributes, validateConditional } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import type { FlatImport } from "./FlattenTreeImport.ts";
 import type { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
@@ -42,6 +42,12 @@ import { last } from "./Util.ts";
   When iterating through the idents inside a scope, we maintain a parallel data structure of
   'liveDecls', the declarations that are visible in the current scope at the currently
   processed ident, along with a link to parent liveDecls for their current decl visibility.
+  
+  @if/@else Handling:
+  The binding phase respects conditional compilation by tracking @else validity state as it
+  processes sibling scopes. This prevents references from within filtered @else blocks from
+  pulling in declarations that won't be emitted. The algorithm mirrors the emission phase's
+  filterValidElements approach but operates on scopes rather than elements.
 */
 
 /** results returned from binding pass */
@@ -161,25 +167,61 @@ export function findUnboundIdents(registry: ParsedRegistry): string[][] {
 }
 
 /**
- * @return the list of conditional valid declarations at the root level
- * decls are either in the root scope or in a conditionally valid partial scope
+ * Find all conditionally valid declarations at the root level.
+ * Declarations are either directly in the root scope or in conditionally valid partial scopes.
+ *
+ * This function tracks @else state to ensure that declarations in @else blocks are only
+ * included when the corresponding @if block is invalid. This is essential for preventing
+ * unused declarations from being included in the output.
+ *
+ * @param rootScope The root scope to search
+ * @param conditions Current conditional compilation settings
+ * @return Array of valid declaration identifiers
  */
 export function findValidRootDecls(
   rootScope: Scope,
   conditions: Conditions,
 ): DeclIdent[] {
   const found: DeclIdent[] = [];
-  for (const e of rootScope.contents) {
-    if (e.kind === "decl") {
-      assertThatDebug(e.declElem);
-      if (elementValid(e.declElem!, conditions)) {
-        found.push(e);
+  let elseValid = false;
+
+  for (const item of rootScope.contents) {
+    if (item.kind === "decl") {
+      assertThatDebug(item.declElem);
+      const { valid, nextElseState } = validateAttributes(
+        (item.declElem as ElemWithAttributes).attributes,
+        elseValid,
+        conditions,
+      );
+      elseValid = nextElseState;
+      if (valid) {
+        found.push(item);
       }
-    } else if (e.kind === "partial") {
-      found.push(...findValidRootDecls(e, conditions));
+    } else if (item.kind === "partial") {
+      const { valid, nextElseState } = validateConditional(
+        item.condAttribute,
+        elseValid,
+        conditions,
+      );
+      elseValid = nextElseState;
+      if (valid) {
+        collectAllDeclarationsInScope(item, found);
+      }
     }
   }
+
   return found;
+}
+
+/** Collect all declarations in a scope (used when scope is already validated) */
+function collectAllDeclarationsInScope(scope: Scope, found: DeclIdent[]): void {
+  for (const item of scope.contents) {
+    if (item.kind === "decl") {
+      found.push(item);
+    } else if (item.kind === "partial") {
+      collectAllDeclarationsInScope(item, found);
+    }
+  }
 }
 
 /** state used during the recursive scope tree walk to bind references to declarations */
@@ -220,12 +262,18 @@ interface BindContext {
 /**
  * Recursively bind references to declarations in this scope and
  * any child scopes referenced by these declarations.
- * Uses a hash set of found declarations to avoid duplication
+ * Uses a hash set of found declarations to avoid duplication.
+ *
+ * IMPORTANT: This function tracks @else state while traversing sibling scopes.
+ * When an @if scope is processed, its validity determines whether the following
+ * @else scope should be considered valid. This ensures that references from
+ * filtered @else blocks don't pull in unused declarations.
+ *
  * @return any new declarations found
  * @param liveDecls current set of live declaration in this scope
  *  (empty when traversing to a new scope, possibly non-empty for a partial scope)
  * @param isRoot liveDecls refers to a prepopulated root scope
- *  (root scoope declarations may appear in any order)
+ *  (root scope declarations may appear in any order)
  */
 function bindIdentsRecursive(
   scope: Scope,
@@ -243,6 +291,9 @@ function bindIdentsRecursive(
   // active declarations in this scope
   const newFromChildren: DeclIdent[] = [];
 
+  // Track @else validity state across sibling scopes.
+  let elseValid = false;
+
   // process all identifiers and subscopes in this scope
   scope.contents.forEach(child => {
     const { kind } = child;
@@ -253,9 +304,10 @@ function bindIdentsRecursive(
       const newDecl = handleRef(child, liveDecls, bindContext);
       if (newDecl) newGlobals.push(newDecl);
     } else {
-      const fromScope = handleScope(child, liveDecls, bindContext);
+      const fromScope = handleScope(child, liveDecls, bindContext, elseValid);
       if (fromScope) {
-        newFromChildren.push(...fromScope);
+        newFromChildren.push(...fromScope.decls);
+        elseValid = fromScope.nextElseState;
       }
     }
   });
@@ -318,27 +370,29 @@ function handleRef(
 }
 
 /**
- * If the child scope is conditionally valid,
- * update liveDecls tree and recurse to process the elements in it.
- *
- * @return any new global declarations found
+ * Process a child scope, checking its conditional validity,
+ * and tracking @else validity for siblings.
+ * Updates liveDecls tree and recurses to process the elements in valid scopes.
  */
 function handleScope(
   childScope: Scope,
   liveDecls: LiveDecls,
   bindContext: BindContext,
-): DeclIdent[] | undefined {
-  const { conditions } = bindContext;
-  if (!scopeValid(childScope, conditions)) return;
-  const { kind } = childScope;
-  if (kind === "scope") {
-    const newLive = makeLiveDecls(liveDecls);
-    return bindIdentsRecursive(childScope, bindContext, newLive);
-  } else if (kind === "partial") {
-    return bindIdentsRecursive(childScope, bindContext, liveDecls);
-  } else {
-    assertUnreachableSilent(kind);
-  }
+  elseValid: boolean,
+): { decls: DeclIdent[]; nextElseState: boolean } | undefined {
+  const { valid, nextElseState } = validateConditional(
+    childScope.condAttribute,
+    elseValid,
+    bindContext.conditions,
+  );
+  if (!valid) return { decls: [], nextElseState };
+
+  const decls = bindIdentsRecursive(
+    childScope,
+    bindContext,
+    childScope.kind === "scope" ? makeLiveDecls(liveDecls) : liveDecls,
+  );
+  return { decls, nextElseState };
 }
 
 /**
@@ -457,7 +511,7 @@ function findQualifiedImport(
   virtuals: VirtualLibrarySet | undefined,
   unbound: string[][] | undefined,
 ): FoundDecl | undefined {
-  const flatImps = flatImports(refIdent.ast);
+  const flatImps = flatImports(refIdent.ast, conditions);
 
   const identParts = refIdent.originalName.split("::");
 
