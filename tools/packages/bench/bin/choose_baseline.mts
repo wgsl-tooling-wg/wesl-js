@@ -26,8 +26,9 @@ import process from "node:process";
 const version = process.argv[2];
 
 if (!version) {
-  const scriptName =
-    process.argv[1] ? process.argv[1].split("/").pop() : "checkout_baseline";
+  const scriptName = process.argv[1]
+    ? process.argv[1].split("/").pop()
+    : "checkout_baseline";
   console.error(`Usage: ${scriptName} <version>`);
   process.exit(1);
 }

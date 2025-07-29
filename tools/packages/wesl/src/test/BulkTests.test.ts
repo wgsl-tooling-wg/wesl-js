@@ -2,7 +2,9 @@ import fs from "node:fs/promises";
 import { expectNoLogAsync } from "mini-parse/test-util";
 import { describe, expect, test } from "vitest";
 import { BaseDir, fetchBulkTest } from "wesl-testsuite/fetch-bulk-tests";
-import bulkTests from "wesl-testsuite/test-cases-json/bulkTests" with { type: "json" };
+import bulkTests from "wesl-testsuite/test-cases-json/bulkTests" with {
+  type: "json",
+};
 import { link } from "../Linker.ts";
 import { stripWesl } from "./StripWesl.ts";
 

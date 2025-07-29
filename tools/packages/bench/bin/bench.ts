@@ -1,4 +1,5 @@
 import path from "node:path";
+import process from "node:process";
 import { link } from "wesl";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
@@ -16,7 +17,6 @@ import {
   mitataBench,
 } from "../src/mitata-util/MitataBench.ts";
 import type { MeasuredResults } from "../src/mitata-util/MitataStats.ts";
-import process from "node:process";
 
 export interface BenchTest {
   /** name of the test */
