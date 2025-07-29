@@ -18,7 +18,8 @@
     "**/dist/**"
   ],
   "compilerOptions": {
-    "lib": ["deno.ns", "dom"],
+    "strict": true,
+    "lib": ["deno.ns", "dom", "dom.iterable"],
     "types": ["@webgpu/types"]
   },
   "lint": {
