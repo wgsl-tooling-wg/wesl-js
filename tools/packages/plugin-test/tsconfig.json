@@ -4,6 +4,5 @@
     "target": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types"]
-  },
-  "include": ["*.ts", "src"]
+  }
 }

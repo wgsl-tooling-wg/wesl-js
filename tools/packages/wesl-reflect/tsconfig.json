@@ -1,4 +1,3 @@
 {
-  "extends": "../../tsconfig.node.json",
-  "include": ["*.ts", "src", "generated"]
+  "extends": "../../tsconfig.node.json"
 }
