@@ -295,6 +295,25 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
 
+  packages/bench2:
+    dependencies:
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+      table:
+        specifier: ^6.9.0
+        version: 6.9.0
+    devDependencies:
+      '@mitata/counters':
+        specifier: ^0.0.8
+        version: 0.0.8
+      mitata:
+        specifier: ^1.0.34
+        version: 1.0.34
+      tinybench:
+        specifier: ^4.0.1
+        version: 4.0.1
+
   packages/built-test:
     dependencies:
       wesl:
