@@ -1,4 +1,3 @@
-/// <reference types="vitest" />
 import { defineConfig, type LibraryOptions } from "vite";
 import { baseViteConfig } from "./base.vite.config.ts";
 

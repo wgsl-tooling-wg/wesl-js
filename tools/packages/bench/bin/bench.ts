@@ -1,4 +1,5 @@
 import path from "node:path";
+import process from "node:process";
 import { link } from "wesl";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";

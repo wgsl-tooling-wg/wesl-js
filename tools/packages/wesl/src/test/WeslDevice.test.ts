@@ -1,8 +1,7 @@
-import { setTimeout } from "node:timers";
 import { SrcMap } from "mini-parse";
 import { expect, test, vi } from "vitest";
-import { LinkedWesl } from "../LinkedWesl";
-import { makeWeslDevice } from "../WeslDevice";
+import { LinkedWesl } from "../LinkedWesl.ts";
+import { makeWeslDevice } from "../WeslDevice.ts";
 
 test("WeslDevice doesn't conflict with uncapturederror", async () => {
   const GPUDeviceMock = vi.fn(function (this: GPUDevice) {

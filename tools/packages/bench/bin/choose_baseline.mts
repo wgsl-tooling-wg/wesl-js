@@ -3,6 +3,7 @@
 import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
+import process from "node:process";
 
 /**
  * a node script get an earlier copy of the repo as a baseline for benchmark comparisons
