@@ -1,0 +1,12 @@
+{
+  "name": "vitest-util",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsgo"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.ts"
+    }
+  }
+}
