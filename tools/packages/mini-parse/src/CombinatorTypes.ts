@@ -11,18 +11,13 @@ import type { Parser, ParserStream } from "./Parser.ts";
  * and https://stackoverflow.com/questions/50374908/transform-union-type-to-intersection-type
  *
  * (and wrapping things in conditional types with ? : never gives us a stage to place the inferencing)
+ * @public
  */
 export type Intersection<U> = (U extends any ? (k: U) => void : never) extends (
   k: infer I extends U,
 ) => void
   ? I
   : never;
-
-/**
- * @param T a Record type
- * @returns a Record type with the keys explictly defined, if possible.
- */
-export type KeyedRecord<T> = { [A in keyof T]: T[A] };
 
 /**
  * This type describes the variations for parser combinator arguments.

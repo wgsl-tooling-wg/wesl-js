@@ -8,10 +8,12 @@ export function assertUnreachable(value: never): never {
   throw new ErrorWithData("Unreachable value", { data: value });
 }
 
+/** @public */
 export interface ErrorWithDataOptions extends ErrorOptions {
   data: any;
 }
 
+/** @public */
 export class ErrorWithData extends Error {
   data: any;
   constructor(message?: string, options?: ErrorWithDataOptions) {

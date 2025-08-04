@@ -10,7 +10,7 @@ export function toRegexSource(nameExp: [string, RegExp | string]): string {
   }
 }
 
-export function verifyNonCapturing(name: string, exp: RegExp): void {
+function verifyNonCapturing(name: string, exp: RegExp): void {
   const willMatch = new RegExp("|" + exp.source);
   const result = willMatch.exec("")!;
   if (result.length > 1) {
@@ -22,7 +22,7 @@ export function verifyNonCapturing(name: string, exp: RegExp): void {
 
 const regexSpecials = /[$+*.?|(){}[\]\\/^]/g;
 
-export function escapeRegex(s: string): string {
+function escapeRegex(s: string): string {
   return s.replace(regexSpecials, "\\$&");
 }
 
