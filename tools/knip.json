@@ -4,7 +4,12 @@
   "workspaces": {
     "packages/*": {
       "entry": ["src/index.ts", "src/**/*.test.ts"],
-      "project": ["src/**/*.ts", "src/test/**/*.test.ts", "test/**/*.ts", "test/**/*.test.ts"],
+      "project": [
+        "src/**/*.ts",
+        "src/test/**/*.test.ts",
+        "test/**/*.ts",
+        "test/**/*.test.ts"
+      ],
       "ignore": ["vite.config.ts", "vitest.config.ts"]
     }
   },

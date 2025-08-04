@@ -18,6 +18,7 @@
     "fix:biome": "biome check --fix --unsafe",
     "fix:pkgJsonFormat": "syncpack format",
     "fix:syncpack": "syncpack fix-mismatches",
+    "knip": "knip",
     "lint:all": "run-s lint:biome lint:oxlint check:versions",
     "lint:biome": "biome check",
     "lint:oxlint": "oxlint",
@@ -35,8 +36,7 @@
     "typecheck:all": "run-s typecheck:packages typecheck:examples",
     "typecheck:examples": "pnpm --filter \"./examples/**\" --filter \"!lygia-cli-example\" exec tsgo",
     "typecheck:packages": "pnpm --filter \"./packages/**\" typecheck",
-    "typecheck:watch": "nodemon --config nodemon-typecheck-watch.json",
-    "knip": "knip"
+    "typecheck:watch": "nodemon --config nodemon-typecheck-watch.json"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.6",
@@ -78,13 +78,8 @@
   },
   "packageManager": "pnpm@10.12.4",
   "pnpm": {
-    "ignoredBuiltDependencies": [
-      "es5-ext"
-    ],
-    "onlyBuiltDependencies": [
-      "core-js",
-      "esbuild"
-    ],
+    "ignoredBuiltDependencies": ["es5-ext"],
+    "onlyBuiltDependencies": ["core-js", "esbuild"],
     "overrides": {}
   }
 }
