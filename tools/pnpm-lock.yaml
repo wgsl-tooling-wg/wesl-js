@@ -399,12 +399,6 @@ importers:
       '@biomejs/wasm-nodejs':
         specifier: ^2.0.6
         version: 2.0.6
-      glob:
-        specifier: ^11.0.3
-        version: 11.0.3
-      import-meta-resolve:
-        specifier: ^4.1.0
-        version: 4.1.0
       wesl:
         specifier: workspace:*
         version: link:../wesl

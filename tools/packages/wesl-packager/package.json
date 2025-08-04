@@ -15,8 +15,6 @@
   "dependencies": {
     "@biomejs/js-api": "^1.0.0",
     "@biomejs/wasm-nodejs": "^2.0.6",
-    "glob": "^11.0.3",
-    "import-meta-resolve": "^4.1.0",
     "wesl": "workspace:*",
     "wesl-tooling": "workspace:*",
     "yargs": "^18.0.0"
