@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { type BenchmarkReport, reportResults } from "../BenchmarkReport.ts";
 import { mitataBench } from "../mitata-util/MitataBench.ts";
 import { gcSection, runsSection, timeSection } from "../StandardSections.ts";
-import { extractValue } from "./TableValueExtractor.ts";
+import { extractValue } from "../table-util/test/TableValueExtractor.ts";
 
 /** Memory-allocating function that creates arrays and objects to trigger GC activity */
 function memoryAllocatingFunction(): number {
