@@ -21,13 +21,13 @@ test("MitataBenchRunner runs benchmark in worker mode", async () => {
   const results = await runBenchmark(
     spec,
     "mitata",
-    { 
+    {
       minTime: 1,
       maxIterations: 10,
       minSamples: 1,
       warmupTime: 0,
       warmupSamples: 0,
-      observeGC: false,  // Disable GC observation to avoid 1000ms wait
+      observeGC: false, // Disable GC observation to avoid 1000ms wait
     },
     true,
   );
@@ -54,11 +54,11 @@ test("TinyBenchRunner runs benchmark in worker mode", async () => {
   const results = await runBenchmark(
     spec,
     "tinybench",
-    { 
-      maxTime: 5,       // Reduced from 30ms
-      warmupTime: 0,    // Disable warmup
+    {
+      maxTime: 5, // Reduced from 30ms
+      warmupTime: 0, // Disable warmup
     },
-    true
+    true,
   );
 
   expect(results).toHaveLength(1);
@@ -79,9 +79,9 @@ test("BasicRunner runs benchmark in worker mode", async () => {
   const results = await runBenchmark(
     spec,
     "basic",
-    { 
-      maxTime: 5,          // Reduced from 100ms
-      maxIterations: 50    // Reduced from 500
+    {
+      maxTime: 5, // Reduced from 100ms
+      maxIterations: 50, // Reduced from 500
     },
     true,
   );
@@ -112,12 +112,12 @@ test("RunnerOrchestrator propagates mitata errors from worker", async () => {
     runBenchmark(
       spec,
       "mitata",
-      { 
+      {
         minTime: 1,
         maxIterations: 1,
         observeGC: false,
       },
-      true
+      true,
     ),
   ).rejects.toThrow("Test error from benchmark");
 });

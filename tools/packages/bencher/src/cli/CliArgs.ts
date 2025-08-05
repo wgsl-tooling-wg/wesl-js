@@ -30,15 +30,11 @@ export function cliArgs(args: string[]) {
       default: false,
       describe: "run once, for attaching a profiler",
     })
-    .option("mitata", {
-      type: "boolean",
-      default: false,
-      describe: "run using vanilla mitata profiler",
-    })
-    .option("tinybench", {
-      type: "boolean",
-      default: false,
-      describe: "run using tinybench library",
+    .option("runner", {
+      type: "string",
+      default: "mitata",
+      choices: ["mitata", "tinybench", "basic"],
+      describe: "benchmark runner to use",
     })
     .option("filter", {
       type: "string",

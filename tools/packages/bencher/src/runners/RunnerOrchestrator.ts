@@ -4,7 +4,7 @@ import type { BenchmarkSpec } from "../Benchmark.ts";
 import type { MeasuredResults } from "../MeasuredResults.ts";
 import type { RunnerOptions } from "./BenchRunner.ts";
 import { createRunner, type KnownRunner } from "./CreateRunner.ts";
-import { debugWorkerTiming, getPerfNow, getElapsed } from "./TimingUtils.ts";
+import { debugWorkerTiming, getElapsed, getPerfNow } from "./TimingUtils.ts";
 
 /** Message sent to worker process to start a benchmark run. */
 interface RunMessage {

@@ -7,9 +7,14 @@
     "test:once": "pnpm --node-options=\"--expose-gc\" vitest run",
     "typecheck": "tsgo"
   },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "main": "./src/index.ts",
   "dependencies": {
     "picocolors": "^1.1.1",
-    "table": "^6.9.0"
+    "table": "^6.9.0",
+    "yargs": "^18.0.0"
   },
   "devDependencies": {
     "@mitata/counters": "^0.0.8",

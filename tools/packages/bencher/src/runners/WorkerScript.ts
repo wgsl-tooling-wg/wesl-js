@@ -3,7 +3,7 @@ import type { BenchmarkFunction, BenchmarkSpec } from "../Benchmark.ts";
 import type { MeasuredResults } from "../MeasuredResults.ts";
 import type { RunnerOptions } from "./BenchRunner.ts";
 import { createRunner, type KnownRunner } from "./CreateRunner.ts";
-import { debugWorkerTiming, getPerfNow, getElapsed } from "./TimingUtils.ts";
+import { debugWorkerTiming, getElapsed, getPerfNow } from "./TimingUtils.ts";
 
 interface RunMessage {
   type: "run";

@@ -25,10 +25,8 @@ export class MitataBenchRunner implements BenchRunner {
     const opts: MeasureOptions = { args: {}, warmupTime };
     if (minTime) opts.min_cpu_time = minTime * msToNs;
     if (maxIterations) opts.max_samples = maxIterations;
-    if (warmupSamples !== undefined)
-      opts.warmup_samples = warmupSamples;
-    if (warmupThreshold !== undefined)
-      opts.warmup_threshold = warmupThreshold;
+    if (warmupSamples !== undefined) opts.warmup_samples = warmupSamples;
+    if (warmupThreshold !== undefined) opts.warmup_threshold = warmupThreshold;
     if (minSamples !== undefined) opts.min_samples = minSamples;
     opts.observeGC = observeGC;
 
