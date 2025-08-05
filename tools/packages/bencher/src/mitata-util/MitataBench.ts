@@ -28,6 +28,7 @@ export type MeasureOptions = Parameters<typeof measure>[1] & {
   $counters?: typeof mitataCountersType; // missing from published types, loaded dynamically
   cpuCounters?: boolean; // default: false
   observeGC?: boolean; // default: true
+  warmupTime?: number; // missing from published types, supported by mitata
 };
 
 /** Run a function using mitata benchmarking,

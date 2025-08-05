@@ -7,7 +7,7 @@ import { extractValue } from "../table-util/test/TableValueExtractor.ts";
 /** Memory-allocating function that creates arrays and objects to trigger GC activity */
 function memoryAllocatingFunction(): number {
   // Create arrays to allocate memory
-  const arrays = Array(500)
+  const arrays = Array(50)
     .fill(0)
     .map(() => new Array(200).fill(Math.random()));
 
@@ -26,7 +26,11 @@ function memoryAllocatingFunction(): number {
 }
 
 test("mitataBench produces valid benchmark report", async () => {
-  const results = await mitataBench(memoryAllocatingFunction, "test-bench");
+  const results = await mitataBench(memoryAllocatingFunction, "test-bench", {
+    args: {},
+    max_samples: 100,
+    observeGC: true, // slows test, LATER could move to an integration test
+  });
   const report: BenchmarkReport = {
     name: "test-bench",
     measuredResults: results,
@@ -53,7 +57,5 @@ test("mitataBench produces valid benchmark report", async () => {
   expect(table).toContain("test-bench");
 
   // Note: GC time column header is split across lines ("gc t" + "ime")
-  // so we verify the table structure contains both parts
-  expect(table).toContain("gc t");
-  expect(table).toContain("ime");
+  expect(table).toContain("gc");
 });

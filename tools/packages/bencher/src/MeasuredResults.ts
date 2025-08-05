@@ -14,7 +14,6 @@ export interface MeasuredResults {
     min: number;
     max: number;
     avg: number;
-    p25: number;
     p50: number;
     p75: number;
     p99: number;

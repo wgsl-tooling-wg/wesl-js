@@ -99,13 +99,14 @@ function splitColumnGroups(line: string): string[] {
   return line.split("│").map(col => col.trim());
 }
 
-/** split data or title columns (ws or '│' borders)
- * 
- * NOTE: assumes that column titles don't have spaces in them!
+/** split data or title columns (two or more ws or '│' borders)
+ *
+ * NOTE: requires two or more whitespace or border characters to split columns,
+ * allowing column titles to contain single spaces (e.g. "L1 miss")
  */
 function splitColumns(line: string): string[] {
   return line
-    .split(/[\s│]+/)
+    .split(/(?:[\s│]{2,}|│)/)
     .map(col => col.trim())
     .filter(Boolean);
 }

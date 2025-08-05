@@ -18,7 +18,6 @@ function createMockResults(
       min: 1.0,
       max: 3.0,
       avg: 1.5,
-      p25: 1.2,
       p50: 1.4,
       p75: 1.8,
       p99: 2.1,
