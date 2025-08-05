@@ -13,10 +13,13 @@ test("TinyBenchRunner runs benchmark in direct mode", async () => {
   const spec: BenchmarkSpec<number> = {
     name: "fibonacci-test",
     fn: fibonacci,
-    params: 15,
   };
 
-  const results = await runner.runBench(spec, { minTime: 100, maxTime: 50 });
+  const results = await runner.runBench(
+    spec,
+    { minTime: 100, maxTime: 50 },
+    15,
+  );
 
   expect(results).toHaveLength(1);
   const result = results[0];

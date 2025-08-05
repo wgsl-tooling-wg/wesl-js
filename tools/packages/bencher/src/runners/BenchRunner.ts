@@ -1,11 +1,32 @@
 import type { BenchmarkSpec } from "../Benchmark.ts";
 import type { MeasuredResults } from "../MeasuredResults.ts";
 
+/** Execute a benchmark function with proper parameter handling */
+export function executeBenchmark<T>(
+  benchmark: BenchmarkSpec<T>,
+  params?: T,
+): void {
+  if (benchmark.fn.length === 0) {
+    // No-args function
+    (benchmark.fn as () => void)();
+  } else if (params !== undefined) {
+    // Function expects params from setup
+    (benchmark.fn as (params: T) => void)(params);
+  } else {
+    // Function expects params but none provided
+    throw new Error(
+      `Benchmark "${benchmark.name}" expects parameters but none were provided. ` +
+        `Add a setup function to the benchmark group to provide data.`,
+    );
+  }
+}
+
 /** Implemented by benchmark libraries to run individual benchmark tasks */
 export interface BenchRunner {
   runBench<T = unknown>(
     benchmark: BenchmarkSpec<T>,
     options: RunnerOptions,
+    params?: T,
   ): Promise<MeasuredResults[]>;
 }
 

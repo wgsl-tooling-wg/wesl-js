@@ -23,7 +23,6 @@ test("MitataBenchRunner runs benchmark in direct mode", async () => {
   const spec: BenchmarkSpec = {
     name: "memory-allocation-test",
     fn: memoryAllocatingFunction,
-    params: undefined,
   };
 
   const results = await runner.runBench(spec, {

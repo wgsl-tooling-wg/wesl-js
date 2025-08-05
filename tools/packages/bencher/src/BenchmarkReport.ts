@@ -1,5 +1,6 @@
 import type { MeasuredResults } from "./MeasuredResults.ts";
 import type { UnionToIntersection } from "./TypeUtil.ts";
+import { diffPercentBenchmark } from "./table-util/Formatters.ts";
 import {
   type AnyColumn,
   buildTable,
@@ -130,7 +131,12 @@ function injectDiffColumns<T>(
     columns: group.columns.flatMap(col => {
       if (col.comparable) {
         const key = `${String(col.key)}Diff` as keyof T;
-        const diffCol = { title: "Δ%", key, diffKey: col.key };
+        const diffCol = {
+          title: "Δ%",
+          key,
+          diffKey: col.key,
+          diffFormatter: diffPercentBenchmark,
+        };
         return [col, diffCol];
       }
       return [col];

@@ -1,6 +1,7 @@
 import type { BenchmarkSpec } from "../Benchmark.ts";
 import type { MeasuredResults } from "../MeasuredResults.ts";
 import type { BenchRunner, RunnerOptions } from "./BenchRunner.ts";
+import { executeBenchmark } from "./BenchRunner.ts";
 import { nsToMs } from "./RunnerUtils.ts";
 
 /** Benchmark runner using the tinybench library. */
@@ -8,6 +9,7 @@ export class TinyBenchRunner implements BenchRunner {
   async runBench<T = unknown>(
     benchmark: BenchmarkSpec<T>,
     options: RunnerOptions,
+    params?: T,
   ): Promise<MeasuredResults[]> {
     const { Bench } = await import("tinybench");
 
@@ -16,7 +18,7 @@ export class TinyBenchRunner implements BenchRunner {
       warmupTime: options.warmupTime,
     });
 
-    bench.add(benchmark.name, () => benchmark.fn(benchmark.params));
+    bench.add(benchmark.name, () => executeBenchmark(benchmark, params));
 
     await bench.run();
 

@@ -5,12 +5,11 @@ export interface BenchmarkSpec<T = unknown> {
 
   /** The function to benchmark */
   fn: BenchmarkFunction<T>;
-
-  /** Parameters to pass to the benchmark function */
-  params: T;
 }
 
-export type BenchmarkFunction<T = unknown> = (params: T) => unknown;
+export type BenchmarkFunction<T = unknown> =
+  | ((params: T) => void)
+  | (() => void);
 
 /** a group of benchmark functions with a common setup */
 export interface BenchGroup<T = unknown> {
@@ -23,6 +22,9 @@ export interface BenchGroup<T = unknown> {
   /** Array of benchmark functions to run */
   benchmarks: BenchmarkSpec<T>[];
 
+  /** Optional baseline benchmark for comparison */
+  baseline?: BenchmarkSpec<T>;
+
   /** Optional metadata for reporting (e.g., lines of code) */
   metadata?: Record<string, any>;
 }
@@ -33,5 +35,5 @@ export interface BenchSuite {
   name: string;
 
   /** Array of test groups */
-  groups: BenchGroup[];
+  groups: BenchGroup<any>[];
 }

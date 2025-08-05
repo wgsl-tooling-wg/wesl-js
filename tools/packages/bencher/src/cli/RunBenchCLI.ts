@@ -20,14 +20,14 @@ export async function runBenchCLI(
     prepareGarbageCollection(args.collect);
 
     const options = cliToRunnerOptions(args);
-    const reports = await runFilteredBenchmarks(
+    const reportGroups = await runFilteredBenchmarks(
       filtered,
       args.runner as KnownRunner,
       options,
       args.worker,
     );
 
-    displayResults(reports, args.observeGc);
+    displayResults(reportGroups, args.observeGc);
   } catch (error) {
     console.error("Benchmark run failed:", error);
     process.exit(1);
@@ -101,10 +101,9 @@ function prepareGarbageCollection(shouldCollect: boolean): void {
 }
 
 /** Print results table to console */
-function displayResults(reports: BenchmarkReport[], observeGc: boolean): void {
+function displayResults(groups: ReportGroup[], observeGc: boolean): void {
   const sections = [timeSection, runsSection] as const;
   const finalSections = observeGc ? [...sections, gcSection] : sections;
-  const groups: ReportGroup[] = [{ reports }];
   const table = reportResults(groups, finalSections);
   console.log(table);
 }
@@ -115,15 +114,15 @@ async function runFilteredBenchmarks(
   runner: KnownRunner,
   options: RunnerOptions,
   useWorker: boolean,
-): Promise<BenchmarkReport[]> {
-  const reports: BenchmarkReport[] = [];
+): Promise<ReportGroup[]> {
+  const reportGroups: ReportGroup[] = [];
 
   for (const group of suite.groups) {
-    const groupReports = await runGroup(group, runner, options, useWorker);
-    reports.push(...groupReports);
+    const groupResult = await runGroup(group, runner, options, useWorker);
+    reportGroups.push(groupResult);
   }
 
-  return reports;
+  return reportGroups;
 }
 
 /** Run group benchmarks with setup params */
@@ -132,13 +131,36 @@ async function runGroup(
   runner: KnownRunner,
   options: RunnerOptions,
   useWorker: boolean,
-): Promise<BenchmarkReport[]> {
+): Promise<ReportGroup> {
   const params = await group.setup?.();
   const reports: BenchmarkReport[] = [];
 
+  // Run baseline if present
+  let baseline: BenchmarkReport | undefined;
+  if (group.baseline) {
+    const baselineResults = await runBenchmark(
+      group.baseline,
+      runner,
+      options,
+      useWorker,
+      params,
+    );
+    baseline = {
+      name: group.baseline.name,
+      measuredResults: baselineResults[0],
+      metadata: group.metadata,
+    };
+  }
+
+  // Run all benchmarks
   for (const benchmark of group.benchmarks) {
-    const spec = params ? { ...benchmark, params } : benchmark;
-    const results = await runBenchmark(spec, runner, options, useWorker);
+    const results = await runBenchmark(
+      benchmark,
+      runner,
+      options,
+      useWorker,
+      params,
+    );
 
     reports.push({
       name: benchmark.name,
@@ -147,5 +169,5 @@ async function runGroup(
     });
   }
 
-  return reports;
+  return { reports, baseline };
 }

@@ -5,6 +5,7 @@ import {
   mitataBench,
 } from "../mitata-util/MitataBench.ts";
 import type { BenchRunner, RunnerOptions } from "./BenchRunner.ts";
+import { executeBenchmark } from "./BenchRunner.ts";
 import { msToNs } from "./RunnerUtils.ts";
 
 /** Benchmark using the mitata library. */
@@ -12,6 +13,7 @@ export class MitataBenchRunner implements BenchRunner {
   async runBench<T = unknown>(
     benchmark: BenchmarkSpec<T>,
     options: RunnerOptions,
+    params?: T,
   ): Promise<MeasuredResults[]> {
     const {
       minTime,
@@ -31,7 +33,7 @@ export class MitataBenchRunner implements BenchRunner {
     opts.observeGC = observeGC;
 
     const result = await mitataBench(
-      () => benchmark.fn(benchmark.params),
+      () => executeBenchmark(benchmark, params),
       benchmark.name,
       opts,
     );

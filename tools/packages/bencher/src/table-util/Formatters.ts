@@ -24,12 +24,22 @@ export function percentPrecision(
   };
 }
 
-/** Format duration in milliseconds */
+/** Format duration in milliseconds with appropriate units */
 export function duration(ms: unknown): string | null {
   if (typeof ms !== "number") return null;
+  if (ms < 0.001) return `${(ms * 1000000).toFixed(0)}ns`;
   if (ms < 1) return `${(ms * 1000).toFixed(1)}μs`;
   if (ms < 1000) return `${ms.toFixed(2)}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
+}
+
+/** Format time in milliseconds, showing very small values with units */
+export function timeValue(ms: unknown): string | null {
+  if (typeof ms !== "number") return null;
+  if (ms < 0.001) return `${(ms * 1000000).toFixed(0)}ns`;
+  if (ms < 0.01) return `${(ms * 1000).toFixed(1)}μs`;
+  if (ms >= 10) return ms.toFixed(0);
+  return ms.toFixed(2);
 }
 
 /** Format as a rate (value per unit) */
@@ -56,6 +66,13 @@ export function diffPercent(main: unknown, base: unknown): string {
   if (typeof main !== "number" || typeof base !== "number") return " ";
   const diff = main - base;
   return coloredPercent(diff, base);
+}
+
+/** Format percentage difference for benchmarks (lower is better) */
+export function diffPercentBenchmark(main: unknown, base: unknown): string {
+  if (typeof main !== "number" || typeof base !== "number") return " ";
+  const diff = main - base;
+  return coloredPercent(diff, base, false); // negative is good for benchmarks
 }
 
 /**

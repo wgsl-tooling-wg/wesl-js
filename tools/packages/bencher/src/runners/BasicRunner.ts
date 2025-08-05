@@ -1,12 +1,14 @@
 import type { BenchmarkSpec } from "../Benchmark.ts";
 import type { MeasuredResults } from "../MeasuredResults.ts";
 import type { BenchRunner, RunnerOptions } from "./BenchRunner.ts";
+import { executeBenchmark } from "./BenchRunner.ts";
 
 /** Basic benchmark runner that respects max time and max iterations for timing benchmarks. */
 export class BasicRunner implements BenchRunner {
   async runBench<T = unknown>(
     benchmark: BenchmarkSpec<T>,
     options: RunnerOptions,
+    params?: T,
   ): Promise<MeasuredResults[]> {
     const { maxTime = 5000, maxIterations = 1000000 } = options;
     const samples: number[] = [];
@@ -16,7 +18,7 @@ export class BasicRunner implements BenchRunner {
 
     while (iterations < maxIterations) {
       const sampleStart = performance.now();
-      benchmark.fn(benchmark.params);
+      executeBenchmark(benchmark, params);
       const sampleEnd = performance.now();
 
       const sampleTime = sampleEnd - sampleStart;

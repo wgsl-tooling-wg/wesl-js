@@ -1,10 +1,10 @@
 import type { ReportColumnGroup, ResultsMapper } from "./BenchmarkReport.ts";
 import type { MeasuredResults } from "./MeasuredResults.ts";
 import {
-  floatPrecision,
   integer,
   percent,
   percentPrecision,
+  timeValue,
 } from "./table-util/Formatters.ts";
 
 export interface TimeStats {
@@ -27,19 +27,19 @@ export const timeSection: ResultsMapper<TimeStats> = {
         {
           key: "mean",
           title: "mean",
-          formatter: floatPrecision(2),
+          formatter: timeValue,
           comparable: true,
         },
         {
           key: "p50",
           title: "p50",
-          formatter: floatPrecision(2),
+          formatter: timeValue,
           comparable: true,
         },
         {
           key: "p99",
           title: "p99",
-          formatter: floatPrecision(2),
+          formatter: timeValue,
           comparable: true,
         },
       ],

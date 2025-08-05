@@ -15,7 +15,6 @@ test("MitataBenchRunner runs benchmark in worker mode", async () => {
   const spec: BenchmarkSpec = {
     name: "worker-test",
     fn: simpleTestFunction,
-    params: undefined,
   };
 
   const results = await runBenchmark(
@@ -48,7 +47,6 @@ test("TinyBenchRunner runs benchmark in worker mode", async () => {
       const fib = (x: number): number => (x <= 1 ? x : fib(x - 1) + fib(x - 2));
       return fib(n);
     },
-    params: 5,
   };
 
   const results = await runBenchmark(
@@ -59,6 +57,7 @@ test("TinyBenchRunner runs benchmark in worker mode", async () => {
       warmupTime: 0, // Disable warmup
     },
     true,
+    5,
   );
 
   expect(results).toHaveLength(1);
@@ -73,7 +72,6 @@ test("BasicRunner runs benchmark in worker mode", async () => {
   const spec: BenchmarkSpec = {
     name: "basic-worker-test",
     fn: simpleTestFunction,
-    params: undefined,
   };
 
   const results = await runBenchmark(
@@ -105,7 +103,6 @@ test("RunnerOrchestrator propagates mitata errors from worker", async () => {
     fn: () => {
       throw new Error("Test error from benchmark");
     },
-    params: undefined,
   };
 
   await expect(

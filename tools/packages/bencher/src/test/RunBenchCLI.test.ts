@@ -1,6 +1,4 @@
 import { execSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
 import type { BenchSuite } from "../Benchmark.ts";
@@ -17,15 +15,39 @@ const testSuite: BenchSuite = {
     {
       name: "String Operations",
       benchmarks: [
-        { name: "concatenation", fn: () => "a" + "b", params: undefined },
-        { name: "template literal", fn: () => `a${"b"}`, params: undefined },
+        { name: "concatenation", fn: () => "a" + "b" },
+        { name: "template literal", fn: () => `a${"b"}` },
       ],
     },
     {
       name: "Math Operations",
       benchmarks: [
-        { name: "addition", fn: () => 1 + 1, params: undefined },
-        { name: "multiplication", fn: () => 2 * 2, params: undefined },
+        { name: "addition", fn: () => 1 + 1 },
+        { name: "multiplication", fn: () => 2 * 2 },
+      ],
+    },
+  ],
+};
+
+const suiteWithSetup: BenchSuite = {
+  name: "Array Suite",
+  groups: [
+    {
+      name: "Array Operations",
+      setup: () => ({
+        numbers: Array.from({ length: 100 }, (_, i) => i),
+        strings: Array.from({ length: 100 }, (_, i) => `item${i}`),
+      }),
+      benchmarks: [
+        {
+          name: "sum numbers",
+          fn: ({ numbers }: any) =>
+            numbers.reduce((a: number, b: number) => a + b, 0),
+        },
+        {
+          name: "join strings",
+          fn: ({ strings }: any) => strings.join(","),
+        },
       ],
     },
   ],
@@ -125,45 +147,19 @@ test("profile mode sets single iteration", () => {
   expect(options.warmupSamples).toBe(0);
 });
 
-/** Create test benchmark script */
-function createTestBenchScript(): string {
-  const importPath = path.resolve(import.meta.dirname!, "../index.ts");
-  return `
-import { runBenchCLI, type BenchSuite } from '${importPath}';
-
-const suite: BenchSuite = {
-  name: "Test",
-  groups: [{
-    name: "Math",
-    benchmarks: [
-      { name: "plus", fn: () => 1 + 1, params: undefined },
-      { name: "multiply", fn: () => 2 * 2, params: undefined }
-    ]
-  }]
-};
-
-runBenchCLI(suite);
-`;
-}
-
-/** Run script in temp dir and return output */
-function executeTestScript(script: string, args = ""): string {
-  const tempDir = mkdtempSync(path.join(tmpdir(), "bench-cli-test-"));
-  const scriptPath = path.join(tempDir, "test-bench.ts");
-
-  try {
-    writeFileSync(scriptPath, script);
-    return execSync(`node --expose-gc --import tsx ${scriptPath} ${args}`, {
-      encoding: "utf8",
-    });
-  } finally {
-    rmSync(tempDir, { recursive: true });
-  }
+/** Execute test fixture script and return output */
+function executeTestScript(args = ""): string {
+  const scriptPath = path.join(
+    import.meta.dirname!,
+    "fixtures/test-bench-script.ts",
+  );
+  return execSync(`node --expose-gc ${scriptPath} ${args}`, {
+    encoding: "utf8",
+  });
 }
 
 test("e2e: runs user script", () => {
-  const script = createTestBenchScript();
-  const output = executeTestScript(script, "--time 0.1");
+  const output = executeTestScript("--time 0.1");
 
   expect(output).toContain("plus");
   expect(output).toContain("multiply");
@@ -179,9 +175,52 @@ test("e2e: runs user script", () => {
 });
 
 test("e2e: filter flag", () => {
-  const script = createTestBenchScript();
-  const output = executeTestScript(script, '--filter "plus" --time 0.1');
+  const output = executeTestScript('--filter "plus" --time 0.1');
 
   expect(output).toContain("plus");
   expect(output).not.toContain("multiply");
+});
+
+test("runs benchmarks with setup function", async () => {
+  const output = await captureConsoleOutput(() =>
+    runBenchCLI(suiteWithSetup, ["--time", "0.1"]),
+  );
+
+  expect(output).toContain("sum numbers");
+  expect(output).toContain("join strings");
+  expect(output).toContain("mean");
+  expect(output).toContain("runs");
+});
+
+test("runs benchmarks with baseline comparison", async () => {
+  const suiteWithBaseline: BenchSuite = {
+    name: "Baseline Test",
+    groups: [
+      {
+        name: "Sort Comparison",
+        setup: () => ({
+          data: Array.from({ length: 100 }, () => Math.random()),
+        }),
+        baseline: {
+          name: "baseline sort",
+          fn: ({ data }: any) => [...data].sort(),
+        },
+        benchmarks: [
+          {
+            name: "optimized sort",
+            fn: ({ data }: any) => [...data].sort((a, b) => a - b),
+          },
+        ],
+      },
+    ],
+  };
+
+  const output = await captureConsoleOutput(() =>
+    runBenchCLI(suiteWithBaseline, ["--time", "0.1"]),
+  );
+
+  expect(output).toContain("baseline sort");
+  expect(output).toContain("optimized sort");
+  expect(output).toContain("Δ%"); // Diff column should appear
+  expect(output).toContain("mean");
 });

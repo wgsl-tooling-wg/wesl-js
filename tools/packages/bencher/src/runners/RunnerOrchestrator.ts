@@ -13,6 +13,7 @@ interface RunMessage {
   runnerName: KnownRunner;
   options: RunnerOptions;
   fnCode: string;
+  params?: unknown;
 }
 
 /** Message returned from worker process with benchmark results. */
@@ -39,13 +40,14 @@ export async function runBenchmark<T = unknown>(
   runner: KnownRunner,
   options: RunnerOptions,
   useWorker = false,
+  params?: T,
 ): Promise<MeasuredResults[]> {
   if (!useWorker) {
     const benchRunner = await createRunner(runner);
-    return benchRunner.runBench(spec, options);
+    return benchRunner.runBench(spec, options, params);
   }
 
-  return runInWorker(spec, runner, options);
+  return runInWorker(spec, runner, options, params);
 }
 
 /** Runs benchmark in isolated worker process. */
@@ -53,6 +55,7 @@ async function runInWorker<T>(
   spec: BenchmarkSpec<T>,
   runnerName: KnownRunner,
   options: RunnerOptions,
+  params?: T,
 ): Promise<MeasuredResults[]> {
   const startTime = getPerfNow();
   logTiming(`Starting worker for ${spec.name} with ${runnerName}`);
@@ -78,7 +81,7 @@ async function runInWorker<T>(
       reject,
     );
 
-    const runMessage = createRunMessage(spec, runnerName, options);
+    const runMessage = createRunMessage(spec, runnerName, options, params);
     const messageTime = getPerfNow();
     worker.send(runMessage);
     logTiming(
@@ -173,6 +176,7 @@ function createRunMessage<T>(
   spec: BenchmarkSpec<T>,
   runnerName: KnownRunner,
   options: RunnerOptions,
+  params?: T,
 ): RunMessage {
   return {
     type: "run",
@@ -180,5 +184,6 @@ function createRunMessage<T>(
     runnerName,
     options,
     fnCode: spec.fn.toString(),
+    params,
   };
 }

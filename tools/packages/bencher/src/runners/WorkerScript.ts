@@ -11,6 +11,7 @@ interface RunMessage {
   runnerName: KnownRunner;
   options: RunnerOptions;
   fnCode: string;
+  params?: unknown;
 }
 
 interface ResultMessage {
@@ -49,7 +50,11 @@ process.on("message", async (message: RunMessage) => {
     const spec: BenchmarkSpec = { ...message.spec, fn };
 
     const benchStart = getPerfNow();
-    const results = await runner.runBench(spec, message.options);
+    const results = await runner.runBench(
+      spec,
+      message.options,
+      message.params,
+    );
     logTiming("Benchmark execution took", getElapsed(benchStart));
 
     sendAndExit({ type: "result", results }, 0);
