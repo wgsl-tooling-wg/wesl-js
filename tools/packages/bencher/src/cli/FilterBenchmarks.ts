@@ -26,7 +26,9 @@ function createFilterRegex(filter: string): RegExp {
     filter.includes("*") ||
     filter.includes("?") ||
     filter.includes("[") ||
-    filter.includes("|");
+    filter.includes("|") ||
+    filter.startsWith("^") ||
+    filter.endsWith("$");
   
   if (looksLikeRegex) {
     // Strip surrounding slashes if present

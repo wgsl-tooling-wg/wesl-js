@@ -42,10 +42,6 @@ export const locSection: ResultsMapper<LocStats> = {
           formatter: integer,
           comparable: true,
         },
-      ],
-    },
-    {
-      columns: [
         {
           key: "lines",
           title: "lines",

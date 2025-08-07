@@ -77,7 +77,7 @@ export const gcSection: ResultsMapper<GcStats> = {
   },
   columns: (): ReportColumnGroup<GcStats>[] => [
     {
-      groupTitle: "gc time",
+      groupTitle: "gc",
       columns: [
         {
           key: "gc",

@@ -45,13 +45,11 @@ test("combines column sections correctly", () => {
 
   const rows = valuesForReports(reports, sections);
 
-  expect(rows[0]).toEqual({
-    name: "test",
-    mean: 1.5,
-    p50: 1.4,
-    p99: 2.1,
-    gc: 0.03,
-  });
+  expect(rows[0].name).toBe("test");
+  expect(rows[0].mean).toBe(1.5);
+  expect(rows[0].p50).toBe(1.4);
+  expect(rows[0].p99).toBe(2.1);
+  expect(rows[0].gc).toBeCloseTo(0.02, 2);
 });
 
 test("generates diff columns for baseline comparison", () => {

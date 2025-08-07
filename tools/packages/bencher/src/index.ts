@@ -26,4 +26,4 @@ export {
   runsSection,
   timeSection,
 } from "./StandardSections.ts";
-export { integer } from "./table-util/Formatters.ts";
+export { integer, timeMs } from "./table-util/Formatters.ts";

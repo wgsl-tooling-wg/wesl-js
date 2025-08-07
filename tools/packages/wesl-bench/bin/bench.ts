@@ -5,14 +5,16 @@ import {
   type BenchGroup,
   type BenchSuite,
   defaultCliArgs,
+  gcSection,
   parseBenchArgs,
+  type ReportGroup,
   reportResults,
   runBenchmarks,
   runsSection,
-  timeSection,
 } from "bencher";
 import { loadExamples, type WeslSource } from "../src/LoadExamples.ts";
 import { locSection } from "../src/LocSection.ts";
+import { meanTimeSection } from "../src/MeanTimeSection.ts";
 import {
   type ParserVariant,
   parserVariation,
@@ -36,9 +38,23 @@ async function main() {
 
   const results = await runBenchmarks(suite, args);
   const reorganized = reorganizeReportGroups(results, variants);
-  const sections = [timeSection, runsSection, locSection];
+
+  // Only include GC section if GC data is available
+  const sections = hasGcData(results)
+    ? [locSection, meanTimeSection, gcSection, runsSection]
+    : [locSection, meanTimeSection, runsSection];
+
   const table = reportResults(reorganized, sections);
   console.log(table);
+}
+
+/** @return true if any benchmark result contains GC data */
+function hasGcData(results: ReportGroup[]): boolean {
+  return results.some(({ reports }) =>
+    reports.some(
+      ({ measuredResults }) => measuredResults.nodeGcTime !== undefined,
+    ),
+  );
 }
 
 /** @return parsed CLI arguments with custom variant option */
