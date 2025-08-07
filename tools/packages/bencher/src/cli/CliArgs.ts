@@ -1,9 +1,18 @@
+import type { Argv } from "yargs";
 import yargs from "yargs";
 
-export type CliArgs = ReturnType<typeof cliArgs>;
-/** parse command line arguments for wesl-bench */
-export function cliArgs(args: string[]) {
-  return yargs(args)
+/** Configure function that adds CLI arguments to yargs */
+export type ConfigureArgs<T> = (yargs: Argv) => Argv<T>;
+
+// biome-ignore format: readability
+/** Derive the default CLI args type from the builder function */
+export type DefaultCliArgs = 
+  ReturnType<typeof defaultCliArgs> extends Argv<infer T> ? 
+    T : never;
+
+/** Build default benchmark CLI arguments */
+export function defaultCliArgs(yargsInstance: Argv) {
+  return yargsInstance
     .option("time", {
       type: "number",
       default: 0.642,
@@ -18,7 +27,7 @@ export function cliArgs(args: string[]) {
     .option("collect", {
       type: "boolean",
       default: false,
-      describe: "force a garbage collection after each test",
+      describe: "force a garbage collection after every single iteration",
     })
     .option("observe-gc", {
       type: "boolean",
@@ -48,6 +57,14 @@ export function cliArgs(args: string[]) {
       describe: "run benchmarks in a worker thread for better isolation",
     })
     .help()
-    .strict()
-    .parseSync();
+    .strict();
+}
+
+/** Parse CLI arguments with optional custom configuration */
+export function parseCliArgs<T = DefaultCliArgs>(
+  args: string[],
+  configure: ConfigureArgs<T> = defaultCliArgs as ConfigureArgs<T>,
+): T {
+  const yargsInstance = configure(yargs(args));
+  return yargsInstance.parseSync() as T;
 }

@@ -1,76 +1,92 @@
-import type { BenchGroup, BenchSuite } from "../Benchmark.ts";
+import { hideBin } from "yargs/helpers";
+import type { BenchGroup, BenchmarkSpec, BenchSuite } from "../Benchmark.ts";
 import type { BenchmarkReport, ReportGroup } from "../BenchmarkReport.ts";
 import { reportResults } from "../BenchmarkReport.ts";
 import type { RunnerOptions } from "../runners/BenchRunner.ts";
 import type { KnownRunner } from "../runners/CreateRunner.ts";
 import { runBenchmark } from "../runners/RunnerOrchestrator.ts";
 import { gcSection, runsSection, timeSection } from "../StandardSections.ts";
-import { type CliArgs, cliArgs } from "./CliArgs.ts";
+import {
+  type ConfigureArgs,
+  type DefaultCliArgs,
+  parseCliArgs,
+} from "./CliArgs.ts";
+
+type BaseRunParams = {
+  runner: KnownRunner;
+  options: RunnerOptions;
+  useWorker: boolean;
+};
+
+type SpecRunParams = BaseRunParams & {
+  params: unknown;
+  metadata?: Record<string, any>;
+};
+
+type SuiteRunParams = BaseRunParams & {
+  suite: BenchSuite;
+};
 
 /** Run benchmarks from CLI with filtering and custom options */
-export async function runBenchCLI(
+export async function runBenchCLI<T = DefaultCliArgs>(
   suite: BenchSuite,
-  argv?: string[],
+  configureArgs?: ConfigureArgs<T>,
+): Promise<void> {
+  const argv = hideBin(process.argv);
+  return runBenchInternal(suite, argv, configureArgs);
+}
+
+/** CLI API for tests */
+export async function runBenchCLITest<T = DefaultCliArgs>(
+  suite: BenchSuite,
+  args: string,
+  configureArgs?: ConfigureArgs<T>,
+): Promise<void> {
+  const argv = args.split(/\s+/).filter(arg => arg.length > 0);
+  return runBenchInternal(suite, argv, configureArgs);
+}
+
+/** Internal implementation for both public APIs */
+async function runBenchInternal<T = DefaultCliArgs>(
+  suite: BenchSuite,
+  argv: string[],
+  configureArgs?: ConfigureArgs<T>,
 ): Promise<void> {
   try {
-    const args = cliArgs(argv ?? process.argv.slice(2));
-    const filtered = filterBenchmarks(suite, args.filter);
-
-    validateFilteredSuite(filtered, args.filter);
-    prepareGarbageCollection(args.collect);
-
+    const args = parseCliArgs(argv, configureArgs as ConfigureArgs<T>) as T &
+      DefaultCliArgs;
+    const { filter, runner, worker: useWorker, "observe-gc": observeGC } = args;
     const options = cliToRunnerOptions(args);
-    const reportGroups = await runFilteredBenchmarks(
-      filtered,
-      args.runner as KnownRunner,
+    const filtered = filterBenchmarks(suite, filter);
+    const reportGroups = await runSuite({
+      suite: filtered,
+      runner: runner as KnownRunner,
       options,
-      args.worker,
-    );
-
-    displayResults(reportGroups, args.observeGc);
+      useWorker,
+    });
+    displayResults(reportGroups, observeGC);
   } catch (error) {
     console.error("Benchmark run failed:", error);
     process.exit(1);
   }
 }
 
-/** Filter benchmarks by name pattern (substring or regex) */
+/** Filter benchmarks by name pattern */
 export function filterBenchmarks(
   suite: BenchSuite,
   filter?: string,
 ): BenchSuite {
   if (!filter) return suite;
-
   const regex = createFilterRegex(filter);
-
   const groups = suite.groups.map(group => ({
     ...group,
     benchmarks: group.benchmarks.filter(bench => regex.test(bench.name)),
   }));
-
-  return {
-    name: suite.name,
-    groups,
-  };
+  validateFilteredSuite(groups, filter);
+  return { name: suite.name, groups };
 }
 
-/** Convert CLI args to runner options */
-export function cliToRunnerOptions(args: CliArgs): RunnerOptions {
-  const options: RunnerOptions = {
-    minTime: args.time * 1000,
-    observeGC: args.observeGc,
-  };
-
-  if (args.profile) {
-    options.maxIterations = 1;
-    options.minSamples = 1;
-    options.warmupSamples = 0;
-  }
-
-  return options;
-}
-
-/** Create case-insensitive regex from filter string */
+/** Create case-insensitive regex from filter */
 function createFilterRegex(filter: string): RegExp {
   try {
     return new RegExp(filter, "i");
@@ -79,24 +95,77 @@ function createFilterRegex(filter: string): RegExp {
   }
 }
 
-/** Escape regex special chars for literal matching */
+/** Escape regex special chars */
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Exit if no benchmarks match filter */
-function validateFilteredSuite(suite: BenchSuite, filter?: string): void {
-  const hasNoBenchmarks = suite.groups.every(g => g.benchmarks.length === 0);
-  if (hasNoBenchmarks) {
-    console.error(`No benchmarks match filter: "${filter}"`);
-    process.exit(1);
+/** Throw if no benchmarks match filter */
+function validateFilteredSuite(groups: BenchGroup[], filter?: string): void {
+  if (groups.every(g => g.benchmarks.length === 0)) {
+    throw new Error(`No benchmarks match filter: "${filter}"`);
   }
 }
 
-/** Run GC if requested and available */
-function prepareGarbageCollection(shouldCollect: boolean): void {
-  if (shouldCollect && global.gc) {
-    global.gc();
+/** Run all benchmarks in suite */
+async function runSuite(params: SuiteRunParams): Promise<ReportGroup[]> {
+  const { suite, runner, options, useWorker } = params;
+  const reportGroups: ReportGroup[] = [];
+  for (const group of suite.groups) {
+    const groupResult = await runGroup(group, runner, options, useWorker);
+    reportGroups.push(groupResult);
+  }
+  return reportGroups;
+}
+
+/** Run group benchmarks with setup params */
+async function runGroup(
+  group: BenchGroup,
+  runner: KnownRunner,
+  options: RunnerOptions,
+  useWorker: boolean,
+): Promise<ReportGroup> {
+  const { benchmarks, baseline, setup, metadata } = group;
+  const params = await setup?.();
+  const runParams = { runner, options, useWorker, params, metadata };
+
+  validateBenchmarkParameters(group);
+
+  const baselineReport = baseline
+    ? await runSingleBenchmark(baseline, runParams)
+    : undefined;
+  
+  const reports = [];
+  for (const benchmark of benchmarks) {
+    reports.push(await runSingleBenchmark(benchmark, runParams));
+  }
+  
+  return { reports, baseline: baselineReport };
+}
+
+/** Create benchmark report */
+async function runSingleBenchmark(
+  spec: BenchmarkSpec,
+  runParams: SpecRunParams,
+): Promise<BenchmarkReport> {
+  const { runner, options, useWorker, params, metadata } = runParams;
+  const benchParams = { spec, runner, options, useWorker, params };
+  const [result] = await runBenchmark(benchParams);
+  return { name: spec.name, measuredResults: result, metadata };
+}
+
+/** Validate parameterized benchmarks have setup */
+function validateBenchmarkParameters(group: BenchGroup): void {
+  const { name, setup, benchmarks, baseline } = group;
+  if (setup) return;
+  
+  const allBenchmarks = baseline ? [...benchmarks, baseline] : benchmarks;
+  for (const benchmark of allBenchmarks) {
+    if (benchmark.fn.length > 0) {
+      console.warn(
+        `Benchmark "${benchmark.name}" in group "${name}" expects parameters but no setup() provided.`,
+      );
+    }
   }
 }
 
@@ -108,66 +177,11 @@ function displayResults(groups: ReportGroup[], observeGc: boolean): void {
   console.log(table);
 }
 
-/** Run all benchmarks in suite */
-async function runFilteredBenchmarks(
-  suite: BenchSuite,
-  runner: KnownRunner,
-  options: RunnerOptions,
-  useWorker: boolean,
-): Promise<ReportGroup[]> {
-  const reportGroups: ReportGroup[] = [];
-
-  for (const group of suite.groups) {
-    const groupResult = await runGroup(group, runner, options, useWorker);
-    reportGroups.push(groupResult);
-  }
-
-  return reportGroups;
-}
-
-/** Run group benchmarks with setup params */
-async function runGroup(
-  group: BenchGroup,
-  runner: KnownRunner,
-  options: RunnerOptions,
-  useWorker: boolean,
-): Promise<ReportGroup> {
-  const params = await group.setup?.();
-  const reports: BenchmarkReport[] = [];
-
-  // Run baseline if present
-  let baseline: BenchmarkReport | undefined;
-  if (group.baseline) {
-    const baselineResults = await runBenchmark(
-      group.baseline,
-      runner,
-      options,
-      useWorker,
-      params,
-    );
-    baseline = {
-      name: group.baseline.name,
-      measuredResults: baselineResults[0],
-      metadata: group.metadata,
-    };
-  }
-
-  // Run all benchmarks
-  for (const benchmark of group.benchmarks) {
-    const results = await runBenchmark(
-      benchmark,
-      runner,
-      options,
-      useWorker,
-      params,
-    );
-
-    reports.push({
-      name: benchmark.name,
-      measuredResults: results[0],
-      metadata: group.metadata,
-    });
-  }
-
-  return { reports, baseline };
+/** Convert CLI args to runner options */
+export function cliToRunnerOptions(args: DefaultCliArgs): RunnerOptions {
+  return {
+    minTime: args.time * 1000,
+    observeGC: args["observe-gc"],
+    collect: args.collect,
+  };
 }
