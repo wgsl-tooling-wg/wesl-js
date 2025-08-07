@@ -18,7 +18,17 @@ export class TinyBenchRunner implements BenchRunner {
       warmupTime: options.warmupTime,
     });
 
-    bench.add(benchmark.name, () => executeBenchmark(benchmark, params));
+    // Wrap the benchmark function to force GC after each iteration if collect is enabled
+    const gc = globalThis.gc;
+    const benchFn =
+      options.collect && gc
+        ? () => {
+            executeBenchmark(benchmark, params);
+            gc();
+          }
+        : () => executeBenchmark(benchmark, params);
+
+    bench.add(benchmark.name, benchFn);
 
     await bench.run();
 

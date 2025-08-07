@@ -6,19 +6,7 @@ export function executeBenchmark<T>(
   benchmark: BenchmarkSpec<T>,
   params?: T,
 ): void {
-  if (benchmark.fn.length === 0) {
-    // No-args function
-    (benchmark.fn as () => void)();
-  } else if (params !== undefined) {
-    // Function expects params from setup
-    (benchmark.fn as (params: T) => void)(params);
-  } else {
-    // Function expects params but none provided
-    throw new Error(
-      `Benchmark "${benchmark.name}" expects parameters but none were provided. ` +
-        `Add a setup function to the benchmark group to provide data.`,
-    );
-  }
+  (benchmark.fn as (params?: T) => void)(params);
 }
 
 /** Implemented by benchmark libraries to run individual benchmark tasks */
@@ -54,4 +42,7 @@ export interface RunnerOptions {
 
   /** Whether to observe GC events (mitata only). Disabling this avoids a 1-second wait. Default: true */
   observeGC?: boolean;
+
+  /** Force a garbage collection after each iteration (requires --expose-gc flag). */
+  collect?: boolean;
 }

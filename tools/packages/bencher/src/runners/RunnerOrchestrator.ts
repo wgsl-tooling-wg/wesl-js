@@ -34,14 +34,22 @@ const logTiming = debugWorkerTiming
   ? (message: string) => console.log(`[RunnerOrchestrator] ${message}`)
   : () => {};
 
+interface RunBenchmarkParams<T = unknown> {
+  spec: BenchmarkSpec<T>;
+  runner: KnownRunner;
+  options: RunnerOptions;
+  useWorker?: boolean;
+  params?: T;
+}
+
 /** Executes benchmarks either directly or in isolated worker processes. */
-export async function runBenchmark<T = unknown>(
-  spec: BenchmarkSpec<T>,
-  runner: KnownRunner,
-  options: RunnerOptions,
+export async function runBenchmark<T = unknown>({
+  spec,
+  runner,
+  options,
   useWorker = false,
-  params?: T,
-): Promise<MeasuredResults[]> {
+  params,
+}: RunBenchmarkParams<T>): Promise<MeasuredResults[]> {
   if (!useWorker) {
     const benchRunner = await createRunner(runner);
     return benchRunner.runBench(spec, options, params);
@@ -158,7 +166,7 @@ function createCleanup(
 function createWorkerProcess() {
   const workerPath = path.join(import.meta.dirname!, "WorkerScript.ts");
   return fork(workerPath, [], {
-    execArgv: ["--expose-gc", "--import", "tsx"],
+    execArgv: ["--expose-gc", "--allow-natives-syntax", "--import", "tsx"],
     silent: false,
     env: { ...process.env, NODE_OPTIONS: "" },
   });
