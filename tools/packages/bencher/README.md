@@ -13,7 +13,7 @@ pnpm add bencher
 ## Quick Start
 
 ```typescript
-import { runBenchCLI, type BenchSuite } from 'bencher';
+import { parseBenchArgs, runBenchmarks, reportResults, timeSection, runsSection, type BenchSuite } from 'bencher';
 
 const suite: BenchSuite = {
   name: "String Operations",
@@ -28,7 +28,10 @@ const suite: BenchSuite = {
   ],
 };
 
-runBenchCLI(suite);
+const args = parseBenchArgs();
+const results = await runBenchmarks(suite, args);
+const table = reportResults(results, [timeSection, runsSection]);
+console.log(table);
 ```
 
 ### Setup and Baseline Example
@@ -36,7 +39,7 @@ runBenchCLI(suite);
 Here's a more comprehensive example with shared setup data and baseline comparison:
 
 ```typescript
-import { runBenchCLI, type BenchGroup, type BenchSuite } from 'bencher';
+import { parseBenchArgs, runBenchmarks, defaultReport, type BenchGroup, type BenchSuite } from 'bencher';
 
 const sortingGroup: BenchGroup<number[]> = {
   name: "Array Sorting (1000 numbers)",
@@ -53,7 +56,10 @@ const suite: BenchSuite = {
   groups: [sortingGroup],
 };
 
-runBenchCLI(suite);
+const args = parseBenchArgs();
+const results = await runBenchmarks(suite, args);
+const report = defaultReport(results, args);
+console.log(report);
 ```
 
 See `examples/simple-cli.ts` for a complete runnable example.

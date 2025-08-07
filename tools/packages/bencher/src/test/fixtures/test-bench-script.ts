@@ -27,4 +27,4 @@ const suite: BenchSuite = {
   ],
 };
 
-await runDefaultBench({ suite });
+await runDefaultBench(suite);

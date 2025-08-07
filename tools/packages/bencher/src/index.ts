@@ -15,9 +15,9 @@ export type { ConfigureArgs, DefaultCliArgs } from "./cli/CliArgs.ts";
 export { defaultCliArgs, parseCliArgs } from "./cli/CliArgs.ts";
 export {
   defaultReport,
-  runBenchCLI,
+  parseBenchArgs,
+  runBenchmarks,
   runDefaultBench,
-  type RunBenchParams,
 } from "./cli/RunBenchCLI.ts";
 export type { MeasuredResults } from "./MeasuredResults.ts";
 export type { RunnerOptions } from "./runners/BenchRunner.ts";

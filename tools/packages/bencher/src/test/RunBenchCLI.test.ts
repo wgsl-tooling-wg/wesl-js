@@ -2,7 +2,8 @@ import { execSync } from "node:child_process";
 import path from "node:path";
 import { expect, test } from "vitest";
 import type { BenchSuite } from "../Benchmark.ts";
-import { defaultReport, filterBenchmarks, runBenchCLITest } from "../cli/RunBenchCLI.ts";
+import { filterBenchmarks } from "../cli/FilterBenchmarks.ts";
+import { runBenchCLITest } from "./TestUtils.ts";
 
 const testSuite: BenchSuite = {
   name: "Test Suite",
@@ -48,27 +49,8 @@ const suiteWithSetup: BenchSuite = {
   ],
 };
 
-/** Capture console output from async function */
-async function captureConsoleOutput(fn: () => Promise<any>): Promise<string> {
-  let output = "";
-  const original = console.log;
-  console.log = (msg: string) => {
-    output += msg + "\n";
-  };
-
-  try {
-    await fn();
-    return output;
-  } finally {
-    console.log = original;
-  }
-}
-
 test("runs all benchmarks", async () => {
-  const output = await captureConsoleOutput(async () => {
-    const results = await runBenchCLITest(testSuite, "--time 0.1 --runner basic");
-    defaultReport(results, false);
-  });
+  const output = await runBenchCLITest(testSuite, "--time 0.1 --runner basic");
 
   expect(output).toContain("concatenation");
   expect(output).toContain("template literal");
@@ -79,20 +61,20 @@ test("runs all benchmarks", async () => {
 });
 
 test("filters by substring", async () => {
-  const output = await captureConsoleOutput(async () => {
-    const results = await runBenchCLITest(testSuite, "--filter concat --time 0.1 --runner basic");
-    defaultReport(results, false);
-  });
+  const output = await runBenchCLITest(
+    testSuite,
+    "--filter concat --time 0.1 --runner basic",
+  );
 
   expect(output).toContain("concatenation");
   expect(output).not.toContain("addition");
 });
 
 test("filters by regex", async () => {
-  const output = await captureConsoleOutput(async () => {
-    const results = await runBenchCLITest(testSuite, "--filter ^template --time 0.1 --runner basic");
-    defaultReport(results, false);
-  });
+  const output = await runBenchCLITest(
+    testSuite,
+    "--filter ^template --time 0.1 --runner basic",
+  );
 
   expect(output).toContain("template literal");
   expect(output).not.toContain("addition");
@@ -147,10 +129,10 @@ test("e2e: filter flag", () => {
 });
 
 test("runs benchmarks with setup function", async () => {
-  const output = await captureConsoleOutput(async () => {
-    const results = await runBenchCLITest(suiteWithSetup, "--time 0.1 --runner basic");
-    defaultReport(results, false);
-  });
+  const output = await runBenchCLITest(
+    suiteWithSetup,
+    "--time 0.1 --runner basic",
+  );
 
   expect(output).toContain("sum numbers");
   expect(output).toContain("join strings");
@@ -184,10 +166,10 @@ test(
       ],
     };
 
-    const output = await captureConsoleOutput(async () => {
-      const results = await runBenchCLITest(suiteWithBaseline, "--time 0.01 --runner basic"); // Further reduced time
-      defaultReport(results, false);
-    });
+    const output = await runBenchCLITest(
+      suiteWithBaseline,
+      "--time 0.01 --runner basic",
+    ); // Further reduced time
 
     expect(output).toContain("baseline sort");
     expect(output).toContain("optimized sort");

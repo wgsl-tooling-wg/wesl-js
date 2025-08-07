@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "bencher": "workspace:*",
-    "wesl": "workspace:*"
-  },
-  "devDependencies": {}
+    "wesl": "workspace:*",
+    "wgsl_reflect": "^1.2.1"
+  }
 }

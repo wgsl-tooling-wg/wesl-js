@@ -7,6 +7,39 @@ export interface WeslSource {
   lineCount?: number;
 }
 
+/** @return preloaded source data for all benchmark examples */
+export function loadExamples(examplesDir: string): Record<string, WeslSource> {
+  return {
+    bevy: loadDirectory(
+      join(examplesDir, "bevy"),
+      "./bevy_generated_deferred_lighting.wgsl",
+    ),
+    import_only: loadFile(examplesDir, "imports_only.wgsl"),
+    particle: loadFile(examplesDir, "particle.wgsl"),
+    rasterize: loadFile(examplesDir, "rasterize_05_fine.wgsl"),
+    reduceBuffer: loadFile(examplesDir, "reduceBuffer.wgsl"),
+    unity: loadFile(examplesDir, "unity_webgpu_000002B8376A5020.fs.wgsl"),
+  };
+}
+
+/** @return source data for all WESL files in a directory */
+function loadDirectory(dir: string, rootModule?: string): WeslSource {
+  const weslSrc = collectFiles(dir);
+  const resolvedRoot = resolveRoot(weslSrc, rootModule, dir);
+  const lineCount = countLines(weslSrc);
+  return { weslSrc, rootModule: resolvedRoot, lineCount };
+}
+
+/** @return source data for a single WESL file */
+function loadFile(basePath: string, filename: string): WeslSource {
+  const path = join(basePath, filename);
+  const content = readFileSync(path, "utf-8");
+  const modulePath = `./${filename}`;
+  const weslSrc = { [modulePath]: content };
+  const lineCount = countLines(weslSrc);
+  return { weslSrc, rootModule: modulePath, lineCount };
+}
+
 /** @return true if file has a WESL/WGSL extension */
 function isWeslFile(filename: string): boolean {
   return filename.endsWith(".wgsl") || filename.endsWith(".wesl");
@@ -58,43 +91,10 @@ function resolveRoot(
   return resolved;
 }
 
-/** @return source data for all WESL files in a directory */
-export function loadDirectory(dir: string, rootModule?: string): WeslSource {
-  const weslSrc = collectFiles(dir);
-  const resolvedRoot = resolveRoot(weslSrc, rootModule, dir);
-  const lineCount = countLines(weslSrc);
-  return { weslSrc, rootModule: resolvedRoot, lineCount };
-}
-
-/** @return source data for a single WESL file */
-export function loadFile(basePath: string, filename: string): WeslSource {
-  const path = join(basePath, filename);
-  const content = readFileSync(path, "utf-8");
-  const modulePath = `./${filename}`;
-  const weslSrc = { [modulePath]: content };
-  const lineCount = countLines(weslSrc);
-  return { weslSrc, rootModule: modulePath, lineCount };
-}
-
 /** @return total line count across all source files */
 function countLines(weslSrc: Record<string, string>): number {
   return Object.values(weslSrc).reduce(
     (total, content) => total + content.split("\n").length,
     0,
   );
-}
-
-/** @return preloaded source data for all benchmark examples */
-export function loadExamples(examplesDir: string) {
-  return {
-    bevy: loadDirectory(
-      join(examplesDir, "bevy"),
-      "./bevy_generated_deferred_lighting.wgsl",
-    ),
-    import_only: loadFile(examplesDir, "imports_only.wgsl"),
-    particle: loadFile(examplesDir, "particle.wgsl"),
-    rasterize: loadFile(examplesDir, "rasterize_05_fine.wgsl"),
-    reduceBuffer: loadFile(examplesDir, "reduceBuffer.wgsl"),
-    unity: loadFile(examplesDir, "unity_webgpu_000002B8376A5020.fs.wgsl"),
-  };
 }

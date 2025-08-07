@@ -11,6 +11,7 @@ import {
   type DefaultCliArgs,
   parseCliArgs,
 } from "./CliArgs.ts";
+import { filterBenchmarks } from "./FilterBenchmarks.ts";
 
 type BaseRunParams = {
   runner: KnownRunner;
@@ -27,91 +28,32 @@ type SuiteRunParams = BaseRunParams & {
   suite: BenchSuite;
 };
 
-/** Parameters for runBenchCLI */
-export interface RunBenchParams<T = DefaultCliArgs> {
-  suite: BenchSuite;
-  configureArgs?: ConfigureArgs<T>;
-}
-
-/** Run benchmarks from CLI with filtering and custom options */
-export async function runBenchCLI<T = DefaultCliArgs>(
-  params: RunBenchParams<T>,
-): Promise<ReportGroup[]> {
-  const { suite, configureArgs } = params;
+/** Parse CLI arguments with optional custom configuration */
+export function parseBenchArgs<T = DefaultCliArgs>(
+  configureArgs?: ConfigureArgs<T>,
+): T & DefaultCliArgs {
   const argv = hideBin(process.argv);
-  return runBenchInternal(suite, argv, configureArgs);
+  return parseCliArgs(argv, configureArgs) as T & DefaultCliArgs;
 }
 
-/** CLI API for tests */
-export async function runBenchCLITest<T = DefaultCliArgs>(
+/** Run benchmarks with parsed arguments */
+export async function runBenchmarks(
   suite: BenchSuite,
-  args: string,
-  configureArgs?: ConfigureArgs<T>,
+  args: DefaultCliArgs,
 ): Promise<ReportGroup[]> {
-  const argv = args.split(/\s+/).filter(arg => arg.length > 0);
-  return runBenchInternal(suite, argv, configureArgs);
-}
+  const { filter, profile, worker: useWorker } = args;
+  const runner = profile ? "basic" : (args.runner as KnownRunner);
+  const options = cliToRunnerOptions(args);
+  const filtered = filterBenchmarks(suite, filter);
 
-/** Internal implementation for both public APIs */
-async function runBenchInternal<T = DefaultCliArgs>(
-  suite: BenchSuite,
-  argv: string[],
-  configureArgs?: ConfigureArgs<T>,
-): Promise<ReportGroup[]> {
-  try {
-    const args = parseCliArgs(argv, configureArgs) as T & DefaultCliArgs;
-    const { filter, profile } = args;
-    const { worker: useWorker } = args;
-    const runner = profile ? "basic" : (args.runner as KnownRunner);
-    const options = cliToRunnerOptions(args);
-    const filtered = filterBenchmarks(suite, filter);
-    const reportGroups = await runSuite({
-      suite: filtered,
-      runner,
-      options,
-      useWorker,
-    });
-    return reportGroups;
-  } catch (error) {
-    console.error("Benchmark run failed:", error);
-    process.exit(1);
-  }
-}
+  const reportGroups = await runSuite({
+    suite: filtered,
+    runner,
+    options,
+    useWorker,
+  });
 
-/** Filter benchmarks by name pattern */
-export function filterBenchmarks(
-  suite: BenchSuite,
-  filter?: string,
-): BenchSuite {
-  if (!filter) return suite;
-  const regex = createFilterRegex(filter);
-  const groups = suite.groups.map(group => ({
-    ...group,
-    benchmarks: group.benchmarks.filter(bench => regex.test(bench.name)),
-  }));
-  validateFilteredSuite(groups, filter);
-  return { name: suite.name, groups };
-}
-
-/** Create case-insensitive regex from filter */
-function createFilterRegex(filter: string): RegExp {
-  try {
-    return new RegExp(filter, "i");
-  } catch {
-    return new RegExp(escapeRegex(filter), "i");
-  }
-}
-
-/** Escape regex special chars */
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/** Throw if no benchmarks match filter */
-function validateFilteredSuite(groups: BenchGroup[], filter?: string): void {
-  if (groups.every(g => g.benchmarks.length === 0)) {
-    throw new Error(`No benchmarks match filter: "${filter}"`);
-  }
+  return reportGroups;
 }
 
 /** Run all benchmarks in suite */
@@ -176,23 +118,27 @@ function validateBenchmarkParameters(group: BenchGroup): void {
   }
 }
 
-/** Print results table to console with default sections */
-export function defaultReport(groups: ReportGroup[], observeGc: boolean): void {
+/** Generate results table with default sections */
+export function defaultReport(
+  groups: ReportGroup[],
+  args: DefaultCliArgs,
+): string {
   const sections = [timeSection, runsSection] as const;
-  const finalSections = observeGc ? [...sections, gcSection] : sections;
-  const table = reportResults(groups, finalSections);
-  console.log(table);
+  const finalSections = args["observe-gc"]
+    ? [...sections, gcSection]
+    : sections;
+  return reportResults(groups, finalSections);
 }
 
-/** Run benchmarks and display with default report - convenience for tests */
-export async function runDefaultBench<T = DefaultCliArgs>(
-  params: RunBenchParams<T>,
+/** Run benchmarks and display with default report - convenience function */
+export async function runDefaultBench(
+  suite: BenchSuite,
+  configureArgs?: ConfigureArgs<any>,
 ): Promise<void> {
-  const results = await runBenchCLI(params);
-  // Extract observe-gc from parsed args to pass to defaultReport
-  const argv = hideBin(process.argv);
-  const args = parseCliArgs(argv, params.configureArgs) as T & DefaultCliArgs;
-  defaultReport(results, args["observe-gc"]);
+  const args = parseBenchArgs(configureArgs);
+  const results = await runBenchmarks(suite, args);
+  const report = defaultReport(results, args);
+  console.log(report);
 }
 
 /** Convert CLI args to runner options */

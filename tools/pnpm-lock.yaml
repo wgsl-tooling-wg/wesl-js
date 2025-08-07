@@ -414,6 +414,9 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
+      wgsl_reflect:
+        specifier: ^1.2.1
+        version: 1.2.1
 
   packages/wesl-link:
     dependencies:

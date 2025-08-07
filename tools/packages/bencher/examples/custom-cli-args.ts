@@ -4,7 +4,8 @@ import {
   type BenchSuite,
   defaultCliArgs,
   defaultReport,
-  runBenchCLI,
+  parseBenchArgs,
+  runBenchmarks,
 } from "../src/index.ts";
 
 // Example showing how to add custom CLI arguments to benchmarks
@@ -18,11 +19,6 @@ const mathGroup: BenchGroup<void> = {
   ],
 };
 
-const suite: BenchSuite = {
-  name: "Custom Args Demo",
-  groups: [mathGroup],
-};
-
 // Configure CLI with custom arguments
 function configureCustomArgs(yargs: any) {
   return defaultCliArgs(yargs).option("verbose", {
@@ -32,6 +28,17 @@ function configureCustomArgs(yargs: any) {
   });
 }
 
-// Run with custom CLI configuration
-const results = await runBenchCLI({ suite, configureArgs: configureCustomArgs });
-defaultReport(results, false);
+// Parse arguments with custom configuration
+const args = parseBenchArgs(configureCustomArgs);
+
+if (args.verbose) console.log("Verbose mode enabled");
+
+const suite: BenchSuite = {
+  name: "Custom Args Demo",
+  groups: [mathGroup],
+};
+
+// Run benchmarks with parsed arguments
+const results = await runBenchmarks(suite, args);
+const report = defaultReport(results, args);
+console.log(report);
