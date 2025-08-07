@@ -111,13 +111,20 @@ function markAsBaseline(report: BenchmarkReport): BenchmarkReport {
 /** @return base benchmark name without variant suffix */
 function extractBaseName(name: string): string {
   const cleanName = name.replace(/^--> /, "");
-  return cleanName.replace(/ \[(tokenize|parse)\]$/, "");
+  return cleanName.replace(/ \[.*?\]$/, "");
 }
 
 /** @return sort order for benchmark variants */
 function variantOrder(name: string): number {
-  if (name.startsWith("-->")) return 3; // baseline last
-  if (name.includes("[tokenize]")) return 0;
-  if (name.includes("[parse]")) return 1;
-  return 2; // link variant (no suffix)
+  // Extract variant and baseline status
+  const isBaseline = name.startsWith("-->");
+  const cleanName = name.replace(/^--> /, "");
+  
+  // Determine base order by variant type
+  let baseOrder = 4; // link variant (no suffix)
+  if (cleanName.includes("[tokenize]")) baseOrder = 0;
+  else if (cleanName.includes("[parse]")) baseOrder = 2;
+  
+  // Baselines come immediately after their variant
+  return isBaseline ? baseOrder + 1 : baseOrder;
 }

@@ -7,14 +7,16 @@ export function filterBenchmarks(
 ): BenchSuite {
   if (!filter) return suite;
   const regex = createFilterRegex(filter);
-  const groups = suite.groups.map(group => ({
-    ...group,
-    benchmarks: group.benchmarks.filter(bench => {
-      // Extract base name without variant suffix for filtering
-      const baseName = bench.name.replace(/ \[(tokenize|parse)\]$/, "");
-      return regex.test(baseName);
-    }),
-  }));
+  const groups = suite.groups
+    .map(group => ({
+      ...group,
+      benchmarks: group.benchmarks.filter(bench => {
+        // Extract base name without variant suffix for filtering
+        const baseName = bench.name.replace(/ \[.*?\]$/, "");
+        return regex.test(baseName);
+      }),
+    }))
+    .filter(group => group.benchmarks.length > 0); // Remove empty groups
   validateFilteredSuite(groups, filter);
   return { name: suite.name, groups };
 }

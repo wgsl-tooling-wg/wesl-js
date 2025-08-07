@@ -3,22 +3,45 @@ import type { WeslSource } from "./LoadExamples.ts";
 
 export type ParserVariant = "link" | "parse" | "tokenize";
 
+/** WESL imports interface for creating parser variations */
+export interface WeslImports {
+  _linkSync: typeof _linkSync;
+  parsedRegistry: typeof parsedRegistry;
+  parseIntoRegistry: typeof parseIntoRegistry;
+  WeslStream: typeof WeslStream;
+}
+
 /** Create a benchmark function for the specified variant */
 export function parserVariation(variant: ParserVariant) {
+  const imports: WeslImports = {
+    _linkSync,
+    parsedRegistry,
+    parseIntoRegistry,
+    WeslStream,
+  };
+  return parserVariationWithImports(variant, imports);
+}
+
+/** Create a benchmark function with custom imports */
+export function parserVariationWithImports(
+  variant: ParserVariant,
+  imports: WeslImports,
+) {
   switch (variant) {
     case "link":
-      return linkFunction();
+      return createLinkFunction(imports);
     case "parse":
-      return parseFunction();
+      return createParseFunction(imports);
     case "tokenize":
-      return tokenizeFunction();
+      return createTokenizeFunction(imports);
     default:
       throw new Error(`Unknown variant: ${variant}`);
   }
 }
 
 /** Create benchmark function for full linking */
-function linkFunction() {
+export function createLinkFunction(imports: WeslImports) {
+  const { _linkSync } = imports;
   return (source: WeslSource) => {
     const { weslSrc, rootModule } = source;
     _linkSync({ weslSrc, rootModuleName: rootModule });
@@ -26,7 +49,8 @@ function linkFunction() {
 }
 
 /** Create benchmark function for parsing only */
-function parseFunction() {
+export function createParseFunction(imports: WeslImports) {
+  const { parsedRegistry, parseIntoRegistry } = imports;
   return (source: WeslSource) => {
     const { weslSrc } = source;
     const registry = parsedRegistry();
@@ -36,7 +60,8 @@ function parseFunction() {
 }
 
 /** Create benchmark function for tokenization only */
-function tokenizeFunction() {
+export function createTokenizeFunction(imports: WeslImports) {
+  const { WeslStream } = imports;
   return (source: WeslSource) => {
     const { weslSrc } = source;
     const allText = Object.values(weslSrc).join("\n");

@@ -12,12 +12,15 @@ import {
   runBenchmarks,
   runsSection,
 } from "bencher";
+import { loadBaselineImports } from "../src/BaselineVariations.ts";
 import { loadExamples, type WeslSource } from "../src/LoadExamples.ts";
 import { locSection } from "../src/LocSection.ts";
 import { meanTimeSection } from "../src/MeanTimeSection.ts";
 import {
   type ParserVariant,
   parserVariation,
+  parserVariationWithImports,
+  type WeslImports,
 } from "../src/ParserVariations.ts";
 import { reorganizeReportGroups } from "../src/ReorganizeReportGroups.ts";
 
@@ -30,16 +33,16 @@ async function main() {
   const args = parseArgs();
   const variants = args.variant as ParserVariant[];
 
+  const baselineImports = await loadBaselineImports(args);
   const examples = loadExamples(examplesDir);
   const suite: BenchSuite = {
     name: "WESL Benchmarks",
-    groups: createBenchGroups(variants, examples),
+    groups: createBenchGroups(variants, examples, baselineImports),
   };
 
   const results = await runBenchmarks(suite, args);
-  const reorganized = reorganizeReportGroups(results, variants);
 
-  // Only include GC section if GC data is available
+  const reorganized = reorganizeReportGroups(results, variants);
   const sections = hasGcData(results)
     ? [locSection, meanTimeSection, gcSection, runsSection]
     : [locSection, meanTimeSection, runsSection];
@@ -60,12 +63,18 @@ function hasGcData(results: ReportGroup[]): boolean {
 /** @return parsed CLI arguments with custom variant option */
 function parseArgs() {
   return parseBenchArgs(yargs =>
-    defaultCliArgs(yargs).option("variant", {
-      type: "array",
-      choices: ["link", "parse", "tokenize"] as const,
-      default: ["link"],
-      describe: "Parser variant(s) to benchmark",
-    }),
+    defaultCliArgs(yargs)
+      .option("variant", {
+        type: "array",
+        choices: ["link", "parse", "tokenize"] as const,
+        default: ["link"],
+        describe: "Parser variant(s) to benchmark",
+      })
+      .option("baseline", {
+        type: "boolean",
+        default: false,
+        describe: "Compare against baseline version in _baseline/ directory",
+      }),
   );
 }
 
@@ -73,27 +82,41 @@ function parseArgs() {
 function createBenchGroups(
   variants: ParserVariant[],
   examples: Record<string, WeslSource>,
+  baselineImports?: WeslImports,
 ): BenchGroup[] {
   const entries = Object.entries(examples);
   const exampleList = entries.map(([name, source]) => ({ name, source }));
 
   return variants.flatMap(variant =>
-    exampleList.map(({ name, source }) => makeBenchmark(name, source, variant)),
+    exampleList.map(({ name, source }) =>
+      makeBenchGroup(name, source, variant, baselineImports),
+    ),
   );
 }
 
 /** @return a benchmark group with metadata for lines/sec calculation */
-function makeBenchmark(
+function makeBenchGroup(
   name: string,
   source: WeslSource,
   variant: ParserVariant,
-) {
-  const fn = parserVariation(variant);
+  baselineImports?: WeslImports,
+): BenchGroup {
+  const benchFn = parserVariation(variant);
   const benchName = variant === "link" ? name : `${name} [${variant}]`;
 
-  return {
+  const group: BenchGroup = {
     name: benchName,
-    benchmarks: [{ name: benchName, fn: () => fn(source) }],
+    benchmarks: [{ name: benchName, fn: () => benchFn(source) }],
     metadata: { linesOfCode: source.lineCount ?? 0 },
   };
+
+  if (baselineImports) {
+    const baselineFn = parserVariationWithImports(variant, baselineImports);
+    group.baseline = {
+      name: benchName, // Same name; table formatter will add --> prefix
+      fn: () => baselineFn(source),
+    };
+  }
+
+  return group;
 }
