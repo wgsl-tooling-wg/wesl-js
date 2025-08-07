@@ -9,6 +9,8 @@
     "bench:details": "sudo bin/bench.ts --cpu",
     "bench:profile": "node --inspect-brk bin/bench.ts --profile",
     "bench:validate": "bin/bench.ts --profile",
+    "test": "vitest --hideSkippedTests",
+    "test:once": "vitest run",
     "typecheck": "tsgo"
   },
   "dependencies": {
