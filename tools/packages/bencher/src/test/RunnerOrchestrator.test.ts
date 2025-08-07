@@ -17,10 +17,10 @@ test("MitataBenchRunner runs benchmark in worker mode", async () => {
     fn: simpleTestFunction,
   };
 
-  const results = await runBenchmark(
+  const results = await runBenchmark({
     spec,
-    "mitata",
-    {
+    runner: "mitata",
+    options: {
       minTime: 1,
       maxIterations: 10,
       minSamples: 1,
@@ -28,8 +28,8 @@ test("MitataBenchRunner runs benchmark in worker mode", async () => {
       warmupSamples: 0,
       observeGC: false, // Disable GC observation to avoid 1000ms wait
     },
-    true,
-  );
+    useWorker: true,
+  });
 
   expect(results).toHaveLength(1);
   const result = results[0];
@@ -49,16 +49,16 @@ test("TinyBenchRunner runs benchmark in worker mode", async () => {
     },
   };
 
-  const results = await runBenchmark(
+  const results = await runBenchmark({
     spec,
-    "tinybench",
-    {
+    runner: "tinybench",
+    options: {
       maxTime: 5, // Reduced from 30ms
       warmupTime: 0, // Disable warmup
     },
-    true,
-    5,
-  );
+    useWorker: true,
+    params: 5,
+  });
 
   expect(results).toHaveLength(1);
   const result = results[0];
@@ -74,15 +74,15 @@ test("BasicRunner runs benchmark in worker mode", async () => {
     fn: simpleTestFunction,
   };
 
-  const results = await runBenchmark(
+  const results = await runBenchmark({
     spec,
-    "basic",
-    {
+    runner: "basic",
+    options: {
       maxTime: 5, // Reduced from 100ms
       maxIterations: 50, // Reduced from 500
     },
-    true,
-  );
+    useWorker: true,
+  });
 
   expect(results).toHaveLength(1);
   const result = results[0];
@@ -106,15 +106,15 @@ test("RunnerOrchestrator propagates mitata errors from worker", async () => {
   };
 
   await expect(
-    runBenchmark(
+    runBenchmark({
       spec,
-      "mitata",
-      {
+      runner: "mitata",
+      options: {
         minTime: 1,
         maxIterations: 1,
         observeGC: false,
       },
-      true,
-    ),
+      useWorker: true,
+    }),
   ).rejects.toThrow("Test error from benchmark");
 });

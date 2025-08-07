@@ -3,7 +3,9 @@ import type { Alignment, SpanningCellConfig, TableUserConfig } from "table";
 import { table } from "table";
 import { diffPercent } from "./Formatters.ts";
 
-const { bold } = pico;
+// Disable colors in tests to avoid ANSI escape codes in test output
+const isTest = process.env.NODE_ENV === "test" || process.env.VITEST === "true";
+const { bold } = isTest ? { bold: (str: string) => str } : pico;
 
 /** Group of related columns in a table */
 export interface ColumnGroup<T> {

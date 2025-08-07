@@ -4,7 +4,7 @@ import {
   integer,
   percent,
   percentPrecision,
-  timeValue,
+  timeMs,
 } from "./table-util/Formatters.ts";
 
 export interface TimeStats {
@@ -27,19 +27,19 @@ export const timeSection: ResultsMapper<TimeStats> = {
         {
           key: "mean",
           title: "mean",
-          formatter: timeValue,
+          formatter: timeMs,
           comparable: true,
         },
         {
           key: "p50",
           title: "p50",
-          formatter: timeValue,
+          formatter: timeMs,
           comparable: true,
         },
         {
           key: "p99",
           title: "p99",
-          formatter: timeValue,
+          formatter: timeMs,
           comparable: true,
         },
       ],

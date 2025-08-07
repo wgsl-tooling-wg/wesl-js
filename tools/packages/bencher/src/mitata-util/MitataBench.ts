@@ -29,6 +29,7 @@ export type MeasureOptions = Parameters<typeof measure>[1] & {
   cpuCounters?: boolean; // default: false
   observeGC?: boolean; // default: true
   warmupTime?: number; // missing from published types, supported by mitata
+  collect?: boolean; // force GC after each iteration
 };
 
 /** Run a function using mitata benchmarking,
@@ -50,6 +51,8 @@ export async function mitataBench(
     heap: heapFn,
     $counters: await loadMitataCounters(options),
     ...options,
+    // Use Mitata's built-in inner_gc option to force GC before each iteration
+    inner_gc: options?.collect,
   } as MeasureOptions;
 
   const observeGC = options?.observeGC ?? true;
@@ -158,7 +161,7 @@ function gcFunction(): () => void {
   const gc = globalThis.gc || (globalThis as any).__gc;
   if (gc) return gc;
   console.warn(
-    "MitataBench: gc() not available, run node/bun with --expose-gc",
+    "MitataBench: gc() not available, run node/bun with --expose-gc --allow-natives-syntax",
   );
   return () => {};
 }

@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "pnpm --node-options=\"--expose-gc\" vitest --hideSkippedTests",
-    "test:once": "pnpm --node-options=\"--expose-gc\" vitest run",
+    "test": "pnpm --node-options=--expose-gc vitest --hideSkippedTests",
+    "test:once": "pnpm --node-options=--expose-gc vitest run",
     "typecheck": "tsgo"
   },
   "exports": {

@@ -1,6 +1,10 @@
 import pico from "picocolors";
 
-const { red, green } = pico;
+// Disable colors in tests to avoid ANSI escape codes in test output
+const isTest = process.env.NODE_ENV === "test" || process.env.VITEST === "true";
+const { red, green } = isTest 
+  ? { red: (str: string) => str, green: (str: string) => str }
+  : pico;
 
 /** Formatting utilities for table data */
 
@@ -34,7 +38,7 @@ export function duration(ms: unknown): string | null {
 }
 
 /** Format time in milliseconds, showing very small values with units */
-export function timeValue(ms: unknown): string | null {
+export function timeMs(ms: unknown): string | null {
   if (typeof ms !== "number") return null;
   if (ms < 0.001) return `${(ms * 1000000).toFixed(0)}ns`;
   if (ms < 0.01) return `${(ms * 1000).toFixed(1)}μs`;

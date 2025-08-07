@@ -56,12 +56,6 @@ const suite: BenchSuite = {
 runBenchCLI(suite);
 ```
 
-Run your benchmarks:
-
-```bash
-node --expose-gc your-benchmark.ts
-```
-
 See `examples/simple-cli.ts` for a complete runnable example.
 
 ## CLI Options
@@ -78,8 +72,8 @@ See `examples/simple-cli.ts` for a complete runnable example.
 ### Filter benchmarks by name
 
 ```bash
-node --expose-gc bench.ts --filter "concat"
-node --expose-gc bench.ts --filter "^parse" --time 2
+simple-cli.ts --filter "concat"
+simple-cli.ts --filter "^parse" --time 2
 ```
 
 ### Key Concepts
@@ -108,4 +102,4 @@ Results are displayed in a formatted table:
 ## Requirements
 
 - Node.js 22.6+ (for native TypeScript support)
-- Use `--expose-gc` flag for garbage collection monitoring
+- Use `--expose-gc --allow-natives-syntax` flags for garbage collection monitoring and V8 native functions
