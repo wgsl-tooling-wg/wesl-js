@@ -27,11 +27,17 @@ type SuiteRunParams = BaseRunParams & {
   suite: BenchSuite;
 };
 
+/** Parameters for runBenchCLI */
+export interface RunBenchParams<T = DefaultCliArgs> {
+  suite: BenchSuite;
+  configureArgs?: ConfigureArgs<T>;
+}
+
 /** Run benchmarks from CLI with filtering and custom options */
 export async function runBenchCLI<T = DefaultCliArgs>(
-  suite: BenchSuite,
-  configureArgs?: ConfigureArgs<T>,
-): Promise<void> {
+  params: RunBenchParams<T>,
+): Promise<ReportGroup[]> {
+  const { suite, configureArgs } = params;
   const argv = hideBin(process.argv);
   return runBenchInternal(suite, argv, configureArgs);
 }
@@ -41,7 +47,7 @@ export async function runBenchCLITest<T = DefaultCliArgs>(
   suite: BenchSuite,
   args: string,
   configureArgs?: ConfigureArgs<T>,
-): Promise<void> {
+): Promise<ReportGroup[]> {
   const argv = args.split(/\s+/).filter(arg => arg.length > 0);
   return runBenchInternal(suite, argv, configureArgs);
 }
@@ -51,11 +57,11 @@ async function runBenchInternal<T = DefaultCliArgs>(
   suite: BenchSuite,
   argv: string[],
   configureArgs?: ConfigureArgs<T>,
-): Promise<void> {
+): Promise<ReportGroup[]> {
   try {
     const args = parseCliArgs(argv, configureArgs) as T & DefaultCliArgs;
     const { filter, profile } = args;
-    const { worker: useWorker, "observe-gc": observeGC } = args;
+    const { worker: useWorker } = args;
     const runner = profile ? "basic" : (args.runner as KnownRunner);
     const options = cliToRunnerOptions(args);
     const filtered = filterBenchmarks(suite, filter);
@@ -65,7 +71,7 @@ async function runBenchInternal<T = DefaultCliArgs>(
       options,
       useWorker,
     });
-    displayResults(reportGroups, observeGC);
+    return reportGroups;
   } catch (error) {
     console.error("Benchmark run failed:", error);
     process.exit(1);
@@ -170,12 +176,23 @@ function validateBenchmarkParameters(group: BenchGroup): void {
   }
 }
 
-/** Print results table to console */
-function displayResults(groups: ReportGroup[], observeGc: boolean): void {
+/** Print results table to console with default sections */
+export function defaultReport(groups: ReportGroup[], observeGc: boolean): void {
   const sections = [timeSection, runsSection] as const;
   const finalSections = observeGc ? [...sections, gcSection] : sections;
   const table = reportResults(groups, finalSections);
   console.log(table);
+}
+
+/** Run benchmarks and display with default report - convenience for tests */
+export async function runDefaultBench<T = DefaultCliArgs>(
+  params: RunBenchParams<T>,
+): Promise<void> {
+  const results = await runBenchCLI(params);
+  // Extract observe-gc from parsed args to pass to defaultReport
+  const argv = hideBin(process.argv);
+  const args = parseCliArgs(argv, params.configureArgs) as T & DefaultCliArgs;
+  defaultReport(results, args["observe-gc"]);
 }
 
 /** Convert CLI args to runner options */

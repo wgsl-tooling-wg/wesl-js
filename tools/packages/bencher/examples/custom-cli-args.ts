@@ -3,6 +3,7 @@ import {
   type BenchGroup,
   type BenchSuite,
   defaultCliArgs,
+  defaultReport,
   runBenchCLI,
 } from "../src/index.ts";
 
@@ -32,4 +33,5 @@ function configureCustomArgs(yargs: any) {
 }
 
 // Run with custom CLI configuration
-await runBenchCLI(suite, configureCustomArgs);
+const results = await runBenchCLI({ suite, configureArgs: configureCustomArgs });
+defaultReport(results, false);

@@ -2,7 +2,7 @@ import pico from "picocolors";
 
 // Disable colors in tests to avoid ANSI escape codes in test output
 const isTest = process.env.NODE_ENV === "test" || process.env.VITEST === "true";
-const { red, green } = isTest 
+const { red, green } = isTest
   ? { red: (str: string) => str, green: (str: string) => str }
   : pico;
 

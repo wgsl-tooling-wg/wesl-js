@@ -118,3 +118,19 @@ Results are displayed in a formatted table:
 
 - Node.js 22.6+ (for native TypeScript support)
 - Use `--expose-gc --allow-natives-syntax` flags for garbage collection monitoring and V8 native functions
+
+## Understanding GC Time Measurements
+
+### GC Duration in Node.js Performance Hooks
+
+The `duration` field in GC PerformanceEntry records **stop-the-world pause time** - the time when JavaScript execution is actually blocked. This does NOT include:
+
+1. **Concurrent GC work** done in parallel threads (concurrent marking, sweeping)
+2. **Performance degradation** from CPU contention and cache effects
+3. **Total GC overhead** including preparation and cleanup
+
+### Key Findings
+
+1. **Multiple GC Events**: A single `gc()` call can trigger multiple GC events that are recorded separately
+2. **Incremental GC**: V8 breaks up GC work into smaller increments to reduce pause times
+3. **Duration < Impact**: The recorded duration is often much less than the actual performance impact

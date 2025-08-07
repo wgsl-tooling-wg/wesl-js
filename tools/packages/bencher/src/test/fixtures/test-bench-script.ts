@@ -1,5 +1,5 @@
 #!/usr/bin/env -S node --expose-gc --allow-natives-syntax
-import { type BenchSuite, runBenchCLI } from "../../index.ts";
+import { type BenchSuite, runDefaultBench } from "../../index.ts";
 
 const suite: BenchSuite = {
   name: "Test",
@@ -27,4 +27,4 @@ const suite: BenchSuite = {
   ],
 };
 
-runBenchCLI(suite);
+await runDefaultBench({ suite });

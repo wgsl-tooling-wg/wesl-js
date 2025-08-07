@@ -1,0 +1,19 @@
+{
+  "name": "wesl-bench",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench": "bin/bench.ts",
+    "bench:baseline": "bin/choose_baseline.mts",
+    "bench:bun": "bun --expose-gc --allow-natives-syntax bin/bench.ts",
+    "bench:details": "sudo bin/bench.ts --cpu",
+    "bench:profile": "node --inspect-brk bin/bench.ts --profile",
+    "bench:validate": "bin/bench.ts --profile",
+    "typecheck": "tsgo"
+  },
+  "dependencies": {
+    "bencher": "workspace:*",
+    "wesl": "workspace:*"
+  },
+  "devDependencies": {}
+}

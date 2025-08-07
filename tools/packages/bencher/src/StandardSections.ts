@@ -56,8 +56,22 @@ export interface GcStats {
 export const gcSection: ResultsMapper<GcStats> = {
   extract: (results: MeasuredResults) => {
     let gcTime: number | undefined;
-    if (results.nodeGcTime) {
-      gcTime = results.nodeGcTime.inRun / results.samples.length;
+    const { nodeGcTime, time, samples } = results;
+    if (nodeGcTime && time?.avg) {
+      // Calculate total benchmark time (avg time per iteration * number of iterations)
+      const totalBenchTime = time.avg * samples.length;
+
+      // GC percentage = (total GC pause time / total benchmark time)
+      // This represents the fraction of time the main thread was paused for GC
+      if (totalBenchTime > 0) {
+        gcTime = nodeGcTime.inRun / totalBenchTime;
+
+        // For very fast benchmarks where GC time exceeds 100%, the measurement
+        // is not meaningful as GC is unrelated to the benchmark itself
+        if (gcTime > 1) {
+          gcTime = undefined;
+        }
+      }
     }
     return { gc: gcTime };
   },

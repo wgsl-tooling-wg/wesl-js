@@ -1,6 +1,9 @@
-import type { ReportColumnGroup, ResultsMapper } from "./BenchmarkReport.ts";
-import type { MeasuredResults } from "./MeasuredResults.ts";
-import { integer } from "./table-util/Formatters.ts";
+import {
+  integer,
+  type MeasuredResults,
+  type ReportColumnGroup,
+  type ResultsMapper,
+} from "bencher";
 
 /** Lines of code statistics */
 export interface LocStats {
