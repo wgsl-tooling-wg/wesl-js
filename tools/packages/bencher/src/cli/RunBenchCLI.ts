@@ -53,14 +53,15 @@ async function runBenchInternal<T = DefaultCliArgs>(
   configureArgs?: ConfigureArgs<T>,
 ): Promise<void> {
   try {
-    const args = parseCliArgs(argv, configureArgs as ConfigureArgs<T>) as T &
-      DefaultCliArgs;
-    const { filter, runner, worker: useWorker, "observe-gc": observeGC } = args;
+    const args = parseCliArgs(argv, configureArgs) as T & DefaultCliArgs;
+    const { filter, profile } = args;
+    const { worker: useWorker, "observe-gc": observeGC } = args;
+    const runner = profile ? "basic" : (args.runner as KnownRunner);
     const options = cliToRunnerOptions(args);
     const filtered = filterBenchmarks(suite, filter);
     const reportGroups = await runSuite({
       suite: filtered,
-      runner: runner as KnownRunner,
+      runner,
       options,
       useWorker,
     });
@@ -134,12 +135,12 @@ async function runGroup(
   const baselineReport = baseline
     ? await runSingleBenchmark(baseline, runParams)
     : undefined;
-  
+
   const reports = [];
   for (const benchmark of benchmarks) {
     reports.push(await runSingleBenchmark(benchmark, runParams));
   }
-  
+
   return { reports, baseline: baselineReport };
 }
 
@@ -158,7 +159,7 @@ async function runSingleBenchmark(
 function validateBenchmarkParameters(group: BenchGroup): void {
   const { name, setup, benchmarks, baseline } = group;
   if (setup) return;
-  
+
   const allBenchmarks = baseline ? [...benchmarks, baseline] : benchmarks;
   for (const benchmark of allBenchmarks) {
     if (benchmark.fn.length > 0) {
@@ -179,9 +180,11 @@ function displayResults(groups: ReportGroup[], observeGc: boolean): void {
 
 /** Convert CLI args to runner options */
 export function cliToRunnerOptions(args: DefaultCliArgs): RunnerOptions {
-  return {
-    minTime: args.time * 1000,
-    observeGC: args["observe-gc"],
-    collect: args.collect,
-  };
+  const { profile, collect, time, "observe-gc": observeGC } = args;
+
+  // Profile mode: single iteration for external profiler attachment
+  if (profile) {
+    return { maxIterations: 1, warmupTime: 0, observeGC: false, collect };
+  }
+  return { minTime: time * 1000, observeGC, collect };
 }

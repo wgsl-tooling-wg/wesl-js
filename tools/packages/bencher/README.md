@@ -65,6 +65,7 @@ See `examples/simple-cli.ts` for a complete runnable example.
 - `--runner <type>` - Choose runner: mitata (default), tinybench, or basic
 - `--observe-gc` - Monitor garbage collection (default: true)
 - `--worker` - Run benchmarks in isolated worker processes
+- `--profile` - Run once for profiling (forces basic runner, single iteration)
 - `--help` - Show all available options
 
 ## CLI Usage
@@ -75,6 +76,20 @@ See `examples/simple-cli.ts` for a complete runnable example.
 simple-cli.ts --filter "concat"
 simple-cli.ts --filter "^parse" --time 2
 ```
+
+### Profiling with external debuggers
+
+Use `--profile` to run benchmarks once for attaching external profilers:
+
+```bash
+# Use with Chrome DevTools profiler
+node --inspect-brk simple-cli.ts --profile
+
+# Use with other profiling tools
+node --prof simple-cli.ts --profile
+```
+
+The `--profile` flag forces the basic runner to execute exactly one iteration with no warmup, making it ideal for debugging and performance profiling.
 
 ### Key Concepts
 
