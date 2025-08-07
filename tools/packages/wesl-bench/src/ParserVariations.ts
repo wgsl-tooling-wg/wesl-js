@@ -1,7 +1,8 @@
 import { _linkSync, parsedRegistry, parseIntoRegistry, WeslStream } from "wesl";
+import { WgslReflect } from "wgsl_reflect";
 import type { WeslSource } from "./LoadExamples.ts";
 
-export type ParserVariant = "link" | "parse" | "tokenize";
+export type ParserVariant = "link" | "parse" | "tokenize" | "wgsl-reflect";
 
 /** WESL imports interface for creating parser variations */
 export interface WeslImports {
@@ -34,6 +35,8 @@ export function parserVariationWithImports(
       return createParseFunction(imports);
     case "tokenize":
       return createTokenizeFunction(imports);
+    case "wgsl-reflect":
+      return createWgslReflectFunction();
     default:
       throw new Error(`Unknown variant: ${variant}`);
   }
@@ -73,5 +76,14 @@ export function createTokenizeFunction(imports: WeslImports) {
       tokens.push(token);
     }
     return tokens;
+  };
+}
+
+/** Create benchmark function for WgslReflect parsing */
+export function createWgslReflectFunction() {
+  return (source: WeslSource) => {
+    const { weslSrc } = source;
+    const allText = Object.values(weslSrc).join("\n");
+    return new WgslReflect(allText);
   };
 }

@@ -66,7 +66,7 @@ function parseArgs() {
     defaultCliArgs(yargs)
       .option("variant", {
         type: "array",
-        choices: ["link", "parse", "tokenize"] as const,
+        choices: ["link", "parse", "tokenize", "wgsl-reflect"] as const,
         default: ["link"],
         describe: "Parser variant(s) to benchmark",
       })
