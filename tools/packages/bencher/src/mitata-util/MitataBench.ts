@@ -5,6 +5,17 @@ import type { MeasuredResults } from "../MeasuredResults.ts";
 import { analyzeGCEntries, type NodeGCTime } from "../NodeGC.ts";
 import { mitataStats } from "./MitataStats.ts";
 
+type GCObservationResult = {
+  nodeGcTime: NodeGCTime | undefined;
+  stats: Awaited<ReturnType<typeof measure>>;
+};
+
+type GCObserver = {
+  gcRecords: PerformanceEntry[];
+  numGC: number;
+  observer: PerformanceObserver;
+};
+
 export type MeasureResult = Awaited<ReturnType<typeof measure>>;
 
 /** Load mitataCounters dynamically if cpuCounters is enabled, otherwise return undefined */
@@ -66,59 +77,84 @@ async function measureWithObserveGC(
   fn: () => any,
   measureOptions: MeasureOptions,
   enableObserveGC: boolean,
-): Promise<{
-  nodeGcTime: NodeGCTime | undefined;
-  stats: Awaited<ReturnType<typeof measure>>;
-}> {
-  // Only observe GC if enabled and running under Node.js (only node gives gc perf events)
+): Promise<GCObservationResult> {
+  if (!shouldObserveGC(enableObserveGC)) {
+    return { nodeGcTime: undefined, stats: await measure(fn, measureOptions) };
+  }
+
+  const gcObserver = createGCObserver();
+  let benchStart: number;
+  let benchEnd: number;
+  const wrappedFn = createBenchmarkWrapper(fn, () => {
+    if (!benchStart) benchStart = performance.now();
+    benchEnd = performance.now();
+  });
+
+  gcObserver.observer.observe({ entryTypes: ["gc"] });
+
+  await runWarmupAndClear(wrappedFn, gcObserver);
+  benchStart = 0;
+  benchEnd = 0;
+
+  const stats = await measure(wrappedFn, measureOptions);
+  const nodeGcTime = await finishGCObservation(gcObserver, [
+    benchStart,
+    benchEnd,
+  ]);
+
+  return { nodeGcTime, stats };
+}
+
+function shouldObserveGC(enableObserveGC: boolean): boolean {
   const isNode =
     typeof process !== "undefined" &&
     process.versions?.node &&
     !process.versions?.bun;
-  if (!enableObserveGC || !isNode) {
-    return { nodeGcTime: undefined, stats: await measure(fn, measureOptions) };
-  }
+  return enableObserveGC && !!isNode;
+}
 
+function createGCObserver(): GCObserver {
   const gcRecords: PerformanceEntry[] = [];
   let numGC = 0;
-  const obs = new PerformanceObserver(items => {
+  const observer = new PerformanceObserver(items => {
     for (const item of items.getEntries()) {
       if (item.name === "gc") {
         gcRecords[numGC++] = item;
       }
     }
   });
+  return { gcRecords, numGC, observer };
+}
 
-  let benchStart: number;
-  let benchEnd: number;
-  const wrappedFn = () => {
-    if (!benchStart) benchStart = performance.now();
+function createBenchmarkWrapper(fn: () => any, onTiming: () => void) {
+  return () => {
+    onTiming();
     fn();
-    benchEnd = performance.now();
   };
-  obs.observe({ entryTypes: ["gc"] });
+}
 
-  /** allocate what we can in advance, and run a gc() so that our collection metrics are as pristine as possible */
+async function runWarmupAndClear(
+  wrappedFn: () => void,
+  gcObserver: GCObserver,
+): Promise<void> {
   wrappedFn();
   await clearGarbage();
-  benchStart = 0;
-  benchEnd = 0;
-  numGC = 0;
+  gcObserver.numGC = 0;
+}
 
-  const stats = await measure(wrappedFn, measureOptions);
-
-  await wait(); // let any straggler gc events be delivered
-  gcRecords.push(...finishObserver(obs));
-  const gcEntries = gcRecords.slice(0, numGC);
-  const nodeGcTime = analyzeGCEntries(gcEntries, [benchStart, benchEnd]);
-  return { nodeGcTime, stats };
+async function finishGCObservation(
+  gcObserver: GCObserver,
+  benchTiming: [number, number],
+): Promise<NodeGCTime | undefined> {
+  await wait();
+  gcObserver.gcRecords.push(...finishObserver(gcObserver.observer));
+  const gcEntries = gcObserver.gcRecords.slice(0, gcObserver.numGC);
+  return analyzeGCEntries(gcEntries, benchTiming);
 }
 
 /** allocate what we can in advance, and run a gc() so that our collection metrics are as pristine as possible */
 async function clearGarbage(): Promise<void> {
   const gc = gcFunction();
-
-  // mysteriously, calling gc() multiple times with a wait in between seems to help on v8
   gc();
   await wait(1000); // milliseconds, wait after GC. mysteriously, 800 is not enough. try pnpm bench --simple someAllocation and look at heap kb
   gc();
@@ -127,20 +163,16 @@ async function clearGarbage(): Promise<void> {
 
 /** finish the observer and return any straggler gc records (unlikely in practice) */
 function finishObserver(obs: PerformanceObserver): PerformanceEntry[] {
-  const records = obs.takeRecords?.(); // not avail in deno
+  const records = obs.takeRecords?.();
   obs.disconnect();
   if (!records) return [];
-
   return records.filter(record => record.entryType === "gc");
 }
 async function getHeapFn(): Promise<() => number> {
   if ((globalThis as any).Bun?.version) {
     // @ts-expect-error: bun:jsc is only available in Bun runtime
     const { memoryUsage } = await import("bun:jsc");
-    return () => {
-      const m = memoryUsage();
-      return m.current;
-    };
+    return () => memoryUsage().current;
   }
 
   try {

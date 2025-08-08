@@ -1,6 +1,6 @@
 import type { PerformanceEntry } from "node:perf_hooks";
 
-/** gc time mesured by node's performance hooks */
+/** GC time measured by Node's performance hooks */
 export interface NodeGCTime {
   inRun: number;
   before: number;
@@ -9,7 +9,7 @@ export interface NodeGCTime {
   collects: number;
 }
 
-/** correlate the node perf gc events from hooks with the function timing results */
+/** Correlate GC events with benchmark timing */
 export function analyzeGCEntries(
   gcRecords: PerformanceEntry[],
   benchTime: [number, number],

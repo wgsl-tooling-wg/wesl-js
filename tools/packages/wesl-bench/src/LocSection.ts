@@ -5,7 +5,7 @@ import {
   type ResultsMapper,
 } from "bencher";
 
-/** Lines of code statistics */
+/** Lines of code throughput statistics */
 export interface LocStats {
   lines?: number;
   locSecP50?: number;
@@ -16,7 +16,6 @@ export const locSection: ResultsMapper<LocStats> = {
   extract: (results: MeasuredResults, metadata?: any) => {
     const lines = metadata?.linesOfCode || 0;
 
-    // Calculate lines per second
     const locSecP50 = results.time?.p50
       ? lines / (results.time.p50 / 1000)
       : undefined;

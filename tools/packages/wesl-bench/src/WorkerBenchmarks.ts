@@ -1,5 +1,6 @@
 import { _linkSync, parsedRegistry, parseIntoRegistry, WeslStream } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
+import { srcToText, tokenize } from "./BenchUtils.ts";
 import type { WeslSource } from "./LoadExamples.ts";
 import type { ParserVariant } from "./ParserVariations.ts";
 
@@ -9,10 +10,10 @@ export interface BenchParams {
   source: WeslSource;
 }
 
-/** Main benchmark function called by workers */
+/** @return benchmark result for the given variant and source */
 export function runBenchmark(params: BenchParams) {
   const { variant, source } = params;
-  
+
   switch (variant) {
     case "link": {
       const { weslSrc, rootModule } = source;
@@ -26,20 +27,11 @@ export function runBenchmark(params: BenchParams) {
     }
     case "tokenize": {
       const { weslSrc } = source;
-      const allText = Object.values(weslSrc).join("\n");
-      const stream = new WeslStream(allText);
-      const tokens = [];
-      while (true) {
-        const token = stream.nextToken();
-        if (token === null) break;
-        tokens.push(token);
-      }
-      return tokens;
+      return tokenize(srcToText(weslSrc), WeslStream);
     }
     case "wgsl-reflect": {
       const { weslSrc } = source;
-      const allText = Object.values(weslSrc).join("\n");
-      return new WgslReflect(allText);
+      return new WgslReflect(srcToText(weslSrc));
     }
     default:
       throw new Error(`Unknown variant: ${variant}`);

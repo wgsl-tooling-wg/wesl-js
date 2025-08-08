@@ -11,19 +11,18 @@ export function filterBenchmarks(
     .map(group => ({
       ...group,
       benchmarks: group.benchmarks.filter(bench => {
-        // Extract base name without variant suffix for filtering
         const baseName = bench.name.replace(/ \[.*?\]$/, "");
         return regex.test(baseName);
       }),
     }))
-    .filter(group => group.benchmarks.length > 0); // Remove empty groups
+    .filter(group => group.benchmarks.length > 0);
   validateFilteredSuite(groups, filter);
   return { name: suite.name, groups };
 }
 
-/** Create regex from filter, treating as literal unless it looks like regex */
+/** Create regex from filter (literal unless regex-like) */
 function createFilterRegex(filter: string): RegExp {
-  const looksLikeRegex = 
+  const looksLikeRegex =
     (filter.startsWith("/") && filter.endsWith("/")) ||
     filter.includes("*") ||
     filter.includes("?") ||
@@ -31,29 +30,28 @@ function createFilterRegex(filter: string): RegExp {
     filter.includes("|") ||
     filter.startsWith("^") ||
     filter.endsWith("$");
-  
+
   if (looksLikeRegex) {
-    // Strip surrounding slashes if present
-    const pattern = filter.startsWith("/") && filter.endsWith("/") 
-      ? filter.slice(1, -1) 
-      : filter;
+    const pattern =
+      filter.startsWith("/") && filter.endsWith("/")
+        ? filter.slice(1, -1)
+        : filter;
     try {
       return new RegExp(pattern, "i");
     } catch {
       return new RegExp(escapeRegex(filter), "i");
     }
   }
-  
-  // Treat as literal prefix match
+
   return new RegExp("^" + escapeRegex(filter), "i");
 }
 
-/** Escape regex special chars */
+/** Escape regex special characters */
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Throw if no benchmarks match filter */
+/** Ensure at least one benchmark matches filter */
 function validateFilteredSuite(groups: BenchGroup[], filter?: string): void {
   if (groups.every(g => g.benchmarks.length === 0)) {
     throw new Error(`No benchmarks match filter: "${filter}"`);

@@ -1,16 +1,16 @@
 import type { Argv } from "yargs";
 import yargs from "yargs";
 
-/** Configure function that adds CLI arguments to yargs */
+/** Function to configure yargs with CLI arguments */
 export type ConfigureArgs<T> = (yargs: Argv) => Argv<T>;
 
 // biome-ignore format: readability
-/** Derive the default CLI args type from the builder function */
+/** Derive CLI args type from builder function */
 export type DefaultCliArgs = 
   ReturnType<typeof defaultCliArgs> extends Argv<infer T> ? 
     T : never;
 
-/** Build default benchmark CLI arguments */
+/** Configure default benchmark CLI arguments */
 export function defaultCliArgs(yargsInstance: Argv) {
   return yargsInstance
     .option("time", {
@@ -60,7 +60,7 @@ export function defaultCliArgs(yargsInstance: Argv) {
     .strict();
 }
 
-/** Parse CLI arguments with optional custom configuration */
+/** Parse CLI with optional custom configuration */
 export function parseCliArgs<T = DefaultCliArgs>(
   args: string[],
   configure: ConfigureArgs<T> = defaultCliArgs as ConfigureArgs<T>,

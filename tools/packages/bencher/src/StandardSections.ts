@@ -13,7 +13,7 @@ export interface TimeStats {
   p99?: number;
 }
 
-/** Time statistics section */
+/** Extract and format time statistics */
 export const timeSection: ResultsMapper<TimeStats> = {
   extract: (results: MeasuredResults) => ({
     mean: results.time?.avg,
@@ -52,22 +52,16 @@ export interface GcStats {
   gc?: number;
 }
 
-/** Garbage collection section */
+/** Extract and format GC percentage */
 export const gcSection: ResultsMapper<GcStats> = {
   extract: (results: MeasuredResults) => {
     let gcTime: number | undefined;
     const { nodeGcTime, time, samples } = results;
     if (nodeGcTime && time?.avg) {
-      // Calculate total benchmark time (avg time per iteration * number of iterations)
       const totalBenchTime = time.avg * samples.length;
-
-      // GC percentage = (total GC pause time / total benchmark time)
-      // This represents the fraction of time the main thread was paused for GC
       if (totalBenchTime > 0) {
         gcTime = nodeGcTime.inRun / totalBenchTime;
-
-        // For very fast benchmarks where GC time exceeds 100%, the measurement
-        // is not meaningful as GC is unrelated to the benchmark itself
+        // Ignore meaningless measurements where GC exceeds benchmark time
         if (gcTime > 1) {
           gcTime = undefined;
         }
@@ -95,7 +89,7 @@ export interface CpuStats {
   cpuStall?: number;
 }
 
-/** CPU statistics section */
+/** Extract and format CPU counters */
 export const cpuSection: ResultsMapper<CpuStats> = {
   extract: (results: MeasuredResults) => ({
     cpuCacheMiss: results.cpuCacheMiss,
@@ -124,7 +118,7 @@ export interface RunStats {
   runs?: number;
 }
 
-/** number of benchmark test runs */
+/** Extract number of benchmark runs */
 export const runsSection: ResultsMapper<RunStats> = {
   extract: (results: MeasuredResults) => ({
     runs: results.samples.length,

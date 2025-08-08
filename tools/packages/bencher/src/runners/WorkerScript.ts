@@ -1,42 +1,44 @@
 #!/usr/bin/env node
 import type { BenchmarkFunction, BenchmarkSpec } from "../Benchmark.ts";
 import type { MeasuredResults } from "../MeasuredResults.ts";
-import type { RunnerOptions } from "./BenchRunner.ts";
 import { createRunner, type KnownRunner } from "./CreateRunner.ts";
+import type { RunnerOptions } from "./BenchRunner.ts";
 import { debugWorkerTiming, getElapsed, getPerfNow } from "./TimingUtils.ts";
 
-interface RunMessage {
+// Constants at the top
+const workerStartTime = getPerfNow();
+const maxLifetime = 5 * 60 * 1000; // 5 minutes
+
+/** Message sent to worker process to start a benchmark run. */
+export interface RunMessage {
   type: "run";
   spec: BenchmarkSpec;
   runnerName: KnownRunner;
   options: RunnerOptions;
-  fnCode?: string;
-  modulePath?: string;
-  exportName?: string;
+  fnCode?: string; // Made optional - either fnCode or modulePath is required
+  modulePath?: string; // Path to module for dynamic import
+  exportName?: string; // Export name from module
   params?: unknown;
 }
 
-interface ResultMessage {
+/** Message returned from worker process with benchmark results. */
+export interface ResultMessage {
   type: "result";
   results: MeasuredResults[];
 }
 
-interface ErrorMessage {
+/** Message returned from worker process when benchmark fails. */
+export interface ErrorMessage {
   type: "error";
   error: string;
   stack?: string;
 }
 
-const workerStartTime = getPerfNow();
+export type WorkerMessage = RunMessage | ResultMessage | ErrorMessage;
 
 /**
- * Worker process entry point for isolated benchmark execution.
- *
- * Uses eval() to reconstruct functions - safe because:
- * - Isolated child process
- * - Code from trusted source
- * - Process exits after execution
- * - No network/file access
+ * Worker process for isolated benchmark execution.
+ * Uses eval() safely in isolated child process with trusted code.
  */
 process.on("message", async (message: RunMessage) => {
   if (message.type !== "run") return;
@@ -48,7 +50,6 @@ process.on("message", async (message: RunMessage) => {
     const runner = await createRunner(message.runnerName);
     logTiming("Runner created in", getElapsed(start));
 
-    // Import from module path if provided, otherwise reconstruct from code
     const fn = message.modulePath
       ? await importBenchmarkFunction(message.modulePath, message.exportName)
       : reconstructFunction(message.fnCode!);
@@ -68,17 +69,15 @@ process.on("message", async (message: RunMessage) => {
   }
 });
 
-// Keep the process alive to receive messages, but exit after 5 minutes to prevent zombie processes
-const maxLifetime = 5 * 60 * 1000; // 5 minutes
+// Exit after 5 minutes to prevent zombie processes
 setTimeout(() => {
   console.error("WorkerScript: Maximum lifetime exceeded, exiting");
   process.exit(1);
 }, maxLifetime);
 
-// Keep the process alive until we receive a first message
 process.stdin.pause();
 
-/** Log operation timing with consistent format */
+/** Log timing with consistent format */
 const logTiming = debugWorkerTiming ? _logTiming : () => {};
 function _logTiming(operation: string, duration?: number) {
   if (duration === undefined) {
@@ -88,7 +87,7 @@ function _logTiming(operation: string, duration?: number) {
   }
 }
 
-/** Send message and exit with total duration logging */
+/** Send message and exit with duration log */
 function sendAndExit(message: ResultMessage | ErrorMessage, exitCode: number) {
   process.send!(message, (err: Error | null) => {
     if (err) {
@@ -107,18 +106,21 @@ async function importBenchmarkFunction(
   modulePath: string,
   exportName?: string,
 ): Promise<BenchmarkFunction> {
-  logTiming(`Importing from ${modulePath}${exportName ? ` (${exportName})` : ""}`);
+  logTiming(
+    `Importing from ${modulePath}${exportName ? ` (${exportName})` : ""}`,
+  );
   const module = await import(modulePath);
-  
+
   if (exportName) {
     const fn = module[exportName];
     if (typeof fn !== "function") {
-      throw new Error(`Export '${exportName}' from ${modulePath} is not a function`);
+      throw new Error(
+        `Export '${exportName}' from ${modulePath} is not a function`,
+      );
     }
     return fn;
   }
-  
-  // Use default export if no export name specified
+
   const fn = module.default || module;
   if (typeof fn !== "function") {
     throw new Error(`Default export from ${modulePath} is not a function`);
@@ -126,7 +128,7 @@ async function importBenchmarkFunction(
   return fn;
 }
 
-/** Reconstruct function from serialized code */
+/** Reconstruct function from string code */
 function reconstructFunction(fnCode: string): BenchmarkFunction {
   // biome-ignore lint/security/noGlobalEval: Necessary for worker process isolation, code is from trusted source
   const fn = eval(`(${fnCode})`);
@@ -136,7 +138,7 @@ function reconstructFunction(fnCode: string): BenchmarkFunction {
   return fn;
 }
 
-/** Create error message from caught exception */
+/** Create error message from exception */
 function createErrorMessage(error: unknown): ErrorMessage {
   return {
     type: "error",

@@ -4,6 +4,6 @@ export default defineConfig({
   test: {
     globals: false,
     environment: "node",
-    exclude: ["**/*.integration.ts", "node_modules/**"],
+    include: ["**/*.integration.ts"],
   },
 });

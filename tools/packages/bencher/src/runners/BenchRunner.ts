@@ -1,7 +1,7 @@
 import type { BenchmarkSpec } from "../Benchmark.ts";
 import type { MeasuredResults } from "../MeasuredResults.ts";
 
-/** Execute a benchmark function with proper parameter handling */
+/** Execute benchmark with optional parameters */
 export function executeBenchmark<T>(
   benchmark: BenchmarkSpec<T>,
   params?: T,
@@ -9,7 +9,7 @@ export function executeBenchmark<T>(
   (benchmark.fn as (params?: T) => void)(params);
 }
 
-/** Implemented by benchmark libraries to run individual benchmark tasks */
+/** Interface for benchmark execution libraries */
 export interface BenchRunner {
   runBench<T = unknown>(
     benchmark: BenchmarkSpec<T>,
@@ -19,30 +19,22 @@ export interface BenchRunner {
 }
 
 export interface RunnerOptions {
-  /** Minimum time in milliseconds to run each benchmark. */
+  /** Minimum time to run each benchmark (milliseconds) */
   minTime?: number;
-
-  /** Maximum time in milliseconds to run each benchmark (ignored by mitata). */
+  /** Maximum time to run each benchmark - ignored by mitata (milliseconds) */
   maxTime?: number;
-
-  /** Maximum number of iterations to run for each benchmark. (ignored by TinyBench) */
+  /** Maximum iterations per benchmark - ignored by TinyBench */
   maxIterations?: number;
-
-  /** Warmup time to prepare the JS engine before measurement. */
+  /** Warmup time before measurement (milliseconds) */
   warmupTime?: number;
-
-  /** Number of warmup samples (mitata only, for reducing unit test time). */
+  /** Warmup samples - mitata only, for reducing test time */
   warmupSamples?: number;
-
-  /** Warmup threshold in nanoseconds - below this threshold, warmup runs are performed (mitata only). */
+  /** Warmup threshold - mitata only (nanoseconds) */
   warmupThreshold?: number;
-
-  /** Minimum number of samples required (mitata only, for reducing unit test time). */
+  /** Minimum samples required - mitata only */
   minSamples?: number;
-
-  /** Whether to observe GC events (mitata only). Disabling this avoids a 1-second wait. Default: true */
+  /** Observe GC events - mitata only, disabling avoids 1s wait (default: true) */
   observeGC?: boolean;
-
-  /** Force a garbage collection after each iteration (requires --expose-gc flag). */
+  /** Force GC after each iteration (requires --expose-gc) */
   collect?: boolean;
 }

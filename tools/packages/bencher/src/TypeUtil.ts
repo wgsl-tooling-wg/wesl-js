@@ -1,5 +1,5 @@
 // biome-ignore format: readability
-/** Convert union type to intersection type: see https://mighdoll.dev/blog/modern-typescript-intersection/ */
+/** Convert union to intersection - https://mighdoll.dev/blog/modern-typescript-intersection/ */
 export type UnionToIntersection<U> = 
     (U extends any ? 
       (k: U) => void : never) extends 

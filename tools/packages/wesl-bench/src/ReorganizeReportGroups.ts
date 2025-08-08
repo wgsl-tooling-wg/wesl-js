@@ -2,43 +2,12 @@ import type { BenchmarkReport, ReportGroup } from "bencher";
 import type { ParserVariant } from "./ParserVariations.ts";
 
 /**
- * Reorganize report groups for optimal table display with blank line placement.
+ * Groups reports for table display with strategic blank lines.
  *
- * Report grouping behaviors:
- *
- * 1. Default (single variant, no baseline):
- *    bevy              55    ...
- *    reduceBuffer      23    ...
- *    anotherBench      18    ...
- *    → All benchmarks in one group, no blank lines
- *
- * 2. Multiple variants (e.g., --variant tokenize --variant parse):
- *    bevy [tokenize]   6.75  ...
- *    bevy [parse]      49    ...
- *                                  <- blank line between benchmarks
- *    reduceBuffer [tokenize]  3.2  ...
- *    reduceBuffer [parse]     11   ...
- *    → Variants grouped by benchmark, blank lines between different benchmarks
- *
- * 3. Single variant with baseline (--baseline):
- *    bevy              53    ...
- *    --> baseline      45    ...
- *                                  <- blank line between benchmarks
- *    reduceBuffer      23    ...
- *    --> baseline      12    ...
- *    → Each benchmark paired with its baseline, blank lines between pairs
- *
- * 4. Multiple variants with baseline:
- *    bevy [tokenize]   6.75  ...
- *    bevy [parse]      49    ...
- *    bevy              55    ...
- *    --> bevy          45    ...
- *                                  <- blank line between benchmarks
- *    reduceBuffer [tokenize]  3.2  ...
- *    reduceBuffer [parse]     11   ...
- *    reduceBuffer             23   ...
- *    --> reduceBuffer         12   ...
- *    → Baseline included as last variant in each benchmark group
+ * Single variant, no baseline: all in one group
+ * Multiple variants: group by benchmark name
+ * With baseline: pair each benchmark with its baseline
+ * Multiple variants + baseline: baseline last in each group
  */
 export function reorganizeReportGroups(
   results: ReportGroup[],
@@ -47,19 +16,18 @@ export function reorganizeReportGroups(
   const hasBaseline = results.some(g => g.baseline);
 
   if (variants.length === 1) {
-    // Single variant with baseline: keep groups separate for each benchmark+baseline pair
+    // Single variant with baseline: keep groups separate
     if (hasBaseline) {
       return results;
     }
-    // Single variant without baseline: merge all groups into one
     return mergeAllGroups(results);
   }
 
-  // Multiple variants: group by benchmark (including baseline as a variant)
+  // Multiple variants: group by benchmark
   return groupByBenchmark(results);
 }
 
-/** @return all report groups merged into a single group */
+/** @return single group containing all reports */
 function mergeAllGroups(groups: ReportGroup[]): ReportGroup[] {
   if (groups.length === 0) return [];
 
@@ -69,7 +37,7 @@ function mergeAllGroups(groups: ReportGroup[]): ReportGroup[] {
   return [{ reports: allReports, baseline: firstBaseline }];
 }
 
-/** @return reports grouped by benchmark name with ordered variants */
+/** @return reports grouped by benchmark name */
 function groupByBenchmark(groups: ReportGroup[]): ReportGroup[] {
   const allReports = flattenWithBaselines(groups);
   const byName = groupByBaseName(allReports);
@@ -81,7 +49,7 @@ function groupByBenchmark(groups: ReportGroup[]): ReportGroup[] {
   }));
 }
 
-/** @return flattened reports with baselines marked with prefix */
+/** @return flattened reports with baselines prefixed */
 function flattenWithBaselines(groups: ReportGroup[]): BenchmarkReport[] {
   return groups.flatMap(g => {
     const baselineReports = g.baseline ? [markAsBaseline(g.baseline)] : [];
@@ -89,7 +57,7 @@ function flattenWithBaselines(groups: ReportGroup[]): BenchmarkReport[] {
   });
 }
 
-/** @return reports grouped by base benchmark name */
+/** @return reports by base name */
 function groupByBaseName(
   reports: BenchmarkReport[],
 ): Map<string, BenchmarkReport[]> {
@@ -100,7 +68,7 @@ function groupByBaseName(
   }, new Map());
 }
 
-/** @return baseline report marked with --> prefix */
+/** @return report with --> prefix */
 function markAsBaseline(report: BenchmarkReport): BenchmarkReport {
   return {
     ...report,
@@ -108,7 +76,7 @@ function markAsBaseline(report: BenchmarkReport): BenchmarkReport {
   };
 }
 
-/** @return base benchmark name without variant suffix */
+/** @return name without variant suffix */
 function extractBaseName(name: string): string {
   const cleanName = name.replace(/^--> /, "");
   return cleanName.replace(/ \[.*?\]$/, "");
@@ -116,15 +84,14 @@ function extractBaseName(name: string): string {
 
 /** @return sort order for benchmark variants */
 function variantOrder(name: string): number {
-  // Extract variant and baseline status
   const isBaseline = name.startsWith("-->");
   const cleanName = name.replace(/^--> /, "");
-  
+
   // Determine base order by variant type
   let baseOrder = 4; // link variant (no suffix)
   if (cleanName.includes("[tokenize]")) baseOrder = 0;
   else if (cleanName.includes("[parse]")) baseOrder = 2;
-  
+
   // Baselines come immediately after their variant
   return isBaseline ? baseOrder + 1 : baseOrder;
 }

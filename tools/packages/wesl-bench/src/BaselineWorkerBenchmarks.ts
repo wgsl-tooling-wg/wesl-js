@@ -5,9 +5,10 @@ import {
   parseIntoRegistry,
   WeslStream,
 } from "../../../../_baseline/packages/wesl/src/index.ts";
+import { srcToText, tokenize } from "./BenchUtils.ts";
 import type { BenchParams } from "./WorkerBenchmarks.ts";
 
-/** Baseline benchmark function called by workers - imports from _baseline directory */
+/** @return baseline benchmark result using _baseline imports */
 export function runBaselineBenchmark(params: BenchParams) {
   const { variant, source } = params;
 
@@ -24,21 +25,12 @@ export function runBaselineBenchmark(params: BenchParams) {
     }
     case "tokenize": {
       const { weslSrc } = source;
-      const allText = Object.values(weslSrc).join("\n");
-      const stream = new WeslStream(allText);
-      const tokens = [];
-      while (true) {
-        const token = stream.nextToken();
-        if (token === null) break;
-        tokens.push(token);
-      }
-      return tokens;
+      return tokenize(srcToText(weslSrc), WeslStream);
     }
     case "wgsl-reflect": {
       // wgsl-reflect doesn't change between baseline and current
       const { weslSrc } = source;
-      const allText = Object.values(weslSrc).join("\n");
-      return new WgslReflect(allText);
+      return new WgslReflect(srcToText(weslSrc));
     }
     default:
       throw new Error(`Unknown variant: ${variant}`);

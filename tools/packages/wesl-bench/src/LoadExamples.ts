@@ -26,7 +26,7 @@ export function loadExamples(examplesDir: string): Record<string, WeslSource> {
 function loadDirectory(dir: string, rootModule?: string): WeslSource {
   const weslSrc = collectFiles(dir);
   const resolvedRoot = resolveRoot(weslSrc, rootModule, dir);
-  const lineCount = countLines(weslSrc);
+  const lineCount = totalLines(weslSrc);
   return { weslSrc, rootModule: resolvedRoot, lineCount };
 }
 
@@ -36,11 +36,11 @@ function loadFile(basePath: string, filename: string): WeslSource {
   const content = readFileSync(path, "utf-8");
   const modulePath = `./${filename}`;
   const weslSrc = { [modulePath]: content };
-  const lineCount = countLines(weslSrc);
+  const lineCount = totalLines(weslSrc);
   return { weslSrc, rootModule: modulePath, lineCount };
 }
 
-/** @return true if file has a WESL/WGSL extension */
+/** @return true if file has WESL/WGSL extension */
 function isWeslFile(filename: string): boolean {
   return filename.endsWith(".wgsl") || filename.endsWith(".wesl");
 }
@@ -52,7 +52,7 @@ function loadFileEntry(baseDir: string, filePath: string): [string, string] {
   return [`./${relativePath}`, content];
 }
 
-/** @return map of module paths to file contents for all WESL files in directory tree */
+/** @return module paths to contents for all WESL files in tree */
 function collectFiles(dir: string): Record<string, string> {
   const modules: Record<string, string> = {};
   const baseDir = dir;
@@ -75,7 +75,7 @@ function collectFiles(dir: string): Record<string, string> {
   return modules;
 }
 
-/** @return the root module path, defaulting to single file if only one exists */
+/** @return root module path, defaults to single file */
 function resolveRoot(
   weslSrc: Record<string, string>,
   rootModule: string | undefined,
@@ -91,8 +91,8 @@ function resolveRoot(
   return resolved;
 }
 
-/** @return total line count across all source files */
-function countLines(weslSrc: Record<string, string>): number {
+/** @return total lines across all source files */
+function totalLines(weslSrc: Record<string, string>): number {
   return Object.values(weslSrc).reduce(
     (total, content) => total + content.split("\n").length,
     0,

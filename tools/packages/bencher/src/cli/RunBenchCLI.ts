@@ -28,7 +28,7 @@ type SuiteRunParams = BaseRunParams & {
   suite: BenchSuite;
 };
 
-/** Parse CLI arguments with optional custom configuration */
+/** Parse CLI with custom configuration */
 export function parseBenchArgs<T = DefaultCliArgs>(
   configureArgs?: ConfigureArgs<T>,
 ): T & DefaultCliArgs {
@@ -36,7 +36,7 @@ export function parseBenchArgs<T = DefaultCliArgs>(
   return parseCliArgs(argv, configureArgs) as T & DefaultCliArgs;
 }
 
-/** Run benchmarks with parsed arguments */
+/** Run suite with CLI arguments */
 export async function runBenchmarks(
   suite: BenchSuite,
   args: DefaultCliArgs,
@@ -56,7 +56,7 @@ export async function runBenchmarks(
   return reportGroups;
 }
 
-/** Run all benchmarks in suite */
+/** Execute all groups in suite */
 async function runSuite(params: SuiteRunParams): Promise<ReportGroup[]> {
   const { suite, runner, options, useWorker } = params;
   const reportGroups: ReportGroup[] = [];
@@ -67,7 +67,7 @@ async function runSuite(params: SuiteRunParams): Promise<ReportGroup[]> {
   return reportGroups;
 }
 
-/** Run group benchmarks with setup params */
+/** Execute group with shared setup */
 async function runGroup(
   group: BenchGroup,
   runner: KnownRunner,
@@ -92,7 +92,7 @@ async function runGroup(
   return { reports, baseline: baselineReport };
 }
 
-/** Create benchmark report */
+/** Run single benchmark and create report */
 async function runSingleBenchmark(
   spec: BenchmarkSpec,
   runParams: SpecRunParams,
@@ -103,7 +103,7 @@ async function runSingleBenchmark(
   return { name: spec.name, measuredResults: result, metadata };
 }
 
-/** Validate parameterized benchmarks have setup */
+/** Warn if parameterized benchmarks lack setup */
 function validateBenchmarkParameters(group: BenchGroup): void {
   const { name, setup, benchmarks, baseline } = group;
   if (setup) return;
@@ -118,7 +118,7 @@ function validateBenchmarkParameters(group: BenchGroup): void {
   }
 }
 
-/** Generate results table with default sections */
+/** Generate table with standard sections */
 export function defaultReport(
   groups: ReportGroup[],
   args: DefaultCliArgs,
@@ -130,7 +130,7 @@ export function defaultReport(
   return reportResults(groups, finalSections);
 }
 
-/** Run benchmarks and display with default report - convenience function */
+/** Run benchmarks and display table */
 export async function runDefaultBench(
   suite: BenchSuite,
   configureArgs?: ConfigureArgs<any>,
@@ -144,9 +144,8 @@ export async function runDefaultBench(
 /** Convert CLI args to runner options */
 export function cliToRunnerOptions(args: DefaultCliArgs): RunnerOptions {
   const { profile, collect, time, "observe-gc": observeGC } = args;
-
-  // Profile mode: single iteration for external profiler attachment
   if (profile) {
+    // Single iteration for profiler attachment
     return { maxIterations: 1, warmupTime: 0, observeGC: false, collect };
   }
   return { minTime: time * 1000, observeGC, collect };

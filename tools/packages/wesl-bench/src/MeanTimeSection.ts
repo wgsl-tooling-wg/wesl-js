@@ -5,12 +5,12 @@ import {
   timeMs,
 } from "bencher";
 
-/** Time statistics with only mean */
+/** Mean time statistics */
 export interface MeanTimeStats {
   mean?: number;
 }
 
-/** Time section showing only mean time */
+/** @return mean time section */
 export const meanTimeSection: ResultsMapper<MeanTimeStats> = {
   extract: (results: MeasuredResults) => ({
     mean: results.time?.avg,

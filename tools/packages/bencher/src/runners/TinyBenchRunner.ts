@@ -4,7 +4,20 @@ import type { BenchRunner, RunnerOptions } from "./BenchRunner.ts";
 import { executeBenchmark } from "./BenchRunner.ts";
 import { nsToMs } from "./RunnerUtils.ts";
 
-/** Benchmark runner using the tinybench library. */
+type TinyBenchResult = {
+  latency: {
+    samples: number[];
+    min: number;
+    max: number;
+    mean: number;
+    p50?: number;
+    p75?: number;
+    p99?: number;
+    p999?: number;
+  };
+};
+
+/** Runner using tinybench library */
 export class TinyBenchRunner implements BenchRunner {
   async runBench<T = unknown>(
     benchmark: BenchmarkSpec<T>,
@@ -12,24 +25,13 @@ export class TinyBenchRunner implements BenchRunner {
     params?: T,
   ): Promise<MeasuredResults[]> {
     const { Bench } = await import("tinybench");
-
     const bench = new Bench({
       time: options.maxTime,
       warmupTime: options.warmupTime,
     });
-
-    // Wrap the benchmark function to force GC after each iteration if collect is enabled
-    const gc = globalThis.gc;
-    const benchFn =
-      options.collect && gc
-        ? () => {
-            executeBenchmark(benchmark, params);
-            gc();
-          }
-        : () => executeBenchmark(benchmark, params);
+    const benchFn = createBenchmarkFunction(benchmark, options, params);
 
     bench.add(benchmark.name, benchFn);
-
     await bench.run();
 
     const task = bench.tasks.find(t => t.name === benchmark.name);
@@ -37,22 +39,40 @@ export class TinyBenchRunner implements BenchRunner {
       throw new Error(`No results found for benchmark: ${benchmark.name}`);
     }
 
-    const samples = task.result.latency.samples.map((s: number) => s * nsToMs);
-
-    const result: MeasuredResults = {
-      name: benchmark.name,
-      samples,
-      time: {
-        min: task.result.latency.min * nsToMs,
-        max: task.result.latency.max * nsToMs,
-        avg: task.result.latency.mean * nsToMs,
-        p50: task.result.latency.p50! * nsToMs,
-        p75: task.result.latency.p75! * nsToMs,
-        p99: task.result.latency.p99! * nsToMs,
-        p999: task.result.latency.p999! * nsToMs,
-      },
-    };
-
-    return [result];
+    return [transformTinyBenchResult(benchmark.name, task.result)];
   }
+}
+
+function createBenchmarkFunction<T>(
+  benchmark: BenchmarkSpec<T>,
+  options: RunnerOptions,
+  params?: T,
+) {
+  const gc = globalThis.gc;
+  return options.collect && gc
+    ? () => {
+        executeBenchmark(benchmark, params);
+        gc();
+      }
+    : () => executeBenchmark(benchmark, params);
+}
+
+function transformTinyBenchResult(
+  name: string,
+  result: TinyBenchResult,
+): MeasuredResults {
+  const { samples, min, max, mean, p50, p75, p99, p999 } = result.latency;
+  return {
+    name,
+    samples: samples.map(s => s * nsToMs),
+    time: {
+      min: min * nsToMs,
+      max: max * nsToMs,
+      avg: mean * nsToMs,
+      p50: p50! * nsToMs,
+      p75: p75! * nsToMs,
+      p99: p99! * nsToMs,
+      p999: p999! * nsToMs,
+    },
+  };
 }

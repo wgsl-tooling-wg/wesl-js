@@ -1,14 +1,11 @@
 import pico from "picocolors";
 
-// Disable colors in tests to avoid ANSI escape codes in test output
 const isTest = process.env.NODE_ENV === "test" || process.env.VITEST === "true";
 const { red, green } = isTest
   ? { red: (str: string) => str, green: (str: string) => str }
   : pico;
 
-/** Formatting utilities for table data */
-
-/** @return a function that formats floats with custom precision */
+/** Format floats with custom precision */
 export function floatPrecision(
   precision: number,
 ): (x: unknown) => string | null {
@@ -18,7 +15,7 @@ export function floatPrecision(
   };
 }
 
-/** @return a function that formats percentages with custom precision */
+/** Format percentages with custom precision */
 export function percentPrecision(
   precision: number,
 ): (x: unknown) => string | null {
@@ -46,7 +43,7 @@ export function timeMs(ms: unknown): string | null {
   return ms.toFixed(2);
 }
 
-/** Format as a rate (value per unit) */
+/** Format as rate (value per unit) */
 export function rate(unit: string) {
   return (value: unknown) => {
     if (typeof value !== "number") return null;
@@ -54,13 +51,13 @@ export function rate(unit: string) {
   };
 }
 
-/** format an integer with commas between thousands */
+/** Format integer with thousand separators */
 export function integer(x: unknown): string | null {
   if (typeof x !== "number") return null;
   return new Intl.NumberFormat("en-US").format(Math.round(x));
 }
 
-/** format a number like .473 as a percentage like 47.3% */
+/** Format fraction as percentage (0.473 → 47.3%) */
 export function percent(fraction: unknown, precision = 1): string | null {
   if (typeof fraction !== "number") return null;
   return `${Math.abs(fraction * 100).toFixed(precision)}%`;
@@ -79,10 +76,7 @@ export function diffPercentBenchmark(main: unknown, base: unknown): string {
   return coloredPercent(diff, base, false); // negative is good for benchmarks
 }
 
-/**
- * format a fraction as a colored +/- percentage
- * @param positiveIsGreen whether a positive difference is good (green) or bad (red)
- */
+/** Format fraction as colored +/- percentage */
 function coloredPercent(
   numerator: number,
   denominator: number,

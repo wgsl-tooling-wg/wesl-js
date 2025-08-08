@@ -3,11 +3,10 @@ import type { Alignment, SpanningCellConfig, TableUserConfig } from "table";
 import { table } from "table";
 import { diffPercent } from "./Formatters.ts";
 
-// Disable colors in tests to avoid ANSI escape codes in test output
 const isTest = process.env.NODE_ENV === "test" || process.env.VITEST === "true";
 const { bold } = isTest ? { bold: (str: string) => str } : pico;
 
-/** Group of related columns in a table */
+/** Related table columns */
 export interface ColumnGroup<T> {
   groupTitle?: string;
   columns: AnyColumn<T>[];
@@ -15,30 +14,23 @@ export interface ColumnGroup<T> {
 
 export type AnyColumn<T> = Column<T> | DiffColumn<T>;
 
-/** Column definition with optional formatter */
+/** Column with optional formatter */
 export interface Column<T> extends ColumnFormat<T> {
   formatter?: (value: unknown) => string | null;
   diffKey?: undefined;
 }
 
-/** Column that compares values against a baseline */
+/** Comparison column against baseline */
 interface DiffColumn<T> extends ColumnFormat<T> {
   diffFormatter?: (value: unknown, baseline: unknown) => string | null;
   formatter?: undefined;
 
-  /** if set, this column holds a synthesized comparison value
-   * comparing the value in selected by the diffKey against the
-   * corresponding baseline value.
-   */
+  /** Key for comparison value against baseline */
   diffKey: keyof T;
 }
 
-/** Column formatting configuration */
 interface ColumnFormat<T> {
-  /** Data field to display */
   key: keyof T;
-
-  /** Header text */
   title: string;
 
   alignment?: Alignment;
@@ -46,20 +38,20 @@ interface ColumnFormat<T> {
   width?: number;
 }
 
-/** Table headers and configuration for the table library */
+/** Table headers and configuration */
 export interface TableSetup {
   headerRows: string[][];
   config: TableUserConfig;
 }
 
-/** Data rows with optional baseline for comparison */
+/** Data rows with optional baseline */
 export interface ResultGroup<T extends Record<string, any>> {
   results: T[];
 
   baseline?: T;
 }
 
-/** Build a formatted table with column groups and optional baseline comparisons */
+/** Build formatted table with column groups and baselines */
 export function buildTable<T extends Record<string, any>>(
   columnGroups: ColumnGroup<T>[],
   resultGroups: ResultGroup<T>[],
@@ -69,7 +61,7 @@ export function buildTable<T extends Record<string, any>>(
   return createTable(columnGroups, allRecords);
 }
 
-/** Convert column definitions and records into a formatted table string */
+/** Convert columns and records to formatted table */
 function createTable<T extends Record<string, any>>(
   groups: ColumnGroup<T>[],
   records: T[],
@@ -80,7 +72,7 @@ function createTable<T extends Record<string, any>>(
   return table(allRows, config);
 }
 
-/** Create group header rows with titles and spacing */
+/** Create header rows with group titles */
 function createGroupHeaders<T>(
   groups: ColumnGroup<T>[],
   numColumns: number,
@@ -119,9 +111,7 @@ function createLines<T>(groups: ColumnGroup<T>[]): Lines {
   return { drawHorizontalLine, drawVerticalLine };
 }
 
-/** @return spanning cells to configure for the main columns
- * currently unused due to upstream issue: https://github.com/gajus/table/issues/234
- */
+/** Spanning cells config - unused due to upstream issue #234 */
 function _columnSpanning<T>(
   groups: ColumnGroup<T>[],
   row = 0,
@@ -156,7 +146,7 @@ function padWithBlanks(arr: string[], length: number): string[] {
   return [...arr, ...Array(length - arr.length).fill(" ")];
 }
 
-/** Convert records to string arrays for the table library */
+/** Convert records to string arrays for table */
 export function toRows<T extends Record<string, any>>(
   records: T[],
   groups: ColumnGroup<T>[],
@@ -176,7 +166,7 @@ export function toRows<T extends Record<string, any>>(
   return rawRows.map(row => row.map(cell => cell ?? " "));
 }
 
-/** Add comparison values to records that have diff columns */
+/** Add comparison values for diff columns */
 function addComparisons<T extends Record<string, any>>(
   groups: ColumnGroup<T>[],
   mainRecord: T,
@@ -198,7 +188,7 @@ function addComparisons<T extends Record<string, any>>(
   return updatedMain;
 }
 
-/** Flatten result groups and add spacing between groups */
+/** Flatten groups with spacing */
 function flattenGroups<T extends Record<string, any>>(
   columnGroups: ColumnGroup<T>[],
   resultGroups: ResultGroup<T>[],
@@ -212,7 +202,7 @@ function flattenGroups<T extends Record<string, any>>(
   });
 }
 
-/** Process results with baseline comparisons if available */
+/** Process results with baseline comparisons */
 function addBaseline<T extends Record<string, any>>(
   columnGroups: ColumnGroup<T>[],
   group: ResultGroup<T>,
@@ -256,7 +246,7 @@ function calcBorders<T>(groups: ColumnGroup<T>[]): {
   return { sectionBorders, headerBottom };
 }
 
-/** Create table headers and configuration */
+/** Create headers and table configuration */
 function setup<T>(groups: ColumnGroup<T>[]): TableSetup {
   const titles = getTitles(groups);
   const numColumns = titles.length;

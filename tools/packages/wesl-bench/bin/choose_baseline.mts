@@ -5,36 +5,25 @@ import { existsSync, mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
 
 /**
- * a node script get an earlier copy of the repo as a baseline for benchmark comparisons
+ * Get an earlier version of the repo as a baseline for benchmark comparisons.
  *
- * Usage:
- * checkout_baseline <version>
+ * Usage: choose_baseline <version>
  *
- * how it works:
- * uses git archive to copy the files from the specified version
- * of the tools directory of the repo into ../../../_baseline
- * e.g. for git version v0.6.6, the tool will run:
- *   git archive v0.6.6 tools
- *
- * (note that archive creates a tar file with the directory name tools, and we
- * want a directory named _baseline)
- * the contents of _baseline will be the contents of the tools directory at
- * after the contents are in place
- * run `pnpm install` in the _baseline directory
+ * Archives the tools directory from the specified git version
+ * into ../_baseline directory, then runs pnpm install.
  */
 const version = process.argv[2];
 
 if (!version) {
   const scriptName = process.argv[1]
     ? process.argv[1].split("/").pop()
-    : "checkout_baseline";
+    : "choose_baseline";
   console.error(`Usage: ${scriptName} <version>`);
   process.exit(1);
 }
 console.log("version:", version);
 
-const __filename = new URL(import.meta.url).pathname;
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 process.chdir(path.resolve(__dirname, "../../../../"));
 const baselineDir = path.resolve("_baseline");
 

@@ -8,34 +8,32 @@ import {
   type ResultGroup,
 } from "./table-util/TableReport.ts";
 
-/** A set of benchmark results with an optional baseline for comparison */
+/** Benchmark results with optional baseline for comparison */
 export interface ReportGroup {
   reports: BenchmarkReport[];
   baseline?: BenchmarkReport;
 }
 
-/** results from running a benchmark */
+/** Results from a single benchmark run */
 export interface BenchmarkReport {
   name: string;
   measuredResults: MeasuredResults;
   metadata?: UnknownRecord;
 }
 
-/** a set of columns, grouped together in the report table */
+/** Column group for report table */
 export interface ReportColumnGroup<T> {
   groupTitle?: string;
   columns: ReportColumn<T>[];
 }
 
-/** a single column in the report table */
+/** Report table column */
 export type ReportColumn<T> = AnyColumn<T> & {
-  /** if true, a diff column will be added after this column when baseline data is present */
+  /** Add diff column after this column when baseline exists */
   comparable?: boolean;
 };
 
-/** Maps benchmark results to table columns
- * @typeParam T - Shape of extracted data (e.g. `{mean: number, p95: number}`)
- */
+/** Maps benchmark results to table columns */
 export interface ResultsMapper<
   T extends Record<string, any> = Record<string, any>,
 > {
@@ -44,20 +42,18 @@ export interface ResultsMapper<
 }
 export type UnknownRecord = Record<string, unknown>;
 
-/** Extracts the statistics type from a single section */
+/** Extract statistics type from section */
 type SectionStats<S> = S extends ResultsMapper<infer T> ? T : never;
 
 interface ReportRowBase {
   name: string;
 }
 
-/** Data row record type. e.g., {name: string, mean: number, p50: number}
- * constructed by combining section
- */
+/** Row data combining all section statistics */
 type ReportRowData<S extends ReadonlyArray<ResultsMapper<any>>> =
   ReportRowBase & UnionToIntersection<SectionStats<S[number]>>;
 
-/** Generate a formatted table report from benchmark results with optional baseline comparisons */
+/** Generate formatted table report with optional baseline comparisons */
 export function reportResults<S extends ReadonlyArray<ResultsMapper<any>>>(
   groups: ReportGroup[],
   sections: S,
@@ -69,7 +65,7 @@ export function reportResults<S extends ReadonlyArray<ResultsMapper<any>>>(
   return buildTable(columnGroups, resultGroups);
 }
 
-/** extract all needed values for this ReportGroup */
+/** Extract values for report group */
 function resultGroupValues<S extends ReadonlyArray<ResultsMapper<any>>>(
   group: ReportGroup,
   sections: S,
@@ -81,7 +77,7 @@ function resultGroupValues<S extends ReadonlyArray<ResultsMapper<any>>>(
   return { results, baseline: baselineRow };
 }
 
-/** Build report rows by extracting stats from all sections */
+/** Build rows by extracting stats from sections */
 export function valuesForReports<S extends ReadonlyArray<ResultsMapper<any>>>(
   reports: BenchmarkReport[],
   sections: S,
@@ -92,7 +88,7 @@ export function valuesForReports<S extends ReadonlyArray<ResultsMapper<any>>>(
   })) as ReportRowData<S>[];
 }
 
-/** Select and merge statistics values from all sections */
+/** Merge statistics from all sections */
 function extractReportValues(
   report: BenchmarkReport,
   sections: ReadonlyArray<ResultsMapper<any>>,
@@ -105,7 +101,7 @@ function extractReportValues(
   return Object.fromEntries(combinedEntries);
 }
 
-/** Create column groups from sections, injecting diff columns if needed */
+/** Create column groups with diff columns if baseline exists */
 function createColumnGroups<S extends ReadonlyArray<ResultsMapper<any>>>(
   sections: S,
   hasBaseline: boolean,
@@ -122,7 +118,7 @@ function createColumnGroups<S extends ReadonlyArray<ResultsMapper<any>>>(
   return [nameColumn, ...columnGroups];
 }
 
-/** Inject diff columns after comparable fields */
+/** Add diff columns after comparable fields */
 function injectDiffColumns<T>(
   reportGroups: ReportColumnGroup<T>[],
 ): ColumnGroup<T>[] {
@@ -144,7 +140,7 @@ function injectDiffColumns<T>(
   }));
 }
 
-/** Truncate long names to fit table width */
+/** Truncate names to fit table width */
 function truncate(name: string): string {
   const maxLength = 30;
   return name.length > maxLength ? name.slice(0, maxLength - 3) + "..." : name;

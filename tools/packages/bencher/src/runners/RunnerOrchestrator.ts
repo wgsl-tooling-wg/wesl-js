@@ -5,36 +5,23 @@ import type { MeasuredResults } from "../MeasuredResults.ts";
 import type { RunnerOptions } from "./BenchRunner.ts";
 import { createRunner, type KnownRunner } from "./CreateRunner.ts";
 import { debugWorkerTiming, getElapsed, getPerfNow } from "./TimingUtils.ts";
+import type { ErrorMessage, ResultMessage, RunMessage } from "./WorkerScript.ts";
 
-/** Message sent to worker process to start a benchmark run. */
-interface RunMessage {
-  type: "run";
-  spec: BenchmarkSpec;
-  runnerName: KnownRunner;
-  options: RunnerOptions;
-  fnCode?: string; // Made optional - either fnCode or modulePath is required
-  modulePath?: string; // Path to module for dynamic import
-  exportName?: string; // Export name from module
-  params?: unknown;
-}
-
-/** Message returned from worker process with benchmark results. */
-interface ResultMessage {
-  type: "result";
-  results: MeasuredResults[];
-}
-
-/** Message returned from worker process when benchmark fails. */
-interface ErrorMessage {
-  type: "error";
-  error: string;
-  stack?: string;
-}
-
-/** Log timing information when debugging is enabled */
 const logTiming = debugWorkerTiming
   ? (message: string) => console.log(`[RunnerOrchestrator] ${message}`)
   : () => {};
+
+type WorkerParams<T = unknown> = {
+  spec: BenchmarkSpec<T>;
+  runner: KnownRunner;
+  options: RunnerOptions;
+  params?: T;
+};
+
+type WorkerHandlers = {
+  resolve: (results: MeasuredResults[]) => void;
+  reject: (error: Error) => void;
+};
 
 interface RunBenchmarkParams<T = unknown> {
   spec: BenchmarkSpec<T>;
@@ -44,7 +31,7 @@ interface RunBenchmarkParams<T = unknown> {
   params?: T;
 }
 
-/** Executes benchmarks either directly or in isolated worker processes. */
+/** Execute benchmarks directly or in worker process */
 export async function runBenchmark<T = unknown>({
   spec,
   runner,
@@ -57,18 +44,16 @@ export async function runBenchmark<T = unknown>({
     return benchRunner.runBench(spec, options, params);
   }
 
-  return runInWorker(spec, runner, options, params);
+  return runInWorker({ spec, runner, options, params });
 }
 
-/** Runs benchmark in isolated worker process. */
+/** Run benchmark in isolated worker process */
 async function runInWorker<T>(
-  spec: BenchmarkSpec<T>,
-  runnerName: KnownRunner,
-  options: RunnerOptions,
-  params?: T,
+  workerParams: WorkerParams<T>,
 ): Promise<MeasuredResults[]> {
+  const { spec, runner, options, params } = workerParams;
   const startTime = getPerfNow();
-  logTiming(`Starting worker for ${spec.name} with ${runnerName}`);
+  logTiming(`Starting worker for ${spec.name} with ${runner}`);
 
   return new Promise((resolve, reject) => {
     const workerStartTime = getPerfNow();
@@ -78,20 +63,15 @@ async function runInWorker<T>(
       `Worker process created in ${getElapsed(workerStartTime, workerCreateTime).toFixed(1)}ms`,
     );
 
-    setupWorkerHandlers(
-      worker,
+    const handlers = createWorkerHandlers(
       spec.name,
-      results => {
-        const totalTime = getElapsed(startTime);
-        logTiming(
-          `Total worker time for ${spec.name}: ${totalTime.toFixed(1)}ms`,
-        );
-        resolve(results);
-      },
+      startTime,
+      resolve,
       reject,
     );
+    setupWorkerHandlers(worker, spec.name, handlers);
 
-    const runMessage = createRunMessage(spec, runnerName, options, params);
+    const runMessage = createRunMessage(spec, runner, options, params);
     const messageTime = getPerfNow();
     worker.send(runMessage);
     logTiming(
@@ -100,13 +80,13 @@ async function runInWorker<T>(
   });
 }
 
-/** Sets up worker event handlers with cleanup and promise resolution. */
+/** Setup worker event handlers with cleanup */
 function setupWorkerHandlers(
   worker: ReturnType<typeof createWorkerProcess>,
   specName: string,
-  resolve: (results: MeasuredResults[]) => void,
-  reject: (error: Error) => void,
+  handlers: WorkerHandlers,
 ) {
+  const { resolve, reject } = handlers;
   const cleanup = createCleanup(worker, specName, reject);
 
   worker.on("message", (message: ResultMessage | ErrorMessage) => {
@@ -143,7 +123,7 @@ function setupWorkerHandlers(
   });
 }
 
-/** Creates cleanup function that handles timeout and worker termination. */
+/** Create cleanup for timeout and termination */
 function createCleanup(
   worker: ReturnType<typeof createWorkerProcess>,
   specName: string,
@@ -164,37 +144,47 @@ function createCleanup(
   return cleanup;
 }
 
-/** Creates worker process with proper configuration. */
+/** Create worker process with configuration */
 function createWorkerProcess() {
   const workerPath = path.join(import.meta.dirname!, "WorkerScript.ts");
-  
+
   return fork(workerPath, [], {
     execArgv: ["--expose-gc", "--allow-natives-syntax", "--import", "tsx"],
     silent: false,
-    env: { 
-      ...process.env, 
+    env: {
+      ...process.env,
       NODE_OPTIONS: "",
     },
   });
 }
 
-/*
-consider using these options for worker processes for more consistency (but less realism).
-    "--no-compilation-cache",    // Prevent JIT compilation caching between runs
-    "--max-old-space-size=512",  // Consistent memory limits
-    "--no-lazy",                 // Consistent compilation behavior
-*/
+// Consider: --no-compilation-cache, --max-old-space-size=512, --no-lazy
+// for consistency (less realistic)
 
-/** Creates run message for worker. */
+function createWorkerHandlers(
+  specName: string,
+  startTime: number,
+  resolve: (results: MeasuredResults[]) => void,
+  reject: (error: Error) => void,
+): WorkerHandlers {
+  return {
+    resolve: (results: MeasuredResults[]) => {
+      const totalTime = getElapsed(startTime);
+      logTiming(`Total worker time for ${specName}: ${totalTime.toFixed(1)}ms`);
+      resolve(results);
+    },
+    reject,
+  };
+}
+
+/** Create message for worker execution */
 function createRunMessage<T>(
   spec: BenchmarkSpec<T>,
   runnerName: KnownRunner,
   options: RunnerOptions,
   params?: T,
 ): RunMessage {
-  // Create spec without function for serialization
   const { fn, ...specWithoutFn } = spec;
-  
   const message: RunMessage = {
     type: "run",
     spec: specWithoutFn as BenchmarkSpec,
@@ -203,7 +193,6 @@ function createRunMessage<T>(
     params,
   };
 
-  // Use module path if available, otherwise serialize function
   if (spec.modulePath) {
     message.modulePath = spec.modulePath;
     message.exportName = spec.exportName;

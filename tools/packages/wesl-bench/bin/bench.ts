@@ -17,9 +17,9 @@ import { loadExamples, type WeslSource } from "../src/LoadExamples.ts";
 import { locSection } from "../src/LocSection.ts";
 import { meanTimeSection } from "../src/MeanTimeSection.ts";
 import {
+  makeVariation,
   type ParserVariant,
   parserVariation,
-  parserVariationWithImports,
   type WeslImports,
 } from "../src/ParserVariations.ts";
 import { reorganizeReportGroups } from "../src/ReorganizeReportGroups.ts";
@@ -52,7 +52,7 @@ async function main() {
   console.log(table);
 }
 
-/** @return true if any benchmark result contains GC data */
+/** @return true if results contain GC data */
 function hasGcData(results: ReportGroup[]): boolean {
   return results.some(({ reports }) =>
     reports.some(
@@ -61,7 +61,7 @@ function hasGcData(results: ReportGroup[]): boolean {
   );
 }
 
-/** @return parsed CLI arguments with custom variant option */
+/** @return parsed CLI arguments */
 function parseArgs() {
   return parseBenchArgs(yargs =>
     defaultCliArgs(yargs)
@@ -79,7 +79,7 @@ function parseArgs() {
   );
 }
 
-/** @return benchmark groups for all requested variants */
+/** @return benchmark groups for requested variants */
 function createBenchGroups(
   variants: ParserVariant[],
   examples: Record<string, WeslSource>,
@@ -96,7 +96,7 @@ function createBenchGroups(
   );
 }
 
-/** @return a benchmark group with metadata for lines/sec calculation */
+/** @return benchmark group with lines/sec metadata */
 function makeBenchGroup(
   name: string,
   source: WeslSource,
@@ -109,21 +109,22 @@ function makeBenchGroup(
   if (useWorker) {
     // Worker mode: use module path and params
     const workerModulePath = join(__dirname, "../src/WorkerBenchmarks.ts");
-    
+
     const group: BenchGroup<BenchParams> = {
       name: benchName,
       setup: () => ({ variant, source }),
-      benchmarks: [{
-        name: benchName,
-        fn: () => {}, // Placeholder - not used when modulePath is provided
-        modulePath: workerModulePath,
-        exportName: "runBenchmark",
-      }],
+      benchmarks: [
+        {
+          name: benchName,
+          fn: () => {}, // unused with modulePath
+          modulePath: workerModulePath,
+          exportName: "runBenchmark",
+        },
+      ],
       metadata: { linesOfCode: source.lineCount ?? 0 },
     };
 
     if (baselineImports) {
-      // Use separate baseline worker module that imports from _baseline directory
       group.baseline = {
         name: benchName,
         fn: () => {}, // Placeholder - not used when modulePath is provided
@@ -144,9 +145,9 @@ function makeBenchGroup(
   };
 
   if (baselineImports) {
-    const baselineFn = parserVariationWithImports(variant, baselineImports);
+    const baselineFn = makeVariation(variant, baselineImports);
     group.baseline = {
-      name: benchName, // Same name; table formatter will add --> prefix
+      name: benchName, // table formatter adds --> prefix
       fn: () => baselineFn(source),
     };
   }

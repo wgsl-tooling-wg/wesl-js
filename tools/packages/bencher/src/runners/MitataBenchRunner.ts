@@ -8,7 +8,7 @@ import type { BenchRunner, RunnerOptions } from "./BenchRunner.ts";
 import { executeBenchmark } from "./BenchRunner.ts";
 import { msToNs } from "./RunnerUtils.ts";
 
-/** Benchmark using the mitata library. */
+/** Runner using mitata benchmark library */
 export class MitataBenchRunner implements BenchRunner {
   async runBench<T = unknown>(
     benchmark: BenchmarkSpec<T>,
