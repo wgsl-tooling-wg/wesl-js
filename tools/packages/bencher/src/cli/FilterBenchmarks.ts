@@ -7,15 +7,13 @@ export function filterBenchmarks(
 ): BenchSuite {
   if (!filter) return suite;
   const regex = createFilterRegex(filter);
-  const groups = suite.groups
-    .map(group => ({
-      ...group,
-      benchmarks: group.benchmarks.filter(bench => {
-        const baseName = bench.name.replace(/ \[.*?\]$/, "");
-        return regex.test(baseName);
-      }),
-    }))
-    .filter(group => group.benchmarks.length > 0);
+  const groups = suite.groups.map(group => ({
+    ...group,
+    benchmarks: group.benchmarks.filter(bench => {
+      const baseName = bench.name.replace(/ \[.*?\]$/, "");
+      return regex.test(baseName);
+    }),
+  }));
   validateFilteredSuite(groups, filter);
   return { name: suite.name, groups };
 }

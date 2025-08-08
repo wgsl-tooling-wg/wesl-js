@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import type { BenchmarkFunction, BenchmarkSpec } from "../Benchmark.ts";
 import type { MeasuredResults } from "../MeasuredResults.ts";
-import { createRunner, type KnownRunner } from "./CreateRunner.ts";
 import type { RunnerOptions } from "./BenchRunner.ts";
+import { createRunner, type KnownRunner } from "./CreateRunner.ts";
 import { debugWorkerTiming, getElapsed, getPerfNow } from "./TimingUtils.ts";
 
 // Constants at the top

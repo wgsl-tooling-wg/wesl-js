@@ -1,3 +1,4 @@
+/// <reference path="../types/mitata-counters.d.ts" />
 import type { CpuCounts } from "@mitata/counters";
 import type { NodeGCTime } from "./NodeGC.ts";
 

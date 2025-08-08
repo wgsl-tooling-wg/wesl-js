@@ -5,7 +5,11 @@ import type { MeasuredResults } from "../MeasuredResults.ts";
 import type { RunnerOptions } from "./BenchRunner.ts";
 import { createRunner, type KnownRunner } from "./CreateRunner.ts";
 import { debugWorkerTiming, getElapsed, getPerfNow } from "./TimingUtils.ts";
-import type { ErrorMessage, ResultMessage, RunMessage } from "./WorkerScript.ts";
+import type {
+  ErrorMessage,
+  ResultMessage,
+  RunMessage,
+} from "./WorkerScript.ts";
 
 const logTiming = debugWorkerTiming
   ? (message: string) => console.log(`[RunnerOrchestrator] ${message}`)
