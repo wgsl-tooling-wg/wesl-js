@@ -12,7 +12,9 @@ interface RunMessage {
   spec: BenchmarkSpec;
   runnerName: KnownRunner;
   options: RunnerOptions;
-  fnCode: string;
+  fnCode?: string; // Made optional - either fnCode or modulePath is required
+  modulePath?: string; // Path to module for dynamic import
+  exportName?: string; // Export name from module
   params?: unknown;
 }
 
@@ -165,10 +167,14 @@ function createCleanup(
 /** Creates worker process with proper configuration. */
 function createWorkerProcess() {
   const workerPath = path.join(import.meta.dirname!, "WorkerScript.ts");
+  
   return fork(workerPath, [], {
     execArgv: ["--expose-gc", "--allow-natives-syntax", "--import", "tsx"],
     silent: false,
-    env: { ...process.env, NODE_OPTIONS: "" },
+    env: { 
+      ...process.env, 
+      NODE_OPTIONS: "",
+    },
   });
 }
 
@@ -186,12 +192,24 @@ function createRunMessage<T>(
   options: RunnerOptions,
   params?: T,
 ): RunMessage {
-  return {
+  // Create spec without function for serialization
+  const { fn, ...specWithoutFn } = spec;
+  
+  const message: RunMessage = {
     type: "run",
-    spec: spec as BenchmarkSpec,
+    spec: specWithoutFn as BenchmarkSpec,
     runnerName,
     options,
-    fnCode: spec.fn.toString(),
     params,
   };
+
+  // Use module path if available, otherwise serialize function
+  if (spec.modulePath) {
+    message.modulePath = spec.modulePath;
+    message.exportName = spec.exportName;
+  } else {
+    message.fnCode = fn.toString();
+  }
+
+  return message;
 }

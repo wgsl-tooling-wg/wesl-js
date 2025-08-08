@@ -23,6 +23,7 @@ import {
   type WeslImports,
 } from "../src/ParserVariations.ts";
 import { reorganizeReportGroups } from "../src/ReorganizeReportGroups.ts";
+import type { BenchParams } from "../src/WorkerBenchmarks.ts";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const examplesDir = join(__dirname, "..", "wesl-examples");
@@ -37,7 +38,7 @@ async function main() {
   const examples = loadExamples(examplesDir);
   const suite: BenchSuite = {
     name: "WESL Benchmarks",
-    groups: createBenchGroups(variants, examples, baselineImports),
+    groups: createBenchGroups(variants, examples, baselineImports, args.worker),
   };
 
   const results = await runBenchmarks(suite, args);
@@ -83,13 +84,14 @@ function createBenchGroups(
   variants: ParserVariant[],
   examples: Record<string, WeslSource>,
   baselineImports?: WeslImports,
+  useWorker?: boolean,
 ): BenchGroup[] {
   const entries = Object.entries(examples);
   const exampleList = entries.map(([name, source]) => ({ name, source }));
 
   return variants.flatMap(variant =>
     exampleList.map(({ name, source }) =>
-      makeBenchGroup(name, source, variant, baselineImports),
+      makeBenchGroup(name, source, variant, baselineImports, useWorker),
     ),
   );
 }
@@ -100,10 +102,41 @@ function makeBenchGroup(
   source: WeslSource,
   variant: ParserVariant,
   baselineImports?: WeslImports,
+  useWorker?: boolean,
 ): BenchGroup {
-  const benchFn = parserVariation(variant);
   const benchName = variant === "link" ? name : `${name} [${variant}]`;
 
+  if (useWorker) {
+    // Worker mode: use module path and params
+    const workerModulePath = join(__dirname, "../src/WorkerBenchmarks.ts");
+    
+    const group: BenchGroup<BenchParams> = {
+      name: benchName,
+      setup: () => ({ variant, source }),
+      benchmarks: [{
+        name: benchName,
+        fn: () => {}, // Placeholder - not used when modulePath is provided
+        modulePath: workerModulePath,
+        exportName: "runBenchmark",
+      }],
+      metadata: { linesOfCode: source.lineCount ?? 0 },
+    };
+
+    if (baselineImports) {
+      // Use separate baseline worker module that imports from _baseline directory
+      group.baseline = {
+        name: benchName,
+        fn: () => {}, // Placeholder - not used when modulePath is provided
+        modulePath: join(__dirname, "../src/BaselineWorkerBenchmarks.ts"),
+        exportName: "runBaselineBenchmark",
+      };
+    }
+
+    return group as BenchGroup;
+  }
+
+  // Non-worker mode: use closures
+  const benchFn = parserVariation(variant);
   const group: BenchGroup = {
     name: benchName,
     benchmarks: [{ name: benchName, fn: () => benchFn(source) }],

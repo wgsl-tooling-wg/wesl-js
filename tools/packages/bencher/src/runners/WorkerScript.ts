@@ -10,7 +10,9 @@ interface RunMessage {
   spec: BenchmarkSpec;
   runnerName: KnownRunner;
   options: RunnerOptions;
-  fnCode: string;
+  fnCode?: string;
+  modulePath?: string;
+  exportName?: string;
   params?: unknown;
 }
 
@@ -46,7 +48,10 @@ process.on("message", async (message: RunMessage) => {
     const runner = await createRunner(message.runnerName);
     logTiming("Runner created in", getElapsed(start));
 
-    const fn = reconstructFunction(message.fnCode);
+    // Import from module path if provided, otherwise reconstruct from code
+    const fn = message.modulePath
+      ? await importBenchmarkFunction(message.modulePath, message.exportName)
+      : reconstructFunction(message.fnCode!);
     const spec: BenchmarkSpec = { ...message.spec, fn };
 
     const benchStart = getPerfNow();
@@ -95,6 +100,30 @@ function sendAndExit(message: ResultMessage | ErrorMessage, exitCode: number) {
     logTiming(`Total worker duration${suffix}:`, totalTime);
     process.exit(exitCode);
   });
+}
+
+/** Import benchmark function from module path */
+async function importBenchmarkFunction(
+  modulePath: string,
+  exportName?: string,
+): Promise<BenchmarkFunction> {
+  logTiming(`Importing from ${modulePath}${exportName ? ` (${exportName})` : ""}`);
+  const module = await import(modulePath);
+  
+  if (exportName) {
+    const fn = module[exportName];
+    if (typeof fn !== "function") {
+      throw new Error(`Export '${exportName}' from ${modulePath} is not a function`);
+    }
+    return fn;
+  }
+  
+  // Use default export if no export name specified
+  const fn = module.default || module;
+  if (typeof fn !== "function") {
+    throw new Error(`Default export from ${modulePath} is not a function`);
+  }
+  return fn;
 }
 
 /** Reconstruct function from serialized code */

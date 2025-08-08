@@ -5,6 +5,12 @@ export interface BenchmarkSpec<T = unknown> {
 
   /** The function to benchmark */
   fn: BenchmarkFunction<T>;
+
+  /** Optional: Path to module exporting the benchmark function (for worker mode) */
+  modulePath?: string;
+
+  /** Optional: Name of the exported function in the module (defaults to default export) */
+  exportName?: string;
 }
 
 export type BenchmarkFunction<T = unknown> =
