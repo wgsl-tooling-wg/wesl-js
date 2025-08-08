@@ -6,7 +6,7 @@ import { MitataBenchRunner } from "../runners/MitataBenchRunner.ts";
 function memoryAllocatingFunction(): number {
   const arrays = Array(500)
     .fill(0)
-    .map(() => new Array(200).fill(Math.random()));
+    .map(() => Array.from({ length: 200 }, () => Math.random()));
 
   const objects = arrays.map(arr => ({
     data: arr,

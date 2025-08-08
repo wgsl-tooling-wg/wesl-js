@@ -106,7 +106,7 @@ function getTimestamp() {
 function run(cmd: string, cwd?: string) {
   try {
     return execSync(cmd, { cwd, stdio: "inherit" });
-  } catch (_error) {
+  } catch {
     throw new Error(`Failed to run: ${cmd}`);
   }
 }

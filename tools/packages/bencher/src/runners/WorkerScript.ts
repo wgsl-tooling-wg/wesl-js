@@ -131,7 +131,7 @@ async function importBenchmarkFunction(
 /** Reconstruct function from string code */
 function reconstructFunction(fnCode: string): BenchmarkFunction {
   // biome-ignore lint/security/noGlobalEval: Necessary for worker process isolation, code is from trusted source
-  const fn = eval(`(${fnCode})`);
+  const fn = eval(`(${fnCode})`); // eslint-disable-line no-eval
   if (typeof fn !== "function") {
     throw new Error("Reconstructed code is not a function");
   }

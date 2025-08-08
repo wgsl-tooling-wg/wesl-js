@@ -9,7 +9,7 @@ function memoryAllocatingFunction(): number {
   // Create arrays to allocate memory
   const arrays = Array(50)
     .fill(0)
-    .map(() => new Array(200).fill(Math.random()));
+    .map(() => Array.from({ length: 200 }, () => Math.random()));
 
   // Create objects to further allocate memory
   const objects = arrays.map(arr => ({
