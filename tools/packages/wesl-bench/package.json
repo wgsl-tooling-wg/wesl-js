@@ -11,6 +11,7 @@
     "bench:validate": "bin/bench.ts --profile",
     "test": "vitest --hideSkippedTests",
     "test:once": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck": "tsgo"
   },
   "dependencies": {
