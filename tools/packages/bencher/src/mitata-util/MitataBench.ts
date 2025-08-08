@@ -1,4 +1,5 @@
 import { type PerformanceEntry, PerformanceObserver } from "node:perf_hooks";
+/// <reference path="../../types/mitata-counters.d.ts" />
 import type * as mitataCountersType from "@mitata/counters";
 import { measure } from "mitata";
 import type { MeasuredResults } from "../MeasuredResults.ts";
@@ -27,9 +28,25 @@ async function loadMitataCounters(
   }
 
   try {
-    return await import("@mitata/counters");
+    const counters = await import("@mitata/counters");
+
+    // Check if running with sufficient privileges
+    if (
+      process.platform !== "win32" &&
+      process.getuid &&
+      process.getuid() !== 0
+    ) {
+      console.warn(
+        "⚠️  CPU counters require root access. Run with sudo for CPU measurements.",
+      );
+      console.warn("   Continuing without CPU counters...\n");
+      return undefined;
+    }
+
+    return counters;
   } catch (error) {
     console.warn("Failed to load @mitata/counters:", error);
+    console.warn("CPU measurements will be unavailable.\n");
     return undefined;
   }
 }

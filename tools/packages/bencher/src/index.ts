@@ -22,6 +22,7 @@ export {
 export type { MeasuredResults } from "./MeasuredResults.ts";
 export type { RunnerOptions } from "./runners/BenchRunner.ts";
 export {
+  cpuSection,
   gcSection,
   runsSection,
   timeSection,

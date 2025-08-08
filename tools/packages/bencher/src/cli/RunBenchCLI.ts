@@ -5,7 +5,12 @@ import { reportResults } from "../BenchmarkReport.ts";
 import type { RunnerOptions } from "../runners/BenchRunner.ts";
 import type { KnownRunner } from "../runners/CreateRunner.ts";
 import { runBenchmark } from "../runners/RunnerOrchestrator.ts";
-import { gcSection, runsSection, timeSection } from "../StandardSections.ts";
+import {
+  cpuSection,
+  gcSection,
+  runsSection,
+  timeSection,
+} from "../StandardSections.ts";
 import {
   type ConfigureArgs,
   type DefaultCliArgs,
@@ -123,10 +128,19 @@ export function defaultReport(
   groups: ReportGroup[],
   args: DefaultCliArgs,
 ): string {
+  const hasCpuData = groups.some(({ reports }) =>
+    reports.some(({ measuredResults }) => measuredResults.cpu !== undefined),
+  );
+
   const sections = [timeSection, runsSection] as const;
-  const finalSections = args["observe-gc"]
+  let finalSections: any[] = args["observe-gc"]
     ? [...sections, gcSection]
-    : sections;
+    : [...sections];
+
+  if (hasCpuData) {
+    finalSections = [...finalSections, cpuSection];
+  }
+
   return reportResults(groups, finalSections);
 }
 
@@ -143,10 +157,10 @@ export async function runDefaultBench(
 
 /** Convert CLI args to runner options */
 export function cliToRunnerOptions(args: DefaultCliArgs): RunnerOptions {
-  const { profile, collect, time, "observe-gc": observeGC } = args;
+  const { profile, collect, time, cpu, "observe-gc": observeGC } = args;
   if (profile) {
     // Single iteration for profiler attachment
     return { maxIterations: 1, warmupTime: 0, observeGC: false, collect };
   }
-  return { minTime: time * 1000, observeGC, collect };
+  return { minTime: time * 1000, observeGC, collect, cpuCounters: cpu };
 }

@@ -15,7 +15,14 @@ export class MitataBenchRunner implements BenchRunner {
     options: RunnerOptions,
     params?: T,
   ): Promise<MeasuredResults[]> {
-    const { minTime, warmupTime, maxIterations, observeGC, collect } = options;
+    const {
+      minTime,
+      warmupTime,
+      maxIterations,
+      observeGC,
+      collect,
+      cpuCounters,
+    } = options;
     const { warmupSamples, warmupThreshold, minSamples } = options;
 
     const opts: MeasureOptions = { args: {}, warmupTime };
@@ -26,6 +33,7 @@ export class MitataBenchRunner implements BenchRunner {
     if (minSamples !== undefined) opts.min_samples = minSamples;
     opts.observeGC = observeGC;
     opts.collect = collect;
+    opts.cpuCounters = cpuCounters;
 
     const result = await mitataBench(
       () => executeBenchmark(benchmark, params),

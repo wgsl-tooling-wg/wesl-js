@@ -37,4 +37,6 @@ export interface RunnerOptions {
   observeGC?: boolean;
   /** Force GC after each iteration (requires --expose-gc) */
   collect?: boolean;
+  /** Enable CPU performance counters (requires root access) */
+  cpuCounters?: boolean;
 }

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import {
   type BenchGroup,
   type BenchSuite,
+  cpuSection,
   defaultCliArgs,
   gcSection,
   parseBenchArgs,
@@ -44,11 +45,21 @@ async function main() {
   const results = await runBenchmarks(suite, args);
 
   const reorganized = reorganizeReportGroups(results, variants);
+
+  const hasCpuData = results.some(({ reports }) =>
+    reports.some(({ measuredResults }) => measuredResults.cpu !== undefined),
+  );
+
   const sections = hasGcData(results)
     ? [locSection, meanTimeSection, gcSection, runsSection]
     : [locSection, meanTimeSection, runsSection];
 
-  const table = reportResults(reorganized, sections);
+  // Add CPU section if CPU data is available
+  const finalSections = hasCpuData
+    ? [...sections.slice(0, -1), cpuSection, sections[sections.length - 1]]
+    : sections;
+
+  const table = reportResults(reorganized, finalSections);
   console.log(table);
 }
 
