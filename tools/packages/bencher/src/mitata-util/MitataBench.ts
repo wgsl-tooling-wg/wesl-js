@@ -135,8 +135,10 @@ function createGCObserver(): GCObserver {
   let numGC = 0;
   const observer = new PerformanceObserver(items => {
     for (const item of items.getEntries()) {
-      if (item.name === "gc") {
-        gcRecords[numGC++] = item;
+      // GC events have entryType 'gc', not name 'gc'
+      if (item.entryType === "gc") {
+        gcRecords.push(item);
+        numGC++;
       }
     }
   });
@@ -156,6 +158,8 @@ async function runWarmupAndClear(
 ): Promise<void> {
   wrappedFn();
   await clearGarbage();
+  // Clear the GC records collected during warmup
+  gcObserver.gcRecords.length = 0;
   gcObserver.numGC = 0;
 }
 
@@ -165,8 +169,8 @@ async function finishGCObservation(
 ): Promise<NodeGCTime | undefined> {
   await wait();
   gcObserver.gcRecords.push(...finishObserver(gcObserver.observer));
-  const gcEntries = gcObserver.gcRecords.slice(0, gcObserver.numGC);
-  return analyzeGCEntries(gcEntries, benchTiming);
+  // Use all records, not just up to numGC since we're pushing to the array
+  return analyzeGCEntries(gcObserver.gcRecords, benchTiming);
 }
 
 /** allocate what we can in advance, and run a gc() so that our collection metrics are as pristine as possible */

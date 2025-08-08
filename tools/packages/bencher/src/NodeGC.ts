@@ -15,6 +15,7 @@ export function analyzeGCEntries(
   benchTime: [number, number],
 ): NodeGCTime {
   const [start, end] = benchTime;
+
   let inRun = 0;
   let before = 0;
   let after = 0;

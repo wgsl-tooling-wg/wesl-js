@@ -4,16 +4,24 @@ import type { BenchGroup, BenchSuite } from "../Benchmark.ts";
 export function filterBenchmarks(
   suite: BenchSuite,
   filter?: string,
+  removeEmpty = true,
 ): BenchSuite {
   if (!filter) return suite;
   const regex = createFilterRegex(filter);
-  const groups = suite.groups.map(group => ({
-    ...group,
-    benchmarks: group.benchmarks.filter(bench => {
-      const baseName = bench.name.replace(/ \[.*?\]$/, "");
-      return regex.test(baseName);
-    }),
-  }));
+  const groups = suite.groups
+    .map(group => ({
+      ...group,
+      benchmarks: group.benchmarks.filter(bench => {
+        const baseName = bench.name.replace(/ \[.*?\]$/, "");
+        return regex.test(baseName);
+      }),
+      baseline:
+        group.baseline &&
+        regex.test(group.baseline.name.replace(/ \[.*?\]$/, ""))
+          ? group.baseline
+          : undefined,
+    }))
+    .filter(group => !removeEmpty || group.benchmarks.length > 0);
   validateFilteredSuite(groups, filter);
   return { name: suite.name, groups };
 }

@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 import type { BenchmarkFunction, BenchmarkSpec } from "../Benchmark.ts";
 import type { MeasuredResults } from "../MeasuredResults.ts";
+import {
+  type AdaptiveOptions,
+  createAdaptiveWrapper,
+} from "./AdaptiveWrapper.ts";
 import type { RunnerOptions } from "./BenchRunner.ts";
 import { createRunner, type KnownRunner } from "./CreateRunner.ts";
 import { debugWorkerTiming, getElapsed, getPerfNow } from "./TimingUtils.ts";
@@ -47,7 +51,13 @@ process.on("message", async (message: RunMessage) => {
 
   try {
     const start = getPerfNow();
-    const runner = await createRunner(message.runnerName);
+    const baseRunner = await createRunner(message.runnerName);
+
+    // Apply adaptive wrapper if adaptive mode is enabled
+    const runner = (message.options as any).adaptive
+      ? createAdaptiveWrapper(baseRunner, message.options as AdaptiveOptions)
+      : baseRunner;
+
     logTiming("Runner created in", getElapsed(start));
 
     const fn = message.modulePath

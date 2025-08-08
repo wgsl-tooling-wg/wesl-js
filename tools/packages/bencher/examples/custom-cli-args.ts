@@ -21,21 +21,48 @@ const mathGroup: BenchGroup<void> = {
 
 // Configure CLI with custom arguments
 function configureCustomArgs(yargs: any) {
-  return defaultCliArgs(yargs).option("verbose", {
-    type: "boolean",
-    default: false,
-    describe: "enable verbose logging",
+  return defaultCliArgs(yargs).option("size", {
+    type: "number",
+    default: 100,
+    describe: "size of arrays to allocate and reduce",
   });
 }
 
 // Parse arguments with custom configuration
 const args = parseBenchArgs(configureCustomArgs);
 
-if (args.verbose) console.log("Verbose mode enabled");
+// Create a garbage-generating benchmark group
+const garbageGroup: BenchGroup<void> = {
+  name: "Garbage Generation",
+  benchmarks: [
+    {
+      name: `array-reduce-${args.size}`,
+      fn: () => {
+        // Create array of arrays to generate garbage
+        const arrays = [];
+        for (let i = 0; i < args.size; i++) {
+          // Each inner array has random values
+          const innerArray = new Array(100);
+          for (let j = 0; j < 100; j++) {
+            innerArray[j] = Math.random() * 1000;
+          }
+          arrays.push(innerArray);
+        }
+
+        // Reduce all arrays to generate more garbage
+        return arrays
+          .map(arr => arr.reduce((sum, val) => sum + val, 0))
+          .reduce((total, sum) => total + sum, 0);
+      },
+    },
+  ],
+};
+
+console.log(`Testing with array size: ${args.size}`);
 
 const suite: BenchSuite = {
   name: "Custom Args Demo",
-  groups: [mathGroup],
+  groups: [mathGroup, garbageGroup],
 };
 
 // Run benchmarks with parsed arguments

@@ -125,6 +125,134 @@ Results are displayed in a formatted table:
 - Node.js 22.6+ (for native TypeScript support)
 - Use `--expose-gc --allow-natives-syntax` flags for garbage collection monitoring and V8 native functions
 
+## Adaptive Mode
+
+Adaptive mode automatically adjusts the number of benchmark iterations to achieve a desired confidence interval, providing statistically significant results without excessive runtime.
+
+### Using Adaptive Mode
+
+```bash
+# Enable adaptive benchmarking with default settings
+simple-cli.ts --adaptive
+
+# Customize confidence parameters
+simple-cli.ts --adaptive --threshold 0.02 --confidence 0.99 --max-time 60
+
+# Combine with other options
+simple-cli.ts --adaptive --worker --filter "sort"
+```
+
+### CLI Options for Adaptive Mode
+
+- `--adaptive` - Enable adaptive sampling mode
+- `--threshold <fraction>` - Target confidence interval width (default: 0.03 = ±3%)
+- `--confidence <level>` - Confidence level for intervals (default: 0.95 = 95%)
+- `--max-time <seconds>` - Maximum time per benchmark (default: 30s)
+
+### How It Works
+
+1. **Initial Sampling**: Runs benchmark for minimum time to collect initial samples
+2. **Statistical Analysis**: Calculates mean and confidence interval using Student's t-distribution
+3. **Convergence Check**: Continues sampling until CI width < threshold or max-time reached
+4. **Early Termination**: Stops when statistical significance achieved, saving time
+
+### Output with Adaptive Mode
+
+```
+╔═══════════════╤═════════════════════════════╤═══════╤═══════╗
+║               │            time             │       │       ║
+║ name          │ mean    ±CI      p50        │ runs  │ time  ║
+╟───────────────┼─────────────────────────────┼───────┼───────╢
+║ quicksort     │ 0.16ms  ±2.1%   0.15ms     │ 4,823 │ 3.2s  ║
+║ native sort   │ 0.14ms  ±1.8%   0.14ms     │ 5,421 │ 2.8s  ║
+╚═══════════════╧═════════════════════════════╧═══════╧═══════╝
+```
+
+The `±CI` column shows the confidence interval as a percentage of the mean. Lower percentages indicate more reliable measurements.
+
+## Statistical Considerations: Mean vs Median
+
+### When to Use Mean with Confidence Intervals
+
+**Best for:**
+- **Normally distributed data** - When benchmark times follow a bell curve
+- **Statistical comparison** - Comparing performance between implementations
+- **Throughput analysis** - Understanding average system performance
+- **Resource planning** - Estimating typical resource usage
+
+**Advantages:**
+- Provides confidence intervals for statistical significance
+- Captures the full distribution including outliers
+- Better for detecting small but consistent performance differences
+- Standard in academic performance research
+
+**Example use cases:**
+- Comparing algorithm implementations
+- Measuring API response times under normal load
+- Evaluating compiler optimizations
+- Benchmarking pure computational functions
+
+### When to Use Median (p50)
+
+**Best for:**
+- **Skewed distributions** - When outliers are common
+- **Latency-sensitive applications** - Where typical user experience matters
+- **Noisy environments** - Systems with unpredictable interference
+- **Service Level Agreements** - "50% of requests complete within X ms"
+
+**Advantages:**
+- Robust to outliers and system noise
+- Better represents "typical" performance
+- More stable in virtualized/cloud environments
+- Less affected by GC pauses and OS scheduling
+
+**Example use cases:**
+- Web server response times
+- Database query performance
+- UI responsiveness metrics
+- Real-time system benchmarks
+
+### Interpreting Results
+
+#### With Adaptive Mode (Mean + CI)
+```
+mean: 0.16ms ±2.1%
+```
+This means we're 95% confident the true mean lies between 0.157ms and 0.163ms. Use this when you need statistical rigor and are comparing implementations.
+
+#### With Traditional Mode (Percentiles)
+```
+p50: 0.15ms, p99: 0.27ms
+```
+This shows that 50% of runs completed in ≤0.15ms and 99% in ≤0.27ms. Use this when you care about consistency and tail latencies.
+
+### Practical Guidelines
+
+1. **Use adaptive mode (mean + CI) when:**
+   - Running in controlled environments
+   - Comparing similar implementations
+   - Making optimization decisions
+   - Publishing benchmark results
+
+2. **Use median/percentiles when:**
+   - Running in production-like environments
+   - Measuring user-facing latencies
+   - System has unpredictable load
+   - GC or other pauses are unavoidable
+
+3. **Consider both when:**
+   - Doing comprehensive performance analysis
+   - Large difference between mean and median indicates skew
+   - Debugging performance issues
+   - Setting performance targets
+
+### Statistical Notes
+
+- **Student's t-distribution**: Used for confidence intervals when sample size is small (< 30) or population variance unknown
+- **Confidence Level**: 95% means if we repeated the benchmark many times, 95% of the calculated intervals would contain the true mean
+- **Sample Size**: Adaptive mode automatically determines optimal sample size based on variance
+- **Independence**: Assumes benchmark iterations are independent (use `--worker` flag for better isolation)
+
 ## Understanding GC Time Measurements
 
 ### GC Duration in Node.js Performance Hooks

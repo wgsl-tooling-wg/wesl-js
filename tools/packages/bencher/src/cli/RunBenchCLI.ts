@@ -6,10 +6,12 @@ import type { RunnerOptions } from "../runners/BenchRunner.ts";
 import type { KnownRunner } from "../runners/CreateRunner.ts";
 import { runBenchmark } from "../runners/RunnerOrchestrator.ts";
 import {
+  adaptiveTimeSection,
   cpuSection,
   gcSection,
   runsSection,
   timeSection,
+  totalTimeSection,
 } from "../StandardSections.ts";
 import {
   type ConfigureArgs,
@@ -18,18 +20,18 @@ import {
 } from "./CliArgs.ts";
 import { filterBenchmarks } from "./FilterBenchmarks.ts";
 
-type BaseRunParams = {
+type RunParams = {
   runner: KnownRunner;
   options: RunnerOptions;
   useWorker: boolean;
-};
-
-type SpecRunParams = BaseRunParams & {
   params: unknown;
   metadata?: Record<string, any>;
 };
 
-type SuiteRunParams = BaseRunParams & {
+type SuiteParams = {
+  runner: KnownRunner;
+  options: RunnerOptions;
+  useWorker: boolean;
   suite: BenchSuite;
 };
 
@@ -62,9 +64,10 @@ export async function runBenchmarks(
 }
 
 /** Execute all groups in suite */
-async function runSuite(params: SuiteRunParams): Promise<ReportGroup[]> {
+async function runSuite(params: SuiteParams): Promise<ReportGroup[]> {
   const { suite, runner, options, useWorker } = params;
   const reportGroups: ReportGroup[] = [];
+
   for (const group of suite.groups) {
     const groupResult = await runGroup(group, runner, options, useWorker);
     reportGroups.push(groupResult);
@@ -80,8 +83,14 @@ async function runGroup(
   useWorker: boolean,
 ): Promise<ReportGroup> {
   const { benchmarks, baseline, setup, metadata } = group;
-  const params = await setup?.();
-  const runParams = { runner, options, useWorker, params, metadata };
+  const setupParams = await setup?.();
+  const runParams = {
+    runner,
+    options,
+    useWorker,
+    params: setupParams,
+    metadata,
+  };
 
   validateBenchmarkParameters(group);
 
@@ -89,22 +98,22 @@ async function runGroup(
     ? await runSingleBenchmark(baseline, runParams)
     : undefined;
 
-  const reports = [];
+  const benchmarkReports = [];
   for (const benchmark of benchmarks) {
-    reports.push(await runSingleBenchmark(benchmark, runParams));
+    benchmarkReports.push(await runSingleBenchmark(benchmark, runParams));
   }
 
-  return { reports, baseline: baselineReport };
+  return { reports: benchmarkReports, baseline: baselineReport };
 }
 
 /** Run single benchmark and create report */
 async function runSingleBenchmark(
   spec: BenchmarkSpec,
-  runParams: SpecRunParams,
+  runParams: RunParams,
 ): Promise<BenchmarkReport> {
   const { runner, options, useWorker, params, metadata } = runParams;
-  const benchParams = { spec, runner, options, useWorker, params };
-  const [result] = await runBenchmark(benchParams);
+  const benchmarkParams = { spec, runner, options, useWorker, params };
+  const [result] = await runBenchmark(benchmarkParams);
   return { name: spec.name, measuredResults: result, metadata };
 }
 
@@ -128,20 +137,29 @@ export function defaultReport(
   groups: ReportGroup[],
   args: DefaultCliArgs,
 ): string {
+  const { adaptive, "observe-gc": observeGC } = args;
   const hasCpuData = groups.some(({ reports }) =>
     reports.some(({ measuredResults }) => measuredResults.cpu !== undefined),
   );
 
-  const sections = [timeSection, runsSection] as const;
-  let finalSections: any[] = args["observe-gc"]
-    ? [...sections, gcSection]
-    : [...sections];
+  const sections = buildReportSections(adaptive, observeGC, hasCpuData);
+  return reportResults(groups, sections);
+}
 
-  if (hasCpuData) {
-    finalSections = [...finalSections, cpuSection];
-  }
+/** Build report sections based on CLI options */
+function buildReportSections(
+  adaptive: boolean,
+  observeGC: boolean,
+  hasCpuData: boolean,
+) {
+  const sections = adaptive
+    ? [adaptiveTimeSection, runsSection, totalTimeSection]
+    : [timeSection, runsSection];
 
-  return reportResults(groups, finalSections);
+  if (observeGC) sections.push(gcSection);
+  if (hasCpuData) sections.push(cpuSection);
+
+  return sections;
 }
 
 /** Run benchmarks and display table */
@@ -157,10 +175,45 @@ export async function runDefaultBench(
 
 /** Convert CLI args to runner options */
 export function cliToRunnerOptions(args: DefaultCliArgs): RunnerOptions {
-  const { profile, collect, time, cpu, "observe-gc": observeGC } = args;
+  const {
+    profile,
+    collect,
+    time,
+    cpu,
+    "observe-gc": observeGC,
+    adaptive,
+  } = args;
+
   if (profile) {
-    // Single iteration for profiler attachment
-    return { maxIterations: 1, warmupTime: 0, observeGC: false, collect };
+    return createProfileOptions(collect);
   }
+
+  if (adaptive) {
+    return createAdaptiveOptions(args, time, observeGC, collect, cpu);
+  }
+
   return { minTime: time * 1000, observeGC, collect, cpuCounters: cpu };
+}
+
+/** Create options for profiling mode */
+function createProfileOptions(collect?: boolean): RunnerOptions {
+  return { maxIterations: 1, warmupTime: 0, observeGC: false, collect };
+}
+
+/** Create options for adaptive mode */
+function createAdaptiveOptions(
+  args: DefaultCliArgs,
+  time: number,
+  observeGC: boolean,
+  collect: boolean | undefined,
+  cpu: boolean | undefined,
+): RunnerOptions {
+  return {
+    minTime: time * 1000,
+    maxTime: (args["max-time"] || 30) * 1000,
+    observeGC,
+    collect,
+    cpuCounters: cpu,
+    adaptive: true,
+  } as any;
 }

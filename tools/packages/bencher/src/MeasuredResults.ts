@@ -53,4 +53,7 @@ export interface MeasuredResults {
    * Excludes parallel thread collection time and indirect slowdowns.
    */
   nodeGcTime?: NodeGCTime;
+
+  /** Total time spent collecting samples (seconds) */
+  totalTime?: number;
 }

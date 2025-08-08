@@ -81,7 +81,7 @@ test("filters by regex", async () => {
 });
 
 test("filter preserves suite structure", () => {
-  const filtered = filterBenchmarks(testSuite, "concatenation");
+  const filtered = filterBenchmarks(testSuite, "concatenation", false);
 
   expect(filtered.name).toBe("Test Suite");
   expect(filtered.groups).toHaveLength(2);

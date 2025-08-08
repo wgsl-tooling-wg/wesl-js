@@ -1,7 +1,6 @@
 import type { Argv } from "yargs";
 import yargs from "yargs";
 
-/** Function to configure yargs with CLI arguments */
 export type ConfigureArgs<T> = (yargs: Argv) => Argv<T>;
 
 // biome-ignore format: readability
@@ -10,7 +9,7 @@ export type DefaultCliArgs =
   ReturnType<typeof defaultCliArgs> extends Argv<infer T> ? 
     T : never;
 
-/** Configure default benchmark CLI arguments */
+/** @return yargs with standard benchmark options */
 export function defaultCliArgs(yargsInstance: Argv) {
   return yargsInstance
     .option("time", {
@@ -56,11 +55,21 @@ export function defaultCliArgs(yargsInstance: Argv) {
       default: false,
       describe: "run benchmarks in a worker thread for better isolation",
     })
+    .option("adaptive", {
+      type: "boolean",
+      default: false,
+      describe: "use adaptive sampling mode",
+    })
+    .option("max-time", {
+      type: "number",
+      default: 30,
+      describe: "maximum time in seconds for adaptive mode",
+    })
     .help()
     .strict();
 }
 
-/** Parse CLI with optional custom configuration */
+/** @return parsed command line arguments */
 export function parseCliArgs<T = DefaultCliArgs>(
   args: string[],
   configure: ConfigureArgs<T> = defaultCliArgs as ConfigureArgs<T>,
