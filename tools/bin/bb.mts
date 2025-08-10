@@ -143,11 +143,8 @@ function loadPackageScripts(
   if (!existsSync(packagePath)) return [];
 
   const packageScripts = loadScripts(packagePath);
-  return Object.entries(packageScripts).map(([name, command]) => ({
-    name,
-    source,
-    command,
-  }));
+  const entries = Object.entries(packageScripts);
+  return entries.map(([name, command]) => ({ name, source, command }));
 }
 
 /** Load agent scripts from .agent/bin directory */
