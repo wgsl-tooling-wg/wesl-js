@@ -49,3 +49,11 @@ WESL npm packages.
 ## Test Packages
 Supporting sources for tests are available as subprojects in the
 `/wesl-testsuite` directory.
+
+## bb script
+the script `tools/bin/bb` is convenient way to run package
+scripts from any directory within the project. 
+- soft link bb your `PATH, e.g. as `~/bin/bb` (if `~/bin` is in your PATH). 
+- Then you can run bb instead of any pnpm script. 
+And you can tools/package.json scripts from any directory.
+- `bb fix:all` (instead of `cd ../../tools; pnpm fix:all`)
