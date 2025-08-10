@@ -33,6 +33,22 @@ function main(): void {
   }
 }
 
+/** @return validated repo root, exits if invalid */
+function validateRepo(currentDir: string): string {
+  const repoRoot = findRepoRoot(currentDir);
+  if (!repoRoot) {
+    console.error("Error: Could not find repository root (.git directory)");
+    process.exit(1);
+  }
+
+  if (!isWeslRepo(repoRoot)) {
+    console.error("Error: bb must be run within a wesl-js repository");
+    console.error("This directory does not appear to be a wesl-js git branch");
+    process.exit(1);
+  }
+
+  return repoRoot;
+}
 
 /** @return repo root containing .git, or null if not found */
 function findRepoRoot(startDir: string): string | null {
@@ -97,18 +113,6 @@ function findExecutables(dir: string): string[] {
   }
 }
 
-/** Merge package.json scripts into the map */
-function addScripts(
-  scripts: Map<string, ScriptInfo>,
-  packagePath: string,
-  source: "tools" | "local",
-): void {
-  const packageScripts = loadScripts(packagePath);
-  Object.entries(packageScripts).forEach(([name, command]) => {
-    scripts.set(name, { name, source, command });
-  });
-}
-
 /** @return all scripts from tools, agent, and local sources */
 function discoverScripts(
   repoRoot: string,
@@ -137,94 +141,16 @@ function discoverScripts(
   return scripts;
 }
 
-/** @return shell-safe quoted arguments */
-function quoteArgs(args: string[]): string {
-  return args
-    .map(arg =>
-      /[\s"'`$|&;<>()\\]/.test(arg) ? `"${arg.replace(/"/g, '\\"')}"` : arg,
-    )
-    .join(" ");
-}
-
-/** Run agent executable directly */
-function runAgentScript(
-  scriptInfo: ScriptInfo,
-  args: string[],
-  currentDir: string,
-): void {
-  const cmd = `${scriptInfo.path!} ${quoteArgs(args)}`.trim();
-  execSync(cmd, { stdio: "inherit", cwd: currentDir });
-}
-
-/** Run script via pnpm */
-function runPnpmScript(scriptName: string, args: string[], cwd: string): void {
-  const cmd = `pnpm run ${scriptName} ${quoteArgs(args)}`.trim();
-  execSync(cmd, { stdio: "inherit", cwd });
-}
-
-/** Run script using appropriate method for its source */
-function runScript(
-  scriptInfo: ScriptInfo,
-  args: string[],
-  repoRoot: string,
-  currentDir: string,
-): void {
-  const { source, name, path } = scriptInfo;
-  
-  if (source === "agent" && path) {
-    runAgentScript(scriptInfo, args, currentDir);
-  } else if (source === "local") {
-    runPnpmScript(name, args, currentDir);
-  } else if (source === "tools") {
-    runPnpmScript(name, args, join(repoRoot, "tools"));
-  }
-}
-
-/** @return scripts matching the given source */
-function filterBySource(
+/** Merge package.json scripts into the map */
+function addScripts(
   scripts: Map<string, ScriptInfo>,
-  source: string,
-): ScriptInfo[] {
-  return Array.from(scripts.values()).filter(s => s.source === source);
-}
-
-/** Print script group with title */
-function printGroup(scripts: ScriptInfo[], title: string): void {
-  if (scripts.length === 0) return;
-  console.log(`\n  ${title}:`);
-  scripts.forEach(script => console.log(`    ${script.name}`));
-}
-
-/** Print usage and available scripts */
-function showHelp(scripts: Map<string, ScriptInfo>): void {
-  console.log("Usage: bb <script> [args...]");
-  console.log("\nAvailable scripts:");
-
-  printGroup(filterBySource(scripts, "local"), "Local (current directory)");
-  printGroup(
-    filterBySource(scripts, "tools"),
-    "Tools (from tools/package.json)",
-  );
-  printGroup(filterBySource(scripts, "agent"), "Agent (from .agent/bin)");
-
-  console.log("\nAny other command will be passed through to pnpm.");
-}
-
-/** @return validated repo root, exits if invalid */
-function validateRepo(currentDir: string): string {
-  const repoRoot = findRepoRoot(currentDir);
-  if (!repoRoot) {
-    console.error("Error: Could not find repository root (.git directory)");
-    process.exit(1);
-  }
-
-  if (!isWeslRepo(repoRoot)) {
-    console.error("Error: bb must be run within a wesl-js repository");
-    console.error("This directory does not appear to be a wesl-js git branch");
-    process.exit(1);
-  }
-
-  return repoRoot;
+  packagePath: string,
+  source: "tools" | "local",
+): void {
+  const packageScripts = loadScripts(packagePath);
+  Object.entries(packageScripts).forEach(([name, command]) => {
+    scripts.set(name, { name, source, command });
+  });
 }
 
 /** Execute discovered script or pass through to pnpm */
@@ -244,4 +170,77 @@ function execute(
     const cmd = `pnpm ${scriptName} ${scriptArgs.join(" ")}`.trim();
     execSync(cmd, { stdio: "inherit", cwd: currentDir });
   }
+}
+
+/** Run script using appropriate method for its source */
+function runScript(
+  scriptInfo: ScriptInfo,
+  args: string[],
+  repoRoot: string,
+  currentDir: string,
+): void {
+  const { source, name, path } = scriptInfo;
+
+  if (source === "agent" && path) {
+    runAgentScript(scriptInfo, args, currentDir);
+  } else if (source === "local") {
+    runPnpmScript(name, args, currentDir);
+  } else if (source === "tools") {
+    runPnpmScript(name, args, join(repoRoot, "tools"));
+  }
+}
+
+/** Run agent executable directly */
+function runAgentScript(
+  scriptInfo: ScriptInfo,
+  args: string[],
+  currentDir: string,
+): void {
+  const cmd = `${scriptInfo.path!} ${quoteArgs(args)}`.trim();
+  execSync(cmd, { stdio: "inherit", cwd: currentDir });
+}
+
+/** Run script via pnpm */
+function runPnpmScript(scriptName: string, args: string[], cwd: string): void {
+  const cmd = `pnpm run ${scriptName} ${quoteArgs(args)}`.trim();
+  execSync(cmd, { stdio: "inherit", cwd });
+}
+
+/** @return shell-safe quoted arguments */
+function quoteArgs(args: string[]): string {
+  return args
+    .map(arg =>
+      /[\s"'`$|&;<>()\\]/.test(arg) ? `"${arg.replace(/"/g, '\\"')}"` : arg,
+    )
+    .join(" ");
+}
+
+/** Print usage and available scripts */
+function showHelp(scripts: Map<string, ScriptInfo>): void {
+  console.log("Usage: bb <script> [args...]");
+  console.log("\nAvailable scripts:");
+
+  printGroup(filterBySource(scripts, "local"), "Local (current directory)");
+  printGroup(
+    filterBySource(scripts, "tools"),
+    "Tools (from tools/package.json)",
+  );
+  printGroup(filterBySource(scripts, "agent"), "Agent (from .agent/bin)");
+
+  console.log("\nAny other command will be passed through to pnpm.");
+}
+
+/** Print script group with title */
+function printGroup(scripts: ScriptInfo[], title: string): void {
+  if (scripts.length === 0) return;
+  console.log(`\n  ${title}:`);
+  scripts.forEach(script => console.log(`    ${script.name}`));
+}
+
+/** @return scripts matching the given source */
+function filterBySource(
+  scripts: Map<string, ScriptInfo>,
+  source: string,
+): ScriptInfo[] {
+  return Array.from(scripts.values()).filter(s => s.source === source);
 }
