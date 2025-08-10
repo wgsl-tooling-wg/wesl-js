@@ -18,7 +18,7 @@ function main(): void {
   const currentDir = process.cwd();
   const repoRoot = validateRepo(currentDir);
 
-  if (args.length === 0) {
+  if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
     showHelp(discoverScripts(repoRoot, currentDir));
     process.exit(0);
   }
