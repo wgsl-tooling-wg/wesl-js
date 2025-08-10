@@ -169,12 +169,14 @@ function runScript(
   repoRoot: string,
   currentDir: string,
 ): void {
-  if (scriptInfo.source === "agent" && scriptInfo.path) {
+  const { source, name, path } = scriptInfo;
+  
+  if (source === "agent" && path) {
     runAgentScript(scriptInfo, args, currentDir);
-  } else if (scriptInfo.source === "local") {
-    runPnpmScript(scriptInfo.name, args, currentDir);
-  } else if (scriptInfo.source === "tools") {
-    runPnpmScript(scriptInfo.name, args, join(repoRoot, "tools"));
+  } else if (source === "local") {
+    runPnpmScript(name, args, currentDir);
+  } else if (source === "tools") {
+    runPnpmScript(name, args, join(repoRoot, "tools"));
   }
 }
 
