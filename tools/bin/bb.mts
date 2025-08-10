@@ -120,37 +120,50 @@ function discoverScripts(
 ): Map<string, ScriptInfo> {
   const scripts = new Map<string, ScriptInfo>();
 
+  // Load tools scripts
   const toolsPackagePath = join(repoRoot, "tools", "package.json");
-  addScripts(scripts, toolsPackagePath, "tools");
+  const toolsScripts = loadPackageScripts(toolsPackagePath, "tools");
+  toolsScripts.forEach(script => scripts.set(script.name, script));
 
-  const agentBinDir = join(repoRoot, ".agent", "bin");
-  findExecutables(agentBinDir).forEach(exe => {
-    scripts.set(exe, {
-      name: exe,
-      source: "agent",
-      path: join(agentBinDir, exe),
-    });
-  });
+  // Load agent scripts
+  const agentScripts = loadAgentScripts(repoRoot);
+  agentScripts.forEach(script => scripts.set(script.name, script));
 
-  // Local scripts override global ones
+  // Load local scripts (override global ones)
   const localPackagePath = join(currentDir, "package.json");
   if (existsSync(localPackagePath) && localPackagePath !== toolsPackagePath) {
-    addScripts(scripts, localPackagePath, "local");
+    const localScripts = loadPackageScripts(localPackagePath, "local");
+    localScripts.forEach(script => scripts.set(script.name, script));
   }
 
   return scripts;
 }
 
-/** Merge package.json scripts into the map */
-function addScripts(
-  scripts: Map<string, ScriptInfo>,
+/** Load scripts from package.json and return as ScriptInfo array */
+function loadPackageScripts(
   packagePath: string,
   source: "tools" | "local",
-): void {
+): ScriptInfo[] {
+  if (!existsSync(packagePath)) return [];
+  
   const packageScripts = loadScripts(packagePath);
-  Object.entries(packageScripts).forEach(([name, command]) => {
-    scripts.set(name, { name, source, command });
-  });
+  return Object.entries(packageScripts).map(([name, command]) => ({
+    name,
+    source,
+    command,
+  }));
+}
+
+/** Load agent scripts from .agent/bin directory */
+function loadAgentScripts(repoRoot: string): ScriptInfo[] {
+  const agentBinDir = join(repoRoot, ".agent", "bin");
+  const executables = findExecutables(agentBinDir);
+  
+  return executables.map(exe => ({
+    name: exe,
+    source: "agent" as const,
+    path: join(agentBinDir, exe),
+  }));
 }
 
 /** Execute discovered script or pass through to pnpm */
