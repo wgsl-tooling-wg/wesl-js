@@ -62,17 +62,18 @@ function transformTinyBenchResult(
   result: TinyBenchResult,
 ): MeasuredResults {
   const { samples, min, max, mean, p50, p75, p99, p999 } = result.latency;
+  
   return {
     name,
-    samples: samples.map(s => s * nsToMs),
+    samples: samples,
     time: {
-      min: min * nsToMs,
-      max: max * nsToMs,
-      avg: mean * nsToMs,
-      p50: p50! * nsToMs,
-      p75: p75! * nsToMs,
-      p99: p99! * nsToMs,
-      p999: p999! * nsToMs,
+      min: min,
+      max: max,
+      avg: mean,
+      p50: p50!,
+      p75: p75!,
+      p99: p99!,
+      p999: p999!,
     },
   };
 }
