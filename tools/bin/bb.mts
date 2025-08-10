@@ -11,6 +11,29 @@ interface ScriptInfo {
   path?: string;
 }
 
+main();
+
+function main(): void {
+  const args = process.argv.slice(2);
+  const currentDir = process.cwd();
+  const repoRoot = validateRepo(currentDir);
+
+  if (args.length === 0) {
+    showHelp(discoverScripts(repoRoot, currentDir));
+    process.exit(0);
+  }
+
+  const [scriptName, ...scriptArgs] = args;
+  const scripts = discoverScripts(repoRoot, currentDir);
+
+  try {
+    execute(scriptName, scriptArgs, scripts, repoRoot, currentDir);
+  } catch (_error) {
+    process.exit(1);
+  }
+}
+
+
 /** @return repo root containing .git, or null if not found */
 function findRepoRoot(startDir: string): string | null {
   let dir = resolve(startDir);
@@ -220,25 +243,3 @@ function execute(
     execSync(cmd, { stdio: "inherit", cwd: currentDir });
   }
 }
-
-function main(): void {
-  const args = process.argv.slice(2);
-  const currentDir = process.cwd();
-  const repoRoot = validateRepo(currentDir);
-
-  if (args.length === 0) {
-    showHelp(discoverScripts(repoRoot, currentDir));
-    process.exit(0);
-  }
-
-  const [scriptName, ...scriptArgs] = args;
-  const scripts = discoverScripts(repoRoot, currentDir);
-
-  try {
-    execute(scriptName, scriptArgs, scripts, repoRoot, currentDir);
-  } catch (_error) {
-    process.exit(1);
-  }
-}
-
-main();
