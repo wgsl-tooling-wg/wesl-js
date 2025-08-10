@@ -118,25 +118,21 @@ function discoverScripts(
   repoRoot: string,
   currentDir: string,
 ): Map<string, ScriptInfo> {
-  const scripts = new Map<string, ScriptInfo>();
-
-  // Load tools scripts
   const toolsPackagePath = join(repoRoot, "tools", "package.json");
-  const toolsScripts = loadPackageScripts(toolsPackagePath, "tools");
-  toolsScripts.forEach(script => scripts.set(script.name, script));
 
-  // Load agent scripts
+  const toolsScripts = loadPackageScripts(toolsPackagePath, "tools");
   const agentScripts = loadAgentScripts(repoRoot);
-  agentScripts.forEach(script => scripts.set(script.name, script));
 
   // Load local scripts (override global ones)
   const localPackagePath = join(currentDir, "package.json");
+  let localScripts: ScriptInfo[] = [];
   if (existsSync(localPackagePath) && localPackagePath !== toolsPackagePath) {
-    const localScripts = loadPackageScripts(localPackagePath, "local");
-    localScripts.forEach(script => scripts.set(script.name, script));
+    localScripts = loadPackageScripts(localPackagePath, "local");
   }
 
-  return scripts;
+  const allScripts = [...toolsScripts, ...agentScripts, ...localScripts];
+  const entries = allScripts.map(s => [s.name, s] as const);
+  return new Map(entries);
 }
 
 /** Load scripts from package.json and return as ScriptInfo array */
@@ -145,7 +141,7 @@ function loadPackageScripts(
   source: "tools" | "local",
 ): ScriptInfo[] {
   if (!existsSync(packagePath)) return [];
-  
+
   const packageScripts = loadScripts(packagePath);
   return Object.entries(packageScripts).map(([name, command]) => ({
     name,
@@ -158,11 +154,11 @@ function loadPackageScripts(
 function loadAgentScripts(repoRoot: string): ScriptInfo[] {
   const agentBinDir = join(repoRoot, ".agent", "bin");
   const executables = findExecutables(agentBinDir);
-  
-  return executables.map(exe => ({
-    name: exe,
+
+  return executables.map(name => ({
+    name,
     source: "agent" as const,
-    path: join(agentBinDir, exe),
+    path: join(agentBinDir, name),
   }));
 }
 
