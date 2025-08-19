@@ -65,6 +65,21 @@ export function defaultCliArgs(yargsInstance: Argv) {
       default: 30,
       describe: "maximum time in seconds for adaptive mode",
     })
+    .option("html", {
+      type: "boolean",
+      default: false,
+      describe: "generate HTML report and open in browser",
+    })
+    .option("export-html", {
+      type: "string",
+      requiresArg: true,
+      describe: "export HTML report to specified file",
+    })
+    .option("json", {
+      type: "string",
+      requiresArg: true,
+      describe: "export benchmark data to JSON file",
+    })
     .help()
     .strict();
 }

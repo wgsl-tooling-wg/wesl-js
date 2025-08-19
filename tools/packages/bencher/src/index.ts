@@ -14,11 +14,15 @@ export { reportResults } from "./BenchmarkReport.ts";
 export type { ConfigureArgs, DefaultCliArgs } from "./cli/CliArgs.ts";
 export { defaultCliArgs, parseCliArgs } from "./cli/CliArgs.ts";
 export {
+  benchExports,
   defaultReport,
   parseBenchArgs,
   runBenchmarks,
   runDefaultBench,
 } from "./cli/RunBenchCLI.ts";
+export * from "./export/JsonFormat.ts";
+export type { HtmlReportOptions } from "./html/HtmlReport.ts";
+export { generateHtmlReport } from "./html/HtmlReport.ts";
 export type { MeasuredResults } from "./MeasuredResults.ts";
 export type { RunnerOptions } from "./runners/BenchRunner.ts";
 export {

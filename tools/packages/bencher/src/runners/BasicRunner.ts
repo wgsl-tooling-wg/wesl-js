@@ -3,13 +3,6 @@ import type { MeasuredResults } from "../MeasuredResults.ts";
 import type { BenchRunner, RunnerOptions } from "./BenchRunner.ts";
 import { executeBenchmark } from "./BenchRunner.ts";
 
-type SampleCollectionParams<T = unknown> = {
-  benchmark: BenchmarkSpec<T>;
-  maxTime: number;
-  maxIterations: number;
-  params?: T;
-};
-
 type TimeStatistics = {
   min: number;
   max: number;
@@ -27,29 +20,36 @@ export class BasicRunner implements BenchRunner {
     options: RunnerOptions,
     params?: T,
   ): Promise<MeasuredResults[]> {
-    const { maxTime = 5000, maxIterations = 1000000 } = options;
-    const samples = collectSamples({
-      benchmark,
-      maxTime,
-      maxIterations,
-      params,
-    });
+    const samples = collectSamples(benchmark, options, params);
     const time = calculateTimeStatistics(samples);
     return [{ name: benchmark.name, samples, time }];
   }
 }
 
-function collectSamples<T>({
-  benchmark,
-  maxTime,
-  maxIterations,
-  params,
-}: SampleCollectionParams<T>): number[] {
+function collectSamples<T>(
+  benchmark: BenchmarkSpec<T>,
+  opts: RunnerOptions,
+  params?: T,
+): number[] {
   const samples: number[] = [];
   const startTime = performance.now();
+  const { minTime, maxTime, maxIterations } = opts;
   let iterations = 0;
+  let elapsed = 0;
 
-  while (iterations < maxIterations) {
+  if (!maxIterations && !maxTime && !minTime) {
+    throw new Error(
+      `At least one of maxIterations, maxTime, or minTime must be set`,
+    );
+  }
+  const gc = gcFunction();
+  gc();
+
+  while (true) {
+    if (maxIterations && iterations > maxIterations) break;
+    if (maxTime && elapsed >= maxTime) break;
+    if (minTime && !maxTime && !maxIterations && elapsed > minTime) break;
+
     const sampleStart = performance.now();
     executeBenchmark(benchmark, params);
     const sampleEnd = performance.now();
@@ -57,7 +57,7 @@ function collectSamples<T>({
     samples.push(sampleEnd - sampleStart);
     iterations++;
 
-    if (sampleEnd - startTime >= maxTime) break;
+    elapsed = sampleEnd - startTime;
   }
 
   if (samples.length === 0) {
@@ -90,4 +90,14 @@ function percentile(sortedArray: number[], p: number): number {
   if (upper >= sortedArray.length) return sortedArray[sortedArray.length - 1];
 
   return sortedArray[lower] * (1 - weight) + sortedArray[upper] * weight;
+}
+
+/** fetch the runtime's function to call gc() manually */
+function gcFunction(): () => void {
+  const gc = globalThis.gc || (globalThis as any).__gc;
+  if (gc) return gc;
+  console.warn(
+    "MitataBench: gc() not available, run node/bun with --expose-gc",
+  );
+  return () => {};
 }

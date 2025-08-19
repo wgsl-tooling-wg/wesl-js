@@ -2,12 +2,13 @@
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  adaptiveTimeSection,
   type BenchGroup,
   type BenchSuite,
+  benchExports,
   cpuSection,
   defaultCliArgs,
   gcSection,
+  generateHtmlReport,
   parseBenchArgs,
   type ReportGroup,
   reportResults,
@@ -15,9 +16,9 @@ import {
   runsSection,
   totalTimeSection,
 } from "bencher";
+import { adaptiveLocSection } from "../src/AdaptiveLocSection.ts";
 import { loadBaselineImports } from "../src/BaselineVariations.ts";
 import { loadExamples, type WeslSource } from "../src/LoadExamples.ts";
-import { adaptiveLocSection } from "../src/AdaptiveLocSection.ts";
 import { locSection } from "../src/LocSection.ts";
 import { meanTimeSection } from "../src/MeanTimeSection.ts";
 import {
@@ -45,6 +46,14 @@ async function main() {
     groups: createBenchGroups(variants, examples, baselineImports, args.worker),
   };
 
+  // Use benchExports for automatic JSON export support
+  if (args.json) {
+    // Simple path: use benchExports which handles table + HTML + JSON
+    await benchExports(suite, args);
+    return;
+  }
+
+  // Original custom logic for when JSON is not needed
   const results = await runBenchmarks(suite, args);
 
   const reorganized = reorganizeReportGroups(results, variants);
@@ -72,6 +81,14 @@ async function main() {
 
   const table = reportResults(reorganized, finalSections);
   console.log(table);
+
+  // Generate HTML report if requested
+  if (args.html || args["export-html"]) {
+    await generateHtmlReport(reorganized, {
+      openBrowser: args.html && !args["export-html"],
+      outputPath: args["export-html"],
+    });
+  }
 }
 
 /** @return true if results contain GC data */

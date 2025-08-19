@@ -8,18 +8,23 @@
     "typecheck": "tsgo"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "import": "./src/index.ts"
+    },
+    "./json": {
+      "import": "./src/export/JsonFormat.ts"
+    }
   },
-  "main": "./src/index.ts",
   "dependencies": {
+    "@mitata/counters": "^0.0.8",
+    "mitata": "^1.0.34",
+    "open": "^10.0.0",
     "picocolors": "^1.1.1",
     "table": "^6.9.0",
+    "tinybench": "^4.0.1",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "@mitata/counters": "^0.0.8",
-    "mitata": "^1.0.34",
-    "tinybench": "^4.0.1",
     "vitest-util": "workspace:x"
   }
 }

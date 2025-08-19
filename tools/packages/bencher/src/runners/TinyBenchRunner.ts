@@ -2,7 +2,6 @@ import type { BenchmarkSpec } from "../Benchmark.ts";
 import type { MeasuredResults } from "../MeasuredResults.ts";
 import type { BenchRunner, RunnerOptions } from "./BenchRunner.ts";
 import { executeBenchmark } from "./BenchRunner.ts";
-import { nsToMs } from "./RunnerUtils.ts";
 
 type TinyBenchResult = {
   latency: {
@@ -62,7 +61,7 @@ function transformTinyBenchResult(
   result: TinyBenchResult,
 ): MeasuredResults {
   const { samples, min, max, mean, p50, p75, p99, p999 } = result.latency;
-  
+
   return {
     name,
     samples: samples,

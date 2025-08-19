@@ -2,6 +2,8 @@ import { hideBin } from "yargs/helpers";
 import type { BenchGroup, BenchmarkSpec, BenchSuite } from "../Benchmark.ts";
 import type { BenchmarkReport, ReportGroup } from "../BenchmarkReport.ts";
 import { reportResults } from "../BenchmarkReport.ts";
+import { exportBenchmarkJson } from "../export/JsonExport.ts";
+import { generateHtmlReport } from "../html/HtmlReport.ts";
 import type { RunnerOptions } from "../runners/BenchRunner.ts";
 import type { KnownRunner } from "../runners/CreateRunner.ts";
 import { runBenchmark } from "../runners/RunnerOrchestrator.ts";
@@ -162,15 +164,36 @@ function buildReportSections(
   return sections;
 }
 
+/** Run benchmarks, display table, and optionally generate HTML report */
+export async function benchExports(
+  suite: BenchSuite,
+  args: DefaultCliArgs,
+): Promise<void> {
+  const results = await runBenchmarks(suite, args);
+  const report = defaultReport(results, args);
+  console.log(report);
+
+  // Generate HTML report if requested
+  if (args.html || args["export-html"]) {
+    await generateHtmlReport(results, {
+      openBrowser: args.html && !args["export-html"], // Only open if html flag and no export path
+      outputPath: args["export-html"],
+    });
+  }
+
+  // Export JSON data if requested
+  if (args.json) {
+    await exportBenchmarkJson(results, args.json, args, suite.name);
+  }
+}
+
 /** Run benchmarks and display table */
 export async function runDefaultBench(
   suite: BenchSuite,
   configureArgs?: ConfigureArgs<any>,
 ): Promise<void> {
   const args = parseBenchArgs(configureArgs);
-  const results = await runBenchmarks(suite, args);
-  const report = defaultReport(results, args);
-  console.log(report);
+  await benchExports(suite, args);
 }
 
 /** Convert CLI args to runner options */

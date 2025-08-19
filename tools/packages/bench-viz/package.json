@@ -1,0 +1,25 @@
+{
+  "name": "bench-viz",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "typecheck": "tsgo"
+  },
+  "dependencies": {
+    "@observablehq/plot": "^0.6.17",
+    "bencher": "workspace:*",
+    "d3": "^7.9.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.1.2",
+    "@types/d3": "^7.4.3",
+    "svelte": "^5.38.1",
+    "svelte-check": "^4.3.1",
+    "svelte-preprocess": "^6.0.3",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.1"
+  }
+}

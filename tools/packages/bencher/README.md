@@ -119,6 +119,14 @@ Results are displayed in a formatted table:
 ╚═════════════════╧════════════════════════════════════════════╧═══════╧══════════════╝
 ```
 
+### HTML
+
+  The HTML report should now display:
+  - Histogram + KDE: Bar chart with a line overlay showing the distribution
+  - Violin Plot: Distribution shape comparison between benchmarks
+  - Time Series: Sample values over iterations with outliers marked in red
+  - Q-Q Plots: For testing normality of the distributions
+
 
 ## Requirements
 
