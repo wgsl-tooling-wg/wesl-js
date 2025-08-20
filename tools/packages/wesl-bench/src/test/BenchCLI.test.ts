@@ -8,9 +8,12 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const benchPath = join(__dirname, "../../bin/bench.ts");
 
 test("runs without errors", () => {
-  const result = execSync(`node --expose-gc --experimental-strip-types ${benchPath} --profile --filter import_only`, {
-    encoding: "utf8",
-  });
+  const result = execSync(
+    `node --expose-gc --experimental-strip-types ${benchPath} --profile --filter import_only`,
+    {
+      encoding: "utf8",
+    },
+  );
 
   if (!result.includes("lines / sec")) throw new Error("Missing table header");
   if (!result.includes("import_only"))
