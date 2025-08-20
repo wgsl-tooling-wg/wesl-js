@@ -8,7 +8,7 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const benchPath = join(__dirname, "../../bin/bench.ts");
 
 test("runs without errors", () => {
-  const result = execSync(`${benchPath} --profile --filter import_only`, {
+  const result = execSync(`node --expose-gc --experimental-strip-types ${benchPath} --profile --filter import_only`, {
     encoding: "utf8",
   });
 
@@ -28,7 +28,7 @@ test("supports --baseline flag", () => {
   }
 
   const result = execSync(
-    `${benchPath} --profile --filter import_only --baseline`,
+    `node --expose-gc --experimental-strip-types ${benchPath} --profile --filter import_only --baseline`,
     { encoding: "utf8" },
   );
 
@@ -38,7 +38,7 @@ test("supports --baseline flag", () => {
 
 test("supports multiple variants", () => {
   const result = execSync(
-    `${benchPath} --profile --filter import_only --variant tokenize --variant parse`,
+    `node --expose-gc --experimental-strip-types ${benchPath} --profile --filter import_only --variant tokenize --variant parse`,
     { encoding: "utf8" },
   );
 

@@ -11,7 +11,7 @@ test("works with all variants", { timeout: 30000 }, () => {
 
   for (const variant of variants) {
     const output = execSync(
-      `${benchScript} --variant ${variant} --filter bevy --worker --time 0.02`,
+      `node --expose-gc --experimental-strip-types ${benchScript} --variant ${variant} --filter bevy --worker --time 0.02`,
       {
         encoding: "utf8",
         env: { ...process.env, NODE_ENV: "test" },
@@ -29,7 +29,7 @@ test(
   { timeout: 20000 },
   () => {
     const workerOutput = execSync(
-      `${benchScript} --variant tokenize --filter bevy --worker --time 0.02`,
+      `node --expose-gc --experimental-strip-types ${benchScript} --variant tokenize --filter bevy --worker --time 0.02`,
       {
         encoding: "utf8",
         env: { ...process.env, NODE_ENV: "test" },
@@ -37,7 +37,7 @@ test(
     );
 
     const normalOutput = execSync(
-      `${benchScript} --variant tokenize --filter bevy --time 0.02`,
+      `node --expose-gc --experimental-strip-types ${benchScript} --variant tokenize --filter bevy --time 0.02`,
       {
         encoding: "utf8",
         env: { ...process.env, NODE_ENV: "test" },

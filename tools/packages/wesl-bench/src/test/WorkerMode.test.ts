@@ -8,7 +8,7 @@ const benchScript = join(__dirname, "../../bin/bench.ts");
 
 test("worker mode runs successfully", { timeout: 10000 }, () => {
   const output = execSync(
-    `${benchScript} --variant tokenize --filter bevy --worker --time 0.01`,
+    `node --expose-gc --experimental-strip-types ${benchScript} --variant tokenize --filter bevy --worker --time 0.01`,
     {
       encoding: "utf8",
       env: { ...process.env, NODE_ENV: "test" },
