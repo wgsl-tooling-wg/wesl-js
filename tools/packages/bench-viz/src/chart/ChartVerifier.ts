@@ -1,7 +1,7 @@
 /** Tools for reading and verifying generated charts */
 
 /** expose verification functions globally */
-const debugCharts = true; 
+const debugCharts = true;
 
 if (debugCharts && typeof globalThis !== "undefined") {
   (globalThis as any).verifyChart = verifyChart;
