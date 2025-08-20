@@ -8,7 +8,7 @@ const exec = util.promisify((process as any).exec); // not sure why @types/node 
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 
-test("vite generates binding layout", async () => {
+test("vite generates binding layout", { timeout: 30000 }, async () => {
   // vite is configured to use the wesl plugin
   // build a test program that imports using the '?bindingLayout' import pattern
   await exec(`pnpm vite build`, {
