@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --expose-gc --allow-natives-syntax
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   type BenchGroup,
   type BenchSuite,
@@ -148,6 +148,8 @@ function makeBenchGroup(
   if (useWorker) {
     // Worker mode: use module path and params
     const workerModulePath = join(__dirname, "../src/WorkerBenchmarks.ts");
+    // Convert to file:// URL for cross-platform compatibility
+    const workerModuleUrl = pathToFileURL(workerModulePath).href;
 
     const group: BenchGroup<BenchParams> = {
       name: benchName,
@@ -156,7 +158,7 @@ function makeBenchGroup(
         {
           name: benchName,
           fn: () => {}, // unused with modulePath
-          modulePath: workerModulePath,
+          modulePath: workerModuleUrl,
           exportName: "runBenchmark",
         },
       ],
@@ -164,10 +166,15 @@ function makeBenchGroup(
     };
 
     if (baselineImports) {
+      const baselineModulePath = join(
+        __dirname,
+        "../src/BaselineWorkerBenchmarks.ts",
+      );
+      const baselineModuleUrl = pathToFileURL(baselineModulePath).href;
       group.baseline = {
         name: benchName,
         fn: () => {}, // Placeholder - not used when modulePath is provided
-        modulePath: join(__dirname, "../src/BaselineWorkerBenchmarks.ts"),
+        modulePath: baselineModuleUrl,
         exportName: "runBaselineBenchmark",
       };
     }
