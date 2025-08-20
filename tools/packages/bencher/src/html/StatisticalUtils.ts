@@ -9,27 +9,26 @@ export interface OutlierInfo {
   upperBound: number;
 }
 
-/** Calculate Q-Q plot data points for normality testing */
+/** @return Q-Q plot data points for normality testing */
 export function calculateQQData(samples: number[]): QQPoint[] {
   const sorted = [...samples].sort((a, b) => a - b);
   const n = sorted.length;
   const mean = calculateMean(sorted);
   const stdDev = calculateStdDev(sorted, mean);
 
-  // Standardize the samples to compare against standard normal
   const standardized = sorted.map(x => (x - mean) / stdDev);
 
   return standardized.map((value, i) => {
     const p = (i + 0.5) / n;
-    const theoretical = normalInverse(p, 0, 1); // Standard normal
+    const theoretical = normalInverse(p, 0, 1);
     return {
-      sample: value * stdDev + mean, // Convert back to original scale
+      sample: value * stdDev + mean, // original scale
       theoretical: theoretical * stdDev + mean,
     };
   });
 }
 
-/** Detect outliers using IQR method */
+/** @return outliers using IQR method */
 export function detectOutliers(samples: number[]): OutlierInfo {
   const sorted = [...samples].sort((a, b) => a - b);
   const q1 = percentile(sorted, 0.25);
@@ -45,12 +44,12 @@ export function detectOutliers(samples: number[]): OutlierInfo {
   return { outliers, lowerBound, upperBound };
 }
 
-/** Calculate mean of array */
+/** @return mean of array */
 function calculateMean(values: number[]): number {
   return values.reduce((sum, val) => sum + val, 0) / values.length;
 }
 
-/** Calculate standard deviation */
+/** @return standard deviation */
 function calculateStdDev(values: number[], mean?: number): number {
   const m = mean ?? calculateMean(values);
   const squaredDiffs = values.map(val => (val - m) ** 2);
@@ -59,7 +58,7 @@ function calculateStdDev(values: number[], mean?: number): number {
   return Math.sqrt(variance);
 }
 
-/** Calculate percentile value */
+/** @return percentile value */
 function percentile(sorted: number[], p: number): number {
   const index = p * (sorted.length - 1);
   const lower = Math.floor(index);
@@ -73,7 +72,7 @@ function percentile(sorted: number[], p: number): number {
   return sorted[lower] * (1 - weight) + sorted[upper] * weight;
 }
 
-/** Normal inverse cumulative distribution function (approximation) */
+/** @return inverse normal CDF (approximation) */
 function normalInverse(p: number, mean: number, stdDev: number): number {
   const a1 = -3.969683028665376e1;
   const a2 = 2.209460984245205e2;
@@ -128,7 +127,7 @@ function normalInverse(p: number, mean: number, stdDev: number): number {
   }
 }
 
-/** JavaScript implementation of Q-Q calculation for embedding in HTML */
+/** JS code for Q-Q calculation in HTML */
 export const qqDataJsCode = `
 function calculateQQData(samples) {
   const sorted = [...samples].sort((a, b) => a - b);
@@ -137,21 +136,19 @@ function calculateQQData(samples) {
   const variance = sorted.reduce((sum, val) => sum + (val - mean) ** 2, 0) / n;
   const stdDev = Math.sqrt(variance);
   
-  // Standardize the samples to compare against standard normal
   const standardized = sorted.map(x => (x - mean) / stdDev);
   
   return standardized.map((value, i) => {
     const p = (i + 0.5) / n;
-    const theoretical = normalInverse(p, 0, 1); // Standard normal
+    const theoretical = normalInverse(p, 0, 1);
     return { 
-      sample: value * stdDev + mean, // Convert back to original scale for display
+      sample: value * stdDev + mean,
       theoretical: theoretical * stdDev + mean
     };
   });
 }
 
 function normalInverse(p, mean, stdDev) {
-  // Approximation using Beasley-Springer-Moro algorithm
   const a = [2.50662823884, -18.61500062529, 41.39119773534, -25.44106049637];
   const b = [-8.47351093090, 23.08336743743, -21.06224101826, 3.13082909833];
   const c = [0.3374754822726147, 0.9761690190917186, 0.1607979714918209,
@@ -177,7 +174,7 @@ function normalInverse(p, mean, stdDev) {
   }
 }`;
 
-/** JavaScript implementation of outlier detection for embedding in HTML */
+/** JS code for outlier detection in HTML */
 export const detectOutliersJsCode = `
 function detectOutliers(samples) {
   const sorted = [...samples].sort((a, b) => a - b);

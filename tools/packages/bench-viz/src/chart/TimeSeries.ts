@@ -16,7 +16,7 @@ interface YAxisRange {
   max: number;
 }
 
-/** Render sample execution times in collection order */
+/** Render sample times in collection order */
 export function renderTimeSeriesChart(
   container: HTMLElement,
   group: BenchmarkGroup,
@@ -44,7 +44,7 @@ export function renderTimeSeriesChart(
   }
 }
 
-/** Check if group contains sample data */
+/** @return true if group contains sample data */
 function hasValidData(group: BenchmarkGroup): boolean {
   return !!(
     group.baseline?.samples?.length ||
@@ -52,7 +52,7 @@ function hasValidData(group: BenchmarkGroup): boolean {
   );
 }
 
-/** Build Plot.js scatter plot with separate series per benchmark */
+/** @return scatter plot with series per benchmark */
 function createTimeSeriesPlot(
   chartData: ChartDataPoint[],
   timeUnit: TimeUnit,
@@ -91,7 +91,7 @@ function createTimeSeriesPlot(
   });
 }
 
-/** Generate dot marks for each benchmark series */
+/** @return dot marks for each benchmark series */
 function createMarks(
   names: string[],
   chartData: ChartDataPoint[],
@@ -115,7 +115,7 @@ function createMarks(
   });
 }
 
-/** Calculate y-axis bounds with padding for clarity */
+/** @return y-axis bounds with padding */
 function calcYAxisRange(values: number[]): YAxisRange {
   const dataMin = d3.min(values)!;
   const dataMax = d3.max(values)!;
@@ -126,7 +126,6 @@ function calcYAxisRange(values: number[]): YAxisRange {
   const magnitude = 10 ** Math.floor(Math.log10(Math.abs(yMin)));
   yMin = Math.floor(yMin / magnitude) * magnitude;
 
-  /** Keep positive data above zero line */
   if (dataMin > 0 && yMin < 0) yMin = 0;
   const yMax = dataMax + dataRange * 0.05;
 

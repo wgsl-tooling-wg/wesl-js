@@ -42,7 +42,6 @@ export interface ResultsMapper<
 }
 export type UnknownRecord = Record<string, unknown>;
 
-/** Extract statistics type from section */
 type SectionStats<S> = S extends ResultsMapper<infer T> ? T : never;
 
 interface ReportRowBase {
@@ -53,7 +52,7 @@ interface ReportRowBase {
 type ReportRowData<S extends ReadonlyArray<ResultsMapper<any>>> =
   ReportRowBase & UnionToIntersection<SectionStats<S[number]>>;
 
-/** Generate formatted table report with optional baseline comparisons */
+/** @return formatted table report with optional baseline comparisons */
 export function reportResults<S extends ReadonlyArray<ResultsMapper<any>>>(
   groups: ReportGroup[],
   sections: S,
@@ -65,7 +64,7 @@ export function reportResults<S extends ReadonlyArray<ResultsMapper<any>>>(
   return buildTable(columnGroups, resultGroups);
 }
 
-/** Extract values for report group */
+/** @return values for report group */
 function resultGroupValues<S extends ReadonlyArray<ResultsMapper<any>>>(
   group: ReportGroup,
   sections: S,
@@ -77,7 +76,7 @@ function resultGroupValues<S extends ReadonlyArray<ResultsMapper<any>>>(
   return { results, baseline: baselineRow };
 }
 
-/** Build rows by extracting stats from sections */
+/** @return rows with stats from sections */
 export function valuesForReports<S extends ReadonlyArray<ResultsMapper<any>>>(
   reports: BenchmarkReport[],
   sections: S,
@@ -88,7 +87,7 @@ export function valuesForReports<S extends ReadonlyArray<ResultsMapper<any>>>(
   })) as ReportRowData<S>[];
 }
 
-/** Merge statistics from all sections */
+/** @return merged statistics from all sections */
 function extractReportValues(
   report: BenchmarkReport,
   sections: ReadonlyArray<ResultsMapper<any>>,
@@ -101,7 +100,7 @@ function extractReportValues(
   return Object.fromEntries(combinedEntries);
 }
 
-/** Create column groups with diff columns if baseline exists */
+/** @return column groups with diff columns if baseline exists */
 function createColumnGroups<S extends ReadonlyArray<ResultsMapper<any>>>(
   sections: S,
   hasBaseline: boolean,
@@ -118,7 +117,7 @@ function createColumnGroups<S extends ReadonlyArray<ResultsMapper<any>>>(
   return [nameColumn, ...columnGroups];
 }
 
-/** Add diff columns after comparable fields */
+/** @return groups with diff columns after comparable fields */
 function injectDiffColumns<T>(
   reportGroups: ReportColumnGroup<T>[],
 ): ColumnGroup<T>[] {
@@ -140,7 +139,7 @@ function injectDiffColumns<T>(
   }));
 }
 
-/** Truncate names to fit table width */
+/** @return truncated name to fit table width */
 function truncate(name: string): string {
   const maxLength = 30;
   return name.length > maxLength ? name.slice(0, maxLength - 3) + "..." : name;

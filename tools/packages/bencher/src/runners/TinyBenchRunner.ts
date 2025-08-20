@@ -16,7 +16,7 @@ type TinyBenchResult = {
   };
 };
 
-/** Runner using tinybench library */
+/** Benchmark runner using tinybench library */
 export class TinyBenchRunner implements BenchRunner {
   async runBench<T = unknown>(
     benchmark: BenchmarkSpec<T>,

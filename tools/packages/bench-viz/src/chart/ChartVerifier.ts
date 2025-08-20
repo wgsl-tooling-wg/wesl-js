@@ -1,9 +1,8 @@
-/* Tools for a coding agent to be able to read and verify generated charts.  */
+/** Tools for reading and verifying generated charts */
 
-/** Enable debug mode to expose chart verification functions globally */
-const debugCharts = true;
+/** expose verification functions globally */
+const debugCharts = true; 
 
-/** Expose verification functions globally for browser console debugging */
 if (debugCharts && typeof globalThis !== "undefined") {
   (globalThis as any).verifyChart = verifyChart;
   (globalThis as any).logChartVerification = logChartVerification;
@@ -32,7 +31,7 @@ export interface HistogramCoverage {
   warnings: string[];
 }
 
-/** Extract and verify visualization elements from a chart container */
+/** @return verification of visualization elements from chart container */
 export function verifyChart(container: HTMLElement): ChartVerification {
   const svgMarks = querySVGMarks(container);
   const primaryMark = determinePrimaryMark(svgMarks);
@@ -51,7 +50,7 @@ export function verifyChart(container: HTMLElement): ChartVerification {
   };
 }
 
-/** Verify chart and log detailed debugging information to console */
+/** @return verification with detailed console logging */
 export function logChartVerification(
   container: HTMLElement,
   chartType = "chart",
@@ -77,7 +76,7 @@ export function logChartVerification(
   return verification;
 }
 
-/** Log detailed SVG element hierarchy for debugging rendering issues */
+/** Debug SVG element hierarchy for rendering issues */
 export function debugSVGStructure(container: HTMLElement): void {
   if (debugCharts) {
     console.group("🔍 SVG Structure Debug");
@@ -105,7 +104,7 @@ export function debugSVGStructure(container: HTMLElement): void {
   }
 }
 
-/** Check if histogram bars adequately cover the expected data range */
+/** @return coverage analysis of histogram bars vs expected range */
 export function verifyHistogramCoverage(
   container: HTMLElement,
   expectedDataRange: [number, number],
@@ -143,7 +142,7 @@ interface PrimaryMark {
   elements: Element[];
 }
 
-/** Find all visualization marks in the SVG, excluding background rectangles */
+/** @return all visualization marks excluding background rectangles */
 function querySVGMarks(container: HTMLElement): SVGMarks {
   return {
     rects: Array.from(container.querySelectorAll("rect")).filter(
@@ -156,7 +155,7 @@ function querySVGMarks(container: HTMLElement): SVGMarks {
   };
 }
 
-/** Identify the main visualization element type (rect/circle/path) */
+/** @return primary visualization element type */
 function determinePrimaryMark(marks: SVGMarks): PrimaryMark {
   if (marks.rects.length > 0) {
     return { type: "rect", count: marks.rects.length, elements: marks.rects };
@@ -174,7 +173,7 @@ function determinePrimaryMark(marks: SVGMarks): PrimaryMark {
   return { type: "none", count: 0, elements: [] };
 }
 
-/** Extract all attributes from SVG elements for debugging */
+/** @return all attributes from SVG elements */
 function extractAttributes(elements: Element[]): Record<string, any>[] {
   return elements.map(el => {
     const attrs: Record<string, any> = {};
@@ -185,7 +184,7 @@ function extractAttributes(elements: Element[]): Record<string, any>[] {
   });
 }
 
-/** Get unique fill colors from elements */
+/** @return unique fill colors from elements */
 function extractUniqueColors(elements: Element[]): string[] {
   return elements
     .map(el => el.getAttribute("fill"))
@@ -193,7 +192,7 @@ function extractUniqueColors(elements: Element[]): string[] {
     .filter((color, index, arr) => arr.indexOf(color) === index);
 }
 
-/** Extract position and size data based on element type */
+/** @return position and size data based on element type */
 function extractPositions(elements: Element[], markType: string) {
   return elements.map(el => {
     if (markType === "rect") {
@@ -214,7 +213,7 @@ function extractPositions(elements: Element[], markType: string) {
   });
 }
 
-/** Create human-readable summary of chart verification results */
+/** @return human-readable summary of verification results */
 function generateSummary(
   count: number,
   markType: string,
@@ -231,7 +230,7 @@ function generateSummary(
   return summary;
 }
 
-/** Log warnings for common chart rendering problems */
+/** Log common chart rendering problems */
 function logCommonIssues(verification: ChartVerification): void {
   if (verification.count === 0) {
     console.warn("⚠️  No marks found. Check:");
@@ -247,7 +246,7 @@ function logCommonIssues(verification: ChartVerification): void {
   }
 }
 
-/** Create coverage result when no histogram bars are found */
+/** @return empty coverage result when no bars found */
 function createEmptyCoverage(
   expectedDataRange: [number, number],
   warning: string,
@@ -262,7 +261,7 @@ function createEmptyCoverage(
   };
 }
 
-/** Get sorted x-positions of histogram bars */
+/** @return sorted x-positions of histogram bars */
 function extractBarPositions(
   positions: ChartVerification["positions"],
 ): number[] {
@@ -272,7 +271,7 @@ function extractBarPositions(
     .sort((a, b) => a - b);
 }
 
-/** Analyze if bars cover the data range with 10% tolerance */
+/** @return coverage analysis with 10% tolerance */
 function calculateCoverage(
   barXPositions: number[],
   expectedDataRange: [number, number],

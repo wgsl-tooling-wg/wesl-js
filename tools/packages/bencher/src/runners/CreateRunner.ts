@@ -2,7 +2,7 @@ import type { BenchRunner } from "./BenchRunner.ts";
 
 export type KnownRunner = "mitata" | "tinybench" | "basic";
 
-/** Create benchmark runner by name */
+/** @return benchmark runner by name */
 export async function createRunner(
   runnerName: KnownRunner,
 ): Promise<BenchRunner> {

@@ -1,9 +1,6 @@
 import { expect } from "vitest";
 
-/** trim source for test comparisons
- * rm blank lines
- * rm leading and trailing white space
- */
+/** @return trimmed source for test comparisons */
 export function trimSrc(src: string): string {
   const rawLines = src.split("\n");
   const trimmed = rawLines.map(l => l.trim());
@@ -12,8 +9,7 @@ export function trimSrc(src: string): string {
   return nonBlank.join("\n");
 }
 
-/** expect a match between two strings
- *  with blank lines and any consistent leading indent removed */
+/** Assert match between trimmed strings */
 export function expectTrimmedMatch(result: string, expected: string): void {
   const resultTrimmed = trimSrc(result);
   const expectTrimmed = trimSrc(expected);
@@ -33,9 +29,6 @@ export function expectTrimmedMatch(result: string, expected: string): void {
     console.log(
       `\ntrimmed result:\n${resultTrimmed}\n\ntrimmed expected:\n${expectTrimmed}\n`,
     );
-    // console.log(
-    //   `\nresult:\n${result}\n\nexpected:\n${expected}\n`,
-    // );
   }
   expect(resultTrimmed).toBe(expectTrimmed);
 }

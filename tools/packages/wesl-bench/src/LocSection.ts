@@ -21,7 +21,7 @@ export const locSection: ResultsMapper<LocStats> = {
       : undefined;
     const locSecMax = results.time?.min
       ? lines / (results.time.min / 1000)
-      : undefined; // min time = max throughput
+      : undefined; // min time gives max throughput
 
     return { lines, locSecP50, locSecMax };
   },

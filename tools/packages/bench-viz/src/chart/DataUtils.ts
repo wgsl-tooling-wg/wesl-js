@@ -13,7 +13,7 @@ export interface HistogramDataPoint {
   name: string;
 }
 
-/** Transform benchmark group into points for time series visualization */
+/** @return points for time series visualization */
 export function prepareGroupData(group: BenchmarkGroup): ChartDataPoint[] {
   const data: ChartDataPoint[] = [];
 
@@ -23,7 +23,7 @@ export function prepareGroupData(group: BenchmarkGroup): ChartDataPoint[] {
         name: `${group.baseline!.name} (baseline)`,
         sample: iteration,
         value,
-        displayValue: -1,
+        displayValue: -1, // converted later
         isBaseline: true,
       });
     });
@@ -36,7 +36,7 @@ export function prepareGroupData(group: BenchmarkGroup): ChartDataPoint[] {
           name: benchmark.name,
           sample: iteration,
           value,
-          displayValue: -1, // Will be converted later
+          displayValue: -1, // converted later
           isBaseline: false,
         });
       });
@@ -46,7 +46,7 @@ export function prepareGroupData(group: BenchmarkGroup): ChartDataPoint[] {
   return data;
 }
 
-/** Extract values and names for histogram binning */
+/** @return values and names for histogram binning */
 export function prepareHistogramData(
   group: BenchmarkGroup,
 ): HistogramDataPoint[] {
@@ -70,7 +70,7 @@ export function prepareHistogramData(
   return [...baselinePoints, ...mainPoints];
 }
 
-/** Combine baseline and benchmarks into single array with flag */
+/** @return all benchmarks with baseline flag */
 export function getAllBenchmarks(
   group: BenchmarkGroup,
 ): (BenchmarkResult & { isBaseline: boolean })[] {

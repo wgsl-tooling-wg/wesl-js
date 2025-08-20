@@ -19,7 +19,7 @@ type GCObserver = {
 
 export type MeasureResult = Awaited<ReturnType<typeof measure>>;
 
-/** Load mitataCounters dynamically if cpuCounters is enabled, otherwise return undefined */
+/** @return mitataCounters if cpuCounters enabled, else undefined */
 async function loadMitataCounters(
   options?: MeasureOptions,
 ): Promise<typeof mitataCountersType | undefined> {
@@ -30,7 +30,6 @@ async function loadMitataCounters(
   try {
     const counters = await import("@mitata/counters");
 
-    // Check if running with sufficient privileges
     if (
       process.platform !== "win32" &&
       process.getuid &&
@@ -51,7 +50,7 @@ async function loadMitataCounters(
   }
 }
 
-/** options for mitata */
+/** Options for mitata benchmarking */
 export type MeasureOptions = Parameters<typeof measure>[1] & {
   $counters?: typeof mitataCountersType; // missing from published types, loaded dynamically
   cpuCounters?: boolean; // default: false
@@ -60,26 +59,19 @@ export type MeasureOptions = Parameters<typeof measure>[1] & {
   collect?: boolean; // force GC after each iteration
 };
 
-/** Run a function using mitata benchmarking,
- *  collecting time, gc, heap, and cpu counter statistics.
- * @param fn - the function to benchmark
- * @param name - optional name for the benchmark
- * @param options - optional mitata measure options
- * @returns the measured results, with time in milliseconds, and heap size in kilobytes
- */
+/** @return measured results with time (ms) and heap (kb) */
 export async function mitataBench(
   fn: () => any,
   name = "",
   options?: MeasureOptions,
 ): Promise<MeasuredResults> {
-  gcFunction(); // warn if gc() not available
+  gcFunction();
   const heapFn = await getHeapFn();
 
   const measureOptions = {
     heap: heapFn,
     $counters: await loadMitataCounters(options),
     ...options,
-    // Use Mitata's built-in inner_gc option to force GC before each iteration
     inner_gc: options?.collect,
   } as MeasureOptions;
 
@@ -89,7 +81,7 @@ export async function mitataBench(
   return mitataStats(stats, name, nodeGcTime);
 }
 
-/** measure a function with mitata, collecting GC stats if enabled */
+/** @return mitata measurements with optional GC stats */
 async function measureWithObserveGC(
   fn: () => any,
   measureOptions: MeasureOptions,
@@ -135,7 +127,6 @@ function createGCObserver(): GCObserver {
   let numGC = 0;
   const observer = new PerformanceObserver(items => {
     for (const item of items.getEntries()) {
-      // GC events have entryType 'gc', not name 'gc'
       if (item.entryType === "gc") {
         gcRecords.push(item);
         numGC++;
@@ -158,7 +149,6 @@ async function runWarmupAndClear(
 ): Promise<void> {
   wrappedFn();
   await clearGarbage();
-  // Clear the GC records collected during warmup
   gcObserver.gcRecords.length = 0;
   gcObserver.numGC = 0;
 }
@@ -169,20 +159,19 @@ async function finishGCObservation(
 ): Promise<NodeGCTime | undefined> {
   await wait();
   gcObserver.gcRecords.push(...finishObserver(gcObserver.observer));
-  // Use all records, not just up to numGC since we're pushing to the array
   return analyzeGCEntries(gcObserver.gcRecords, benchTiming);
 }
 
-/** allocate what we can in advance, and run a gc() so that our collection metrics are as pristine as possible */
+/** Clear garbage for pristine collection metrics */
 async function clearGarbage(): Promise<void> {
   const gc = gcFunction();
   gc();
-  await wait(1000); // milliseconds, wait after GC. mysteriously, 800 is not enough. try pnpm bench --simple someAllocation and look at heap kb
+  await wait(1000); // 800ms insufficient - see heap kb in someAllocation test
   gc();
   await wait();
 }
 
-/** finish the observer and return any straggler gc records (unlikely in practice) */
+/** @return remaining gc records from observer */
 function finishObserver(obs: PerformanceObserver): PerformanceEntry[] {
   const records = obs.takeRecords?.();
   obs.disconnect();
@@ -209,7 +198,7 @@ async function getHeapFn(): Promise<() => number> {
   return () => 0;
 }
 
-/** fetch the runtime's function to call gc() manually */
+/** @return runtime's gc() function */
 function gcFunction(): () => void {
   const gc = globalThis.gc || (globalThis as any).__gc;
   if (gc) return gc;

@@ -18,7 +18,7 @@ interface BinConfig {
   timeUnit: TimeUnit;
 }
 
-/** Render frequency distribution histogram for benchmark execution times */
+/** Render frequency histogram for benchmark times */
 export function renderHistogramChart(
   container: HTMLElement,
   group: BenchmarkGroup,
@@ -41,7 +41,7 @@ export function renderHistogramChart(
   }
 }
 
-/** Check if group contains sample data */
+/** @return true if group contains sample data */
 function hasValidData(group: BenchmarkGroup): boolean {
   return !!(
     group.baseline?.samples?.length ||
@@ -49,7 +49,7 @@ function hasValidData(group: BenchmarkGroup): boolean {
   );
 }
 
-/** Build Plot.js histogram with overlapping series */
+/** @return histogram plot with overlapping series */
 function createHistogramPlot(
   group: BenchmarkGroup,
   binConfig: BinConfig,
@@ -84,12 +84,11 @@ function createHistogramPlot(
   });
 }
 
-/** Calculate bin edges and max count for y-axis scaling */
+/** @return bin edges and max count for y-axis */
 function calcBinConfig(group: BenchmarkGroup): BinConfig {
   const allValues = extractAllValues(group);
   const timeUnit = determineTimeUnit(allValues);
 
-  /** Convert values to display units */
   const displayValues = allValues.map(v => timeUnit.convertValue(v));
   const [min, max] = d3.extent(displayValues) as [number, number];
   const bins = createBinThresholds(min, max);
@@ -105,7 +104,7 @@ function calcBinConfig(group: BenchmarkGroup): BinConfig {
   return { min, max, bins, maxCount, timeUnit };
 }
 
-/** Collect all sample values from baseline and benchmarks */
+/** @return all sample values from group */
 function extractAllValues(group: BenchmarkGroup): number[] {
   const values: number[] = [];
 
@@ -124,7 +123,6 @@ function extractAllValues(group: BenchmarkGroup): number[] {
 
 function createBinThresholds(min: number, max: number): number[] {
   const binCount = 30;
-  /** Extend max by 1% to ensure rightmost bar has width */
   const rangeExtension = (max - min) * 0.01;
   const extendedMax = max + rangeExtension;
   const binWidth = (extendedMax - min) / binCount;
@@ -132,7 +130,7 @@ function createBinThresholds(min: number, max: number): number[] {
   return d3.range(binCount + 1).map(i => min + i * binWidth);
 }
 
-/** Find highest bin count across all series for y-axis domain */
+/** @return highest bin count for y-axis domain */
 function calculateMaxCount(
   group: BenchmarkGroup,
   _displayValues: number[],
@@ -156,7 +154,7 @@ function calculateMaxCount(
   return d3.max(allCounts) || 10;
 }
 
-/** Generate histogram marks and setup debug helpers */
+/** @return histogram marks */
 function createMarks(group: BenchmarkGroup, binConfig: BinConfig) {
   const allData = prepareHistogramData(group);
 
@@ -164,7 +162,6 @@ function createMarks(group: BenchmarkGroup, binConfig: BinConfig) {
     return [];
   }
 
-  /** Convert values to display units */
   for (const d of allData) {
     d.value = binConfig.timeUnit.convertValue(d.value);
   }
@@ -174,19 +171,20 @@ function createMarks(group: BenchmarkGroup, binConfig: BinConfig) {
   return [histogram];
 }
 
-/** Create overlapping histogram bars with transparency */
+/** @return overlapping histogram bars with transparency */
 function createHistogramMark(
   allData: ReturnType<typeof prepareHistogramData>,
   binConfig: BinConfig,
 ) {
   return Plot.rectY(
     allData,
-    Plot.binX({ y2: "count" } /** y2 prevents stacking, allows overlaps */, {
+    Plot.binX({ y2: "count" }, {
+      // y2 prevents stacking, allows overlaps
       x: "value",
       fill: "name",
       thresholds: binConfig.bins,
       fillOpacity: 0.6,
-      mixBlendMode: "multiply" /** Makes overlaps darker */,
-    } as Plot.BinXInputs<Plot.RectYOptions>), // .fill causes trouble
+      mixBlendMode: "multiply", // makes overlaps darker
+    } as Plot.BinXInputs<Plot.RectYOptions>),
   );
 }

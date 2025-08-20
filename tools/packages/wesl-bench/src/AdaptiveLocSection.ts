@@ -25,9 +25,7 @@ export const adaptiveLocSection: ResultsMapper<AdaptiveLocStats> = {
       ? lines / (results.time.p50 / 1000)
       : undefined;
 
-    // Use the confidence interval from adaptive mode
-    // const locCI = results.confidenceInterval?.percentage;
-    const locCI = 0; // TODO drop in future merge
+    const locCI = 0; // TODO: add confidence interval from adaptive mode
 
     return { lines, locSecMean, locCI, locSecP50 };
   },

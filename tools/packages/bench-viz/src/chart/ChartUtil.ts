@@ -7,7 +7,7 @@ export interface TimeUnit {
   formatValue: (d: number) => string;
 }
 
-/** shared configuration for charts */
+/** Shared configuration for charts */
 export const chartConfig: Partial<PlotOptions> = {
   marginBottom: 40,
   marginLeft: 50,
@@ -16,7 +16,7 @@ export const chartConfig: Partial<PlotOptions> = {
   style: { fontSize: "12px" },
 };
 
-/** Create colors for benchmarks: gray for baselines, Tableau10 for others */
+/** @return colors for benchmarks: gray for baselines, Tableau10 for others */
 export function createColorRange(names: string[]): string[] {
   const tableau10 = d3.schemeTableau10;
   let colorIndex = 0;
@@ -28,7 +28,7 @@ export function createColorRange(names: string[]): string[] {
   );
 }
 
-/** Extract all benchmark names including baseline with suffix */
+/** @return all benchmark names including baseline with suffix */
 export function extractNames(group: {
   baseline?: { name: string } | null;
   benchmarks: { name: string }[];
@@ -41,7 +41,7 @@ export function extractNames(group: {
   return names;
 }
 
-/** Select appropriate time unit based on data magnitude */
+/** @return appropriate time unit based on data magnitude */
 export function determineTimeUnit(values: number[]): TimeUnit {
   const avgVal = d3.mean(values)!;
 
@@ -54,7 +54,7 @@ export function determineTimeUnit(values: number[]): TimeUnit {
   return createMillisecondsUnit();
 }
 
-/** Convert millisecond values to appropriate display unit */
+/** Convert millisecond values to display units in-place */
 export function convertToDisplayUnits<
   T extends { value: number; displayValue?: number },
 >(data: T[], timeUnit: TimeUnit): void {

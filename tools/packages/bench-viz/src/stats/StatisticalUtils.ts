@@ -1,6 +1,6 @@
 import type { OutlierInfo, QQPoint } from "../data/VizTypes.ts";
 
-/** Generate Q-Q plot points comparing samples to normal distribution */
+/** @return Q-Q plot points comparing samples to normal distribution */
 export function calculateQQData(samples: number[]): QQPoint[] {
   const sorted = [...samples].sort((a, b) => a - b);
   const n = sorted.length;
@@ -19,7 +19,7 @@ export function calculateQQData(samples: number[]): QQPoint[] {
   });
 }
 
-/** Identify outliers using 1.5 * IQR fence method */
+/** @return outliers using 1.5 * IQR fence method */
 export function detectOutliers(samples: number[]): OutlierInfo {
   const sorted = [...samples].sort((a, b) => a - b);
   const q1 = percentile(sorted, 0.25);
@@ -35,12 +35,12 @@ export function detectOutliers(samples: number[]): OutlierInfo {
   return { outliers, lowerBound, upperBound };
 }
 
-/** Calculate arithmetic mean */
+/** @return arithmetic mean */
 function calcMean(values: number[]): number {
   return values.reduce((sum, val) => sum + val, 0) / values.length;
 }
 
-/** Calculate population standard deviation */
+/** @return population standard deviation */
 function calcStdDev(values: number[], mean?: number): number {
   const m = mean ?? calcMean(values);
   const squaredDiffs = values.map(val => (val - m) ** 2);
@@ -49,7 +49,7 @@ function calcStdDev(values: number[], mean?: number): number {
   return Math.sqrt(variance);
 }
 
-/** Linear interpolation for percentile values */
+/** @return linearly interpolated percentile */
 function percentile(sorted: number[], p: number): number {
   const index = p * (sorted.length - 1);
   const lower = Math.floor(index);
@@ -63,7 +63,6 @@ function percentile(sorted: number[], p: number): number {
   return sorted[lower] * (1 - weight) + sorted[upper] * weight;
 }
 
-/** Coefficients for Beasley-Springer-Moro inverse normal CDF */
 const normalInverseCoeffs = {
   a: [
     -3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2,
@@ -84,26 +83,26 @@ const normalInverseCoeffs = {
   thresholds: { low: 0.02425, high: 0.97575 },
 };
 
-/** Evaluate polynomial using Horner's method */
+/** @return polynomial value using Horner's method */
 function evaluatePolynomial(coeffs: number[], x: number): number {
   return coeffs.reduce((sum, coeff, i) => sum + coeff * x ** i, 0);
 }
 
-/** Calculate z-score for tail regions (p < 0.02425 or p > 0.97575) */
+/** @return z-score for tail regions */
 function calcTailZ(q: number, c: number[], d: number[]): number {
   const numerator = evaluatePolynomial([...c].reverse(), q);
   const denominator = evaluatePolynomial([...d, 1].reverse(), q);
   return numerator / denominator;
 }
 
-/** Calculate z-score for central region (0.02425 <= p <= 0.97575) */
+/** @return z-score for central region */
 function calcCentralZ(q: number, r: number, a: number[], b: number[]): number {
   const numerator = q * evaluatePolynomial([...a].reverse(), r);
   const denominator = evaluatePolynomial([...b, 1].reverse(), r);
   return numerator / denominator;
 }
 
-/** Fast inverse normal CDF approximation with < 3e-7 error */
+/** @return inverse normal CDF with < 3e-7 error */
 function normalInverse(p: number, mean: number, stdDev: number): number {
   const { low, high } = normalInverseCoeffs.thresholds;
   const { a, b, c, d } = normalInverseCoeffs;

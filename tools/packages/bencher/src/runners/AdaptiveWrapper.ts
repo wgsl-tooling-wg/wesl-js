@@ -8,7 +8,7 @@ export interface AdaptiveOptions extends RunnerOptions {
   maxTime?: number;
 }
 
-/** @return runner that samples for specified duration */
+/** @return wrapper that samples for specified duration */
 export function createAdaptiveWrapper(
   baseRunner: BenchRunner,
   options: AdaptiveOptions,
@@ -24,7 +24,6 @@ export function createAdaptiveWrapper(
   };
 }
 
-/** Run benchmark for specified duration */
 async function runBench<T>(
   baseRunner: BenchRunner,
   benchmark: BenchmarkSpec<T>,
@@ -33,9 +32,8 @@ async function runBench<T>(
   params?: T,
 ): Promise<MeasuredResults[]> {
   const { minTime = 642, maxTime = 30000 } = options;
-  // Use the smaller of minTime and maxTime as the target
   const targetTime = Math.min(minTime, maxTime);
-  const allSamples: number[] = []; // Collect all raw samples in nanoseconds
+  const allSamples: number[] = []; // raw samples in nanoseconds
   const startTime = performance.now();
 
   const results = await baseRunner.runBench(
@@ -49,8 +47,6 @@ async function runBench<T>(
   );
 
   collectSamples(results[0], allSamples);
-
-  // Continue running until we reach the target time
   while (performance.now() - startTime < targetTime) {
     const batchResults = await baseRunner.runBench(
       benchmark,
@@ -59,16 +55,13 @@ async function runBench<T>(
     );
 
     collectSamples(batchResults[0], allSamples);
-    // Don't need to merge results anymore since we're rebuilding from samples
   }
 
   return buildFinalResults(results[0], allSamples, startTime);
 }
 
-/** Add samples to running totals */
 function collectSamples(result: MeasuredResults, samples: number[]): void {
   if (result.samples) {
-    // Use a loop instead of spread to avoid stack overflow with large arrays
     for (const sample of result.samples) {
       samples.push(sample);
     }
@@ -82,11 +75,8 @@ function buildFinalResults(
   startTime: number,
 ): MeasuredResults[] {
   const totalTime = (performance.now() - startTime) / 1000;
+  const samplesInMs = samples.map(s => s / 1_000_000); // ns to ms
 
-  // Convert samples from nanoseconds to milliseconds for consistency
-  const samplesInMs = samples.map(s => s / 1_000_000);
-
-  // Recalculate time statistics from all collected samples
   const timeStats =
     samples.length > 0 ? calculateTimeStatistics(samples) : result.time;
 
@@ -100,11 +90,9 @@ function buildFinalResults(
   ];
 }
 
-/** @return min, max, avg, and percentile statistics (converted from ns to ms) */
+/** @return time statistics converted from ns to ms */
 function calculateTimeStatistics(samples: number[]) {
-  // Samples are in nanoseconds, convert to milliseconds
-  const msConversion = 1_000_000;
-  // Use reduce to avoid stack overflow with large arrays
+  const msConversion = 1_000_000; // ns to ms
   const min = samples.reduce(
     (a, b) => Math.min(a, b),
     Number.POSITIVE_INFINITY,
