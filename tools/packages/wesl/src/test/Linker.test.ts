@@ -9,7 +9,7 @@ test("link global var", async () => {
 });
 
 test("link an alias", async () => {
-  const src = `
+  const src = /* wgsl */ `
     alias Num = f32;
 
     fn main() { Num(1.0); }
