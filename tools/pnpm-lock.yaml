@@ -458,6 +458,19 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
 
+  packages/wesl-debug:
+    dependencies:
+      thimbleberry:
+        specifier: ^0.2.10
+        version: 0.2.10
+      wesl:
+        specifier: workspace:^
+        version: link:../wesl
+    devDependencies:
+      dependent_package:
+        specifier: workspace:x
+        version: link:../test_pkg/dependent_package
+
   packages/wesl-link:
     dependencies:
       mini-parse:
@@ -672,9 +685,6 @@ importers:
       import-meta-resolve:
         specifier: ^4.1.0
         version: 4.1.0
-      thimbleberry:
-        specifier: ^0.2.10
-        version: 0.2.10
       wesl:
         specifier: workspace:^
         version: link:../wesl
