@@ -240,7 +240,9 @@ function showHelp(scripts: Map<string, ScriptInfo>): void {
 function printGroup(scripts: ScriptInfo[], title: string): void {
   if (scripts.length === 0) return;
   console.log(`\n  ${title}:`);
-  scripts.forEach(script => console.log(`    ${script.name}`));
+  scripts.forEach(script => {
+    console.log(`    ${script.name}`);
+  });
 }
 
 /** @return scripts matching the given source */

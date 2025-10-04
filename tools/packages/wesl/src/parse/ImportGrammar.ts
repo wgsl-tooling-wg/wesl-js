@@ -95,6 +95,7 @@ const import_path_or_item: Parser<Stream<WeslToken>, ImportStatement> = seq(
     ),
     yes().map(() => makeItem("")), // Optional
   ),
+  // biome-ignore lint/suspicious/useIterableCallbackReturn: biome doesn't recognize assertUnreachable's never return type
 ).map(([name, next]): ImportStatement => {
   if (next.kind === "import-collection") {
     return makeStatement([makeSegment(name)], next);

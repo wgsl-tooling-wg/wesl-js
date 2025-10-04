@@ -69,15 +69,15 @@ export function lowerBindingStructs(ast: TransformedAST): TransformedAST {
   const bindingRefs = findRefsToBindingStructs(moduleElem);
 
   // convert references 'b.particles' to references to the synthetic var 'particles'
-  bindingRefs.forEach(({ memberRef, struct }) =>
-    transformBindingReference(memberRef, struct),
-  );
+  bindingRefs.forEach(({ memberRef, struct }) => {
+    transformBindingReference(memberRef, struct);
+  });
   // remove intermediate fn param declaration b:Bindings from 'fn(b:Bindings)'
-  bindingRefs.forEach(({ intermediates }) =>
+  bindingRefs.forEach(({ intermediates }) => {
     intermediates.forEach(e => {
       e.contents = [];
-    }),
-  );
+    });
+  });
   const contents = removeBindingStructs(moduleElem);
   moduleElem.contents = [...newVars, ...contents];
   notableElems.bindingStructs = bindingStructs;

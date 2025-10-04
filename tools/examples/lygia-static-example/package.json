@@ -14,8 +14,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.53.2",
-    "@webgpu/types": "^0.1.63",
-    "vite": "^7.1.1",
+    "@webgpu/types": "^0.1.65",
+    "vite": "^7.1.9",
     "wesl-plugin": "workspace:x"
   }
 }

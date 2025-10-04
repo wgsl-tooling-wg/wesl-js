@@ -37,7 +37,9 @@ export function extractNames(group: {
   if (group.baseline) {
     names.push(`${group.baseline.name} (baseline)`);
   }
-  group.benchmarks.forEach(b => names.push(b.name));
+  group.benchmarks.forEach(b => {
+    names.push(b.name);
+  });
   return names;
 }
 

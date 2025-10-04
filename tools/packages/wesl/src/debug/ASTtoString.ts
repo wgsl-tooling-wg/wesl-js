@@ -211,8 +211,10 @@ function addFnFields(elem: FnElem, str: LineWrapper) {
 function listAttributeElems(
   attributes: AttributeElem[] | undefined,
   str: LineWrapper,
-) {
-  attributes?.forEach(a => str.add(" " + attributeName(a.attribute)));
+): void {
+  attributes?.forEach(a => {
+    str.add(" " + attributeName(a.attribute));
+  });
 }
 
 function attributeName(attr: Attribute): string {

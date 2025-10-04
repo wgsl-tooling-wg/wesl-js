@@ -27,7 +27,7 @@ export class LineWrapper {
   }
 
   /** add a string, wrapping to the next line if necessary */
-  add(s: string) {
+  add(s: string): void {
     if (this.#column + firstLineLength(s) > this.maxWidth) {
       this.hangingNl();
     }

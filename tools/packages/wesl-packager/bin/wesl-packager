@@ -91,8 +91,7 @@ async function writeMultiBundle(modules, name, edition, projectDir, outDir) {
 async function writeJsBundle(weslBundle, dependencies, outDir) {
 	await mkdir(outDir, { recursive: true });
 	const depNames = dependencies.map((dep) => dep.replaceAll("/", "_"));
-	const depsWithNames = zip(dependencies, depNames);
-	const imports = depsWithNames.map(([dep, depName]) => {
+	const imports = zip(dependencies, depNames).map(([dep, depName]) => {
 		return `import ${depName} from "${dep}";`;
 	}).join("\n");
 	const importsStr = imports ? `${imports}\n` : "";
@@ -109,11 +108,10 @@ async function writeJsBundle(weslBundle, dependencies, outDir) {
 }
 /** Write weslBundle.d.ts containing the type definitions for a WeslBundle */
 async function writeTypeScriptDts(outDir) {
-	const constDecl = `
+	const declText = WeslBundle_default + `
     export declare const weslBundle: WeslBundle;
     export default weslBundle;
   `;
-	const declText = WeslBundle_default + constDecl;
 	const formatted = biome.formatContent(biomeKey, declText, { filePath: "t.d.ts" });
 	const outPath = path.join(outDir, "weslBundle.d.ts");
 	await fs.writeFile(outPath, formatted.content);
@@ -131,16 +129,14 @@ function bundleToJsString(bundle, dependencies) {
 	const jsonString = JSON.stringify(obj, null, 2);
 	if (dependencies.length) {
 		const dependenciesStr = `: [${dependencies.join(", ")}]`;
-		const result = jsonString.replace(": 99", dependenciesStr);
-		return result;
+		return jsonString.replace(": 99", dependenciesStr);
 	} else return jsonString;
 }
 /** parse and extract fields from package.json that we care about
 * (the name of the package) */
 async function loadPackageFields(pkgJsonPath) {
 	const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
-	const pkgJson = JSON.parse(pkgJsonString);
-	const { name } = pkgJson;
+	const { name } = JSON.parse(pkgJsonString);
 	verifyField("name", name);
 	function verifyField(field, value) {
 		if (value === void 0) {
@@ -227,3 +223,4 @@ packagerCli(rawArgs).catch((e) => {
 });
 
 //#endregion
+export {  };

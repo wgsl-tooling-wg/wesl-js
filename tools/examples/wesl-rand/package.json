@@ -19,9 +19,9 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.53.2",
-    "@webgpu/types": "^0.1.63",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.1",
+    "@webgpu/types": "^0.1.65",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.9",
     "vite-plugin-static-copy": "^3.1.0",
     "wesl-plugin": "workspace:x"
   }

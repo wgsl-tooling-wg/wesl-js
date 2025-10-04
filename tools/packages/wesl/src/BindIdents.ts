@@ -156,7 +156,7 @@ export function findUnboundIdents(registry: ParsedRegistry): string[][] {
     dontFollowDecls: true,
   };
 
-  Object.entries(registry.modules).map(([_module, ast]) => {
+  Object.entries(registry.modules).forEach(([_module, ast]) => {
     const rootDecls = findValidRootDecls(ast.rootScope, {});
     const declEntries = rootDecls.map(d => [d.originalName, d] as const);
     const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
@@ -418,7 +418,9 @@ function handleNewDecl(
     if (isGlobal(decl)) {
       const { moduleAsserts } = moduleAst;
       const moduleEmit = moduleAsserts?.map(elem => ({ srcModule, elem }));
-      moduleEmit?.forEach(e => globalStatements.set(e.elem, e));
+      moduleEmit?.forEach(e => {
+        globalStatements.set(e.elem, e);
+      });
 
       return decl;
     }
@@ -595,7 +597,7 @@ function absoluteModulePath(
   modulePathParts: string[],
   srcModule: SrcModule,
 ): string[] {
-  const lastSuper = modulePathParts.findLastIndex(p => p === "super");
+  const lastSuper = modulePathParts.lastIndexOf("super");
   if (lastSuper > -1) {
     const srcModuleParts = srcModule.modulePath.split("::");
     const base = srcModuleParts.slice(0, -(lastSuper + 1));

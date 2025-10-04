@@ -172,7 +172,9 @@ async function loadWesl(
   const files = (await Promise.all(futureFiles)).flat();
 
   // trigger rebuild on shader file change
-  files.forEach(f => unpluginCtx.addWatchFile(f));
+  files.forEach(f => {
+    unpluginCtx.addWatchFile(f);
+  });
 
   return await loadFiles(files, resolvedWeslRoot);
 }

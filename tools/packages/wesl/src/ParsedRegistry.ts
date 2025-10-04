@@ -84,13 +84,13 @@ export function parseLibsIntoRegistry(
   registry: ParsedRegistry,
 ): void {
   // libs.forEach(({ modules, name }) => dlog({name, modules}));
-  libs.forEach(({ modules, name }) =>
-    parseIntoRegistry(modules, registry, name),
-  );
+  libs.forEach(({ modules, name }) => {
+    parseIntoRegistry(modules, registry, name);
+  });
   // TODO registry scoping should be hierarchical, not flat
-  libs.forEach(({ dependencies }) =>
-    parseLibsIntoRegistry(dependencies || [], registry),
-  );
+  libs.forEach(({ dependencies }) => {
+    parseLibsIntoRegistry(dependencies || [], registry);
+  });
 }
 
 const libRegex = /^lib\.w[eg]sl$/i;

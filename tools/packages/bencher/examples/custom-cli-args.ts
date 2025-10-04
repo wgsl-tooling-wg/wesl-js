@@ -42,7 +42,7 @@ const garbageGroup: BenchGroup<void> = {
         const arrays = [];
         for (let i = 0; i < args.size; i++) {
           // Each inner array has random values
-          const innerArray = new Array(100);
+          const innerArray: number[] = Array.from({ length: 100 });
           for (let j = 0; j < 100; j++) {
             innerArray[j] = Math.random() * 1000;
           }
