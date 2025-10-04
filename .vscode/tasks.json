@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Biome Check All",
+      "type": "shell",
+      "command": "bb lint:biome",
+      "args": [],
+      "problemMatcher": {
+        "owner": "biome",
+        "fileLocation": ["relative", "${workspaceFolder}/tools"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+).*$",
+          "file": 1,
+          "line": 2,
+          "column": 3
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}
