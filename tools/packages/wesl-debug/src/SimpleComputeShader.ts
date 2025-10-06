@@ -48,7 +48,19 @@ export async function compileShader(
   //
   // We'll still see shader compilation errors from node-webgpu, they
   // just won't be mapped back to the original unlinked source code locations
-  return device.createShaderModule({ code: linked.dest });
+  const module = device.createShaderModule({ code: linked.dest });
+
+  // Check for compilation errors
+  const compilationInfo = await module.getCompilationInfo();
+  const errors = compilationInfo.messages.filter(msg => msg.type === 'error');
+  if (errors.length > 0) {
+    const errorMessages = errors.map(e =>
+      `${e.lineNum}:${e.linePos} ${e.message}`
+    ).join('\n');
+    throw new Error(`Shader compilation failed:\n${errorMessages}`);
+  }
+
+  return module;
 }
 
 /**
@@ -113,6 +125,11 @@ export async function runSimpleComputePipeline(
   module: GPUShaderModule,
   resultFormat?: WgslElementType,
 ): Promise<number[]> {
+  // Push error scopes to catch all types of errors
+  device.pushErrorScope('internal');
+  device.pushErrorScope('out-of-memory');
+  device.pushErrorScope('validation');
+
   const bgLayout = device.createBindGroupLayout({
     entries: [
       {
@@ -157,6 +174,21 @@ export async function runSimpleComputePipeline(
   pass.dispatchWorkgroups(1);
   pass.end();
   device.queue.submit([commands.finish()]);
+
+  // Check for errors (pop in reverse order of push)
+  const validationError = await device.popErrorScope();
+  const oomError = await device.popErrorScope();
+  const internalError = await device.popErrorScope();
+
+  if (validationError) {
+    throw new Error(`WebGPU validation error: ${validationError.message}`);
+  }
+  if (oomError) {
+    throw new Error(`WebGPU out-of-memory error: ${oomError.message}`);
+  }
+  if (internalError) {
+    throw new Error(`WebGPU internal error: ${internalError.message}`);
+  }
 
   const data = await copyBuffer(device, storageBuffer, resultFormat);
   return data;
