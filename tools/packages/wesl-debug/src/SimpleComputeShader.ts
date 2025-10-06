@@ -136,7 +136,14 @@ export async function runSimpleComputePipeline(
     label: "storage",
     size: resultBufferSize,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+    mappedAtCreation: true,
   });
+
+  // Initialize buffer with sentinel values to detect unwritten results
+  // Using -999.0 as a distinctive value that should never appear in valid test results
+  const mappedBuffer = new Float32Array(storageBuffer.getMappedRange());
+  mappedBuffer.fill(-999.0);
+  storageBuffer.unmap();
 
   const bindGroup = device.createBindGroup({
     layout: bgLayout,
