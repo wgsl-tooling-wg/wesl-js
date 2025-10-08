@@ -414,6 +414,44 @@ test("@else with import", () => {
   `);
 });
 
+test("parse @else fn", () => {
+  const src = `
+    @if(FOO)
+    fn testFn() { let a = 0; }
+    @else
+    fn testFn() { let a = 1; }
+  `;
+  const ast = parseTest(src);
+  const astString = astToString(ast.moduleElem);
+  expect(astString).toMatchInlineSnapshot(
+    `
+    "module
+      text '
+        '
+      fn testFn() @if
+        attribute @if(FOO)
+        decl %testFn
+        statement
+          text '{ let '
+          typeDecl %a
+            decl %a
+          text ' = 0; }'
+      text '
+        '
+      fn testFn() @else
+        attribute @else
+        decl %testFn
+        statement
+          text '{ let '
+          typeDecl %a
+            decl %a
+          text ' = 1; }'
+      text '
+      '"
+  `,
+  );
+});
+
 // test("", () => {
 //   const src = `
 //   `;

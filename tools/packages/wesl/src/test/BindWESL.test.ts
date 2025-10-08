@@ -1,8 +1,13 @@
 import { expect, test } from "vitest";
-import { parsedRegistry, parseIntoRegistry, resetScopeIds } from "wesl";
+import {
+  parsedRegistry,
+  parseIntoRegistry,
+  publicDecl,
+  resetScopeIds,
+} from "wesl";
 import { bindIdents } from "../BindIdents.ts";
 import { scopeToStringLong } from "../debug/ScopeToString.ts";
-import { bindTest } from "./TestUtil.ts";
+import { bindTest, parseTest } from "./TestUtil.ts";
 
 test("nested scopes binding", () => {
   const src = `
@@ -83,4 +88,32 @@ test("collect unbound references", async () => {
   const expected = ["pkg1::bar::baz", "pkg2::foo"];
   const expectedArrays = expected.map(s => s.split("::")).sort();
   expect(bindResult.unbound?.sort()).deep.equal(expectedArrays);
+});
+
+test("publicDecl finds valid conditional declaration", () => {
+  const src = `
+    @if(FOO)
+    fn testFn() { let a = 0; }
+    @else
+    fn testFn() { let a = 1; }
+
+    fn otherFn() { }
+  `;
+
+  const ast = parseTest(src);
+  const conditions = {}; // FOO is false
+
+  // First call should find @else function
+  const decl1 = publicDecl(ast.rootScope, "testFn", conditions);
+  expect(decl1).toBeDefined();
+  expect(decl1!.originalName).toBe("testFn");
+
+  // Second call should use cache and return same result
+  const decl2 = publicDecl(ast.rootScope, "testFn", conditions);
+  expect(decl2).toBe(decl1); // Same object reference - caching works
+
+  // Should find other declarations too
+  const otherDecl = publicDecl(ast.rootScope, "otherFn", conditions);
+  expect(otherDecl).toBeDefined();
+  expect(otherDecl!.originalName).toBe("otherFn");
 });

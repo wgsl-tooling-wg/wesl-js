@@ -44,6 +44,7 @@ import type {
   UnknownExpressionElem,
   VarElem,
 } from "./AbstractElems.ts";
+import { findConditional } from "./Conditions.ts";
 import type {
   StableState,
   WeslAST,
@@ -204,34 +205,27 @@ function completeScopeInternal(cc: CollectContext, attachIfs: boolean): Scope {
     console.log("ERR: completeScope, no parent scope", completedScope.contents);
   }
   if (attachIfs) {
-    const condAttribute = collectConditionalAttribute(cc);
+    const condAttribute = collectConditionalAttribute(cc, completedScope);
     completedScope.condAttribute = condAttribute;
   }
   return completedScope;
 }
 
-/** return @if, @elif, or @else attribute from the 'attribute' tag */
+/** return @if, @elif, or @else attribute from the 'attribute' or 'fn_attributes' tag */
 function collectConditionalAttribute(
   cc: CollectContext,
+  completedScope: Scope,
 ): IfAttribute | ElifAttribute | ElseAttribute | undefined {
-  const attributes = cc.tags.attribute as AttributeElem[] | undefined;
-  return extractConditionalAttribute(attributes);
-}
-
-/** Extract @if, @elif, or @else attribute from an array of attributes */
-function extractConditionalAttribute(
-  attributes: AttributeElem[] | undefined,
-): IfAttribute | ElifAttribute | ElseAttribute | undefined {
-  if (!attributes) return;
-
-  // Find first @if, @elif, or @else attribute
-  for (const attr of attributes) {
-    const kind = attr.attribute.kind;
-    if (kind === "@if" || kind === "@elif" || kind === "@else") {
-      return attr.attribute;
-    }
+  // For fn_partial_scope, use fn_attributes
+  if (completedScope.kind === "partial" && cc.tags.fn_name !== undefined) {
+    const attributes = cc.tags.fn_attributes as AttributeElem[] | undefined;
+    const flatAttrs = attributes?.flat?.();
+    return findConditional(flatAttrs);
   }
-  return undefined;
+
+  // For other partial scopes, use attribute
+  const attributes = cc.tags.attribute as AttributeElem[] | undefined;
+  return findConditional(attributes);
 }
 
 // prettier-ignore
@@ -313,19 +307,13 @@ export const fnCollect = collectElem(
     const { name, headerScope, returnScope, bodyScope, body, params } = ourTags;
     const { attributes, returnAttributes, returnType, fnScope } = ourTags;
 
-    // create the fn element
+    // create the fn element (keep all attributes including conditional ones)
     const fnElem: FnElem = {
       ...openElem,
       ...{ name, attributes, params, returnAttributes, body, returnType },
     };
 
     // --- setup the various scopes --
-
-    // attach conditional attribute to outermost partial scope
-    const condAttribute = extractConditionalAttribute(attributes);
-    if (condAttribute) {
-      fnScope.condAttribute = condAttribute;
-    }
 
     // merge the header, return and body scopes into the one scope
     const mergedScope = headerScope;

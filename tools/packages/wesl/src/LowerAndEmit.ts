@@ -20,23 +20,32 @@ import { filterValidElements } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import type { Conditions, DeclIdent, Ident } from "./Scope.ts";
 
+export interface EmitParams {
+  srcBuilder: SrcMapBuilder;
+  rootElems: readonly AbstractElem[];
+  conditions: Conditions;
+  /** are we extracting or copying the root module */
+  extracting?: boolean;
+  /** if true, rootElems are already validated (e.g., from findValidRootDecls) */
+  skipConditionalFiltering?: boolean;
+}
+
 /** passed to the emitters */
 interface EmitContext {
-  srcBuilder: SrcMapBuilder; // constructing the linked output
-  conditions: Conditions; // settings for conditional compilation
-  extracting: boolean; // are we extracting or copying the root module
+  srcBuilder: SrcMapBuilder;
+  conditions: Conditions;
+  extracting: boolean;
 }
 
 /** traverse the AST, starting from root elements, emitting wgsl for each */
-export function lowerAndEmit(
-  srcBuilder: SrcMapBuilder,
-  rootElems: readonly AbstractElem[],
-  conditions: Conditions,
-  extracting = true,
-): void {
+export function lowerAndEmit(params: EmitParams): void {
+  const { srcBuilder, rootElems, conditions } = params;
+  const { extracting = true, skipConditionalFiltering = false } = params;
+
   const emitContext: EmitContext = { conditions, srcBuilder, extracting };
-  const validElements = filterValidElements(rootElems, conditions);
-  // rootElems.forEach(r => console.log(astToString(r) + "\n"));
+  const validElements = skipConditionalFiltering
+    ? rootElems
+    : filterValidElements(rootElems, conditions);
   validElements.forEach(e => {
     lowerAndEmitElem(e, emitContext);
   });

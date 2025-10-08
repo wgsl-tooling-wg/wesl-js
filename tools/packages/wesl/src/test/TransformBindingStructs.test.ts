@@ -53,7 +53,7 @@ test("transformBindingStruct", () => {
   const newVars = transformBindingStruct(bindingStruct, new Set());
 
   const srcBuilder = new SrcMapBuilder({ text: rootAst.srcModule.src });
-  lowerAndEmit(srcBuilder, newVars, {});
+  lowerAndEmit({ srcBuilder, rootElems: newVars, conditions: {} });
   const linked = SrcMapBuilder.build([srcBuilder]).dest.text;
   expect(linked).toMatchInlineSnapshot(
     `
@@ -162,7 +162,12 @@ test("lower binding structs", () => {
   `);
 
   const srcBuilder = new SrcMapBuilder({ text: lowered.srcModule.src });
-  lowerAndEmit(srcBuilder, [lowered.moduleElem], {}, false);
+  lowerAndEmit({
+    srcBuilder,
+    rootElems: [lowered.moduleElem],
+    conditions: {},
+    extracting: false,
+  });
   const linked = SrcMapBuilder.build([srcBuilder]).dest.text;
   expectTrimmedMatch(linked, expected);
 });

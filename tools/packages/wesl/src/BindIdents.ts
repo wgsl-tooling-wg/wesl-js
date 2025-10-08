@@ -1,7 +1,7 @@
-import type { AbstractElem, ElemWithAttributes } from "./AbstractElems.ts";
+import type { AbstractElem } from "./AbstractElems.ts";
 import { assertThatDebug } from "./Assertions.ts";
 import { failIdent } from "./ClickableError.ts";
-import { validateAttributes, validateConditional } from "./Conditions.ts";
+import { findConditional, validateConditional } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import type { FlatImport } from "./FlattenTreeImport.ts";
 import type { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
@@ -9,14 +9,13 @@ import { type LiveDecls, makeLiveDecls } from "./LiveDeclarations.ts";
 import { type ManglerFn, minimalMangle } from "./Mangler.ts";
 import type { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, parseSrcModule, type WeslAST } from "./ParseWESL.ts";
-import {
-  type Conditions,
-  type DeclIdent,
-  type LexicalScope,
-  publicDecl,
-  type RefIdent,
-  type Scope,
-  type SrcModule,
+import type {
+  Conditions,
+  DeclIdent,
+  LexicalScope,
+  RefIdent,
+  Scope,
+  SrcModule,
 } from "./Scope.ts";
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last } from "./Util.ts";
@@ -174,6 +173,9 @@ export function findUnboundIdents(registry: ParsedRegistry): string[][] {
  * included when the corresponding @if block is invalid. This is essential for preventing
  * unused declarations from being included in the output.
  *
+ * Results are cached on the root scope's _validRootDecls field.
+ * Used both for binding and for publicDecl() lookups.
+ *
  * @param rootScope The root scope to search
  * @param conditions Current conditional compilation settings
  * @return Array of valid declaration identifiers
@@ -188,15 +190,14 @@ export function findValidRootDecls(
   for (const item of rootScope.contents) {
     if (item.kind === "decl") {
       assertThatDebug(item.declElem);
-      const { valid, nextElseState } = validateAttributes(
-        (item.declElem as ElemWithAttributes).attributes,
+      const attr = findConditional(item.declElem.attributes);
+      const { valid, nextElseState } = validateConditional(
+        attr,
         elseValid,
         conditions,
       );
       elseValid = nextElseState;
-      if (valid) {
-        found.push(item);
-      }
+      if (valid) found.push(item);
     } else if (item.kind === "partial") {
       const { valid, nextElseState } = validateConditional(
         item.condAttribute,
@@ -204,24 +205,31 @@ export function findValidRootDecls(
         conditions,
       );
       elseValid = nextElseState;
-      if (valid) {
-        collectAllDeclarationsInScope(item, found);
-      }
+      if (valid) collectDecls(item, found);
     }
   }
 
   return found;
 }
 
-/** Collect all declarations in a scope (used when scope is already validated) */
-function collectAllDeclarationsInScope(scope: Scope, found: DeclIdent[]): void {
-  for (const item of scope.contents) {
-    if (item.kind === "decl") {
-      found.push(item);
-    } else if (item.kind === "partial") {
-      collectAllDeclarationsInScope(item, found);
-    }
-  }
+/** Find a public declaration with the given original name */
+export function publicDecl(
+  scope: Scope,
+  name: string,
+  conditions: Conditions,
+): DeclIdent | undefined {
+  const validDecls = getValidRootDecls(scope, conditions);
+  return validDecls.find(d => d.originalName === name);
+}
+
+/** @return true if this decl is at the root scope level of a module */
+export function isGlobal(declIdent: DeclIdent): boolean {
+  const { declElem } = declIdent;
+  if (!declElem) return false;
+
+  return ["alias", "const", "override", "fn", "struct", "gvar"].includes(
+    declElem.kind,
+  );
 }
 
 /** state used during the recursive scope tree walk to bind references to declarations */
@@ -319,21 +327,6 @@ function bindIdentsRecursive(
   return [newGlobals, newFromChildren, newFromRefs].flat();
 }
 
-function handleDecls(
-  newGlobals: DeclIdent[],
-  bindContext: BindContext,
-): DeclIdent[] {
-  const { conditions } = bindContext;
-  return newGlobals.flatMap(decl => {
-    const foundScope = decl.dependentScope;
-    if (!foundScope) return [];
-    const rootDecls = globalDeclToRootLiveDecls(decl, conditions);
-    if (!rootDecls) return [];
-    const rootLive = makeLiveDecls(rootDecls);
-    return bindIdentsRecursive(foundScope, bindContext, rootLive);
-  });
-}
-
 /**
  * Trace references to their declarations
  * mutates to:
@@ -388,6 +381,21 @@ function handleScope(
   return { decls, nextElseState };
 }
 
+function handleDecls(
+  newGlobals: DeclIdent[],
+  bindContext: BindContext,
+): DeclIdent[] {
+  const { conditions } = bindContext;
+  return newGlobals.flatMap(decl => {
+    const foundScope = decl.dependentScope;
+    if (!foundScope) return [];
+    const rootDecls = rootLiveDecls(decl, conditions);
+    if (!rootDecls) return [];
+    const rootLive = makeLiveDecls(rootDecls);
+    return bindIdentsRecursive(foundScope, bindContext, rootLive);
+  });
+}
+
 /**
  * If the found declaration is new, mangle its name and update the
  * knownDecls and globalNames sets. Return it if it's a global declaration.
@@ -416,59 +424,6 @@ function handleNewDecl(
     });
     return decl;
   }
-}
-
-/** given a global declIdent, return the liveDecls for its root scope */
-function globalDeclToRootLiveDecls(
-  decl: DeclIdent,
-  conditions: Conditions,
-): LiveDecls | undefined {
-  assertThatDebug(decl.isGlobal, identToString(decl));
-  let rootScope = decl.containingScope;
-  while (rootScope.parent) {
-    rootScope = rootScope.parent;
-  }
-  assertThatDebug(rootScope.kind === "scope");
-  const root = rootScope as LexicalScope;
-  if (root._scopeDecls) return root._scopeDecls;
-
-  const rootDecls = findValidRootDecls(rootScope, conditions);
-  const entires = rootDecls.map(d => [d.originalName, d] as const);
-  const decls = new Map(entires);
-  const liveDecls = { decls };
-  root._scopeDecls = liveDecls;
-  return liveDecls;
-}
-
-/**
- * Mutate a DeclIdent to set a unique name for global linking
- * using a mangling function to choose a unique name.
- * Also update the set of globally unique names.
- */
-function setMangledName(
-  proposedName: string,
-  decl: DeclIdent,
-  globalNames: Set<string>,
-  srcModule: SrcModule,
-  mangler: ManglerFn,
-): void {
-  if (!decl.mangledName) {
-    let mangledName: string;
-    if (isGlobal(decl)) {
-      const sep = proposedName.lastIndexOf("::");
-      const name = sep === -1 ? proposedName : proposedName.slice(sep + 2);
-      mangledName = mangler(decl, srcModule, name, globalNames);
-    } else {
-      mangledName = decl.originalName;
-    }
-    decl.mangledName = mangledName;
-    globalNames.add(mangledName);
-  }
-}
-
-/** @return true if ident is a standard wgsl type, fn, or enumerant */
-function stdWgsl(name: string): boolean {
-  return stdType(name) || stdFn(name) || stdEnumerant(name); // TODO add tests for enumerants case (e.g. var x = read;)
 }
 
 /** Using the LiveDecls, search earlier in the scope and in parent scopes to find a matching decl ident */
@@ -523,10 +478,6 @@ function findQualifiedImport(
   }
 }
 
-function qualifiedIdent(identParts: string[]): string[] | undefined {
-  if (identParts.length > 1) return identParts;
-}
-
 /** Combine an import using the flattened import array, find an import that matches a provided ident */
 function matchingImport(
   identParts: string[],
@@ -566,20 +517,6 @@ function findExport(
   if (decl) return { decl, moduleAst };
 }
 
-/** Convert a module path with super:: elements to one with no super:: elements */
-function absoluteModulePath(
-  modulePathParts: string[],
-  srcModule: SrcModule,
-): string[] {
-  const lastSuper = modulePathParts.lastIndexOf("super");
-  if (lastSuper === -1) return modulePathParts;
-
-  const srcModuleParts = srcModule.modulePath.split("::");
-  const base = srcModuleParts.slice(0, -(lastSuper + 1));
-  const noSupers = modulePathParts.slice(lastSuper + 1);
-  return [...base, ...noSupers];
-}
-
 /** @return AST for a virtual module */
 function virtualModule(
   moduleName: string,
@@ -601,13 +538,96 @@ function virtualModule(
   return found.ast;
 }
 
-// LATER capture isGlobal in the ident during parsing
-/** @return true if this decl is at the root scope level of a module */
-export function isGlobal(declIdent: DeclIdent): boolean {
-  const { declElem } = declIdent;
-  if (!declElem) return false;
+/** Get cached valid root declarations, computing on first access */
+function getValidRootDecls(
+  rootScope: Scope,
+  conditions: Conditions,
+): DeclIdent[] {
+  const lexScope = rootScope as LexicalScope;
+  if (lexScope._validRootDecls) return lexScope._validRootDecls;
 
-  return ["alias", "const", "override", "fn", "struct", "gvar"].includes(
-    declElem.kind,
-  );
+  const valid = findValidRootDecls(rootScope, conditions);
+  lexScope._validRootDecls = valid;
+  return valid;
+}
+
+/** Given a global declIdent, return the liveDecls for its root scope */
+function rootLiveDecls(
+  decl: DeclIdent,
+  conditions: Conditions,
+): LiveDecls | undefined {
+  assertThatDebug(decl.isGlobal, identToString(decl));
+  let rootScope = decl.containingScope;
+  while (rootScope.parent) {
+    rootScope = rootScope.parent;
+  }
+  assertThatDebug(rootScope.kind === "scope");
+  const root = rootScope as LexicalScope;
+  if (root._scopeDecls) return root._scopeDecls;
+
+  const rootDecls = findValidRootDecls(rootScope, conditions);
+  const entries = rootDecls.map(d => [d.originalName, d] as const);
+  const liveDecls = { decls: new Map(entries) };
+  root._scopeDecls = liveDecls;
+  return liveDecls;
+}
+
+/**
+ * Mutate a DeclIdent to set a unique name for global linking
+ * using a mangling function to choose a unique name.
+ * Also update the set of globally unique names.
+ */
+function setMangledName(
+  proposedName: string,
+  decl: DeclIdent,
+  globalNames: Set<string>,
+  srcModule: SrcModule,
+  mangler: ManglerFn,
+): void {
+  if (decl.mangledName) return;
+
+  let mangledName: string;
+  if (isGlobal(decl)) {
+    const sep = proposedName.lastIndexOf("::");
+    const name = sep === -1 ? proposedName : proposedName.slice(sep + 2);
+    mangledName = mangler(decl, srcModule, name, globalNames);
+  } else {
+    mangledName = decl.originalName;
+  }
+  decl.mangledName = mangledName;
+  globalNames.add(mangledName);
+}
+
+/** @return true if ident is a standard wgsl type, fn, or enumerant */
+function stdWgsl(name: string): boolean {
+  return stdType(name) || stdFn(name) || stdEnumerant(name); // TODO add tests for enumerants case (e.g. var x = read;)
+}
+
+function qualifiedIdent(identParts: string[]): string[] | undefined {
+  if (identParts.length > 1) return identParts;
+}
+
+/** Convert a module path with super:: elements to one with no super:: elements */
+function absoluteModulePath(
+  modulePathParts: string[],
+  srcModule: SrcModule,
+): string[] {
+  const lastSuper = modulePathParts.lastIndexOf("super");
+  if (lastSuper === -1) return modulePathParts;
+
+  const srcModuleParts = srcModule.modulePath.split("::");
+  const base = srcModuleParts.slice(0, -(lastSuper + 1));
+  const noSupers = modulePathParts.slice(lastSuper + 1);
+  return [...base, ...noSupers];
+}
+
+/** Collect all declarations in a scope (used when scope is already validated) */
+function collectDecls(scope: Scope, found: DeclIdent[]): void {
+  for (const item of scope.contents) {
+    if (item.kind === "decl") {
+      found.push(item);
+    } else if (item.kind === "partial") {
+      collectDecls(item, found);
+    }
+  }
 }

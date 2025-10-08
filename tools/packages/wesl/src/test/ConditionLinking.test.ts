@@ -167,3 +167,26 @@ test("@if(MOBILE) global var", async () => {
   `;
   await testLink({ app, util }, "app", expectWgsl);
 });
+
+test("@else fn", async () => {
+  const app = `
+    fn main() {
+      package::util::testFn();
+    }
+  `;
+
+  const util = `
+    @if(FOO)
+    fn testFn() { let a = 0; }
+    @else
+    fn testFn() { let a = 1; }
+  `;
+
+  const expectWgsl = `
+    fn main() {
+      testFn();
+    }
+    fn testFn() { let a = 1; }
+  `;
+  await testLink({ app, util }, "app", expectWgsl);
+});

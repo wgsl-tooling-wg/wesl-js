@@ -235,7 +235,7 @@ function emitWgsl(
     const { elem, srcModule } = s;
     const { src: text, debugFilePath: path } = srcModule;
     const builder = new SrcMapBuilder({ text, path });
-    lowerAndEmit(builder, [elem], conditions);
+    lowerAndEmit({ srcBuilder: builder, rootElems: [elem], conditions });
     builder.addNl();
     return builder;
   });
@@ -244,14 +244,25 @@ function emitWgsl(
     text: srcModule.src,
     path: srcModule.debugFilePath,
   });
-  lowerAndEmit(rootBuilder, [rootModuleElem], conditions, false); // emit the entire root module
+  lowerAndEmit({
+    srcBuilder: rootBuilder,
+    rootElems: [rootModuleElem],
+    conditions,
+    extracting: false,
+  });
 
   const declBuilders = newDecls.map(decl => {
     const builder = new SrcMapBuilder({
       text: decl.srcModule.src,
       path: decl.srcModule.debugFilePath,
     });
-    lowerAndEmit(builder, [decl.declElem!], conditions); // emit referenced declarations from other modules
+    // Skip conditional filtering - these declarations were already validated by findValidRootDecls
+    lowerAndEmit({
+      srcBuilder: builder,
+      rootElems: [decl.declElem!],
+      conditions,
+      skipConditionalFiltering: true,
+    });
     return builder;
   });
 

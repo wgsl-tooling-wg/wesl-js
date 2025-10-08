@@ -6,7 +6,6 @@ import type {
   RefIdentElem,
 } from "./AbstractElems.ts";
 import { assertThatDebug } from "./Assertions.ts";
-import { scopeValid } from "./Conditions.ts";
 import type { LiveDecls } from "./LiveDeclarations.ts";
 import type { WeslAST } from "./ParseWESL.ts";
 
@@ -80,6 +79,10 @@ export interface LexicalScope extends ScopeBase {
    * Efficient access to declarations in this scope.
    * constructed on demand, for module root scopes only */ // LATER consider make a special kind for root scopes
   _scopeDecls?: LiveDecls;
+
+  /** Cached list of valid root declarations after conditional filtering.
+   * Populated on first access for module root scopes. */
+  _validRootDecls?: DeclIdent[];
 }
 
 /** A synthetic partial scope to contain @if conditioned idents.
@@ -160,20 +163,4 @@ export function childScope(child: Scope | Ident): child is Scope {
  *    is an Ident (and not a child Scope) */
 export function childIdent(child: Scope | Ident): child is Ident {
   return !childScope(child);
-}
-
-/** find a public declaration with the given original name */
-export function publicDecl(
-  scope: Scope,
-  name: string,
-  conditions: Conditions,
-): DeclIdent | undefined {
-  for (const elem of scope.contents) {
-    if (elem.kind === "decl" && elem.originalName === name) {
-      return elem;
-    } else if (elem.kind === "partial" && scopeValid(elem, conditions)) {
-      const found = publicDecl(elem, name, conditions);
-      if (found) return found;
-    }
-  }
 }

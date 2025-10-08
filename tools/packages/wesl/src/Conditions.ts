@@ -75,7 +75,7 @@ function evaluateIfExpression(
   } else if (kind === "parenthesized-expression") {
     return evaluateIfExpression(expression.expression, conditions);
   } else if (kind === "translate-time-feature") {
-    return conditions[expression.name];
+    return conditions[expression.name] ?? false;
   } else {
     throw new Error(`unexpected @if expression ${JSON.stringify(expression)}`);
   }
@@ -154,12 +154,12 @@ export function validateAttributes(
   elseValid: boolean,
   conditions: Conditions,
 ): ConditionalResult {
-  const condAttr = extractConditionalAttribute(attributes);
+  const condAttr = findConditional(attributes);
   return validateConditional(condAttr, elseValid, conditions);
 }
 
 /** Extract @if, @elif, or @else attribute from an array of attributes */
-function extractConditionalAttribute(
+export function findConditional(
   attributes: AttributeElem[] | undefined,
 ): IfAttribute | ElifAttribute | ElseAttribute | undefined {
   if (!attributes) return;

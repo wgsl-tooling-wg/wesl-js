@@ -220,7 +220,7 @@ const global_ident = tagScope(
   req(
     seq(
       word.collect(globalDeclCollect, "decl_elem"),
-      opt(seq(":", type_specifier.collect(scopeCollect, "decl_type"))),
+      opt(seq(":", type_specifier.collect(scopeCollectNoIf, "decl_type"))),
     ).collect(typedDecl),
     "expected identifier",
   ),
@@ -286,7 +286,7 @@ const global_variable_decl = seq(
   "var",
   () => var_template_list,
   global_ident,
-  opt(seq("=", () => expression.collect(scopeCollect, "decl_scope"))),
+  opt(seq("=", () => expression.collect(scopeCollectNoIf, "decl_scope"))),
   ";",
 )
   .collect(collectVarLike("gvar"))
@@ -512,7 +512,7 @@ const fn_decl = seq(
   req(fnNameDecl, "invalid fn, expected function name"),
   seq(
     req(fnParamList, "invalid fn, expected function parameters").collect(
-      scopeCollect,
+      scopeCollectNoIf,
       "header_scope",
     ),
     opt(
@@ -521,12 +521,12 @@ const fn_decl = seq(
         opt_attributes.collect(cc => cc.tags.attribute, "return_attributes"),
         type_specifier
           .ctag("return_type")
-          .collect(scopeCollect, "return_scope"),
+          .collect(scopeCollectNoIf, "return_scope"),
       ),
     ),
     req(unscoped_compound_statement, "invalid fn, expected function body")
       .ctag("body_statement")
-      .collect(scopeCollect, "body_scope"),
+      .collect(scopeCollectNoIf, "body_scope"),
   ),
 )
   .collect(partialScopeCollect, "fn_partial_scope")
