@@ -44,11 +44,11 @@ export async function compileShader(
 
   // Check for compilation errors
   const compilationInfo = await module.getCompilationInfo();
-  const errors = compilationInfo.messages.filter(msg => msg.type === 'error');
+  const errors = compilationInfo.messages.filter(msg => msg.type === "error");
   if (errors.length > 0) {
-    const errorMessages = errors.map(e =>
-      `${e.lineNum}:${e.linePos} ${e.message}`
-    ).join('\n');
+    const errorMessages = errors
+      .map(e => `${e.lineNum}:${e.linePos} ${e.message}`)
+      .join("\n");
     throw new Error(`Shader compilation failed:\n${errorMessages}`);
   }
 
@@ -118,9 +118,9 @@ export async function runSimpleComputePipeline(
   resultFormat?: WgslElementType,
 ): Promise<number[]> {
   // Push error scopes to catch all types of errors
-  device.pushErrorScope('internal');
-  device.pushErrorScope('out-of-memory');
-  device.pushErrorScope('validation');
+  device.pushErrorScope("internal");
+  device.pushErrorScope("out-of-memory");
+  device.pushErrorScope("validation");
 
   const bgLayout = device.createBindGroupLayout({
     entries: [
