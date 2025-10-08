@@ -40,15 +40,7 @@ export async function compileShader(
   const weslSrc = { main: src };
   const libs = await dependencyBundles(weslSrc, projectDir);
   const linked = await link({ weslSrc, libs, virtualLibs, conditions });
-
-  // Unfortunately we can't call linked.createShaderModule()
-  // because of limitations in the node-webgpu package.
-  //
-  // See: https://github.com/dawn-gpu/node-webgpu/issues/4
-  //
-  // We'll still see shader compilation errors from node-webgpu, they
-  // just won't be mapped back to the original unlinked source code locations
-  const module = device.createShaderModule({ code: linked.dest });
+  const module = linked.createShaderModule(device);
 
   // Check for compilation errors
   const compilationInfo = await module.getCompilationInfo();
