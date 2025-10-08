@@ -25,24 +25,24 @@ import { last } from "./Util.ts";
   BindIdents pass
 
   Goals:
-  - link references identifiers to their declaration identifiers. 
+  - link references identifiers to their declaration identifiers.
   - produce a list of declarations that are used (and need to be emitted in the link)
   - create mangled names for global declarations (to avoid name conflicts)
 
   BindIdents proceeds as a recursive tree walk of the scope tree, starting from the root module (e.g. main.wesl).
-  It traverses the scope tree depth first (and not the syntax tree). 
-  - For each ref ident, search prior declarations in the current scope, then 
+  It traverses the scope tree depth first (and not the syntax tree).
+  - For each ref ident, search prior declarations in the current scope, then
     up the scope tree to find a matching declaration
   - If no local match is found, check for partial matches with import statements
     - combine the ident with import statement to match a decl in an exporting module
   - As global declaration identifies are found, also:
      - mutate their mangled name to be globally unique.
-     - collect the declarations (they will be emitted) 
-  
+     - collect the declarations (they will be emitted)
+
   When iterating through the idents inside a scope, we maintain a parallel data structure of
   'liveDecls', the declarations that are visible in the current scope at the currently
   processed ident, along with a link to parent liveDecls for their current decl visibility.
-  
+
   @if/@else Handling:
   The binding phase respects conditional compilation by tracking @else validity state as it
   processes sibling scopes. This prevents references from within filtered @else blocks from
@@ -298,8 +298,7 @@ function bindIdentsRecursive(
   scope.contents.forEach(child => {
     const { kind } = child;
     if (kind === "decl") {
-      const ident = child;
-      if (!isRoot) liveDecls.decls.set(ident.originalName, ident);
+      if (!isRoot) liveDecls.decls.set(child.originalName, child);
     } else if (kind === "ref") {
       const newDecl = handleRef(child, liveDecls, bindContext);
       if (newDecl) newGlobals.push(newDecl);
@@ -326,15 +325,12 @@ function handleDecls(
 ): DeclIdent[] {
   const { conditions } = bindContext;
   return newGlobals.flatMap(decl => {
-    const foundsScope = decl.dependentScope; // not all decls have dependent scopes (e.g. var with no initializer)
-    if (foundsScope) {
-      const rootDecls = globalDeclToRootLiveDecls(decl, conditions);
-      if (rootDecls) {
-        const rootLive = makeLiveDecls(rootDecls);
-        return bindIdentsRecursive(foundsScope, bindContext, rootLive);
-      }
-    }
-    return [];
+    const foundScope = decl.dependentScope;
+    if (!foundScope) return [];
+    const rootDecls = globalDeclToRootLiveDecls(decl, conditions);
+    if (!rootDecls) return [];
+    const rootLive = makeLiveDecls(rootDecls);
+    return bindIdentsRecursive(foundScope, bindContext, rootLive);
   });
 }
 
@@ -351,21 +347,20 @@ function handleRef(
   liveDecls: LiveDecls,
   bindContext: BindContext,
 ): DeclIdent | undefined {
-  const { registry, conditions, unbound } = bindContext;
-  const { virtuals } = bindContext;
-  if (!ident.refersTo && !ident.std) {
-    const foundDecl =
-      findDeclInModule(ident, liveDecls) ??
-      findQualifiedImport(ident, registry, conditions, virtuals, unbound);
+  const { registry, conditions, unbound, virtuals } = bindContext;
+  if (ident.refersTo || ident.std) return;
 
-    if (foundDecl) {
-      ident.refersTo = foundDecl.decl;
-      return handleNewDecl(ident, foundDecl, bindContext);
-    } else if (stdWgsl(ident.originalName)) {
-      ident.std = true;
-    } else if (!unbound) {
-      failIdent(ident, `unresolved identifier '${ident.originalName}'`);
-    }
+  const foundDecl =
+    findDeclInModule(ident, liveDecls) ??
+    findQualifiedImport(ident, registry, conditions, virtuals, unbound);
+
+  if (foundDecl) {
+    ident.refersTo = foundDecl.decl;
+    return handleNewDecl(ident, foundDecl, bindContext);
+  } else if (stdWgsl(ident.originalName)) {
+    ident.std = true;
+  } else if (!unbound) {
+    failIdent(ident, `unresolved identifier '${ident.originalName}'`);
   }
 }
 
@@ -387,19 +382,15 @@ function handleScope(
   );
   if (!valid) return { decls: [], nextElseState };
 
-  const decls = bindIdentsRecursive(
-    childScope,
-    bindContext,
-    childScope.kind === "scope" ? makeLiveDecls(liveDecls) : liveDecls,
-  );
+  const newLiveDecls =
+    childScope.kind === "scope" ? makeLiveDecls(liveDecls) : liveDecls;
+  const decls = bindIdentsRecursive(childScope, bindContext, newLiveDecls);
   return { decls, nextElseState };
 }
 
 /**
  * If the found declaration is new, mangle its name and update the
- * knownDecls and globalNames sets.
- * If the found declaration is new and also a global declaration, return it
- * for ruther processing (bindident traversing, and emitting to wgsl).
+ * knownDecls and globalNames sets. Return it if it's a global declaration.
  */
 function handleNewDecl(
   refIdent: RefIdent,
@@ -408,22 +399,22 @@ function handleNewDecl(
 ): DeclIdent | undefined {
   const { decl, moduleAst } = foundDecl;
   const { knownDecls, globalNames, mangler, globalStatements } = bindContext;
-  if (!knownDecls.has(decl)) {
-    knownDecls.add(decl);
+  if (knownDecls.has(decl)) return;
 
-    const { srcModule } = decl;
-    const proposed = refIdent.originalName;
-    setMangledName(proposed, decl, globalNames, srcModule, mangler);
+  knownDecls.add(decl);
+  setMangledName(
+    refIdent.originalName,
+    decl,
+    globalNames,
+    decl.srcModule,
+    mangler,
+  );
 
-    if (isGlobal(decl)) {
-      const { moduleAsserts } = moduleAst;
-      const moduleEmit = moduleAsserts?.map(elem => ({ srcModule, elem }));
-      moduleEmit?.forEach(e => {
-        globalStatements.set(e.elem, e);
-      });
-
-      return decl;
-    }
+  if (isGlobal(decl)) {
+    moduleAst.moduleAsserts?.forEach(elem => {
+      globalStatements.set(elem, { srcModule: decl.srcModule, elem });
+    });
+    return decl;
   }
 }
 
@@ -480,31 +471,19 @@ function stdWgsl(name: string): boolean {
   return stdType(name) || stdFn(name) || stdEnumerant(name); // TODO add tests for enumerants case (e.g. var x = read;)
 }
 
-/** using the LiveDecls, search earlier in the scope and in parent scopes to find a matching decl ident */
+/** Using the LiveDecls, search earlier in the scope and in parent scopes to find a matching decl ident */
 function findDeclInModule(
   ident: RefIdent,
   liveDecls: LiveDecls,
 ): FoundDecl | undefined {
-  const { originalName } = ident;
-  const found = liveDecls.decls.get(originalName);
-  if (found) {
-    return { decl: found, moduleAst: ident.ast };
-  }
-  // recurse to check all idents in parent scope
-  const { parent } = liveDecls;
-  if (parent) {
-    return findDeclInModule(ident, parent);
-  }
+  const found = liveDecls.decls.get(ident.originalName);
+  if (found) return { decl: found, moduleAst: ident.ast };
+  if (liveDecls.parent) return findDeclInModule(ident, liveDecls.parent);
 }
 
 /**
- * Match a reference identifier to a declaration in
- * another module via an import statement
+ * Match a reference identifier to a declaration in another module via an import statement
  * or via an inline qualified ident e.g. foo::bar().
- *
- * If the lookup fails and the optional `unbound` array is provided,
- * this function will push the unresolved identifier parts to `unbound`
- * instead of throwing an error.
  */
 function findQualifiedImport(
   refIdent: RefIdent,
@@ -514,7 +493,6 @@ function findQualifiedImport(
   unbound: string[][] | undefined,
 ): FoundDecl | undefined {
   const flatImps = flatImports(refIdent.ast, conditions);
-
   const identParts = refIdent.originalName.split("::");
 
   // find module path by combining identifer reference with import statement
@@ -522,10 +500,9 @@ function findQualifiedImport(
     matchingImport(identParts, flatImps) ?? qualifiedIdent(identParts);
 
   if (modulePathParts) {
-    const { srcModule } = refIdent.ast;
     const result = findExport(
       modulePathParts,
-      srcModule,
+      refIdent.ast.srcModule,
       parsed,
       conditions,
       virtuals,
@@ -534,8 +511,10 @@ function findQualifiedImport(
       if (unbound) {
         unbound.push(modulePathParts);
       } else {
-        const msg = `module not found for '${modulePathParts.join("::")}'`;
-        failIdent(refIdent, msg);
+        failIdent(
+          refIdent,
+          `module not found for '${modulePathParts.join("::")}'`,
+        );
       }
     }
     return result;
@@ -548,7 +527,7 @@ function qualifiedIdent(identParts: string[]): string[] | undefined {
   if (identParts.length > 1) return identParts;
 }
 
-/** combine and import using the flattened import array, find an import that matches a provided identi*/
+/** Combine an import using the flattened import array, find an import that matches a provided ident */
 function matchingImport(
   identParts: string[],
   flatImports: FlatImport[],
@@ -579,32 +558,26 @@ function findExport(
   const modulePath = fqPathParts.slice(0, -1).join("::");
   const moduleAst =
     parsed.modules[modulePath] ??
-    virtualModule(modulePathParts[0], conditions, virtuals); // LATER consider virtual modules with submodules
-
-  if (!moduleAst) {
-    return undefined;
-  }
+    virtualModule(modulePathParts[0], conditions, virtuals);
+  if (!moduleAst) return undefined;
 
   const name = last(modulePathParts)!;
   const decl = publicDecl(moduleAst.rootScope, name, conditions);
-  if (decl) {
-    return { decl, moduleAst };
-  }
+  if (decl) return { decl, moduleAst };
 }
 
-/** convert a module path with super:: elements to one with no super:: elements */
+/** Convert a module path with super:: elements to one with no super:: elements */
 function absoluteModulePath(
   modulePathParts: string[],
   srcModule: SrcModule,
 ): string[] {
   const lastSuper = modulePathParts.lastIndexOf("super");
-  if (lastSuper > -1) {
-    const srcModuleParts = srcModule.modulePath.split("::");
-    const base = srcModuleParts.slice(0, -(lastSuper + 1));
-    const noSupers = modulePathParts.slice(lastSuper + 1);
-    return [...base, ...noSupers];
-  }
-  return modulePathParts;
+  if (lastSuper === -1) return modulePathParts;
+
+  const srcModuleParts = srcModule.modulePath.split("::");
+  const base = srcModuleParts.slice(0, -(lastSuper + 1));
+  const noSupers = modulePathParts.slice(lastSuper + 1);
+  return [...base, ...noSupers];
 }
 
 /** @return AST for a virtual module */
@@ -615,18 +588,17 @@ function virtualModule(
 ): WeslAST | undefined {
   if (!virtuals) return undefined;
   const found = virtuals[moduleName];
-  if (found) {
-    const { ast, fn } = found;
-    if (ast) return ast;
-    const src = fn(conditions); // generate the virtual module
-    const srcModule: SrcModule = {
-      modulePath: moduleName,
-      debugFilePath: moduleName,
-      src,
-    };
-    found.ast = parseSrcModule(srcModule); // cache parsed virtual module
-    return found.ast;
-  }
+  if (!found) return undefined;
+
+  if (found.ast) return found.ast;
+  const src = found.fn(conditions);
+  const srcModule: SrcModule = {
+    modulePath: moduleName,
+    debugFilePath: moduleName,
+    src,
+  };
+  found.ast = parseSrcModule(srcModule);
+  return found.ast;
 }
 
 // LATER capture isGlobal in the ident during parsing
