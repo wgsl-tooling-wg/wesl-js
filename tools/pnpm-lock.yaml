@@ -390,8 +390,8 @@ importers:
         specifier: ^0.2.10
         version: 0.2.10
       webgpu:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.8
+        version: 0.3.8
       wesl:
         specifier: workspace:*
         version: link:../wesl
@@ -587,8 +587,8 @@ importers:
         specifier: ^0.2.10
         version: 0.2.10
       webgpu:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.8
+        version: 0.3.8
       wesl-plugin:
         specifier: workspace:*
         version: link:../..
@@ -608,8 +608,8 @@ importers:
         specifier: ^0.2.10
         version: 0.2.10
       webgpu:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.8
+        version: 0.3.8
       wesl-plugin:
         specifier: workspace:*
         version: link:../..
@@ -626,8 +626,8 @@ importers:
         specifier: ^0.2.10
         version: 0.2.10
       webgpu:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.8
+        version: 0.3.8
       wesl-plugin:
         specifier: workspace:*
         version: link:../..
@@ -647,8 +647,8 @@ importers:
         specifier: ^0.2.10
         version: 0.2.10
       webgpu:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.8
+        version: 0.3.8
       wesl-plugin:
         specifier: workspace:*
         version: link:../..
@@ -665,8 +665,8 @@ importers:
         specifier: ^0.2.10
         version: 0.2.10
       webgpu:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.8
+        version: 0.3.8
       wesl-plugin:
         specifier: workspace:*
         version: link:../..
@@ -6692,9 +6692,6 @@ packages:
 
   wcwidth@1.0.1:
     resolution: {integrity: sha512-XHPEwS0q6TaxcvG85+8EYkbiCux2XtWG2mkc47Ng2A77BQu9+DqIOJldST4HgPkuea7dvKSj5VgX3P1d4rW8Tg==}
-
-  webgpu@0.3.0:
-    resolution: {integrity: sha512-oDhJlZFFwCxgkHpVVfJn1+S0qsEJSZX9eDCjQCswCkXF2FYklApU974DybGAdBQSpS32XXUtbo31i7HJSYCJow==}
 
   webgpu@0.3.8:
     resolution: {integrity: sha512-g2YwfCvzHoQHwSEY3fS95sVKdo/JVLL9AnicJyRQBPwWm4j7zISHvk6P85HaWP0LhtBV+aopsShKIaDi4smECg==}
@@ -13225,10 +13222,6 @@ snapshots:
   wcwidth@1.0.1:
     dependencies:
       defaults: 1.0.4
-
-  webgpu@0.3.0:
-    dependencies:
-      '@webgpu/types': 0.1.65
 
   webgpu@0.3.8:
     dependencies:
