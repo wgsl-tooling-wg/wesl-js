@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "dependent_package": "workspace:x",
-    "webgpu": "^0.3.0"
+    "webgpu": "^0.3.8"
   },
   "peerDependencies": {
     "wesl": "workspace:^"

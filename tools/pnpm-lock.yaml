@@ -471,8 +471,8 @@ importers:
         specifier: workspace:x
         version: link:../test_pkg/dependent_package
       webgpu:
-        specifier: 0.2.12
-        version: 0.2.12
+        specifier: ^0.3.8
+        version: 0.3.8
 
   packages/wesl-link:
     dependencies:
@@ -6693,11 +6693,11 @@ packages:
   wcwidth@1.0.1:
     resolution: {integrity: sha512-XHPEwS0q6TaxcvG85+8EYkbiCux2XtWG2mkc47Ng2A77BQu9+DqIOJldST4HgPkuea7dvKSj5VgX3P1d4rW8Tg==}
 
-  webgpu@0.2.12:
-    resolution: {integrity: sha512-AtL46u3eyvgW4i5u7ha+WGNQ8XFRpw0zUvh9GcO6cYnlnZf/rHcxxCSMCiACF7CuMAe5X8ibaE3oseg3lgjTZw==}
-
   webgpu@0.3.0:
     resolution: {integrity: sha512-oDhJlZFFwCxgkHpVVfJn1+S0qsEJSZX9eDCjQCswCkXF2FYklApU974DybGAdBQSpS32XXUtbo31i7HJSYCJow==}
+
+  webgpu@0.3.8:
+    resolution: {integrity: sha512-g2YwfCvzHoQHwSEY3fS95sVKdo/JVLL9AnicJyRQBPwWm4j7zISHvk6P85HaWP0LhtBV+aopsShKIaDi4smECg==}
 
   webpack-sources@3.3.3:
     resolution: {integrity: sha512-yd1RBzSGanHkitROoPFd6qsrxt+oFhg/129YzheDGqeustzX0vTZJZsSsQjVQC4yzBQ56K55XU8gaNCtIzOnTg==}
@@ -13226,13 +13226,16 @@ snapshots:
     dependencies:
       defaults: 1.0.4
 
-  webgpu@0.2.12:
-    dependencies:
-      '@webgpu/types': 0.1.65
-
   webgpu@0.3.0:
     dependencies:
       '@webgpu/types': 0.1.65
+
+  webgpu@0.3.8:
+    dependencies:
+      '@webgpu/types': 0.1.65
+      debug: 4.4.3(supports-color@5.5.0)
+    transitivePeerDependencies:
+      - supports-color
 
   webpack-sources@3.3.3: {}
 
