@@ -5,10 +5,26 @@ import { withErrorScopes } from "./ErrorScopes.ts";
 const resultBufferSize = 16; // 4x4 bytes
 
 export interface ComputeTestParams {
-  projectDir: string;
-  device: GPUDevice;
+  /** WESL/WGSL source code for a compute shader to test*/
   src: string;
+
+  /** directory in your project. Used so that the test library
+   * can find installed npm shader libraries.
+   * That way your fragment shader can use import statements
+   * from shader npm libraries.
+   * (typically use import.meta.url) */
+  projectDir: string;
+
+  /** gpu device for running the tests.
+   * (typically use getGPUDevice() from wesl-debug) */
+  device: GPUDevice;
+
+  /** format of result buffer
+   * default: "u32" */
   resultFormat?: WgslElementType;
+
+  /** flags for conditional compilation for testing shader specialization.
+   * useful to test `@if` statements in the shader.  */
   conditions?: Record<string, boolean>;
 }
 
@@ -28,13 +44,8 @@ export interface ComputeTestParams {
 export async function testComputeShader(
   params: ComputeTestParams,
 ): Promise<number[]> {
-  const {
-    projectDir,
-    device,
-    src,
-    resultFormat = "u32",
-    conditions = {},
-  } = params;
+  const { projectDir, device, src } = params;
+  const { resultFormat = "u32", conditions = {} } = params;
 
   const arraySize = resultBufferSize / elementStride(resultFormat);
   const arrayType = `array<${resultFormat}, ${arraySize}>`;

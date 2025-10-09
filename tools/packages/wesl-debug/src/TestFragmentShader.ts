@@ -21,11 +21,31 @@ fn vs_main(@builtin(vertex_index) idx: u32) -> @builtin(position) vec4f {
 }`;
 
 export interface FragmentTestParams {
-  projectDir: string;
-  device: GPUDevice;
+  /** WESL/WGSL source code for a fragment shader to test*/
   src: string;
+
+  /** directory in your project. Used so that the test library
+   * can find installed npm shader libraries.
+   * That way your fragment shader can use import statements
+   * from shader npm libraries.
+   * (typically use import.meta.url) */
+  projectDir: string;
+
+  /** gpu device for running the tests.
+   * (typically use getGPUDevice() from wesl-debug) */
+  device: GPUDevice;
+
+  /** optionally select the texture format for the output texture
+   * default: "rgba32float" */
   textureFormat?: GPUTextureFormat;
+
+  /** optionally specify the size of the output texture.
+   * default: [1, 1] for simple color tests.
+   * Use [2, 2] for derivative tests (forms a complete 2x2 quad for dpdx/dpdy) */
   size?: [width: number, height: number];
+
+  /** flags for conditional compilation for testing shader specialization.
+   * useful to test `@if` statements in the shader.  */
   conditions?: Record<string, boolean>;
 }
 
@@ -38,28 +58,15 @@ export interface FragmentTestParams {
 export async function testFragmentShader(
   params: FragmentTestParams,
 ): Promise<number[]> {
-  const {
-    projectDir,
-    device,
-    src,
-    textureFormat = "rgba32float",
-    size = [1, 1],
-    conditions = {},
-  } = params;
-  const [width, height] = size;
+  const { projectDir, device, src, conditions = {} } = params;
+  const { textureFormat = "rgba32float", size = [1, 1] } = params;
 
   // Put user's fragment shader first as it may contain import statements
   const completeSrc = src + "\n\n" + fullscreenTriangleVertex;
 
   const shaderParams = { projectDir, device, src: completeSrc, conditions };
   const module = await compileShader(shaderParams);
-  return await runSimpleRenderPipeline(
-    device,
-    module,
-    textureFormat,
-    width,
-    height,
-  );
+  return await runSimpleRenderPipeline(device, module, textureFormat, size);
 }
 
 /**
@@ -70,13 +77,12 @@ export async function runSimpleRenderPipeline(
   device: GPUDevice,
   module: GPUShaderModule,
   textureFormat: GPUTextureFormat = "rgba32float",
-  width = 1,
-  height = 1,
+  size = [1, 1],
 ): Promise<number[]> {
   return await withErrorScopes(device, async () => {
     const texture = device.createTexture({
       label: "fragment-test-output",
-      size: { width, height, depthOrArrayLayers: 1 },
+      size: { width: size[0], height: size[1], depthOrArrayLayers: 1 },
       format: textureFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
