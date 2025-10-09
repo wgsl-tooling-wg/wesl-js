@@ -1,59 +1,9 @@
 import { copyBuffer, elementStride, type WgslElementType } from "thimbleberry";
-import { link, requestWeslDevice, type VirtualLibraryFn } from "wesl";
-import { dependencyBundles } from "../../wesl-tooling/src/ParseDependencies.ts";
+import { requestWeslDevice } from "wesl";
+import { compileShader } from "./CompileShader.ts";
+import { withErrorScopes } from "./ErrorScopes.ts";
 
 const resultBufferSize = 16; // 4x4 bytes
-
-export interface CompileShaderParams {
-  /** The project directory, used for resolving dependencies.  */
-  projectDir: string;
-
-  /** The GPUDevice to use for shader compilation. */
-  device: GPUDevice;
-
-  /** The WGSL/WESL shader source code. */
-  src: string;
-
-  /** Optional conditions for shader compilation. */
-  conditions?: Record<string, boolean>;
-
-  /** Optional virtual libraries to include in the shader. */
-  virtualLibs?: Record<string, VirtualLibraryFn>;
-}
-/**
- * Compiles a single WESL shader source string into a GPUShaderModule for testing
- * with automatic package detection.
- *
- * Parses the shader source to find references to wesl packages, and
- * then searches installed npm packages to find the appropriate npm package
- * bundle to include in the link.
- *
- * @param projectDir - The project directory, used for resolving dependencies.
- * @param device - The GPUDevice to use for shader compilation.
- * @param src - The WESL shader source code.
- * @returns A Promise that resolves to the compiled GPUShaderModule.
- */
-export async function compileShader(
-  params: CompileShaderParams,
-): Promise<GPUShaderModule> {
-  const { projectDir, device, src, conditions, virtualLibs } = params;
-  const weslSrc = { main: src };
-  const libs = await dependencyBundles(weslSrc, projectDir);
-  const linked = await link({ weslSrc, libs, virtualLibs, conditions });
-  const module = linked.createShaderModule(device);
-
-  // Check for compilation errors
-  const compilationInfo = await module.getCompilationInfo();
-  const errors = compilationInfo.messages.filter(msg => msg.type === "error");
-  if (errors.length > 0) {
-    const errorMessages = errors
-      .map(e => `${e.lineNum}:${e.linePos} ${e.message}`)
-      .join("\n");
-    throw new Error(`Shader compilation failed:\n${errorMessages}`);
-  }
-
-  return module;
-}
 
 /**
  * Transpiles and runs a simple compute shader on the GPU for testing.
@@ -117,71 +67,53 @@ export async function runSimpleComputePipeline(
   module: GPUShaderModule,
   resultFormat?: WgslElementType,
 ): Promise<number[]> {
-  // Push error scopes to catch all types of errors
-  device.pushErrorScope("internal");
-  device.pushErrorScope("out-of-memory");
-  device.pushErrorScope("validation");
+  return await withErrorScopes(device, async () => {
+    const bgLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: { type: "storage" },
+        },
+      ],
+    });
 
-  const bgLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.COMPUTE,
-        buffer: { type: "storage" },
-      },
-    ],
+    const pipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [bgLayout],
+    });
+
+    const pipeline = device.createComputePipeline({
+      layout: pipelineLayout,
+      compute: { module },
+    });
+
+    const storageBuffer = device.createBuffer({
+      label: "storage",
+      size: resultBufferSize,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+      mappedAtCreation: true,
+    });
+
+    // Initialize buffer with sentinel values to detect unwritten results
+    // Using -999.0 as a distinctive value that should never appear in valid test results
+    const mappedBuffer = new Float32Array(storageBuffer.getMappedRange());
+    mappedBuffer.fill(-999.0);
+    storageBuffer.unmap();
+
+    const bindGroup = device.createBindGroup({
+      layout: bgLayout,
+      entries: [{ binding: 0, resource: { buffer: storageBuffer } }],
+    });
+
+    const commands = device.createCommandEncoder();
+    const pass = commands.beginComputePass();
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, bindGroup);
+    pass.dispatchWorkgroups(1);
+    pass.end();
+    device.queue.submit([commands.finish()]);
+
+    const data = await copyBuffer(device, storageBuffer, resultFormat);
+    return data;
   });
-
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [bgLayout],
-  });
-
-  const pipeline = device.createComputePipeline({
-    layout: pipelineLayout,
-    compute: { module },
-  });
-
-  const storageBuffer = device.createBuffer({
-    label: "storage",
-    size: resultBufferSize,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    mappedAtCreation: true,
-  });
-
-  // Initialize buffer with sentinel values to detect unwritten results
-  // Using -999.0 as a distinctive value that should never appear in valid test results
-  const mappedBuffer = new Float32Array(storageBuffer.getMappedRange());
-  mappedBuffer.fill(-999.0);
-  storageBuffer.unmap();
-
-  const bindGroup = device.createBindGroup({
-    layout: bgLayout,
-    entries: [{ binding: 0, resource: { buffer: storageBuffer } }],
-  });
-
-  const commands = device.createCommandEncoder();
-  const pass = commands.beginComputePass();
-  pass.setPipeline(pipeline);
-  pass.setBindGroup(0, bindGroup);
-  pass.dispatchWorkgroups(1);
-  pass.end();
-  device.queue.submit([commands.finish()]);
-
-  // Check for errors (pop in reverse order of push)
-  const validationError = await device.popErrorScope();
-  const oomError = await device.popErrorScope();
-  const internalError = await device.popErrorScope();
-
-  if (validationError) {
-    throw new Error(`WebGPU validation error: ${validationError.message}`);
-  }
-  if (oomError) {
-    throw new Error(`WebGPU out-of-memory error: ${oomError.message}`);
-  }
-  if (internalError) {
-    throw new Error(`WebGPU internal error: ${internalError.message}`);
-  }
-
-  const data = await copyBuffer(device, storageBuffer, resultFormat);
-  return data;
 }
