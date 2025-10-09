@@ -47,7 +47,10 @@ export async function testFragmentShader(
     conditions = {},
   } = params;
   const [width, height] = size;
-  const completeSrc = fullscreenTriangleVertex + "\n\n" + src;
+
+  // Put user's fragment shader first as it may contain import statements
+  const completeSrc = src + "\n\n" + fullscreenTriangleVertex;
+
   const shaderParams = { projectDir, device, src: completeSrc, conditions };
   const module = await compileShader(shaderParams);
   return await runSimpleRenderPipeline(
