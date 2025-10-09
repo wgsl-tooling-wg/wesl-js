@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { testFragmentShader } from "../SimpleFragmentShader.ts";
+import { testFragmentShader } from "../TestFragmentShader.ts";
 import { destroySharedDevice, getGPUDevice } from "../WebGPUTestSetup.ts";
 
 let device: GPUDevice;
