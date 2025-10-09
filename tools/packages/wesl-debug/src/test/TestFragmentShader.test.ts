@@ -20,8 +20,8 @@ test("renders simple constant color", async () => {
     }
   `;
   const projectDir = import.meta.url;
-  const resultFormat = "vec4f";
-  const r = await testFragmentShader({ projectDir, device, src, resultFormat });
+  const textureFormat = "rgba32float";
+  const r = await testFragmentShader({ projectDir, device, src, textureFormat });
 
   expect(r).toHaveLength(4);
   expect(r[0]).toBeCloseTo(0.5);
@@ -42,7 +42,7 @@ test("derivative of x coordinate", async () => {
     projectDir: import.meta.url,
     device,
     src,
-    resultFormat: "vec2f",
+    textureFormat: "rg32float",
     size: [2, 2],
   });
   // result at pixel (0, 0)

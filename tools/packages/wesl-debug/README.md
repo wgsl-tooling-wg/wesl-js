@@ -39,8 +39,8 @@ const src = `
     return vec4f(0.5, 0.25, 0.75, 1.0);
   }
 `;
-const resultFormat = "vec4f";
-const r = await testFragmentShader({ projectDir, device, src, resultFormat });
+const textureFormat = "rgba32float";
+const r = await testFragmentShader({ projectDir, device, src, textureFormat });
 // r = [0.5, 0.25, 0.75, 1.0]
 ```
 
@@ -62,11 +62,11 @@ const result = await testFragmentShader({
   projectDir: import.meta.url,
   device,
   src,
-  resultFormat: "vec2f",
+  textureFormat: "rg32float",
   size: [2, 2],
 });
-const [x, dx] = result; // result at pixel (0, 0) 
-// x = .5  dx = 1 
+const [x, dx] = result; // result at pixel (0, 0)
+// x = .5  dx = 1
 ```
 
 **Note**: The test function always samples pixel (0,0) from the rendered texture. 
@@ -127,8 +127,8 @@ test("fragment shader renders color", async () => {
       return vec4f(1.0, 0.0, 0.0, 1.0);
     }
   `;
-  const resultFormat = "vec4f";
-  const r = await testFragmentShader({ projectDir, device, src, resultFormat });
+  const textureFormat = "rgba32float";
+  const r = await testFragmentShader({ projectDir, device, src, textureFormat });
   expect(r).toEqual([1.0, 0.0, 0.0, 1.0]);
 });
 

@@ -1,4 +1,4 @@
-import { type WgslElementType, withTextureCopy } from "thimbleberry";
+import { numComponents, withTextureCopy } from "thimbleberry";
 import { compileShader } from "./CompileShader.ts";
 import { withErrorScopes } from "./ErrorScopes.ts";
 
@@ -24,14 +24,14 @@ export interface FragmentTestParams {
   projectDir: string;
   device: GPUDevice;
   src: string;
-  resultFormat?: WgslElementType;
+  textureFormat?: GPUTextureFormat;
   size?: [width: number, height: number];
   conditions?: Record<string, boolean>;
 }
 
 /**
  * Executes a fragment shader test and returns pixel (0,0) values for validation.
- * Renders to RGBA32Float texture using a fullscreen triangle.
+ * Renders using a fullscreen triangle to the specified texture format (default: rgba32float).
  * Default: [1, 1] texture for simple color tests
  * Use [2, 2] for derivative tests (forms a complete 2x2 quad for dpdx/dpdy)
  */
@@ -42,7 +42,7 @@ export async function testFragmentShader(
     projectDir,
     device,
     src,
-    resultFormat = "f32",
+    textureFormat = "rgba32float",
     size = [1, 1],
     conditions = {},
   } = params;
@@ -56,7 +56,7 @@ export async function testFragmentShader(
   return await runSimpleRenderPipeline(
     device,
     module,
-    resultFormat,
+    textureFormat,
     width,
     height,
   );
@@ -64,12 +64,12 @@ export async function testFragmentShader(
 
 /**
  * Executes a render pipeline with the given shader module.
- * Creates an RGBA32Float texture, renders to it, and reads back pixel (0,0).
+ * Creates a texture with the specified format, renders to it, and reads back pixel (0,0).
  */
 export async function runSimpleRenderPipeline(
   device: GPUDevice,
   module: GPUShaderModule,
-  resultFormat: WgslElementType = "f32",
+  textureFormat: GPUTextureFormat = "rgba32float",
   width = 1,
   height = 1,
 ): Promise<number[]> {
@@ -77,7 +77,7 @@ export async function runSimpleRenderPipeline(
     const texture = device.createTexture({
       label: "fragment-test-output",
       size: { width, height, depthOrArrayLayers: 1 },
-      format: "rgba32float",
+      format: textureFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
 
@@ -86,7 +86,7 @@ export async function runSimpleRenderPipeline(
       vertex: { module },
       fragment: {
         module,
-        targets: [{ format: "rgba32float" }],
+        targets: [{ format: textureFormat }],
       },
       primitive: { topology: "triangle-list" },
     });
@@ -108,7 +108,7 @@ export async function runSimpleRenderPipeline(
     renderPass.end();
     device.queue.submit([commandEncoder.finish()]);
 
-    const extractCount = resultFormatComponents(resultFormat);
+    const extractCount = numComponents(textureFormat);
     const data = await withTextureCopy(device, texture, texData =>
       Array.from(texData.slice(0, extractCount)),
     );
@@ -116,12 +116,4 @@ export async function runSimpleRenderPipeline(
     texture.destroy();
     return data;
   });
-}
-
-function resultFormatComponents(format: WgslElementType): number {
-  if (format === "f32" || format === "u32" || format === "i32") return 1;
-  if (format === "vec2f" || format === "vec2u" || format === "vec2i") return 2;
-  if (format === "vec3f" || format === "vec3u" || format === "vec3i") return 3;
-  if (format === "vec4f" || format === "vec4u" || format === "vec4i") return 4;
-  return 1;
 }
