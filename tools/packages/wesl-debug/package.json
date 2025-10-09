@@ -25,7 +25,8 @@
     "thimbleberry": "^0.2.10"
   },
   "devDependencies": {
-    "dependent_package": "workspace:x"
+    "dependent_package": "workspace:x",
+    "webgpu": "^0.3.0"
   },
   "peerDependencies": {
     "wesl": "workspace:^"

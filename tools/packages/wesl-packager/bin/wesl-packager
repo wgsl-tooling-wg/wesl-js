@@ -18,8 +18,7 @@ const { biome, projectKey: biomeKey } = await setupBiome();
 async function packageWgsl(args) {
 	const { projectDir, outDir, multiBundle, baseDir, src } = args;
 	const modules = await loadModules(projectDir, baseDir, src);
-	const pkgJsonPath = path.join(projectDir, "package.json");
-	const { name } = await loadPackageFields(pkgJsonPath);
+	const { name } = await loadPackageFields(path.join(projectDir, "package.json"));
 	const edition = "unstable_2025_1";
 	if (args.multiBundle) await writeMultiBundle(modules, name, edition, projectDir, outDir);
 	else {
@@ -83,8 +82,7 @@ async function writeMultiBundle(modules, name, edition, projectDir, outDir) {
 		};
 		const dependencies = parseDependencies(oneModule, projectDir);
 		const bundleDirRelative = noSuffix(moduleName);
-		const bundleDir = path.join(outDir, bundleDirRelative);
-		await writeJsBundle(moduleBundle, dependencies, bundleDir);
+		await writeJsBundle(moduleBundle, dependencies, path.join(outDir, bundleDirRelative));
 	}
 }
 /** Write a weslBundle.js containing the bundled shader sources */
@@ -94,11 +92,9 @@ async function writeJsBundle(weslBundle, dependencies, outDir) {
 	const imports = zip(dependencies, depNames).map(([dep, depName]) => {
 		return `import ${depName} from "${dep}";`;
 	}).join("\n");
-	const importsStr = imports ? `${imports}\n` : "";
-	const bundleString = bundleToJsString(weslBundle, depNames);
 	const outString = `
-    ${importsStr}
-    export const weslBundle = ${bundleString}
+    ${imports ? `${imports}\n` : ""}
+    export const weslBundle = ${bundleToJsString(weslBundle, depNames)}
 
     export default weslBundle;
   `;
@@ -119,12 +115,11 @@ async function writeTypeScriptDts(outDir) {
 /** @return the bundle plus dependencies as a JavaScript string */
 function bundleToJsString(bundle, dependencies) {
 	const { name, edition, modules } = bundle;
-	const depsObj = dependencies.length ? { dependencies: 99 } : {};
 	const obj = {
 		name,
 		edition,
 		modules,
-		...depsObj
+		...dependencies.length ? { dependencies: 99 } : {}
 	};
 	const jsonString = JSON.stringify(obj, null, 2);
 	if (dependencies.length) {
@@ -170,8 +165,7 @@ async function packagerCli(rawArgs$1) {
 	await packageWgsl(cliArgs);
 }
 async function parseArgs(args) {
-	const projectDir = new URL("..", import.meta.url);
-	const appVersion = await versionFromPackageJson(projectDir);
+	const appVersion = await versionFromPackageJson(new URL("..", import.meta.url));
 	return yargs(args).command("$0", "create an npm package from WGSL/WESL files").version(appVersion).option("src", {
 		type: "string",
 		default: "./shaders/*.w[eg]sl",
