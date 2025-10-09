@@ -20,14 +20,15 @@ test("renders simple constant color", async () => {
     }
   `;
   const projectDir = import.meta.url;
-  const textureFormat = "rgba32float";
-  const r = await testFragmentShader({ projectDir, device, src, textureFormat });
+  const textureFormat: GPUTextureFormat = "rgba32float";
+  const params = { projectDir, device, src, textureFormat };
+  const result = await testFragmentShader(params);
 
-  expect(r).toHaveLength(4);
-  expect(r[0]).toBeCloseTo(0.5);
-  expect(r[1]).toBeCloseTo(0.25);
-  expect(r[2]).toBeCloseTo(0.75);
-  expect(r[3]).toBeCloseTo(1.0);
+  expect(result).toHaveLength(4);
+  expect(result[0]).toBeCloseTo(0.5);
+  expect(result[1]).toBeCloseTo(0.25);
+  expect(result[2]).toBeCloseTo(0.75);
+  expect(result[3]).toBeCloseTo(1.0);
 });
 
 test("derivative of x coordinate", async () => {
