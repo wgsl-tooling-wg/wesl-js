@@ -1,9 +1,16 @@
 import { copyBuffer, elementStride, type WgslElementType } from "thimbleberry";
-import { requestWeslDevice } from "wesl";
 import { compileShader } from "./CompileShader.ts";
 import { withErrorScopes } from "./ErrorScopes.ts";
 
 const resultBufferSize = 16; // 4x4 bytes
+
+export interface ComputeTestParams {
+  projectDir: string;
+  device: GPUDevice;
+  src: string;
+  resultFormat?: WgslElementType;
+  conditions?: Record<string, boolean>;
+}
 
 /**
  * Transpiles and runs a simple compute shader on the GPU for testing.
@@ -16,34 +23,28 @@ const resultBufferSize = 16; // 4x4 bytes
  * Shader libraries mentioned in the shader source are attached automatically
  * if they are in node_modules.
  *
- * @param module - The compiled GPUShaderModule containing the compute shader.
- * The shader is invoked once.
- * @param resultFormat - format for interpreting the result buffer data. (default u32)
  * @returns storage result array (typically four numbers if the buffer format is u32 or f32)
  */
 export async function testComputeShader(
-  projectDir: string,
-  gpu: GPU,
-  src: string,
-  resultFormat: WgslElementType,
-  conditions: Record<string, boolean> = {},
+  params: ComputeTestParams,
 ): Promise<number[]> {
-  const adapter = await gpu.requestAdapter();
-  const device = await requestWeslDevice(adapter);
-  try {
-    const arraySize = resultBufferSize / elementStride(resultFormat);
-    const arrayType = `array<${resultFormat}, ${arraySize}>`;
-    const virtualLibs = {
-      test: () =>
-        `@group(0) @binding(0) var <storage, read_write> results: ${arrayType};`,
-    };
-    const params = { projectDir, device, src, conditions, virtualLibs };
-    const module = await compileShader(params);
-    const result = await runSimpleComputePipeline(device, module, resultFormat);
-    return result;
-  } finally {
-    device.destroy();
-  }
+  const {
+    projectDir,
+    device,
+    src,
+    resultFormat = "u32",
+    conditions = {},
+  } = params;
+
+  const arraySize = resultBufferSize / elementStride(resultFormat);
+  const arrayType = `array<${resultFormat}, ${arraySize}>`;
+  const virtualLibs = {
+    test: () =>
+      `@group(0) @binding(0) var <storage, read_write> results: ${arrayType};`,
+  };
+  const shaderParams = { projectDir, device, src, conditions, virtualLibs };
+  const module = await compileShader(shaderParams);
+  return await runSimpleComputePipeline(device, module, resultFormat);
 }
 
 /**
