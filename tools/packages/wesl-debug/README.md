@@ -44,7 +44,7 @@ const r = await testFragmentShader({ projectDir, device, src, textureFormat });
 // r = [0.5, 0.25, 0.75, 1.0]
 ```
 
-#### Testing using Derivatvees 
+#### Testing using Derivatives
 Derivative functions like `dpdx`, `dpdy`, and `fwidth`
 require at least a 2×2 pixel quad.
 Use the `size` parameter to create a 2×2 texture:
@@ -69,7 +69,56 @@ const [x, dx] = result; // result at pixel (0, 0)
 // x = .5  dx = 1
 ```
 
-**Note**: The test function always samples pixel (0,0) from the rendered texture. 
+**Note**: The test function always samples pixel (0,0) from the rendered texture.
+
+#### Testing with Input Textures
+
+Use `inputTextures` to test fragment shaders that sample from textures.
+Helper functions provide common test patterns:
+
+```typescript
+import {
+  testFragmentShader,
+  getGPUDevice,
+  createSolidTexture,
+  createGradientTexture,
+  createCheckerboardTexture,
+  createSampler
+} from "wesl-debug";
+
+const device = await getGPUDevice();
+const inputTex = createSolidTexture(device, [0.5, 0.5, 0.5, 1.0], 256, 256);
+const sampler = createSampler(device);
+
+const src = `
+  @group(0) @binding(0) var input_tex: texture_2d<f32>;
+  @group(0) @binding(1) var input_samp: sampler;
+
+  @fragment
+  fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+    let uv = pos.xy / 256.0;
+    return textureSample(input_tex, input_samp, uv);
+  }
+`;
+
+const result = await testFragmentShader({
+  projectDir: import.meta.url,
+  device,
+  src,
+  inputTextures: [{ texture: inputTex, sampler }]
+});
+// result = [0.5, 0.5, 0.5, 1.0]
+```
+
+**Texture Helper Functions:**
+- `createSolidTexture(device, color, width, height)` - uniform color
+- `createGradientTexture(device, width, height, direction?)` - gradient ('horizontal' or 'vertical')
+- `createCheckerboardTexture(device, width, height, cellSize?)` - checkerboard pattern
+- `createSampler(device, options?)` - texture sampler (linear filtering, clamp-to-edge by default)
+
+**Binding Convention**: Textures bind sequentially starting at binding 0:
+- `inputTextures[0]` → texture at `@binding(0)`, sampler at `@binding(1)`
+- `inputTextures[1]` → texture at `@binding(2)`, sampler at `@binding(3)` 
 
 ## Testing Compute Shaders
 

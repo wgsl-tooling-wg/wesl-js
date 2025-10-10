@@ -47,6 +47,13 @@ export interface FragmentTestParams {
   /** flags for conditional compilation for testing shader specialization.
    * useful to test `@if` statements in the shader.  */
   conditions?: Record<string, boolean>;
+
+  /** input textures + samplers for the shader.
+   * binds sequentially: [0]=texture, [1]=sampler, [2]=texture, [3]=sampler, ... */
+  inputTextures?: Array<{
+    texture: GPUTexture;
+    sampler: GPUSampler;
+  }>;
 }
 
 /**
@@ -60,13 +67,90 @@ export async function testFragmentShader(
 ): Promise<number[]> {
   const { projectDir, device, src, conditions = {} } = params;
   const { textureFormat = "rgba32float", size = [1, 1] } = params;
+  const { inputTextures } = params;
 
   // Put user's fragment shader first as it may contain import statements
   const completeSrc = src + "\n\n" + fullscreenTriangleVertex;
 
   const shaderParams = { projectDir, device, src: completeSrc, conditions };
   const module = await compileShader(shaderParams);
-  return await runSimpleRenderPipeline(device, module, textureFormat, size);
+  return await runSimpleRenderPipeline(
+    device,
+    module,
+    textureFormat,
+    size,
+    inputTextures,
+  );
+}
+
+/** Create bind group for input textures. Bindings: texture at N, sampler at N+1. */
+function createTextureBindGroup(
+  device: GPUDevice,
+  inputTextures: Array<{ texture: GPUTexture; sampler: GPUSampler }>,
+): { layout: GPUBindGroupLayout; bindGroup: GPUBindGroup } {
+  const entries: GPUBindGroupLayoutEntry[] = [];
+  const bindGroupEntries: GPUBindGroupEntry[] = [];
+
+  inputTextures.forEach((input, i) => {
+    const textureBinding = i * 2;
+    const samplerBinding = i * 2 + 1;
+
+    entries.push({
+      binding: textureBinding,
+      visibility: GPUShaderStage.FRAGMENT,
+      texture: { sampleType: "float" },
+    });
+    entries.push({
+      binding: samplerBinding,
+      visibility: GPUShaderStage.FRAGMENT,
+      sampler: { type: "filtering" },
+    });
+
+    bindGroupEntries.push({
+      binding: textureBinding,
+      resource: input.texture.createView(),
+    });
+    bindGroupEntries.push({
+      binding: samplerBinding,
+      resource: input.sampler,
+    });
+  });
+
+  const layout = device.createBindGroupLayout({ entries });
+  const bindGroup = device.createBindGroup({
+    layout,
+    entries: bindGroupEntries,
+  });
+
+  return { layout, bindGroup };
+}
+
+/** Execute render pass and submit commands. */
+function executeRenderPass(
+  device: GPUDevice,
+  pipeline: GPURenderPipeline,
+  texture: GPUTexture,
+  bindGroup?: GPUBindGroup,
+): void {
+  const commandEncoder = device.createCommandEncoder();
+  const renderPass = commandEncoder.beginRenderPass({
+    colorAttachments: [
+      {
+        view: texture.createView(),
+        loadOp: "clear",
+        clearValue: { r: 0, g: 0, b: 0, a: 0 },
+        storeOp: "store",
+      },
+    ],
+  });
+
+  renderPass.setPipeline(pipeline);
+  if (bindGroup) {
+    renderPass.setBindGroup(0, bindGroup);
+  }
+  renderPass.draw(3);
+  renderPass.end();
+  device.queue.submit([commandEncoder.finish()]);
 }
 
 /**
@@ -78,6 +162,7 @@ export async function runSimpleRenderPipeline(
   module: GPUShaderModule,
   textureFormat: GPUTextureFormat = "rgba32float",
   size = [1, 1],
+  inputTextures: Array<{ texture: GPUTexture; sampler: GPUSampler }> = [],
 ): Promise<number[]> {
   return await withErrorScopes(device, async () => {
     const texture = device.createTexture({
@@ -87,8 +172,19 @@ export async function runSimpleRenderPipeline(
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
 
+    const textureBindings =
+      inputTextures.length > 0
+        ? createTextureBindGroup(device, inputTextures)
+        : undefined;
+
+    const pipelineLayout = textureBindings
+      ? device.createPipelineLayout({
+          bindGroupLayouts: [textureBindings.layout],
+        })
+      : "auto";
+
     const pipeline = device.createRenderPipeline({
-      layout: "auto",
+      layout: pipelineLayout,
       vertex: { module },
       fragment: {
         module,
@@ -97,22 +193,7 @@ export async function runSimpleRenderPipeline(
       primitive: { topology: "triangle-list" },
     });
 
-    const commandEncoder = device.createCommandEncoder();
-    const renderPass = commandEncoder.beginRenderPass({
-      colorAttachments: [
-        {
-          view: texture.createView(),
-          loadOp: "clear",
-          clearValue: { r: 0, g: 0, b: 0, a: 0 },
-          storeOp: "store",
-        },
-      ],
-    });
-
-    renderPass.setPipeline(pipeline);
-    renderPass.draw(3);
-    renderPass.end();
-    device.queue.submit([commandEncoder.finish()]);
+    executeRenderPass(device, pipeline, texture, textureBindings?.bindGroup);
 
     const extractCount = numComponents(textureFormat);
     const data = await withTextureCopy(device, texture, texData =>
