@@ -43,3 +43,9 @@ test("link with details", async () => {
   expect(logged).includes("decl %foo");
   expect(logged).includes("decl %main");
 });
+
+test("link with positional arg", async () => {
+  const logged = await cliLine(`--projectDir ${testDir} main`);
+  expect(logged).includes("fn main()");
+  expect(logged).includes("fn foo()");
+});

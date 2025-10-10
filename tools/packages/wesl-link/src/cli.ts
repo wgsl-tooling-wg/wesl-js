@@ -25,6 +25,13 @@ async function parseArgs(args: string[]) {
   const appVersion = await versionFromPackageJson(toolDir);
   return yargs(args)
     .version(appVersion)
+    .command("$0 [module]", false, yargs => {
+      yargs.positional("module", {
+        type: "string",
+        describe:
+          "root module to link. Use :: for package references (lygia::utils), / for current package (utils/foo)",
+      });
+    })
     .option("src", {
       type: "string",
       default: "./shaders/*.w[eg]sl",
@@ -68,7 +75,7 @@ async function parseArgs(args: string[]) {
 }
 
 async function linkNormally(argv: CliArgs): Promise<void> {
-  const { baseDir, projectDir, rootModule: rootModuleName } = argv;
+  const { baseDir, projectDir, module, rootModule } = argv;
   const weslRoot = baseDir || process.cwd();
   const weslSrc = await loadModules(projectDir, weslRoot, argv.src);
   const projectDirAbs = path.resolve(projectDir);
@@ -76,6 +83,9 @@ async function linkNormally(argv: CliArgs): Promise<void> {
 
   const conditionEntries = argv.conditions?.map(c => [c, true]) || [];
   const conditions = Object.fromEntries(conditionEntries);
+
+  // Use positional module argument if provided, otherwise use --rootModule option (default "main")
+  const rootModuleName = (module || rootModule || "main") as string;
 
   if (argv.emit) {
     const linked = await link({ weslSrc, rootModuleName, libs, conditions });
