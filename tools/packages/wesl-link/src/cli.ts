@@ -1,5 +1,4 @@
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { enableTracing, log } from "mini-parse";
 import { astToString, link, scopeToString } from "wesl";
 import {
@@ -72,9 +71,8 @@ async function linkNormally(argv: CliArgs): Promise<void> {
   const { baseDir, projectDir, rootModule: rootModuleName } = argv;
   const weslRoot = baseDir || process.cwd();
   const weslSrc = await loadModules(projectDir, weslRoot, argv.src);
-  const projectDirAbs = path.resolve(projectDir, "src.js");
-  const projectDirUrl = pathToFileURL(projectDirAbs);
-  const libs = await dependencyBundles(weslSrc, projectDirUrl.href);
+  const projectDirAbs = path.resolve(projectDir);
+  const libs = await dependencyBundles(weslSrc, projectDirAbs);
 
   const conditionEntries = argv.conditions?.map(c => [c, true]) || [];
   const conditions = Object.fromEntries(conditionEntries);

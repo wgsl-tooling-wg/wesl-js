@@ -109,8 +109,10 @@ export async function dependencyBundles(
   projectDir: string,
 ): Promise<WeslBundle[]> {
   const deps = parseDependencies(weslSrc, projectDir);
+  const projectDirAbs = path.resolve(path.join(projectDir, "dummy.js"));
+  const projectURL = pathToFileURL(projectDirAbs).href;
   const bundles = deps.map(async dep => {
-    const url = resolve(dep, projectDir);
+    const url = resolve(dep, projectURL);
     const module = await import(url);
     return module.default;
   });
