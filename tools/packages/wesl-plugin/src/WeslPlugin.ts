@@ -10,37 +10,12 @@ import {
   type UnpluginOptions,
 } from "unplugin";
 import type { Conditions, ParsedRegistry } from "wesl";
+import type { WeslToml, WeslTomlInfo } from "wesl-tooling";
 import { buildApi } from "./PluginApi.ts";
 import type { PluginExtension } from "./PluginExtension.ts";
 import type { WeslPluginOptions } from "./WeslPluginOptions.ts";
 
-/** loaded (or synthesized) info from .toml */
-export interface WeslToml {
-  /** glob search strings to find .wesl/.wgsl files. Relative to the toml directory. */
-  weslFiles: string[];
-
-  /** base directory for wesl files. Relative to the toml directory. */
-  weslRoot: string;
-
-  /** names of directly referenced wesl shader packages (e.g. npm package names) */
-  dependencies?: string[];
-}
-
-export interface WeslTomlInfo {
-  /** The path to the toml file, relative to the cwd, undefined if no toml file */
-  tomlFile: string | undefined;
-
-  /** The absolute path to the directory that contains the toml.
-   * Paths inside the toml are relative to this. */
-  tomlDir: string;
-
-  /** The wesl root, relative to the cwd.
-   * This lets us correctly do `path.resolve(resolvedWeslRoot, someShaderFile)` */
-  resolvedWeslRoot: string;
-
-  /** The underlying toml file */
-  toml: WeslToml;
-}
+export type { WeslToml, WeslTomlInfo };
 
 /** internal cache used by the plugin to avoid reloading files
  * The assumption is that the plugin is used for a single wesl.toml and set of shaders

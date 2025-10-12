@@ -1,12 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { glob } from "glob";
-import toml from "toml";
 import type { UnpluginBuildContext, UnpluginContext } from "unplugin";
 import { type ParsedRegistry, parsedRegistry, parseIntoRegistry } from "wesl";
-import { parseDependencies } from "wesl-tooling";
+import {
+  findWeslToml,
+  parseDependencies,
+  type WeslTomlInfo,
+} from "wesl-tooling";
 import type { PluginExtensionApi } from "./PluginExtension.ts";
-import type { PluginContext, WeslToml, WeslTomlInfo } from "./WeslPlugin.ts";
+import type { PluginContext } from "./WeslPlugin.ts";
 
 export function buildApi(
   context: PluginContext,
@@ -29,55 +32,16 @@ export async function getWeslToml(
   const { cache } = context;
   if (cache.weslToml) return cache.weslToml;
 
-  // find the wesl.toml file if it exists
   const specifiedToml = context.options.weslToml;
-  let tomlFile: string | undefined;
-  if (specifiedToml) {
-    fs.access(specifiedToml);
-    tomlFile = specifiedToml;
-  } else {
-    tomlFile = await fs
-      .access("wesl.toml")
-      .then(() => "wesl.toml")
-      .catch(() => {
-        return undefined;
-      });
+  const tomlInfo = await findWeslToml(process.cwd(), specifiedToml);
+
+  if (tomlInfo.tomlFile) {
+    unpluginCtx.addWatchFile(tomlInfo.tomlFile); // The cache gets cleared by the watchChange hook
+    context.weslToml = tomlInfo.tomlFile;
   }
 
-  // load the toml contents
-  let parsedToml: WeslToml;
-  let tomlDir: string;
-  if (tomlFile) {
-    unpluginCtx.addWatchFile(tomlFile); // The cache gets cleared by the watchChange hook
-    parsedToml = await loadWeslToml(tomlFile);
-    tomlDir = path.dirname(tomlFile);
-    context.weslToml = tomlFile;
-  } else {
-    parsedToml = defaultWeslToml;
-    tomlDir = process.cwd();
-  }
-
-  const tomlToWeslRoot = path.resolve(tomlDir, parsedToml.weslRoot);
-  const resolvedWeslRoot = path.relative(process.cwd(), tomlToWeslRoot);
-  cache.weslToml = { tomlFile, tomlDir, resolvedWeslRoot, toml: parsedToml };
+  cache.weslToml = tomlInfo;
   return cache.weslToml;
-}
-
-const defaultWeslToml: WeslToml = {
-  weslFiles: ["shaders/**/*.w[eg]sl"],
-  weslRoot: "shaders",
-  dependencies: ["auto"],
-};
-
-/**
- * Load and parse a wesl.toml file from the fs.
- * Provide default values for any required WeslToml fields.
- */
-async function loadWeslToml(tomlFile: string): Promise<WeslToml> {
-  const tomlString = await fs.readFile(tomlFile, "utf-8");
-  const parsed = toml.parse(tomlString) as WeslToml;
-  const weslToml = { ...defaultWeslToml, ...parsed };
-  return weslToml;
 }
 
 /** load and parse all the wesl files into a ParsedRegistry */

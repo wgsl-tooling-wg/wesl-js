@@ -1,14 +1,35 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { glob } from "glob";
+import { findWeslToml } from "./LoadWeslToml.ts";
 
-/** load the wesl/wgsl shader sources */
+/**
+ * Load the wesl/wgsl shader sources.
+ *
+ * If baseDir or srcGlob are not provided, this function will attempt to read
+ * configuration from wesl.toml in the projectDir. If no wesl.toml exists,
+ * default values will be used.
+ *
+ * @param projectDir The project directory (typically cwd or directory containing package.json)
+ * @param baseDir Optional base directory for shaders (overrides wesl.toml if provided)
+ * @param srcGlob Optional glob pattern for shader files (overrides wesl.toml if provided)
+ */
 export async function loadModules(
   projectDir: string,
-  baseDir: string,
-  srcGlob: string,
+  baseDir?: string,
+  srcGlob?: string,
 ): Promise<Record<string, string>> {
-  const foundFiles = await glob(`${srcGlob}`, {
+  // If baseDir or srcGlob not provided, load from wesl.toml
+  let resolvedBaseDir = baseDir;
+  let resolvedSrcGlob = srcGlob;
+
+  if (!baseDir || !srcGlob) {
+    const tomlInfo = await findWeslToml(projectDir);
+    resolvedBaseDir = baseDir ?? tomlInfo.resolvedWeslRoot;
+    resolvedSrcGlob = srcGlob ?? tomlInfo.toml.weslFiles[0]; // Use first glob pattern
+  }
+
+  const foundFiles = await glob(`${resolvedSrcGlob}`, {
     cwd: projectDir,
     ignore: "node_modules/**",
   });
@@ -18,9 +39,9 @@ export async function loadModules(
   );
   const src = await Promise.all(promisedSrcs);
   if (src.length === 0) {
-    throw new Error(`no WGSL/WESL files found in ${srcGlob}`);
+    throw new Error(`no WGSL/WESL files found in ${resolvedSrcGlob}`);
   }
-  const baseDirAbs = path.resolve(projectDir, baseDir);
+  const baseDirAbs = path.resolve(projectDir, resolvedBaseDir);
   const relativePaths = shaderFiles.map(p =>
     path.relative(baseDirAbs, path.resolve(p)),
   );
