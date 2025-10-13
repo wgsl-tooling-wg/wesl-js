@@ -12,9 +12,9 @@ import { fileURLToPath } from "node:url";
 
 /**
  * Create a test environment for verifying packed npm packages before publishing.
- * This script builds and packs wesl & wesl-plugin, then creates a temp-built-test
- * directory that uses the packed .tgz files instead of workspace dependencies.
- * This allows testing that the published packages will work correctly.
+ * This script builds and packs wesl, wesl-tooling, & wesl-plugin, then creates
+ * a temp-built-test directory that uses the packed .tgz files instead of workspace
+ * dependencies. This allows testing that the published packages will work correctly.
  */
 
 main().catch(error => {
@@ -37,6 +37,7 @@ async function main() {
   cleanDir(tempPackages);
 
   buildAndPack("wesl", timestamp, packagesRoot, tempPackages);
+  buildAndPack("wesl-tooling", timestamp, packagesRoot, tempPackages);
   buildAndPack("wesl-plugin", timestamp, packagesRoot, tempPackages);
 
   copyProjectFiles(builtTestPackage, tempBuiltTest);
@@ -86,6 +87,7 @@ function updatePackageJson(tempBuiltTest: string, timestamp: string) {
   }
   packageJson.pnpm.overrides = {
     wesl: `file:../temp-packages/wesl-${timestamp}.tgz`,
+    "wesl-tooling": `file:../temp-packages/wesl-tooling-${timestamp}.tgz`,
     "wesl-plugin": `file:../temp-packages/wesl-plugin-${timestamp}.tgz`,
   };
 

@@ -1,6 +1,8 @@
 import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { resolve } from "import-meta-resolve";
 import { enableTracing, log } from "mini-parse";
-import { astToString, link, scopeToString } from "wesl";
+import { astToString, link, scopeToString, type WeslBundle } from "wesl";
 import {
   dependencyBundles,
   loadModules,
@@ -86,6 +88,8 @@ async function linkNormally(argv: CliArgs): Promise<void> {
 
   // Use positional module argument if provided, otherwise use --rootModule option (default "main")
   const rootModuleName = (module || rootModule || "main") as string;
+  const rootLib = await rootModuleLib(rootModuleName, projectDir, libs);
+  if (rootLib) libs.push(rootLib);
 
   if (argv.emit) {
     const linked = await link({ weslSrc, rootModuleName, libs, conditions });
@@ -107,5 +111,48 @@ async function linkNormally(argv: CliArgs): Promise<void> {
       log(scopeToString(ast.rootScope));
       log();
     });
+  }
+}
+
+/** load the weslbundle containing the root module (if we haven't already loaded it) */
+async function rootModuleLib(
+  rootModuleName: string,
+  projectDir: string,
+  libs: WeslBundle[],
+): Promise<WeslBundle | undefined> {
+  // Check if root module is from a dependency (contains :: and doesn't start with "package")
+  if (rootModuleName.includes("::")) {
+    const packageName = rootModuleName.split("::")[0];
+    if (packageName !== "package") {
+      const alreadyLoaded = libs.some(lib => lib.name === packageName);
+      if (!alreadyLoaded) {
+        const depBundle = await loadWeslBundle(packageName, projectDir);
+        if (depBundle) {
+          return depBundle;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Load a specific dependency wesl bundle by package name.
+ *
+ * @param packageName npm package name (e.g., "random_wgsl" or "foo/bar")
+ * @param projectDir directory containing package.json
+ */
+async function loadWeslBundle(
+  packageName: string,
+  projectDir: string,
+): Promise<WeslBundle | undefined> {
+  const projectDirAbs = path.resolve(path.join(projectDir, "dummy.js"));
+  const projectURL = pathToFileURL(projectDirAbs).href;
+
+  try {
+    const url = resolve(packageName, projectURL);
+    const module = await import(url);
+    return module.default;
+  } catch {
+    return undefined;
   }
 }

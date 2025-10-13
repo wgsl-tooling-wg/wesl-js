@@ -476,6 +476,9 @@ importers:
 
   packages/wesl-link:
     dependencies:
+      import-meta-resolve:
+        specifier: ^4.1.0
+        version: 4.1.0
       mini-parse:
         specifier: workspace:*
         version: link:../mini-parse

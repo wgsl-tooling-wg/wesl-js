@@ -20,13 +20,16 @@ export async function loadModules(
   srcGlob?: string,
 ): Promise<Record<string, string>> {
   // If baseDir or srcGlob not provided, load from wesl.toml
-  let resolvedBaseDir = baseDir;
-  let resolvedSrcGlob = srcGlob;
+  let resolvedBaseDir: string;
+  let resolvedSrcGlob: string;
 
   if (!baseDir || !srcGlob) {
     const tomlInfo = await findWeslToml(projectDir);
     resolvedBaseDir = baseDir ?? tomlInfo.resolvedWeslRoot;
     resolvedSrcGlob = srcGlob ?? tomlInfo.toml.weslFiles[0]; // Use first glob pattern
+  } else {
+    resolvedBaseDir = baseDir;
+    resolvedSrcGlob = srcGlob;
   }
 
   const foundFiles = await glob(`${resolvedSrcGlob}`, {

@@ -12,6 +12,12 @@
     "typecheck": "tsgo"
   },
   "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    },
     "types": "./dist/index.d.ts",
     "main": "./dist/index.js",
     "module": "./dist/index.js"
