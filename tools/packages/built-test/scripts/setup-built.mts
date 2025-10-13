@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 
 /**
  * Create a test environment for verifying packed npm packages before publishing.
- * This script builds and packs wesl & wesl-plugin, then creates
+ * This script builds and packs mini-parse, wesl & wesl-plugin, then creates
  * a temp-built-test directory that uses the packed .tgz files instead of workspace
  * dependencies. This allows testing that the published packages will work correctly.
  */
@@ -36,6 +36,7 @@ async function main() {
   cleanDir(tempBuiltTest);
   cleanDir(tempPackages);
 
+  buildAndPack("mini-parse", timestamp, packagesRoot, tempPackages);
   buildAndPack("wesl", timestamp, packagesRoot, tempPackages);
   buildAndPack("wesl-plugin", timestamp, packagesRoot, tempPackages);
 
@@ -85,6 +86,7 @@ function updatePackageJson(tempBuiltTest: string, timestamp: string) {
     packageJson.pnpm = {};
   }
   packageJson.pnpm.overrides = {
+    "mini-parse": `file:../temp-packages/mini-parse-${timestamp}.tgz`,
     wesl: `file:../temp-packages/wesl-${timestamp}.tgz`,
     "wesl-plugin": `file:../temp-packages/wesl-plugin-${timestamp}.tgz`,
   };
