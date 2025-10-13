@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { hideBin } from "yargs/helpers";
-import { cli } from "./cli.ts";
+import { cli } from "./LinkCli.ts";
 
 const rawArgs = hideBin(process.argv);
 
