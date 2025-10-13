@@ -1,7 +1,7 @@
 {
   "name": "root",
-  "private": true,
   "version": "0.6.12",
+  "private": true,
   "type": "module",
   "scripts": {
     "bench": "pnpm --filter bench bench",
@@ -78,13 +78,8 @@
   },
   "packageManager": "pnpm@10.12.4",
   "pnpm": {
-    "ignoredBuiltDependencies": [
-      "es5-ext"
-    ],
-    "onlyBuiltDependencies": [
-      "core-js",
-      "esbuild"
-    ],
+    "ignoredBuiltDependencies": ["es5-ext"],
+    "onlyBuiltDependencies": ["core-js", "esbuild"],
     "overrides": {}
   }
 }
