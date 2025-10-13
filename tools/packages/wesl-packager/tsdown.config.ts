@@ -15,7 +15,7 @@ export default defineConfig({
   clean: true,
   platform: "node",
   outputOptions: { dir: undefined, file: toBin },
-  external: ["wesl", "wesl-tooling", "yargs", "yargs/helpers"],
+  external: ["wesl", "yargs", "yargs/helpers"],
   plugins: [rawFileImporter() as any],
   ignoreWatch: [binPath],
 });

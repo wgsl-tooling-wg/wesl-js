@@ -537,12 +537,6 @@ importers:
       esbuild:
         specifier: '*'
         version: 0.25.5
-      import-meta-resolve:
-        specifier: ^4.1.0
-        version: 4.1.0
-      toml:
-        specifier: ^3.0.0
-        version: 3.0.0
       unplugin:
         specifier: ^2.3.5
         version: 2.3.5
@@ -552,9 +546,6 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
-      wesl-tooling:
-        specifier: workspace:*
-        version: link:../wesl-tooling
     devDependencies:
       '@nuxt/kit':
         specifier: ^3.17.6
@@ -568,15 +559,24 @@ importers:
       chalk:
         specifier: ^5.4.1
         version: 5.4.1
+      import-meta-resolve:
+        specifier: ^4.1.0
+        version: 4.1.0
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
       rollup:
         specifier: ^4.44.1
         version: 4.44.1
+      toml:
+        specifier: ^3.0.0
+        version: 3.0.0
       webpack:
         specifier: ^5.99.9
         version: 5.99.9(esbuild@0.25.5)
+      wesl-tooling:
+        specifier: workspace:*
+        version: link:../wesl-tooling
 
   packages/wesl-plugin/test/linkExtension:
     dependencies:

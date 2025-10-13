@@ -16,13 +16,13 @@
     "@biomejs/js-api": "^1.0.0",
     "@biomejs/wasm-nodejs": "^2.0.6",
     "wesl": "workspace:*",
-    "wesl-tooling": "workspace:*",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
     "dependent_package": "workspace:x",
     "dir-compare": "^5.0.0",
     "picocolors": "^1.1.1",
-    "rollup": "^4.44.1"
+    "rollup": "^4.44.1",
+    "wesl-tooling": "workspace:x"
   }
 }
