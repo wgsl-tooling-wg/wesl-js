@@ -4,3 +4,14 @@ packages:
 - 'packages/wesl-packager/src/test/multi_package'
 - 'packages/wesl-plugin/test/*'
 - 'examples/*'
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+- 'wesl'
+- 'wesl-*'
+- 'lygia'
+- 'thimbleberry'
+- 'berry-pretty'
+- '@typescript/*'
+- 'webgpu'
+- '@webgpu/*'
