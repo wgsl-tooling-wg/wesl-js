@@ -8,7 +8,7 @@
     "bench:baseline": "pnpm --filter bench bench:baseline",
     "bench:validate": "pnpm --filter bench bench:validate",
     "build:all": "pnpm --filter \"*\" --parallel build",
-    "bump": "bumpp --recursive",
+    "bump": "bumpp",
     "check:versions": "syncpack list-mismatches",
     "ci:check": "run-s lint:all build:all typecheck:all test:unit bench:validate",
     "ci:check-windows": "run-s build:all test:unit bench:validate",
