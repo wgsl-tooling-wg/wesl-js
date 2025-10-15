@@ -31,7 +31,7 @@ async function main() {
   const tempPackages = join(weslJsRoot, "temp-packages");
   const timestamp = getTimestamp();
 
-  console.log("Setting up temp-built-test and temp-packages directories...\n");
+  console.log("Setting up temp-built-test and temp-packages directories...");
 
   cleanDir(tempBuiltTest);
   cleanDir(tempPackages);
@@ -45,9 +45,6 @@ async function main() {
   updatePackageJson(tempBuiltTest, timestamp);
 
   run("pnpm install", tempBuiltTest);
-
-  console.log("\nSetup complete! You can now:");
-  console.log("     - Run tests in the temp-built-test directory");
 }
 
 function buildAndPack(
@@ -59,7 +56,7 @@ function buildAndPack(
   run(`pnpm --filter ${packageName} build`, packagesRoot);
 
   const outputFile = join(tempPackages, `${packageName}-${timestamp}.tgz`);
-  run(`pnpm --filter ${packageName} pack --out ${outputFile}`, packagesRoot);
+  run(`pnpm --filter ${packageName} pack --out ${outputFile} 2>&1 | tail -1`, packagesRoot);
 }
 
 /** copy directory except .git,node_modules,scripts */
