@@ -1,3 +1,10 @@
 {
-  "extends": "../../tsconfig.node.json"
+  "extends": "../../tsconfig.node.json",
+  "compilerOptions": {
+    "paths": {
+      // for tsdown to bundle types for wesl-tooling
+      "wesl-tooling": ["../wesl-tooling/src/index.ts"],
+      "wesl-tooling/*": ["../wesl-tooling/src/*"]
+    }
+  }
 }

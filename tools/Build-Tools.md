@@ -88,3 +88,10 @@ The copy is likely a different version than the current tree
   we limit use of TypeScript features that require TypeScript code generation,
   notably attributes like 'public' or 'readonly' on class constructor 
   function parameters. See [commit](https://github.com/wgsl-tooling-wg/wesl-js/tree/cd8dcc3c49fc0fa96174126980cd7e8127b6a073).
+
+### wesl-tooling types
+- We currently don't build or publish the wesl-tooling package
+  since it's only used by internal tools.
+- This causes a little complication in the wesl-plugin build
+  because wesl-plugin wants to publish one of the types from wesl-tooling, and tsdown bundler wants to use d.ts files for types.
+  - see wesl-plugin/tsconfig.json and wesl-plugin/tsdown.config.ts 
