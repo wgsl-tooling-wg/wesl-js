@@ -6,6 +6,18 @@ export default defineConfig({
   clean: true,
   dts: true,
   platform: "neutral",
-  external: ["node:url", "node:path", "wesl", "node:fs/promises"],
-  logLevel: "warn"
+  external: [
+    "module",
+    "node:assert",
+    "node:fs",
+    "node:fs/promises",
+    "node:module",
+    "node:path",
+    "node:process",
+    "node:url",
+    "node:util",
+    "node:v8",
+    "wesl",
+  ],
+  logLevel: "warn",
 });
