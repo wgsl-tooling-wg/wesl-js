@@ -18,4 +18,5 @@ export default defineConfig({
   external: ["wesl", "yargs", "yargs/helpers"],
   plugins: [rawFileImporter() as any],
   ignoreWatch: [binPath],
+  logLevel: "warn",
 });

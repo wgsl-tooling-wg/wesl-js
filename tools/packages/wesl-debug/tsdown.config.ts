@@ -7,4 +7,5 @@ export default defineConfig({
   dts: true,
   platform: "neutral",
   external: ["node:url", "node:path", "wesl", "node:fs/promises"],
+  logLevel: "warn"
 });

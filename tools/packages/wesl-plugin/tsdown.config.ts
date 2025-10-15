@@ -9,4 +9,5 @@ export default defineConfig({
   },
   target: "node22",
   external: ["wesl", "unplugin"],
+  logLevel: "warn",
 });

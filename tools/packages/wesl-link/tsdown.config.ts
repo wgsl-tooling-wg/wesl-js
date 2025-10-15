@@ -16,4 +16,5 @@ export default defineConfig({
   outputOptions: { dir: undefined, file: toBin },
   external: ["wesl", "yargs", "yargs/helpers"],
   ignoreWatch: [binPath],
+  logLevel: "warn",
 });
