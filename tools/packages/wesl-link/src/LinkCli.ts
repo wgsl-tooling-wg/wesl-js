@@ -36,8 +36,8 @@ async function parseArgs(args: string[]) {
     })
     .option("src", {
       type: "string",
-      default: "./shaders/*.w[eg]sl",
-      describe: "WGSL/WESL files to bundle in the package (glob syntax)",
+      describe:
+        "WGSL/WESL files to bundle in the package (glob syntax, defaults to wesl.toml or shaders/**/*.w[eg]sl)",
     })
     .option("rootModule", {
       type: "string",
@@ -51,8 +51,7 @@ async function parseArgs(args: string[]) {
     .option("baseDir", {
       requiresArg: true,
       type: "string",
-      default: "./shaders",
-      describe: "root directory for shaders",
+      describe: "root directory for shaders (defaults to wesl.toml or shaders)",
     })
     .option("projectDir", {
       requiresArg: true,
@@ -78,8 +77,7 @@ async function parseArgs(args: string[]) {
 
 async function linkNormally(argv: CliArgs): Promise<void> {
   const { baseDir, projectDir, module, rootModule } = argv;
-  const weslRoot = baseDir || process.cwd();
-  const weslSrc = await loadModules(projectDir, weslRoot, argv.src);
+  const weslSrc = await loadModules(projectDir, baseDir, argv.src);
   const projectDirAbs = path.resolve(projectDir);
   const libs = await dependencyBundles(weslSrc, projectDirAbs);
 

@@ -23,8 +23,8 @@ export interface WeslTomlInfo {
    * Paths inside the toml are relative to this. */
   tomlDir: string;
 
-  /** The wesl root, relative to the cwd.
-   * This lets us correctly do `path.resolve(resolvedWeslRoot, someShaderFile)` */
+  /** The wesl root, relative to the projectDir.
+   * This lets loadModules do `path.resolve(projectDir, resolvedWeslRoot)` */
   resolvedWeslRoot: string;
 
   /** The underlying toml file */
@@ -87,7 +87,8 @@ export async function findWeslToml(
   }
 
   const tomlToWeslRoot = path.resolve(tomlDir, parsedToml.weslRoot);
-  const resolvedWeslRoot = path.relative(process.cwd(), tomlToWeslRoot);
+  const projectDirAbs = path.resolve(projectDir);
+  const resolvedWeslRoot = path.relative(projectDirAbs, tomlToWeslRoot);
 
   return { tomlFile, tomlDir, resolvedWeslRoot, toml: parsedToml };
 }
