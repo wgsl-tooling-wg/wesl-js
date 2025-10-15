@@ -9674,7 +9674,8 @@ async function findWeslToml(projectDir, specifiedToml) {
 		tomlDir = projectDir;
 	}
 	const tomlToWeslRoot = path.resolve(tomlDir, parsedToml.weslRoot);
-	const resolvedWeslRoot = path.relative(process.cwd(), tomlToWeslRoot);
+	const projectDirAbs = path.resolve(projectDir);
+	const resolvedWeslRoot = path.relative(projectDirAbs, tomlToWeslRoot);
 	return {
 		tomlFile,
 		tomlDir,
@@ -11176,7 +11177,7 @@ async function parseArgs(args) {
 	const appVersion = await versionFromPackageJson(new URL("..", import.meta.url));
 	return yargs(args).command("$0", "create an npm package from WGSL/WESL files").version(appVersion).option("src", {
 		type: "string",
-		describe: "WGSL/WESL files to bundle in the package (glob syntax, defaults from wesl.toml or **/*.w[eg]sl)"
+		describe: "WGSL/WESL files to bundle in the package (glob syntax, defaults to wesl.toml or shaders/**/*.w[eg]sl)"
 	}).option("rootDir", {
 		deprecated: true,
 		type: "string",
@@ -11184,7 +11185,7 @@ async function parseArgs(args) {
 	}).option("baseDir", {
 		deprecated: true,
 		type: "string",
-		describe: "root directory for shaders (defaults from wesl.toml or current directory)"
+		describe: "root directory for shaders (defaults to wesl.toml or shaders)"
 	}).option("projectDir", {
 		type: "string",
 		default: ".",

@@ -19,7 +19,7 @@ async function parseArgs(args: string[]) {
     .option("src", {
       type: "string",
       describe:
-        "WGSL/WESL files to bundle in the package (glob syntax, defaults from wesl.toml or **/*.w[eg]sl)",
+        "WGSL/WESL files to bundle in the package (glob syntax, defaults to wesl.toml or shaders/**/*.w[eg]sl)",
     })
     .option("rootDir", {
       deprecated: true,
@@ -29,8 +29,7 @@ async function parseArgs(args: string[]) {
     .option("baseDir", {
       deprecated: true,
       type: "string",
-      describe:
-        "root directory for shaders (defaults from wesl.toml or current directory)",
+      describe: "root directory for shaders (defaults to wesl.toml or shaders)",
     })
     .option("projectDir", {
       type: "string",
