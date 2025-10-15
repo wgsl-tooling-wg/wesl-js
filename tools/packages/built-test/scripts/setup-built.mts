@@ -56,7 +56,10 @@ function buildAndPack(
   run(`pnpm --filter ${packageName} build`, packagesRoot);
 
   const outputFile = join(tempPackages, `${packageName}-${timestamp}.tgz`);
-  run(`pnpm --filter ${packageName} pack --out ${outputFile} 2>&1 | tail -1`, packagesRoot);
+  run(
+    `pnpm --filter ${packageName} pack --out ${outputFile} 2>&1 | tail -1`,
+    packagesRoot,
+  );
 }
 
 /** copy directory except .git,node_modules,scripts */
