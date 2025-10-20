@@ -24,6 +24,10 @@ export interface ComputeTestParams {
    * default: "u32" */
   resultFormat?: WgslElementType;
 
+  /** size of result buffer in bytes
+   * default: 16 */
+  size?: number;
+
   /** flags for conditional compilation for testing shader specialization.
    * useful to test `@if` statements in the shader.  */
   conditions?: LinkParams["conditions"];
@@ -50,9 +54,14 @@ export async function testComputeShader(
   params: ComputeTestParams,
 ): Promise<number[]> {
   const { projectDir, device, src } = params;
-  const { resultFormat = "u32", conditions = {}, constants } = params;
+  const {
+    resultFormat = "u32",
+    size = resultBufferSize,
+    conditions = {},
+    constants,
+  } = params;
 
-  const arraySize = resultBufferSize / elementStride(resultFormat);
+  const arraySize = size / elementStride(resultFormat);
   const arrayType = `array<${resultFormat}, ${arraySize}>`;
   const virtualLibs = {
     test: () =>
@@ -67,13 +76,13 @@ export async function testComputeShader(
     virtualLibs,
   };
   const module = await compileShader(shaderParams);
-  return await runSimpleComputePipeline(device, module, resultFormat);
+  return await runSimpleComputePipeline(device, module, resultFormat, size);
 }
 
 /**
  * Transpiles and runs a simple compute shader on the GPU for testing.
  *
- * a 16 byte storage buffer is available for the shader at `@group(0) @binding(0)`.
+ * a storage buffer is available for the shader at `@group(0) @binding(0)`.
  * Compute shaders can write test results into the buffer.
  * After execution the storage buffer is copied back to the CPU and returned
  * for test validation.
@@ -84,12 +93,14 @@ export async function testComputeShader(
  * @param module - The compiled GPUShaderModule containing the compute shader.
  * The shader is invoked once.
  * @param resultFormat - format for interpreting the result buffer data. (default u32)
+ * @param size - size of result buffer in bytes (default 16)
  * @returns storage result array
  */
 export async function runSimpleComputePipeline(
   device: GPUDevice,
   module: GPUShaderModule,
   resultFormat?: WgslElementType,
+  size = resultBufferSize,
 ): Promise<number[]> {
   return await withErrorScopes(device, async () => {
     const bgLayout = device.createBindGroupLayout({
@@ -113,7 +124,7 @@ export async function runSimpleComputePipeline(
 
     const storageBuffer = device.createBuffer({
       label: "storage",
-      size: resultBufferSize,
+      size,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
       mappedAtCreation: true,
     });

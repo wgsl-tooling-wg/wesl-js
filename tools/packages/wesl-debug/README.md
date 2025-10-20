@@ -22,7 +22,7 @@ npm install wesl-debug
 
 ## Testing Compute Shaders
 
-Use `testComputeShader()` to test compute shader behavior. A 16-byte storage buffer is provided for writing test results.
+Use `testComputeShader()` to test compute shader behavior. A storage buffer is provided for writing test results.
 
 ### Basic Example
 
@@ -48,8 +48,29 @@ const result = await testComputeShader(import.meta.url, gpu, src, "u32");
 ### Storage Buffer
 
 The `test` virtual module provides a storage buffer for results in WESL code:
-- Buffer size: 16 bytes (4 × 4-byte elements)
+- Default buffer size: 16 bytes (4 × 4-byte elements for u32 or f32)
+- Custom size: Use the `size` parameter to specify buffer size in bytes
 - Access via `test::results[index]`
+
+```typescript
+// Example with custom buffer size
+const result = await testComputeShader({
+  projectDir: import.meta.url,
+  device,
+  src: `
+    import test;
+    @compute @workgroup_size(1)
+    fn main() {
+      for (var i = 0u; i < 8u; i++) {
+        test::results[i] = i * 10u;
+      }
+    }
+  `,
+  resultFormat: "u32",
+  size: 32  // 32 bytes = 8 × 4-byte u32 elements
+});
+// result = [0, 10, 20, 30, 40, 50, 60, 70]
+```
 
 
 ## Testing Fragment Shaders

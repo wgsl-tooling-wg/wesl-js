@@ -165,3 +165,31 @@ test("uses both conditions and constants together", async () => {
 
   expect(resultWithoutConstant[0]).toBeCloseTo(1.0);
 });
+
+test("uses custom buffer size", async () => {
+  const src = `
+    @compute @workgroup_size(1)
+    fn main() {
+      for (var i = 0u; i < 8u; i++) {
+        test::results[i] = i * 10u;
+      }
+    }
+  `;
+  const result = await testComputeShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    resultFormat: "u32",
+    size: 32,
+  });
+
+  expect(result).toHaveLength(8);
+  expect(result[0]).toBe(0);
+  expect(result[1]).toBe(10);
+  expect(result[2]).toBe(20);
+  expect(result[3]).toBe(30);
+  expect(result[4]).toBe(40);
+  expect(result[5]).toBe(50);
+  expect(result[6]).toBe(60);
+  expect(result[7]).toBe(70);
+});
