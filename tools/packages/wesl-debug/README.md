@@ -20,6 +20,38 @@ tests.
 npm install wesl-debug
 ```
 
+## Testing Compute Shaders
+
+Use `testComputeShader()` to test compute shader behavior. A 16-byte storage buffer is provided for writing test results.
+
+### Basic Example
+
+```typescript
+import { testComputeShader } from "wesl-debug";
+
+const gpu = /* initialize GPU */;
+
+const src = `
+  import test;  // provides test::results storage buffer
+
+  @compute @workgroup_size(1)
+  fn main() {
+    test::results[0] = 42u;
+    test::results[1] = 100u;
+  }
+`;
+
+const result = await testComputeShader(import.meta.url, gpu, src, "u32");
+// result = [42, 100, -999, -999]  // (unwritten values are filled with -999)
+```
+
+### Storage Buffer
+
+The `test` virtual module provides a storage buffer for results in WESL code:
+- Buffer size: 16 bytes (4 × 4-byte elements)
+- Access via `test::results[index]`
+
+
 ## Testing Fragment Shaders
 
 Use `testFragmentShader()` to test fragment shader behavior.
@@ -119,37 +151,6 @@ const result = await testFragmentShader({
 **Binding Convention**: Textures bind sequentially starting at binding 0:
 - `inputTextures[0]` → texture at `@binding(0)`, sampler at `@binding(1)`
 - `inputTextures[1]` → texture at `@binding(2)`, sampler at `@binding(3)` 
-
-## Testing Compute Shaders
-
-Use `testComputeShader()` to test compute shader behavior. A 16-byte storage buffer is provided for writing test results.
-
-### Basic Example
-
-```typescript
-import { testComputeShader } from "wesl-debug";
-
-const gpu = /* initialize GPU */;
-
-const src = `
-  import test;  // provides test::results storage buffer
-
-  @compute @workgroup_size(1)
-  fn main() {
-    test::results[0] = 42u;
-    test::results[1] = 100u;
-  }
-`;
-
-const result = await testComputeShader(import.meta.url, gpu, src, "u32");
-// result = [42, 100, -999, -999]  // (unwritten values are filled with -999)
-```
-
-### Storage Buffer
-
-The `test` virtual module provides a storage buffer for results in WESL code:
-- Buffer size: 16 bytes (4 × 4-byte elements)
-- Access via `test::results[index]`
 
 ## Complete Test Example
 
