@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { testFragmentShader } from "../TestFragmentShader.ts";
+import {
+  testAnimatedShader,
+  testFragmentShader,
+} from "../TestFragmentShader.ts";
 import {
   createCheckerboardTexture,
   createGradientTexture,
@@ -64,8 +67,8 @@ test("samples solid color texture", async () => {
   const sampler = createSampler(device);
 
   const src = `
-    @group(0) @binding(0) var input_tex: texture_2d<f32>;
-    @group(0) @binding(1) var input_samp: sampler;
+    @group(0) @binding(1) var input_tex: texture_2d<f32>;
+    @group(0) @binding(2) var input_samp: sampler;
 
     @fragment
     fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -92,8 +95,8 @@ test("samples gradient texture at center", async () => {
   const sampler = createSampler(device);
 
   const src = `
-    @group(0) @binding(0) var input_tex: texture_2d<f32>;
-    @group(0) @binding(1) var input_samp: sampler;
+    @group(0) @binding(1) var input_tex: texture_2d<f32>;
+    @group(0) @binding(2) var input_samp: sampler;
 
     @fragment
     fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -118,8 +121,8 @@ test("samples checkerboard texture", async () => {
   const sampler = createSampler(device);
 
   const src = `
-    @group(0) @binding(0) var input_tex: texture_2d<f32>;
-    @group(0) @binding(1) var input_samp: sampler;
+    @group(0) @binding(1) var input_tex: texture_2d<f32>;
+    @group(0) @binding(2) var input_samp: sampler;
 
     @fragment
     fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -146,10 +149,10 @@ test("samples multiple textures", async () => {
   const sampler = createSampler(device);
 
   const src = `
-    @group(0) @binding(0) var tex1: texture_2d<f32>;
-    @group(0) @binding(1) var samp1: sampler;
-    @group(0) @binding(2) var tex2: texture_2d<f32>;
-    @group(0) @binding(3) var samp2: sampler;
+    @group(0) @binding(1) var tex1: texture_2d<f32>;
+    @group(0) @binding(2) var samp1: sampler;
+    @group(0) @binding(3) var tex2: texture_2d<f32>;
+    @group(0) @binding(4) var samp2: sampler;
 
     @fragment
     fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -286,4 +289,134 @@ test("uses both conditions and constants together", async () => {
   expect(resultWithoutColor[0]).toBeCloseTo(0.0);
   expect(resultWithoutColor[1]).toBeCloseTo(0.0);
   expect(resultWithoutColor[2]).toBeCloseTo(0.0);
+});
+
+test("shader with resolution uniform (auto-populated)", async () => {
+  const src = `
+    @group(0) @binding(0) var<uniform> u: test::Uniforms;
+
+    @fragment
+    fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+      let st = pos.xy / u.resolution;
+      return vec4f(st.x, st.y, 0.0, 1.0);
+    }
+  `;
+
+  const result = await testFragmentShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    size: [256, 256],
+    // resolution auto-populated as [256, 256]
+  });
+
+  // Pixel (0,0) is at fragment coordinate (0.5, 0.5)
+  // Normalized: (0.5/256, 0.5/256, 0, 1)
+  expect(result[0]).toBeCloseTo(0.5 / 256, 4);
+  expect(result[1]).toBeCloseTo(0.5 / 256, 4);
+  expect(result[2]).toBe(0.0);
+  expect(result[3]).toBe(1.0);
+});
+
+test("shader with time uniform", async () => {
+  const src = `
+    @group(0) @binding(0) var<uniform> u: test::Uniforms;
+
+    @fragment
+    fn fs_main() -> @location(0) vec4f {
+      return vec4f(u.time, u.time * 2.0, u.time * 3.0, 1.0);
+    }
+  `;
+
+  const result = await testFragmentShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    uniforms: { time: 5.0 },
+  });
+
+  expect(result[0]).toBeCloseTo(5.0);
+  expect(result[1]).toBeCloseTo(10.0);
+  expect(result[2]).toBeCloseTo(15.0);
+  expect(result[3]).toBeCloseTo(1.0);
+});
+
+test("shader with mouse uniform", async () => {
+  const src = `
+    @group(0) @binding(0) var<uniform> u: test::Uniforms;
+
+    @fragment
+    fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+      let st = pos.xy / u.resolution;
+      let dist = length(st - u.mouse);
+      return vec4f(dist, 0.0, 0.0, 1.0);
+    }
+  `;
+
+  const result = await testFragmentShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    size: [256, 256],
+    uniforms: { mouse: [0.5, 0.5] },
+  });
+
+  // Distance from (0.5/256, 0.5/256) to (0.5, 0.5)
+  const st = [0.5 / 256, 0.5 / 256];
+  const expectedDist = Math.sqrt((st[0] - 0.5) ** 2 + (st[1] - 0.5) ** 2);
+  expect(result[0]).toBeCloseTo(expectedDist, 4);
+});
+
+test("shader with uniforms and texture", async () => {
+  const inputTex = createSolidTexture(device, [0.5, 0.5, 0.5, 1.0], 64, 64);
+  const sampler = createSampler(device);
+
+  const src = `
+    @group(0) @binding(0) var<uniform> u: test::Uniforms;
+    @group(0) @binding(1) var input_tex: texture_2d<f32>;
+    @group(0) @binding(2) var input_samp: sampler;
+
+    @fragment
+    fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+      let uv = pos.xy / u.resolution;
+      let tex_color = textureSample(input_tex, input_samp, uv);
+      let time_mod = vec4f(u.time * 0.1);
+      return tex_color + time_mod;
+    }
+  `;
+
+  const result = await testFragmentShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    size: [64, 64],
+    uniforms: { time: 10.0 },
+    inputTextures: [{ texture: inputTex, sampler }],
+  });
+
+  // 0.5 (texture) + 1.0 (time * 0.1 where time=10) = 1.5
+  expect(result[0]).toBeCloseTo(1.5, 2);
+});
+
+test("multi-frame animation", async () => {
+  const src = `
+    @group(0) @binding(0) var<uniform> u: test::Uniforms;
+
+    @fragment
+    fn fs_main() -> @location(0) vec4f {
+      let phase = sin(u.time);
+      return vec4f(phase, 0.0, 0.0, 1.0);
+    }
+  `;
+
+  const frames = await testAnimatedShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    timePoints: [0.0, 1.57, 3.14], // 0, π/2, π
+  });
+
+  expect(frames[0][0]).toBeCloseTo(0.0, 2); // sin(0) = 0
+  expect(frames[1][0]).toBeCloseTo(1.0, 2); // sin(π/2) = 1
+  expect(frames[2][0]).toBeCloseTo(0.0, 2); // sin(π) ≈ 0
 });

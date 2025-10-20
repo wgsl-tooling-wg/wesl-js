@@ -2,6 +2,11 @@ import { numComponents, withTextureCopy } from "thimbleberry";
 import type { LinkParams } from "wesl";
 import { compileShader } from "./CompileShader.ts";
 import { withErrorScopes } from "./ErrorScopes.ts";
+import {
+  createUniformBuffer,
+  createUniformsVirtualLib,
+  type StandardUniforms,
+} from "./StandardUniforms.ts";
 
 const fullscreenTriangleVertex = `
 @vertex
@@ -53,8 +58,14 @@ export interface FragmentTestParams {
    * useful to inject host-provided values via the `constants::` namespace.  */
   constants?: LinkParams["constants"];
 
+  /** uniform values for the shader (time, mouse).
+   * resolution is auto-populated from size parameter.
+   * Creates test::Uniforms struct available in shader. */
+  uniforms?: StandardUniforms;
+
   /** input textures + samplers for the shader.
-   * binds sequentially: [0]=texture, [1]=sampler, [2]=texture, [3]=sampler, ... */
+   * binds sequentially: [1]=texture, [2]=sampler, [3]=texture, [4]=sampler, ...
+   * (binding 0 is reserved for uniforms) */
   inputTextures?: Array<{
     texture: GPUTexture;
     sampler: GPUSampler;
@@ -72,7 +83,13 @@ export async function testFragmentShader(
 ): Promise<number[]> {
   const { projectDir, device, src, conditions = {}, constants } = params;
   const { textureFormat = "rgba32float", size = [1, 1] } = params;
-  const { inputTextures } = params;
+  const { inputTextures, uniforms = {} } = params;
+
+  // Create uniform buffer (resolution auto-populated from size)
+  const uniformBuffer = createUniformBuffer(device, size, uniforms);
+
+  // Create virtual library for test::Uniforms
+  const virtualLibs = createUniformsVirtualLib();
 
   // Put user's fragment shader first as it may contain import statements
   const completeSrc = src + "\n\n" + fullscreenTriangleVertex;
@@ -83,6 +100,7 @@ export async function testFragmentShader(
     src: completeSrc,
     conditions,
     constants,
+    virtualLibs,
   };
   const module = await compileShader(shaderParams);
   return await runSimpleRenderPipeline(
@@ -91,20 +109,37 @@ export async function testFragmentShader(
     textureFormat,
     size,
     inputTextures,
+    uniformBuffer,
   );
 }
 
-/** Create bind group for input textures. Bindings: texture at N, sampler at N+1. */
-function createTextureBindGroup(
+/**
+ * Create bind group with uniforms and optional textures.
+ * Binding layout: 0=uniform buffer, 1=tex0, 2=samp0, 3=tex1, 4=samp1, ...
+ */
+function createBindGroup(
   device: GPUDevice,
-  inputTextures: Array<{ texture: GPUTexture; sampler: GPUSampler }>,
+  uniformBuffer: GPUBuffer,
+  inputTextures: Array<{ texture: GPUTexture; sampler: GPUSampler }> = [],
 ): { layout: GPUBindGroupLayout; bindGroup: GPUBindGroup } {
-  const entries: GPUBindGroupLayoutEntry[] = [];
-  const bindGroupEntries: GPUBindGroupEntry[] = [];
+  const entries: GPUBindGroupLayoutEntry[] = [
+    {
+      binding: 0,
+      visibility: GPUShaderStage.FRAGMENT,
+      buffer: { type: "uniform" },
+    },
+  ];
+
+  const bindGroupEntries: GPUBindGroupEntry[] = [
+    {
+      binding: 0,
+      resource: { buffer: uniformBuffer },
+    },
+  ];
 
   inputTextures.forEach((input, i) => {
-    const textureBinding = i * 2;
-    const samplerBinding = i * 2 + 1;
+    const textureBinding = i * 2 + 1;
+    const samplerBinding = i * 2 + 2;
 
     entries.push({
       binding: textureBinding,
@@ -174,6 +209,7 @@ export async function runSimpleRenderPipeline(
   textureFormat: GPUTextureFormat = "rgba32float",
   size = [1, 1],
   inputTextures: Array<{ texture: GPUTexture; sampler: GPUSampler }> = [],
+  uniformBuffer?: GPUBuffer,
 ): Promise<number[]> {
   return await withErrorScopes(device, async () => {
     const texture = device.createTexture({
@@ -183,14 +219,13 @@ export async function runSimpleRenderPipeline(
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
 
-    const textureBindings =
-      inputTextures.length > 0
-        ? createTextureBindGroup(device, inputTextures)
-        : undefined;
+    const bindings = uniformBuffer
+      ? createBindGroup(device, uniformBuffer, inputTextures)
+      : undefined;
 
-    const pipelineLayout = textureBindings
+    const pipelineLayout = bindings
       ? device.createPipelineLayout({
-          bindGroupLayouts: [textureBindings.layout],
+          bindGroupLayouts: [bindings.layout],
         })
       : "auto";
 
@@ -204,7 +239,7 @@ export async function runSimpleRenderPipeline(
       primitive: { topology: "triangle-list" },
     });
 
-    executeRenderPass(device, pipeline, texture, textureBindings?.bindGroup);
+    executeRenderPass(device, pipeline, texture, bindings?.bindGroup);
 
     const extractCount = numComponents(textureFormat);
     const data = await withTextureCopy(device, texture, texData =>
@@ -212,6 +247,39 @@ export async function runSimpleRenderPipeline(
     );
 
     texture.destroy();
+    uniformBuffer?.destroy();
     return data;
   });
+}
+
+/**
+ * Tests an animated shader at multiple time points.
+ * Useful for validating that shaders change over time.
+ *
+ * @param params - Same as testFragmentShader, plus timePoints array
+ * @returns Array of results, one per time point
+ *
+ * @example
+ * ```typescript
+ * const frames = await testAnimatedShader({
+ *   projectDir: import.meta.url,
+ *   device,
+ *   src: `shader code`,
+ *   timePoints: [0.0, 1.0, 2.0]
+ * });
+ * // frames[0], frames[1], frames[2] are results at different times
+ * ```
+ */
+export async function testAnimatedShader(
+  params: FragmentTestParams & { timePoints: number[] },
+): Promise<number[][]> {
+  const { timePoints, ...baseParams } = params;
+  return await Promise.all(
+    timePoints.map((time) =>
+      testFragmentShader({
+        ...baseParams,
+        uniforms: { ...baseParams.uniforms, time },
+      }),
+    ),
+  );
 }
