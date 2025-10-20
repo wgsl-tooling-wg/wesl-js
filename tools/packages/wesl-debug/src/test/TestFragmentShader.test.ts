@@ -174,3 +174,116 @@ test("samples multiple textures", async () => {
   expect(result[1]).toBeCloseTo(0.5); // (0.0 + 1.0) / 2
   expect(result[2]).toBeCloseTo(0.0); // (0.0 + 0.0) / 2
 });
+
+test("uses scalar constant from constants namespace", async () => {
+  const src = `
+    import constants::BRIGHTNESS;
+
+    @fragment
+    fn fs_main() -> @location(0) vec4f {
+      return vec4f(BRIGHTNESS, 0.0, 0.0, 1.0);
+    }
+  `;
+
+  const result = await testFragmentShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    constants: { BRIGHTNESS: 0.75 },
+  });
+
+  expect(result[0]).toBeCloseTo(0.75);
+});
+
+test("uses vector constant from constants namespace", async () => {
+  const src = `
+    import constants::COLOR;
+
+    @fragment
+    fn fs_main() -> @location(0) vec4f {
+      return vec4f(COLOR, 0.0, 1.0);
+    }
+  `;
+
+  const result = await testFragmentShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    constants: { COLOR: "vec2f(0.25, 0.5)" },
+  });
+
+  expect(result[0]).toBeCloseTo(0.25);
+  expect(result[1]).toBeCloseTo(0.5);
+  expect(result[2]).toBeCloseTo(0.0);
+  expect(result[3]).toBeCloseTo(1.0);
+});
+
+test("uses conditions for conditional compilation", async () => {
+  const src = `
+    @fragment
+    fn fs_main() -> @location(0) vec4f {
+      @if(USE_RED)
+      return vec4f(1.0, 0.0, 0.0, 1.0);
+      @else
+      return vec4f(0.0, 1.0, 0.0, 1.0);
+    }
+  `;
+
+  const resultRed = await testFragmentShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    conditions: { USE_RED: true },
+  });
+
+  expect(resultRed[0]).toBeCloseTo(1.0);
+  expect(resultRed[1]).toBeCloseTo(0.0);
+
+  const resultGreen = await testFragmentShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    conditions: { USE_RED: false },
+  });
+
+  expect(resultGreen[0]).toBeCloseTo(0.0);
+  expect(resultGreen[1]).toBeCloseTo(1.0);
+});
+
+test("uses both conditions and constants together", async () => {
+  const src = `
+    @if(USE_CUSTOM_COLOR)
+    import constants::CUSTOM_COLOR;
+
+    @fragment
+    fn fs_main() -> @location(0) vec4f {
+      @if(USE_CUSTOM_COLOR)
+      return vec4f(CUSTOM_COLOR, 0.0, 1.0);
+      @else
+      return vec4f(0.0, 0.0, 0.0, 1.0);
+    }
+  `;
+
+  const resultWithColor = await testFragmentShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    conditions: { USE_CUSTOM_COLOR: true },
+    constants: { CUSTOM_COLOR: "vec2f(0.8, 0.6)" },
+  });
+
+  expect(resultWithColor[0]).toBeCloseTo(0.8);
+  expect(resultWithColor[1]).toBeCloseTo(0.6);
+  expect(resultWithColor[2]).toBeCloseTo(0.0);
+
+  const resultWithoutColor = await testFragmentShader({
+    projectDir: import.meta.url,
+    device,
+    src,
+    conditions: { USE_CUSTOM_COLOR: false },
+  });
+
+  expect(resultWithoutColor[0]).toBeCloseTo(0.0);
+  expect(resultWithoutColor[1]).toBeCloseTo(0.0);
+  expect(resultWithoutColor[2]).toBeCloseTo(0.0);
+});

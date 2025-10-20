@@ -10972,7 +10972,7 @@ function parseDependencies(weslSrc, projectDir) {
 	}
 	const unbound = findUnboundIdents(registry);
 	if (!unbound) return [];
-	const pkgRefs = unbound.filter((modulePath) => modulePath.length > 1);
+	const pkgRefs = unbound.filter((modulePath) => modulePath.length > 1 && modulePath[0] !== "constants");
 	if (pkgRefs.length === 0) return [];
 	const projectURL = pathToFileURL(path.resolve(path.join(projectDir, "foo"))).href;
 	const deps = filterMap(pkgRefs, (mPath) => unboundToDependency(mPath, projectURL));

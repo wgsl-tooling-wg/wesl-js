@@ -1,4 +1,5 @@
 import { numComponents, withTextureCopy } from "thimbleberry";
+import type { LinkParams } from "wesl";
 import { compileShader } from "./CompileShader.ts";
 import { withErrorScopes } from "./ErrorScopes.ts";
 
@@ -46,7 +47,11 @@ export interface FragmentTestParams {
 
   /** flags for conditional compilation for testing shader specialization.
    * useful to test `@if` statements in the shader.  */
-  conditions?: Record<string, boolean>;
+  conditions?: LinkParams["conditions"];
+
+  /** constants for shader compilation.
+   * useful to inject host-provided values via the `constants::` namespace.  */
+  constants?: LinkParams["constants"];
 
   /** input textures + samplers for the shader.
    * binds sequentially: [0]=texture, [1]=sampler, [2]=texture, [3]=sampler, ... */
@@ -65,14 +70,20 @@ export interface FragmentTestParams {
 export async function testFragmentShader(
   params: FragmentTestParams,
 ): Promise<number[]> {
-  const { projectDir, device, src, conditions = {} } = params;
+  const { projectDir, device, src, conditions = {}, constants } = params;
   const { textureFormat = "rgba32float", size = [1, 1] } = params;
   const { inputTextures } = params;
 
   // Put user's fragment shader first as it may contain import statements
   const completeSrc = src + "\n\n" + fullscreenTriangleVertex;
 
-  const shaderParams = { projectDir, device, src: completeSrc, conditions };
+  const shaderParams = {
+    projectDir,
+    device,
+    src: completeSrc,
+    conditions,
+    constants,
+  };
   const module = await compileShader(shaderParams);
   return await runSimpleRenderPipeline(
     device,

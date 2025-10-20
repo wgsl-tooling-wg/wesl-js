@@ -44,7 +44,10 @@ export function parseDependencies(
   if (!unbound) return [];
 
   // a package module reference needs at least two segments (length 1 is probably a builtin wgsl fn or type)
-  const pkgRefs = unbound.filter(modulePath => modulePath.length > 1);
+  // filter out virtual packages like 'constants' that are provided by the linker
+  const pkgRefs = unbound.filter(
+    modulePath => modulePath.length > 1 && modulePath[0] !== "constants",
+  );
   if (pkgRefs.length === 0) return [];
 
   const fullProjectDir = path.resolve(path.join(projectDir, "foo"));

@@ -1,4 +1,4 @@
-import type { VirtualLibraryFn } from "wesl";
+import type { LinkParams } from "wesl";
 import { link } from "wesl";
 import { dependencyBundles } from "../../wesl-tooling/src/ParseDependencies.ts";
 
@@ -13,10 +13,13 @@ export interface CompileShaderParams {
   src: string;
 
   /** Optional conditions for shader compilation. */
-  conditions?: Record<string, boolean>;
+  conditions?: LinkParams["conditions"];
+
+  /** Optional constants for shader compilation. */
+  constants?: LinkParams["constants"];
 
   /** Optional virtual libraries to include in the shader. */
-  virtualLibs?: Record<string, VirtualLibraryFn>;
+  virtualLibs?: LinkParams["virtualLibs"];
 }
 
 /**
@@ -30,10 +33,17 @@ export interface CompileShaderParams {
 export async function compileShader(
   params: CompileShaderParams,
 ): Promise<GPUShaderModule> {
-  const { projectDir, device, src, conditions, virtualLibs } = params;
+  const { projectDir, device, src, conditions, constants, virtualLibs } =
+    params;
   const weslSrc = { main: src };
   const libs = await dependencyBundles(weslSrc, projectDir);
-  const linked = await link({ weslSrc, libs, virtualLibs, conditions });
+  const linked = await link({
+    weslSrc,
+    libs,
+    virtualLibs,
+    conditions,
+    constants,
+  });
   const module = linked.createShaderModule(device);
 
   // Check for compilation errors

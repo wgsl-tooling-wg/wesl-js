@@ -1,4 +1,5 @@
 import { copyBuffer, elementStride, type WgslElementType } from "thimbleberry";
+import type { LinkParams } from "wesl";
 import { compileShader } from "./CompileShader.ts";
 import { withErrorScopes } from "./ErrorScopes.ts";
 
@@ -25,7 +26,11 @@ export interface ComputeTestParams {
 
   /** flags for conditional compilation for testing shader specialization.
    * useful to test `@if` statements in the shader.  */
-  conditions?: Record<string, boolean>;
+  conditions?: LinkParams["conditions"];
+
+  /** constants for shader compilation.
+   * useful to inject host-provided values via the `constants::` namespace.  */
+  constants?: LinkParams["constants"];
 }
 
 /**
@@ -45,7 +50,7 @@ export async function testComputeShader(
   params: ComputeTestParams,
 ): Promise<number[]> {
   const { projectDir, device, src } = params;
-  const { resultFormat = "u32", conditions = {} } = params;
+  const { resultFormat = "u32", conditions = {}, constants } = params;
 
   const arraySize = resultBufferSize / elementStride(resultFormat);
   const arrayType = `array<${resultFormat}, ${arraySize}>`;
@@ -53,7 +58,14 @@ export async function testComputeShader(
     test: () =>
       `@group(0) @binding(0) var <storage, read_write> results: ${arrayType};`,
   };
-  const shaderParams = { projectDir, device, src, conditions, virtualLibs };
+  const shaderParams = {
+    projectDir,
+    device,
+    src,
+    conditions,
+    constants,
+    virtualLibs,
+  };
   const module = await compileShader(shaderParams);
   return await runSimpleComputePipeline(device, module, resultFormat);
 }
