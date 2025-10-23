@@ -13,6 +13,7 @@ export default defineConfig({
       "default",
       [
         "vitest-image-snapshot/reporter",
+        // configure path explicitly to get same location from monorepo
         { reportPath: join(__dirname, "__image_diff_report__") },
       ],
     ],
