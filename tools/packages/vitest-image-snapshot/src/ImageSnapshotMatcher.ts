@@ -1,7 +1,11 @@
 /// <reference types="./vitest.d.ts" />
 import { expect } from "vitest";
 import { getCurrentTest } from "vitest/suite";
-import { type ComparisonOptions, compareImages } from "./ImageComparison.ts";
+import {
+  type ComparisonOptions,
+  compareImages,
+  type ImageData,
+} from "./ImageComparison.ts";
 import { pngBuffer } from "./PNGUtil.ts";
 import { ImageSnapshotManager } from "./SnapshotManager.ts";
 

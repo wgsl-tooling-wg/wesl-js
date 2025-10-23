@@ -1,6 +1,14 @@
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
 
+/** nodejs compatible interface to DOM ImageData */
+export interface ImageData {
+  readonly data: Uint8ClampedArray;
+  readonly width: number;
+  readonly height: number;
+  readonly colorSpace: "srgb" | "display-p3";
+}
+
 /** Pixel data extracted from an image buffer or ImageData object. */
 interface PixelData {
   data: Uint8Array | Uint8ClampedArray;

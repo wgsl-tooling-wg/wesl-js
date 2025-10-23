@@ -18,6 +18,7 @@ export default defineConfig({
     "node:url",
     "node:util",
     "node:v8",
+    "vitest-image-snapshot",
     "wesl",
   ],
   logLevel: "warn",

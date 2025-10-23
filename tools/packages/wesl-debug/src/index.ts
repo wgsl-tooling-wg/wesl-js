@@ -1,4 +1,5 @@
 export type { WgslElementType } from "thimbleberry";
+export type { ImageData } from "vitest-image-snapshot";
 export * from "./CompileShader.ts";
 export * from "./ErrorScopes.ts";
 export * from "./ExampleTextures.ts";

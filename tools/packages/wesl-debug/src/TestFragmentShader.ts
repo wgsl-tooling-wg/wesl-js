@@ -1,4 +1,5 @@
 import { componentByteSize, numComponents, texelLoadType } from "thimbleberry";
+import type { ImageData } from "vitest-image-snapshot";
 import type { LinkParams } from "wesl";
 import { compileShader } from "./CompileShader.ts";
 import {

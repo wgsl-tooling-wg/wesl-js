@@ -1,4 +1,5 @@
 import { PNG } from "pngjs";
+import type { ImageData } from "./ImageComparison.ts";
 
 /** Convert standard browser ImageData to PNG Buffer for comparison. */
 export function pngBuffer(imageData: ImageData): Buffer {
