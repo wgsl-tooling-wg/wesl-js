@@ -5,6 +5,7 @@ export default defineConfig({
   target: "node22",
   clean: true,
   dts: true,
+  sourcemap: true,
   platform: "neutral",
   external: [
     "module",
