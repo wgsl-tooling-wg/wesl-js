@@ -1,7 +1,7 @@
 # dependency packages
 node_modules
 
-# bundled release 
+# bundled release
 dist
 
 # macOS
@@ -10,5 +10,8 @@ dist
 # vi temp files
 *.swp
 
-# typescript build info cache files 
+# typescript build info cache files
 *.tsbuildinfo
+
+# Image test outputs (don't commit)
+__image_diff_report__/

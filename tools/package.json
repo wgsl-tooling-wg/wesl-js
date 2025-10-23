@@ -63,7 +63,7 @@
     "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
     "syncpack": "^13.0.4",
-    "tsdown": "^0.15.6",
+    "tsdown": "^0.15.9",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.0",
