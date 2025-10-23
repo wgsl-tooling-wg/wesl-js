@@ -1,14 +1,14 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
 import {
+  checkerboardTexture,
+  createSampler,
+  gradientTexture,
+  solidTexture,
+} from "../ExampleTextures.ts";
+import {
   testAnimatedShader,
   testFragmentShader,
 } from "../TestFragmentShader.ts";
-import {
-  createCheckerboardTexture,
-  createGradientTexture,
-  createSampler,
-  createSolidTexture,
-} from "../TestTextureHelpers.ts";
 import { destroySharedDevice, getGPUDevice } from "../WebGPUTestSetup.ts";
 
 let device: GPUDevice;
@@ -63,7 +63,7 @@ test("derivative of x coordinate", async () => {
 });
 
 test("samples solid color texture", async () => {
-  const inputTex = createSolidTexture(device, [0.5, 0.5, 0.5, 1.0], 256, 256);
+  const inputTex = solidTexture(device, [0.5, 0.5, 0.5, 1.0], 256, 256);
   const sampler = createSampler(device);
 
   const src = `
@@ -91,7 +91,7 @@ test("samples solid color texture", async () => {
 });
 
 test("samples gradient texture at center", async () => {
-  const inputTex = createGradientTexture(device, 256, 256, "horizontal");
+  const inputTex = gradientTexture(device, 256, 256, "horizontal");
   const sampler = createSampler(device);
 
   const src = `
@@ -117,7 +117,7 @@ test("samples gradient texture at center", async () => {
 });
 
 test("samples checkerboard texture", async () => {
-  const inputTex = createCheckerboardTexture(device, 256, 256, 128);
+  const inputTex = checkerboardTexture(device, 256, 256, 128);
   const sampler = createSampler(device);
 
   const src = `
@@ -144,8 +144,8 @@ test("samples checkerboard texture", async () => {
 });
 
 test("samples multiple textures", async () => {
-  const tex1 = createSolidTexture(device, [1.0, 0.0, 0.0, 1.0], 64, 64);
-  const tex2 = createSolidTexture(device, [0.0, 1.0, 0.0, 1.0], 64, 64);
+  const tex1 = solidTexture(device, [1.0, 0.0, 0.0, 1.0], 64, 64);
+  const tex2 = solidTexture(device, [0.0, 1.0, 0.0, 1.0], 64, 64);
   const sampler = createSampler(device);
 
   const src = `
@@ -368,7 +368,7 @@ test("shader with mouse uniform", async () => {
 });
 
 test("shader with uniforms and texture", async () => {
-  const inputTex = createSolidTexture(device, [0.5, 0.5, 0.5, 1.0], 64, 64);
+  const inputTex = solidTexture(device, [0.5, 0.5, 0.5, 1.0], 64, 64);
   const sampler = createSampler(device);
 
   const src = `

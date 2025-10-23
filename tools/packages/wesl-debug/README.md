@@ -171,7 +171,138 @@ const result = await testFragmentShader({
 
 **Binding Convention**: Textures bind sequentially starting at binding 0:
 - `inputTextures[0]` → texture at `@binding(0)`, sampler at `@binding(1)`
-- `inputTextures[1]` → texture at `@binding(2)`, sampler at `@binding(3)` 
+- `inputTextures[1]` → texture at `@binding(2)`, sampler at `@binding(3)`
+
+## Image Testing & Visual Regression
+
+Test complete rendered images and automate visual regression testing using snapshot comparison.
+
+### Full Image Retrieval
+
+Use `testFragmentShaderImage()` to get the complete rendered image instead of just pixel (0,0):
+
+```typescript
+import { testFragmentShaderImage, saveImageDataToPNG } from "wesl-debug";
+
+const result = await testFragmentShaderImage({
+  projectDir: import.meta.url,
+  device,
+  src: blurShaderSource,
+  size: [256, 256],
+  inputTextures: [{ texture: inputTex, sampler }]
+});
+
+// Save for visual inspection
+await saveImageDataToPNG(result, "__image_dev__/blur-result.png");
+```
+
+### Advanced Test Textures
+
+Additional texture generators for image processing tests:
+
+```typescript
+import {
+  createRadialGradientTexture,   // White center → black edge
+  createEdgePatternTexture,       // Sharp lines for edge detection
+  createColorBarsTexture,         // RGB primaries/secondaries
+  createNoiseTexture,             // Deterministic seeded noise
+  createPhotoSampleTexture        // Load from PNG file
+} from "wesl-debug";
+
+const radial = createRadialGradientTexture(device, 256);
+const edges = createEdgePatternTexture(device, 256);
+const colors = createColorBarsTexture(device, 256);
+const noise = createNoiseTexture(device, 256, 42); // seed = 42
+
+// Use the bundled test photo (512x512 lemur image)
+import { getLemurImagePath } from "wesl-debug";
+const photo = createPhotoSampleTexture(device, getLemurImagePath());
+```
+
+### Visual Regression Testing
+
+Use snapshot comparison to catch unintended visual changes:
+
+```typescript
+import { imageMatcher } from "wesl-debug";
+
+// In test setup file or at top of test
+imageMatcher();
+
+test("blur filter produces expected result", async () => {
+  const result = await testFragmentShaderImage({
+    projectDir: import.meta.url,
+    device,
+    src: blurShaderSource,
+    size: [256, 256],
+    inputTextures: [{ texture: inputTex, sampler }]
+  });
+
+  // Compare against reference snapshot
+  await expect(result).toMatchImage("blur-filter");
+});
+```
+
+**Snapshot Workflow:**
+
+```bash
+# Run tests - creates reference snapshots on first run
+pnpm vitest
+
+# Review generated snapshots in __image_snapshots__/
+# Commit if they look correct
+git add __image_snapshots__/
+git commit -m "Add visual regression tests"
+
+# After code changes, tests fail if output changed
+pnpm vitest  # Shows diffs in __image_diffs__/
+
+# If changes are intentional, update snapshots
+pnpm vitest -- -u
+```
+
+**Directory Structure:**
+- `__image_snapshots__/` - Reference images (committed to git)
+- `__image_actual__/` - Current test outputs (gitignored, saved on every run)
+- `__image_diffs__/` - Diff visualizations (gitignored, only on failure)
+- `__image_diff_report__/` - HTML report (gitignored, self-contained)
+- `__image_dev__/` - Dev experiments (gitignored)
+
+### Comparison Options
+
+Fine-tune snapshot comparison thresholds:
+
+```typescript
+await expect(result).toMatchImage("edge-detection", {
+  threshold: 0.1,                      // Color difference threshold (0-1)
+  allowedPixelRatio: 0.01,  // Allow 1% of pixels to differ
+  allowedPixels: 100         // Or allow 100 pixels to differ
+});
+```
+
+### HTML Diff Report
+
+When snapshot tests fail, an HTML report is automatically generated showing all failures side-by-side:
+
+```typescript
+// vitest.config.ts
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    setupFiles: ["./test/setup.ts"],
+    reporters: [
+      "default",
+      ["vitest-image-snapshot/reporter"]
+    ]
+  }
+});
+```
+
+If any tests fail, a report is saved to `__image_diff_report__/index.html` and shows:
+- Side-by-side comparison (Expected | Actual | Diff)
+- Mismatch statistics per test
+- Clickable images for full-size viewing
 
 ## Complete Test Example
 

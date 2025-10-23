@@ -3,7 +3,7 @@ import type { LinkParams } from "wesl";
 import { compileShader } from "./CompileShader.ts";
 import { withErrorScopes } from "./ErrorScopes.ts";
 
-const resultBufferSize = 16; // 4x4 bytes
+const defaultResultSize = 16; // 4x4 bytes
 
 export interface ComputeTestParams {
   /** WESL/WGSL source code for a compute shader to test*/
@@ -56,7 +56,7 @@ export async function testComputeShader(
   const { projectDir, device, src } = params;
   const {
     resultFormat = "u32",
-    size = resultBufferSize,
+    size = defaultResultSize,
     conditions = {},
     constants,
   } = params;
@@ -76,7 +76,7 @@ export async function testComputeShader(
     virtualLibs,
   };
   const module = await compileShader(shaderParams);
-  return await runSimpleComputePipeline(device, module, resultFormat, size);
+  return await runCompute(device, module, resultFormat, size);
 }
 
 /**
@@ -96,59 +96,69 @@ export async function testComputeShader(
  * @param size - size of result buffer in bytes (default 16)
  * @returns storage result array
  */
-export async function runSimpleComputePipeline(
+export async function runCompute(
   device: GPUDevice,
   module: GPUShaderModule,
   resultFormat?: WgslElementType,
-  size = resultBufferSize,
+  size = defaultResultSize,
 ): Promise<number[]> {
   return await withErrorScopes(device, async () => {
-    const bgLayout = device.createBindGroupLayout({
-      entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: "storage" },
-        },
-      ],
-    });
-
+    const bgLayout = makeBindGroupLayout(device);
     const pipelineLayout = device.createPipelineLayout({
       bindGroupLayouts: [bgLayout],
     });
-
     const pipeline = device.createComputePipeline({
       layout: pipelineLayout,
       compute: { module },
     });
 
-    const storageBuffer = device.createBuffer({
-      label: "storage",
-      size,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-      mappedAtCreation: true,
-    });
-
-    // Initialize buffer with sentinel values to detect unwritten results
-    // Using -999.0 as a distinctive value that should never appear in valid test results
-    const mappedBuffer = new Float32Array(storageBuffer.getMappedRange());
-    mappedBuffer.fill(-999.0);
-    storageBuffer.unmap();
-
+    const storageBuffer = initStorageBuffer(device, size);
     const bindGroup = device.createBindGroup({
       layout: bgLayout,
       entries: [{ binding: 0, resource: { buffer: storageBuffer } }],
     });
 
-    const commands = device.createCommandEncoder();
-    const pass = commands.beginComputePass();
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup);
-    pass.dispatchWorkgroups(1);
-    pass.end();
-    device.queue.submit([commands.finish()]);
-
-    const data = await copyBuffer(device, storageBuffer, resultFormat);
-    return data;
+    runComputePass(device, pipeline, bindGroup);
+    return await copyBuffer(device, storageBuffer, resultFormat);
   });
+}
+
+function makeBindGroupLayout(device: GPUDevice): GPUBindGroupLayout {
+  return device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: { type: "storage" },
+      },
+    ],
+  });
+}
+
+function initStorageBuffer(device: GPUDevice, size: number): GPUBuffer {
+  const buffer = device.createBuffer({
+    label: "storage",
+    size,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+    mappedAtCreation: true,
+  });
+  // Initialize with sentinel values to detect unwritten results
+  const mappedBuffer = new Float32Array(buffer.getMappedRange());
+  mappedBuffer.fill(-999.0);
+  buffer.unmap();
+  return buffer;
+}
+
+function runComputePass(
+  device: GPUDevice,
+  pipeline: GPUComputePipeline,
+  bindGroup: GPUBindGroup,
+) {
+  const commands = device.createCommandEncoder();
+  const pass = commands.beginComputePass();
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+  pass.dispatchWorkgroups(1);
+  pass.end();
+  device.queue.submit([commands.finish()]);
 }

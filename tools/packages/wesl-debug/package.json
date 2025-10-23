@@ -2,7 +2,7 @@
   "name": "wesl-debug",
   "version": "0.6.13",
   "type": "module",
-  "files": ["dist"],
+  "files": ["dist", "images"],
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
@@ -22,10 +22,13 @@
     }
   },
   "dependencies": {
+    "pngjs": "^7.0.0",
     "thimbleberry": "^0.2.10"
   },
   "devDependencies": {
+    "@types/pngjs": "^6.0.0",
     "dependent_package": "workspace:x",
+    "vitest-image-snapshot": "workspace:x",
     "webgpu": "^0.3.8"
   },
   "peerDependencies": {

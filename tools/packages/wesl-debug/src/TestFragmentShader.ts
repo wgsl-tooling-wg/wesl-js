@@ -1,30 +1,27 @@
-import { numComponents, withTextureCopy } from "thimbleberry";
+import { componentByteSize, numComponents, texelLoadType } from "thimbleberry";
 import type { LinkParams } from "wesl";
 import { compileShader } from "./CompileShader.ts";
-import { withErrorScopes } from "./ErrorScopes.ts";
 import {
-  createUniformBuffer,
   createUniformsVirtualLib,
-  type StandardUniforms,
-} from "./StandardUniforms.ts";
+  type RenderUniforms,
+  renderUniformBuffer,
+} from "./RenderUniforms.ts";
+import { simpleRender } from "./SimpleRender.ts";
 
-const fullscreenTriangleVertex = `
-@vertex
-fn vs_main(@builtin(vertex_index) idx: u32) -> @builtin(position) vec4f {
-  // Fullscreen triangle: covers viewport with 3 vertices, no vertex buffer needed
-  // Vertex 0: bottom-left (-1, -1)
-  // Vertex 1: bottom-right beyond viewport (3, -1)
-  // Vertex 2: top-left beyond viewport (-1, 3)
-  var pos: vec2f;
-  if (idx == 0u) {
-    pos = vec2f(-1.0, -1.0);
-  } else if (idx == 1u) {
-    pos = vec2f(3.0, -1.0);
-  } else {
-    pos = vec2f(-1.0, 3.0);
-  }
-  return vec4f(pos, 0.0, 1.0);
-}`;
+export const fullscreenTriangleVertex = `
+  @vertex
+  fn vs_main(@builtin(vertex_index) idx: u32) -> @builtin(position) vec4f {
+    // Fullscreen triangle: covers viewport with 3 vertices, no vertex buffer needed
+    var pos: vec2f;
+    if (idx == 0u) {
+      pos = vec2f(-1.0, -1.0); // Vertex 0: bottom-left (-1, -1)
+    } else if (idx == 1u) {
+      pos = vec2f(3.0, -1.0);  // Vertex 1: bottom-right beyond viewport (3, -1)
+    } else {
+      pos = vec2f(-1.0, 3.0);  // Vertex 2: top-left beyond viewport (-1, 3)
+    }
+    return vec4f(pos, 0.0, 1.0);
+  }`;
 
 export interface FragmentTestParams {
   /** WESL/WGSL source code for a fragment shader to test*/
@@ -61,7 +58,7 @@ export interface FragmentTestParams {
   /** uniform values for the shader (time, mouse).
    * resolution is auto-populated from size parameter.
    * Creates test::Uniforms struct available in shader. */
-  uniforms?: StandardUniforms;
+  uniforms?: RenderUniforms;
 
   /** input textures + samplers for the shader.
    * binds sequentially: [1]=texture, [2]=sampler, [3]=texture, [4]=sampler, ...
@@ -72,184 +69,29 @@ export interface FragmentTestParams {
   }>;
 }
 
-/**
- * Executes a fragment shader test and returns pixel (0,0) values for validation.
- * Renders using a fullscreen triangle to the specified texture format (default: rgba32float).
- * Default: [1, 1] texture for simple color tests
- * Use [2, 2] for derivative tests (forms a complete 2x2 quad for dpdx/dpdy)
- */
+/** Executes a fragment shader and returns pixel (0,0) for validation.  */
 export async function testFragmentShader(
   params: FragmentTestParams,
 ): Promise<number[]> {
-  const { projectDir, device, src, conditions = {}, constants } = params;
+  const { textureFormat = "rgba32float" } = params;
+  const data = await runFragment(params);
+  const count = numComponents(textureFormat);
+  return data.slice(0, count);
+}
+
+/** Test a fragment shader and return the complete rendered image for visual inspection or comparison. */
+export async function testFragmentShaderImage(
+  params: FragmentTestParams,
+): Promise<ImageData> {
   const { textureFormat = "rgba32float", size = [1, 1] } = params;
-  const { inputTextures, uniforms = {} } = params;
-
-  // Create uniform buffer (resolution auto-populated from size)
-  const uniformBuffer = createUniformBuffer(device, size, uniforms);
-
-  // Create virtual library for test::Uniforms
-  const virtualLibs = createUniformsVirtualLib();
-
-  // Put user's fragment shader first as it may contain import statements
-  const completeSrc = src + "\n\n" + fullscreenTriangleVertex;
-
-  const shaderParams = {
-    projectDir,
-    device,
-    src: completeSrc,
-    conditions,
-    constants,
-    virtualLibs,
-  };
-  const module = await compileShader(shaderParams);
-  return await runSimpleRenderPipeline(
-    device,
-    module,
-    textureFormat,
-    size,
-    inputTextures,
-    uniformBuffer,
-  );
-}
-
-/**
- * Create bind group with uniforms and optional textures.
- * Binding layout: 0=uniform buffer, 1=tex0, 2=samp0, 3=tex1, 4=samp1, ...
- */
-function createBindGroup(
-  device: GPUDevice,
-  uniformBuffer: GPUBuffer,
-  inputTextures: Array<{ texture: GPUTexture; sampler: GPUSampler }> = [],
-): { layout: GPUBindGroupLayout; bindGroup: GPUBindGroup } {
-  const entries: GPUBindGroupLayoutEntry[] = [
-    {
-      binding: 0,
-      visibility: GPUShaderStage.FRAGMENT,
-      buffer: { type: "uniform" },
-    },
-  ];
-
-  const bindGroupEntries: GPUBindGroupEntry[] = [
-    {
-      binding: 0,
-      resource: { buffer: uniformBuffer },
-    },
-  ];
-
-  inputTextures.forEach((input, i) => {
-    const textureBinding = i * 2 + 1;
-    const samplerBinding = i * 2 + 2;
-
-    entries.push({
-      binding: textureBinding,
-      visibility: GPUShaderStage.FRAGMENT,
-      texture: { sampleType: "float" },
-    });
-    entries.push({
-      binding: samplerBinding,
-      visibility: GPUShaderStage.FRAGMENT,
-      sampler: { type: "filtering" },
-    });
-
-    bindGroupEntries.push({
-      binding: textureBinding,
-      resource: input.texture.createView(),
-    });
-    bindGroupEntries.push({
-      binding: samplerBinding,
-      resource: input.sampler,
-    });
-  });
-
-  const layout = device.createBindGroupLayout({ entries });
-  const bindGroup = device.createBindGroup({
-    layout,
-    entries: bindGroupEntries,
-  });
-
-  return { layout, bindGroup };
-}
-
-/** Execute render pass and submit commands. */
-function executeRenderPass(
-  device: GPUDevice,
-  pipeline: GPURenderPipeline,
-  texture: GPUTexture,
-  bindGroup?: GPUBindGroup,
-): void {
-  const commandEncoder = device.createCommandEncoder();
-  const renderPass = commandEncoder.beginRenderPass({
-    colorAttachments: [
-      {
-        view: texture.createView(),
-        loadOp: "clear",
-        clearValue: { r: 0, g: 0, b: 0, a: 0 },
-        storeOp: "store",
-      },
-    ],
-  });
-
-  renderPass.setPipeline(pipeline);
-  if (bindGroup) {
-    renderPass.setBindGroup(0, bindGroup);
-  }
-  renderPass.draw(3);
-  renderPass.end();
-  device.queue.submit([commandEncoder.finish()]);
-}
-
-/**
- * Executes a render pipeline with the given shader module.
- * Creates a texture with the specified format, renders to it, and reads back pixel (0,0).
- */
-export async function runSimpleRenderPipeline(
-  device: GPUDevice,
-  module: GPUShaderModule,
-  textureFormat: GPUTextureFormat = "rgba32float",
-  size = [1, 1],
-  inputTextures: Array<{ texture: GPUTexture; sampler: GPUSampler }> = [],
-  uniformBuffer?: GPUBuffer,
-): Promise<number[]> {
-  return await withErrorScopes(device, async () => {
-    const texture = device.createTexture({
-      label: "fragment-test-output",
-      size: { width: size[0], height: size[1], depthOrArrayLayers: 1 },
-      format: textureFormat,
-      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
-    });
-
-    const bindings = uniformBuffer
-      ? createBindGroup(device, uniformBuffer, inputTextures)
-      : undefined;
-
-    const pipelineLayout = bindings
-      ? device.createPipelineLayout({
-          bindGroupLayouts: [bindings.layout],
-        })
-      : "auto";
-
-    const pipeline = device.createRenderPipeline({
-      layout: pipelineLayout,
-      vertex: { module },
-      fragment: {
-        module,
-        targets: [{ format: textureFormat }],
-      },
-      primitive: { topology: "triangle-list" },
-    });
-
-    executeRenderPass(device, pipeline, texture, bindings?.bindGroup);
-
-    const extractCount = numComponents(textureFormat);
-    const data = await withTextureCopy(device, texture, texData =>
-      Array.from(texData.slice(0, extractCount)),
-    );
-
-    texture.destroy();
-    uniformBuffer?.destroy();
-    return data;
-  });
+  const texData = await runFragment(params);
+  const data = imageToUint8(texData, textureFormat, size[0], size[1]);
+  return {
+    data: new Uint8ClampedArray(data),
+    width: size[0],
+    height: size[1],
+    colorSpace: "srgb" as const,
+  } as ImageData;
 }
 
 /**
@@ -257,29 +99,82 @@ export async function runSimpleRenderPipeline(
  * Useful for validating that shaders change over time.
  *
  * @param params - Same as testFragmentShader, plus timePoints array
- * @returns Array of results, one per time point
- *
- * @example
- * ```typescript
- * const frames = await testAnimatedShader({
- *   projectDir: import.meta.url,
- *   device,
- *   src: `shader code`,
- *   timePoints: [0.0, 1.0, 2.0]
- * });
- * // frames[0], frames[1], frames[2] are results at different times
- * ```
+ * @returns Array of image arrays, one per time point
  */
 export async function testAnimatedShader(
   params: FragmentTestParams & { timePoints: number[] },
 ): Promise<number[][]> {
   const { timePoints, ...baseParams } = params;
   return await Promise.all(
-    timePoints.map((time) =>
+    timePoints.map(time =>
       testFragmentShader({
         ...baseParams,
         uniforms: { ...baseParams.uniforms, time },
       }),
     ),
   );
+}
+
+/** Compile and run a fragment shader for testing. */
+async function runFragment(params: FragmentTestParams): Promise<number[]> {
+  const { projectDir, device, src, conditions = {}, constants } = params;
+  const { textureFormat = "rgba32float", size = [1, 1] } = params;
+  const { inputTextures, uniforms = {} } = params;
+
+  const uniformBuffer = renderUniformBuffer(device, size, uniforms);
+  const virtualLibs = createUniformsVirtualLib();
+  const completeSrc = src + "\n\n" + fullscreenTriangleVertex;
+
+  const module = await compileShader({
+    projectDir,
+    device,
+    src: completeSrc,
+    conditions,
+    constants,
+    virtualLibs,
+  });
+
+  return await simpleRender({
+    device,
+    module,
+    outputFormat: textureFormat,
+    size,
+    inputTextures,
+    uniformBuffer,
+  });
+}
+
+/** Convert typed data created from a gpu texture to an RGBA Uint8ClampedArray.
+ *
+ * (note that withTextureCopy() has already unpacked the texture data,
+ * but here we convert to 8-bit RGBA for image comparison/saving)
+ */
+function imageToUint8(
+  data: ArrayLike<number>,
+  format: GPUTextureFormat,
+  width: number,
+  height: number,
+): Uint8ClampedArray {
+  const totalPixels = width * height;
+  const components = numComponents(format);
+  const byteSize = componentByteSize(format);
+  const texelType = texelLoadType(format);
+
+  // Already 8-bit normalized - ensure Uint8ClampedArray type
+  if (byteSize === 1 && format.includes("unorm")) {
+    return data instanceof Uint8ClampedArray
+      ? data
+      : new Uint8ClampedArray(Array.from(data));
+  }
+
+  // Float data (f32/f16) - normalize [0,1] and convert to [0,255]
+  if (texelType === "f32") {
+    const uint8Data = new Uint8ClampedArray(totalPixels * 4);
+    for (let i = 0; i < totalPixels * components; i++) {
+      uint8Data[i] = Math.round(Math.max(0, Math.min(1, data[i])) * 255);
+    }
+    return uint8Data;
+  }
+
+  throw new Error(`Unsupported texture format for image export: ${format}`);
 }

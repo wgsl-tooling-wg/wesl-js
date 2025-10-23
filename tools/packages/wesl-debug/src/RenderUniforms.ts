@@ -1,36 +1,28 @@
 import type { VirtualLibraryFn } from "wesl";
 
-/** Standard uniform values for fragment shader testing */
-export interface StandardUniforms {
+/** User provided uniform values */
+export interface RenderUniforms {
   /** Elapsed time in seconds (default: 0.0) */
   time?: number;
 
   /** Mouse position in [0,1] normalized coords (default: [0.0, 0.0]) */
   mouse?: [number, number];
 
-  // Note: resolution is auto-populated from size parameter, not specified here
+  // Note: resolution is auto-populated from size parameter
+  // resolution?: [number, number];
 }
 
 /**
- * Creates a uniform buffer with standard shader parameters.
+ * Creates a standard uniform buffer for running test shaders.
  *
- * @param device - GPU device
  * @param outputSize - Output texture dimensions (becomes uniforms.resolution)
  * @param uniforms - User-provided uniform values (time, mouse)
  * @returns GPUBuffer containing uniform data
- *
- * @example
- * ```typescript
- * const uniformBuffer = createUniformBuffer(device, [512, 512], {
- *   time: 5.0,
- *   mouse: [0.5, 0.5]
- * });
- * ```
  */
-export function createUniformBuffer(
+export function renderUniformBuffer(
   device: GPUDevice,
   outputSize: [number, number],
-  uniforms: StandardUniforms = {},
+  uniforms: RenderUniforms = {},
 ): GPUBuffer {
   const resolution = outputSize;
   const time = uniforms.time ?? 0.0;
@@ -67,26 +59,9 @@ export function createUniformBuffer(
 }
 
 /**
- * Creates a virtual library function that provides the test::Uniforms struct.
+ * return the WGSL struct for use in shaders as test::Uniforms.
  *
- * @returns Virtual library object for passing to compileShader()
- *
- * @example
- * ```typescript
- * const virtualLibs = createUniformsVirtualLib();
- * const module = await compileShader({ src, virtualLibs, ... });
- * ```
- *
- * Shaders can then use:
- * ```wgsl
- * @group(0) @binding(0) var<uniform> u: test::Uniforms;
- *
- * @fragment
- * fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
- *   let st = pos.xy / u.resolution;
- *   return vec4f(st, 0.0, 1.0);
- * }
- * ```
+ * @returns virtual library object for passing to compileShader()
  */
 export function createUniformsVirtualLib(): Record<string, VirtualLibraryFn> {
   return {
