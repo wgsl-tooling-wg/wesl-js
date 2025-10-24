@@ -8,7 +8,7 @@ import {
   destroySharedDevice,
   edgePatternTexture,
   getGPUDevice,
-  testFragmentShaderImage
+  testFragmentShaderImage,
 } from "../index.ts";
 
 imageMatcher();
