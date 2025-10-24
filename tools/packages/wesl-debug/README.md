@@ -133,19 +133,17 @@ Helper functions provide common test patterns:
 import {
   testFragmentShader,
   getGPUDevice,
-  createSolidTexture,
-  createGradientTexture,
-  createCheckerboardTexture,
+  solidTexture,
   createSampler
 } from "wesl-debug";
 
 const device = await getGPUDevice();
-const inputTex = createSolidTexture(device, [0.5, 0.5, 0.5, 1.0], 256, 256);
+const inputTex = solidTexture(device, [0.5, 0.5, 0.5, 1.0], 256, 256);
 const sampler = createSampler(device);
 
 const src = `
-  @group(0) @binding(0) var input_tex: texture_2d<f32>;
-  @group(0) @binding(1) var input_samp: sampler;
+  @group(0) @binding(1) var input_tex: texture_2d<f32>;
+  @group(0) @binding(2) var input_samp: sampler;
 
   @fragment
   fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -164,14 +162,15 @@ const result = await testFragmentShader({
 ```
 
 **Texture Helper Functions:**
-- `createSolidTexture(device, color, width, height)` - uniform color
-- `createGradientTexture(device, width, height, direction?)` - gradient ('horizontal' or 'vertical')
-- `createCheckerboardTexture(device, width, height, cellSize?)` - checkerboard pattern
+- `solidTexture(device, color, width, height)` - uniform color
+- `gradientTexture(device, width, height, direction?)` - gradient ('horizontal' or 'vertical')
+- `checkerboardTexture(device, width, height, cellSize?)` - checkerboard pattern
 - `createSampler(device, options?)` - texture sampler (linear filtering, clamp-to-edge by default)
 
-**Binding Convention**: Textures bind sequentially starting at binding 0:
-- `inputTextures[0]` → texture at `@binding(0)`, sampler at `@binding(1)`
-- `inputTextures[1]` → texture at `@binding(2)`, sampler at `@binding(3)`
+**Binding Convention**: Bindings in group 0:
+- `@binding(0)` - Uniform buffer (automatically provided, contains test::Uniforms)
+- `inputTextures[0]` → texture at `@binding(1)`, sampler at `@binding(2)`
+- `inputTextures[1]` → texture at `@binding(3)`, sampler at `@binding(4)`
 
 ## Image Testing & Visual Regression
 
@@ -182,7 +181,7 @@ Test complete rendered images and automate visual regression testing using snaps
 Use `testFragmentShaderImage()` to get the complete rendered image instead of just pixel (0,0):
 
 ```typescript
-import { testFragmentShaderImage, saveImageDataToPNG } from "wesl-debug";
+import { testFragmentShaderImage } from "wesl-debug";
 
 const result = await testFragmentShaderImage({
   projectDir: import.meta.url,
@@ -192,8 +191,8 @@ const result = await testFragmentShaderImage({
   inputTextures: [{ texture: inputTex, sampler }]
 });
 
-// Save for visual inspection
-await saveImageDataToPNG(result, "__image_dev__/blur-result.png");
+// Use with snapshot testing (see below)
+await expect(result).toMatchImage("blur-result");
 ```
 
 ### Advanced Test Textures
@@ -202,21 +201,20 @@ Additional texture generators for image processing tests:
 
 ```typescript
 import {
-  createRadialGradientTexture,   // White center → black edge
-  createEdgePatternTexture,       // Sharp lines for edge detection
-  createColorBarsTexture,         // RGB primaries/secondaries
-  createNoiseTexture,             // Deterministic seeded noise
-  createPhotoSampleTexture        // Load from PNG file
+  radialGradientTexture,   // White center → black edge
+  edgePatternTexture,       // Sharp lines for edge detection
+  colorBarsTexture,         // RGB primaries/secondaries
+  noiseTexture,             // Deterministic seeded noise
+  pngToTexture              // Load from PNG file
 } from "wesl-debug";
 
-const radial = createRadialGradientTexture(device, 256);
-const edges = createEdgePatternTexture(device, 256);
-const colors = createColorBarsTexture(device, 256);
-const noise = createNoiseTexture(device, 256, 42); // seed = 42
+const radial = radialGradientTexture(device, 256);
+const edges = edgePatternTexture(device, 256);
+const colors = colorBarsTexture(device, 256);
+const noise = noiseTexture(device, 256, 42); // seed = 42
 
-// Use the bundled test photo (512x512 lemur image)
-import { getLemurImagePath } from "wesl-debug";
-const photo = createPhotoSampleTexture(device, getLemurImagePath());
+// Load from a PNG file
+const photo = await pngToTexture(device, "path/to/image.png");
 ```
 
 ### Visual Regression Testing
@@ -224,7 +222,7 @@ const photo = createPhotoSampleTexture(device, getLemurImagePath());
 Use snapshot comparison to catch unintended visual changes:
 
 ```typescript
-import { imageMatcher } from "wesl-debug";
+import { imageMatcher } from "vitest-image-snapshot";
 
 // In test setup file or at top of test
 imageMatcher();
@@ -273,7 +271,8 @@ pnpm vitest -- -u
 Fine-tune snapshot comparison thresholds:
 
 ```typescript
-await expect(result).toMatchImage("edge-detection", {
+await expect(result).toMatchImage({
+  name: "edge-detection",
   threshold: 0.1,                      // Color difference threshold (0-1)
   allowedPixelRatio: 0.01,  // Allow 1% of pixels to differ
   allowedPixels: 100         // Or allow 100 pixels to differ
