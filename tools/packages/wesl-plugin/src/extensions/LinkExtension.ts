@@ -15,14 +15,14 @@ async function emitLinkJs(
   baseId: string,
   api: PluginExtensionApi,
 ): Promise<string> {
-  const { resolvedWeslRoot, tomlDir } = await api.weslToml();
+  const { resolvedRoot, tomlDir } = await api.weslToml();
 
   const weslSrc = await api.weslSrc();
 
   const rootModule = await api.weslMain(baseId);
   const rootModuleName = noSuffix(rootModule);
 
-  const tomlRelative = path.relative(tomlDir, resolvedWeslRoot);
+  const tomlRelative = path.relative(tomlDir, resolvedRoot);
   const debugWeslRoot = tomlRelative.replaceAll(path.sep, "/");
 
   const autoDeps = await api.weslDependencies();

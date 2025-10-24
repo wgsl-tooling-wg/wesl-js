@@ -9632,9 +9632,10 @@ var require_toml = /* @__PURE__ */ __commonJS({ "../../node_modules/.pnpm/toml@3
 var import_toml = /* @__PURE__ */ __toESM(require_toml(), 1);
 /** Default configuration when no wesl.toml is found */
 const defaultWeslToml = {
-	weslFiles: ["shaders/**/*.w[eg]sl"],
-	weslRoot: "shaders",
-	dependencies: ["auto"]
+	edition: "unstable_2025",
+	include: ["shaders/**/*.w[eg]sl"],
+	root: "shaders",
+	dependencies: "auto"
 };
 /**
 * Load and parse a wesl.toml file from the fs.
@@ -9673,13 +9674,13 @@ async function findWeslToml(projectDir, specifiedToml) {
 		parsedToml = defaultWeslToml;
 		tomlDir = projectDir;
 	}
-	const tomlToWeslRoot = path.resolve(tomlDir, parsedToml.weslRoot);
+	const tomlToWeslRoot = path.resolve(tomlDir, parsedToml.root);
 	const projectDirAbs = path.resolve(projectDir);
-	const resolvedWeslRoot = path.relative(projectDirAbs, tomlToWeslRoot);
+	const resolvedRoot = path.relative(projectDirAbs, tomlToWeslRoot);
 	return {
 		tomlFile,
 		tomlDir,
-		resolvedWeslRoot,
+		resolvedRoot,
 		toml: parsedToml
 	};
 }
@@ -9702,8 +9703,8 @@ async function loadModules(projectDir, baseDir, srcGlob) {
 	let resolvedSrcGlob;
 	if (!baseDir || !srcGlob) {
 		const tomlInfo = await findWeslToml(projectDir);
-		resolvedBaseDir = baseDir ?? tomlInfo.resolvedWeslRoot;
-		resolvedSrcGlob = srcGlob ?? tomlInfo.toml.weslFiles[0];
+		resolvedBaseDir = baseDir ?? tomlInfo.resolvedRoot;
+		resolvedSrcGlob = srcGlob ?? tomlInfo.toml.include[0];
 	} else {
 		resolvedBaseDir = baseDir;
 		resolvedSrcGlob = srcGlob;

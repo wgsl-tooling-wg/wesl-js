@@ -4,14 +4,23 @@ import toml from "toml";
 
 /** Configuration from wesl.toml */
 export interface WeslToml {
-  /** glob search strings to find .wesl/.wgsl files. Relative to the toml directory. */
-  weslFiles: string[];
+  /** WESL edition (e.g. "unstable_2025") */
+  edition: string;
+
+  /** glob patterns to find .wesl/.wgsl files. Relative to the toml directory. */
+  include: string[];
 
   /** base directory for wesl files. Relative to the toml directory. */
-  weslRoot: string;
+  root: string;
 
-  /** names of directly referenced wesl shader packages (e.g. npm package names) */
-  dependencies?: string[];
+  /** glob patterns to exclude directories. */
+  exclude?: string[];
+
+  /** package manager ("npm" or "cargo") */
+  "package-manager"?: string;
+
+  /** names of directly referenced wesl shader packages (e.g. npm package names), or "auto" for auto-detection */
+  dependencies?: string[] | string;
 }
 
 /** Information about the loaded wesl.toml file and its location */
@@ -24,8 +33,8 @@ export interface WeslTomlInfo {
   tomlDir: string;
 
   /** The wesl root, relative to the projectDir.
-   * This lets loadModules do `path.resolve(projectDir, resolvedWeslRoot)` */
-  resolvedWeslRoot: string;
+   * This lets loadModules do `path.resolve(projectDir, resolvedRoot)` */
+  resolvedRoot: string;
 
   /** The underlying toml file */
   toml: WeslToml;
@@ -33,9 +42,10 @@ export interface WeslTomlInfo {
 
 /** Default configuration when no wesl.toml is found */
 export const defaultWeslToml: WeslToml = {
-  weslFiles: ["shaders/**/*.w[eg]sl"],
-  weslRoot: "shaders",
-  dependencies: ["auto"],
+  edition: "unstable_2025",
+  include: ["shaders/**/*.w[eg]sl"],
+  root: "shaders",
+  dependencies: "auto",
 };
 
 /**
@@ -86,9 +96,9 @@ export async function findWeslToml(
     tomlDir = projectDir;
   }
 
-  const tomlToWeslRoot = path.resolve(tomlDir, parsedToml.weslRoot);
+  const tomlToWeslRoot = path.resolve(tomlDir, parsedToml.root);
   const projectDirAbs = path.resolve(projectDir);
-  const resolvedWeslRoot = path.relative(projectDirAbs, tomlToWeslRoot);
+  const resolvedRoot = path.relative(projectDirAbs, tomlToWeslRoot);
 
-  return { tomlFile, tomlDir, resolvedWeslRoot, toml: parsedToml };
+  return { tomlFile, tomlDir, resolvedRoot, toml: parsedToml };
 }

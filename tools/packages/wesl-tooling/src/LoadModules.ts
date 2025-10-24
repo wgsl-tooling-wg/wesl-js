@@ -25,8 +25,8 @@ export async function loadModules(
 
   if (!baseDir || !srcGlob) {
     const tomlInfo = await findWeslToml(projectDir);
-    resolvedBaseDir = baseDir ?? tomlInfo.resolvedWeslRoot;
-    resolvedSrcGlob = srcGlob ?? tomlInfo.toml.weslFiles[0]; // Use first glob pattern
+    resolvedBaseDir = baseDir ?? tomlInfo.resolvedRoot;
+    resolvedSrcGlob = srcGlob ?? tomlInfo.toml.include[0]; // Use first glob pattern
   } else {
     resolvedBaseDir = baseDir;
     resolvedSrcGlob = srcGlob;
