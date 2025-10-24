@@ -10,39 +10,6 @@ export interface SamplerOptions {
 const textureCache = new DeviceCache<GPUTexture>();
 const samplerCache = new DeviceCache<GPUSampler>();
 
-/** Common helper for creating cached textures with custom data generation. */
-function cachedTexture(
-  device: GPUDevice,
-  cacheKey: string,
-  label: string,
-  width: number,
-  height: number,
-  generateData: (data: Uint8Array, width: number, height: number) => void,
-): GPUTexture {
-  const cached = textureCache.get(device, cacheKey);
-  if (cached) return cached;
-
-  const texture = device.createTexture({
-    label,
-    size: { width, height, depthOrArrayLayers: 1 },
-    format: "rgba8unorm",
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-  });
-
-  const data = new Uint8Array(width * height * 4);
-  generateData(data, width, height);
-
-  device.queue.writeTexture(
-    { texture },
-    data,
-    { bytesPerRow: width * 4 },
-    { width, height },
-  );
-
-  textureCache.set(device, cacheKey, texture);
-  return texture;
-}
-
 /** Create texture filled with solid color. Internally cached. */
 export function solidTexture(
   device: GPUDevice,
@@ -290,4 +257,37 @@ export function noiseTexture(
       }
     },
   );
+}
+
+/** Common helper for creating cached textures with custom data generation. */
+function cachedTexture(
+  device: GPUDevice,
+  cacheKey: string,
+  label: string,
+  width: number,
+  height: number,
+  generateData: (data: Uint8Array, width: number, height: number) => void,
+): GPUTexture {
+  const cached = textureCache.get(device, cacheKey);
+  if (cached) return cached;
+
+  const texture = device.createTexture({
+    label,
+    size: { width, height, depthOrArrayLayers: 1 },
+    format: "rgba8unorm",
+    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+  });
+
+  const data = new Uint8Array(width * height * 4);
+  generateData(data, width, height);
+
+  device.queue.writeTexture(
+    { texture },
+    data,
+    { bytesPerRow: width * 4 },
+    { width, height },
+  );
+
+  textureCache.set(device, cacheKey, texture);
+  return texture;
 }
