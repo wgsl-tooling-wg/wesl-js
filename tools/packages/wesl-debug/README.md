@@ -205,7 +205,8 @@ import {
   edgePatternTexture,       // Sharp lines for edge detection
   colorBarsTexture,         // RGB primaries/secondaries
   noiseTexture,             // Deterministic seeded noise
-  pngToTexture              // Load from PNG file
+  pngToTexture,             // Load from PNG file
+  lemurTexture              // Bundled 512x512 photo sample
 } from "wesl-debug";
 
 const radial = radialGradientTexture(device, 256);
@@ -213,7 +214,10 @@ const edges = edgePatternTexture(device, 256);
 const colors = colorBarsTexture(device, 256);
 const noise = noiseTexture(device, 256, 42); // seed = 42
 
-// Load from a PNG file
+// Use the bundled lemur test photo (512x512)
+const lemur = await lemurTexture(device);
+
+// Or load from a custom PNG file
 const photo = await pngToTexture(device, "path/to/image.png");
 ```
 
