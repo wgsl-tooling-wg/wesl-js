@@ -1,32 +1,39 @@
+import * as path from "node:path";
 import { expect, test } from "vitest";
 import { ImageSnapshotManager } from "../SnapshotManager.ts";
 
 test("generates correct file paths", () => {
-  const manager = new ImageSnapshotManager("/path/to/test.ts");
+  const testPath = path.join("/path/to/test.ts");
+  const manager = new ImageSnapshotManager(testPath);
 
   expect(manager.referencePath("my-snapshot")).toBe(
-    "/path/to/__image_snapshots__/my-snapshot.png",
+    path.join("/path/to", "__image_snapshots__", "my-snapshot.png"),
   );
   expect(manager.actualPath("my-snapshot")).toBe(
-    "/path/to/__image_actual__/my-snapshot.png",
+    path.join("/path/to", "__image_actual__", "my-snapshot.png"),
   );
   expect(manager.diffPath("my-snapshot")).toBe(
-    "/path/to/__image_diffs__/my-snapshot.png",
+    path.join("/path/to", "__image_diffs__", "my-snapshot.png"),
   );
 });
 
 test("supports custom directory names", () => {
-  const manager = new ImageSnapshotManager("/path/to/test.ts", {
+  const testPath = path.join("/path/to/test.ts");
+  const manager = new ImageSnapshotManager(testPath, {
     snapshotDir: "custom-snapshots",
     diffDir: "custom-diffs",
     actualDir: "custom-actual",
   });
 
   expect(manager.referencePath("test")).toBe(
-    "/path/to/custom-snapshots/test.png",
+    path.join("/path/to", "custom-snapshots", "test.png"),
   );
-  expect(manager.actualPath("test")).toBe("/path/to/custom-actual/test.png");
-  expect(manager.diffPath("test")).toBe("/path/to/custom-diffs/test.png");
+  expect(manager.actualPath("test")).toBe(
+    path.join("/path/to", "custom-actual", "test.png"),
+  );
+  expect(manager.diffPath("test")).toBe(
+    path.join("/path/to", "custom-diffs", "test.png"),
+  );
 });
 
 test("detects update mode from environment", () => {
