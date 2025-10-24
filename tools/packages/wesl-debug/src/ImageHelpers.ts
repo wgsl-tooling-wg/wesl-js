@@ -1,11 +1,14 @@
-import * as fs from "node:fs";
+import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PNG } from "pngjs";
 
 /** Load PNG file and create GPU texture. */
-export function pngToTexture(device: GPUDevice, imagePath: string): GPUTexture {
-  const png = PNG.sync.read(fs.readFileSync(imagePath));
+export async function pngToTexture(
+  device: GPUDevice,
+  imagePath: string,
+): Promise<GPUTexture> {
+  const png = await loadPNG(imagePath);
 
   const texture = device.createTexture({
     label: `test-texture-photo-${path.basename(imagePath)}`,
@@ -22,6 +25,17 @@ export function pngToTexture(device: GPUDevice, imagePath: string): GPUTexture {
   );
 
   return texture;
+}
+
+async function loadPNG(imagePath: string): Promise<PNG> {
+  const fileData = await fs.readFile(imagePath);
+  return new Promise<PNG>((resolve, reject) => {
+    const png = new PNG();
+    png.parse(fileData, (err, data) => {
+      if (err) reject(err);
+      else resolve(data);
+    });
+  });
 }
 
 /** Get the path to the bundled lemur test image (512x512 photo sample). */

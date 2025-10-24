@@ -135,8 +135,7 @@ test("grayscale conversion", async () => {
 });
 
 test("sharpen filter on photo sample", async () => {
-  const lemurPath = lemurImagePath();
-  const inputTex = pngToTexture(device, lemurPath);
+  const inputTex = await pngToTexture(device, lemurImagePath());
   const sampler = createSampler(device);
 
   const src = `
