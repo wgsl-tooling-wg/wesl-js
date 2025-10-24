@@ -6,7 +6,7 @@
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",
-    "prepublishOnly": "build",
+    "prepublishOnly": "run-s build",
     "test": "vitest --hideSkippedTests",
     "test:once": "vitest run",
     "typecheck": "tsgo"
