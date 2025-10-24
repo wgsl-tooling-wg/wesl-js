@@ -1,6 +1,5 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { fileURLToPath } from "node:url";
 import { PNG } from "pngjs";
 
 /** Load PNG file and create GPU texture. */
@@ -36,10 +35,4 @@ async function loadPNG(imagePath: string): Promise<PNG> {
       else resolve(data);
     });
   });
-}
-
-/** Get the path to the bundled lemur test image (512x512 photo sample). */
-export function lemurImagePath(): string {
-  const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-  return path.join(moduleDir, "..", "images", "lemur512.png");
 }

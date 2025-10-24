@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { imageMatcher } from "vitest-image-snapshot";
+import { lemurTexture } from "../ExampleImages.ts";
 import {
   checkerboardTexture,
   colorBarsTexture,
@@ -7,9 +8,7 @@ import {
   destroySharedDevice,
   edgePatternTexture,
   getGPUDevice,
-  lemurImagePath,
-  pngToTexture,
-  testFragmentShaderImage,
+  testFragmentShaderImage
 } from "../index.ts";
 
 imageMatcher();
@@ -135,7 +134,7 @@ test("grayscale conversion", async () => {
 });
 
 test("sharpen filter on photo sample", async () => {
-  const inputTex = await pngToTexture(device, lemurImagePath());
+  const inputTex = await lemurTexture(device);
   const sampler = createSampler(device);
 
   const src = `
