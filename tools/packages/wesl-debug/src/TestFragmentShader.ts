@@ -70,7 +70,7 @@ export interface FragmentTestParams {
   }>;
 }
 
-/** Executes a fragment shader and returns pixel (0,0) for validation.  */
+/** Run a fragment shader and returns pixel (0,0) for validation.  */
 export async function testFragmentShader(
   params: FragmentTestParams,
 ): Promise<number[]> {
@@ -80,7 +80,7 @@ export async function testFragmentShader(
   return data.slice(0, count);
 }
 
-/** Test a fragment shader and return the complete rendered image for visual inspection or comparison. */
+/** Run a fragment shader and return the rendered image. */
 export async function testFragmentShaderImage(
   params: FragmentTestParams,
 ): Promise<ImageData> {

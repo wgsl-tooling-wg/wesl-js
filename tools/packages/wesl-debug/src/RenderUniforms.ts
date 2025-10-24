@@ -13,7 +13,7 @@ export interface RenderUniforms {
 }
 
 /**
- * Creates a standard uniform buffer for running test shaders.
+ * Creates a standard uniform buffer for running test fragment shaders.
  *
  * @param outputSize - Output texture dimensions (becomes uniforms.resolution)
  * @param uniforms - User-provided uniform values (time, mouse)

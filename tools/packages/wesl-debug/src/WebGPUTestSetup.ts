@@ -12,6 +12,7 @@ export async function getGPUDevice(): Promise<GPUDevice> {
   return sharedDevice;
 }
 
+/** destroy globally shared GPU test device */
 export function destroySharedDevice(): void {
   sharedDevice?.destroy();
   sharedDevice = undefined;
