@@ -23,7 +23,7 @@ export async function cli(rawArgs: string[]): Promise<void> {
 }
 
 async function parseArgs(args: string[]) {
-  const toolDir = new URL("..", import.meta.url);
+  const toolDir = new URL("..", import.meta.url).href;
   const appVersion = await versionFromPackageJson(toolDir);
   return yargs(args)
     .version(appVersion)
