@@ -65,6 +65,11 @@ export interface LinkParams {
   /** generate wesl from code at runtime */
   virtualLibs?: Record<string, VirtualLibraryFn>;
 
+  /** package name for the local sources (in addition to default "package::").
+   * Enables imports like `import mypkg::foo` alongside `import package::foo`.
+   * Package names with hyphens should be normalized to underscores. */
+  packageName?: string;
+
   /** plugins and other configuration to use while linking */
   config?: LinkConfig;
 
@@ -90,9 +95,12 @@ export type VirtualLibraryFn = (conditions: Conditions) => string;
  * Only code that is valid with the current conditions is included in the output.
  */
 export async function link(params: LinkParams): Promise<LinkedWesl> {
-  const { weslSrc, debugWeslRoot, libs = [] } = params;
+  const { weslSrc, debugWeslRoot, libs = [], packageName } = params;
   const registry = parsedRegistry();
   parseIntoRegistry(weslSrc, registry, "package", debugWeslRoot);
+  if (packageName) {
+    parseIntoRegistry(weslSrc, registry, packageName, debugWeslRoot);
+  }
   parseLibsIntoRegistry(libs, registry);
   const srcMap = linkRegistry({ registry, ...params });
   return new LinkedWesl(srcMap);
@@ -100,9 +108,12 @@ export async function link(params: LinkParams): Promise<LinkedWesl> {
 
 /** linker api for benchmarking */
 export function _linkSync(params: LinkParams): LinkedWesl {
-  const { weslSrc, debugWeslRoot, libs = [] } = params;
+  const { weslSrc, debugWeslRoot, libs = [], packageName } = params;
   const registry = parsedRegistry();
   parseIntoRegistry(weslSrc, registry, "package", debugWeslRoot);
+  if (packageName) {
+    parseIntoRegistry(weslSrc, registry, packageName, debugWeslRoot);
+  }
   parseLibsIntoRegistry(libs, registry);
   const srcMap = linkRegistry({ registry, ...params });
   return new LinkedWesl(srcMap);
