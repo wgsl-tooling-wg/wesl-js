@@ -61,11 +61,11 @@ export async function compileShader(
     : {};
   const weslSrc = { main: src, ...localSources };
 
-  const libs = await dependencyBundles(weslSrc, projectDir);
   const packageName =
     Object.keys(localSources).length > 0
       ? await getPackageName(projectDir)
       : undefined;
+  const libs = await dependencyBundles(weslSrc, projectDir, packageName);
 
   const linked = await link({
     weslSrc,

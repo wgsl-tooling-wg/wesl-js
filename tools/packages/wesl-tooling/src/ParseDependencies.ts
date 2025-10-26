@@ -104,14 +104,20 @@ function* exportSubpaths(mPath: string[]): Generator<string> {
  *
  * Parse the WESL files to find references to external WESL modules,
  * and then load those modules (weslBundle.js files) using node dynamic imports.
+ *
+ * @param packageName - Optional current package name to exclude from dependencies
  */
 export async function dependencyBundles(
   weslSrc: Record<string, string>,
   projectDir: string,
+  packageName?: string,
 ): Promise<WeslBundle[]> {
   const deps = parseDependencies(weslSrc, projectDir);
+  const filteredDeps = packageName
+    ? deps.filter(dep => dep !== packageName && !dep.startsWith(`${packageName}/`))
+    : deps;
   const projectURL = projectDirURL(projectDir);
-  const bundles = deps.map(async dep => {
+  const bundles = filteredDeps.map(async dep => {
     const url = resolve(dep, projectURL);
     const module = await import(url);
     return module.default;
