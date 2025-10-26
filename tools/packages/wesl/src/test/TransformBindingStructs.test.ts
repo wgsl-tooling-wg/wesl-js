@@ -4,6 +4,7 @@ import { expect, test } from "vitest";
 import { bindIdents } from "../BindIdents.ts";
 import { astToString } from "../debug/ASTtoString.ts";
 import { lowerAndEmit } from "../LowerAndEmit.ts";
+import { RegistryResolver } from "../ModuleResolver.ts";
 import { parsedRegistry } from "../ParsedRegistry.ts";
 import {
   bindingStructsPlugin,
@@ -48,7 +49,7 @@ test("transformBindingStruct", () => {
   `;
 
   const rootAst = parseTest(src);
-  bindIdents({ rootAst, registry: parsedRegistry() });
+  bindIdents({ rootAst, resolver: new RegistryResolver(parsedRegistry()) });
   const bindingStruct = markBindingStructs(rootAst.moduleElem)[0];
   const newVars = transformBindingStruct(bindingStruct, new Set());
 
@@ -78,7 +79,7 @@ test("findRefsToBindingStructs", () => {
   `;
 
   const rootAst = parseTest(src);
-  bindIdents({ rootAst, registry: parsedRegistry() });
+  bindIdents({ rootAst, resolver: new RegistryResolver(parsedRegistry()) });
   markBindingStructs(rootAst.moduleElem);
   const found = findRefsToBindingStructs(rootAst.moduleElem);
   expect(found.length).toBe(1);
@@ -102,7 +103,7 @@ test("transformBindingReference", () => {
   `;
 
   const rootAst = parseTest(src);
-  bindIdents({ rootAst, registry: parsedRegistry() });
+  bindIdents({ rootAst, resolver: new RegistryResolver(parsedRegistry()) });
   const bindingStruct = markBindingStructs(rootAst.moduleElem)[0];
   transformBindingStruct(bindingStruct, new Set());
   const found = findRefsToBindingStructs(rootAst.moduleElem);
@@ -131,7 +132,10 @@ test("lower binding structs", () => {
     }
   `;
   const rootAst = parseTest(src);
-  const { globalNames } = bindIdents({ rootAst, registry: parsedRegistry() });
+  const { globalNames } = bindIdents({
+    rootAst,
+    resolver: new RegistryResolver(parsedRegistry()),
+  });
   const tAst = { ...rootAst, globalNames, notableElems: {} };
   const lowered = lowerBindingStructs(tAst);
 

@@ -3,6 +3,7 @@ import {
   parsedRegistry,
   parseIntoRegistry,
   publicDecl,
+  RegistryResolver,
   resetScopeIds,
 } from "wesl";
 import { bindIdents } from "../BindIdents.ts";
@@ -83,7 +84,8 @@ test("collect unbound references", async () => {
   const registry = parsedRegistry();
   parseIntoRegistry({ main }, registry);
   const rootAst = registry.modules["package::main"];
-  const bindResult = bindIdents({ registry, rootAst, accumulateUnbound: true });
+  const resolver = new RegistryResolver(registry);
+  const bindResult = bindIdents({ resolver, rootAst, accumulateUnbound: true });
 
   const expected = ["pkg1::bar::baz", "pkg2::foo"];
   const expectedArrays = expected.map(s => s.split("::")).sort();

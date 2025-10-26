@@ -1,11 +1,13 @@
+import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { LinkParams } from "wesl";
-import { link, noSuffix } from "wesl";
+import { CompositeResolver, link, RecordResolver } from "wesl";
 import {
   dependencyBundles,
+  FileModuleResolver,
   readPackageJson,
 } from "../../wesl-tooling/src/index.ts";
-import { loadModules } from "../../wesl-tooling/src/LoadModules.ts";
+import { findWeslToml } from "../../wesl-tooling/src/LoadWeslToml.ts";
 
 export interface CompileShaderParams {
   /** Project directory for resolving shader dependencies.
@@ -56,19 +58,17 @@ export async function compileShader(
     params;
   const { useSourceShaders = !process.env.TEST_BUNDLES } = params;
 
-  const localSources = useSourceShaders
-    ? await loadLocalSources(projectDir)
-    : {};
-  const weslSrc = { main: src, ...localSources };
+  const packageName = useSourceShaders
+    ? await getPackageName(projectDir)
+    : undefined;
+  const libs = await dependencyBundles({ main: src }, projectDir, packageName);
 
-  const packageName =
-    Object.keys(localSources).length > 0
-      ? await getPackageName(projectDir)
-      : undefined;
-  const libs = await dependencyBundles(weslSrc, projectDir, packageName);
+  const resolver = useSourceShaders
+    ? await lazyFileResolver(projectDir, src, packageName)
+    : new RecordResolver({ main: src }, packageName);
 
   const linked = await link({
-    weslSrc,
+    resolver,
     rootModuleName: "main",
     libs,
     virtualLibs,
@@ -82,23 +82,22 @@ export async function compileShader(
   return module;
 }
 
-/** Load local shader sources with extensions stripped (utils.wesl -> utils). */
-async function loadLocalSources(
+/** Create a lazy resolver that loads local shaders on-demand from the filesystem.
+ * Laziness allows testing without rebuilding the current package after edits. */
+async function lazyFileResolver(
   projectDir: string,
-): Promise<Record<string, string>> {
-  try {
-    // loadModules needs a filesystem path, convert from file:// URL
-    const projectPath = fileURLToPath(projectDir);
-    const sources = await loadModules(projectPath);
-    return Object.fromEntries(
-      Object.entries(sources).map(([path, content]) => [
-        noSuffix(path),
-        content,
-      ]),
-    );
-  } catch {
-    return {}; // No local shaders found - acceptable
-  }
+  mainSrc: string,
+  packageName: string | undefined,
+): Promise<CompositeResolver> {
+  const mainResolver = new RecordResolver({ main: mainSrc }, packageName);
+  const projectPath = fileURLToPath(projectDir);
+  const tomlInfo = await findWeslToml(projectPath);
+  const baseDir = path.isAbsolute(tomlInfo.resolvedRoot)
+    ? tomlInfo.resolvedRoot
+    : path.join(projectPath, tomlInfo.resolvedRoot);
+
+  const fileResolver = new FileModuleResolver(baseDir, packageName);
+  return new CompositeResolver([mainResolver, fileResolver]);
 }
 
 /** Read package name from package.json, normalized for WGSL identifiers. */

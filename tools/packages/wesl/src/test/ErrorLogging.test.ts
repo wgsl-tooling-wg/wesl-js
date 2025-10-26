@@ -1,4 +1,7 @@
+import { withLoggerAsync } from "mini-parse";
+import { logCatch } from "mini-parse/test-util";
 import { expect, test } from "vitest";
+import { link } from "../Linker.ts";
 import { linkWithLogQuietly } from "./TestUtil.ts";
 
 test("unresolved identifier", async () => {
@@ -27,4 +30,17 @@ test("conditionally empty struct", async () => {
                ^^^^^"
   `,
   );
+});
+
+test("debugWeslRoot in error messages", async () => {
+  const weslSrc = { "main.wesl": "fn main() { x = 7; }" };
+  const { log, logged } = logCatch();
+  try {
+    await withLoggerAsync(log, async () =>
+      link({ weslSrc, rootModuleName: "main.wesl", debugWeslRoot: "shaders/" }),
+    );
+  } catch (_e) {
+    // expected to throw
+  }
+  expect(logged()).toContain("shaders/main.wesl");
 });

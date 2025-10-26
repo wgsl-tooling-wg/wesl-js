@@ -5,6 +5,7 @@ export * from "./debug/ScopeToString.ts";
 export * from "./LinkedWesl.ts";
 export * from "./Linker.ts";
 export * from "./Mangler.ts";
+export * from "./ModuleResolver.ts";
 export * from "./ParsedRegistry.ts";
 export * from "./ParseWESL.ts";
 export * from "./PathUtil.ts";

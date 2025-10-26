@@ -1,4 +1,9 @@
-import { bindAndTransform, bindingStructsPlugin, type LinkConfig } from "wesl";
+import {
+  bindAndTransform,
+  bindingStructsPlugin,
+  type LinkConfig,
+  RegistryResolver,
+} from "wesl";
 import {
   bindingGroupLayoutTs,
   reportBindingStructsPlugin,
@@ -29,7 +34,9 @@ async function bindingLayoutJs(
       }),
     ],
   };
-  bindAndTransform({ registry, rootModuleName: main, config });
+
+  const resolver = new RegistryResolver(registry);
+  bindAndTransform({ resolver, registry, rootModuleName: main, config });
 
   return structsJs;
 }

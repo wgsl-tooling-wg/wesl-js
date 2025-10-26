@@ -22,6 +22,8 @@ import {
  *    . package foo, export './bar' bundle, element baz
  *    . package foo, export './bar/baz' bundle, module lib.wesl, element baz
  * To distinguish these, we node resolve the longest path we can.
+ *
+ * @return dependency paths in npm format, e.g. 'foo/bar' or 'foo'
  */
 export function parseDependencies(
   weslSrc: Record<string, string>,
@@ -61,7 +63,7 @@ export function parseDependencies(
 /**
  * Find the longest resolvable npm subpath from a module path.
  *
- * @param mPath module path, e.g. ['foo', 'bar', 'baz', 'elem']
+ * @param mPath module path segments, e.g. ['foo', 'bar', 'baz', 'elem']
  * @param importerURL URL of the importer, e.g. 'file:///path/to/project/foo/bar/baz.wesl' (doesn't need to be a real file)
  * @returns longest resolvable subpath of mPath, e.g. 'foo/bar/baz' or 'foo/bar'
  */
@@ -113,9 +115,7 @@ export async function dependencyBundles(
   packageName?: string,
 ): Promise<WeslBundle[]> {
   const deps = parseDependencies(weslSrc, projectDir);
-  const filteredDeps = packageName
-    ? deps.filter(dep => dep !== packageName && !dep.startsWith(`${packageName}/`))
-    : deps;
+  const filteredDeps = otherPackages(deps, packageName);
   const projectURL = projectDirURL(projectDir);
   const bundles = filteredDeps.map(async dep => {
     const url = resolve(dep, projectURL);
@@ -124,6 +124,14 @@ export async function dependencyBundles(
   });
 
   return await Promise.all(bundles);
+}
+
+/** exclude the current package from a list of dependencies */
+function otherPackages(deps: string[], packageName?: string): string[] {
+  if (!packageName) return deps;
+  return deps.filter(
+    dep => dep !== packageName && !dep.startsWith(`${packageName}/`),
+  );
 }
 
 /** Normalize a project directory to a file:// URL.

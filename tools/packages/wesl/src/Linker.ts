@@ -1,15 +1,23 @@
 import { type SrcMap, SrcMapBuilder, tracing } from "mini-parse";
 import type { AbstractElem, ModuleElem } from "./AbstractElems.ts";
-import { bindIdents, type EmittableElem } from "./BindIdents.ts";
+import {
+  bindIdents,
+  type EmittableElem,
+  type VirtualLibrarySet,
+} from "./BindIdents.ts";
 import { LinkedWesl } from "./LinkedWesl.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
 import type { ManglerFn } from "./Mangler.ts";
 import {
+  CompositeResolver,
+  type ModuleResolver,
+  RecordResolver,
+  RegistryResolver,
+} from "./ModuleResolver.ts";
+import {
   type ParsedRegistry,
   parsedRegistry,
-  parseIntoRegistry,
   parseLibsIntoRegistry,
-  selectModule,
 } from "./ParsedRegistry.ts";
 import type { WeslAST } from "./ParseWESL.ts";
 import type { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
@@ -33,7 +41,12 @@ export interface LinkConfig {
 }
 
 export interface LinkParams {
-  /** record of file paths and wesl text for modules.
+  /** Module resolver for lazy loading (NEW API - preferred)
+   * Replaces weslSrc for lazy module loading.
+   * If provided, weslSrc will be ignored. */
+  resolver?: ModuleResolver;
+
+  /** record of file paths and wesl text for modules (LEGACY API - still supported).
    *   key is module path or file path
    *     `package::foo::bar`, or './foo/bar.wesl', or './foo/bar'
    *   value is wesl src
@@ -44,7 +57,7 @@ export interface LinkParams {
    * - Valid WGSL identifiers: No backslashes, no `..`, or other non-identifier symbols.
    * - Relative paths: They have to be relative to the wesl root.
    */
-  weslSrc: Record<string, string>;
+  weslSrc?: Record<string, string>;
 
   /** name of root wesl module
    *    for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
@@ -95,28 +108,27 @@ export type VirtualLibraryFn = (conditions: Conditions) => string;
  * Only code that is valid with the current conditions is included in the output.
  */
 export async function link(params: LinkParams): Promise<LinkedWesl> {
-  const { weslSrc, debugWeslRoot, libs = [], packageName } = params;
-  const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry, "package", debugWeslRoot);
-  if (packageName) {
-    parseIntoRegistry(weslSrc, registry, packageName, debugWeslRoot);
-  }
-  parseLibsIntoRegistry(libs, registry);
-  const srcMap = linkRegistry({ registry, ...params });
-  return new LinkedWesl(srcMap);
+  return new LinkedWesl(_linkSync(params));
 }
 
 /** linker api for benchmarking */
-export function _linkSync(params: LinkParams): LinkedWesl {
-  const { weslSrc, debugWeslRoot, libs = [], packageName } = params;
-  const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry, "package", debugWeslRoot);
-  if (packageName) {
-    parseIntoRegistry(weslSrc, registry, packageName, debugWeslRoot);
+export function _linkSync(params: LinkParams): SrcMap {
+  const { weslSrc, libs = [], packageName, debugWeslRoot } = params;
+  let { resolver } = params;
+
+  // If no resolver provided, create one from weslSrc (legacy API)
+  if (!resolver) {
+    if (!weslSrc) {
+      throw new Error("Either resolver or weslSrc must be provided");
+    }
+    resolver = new RecordResolver(weslSrc, packageName, debugWeslRoot);
   }
-  parseLibsIntoRegistry(libs, registry);
-  const srcMap = linkRegistry({ registry, ...params });
-  return new LinkedWesl(srcMap);
+
+  // Libraries still use eager loading via ParsedRegistry
+  const libRegistry = parsedRegistry();
+  parseLibsIntoRegistry(libs, libRegistry);
+
+  return linkRegistry({ resolver, registry: libRegistry, ...params });
 }
 
 export interface LinkRegistryParams
@@ -129,7 +141,8 @@ export interface LinkRegistryParams
     | "constants"
     | "mangler"
   > {
-  registry: ParsedRegistry;
+  resolver: ModuleResolver;
+  registry?: ParsedRegistry; // temporary for libraries
 }
 
 /** Link wesl from a registry of already parsed modules.
@@ -160,25 +173,29 @@ export interface BoundAndTransformed {
   newStatements: EmittableElem[];
 }
 
-/** bind identifers and apply any transform plugins */
+/** Bind identifiers and apply transform plugins */
 export function bindAndTransform(
   params: LinkRegistryParams,
 ): BoundAndTransformed {
-  const { registry, mangler } = params;
+  const { resolver, registry, mangler, constants, config } = params;
   const { rootModuleName = "main", conditions = {} } = params;
-  const rootAst = getRootModule(registry, rootModuleName);
 
-  // setup virtual modules from code generation or host constants provided by the user
-  const { constants, config } = params;
-  let { virtualLibs } = params;
-  if (constants) {
-    virtualLibs = { ...virtualLibs, constants: constantsGenerator(constants) };
-  }
-  const virtuals = virtualLibs && mapValues(virtualLibs, fn => ({ fn }));
+  const modulePath = normalizeModuleName(rootModuleName);
+  const rootAst = getRootModule(resolver, modulePath, rootModuleName);
 
-  /* --- Step #2   Binding Idents --- */
-  // link active Ident references to declarations, and uniquify global declarations
-  const bindParams = { rootAst, registry, conditions, virtuals, mangler };
+  const finalResolver = registry
+    ? new CompositeResolver([resolver, new RegistryResolver(registry)])
+    : resolver;
+
+  const virtuals = setupVirtualLibs(params.virtualLibs, constants);
+
+  const bindParams = {
+    rootAst,
+    resolver: finalResolver,
+    conditions,
+    virtuals,
+    mangler,
+  };
   const bindResults = bindIdents(bindParams);
   const { globalNames, decls: newDecls, newStatements } = bindResults;
 
@@ -186,32 +203,51 @@ export function bindAndTransform(
   return { transformedAst, newDecls, newStatements };
 }
 
-function constantsGenerator(
-  constants: Record<string, string | number>,
-): () => string {
-  return () =>
-    Object.entries(constants)
-      .map(([name, value]) => `const ${name} = ${value};`)
-      .join("\n");
+/** Normalize module name to module path format.
+ * Handles: module path (package::foo), file path (./foo.wesl), or simple name (foo) */
+function normalizeModuleName(name: string): string {
+  if (name.includes("::")) return name;
+  if (name.includes("/") || name.endsWith(".wesl") || name.endsWith(".wgsl")) {
+    const stripped = name.replace(/\.(wesl|wgsl)$/, "").replace(/^\.\//, "");
+    return "package::" + stripped.replaceAll("/", "::");
+  }
+  return "package::" + name;
 }
 
-/** get a reference to the root module, selecting by module name */
+/** Get root module from resolver, throwing if not found */
 function getRootModule(
-  parsed: ParsedRegistry,
+  resolver: ModuleResolver,
+  modulePath: string,
   rootModuleName: string,
 ): WeslAST {
-  const rootModule = selectModule(parsed, rootModuleName);
-  if (!rootModule) {
+  const rootAst = resolver.resolveModule(modulePath);
+  if (!rootAst) {
     if (tracing) {
-      console.log(`parsed modules: ${Object.keys(parsed.modules)}`);
-      console.log(`root module not found: ${rootModuleName}`);
+      console.log(
+        `root module not found: ${modulePath} (from ${rootModuleName})`,
+      );
     }
     throw new Error(`Root module not found: ${rootModuleName}`);
   }
-  return rootModule;
+  return rootAst;
 }
 
-/** run any plugins that transform the AST */
+/** Setup virtual modules from code generation or host constants */
+function setupVirtualLibs(
+  virtualLibs: Record<string, VirtualLibraryFn> | undefined,
+  constants: Record<string, string | number> | undefined,
+): VirtualLibrarySet | undefined {
+  let libs = virtualLibs;
+  if (constants) {
+    const constantsGen = () =>
+      Object.entries(constants)
+        .map(([name, value]) => `const ${name} = ${value};`)
+        .join("\n");
+    libs = { ...libs, constants: constantsGen };
+  }
+  return libs && mapValues(libs, fn => ({ fn }));
+}
+
 function applyTransformPlugins(
   rootModule: WeslAST,
   globalNames: Set<string>,
@@ -231,7 +267,6 @@ function applyTransformPlugins(
   return transformedAst;
 }
 
-/** traverse the AST and emit WGSL */
 function emitWgsl(
   rootModuleElem: ModuleElem,
   srcModule: SrcModule,
@@ -239,17 +274,7 @@ function emitWgsl(
   newStatements: EmittableElem[],
   conditions: Conditions = {},
 ): SrcMapBuilder[] {
-  /* --- Step #3   Writing WGSL --- */ // note doesn't require the scope tree anymore
-
-  // emit any new statements (module level const asserts)
-  const prologueBuilders = newStatements.map(s => {
-    const { elem, srcModule } = s;
-    const { src: text, debugFilePath: path } = srcModule;
-    const builder = new SrcMapBuilder({ text, path });
-    lowerAndEmit({ srcBuilder: builder, rootElems: [elem], conditions });
-    builder.addNl();
-    return builder;
-  });
+  const prologueBuilders = newStatements.map(s => emitStatement(s, conditions));
 
   const rootBuilder = new SrcMapBuilder({
     text: srcModule.src,
@@ -262,22 +287,34 @@ function emitWgsl(
     extracting: false,
   });
 
-  const declBuilders = newDecls.map(decl => {
-    const builder = new SrcMapBuilder({
-      text: decl.srcModule.src,
-      path: decl.srcModule.debugFilePath,
-    });
-    // Skip conditional filtering - these declarations were already validated by findValidRootDecls
-    lowerAndEmit({
-      srcBuilder: builder,
-      rootElems: [decl.declElem!],
-      conditions,
-      skipConditionalFiltering: true,
-    });
-    return builder;
-  });
+  const declBuilders = newDecls.map(decl => emitDecl(decl, conditions));
 
   return [...prologueBuilders, rootBuilder, ...declBuilders];
+}
+
+function emitStatement(
+  s: EmittableElem,
+  conditions: Conditions,
+): SrcMapBuilder {
+  const { elem, srcModule } = s;
+  const { src: text, debugFilePath: path } = srcModule;
+  const builder = new SrcMapBuilder({ text, path });
+  lowerAndEmit({ srcBuilder: builder, rootElems: [elem], conditions });
+  builder.addNl();
+  return builder;
+}
+
+/** Skip conditional filtering because findValidRootDecls already validated these declarations */
+function emitDecl(decl: DeclIdent, conditions: Conditions): SrcMapBuilder {
+  const { src: text, debugFilePath: path } = decl.srcModule;
+  const builder = new SrcMapBuilder({ text, path });
+  lowerAndEmit({
+    srcBuilder: builder,
+    rootElems: [decl.declElem!],
+    conditions,
+    skipConditionalFiltering: true,
+  });
+  return builder;
 }
 
 /* ---- Commentary on present and future features ---- */

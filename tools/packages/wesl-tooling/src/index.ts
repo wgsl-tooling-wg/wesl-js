@@ -1,3 +1,4 @@
+export * from "./FileModuleResolver.ts";
 export * from "./LoadModules.ts";
 export * from "./LoadWeslToml.ts";
 export * from "./ParseDependencies.ts";

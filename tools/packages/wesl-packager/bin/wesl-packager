@@ -2,19 +2,19 @@
 import { builtinModules } from "node:module";
 import process$1, { exit } from "node:process";
 import { hideBin } from "yargs/helpers";
-import fs, { lstat, mkdir, readdir, readlink, realpath } from "node:fs/promises";
+import * as actualFS from "node:fs";
+import fs, { realpathSync, statSync } from "node:fs";
+import { WeslParseError, filterMap, findUnboundIdents, noSuffix, parseIntoRegistry, parsedRegistry } from "wesl";
+import fs$1, { lstat, mkdir, readdir, readlink, realpath } from "node:fs/promises";
 import path, { posix, win32 } from "node:path";
 import { URL as URL$1, fileURLToPath, pathToFileURL } from "node:url";
-import { lstatSync, readdir as readdir$1, readdirSync, readlinkSync, realpathSync } from "fs";
-import * as actualFS from "node:fs";
-import fs$1, { realpathSync as realpathSync$1, statSync } from "node:fs";
+import { lstatSync, readdir as readdir$1, readdirSync, readlinkSync, realpathSync as realpathSync$1 } from "fs";
 import { EventEmitter } from "node:events";
 import Stream from "node:stream";
 import { StringDecoder } from "node:string_decoder";
 import assert from "node:assert";
 import v8 from "node:v8";
 import { format, inspect } from "node:util";
-import { WeslParseError, filterMap, findUnboundIdents, noSuffix, parseIntoRegistry, parsedRegistry } from "wesl";
 import yargs from "yargs";
 import { Biome, Distribution } from "@biomejs/js-api";
 
@@ -3327,7 +3327,7 @@ while (this[FLUSHCHUNK](this[BUFFERSHIFT]()) && this[BUFFER].length);
 
 //#endregion
 //#region ../../node_modules/.pnpm/path-scurry@2.0.0/node_modules/path-scurry/dist/esm/index.js
-const realpathSync$2 = realpathSync.native;
+const realpathSync$2 = realpathSync$1.native;
 const defaultFS = {
 	lstatSync,
 	readdir: readdir$1,
@@ -9642,7 +9642,7 @@ const defaultWeslToml = {
 * Provide default values for any required WeslToml fields.
 */
 async function loadWeslToml(tomlFile) {
-	const tomlString = await fs.readFile(tomlFile, "utf-8");
+	const tomlString = await fs$1.readFile(tomlFile, "utf-8");
 	const parsed = import_toml.default.parse(tomlString);
 	return {
 		...defaultWeslToml,
@@ -9659,11 +9659,11 @@ async function loadWeslToml(tomlFile) {
 async function findWeslToml(projectDir, specifiedToml) {
 	let tomlFile;
 	if (specifiedToml) {
-		await fs.access(specifiedToml);
+		await fs$1.access(specifiedToml);
 		tomlFile = specifiedToml;
 	} else {
 		const tomlPath = path.join(projectDir, "wesl.toml");
-		tomlFile = await fs.access(tomlPath).then(() => tomlPath).catch(() => {});
+		tomlFile = await fs$1.access(tomlPath).then(() => tomlPath).catch(() => {});
 	}
 	let parsedToml;
 	let tomlDir;
@@ -9713,7 +9713,7 @@ async function loadModules(projectDir, baseDir, srcGlob) {
 		cwd: projectDir,
 		ignore: "node_modules/**"
 	})).map((f) => path.resolve(projectDir, f));
-	const promisedSrcs = shaderFiles.map((f) => fs.readFile(f, { encoding: "utf8" }));
+	const promisedSrcs = shaderFiles.map((f) => fs$1.readFile(f, { encoding: "utf8" }));
 	const src = await Promise.all(promisedSrcs);
 	if (src.length === 0) throw new Error(`no WGSL/WESL files found in ${resolvedSrcGlob}`);
 	const baseDirAbs = path.resolve(projectDir, resolvedBaseDir);
@@ -10065,7 +10065,7 @@ function read(jsonPath, { base, specifier }) {
 	/** @type {string | undefined} */
 	let string;
 	try {
-		string = fs$1.readFileSync(path.toNamespacedPath(jsonPath), "utf8");
+		string = fs.readFileSync(path.toNamespacedPath(jsonPath), "utf8");
 	} catch (error) {
 		const exception = error;
 		if (exception.code !== "ENOENT") throw exception;
@@ -10411,7 +10411,7 @@ function finalizeResolution(resolved, base, preserveSymlinks) {
 		throw error;
 	}
 	if (!preserveSymlinks) {
-		const real = realpathSync$1(filePath);
+		const real = realpathSync(filePath);
 		const { search, hash } = resolved;
 		resolved = pathToFileURL(real + (filePath.endsWith(path.sep) ? "/" : ""));
 		resolved.search = search;
@@ -11059,7 +11059,7 @@ async function packageWgsl(args) {
 /** add an 'exports' entry to package.json for the wesl bundles */
 async function updatePackageJson(projectDir, outDir, multiBundle) {
 	const pkgJsonPath = path.join(projectDir, "package.json");
-	const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
+	const pkgJsonString = await fs$1.readFile(pkgJsonPath, { encoding: "utf8" });
 	const pkgJson = JSON.parse(pkgJsonString);
 	const exports = {};
 	const distDir = path.relative(projectDir, outDir);
@@ -11073,7 +11073,7 @@ async function updatePackageJson(projectDir, outDir, multiBundle) {
 	};
 	const newPkgJson = insertExports(pkgJson, exports);
 	const jsonString = JSON.stringify(newPkgJson, null, 2).concat("\n");
-	await fs.writeFile(pkgJsonPath, jsonString);
+	await fs$1.writeFile(pkgJsonPath, jsonString);
 }
 /** insert the exports field into the package.json */
 function insertExports(pkgJson, exports) {
@@ -11124,7 +11124,7 @@ async function writeJsBundle(weslBundle, dependencies, outDir) {
   `;
 	const outPath = path.join(outDir, "weslBundle.js");
 	const formatted = biome.formatContent(biomeKey, outString, { filePath: "b.js" });
-	await fs.writeFile(outPath, formatted.content);
+	await fs$1.writeFile(outPath, formatted.content);
 }
 /** Write weslBundle.d.ts containing the type definitions for a WeslBundle */
 async function writeTypeScriptDts(outDir) {
@@ -11134,7 +11134,7 @@ async function writeTypeScriptDts(outDir) {
   `;
 	const formatted = biome.formatContent(biomeKey, declText, { filePath: "t.d.ts" });
 	const outPath = path.join(outDir, "weslBundle.d.ts");
-	await fs.writeFile(outPath, formatted.content);
+	await fs$1.writeFile(outPath, formatted.content);
 }
 /** @return the bundle plus dependencies as a JavaScript string */
 function bundleToJsString(bundle, dependencies) {
@@ -11154,7 +11154,7 @@ function bundleToJsString(bundle, dependencies) {
 /** parse and extract fields from package.json that we care about
 * (the name of the package) */
 async function loadPackageFields(pkgJsonPath) {
-	const pkgJsonString = await fs.readFile(pkgJsonPath, { encoding: "utf8" });
+	const pkgJsonString = await fs$1.readFile(pkgJsonPath, { encoding: "utf8" });
 	const { name } = JSON.parse(pkgJsonString);
 	verifyField("name", name);
 	function verifyField(field, value) {

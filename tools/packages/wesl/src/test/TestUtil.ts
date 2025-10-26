@@ -10,6 +10,7 @@ import {
   type ParsedRegistry,
   parsedRegistry,
   parseIntoRegistry,
+  RegistryResolver,
   type SrcModule,
 } from "wesl";
 import { bindAndTransform, type LinkParams, link } from "../Linker.ts";
@@ -21,7 +22,7 @@ import {
 import { WeslStream, type WeslToken } from "../parse/WeslStream.ts";
 import { resetScopeIds } from "../Scope.ts";
 
-/** parse a single wesl file */
+/** Parse a single wesl file */
 export function parseWESL(src: string): WeslAST {
   const srcModule: SrcModule = {
     modulePath: "package::test", // TODO this ought not be used outside of tests
@@ -32,7 +33,7 @@ export function parseWESL(src: string): WeslAST {
   return parseSrcModule(srcModule);
 }
 
-/** parse a single wesl file, returning the parse state as well as the WeslAST */ // LATER get rid of this
+/** Parse a single wesl file, returning the parse state as well as the WeslAST */ // LATER get rid of this
 export function testAppParse<T>(
   parser: Parser<Stream<WeslToken>, T>,
   src: string,
@@ -66,7 +67,7 @@ export async function linkTestOpts(
   return srcMap.dest;
 }
 
-/** Link wesl for tests, and return the console log as well */
+/** Link wesl for tests, capturing console output */
 export async function linkWithLog(...rawWgsl: string[]): Promise<{
   log: string;
   result: string;
@@ -74,8 +75,7 @@ export async function linkWithLog(...rawWgsl: string[]): Promise<{
   return linkWithLogInternal(rawWgsl);
 }
 
-/** Link wesl for tests, and return the console log as well.
- * Quietly swallow any exceptions thrown */
+/** Link wesl for tests, capturing console output and swallowing exceptions */
 export async function linkWithLogQuietly(...rawWgsl: string[]): Promise<{
   log: string;
   result: string;
@@ -83,7 +83,6 @@ export async function linkWithLogQuietly(...rawWgsl: string[]): Promise<{
   return linkWithLogInternal(rawWgsl, true);
 }
 
-/** link wesl for tests */
 async function linkWithLogInternal(
   rawWgsl: string[],
   quiet = false,
@@ -101,12 +100,12 @@ async function linkWithLogInternal(
   return { result, log: logged() };
 }
 
-/** parse wesl for testing, and return the AST */
+/** Parse wesl for testing, ensuring no logged warnings */
 export function parseTest(src: string): WeslAST {
   return expectNoLog(() => parseTestRaw(src));
 }
 
-/** test w/o any log collection, to not confuse debugging */
+/** Parse wesl without log collection (for debugging) */
 export function parseTestRaw(src: string) {
   return parseWESL(src);
 }
@@ -116,24 +115,23 @@ interface BindTestResult {
   registry: ParsedRegistry;
 }
 
-/**
- * Test parsing and binding some wesl src.
- * @return both the bound result and the internal registry.
- * (since binding mutates the AST, it's useful for tests to review)
- */
+/** Parse and bind wesl source for testing. Returns bound result and registry for inspection. */
 export function bindTest(...rawWesl: string[]): BindTestResult {
   resetScopeIds();
   const weslSrc = makeTestBundle(rawWesl);
 
   const registry = parsedRegistry();
   parseIntoRegistry(weslSrc, registry, "package", "test");
-  const bound = bindAndTransform({ rootModuleName: "test", registry });
+  const resolver = new RegistryResolver(registry);
+  const bound = bindAndTransform({
+    rootModuleName: "test",
+    resolver,
+    registry,
+  });
   return { bound, registry };
 }
 
-/** @return a weslSrc record for tests by synthesizing file names
- * The root module is named ./test.wesl
- */
+/** Synthesize test file bundle. Root module is ./test.wesl, others are ./file1.wesl, ./file2.wesl, etc. */
 function makeTestBundle(rawWgsl: string[]): Record<string, string> {
   const [root, ...rest] = rawWgsl;
   const restWgsl = Object.fromEntries(

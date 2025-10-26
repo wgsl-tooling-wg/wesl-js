@@ -7,6 +7,7 @@ import type { FlatImport } from "./FlattenTreeImport.ts";
 import type { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
 import { type LiveDecls, makeLiveDecls } from "./LiveDeclarations.ts";
 import { type ManglerFn, minimalMangle } from "./Mangler.ts";
+import { type ModuleResolver, RegistryResolver } from "./ModuleResolver.ts";
 import type { ParsedRegistry } from "./ParsedRegistry.ts";
 import { flatImports, parseSrcModule, type WeslAST } from "./ParseWESL.ts";
 import type {
@@ -85,7 +86,7 @@ export interface VirtualLibrary {
 export type VirtualLibrarySet = Record<string, VirtualLibrary>;
 
 export interface BindIdentsParams
-  extends Pick<LinkRegistryParams, "registry" | "conditions" | "mangler"> {
+  extends Pick<LinkRegistryParams, "resolver" | "conditions" | "mangler"> {
   rootAst: WeslAST;
   virtuals?: VirtualLibrarySet;
 
@@ -103,48 +104,59 @@ export interface BindIdentsParams
  * @return any new declaration elements found (they will need to be emitted)
  */
 export function bindIdents(params: BindIdentsParams): BindResults {
-  const { rootAst, registry, virtuals, accumulateUnbound } = params;
+  const { rootAst, resolver, virtuals, accumulateUnbound } = params;
   const { conditions = {}, mangler = minimalMangle } = params;
-  const { rootScope } = rootAst;
 
+  const validRootDecls = findValidRootDecls(rootAst.rootScope, conditions);
+  const { globalNames, knownDecls } = initializeRootDecls(validRootDecls);
+
+  const bindContext = {
+    resolver,
+    conditions,
+    knownDecls,
+    virtuals,
+    mangler,
+    foundScopes: new Set<Scope>(),
+    globalNames,
+    globalStatements: new Map<AbstractElem, EmittableElem>(),
+    unbound: accumulateUnbound ? [] : undefined,
+  };
+
+  const declEntries = validRootDecls.map(d => [d.originalName, d] as const);
+  const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
+
+  const decls = bindIdentsRecursive(
+    rootAst.rootScope,
+    bindContext,
+    liveDecls,
+    true,
+  );
+  const newStatements = [...bindContext.globalStatements.values()];
+  return { decls, globalNames, newStatements, unbound: bindContext.unbound };
+}
+
+/** Initialize root declarations with mangled names and add to tracking sets */
+function initializeRootDecls(validRootDecls: DeclIdent[]): {
+  globalNames: Set<string>;
+  knownDecls: Set<DeclIdent>;
+} {
   const globalNames = new Set<string>();
   const knownDecls = new Set<DeclIdent>();
-  const validRootDecls = findValidRootDecls(rootScope, conditions);
-
   validRootDecls.forEach(decl => {
     decl.mangledName = decl.originalName;
     globalNames.add(decl.originalName);
     knownDecls.add(decl);
   });
-
-  const unbound = accumulateUnbound ? [] : undefined;
-  const globalStatements = new Map<AbstractElem, EmittableElem>();
-  const bindContext = {
-    registry,
-    conditions,
-    knownDecls,
-    foundScopes: new Set<Scope>(),
-    globalNames,
-    globalStatements,
-    virtuals,
-    mangler,
-    unbound,
-  };
-
-  // initialize liveDecls with all module level declarations
-  // (note that in wgsl module level declarations may appear in any order, incl after their references.)
-  const declEntries = validRootDecls.map(d => [d.originalName, d] as const);
-  const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
-
-  const decls = bindIdentsRecursive(rootScope, bindContext, liveDecls, true);
-  const newStatements = [...globalStatements.values()];
-  return { decls, globalNames, newStatements, unbound };
+  return { globalNames, knownDecls };
 }
 
-/** bind local references in library sources to reveal references to external packages */
+/** bind local references in library sources to reveal references to external packages
+ * NOTE: This function still uses ParsedRegistry for now, as it's primarily used for
+ * libraries which are still eagerly loaded. */
 export function findUnboundIdents(registry: ParsedRegistry): string[][] {
+  const resolver = new RegistryResolver(registry);
   const bindContext = {
-    registry,
+    resolver,
     conditions: {},
     knownDecls: new Set<DeclIdent>(),
     foundScopes: new Set<Scope>(),
@@ -191,21 +203,17 @@ export function findValidRootDecls(
     if (item.kind === "decl") {
       assertThatDebug(item.declElem);
       const attr = findConditional(item.declElem.attributes);
-      const { valid, nextElseState } = validateConditional(
-        attr,
-        elseValid,
-        conditions,
-      );
-      elseValid = nextElseState;
-      if (valid) found.push(item);
+      const validation = validateConditional(attr, elseValid, conditions);
+      elseValid = validation.nextElseState;
+      if (validation.valid) found.push(item);
     } else if (item.kind === "partial") {
-      const { valid, nextElseState } = validateConditional(
+      const validation = validateConditional(
         item.condAttribute,
         elseValid,
         conditions,
       );
-      elseValid = nextElseState;
-      if (valid) collectDecls(item, found);
+      elseValid = validation.nextElseState;
+      if (validation.valid) collectDecls(item, found);
     }
   }
 
@@ -234,9 +242,7 @@ export function isGlobal(declIdent: DeclIdent): boolean {
 
 /** state used during the recursive scope tree walk to bind references to declarations */
 interface BindContext {
-  registry: ParsedRegistry;
-
-  /** live runtime conditions currently defined by the user */
+  resolver: ModuleResolver;
   conditions: Record<string, any>;
 
   /** decl idents discovered so far (to avoid re-traversing) */
@@ -245,25 +251,21 @@ interface BindContext {
   /** save work by not processing scopes multiple times */
   foundScopes: Set<Scope>;
 
-  /** root level names used so far (so that manglers or ast rewriting plugins can pick unique names) */
+  /** root level names used so far (enables manglers/plugins to pick unique names) */
   globalNames: Set<string>;
 
-  /** additional global statements to include in linked results
-   * (e.g. for adding module level const_assert statements)
-   * (indexed by elem for uniqueness) */
+  /** additional global statements to emit (e.g. module level const_assert, indexed by elem for uniqueness) */
   globalStatements: Map<AbstractElem, EmittableElem>;
 
   /** construct unique identifer names for global declarations */
   mangler: ManglerFn;
 
-  /** virtual libraries provided by the user (e.g. for code generators or constants) */
   virtuals?: VirtualLibrarySet;
 
   /** list of unbound identifiers if accumulateUnbound is true */
   unbound?: string[][];
 
-  /** don't recurse to follow references from declarations in other modules
-   * (for libraries, where we're not tracing static usage from the root) */
+  /** don't follow references from declarations (used for library dependency detection) */
   dontFollowDecls?: boolean;
 }
 
@@ -289,25 +291,39 @@ function bindIdentsRecursive(
   liveDecls: LiveDecls,
   isRoot = false,
 ): DeclIdent[] {
-  // early exit if we've processed this scope before
   const { dontFollowDecls, foundScopes } = bindContext;
   if (foundScopes.has(scope)) return [];
   foundScopes.add(scope);
 
-  const newGlobals: DeclIdent[] = []; // new decl idents to process for binding (and return for emitting)
+  const { newGlobals, newFromChildren } = processScope(
+    scope,
+    bindContext,
+    liveDecls,
+    isRoot,
+  );
 
-  // active declarations in this scope
+  const newFromRefs = dontFollowDecls
+    ? []
+    : handleDecls(newGlobals, bindContext);
+
+  return [newGlobals, newFromChildren, newFromRefs].flat();
+}
+
+/** Process all identifiers and subscopes in this scope */
+function processScope(
+  scope: Scope,
+  bindContext: BindContext,
+  liveDecls: LiveDecls,
+  isRoot: boolean,
+): { newGlobals: DeclIdent[]; newFromChildren: DeclIdent[] } {
+  const newGlobals: DeclIdent[] = [];
   const newFromChildren: DeclIdent[] = [];
-
-  // Track @else validity state across sibling scopes.
   let elseValid = false;
 
-  // process all identifiers and subscopes in this scope
   scope.contents.forEach(child => {
-    const { kind } = child;
-    if (kind === "decl") {
+    if (child.kind === "decl") {
       if (!isRoot) liveDecls.decls.set(child.originalName, child);
-    } else if (kind === "ref") {
+    } else if (child.kind === "ref") {
       const newDecl = handleRef(child, liveDecls, bindContext);
       if (newDecl) newGlobals.push(newDecl);
     } else {
@@ -319,19 +335,12 @@ function bindIdentsRecursive(
     }
   });
 
-  // follow references from referenced declarations
-  const newFromRefs = dontFollowDecls
-    ? []
-    : handleDecls(newGlobals, bindContext);
-
-  return [newGlobals, newFromChildren, newFromRefs].flat();
+  return { newGlobals, newFromChildren };
 }
 
 /**
- * Trace references to their declarations
- * mutates to:
- *  mangle declarations
- *  mark references as 'std' if they match a wgsl std function or type
+ * Trace references to their declarations.
+ * Mutates to mangle declarations and mark std references.
  *
  * @return the found declaration, or undefined if this ref has already been processed
  */
@@ -340,12 +349,12 @@ function handleRef(
   liveDecls: LiveDecls,
   bindContext: BindContext,
 ): DeclIdent | undefined {
-  const { registry, conditions, unbound, virtuals } = bindContext;
+  const { resolver, conditions, unbound, virtuals } = bindContext;
   if (ident.refersTo || ident.std) return;
 
   const foundDecl =
     findDeclInModule(ident, liveDecls) ??
-    findQualifiedImport(ident, registry, conditions, virtuals, unbound);
+    findQualifiedImport(ident, resolver, conditions, virtuals, unbound);
 
   if (foundDecl) {
     ident.refersTo = foundDecl.decl;
@@ -426,7 +435,7 @@ function handleNewDecl(
   }
 }
 
-/** Using the LiveDecls, search earlier in the scope and in parent scopes to find a matching decl ident */
+/** Search earlier in the scope and parent scopes for a matching declaration */
 function findDeclInModule(
   ident: RefIdent,
   liveDecls: LiveDecls,
@@ -442,43 +451,42 @@ function findDeclInModule(
  */
 function findQualifiedImport(
   refIdent: RefIdent,
-  parsed: ParsedRegistry,
+  resolver: ModuleResolver,
   conditions: Conditions,
   virtuals: VirtualLibrarySet | undefined,
   unbound: string[][] | undefined,
 ): FoundDecl | undefined {
   const flatImps = flatImports(refIdent.ast, conditions);
   const identParts = refIdent.originalName.split("::");
-
-  // find module path by combining identifer reference with import statement
   const modulePathParts =
     matchingImport(identParts, flatImps) ?? qualifiedIdent(identParts);
 
-  if (modulePathParts) {
-    const result = findExport(
-      modulePathParts,
-      refIdent.ast.srcModule,
-      parsed,
-      conditions,
-      virtuals,
-    );
-    if (!result) {
-      if (unbound) {
-        unbound.push(modulePathParts);
-      } else {
-        failIdent(
-          refIdent,
-          `module not found for '${modulePathParts.join("::")}'`,
-        );
-      }
-    }
-    return result;
-  } else if (unbound) {
-    unbound.push(identParts);
+  if (!modulePathParts) {
+    if (unbound) unbound.push(identParts);
+    return undefined;
   }
+
+  const result = findExport(
+    modulePathParts,
+    refIdent.ast.srcModule,
+    resolver,
+    conditions,
+    virtuals,
+  );
+  if (!result) {
+    if (unbound) {
+      unbound.push(modulePathParts);
+    } else {
+      failIdent(
+        refIdent,
+        `module not found for '${modulePathParts.join("::")}'`,
+      );
+    }
+  }
+  return result;
 }
 
-/** Combine an import using the flattened import array, find an import that matches a provided ident */
+/** Find an import statement that matches a provided identifier */
 function matchingImport(
   identParts: string[],
   flatImports: FlatImport[],
@@ -501,14 +509,14 @@ interface FoundDecl {
 function findExport(
   modulePathParts: string[],
   srcModule: SrcModule,
-  parsed: ParsedRegistry,
+  resolver: ModuleResolver,
   conditions: Conditions = {},
   virtuals?: VirtualLibrarySet,
 ): FoundDecl | undefined {
   const fqPathParts = absoluteModulePath(modulePathParts, srcModule);
   const modulePath = fqPathParts.slice(0, -1).join("::");
   const moduleAst =
-    parsed.modules[modulePath] ??
+    resolver.resolveModule(modulePath) ??
     virtualModule(modulePathParts[0], conditions, virtuals);
   if (!moduleAst) return undefined;
 
@@ -573,9 +581,8 @@ function rootLiveDecls(
 }
 
 /**
- * Mutate a DeclIdent to set a unique name for global linking
- * using a mangling function to choose a unique name.
- * Also update the set of globally unique names.
+ * Set a globally unique mangled name for this declaration.
+ * Uses the mangler function to avoid name collisions.
  */
 function setMangledName(
   proposedName: string,
