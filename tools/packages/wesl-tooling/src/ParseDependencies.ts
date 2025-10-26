@@ -1,56 +1,47 @@
 import { pathToFileURL } from "node:url";
 import { resolve } from "import-meta-resolve";
 import type { WeslBundle } from "wesl";
-import {
-  filterMap,
-  findUnboundIdents,
-  parsedRegistry,
-  parseIntoRegistry,
-  WeslParseError,
-} from "wesl";
+import { filterMap, ParsedRegistry, WeslParseError } from "wesl";
+import { findUnboundIdents } from "./FindUnboundIdents.ts";
+
 /**
- * Find the wesl package dependencies in a set of WESL files
- * (for packaging WESL files into a library)
+ * Find package dependencies in WESL source files.
  *
- * Parse the WESL files and partially bind the identifiers,
- * returning any identifiers that are not succesfully bound.
- * Those identifiers are the package dependencies.
+ * Parses sources and partially binds identifiers to reveal unresolved package
+ * references. Returns the longest resolvable npm subpath for each dependency.
  *
- * The dependency might be a default export bundle or
- * a named export bundle. e.g. for 'foo::bar::baz', it could be
- *    . package foo, export '.' bundle, module bar
- *    . package foo, export './bar' bundle, element baz
- *    . package foo, export './bar/baz' bundle, module lib.wesl, element baz
- * To distinguish these, we node resolve the longest path we can.
+ * For example, 'foo::bar::baz' could resolve to:
+ *   - 'foo/bar' (package foo, export './bar' bundle)
+ *   - 'foo' (package foo, default export)
  *
- * @return dependency paths in npm format, e.g. 'foo/bar' or 'foo'
+ * @param weslSrc - Record of WESL source files by path
+ * @param projectDir - Project directory for resolving package imports
+ * @returns Dependency paths in npm format (e.g., 'foo/bar', 'foo')
  */
 export function parseDependencies(
   weslSrc: Record<string, string>,
   projectDir: string,
 ): string[] {
-  const registry = parsedRegistry();
+  let registry: ParsedRegistry;
   try {
-    parseIntoRegistry(weslSrc, registry);
+    registry = new ParsedRegistry(weslSrc);
   } catch (e: any) {
     if (e.cause instanceof WeslParseError) {
       console.error(e.message, "\n");
-    } else {
-      throw e;
+      return [];
     }
+    throw e;
   }
 
   const unbound = findUnboundIdents(registry);
   if (!unbound) return [];
 
-  // a package module reference needs at least two segments (length 1 is probably a builtin wgsl fn or type)
-  // filter out virtual packages like 'constants' that are provided by the linker
+  // Filter: skip builtins (1 segment) and linker virtuals ('constants')
   const pkgRefs = unbound.filter(
     modulePath => modulePath.length > 1 && modulePath[0] !== "constants",
   );
   if (pkgRefs.length === 0) return [];
 
-  // Normalize projectDir to file:// URL for import-meta-resolve
   const projectURL = projectDirURL(projectDir);
   const deps = filterMap(pkgRefs, mPath =>
     unboundToDependency(mPath, projectURL),
@@ -60,62 +51,62 @@ export function parseDependencies(
   return uniqueDeps;
 }
 
-/**
- * Find the longest resolvable npm subpath from a module path.
+/** Find longest resolvable npm subpath from module path segments.
  *
- * @param mPath module path segments, e.g. ['foo', 'bar', 'baz', 'elem']
- * @param importerURL URL of the importer, e.g. 'file:///path/to/project/foo/bar/baz.wesl' (doesn't need to be a real file)
- * @returns longest resolvable subpath of mPath, e.g. 'foo/bar/baz' or 'foo/bar'
+ * @param mPath - Module path segments (e.g., ['foo', 'bar', 'baz', 'elem'])
+ * @param importerURL - Base URL for resolution (e.g., 'file:///path/to/project/')
+ * @returns Longest resolvable subpath (e.g., 'foo/bar/baz' or 'foo')
  */
 function unboundToDependency(
   mPath: string[],
   importerURL: string,
 ): string | undefined {
-  // return the longest subpath that can be resolved
+  // Try longest subpaths first; resolved file may not exist yet (e.g., dist/weslBundle.js)
   return [...exportSubpaths(mPath)].find(subPath =>
-    // Note that we're not checking here that the resolved file exists.
-    // The file (a weslBundle.js file somewhere in dist) may not have been built yet.
-    // LATER we could do save these paths and check that the resolved files exist.
     tryResolve(subPath, importerURL),
   );
 }
 
-/** Try to resolve a path using node's resolve algorithm.
- * @return the resolved path */
+/** Try Node.js module resolution; returns undefined if unresolvable. */
 function tryResolve(path: string, importerURL: string): string | undefined {
   try {
-    return resolve(path, importerURL); // resolve() throws if the path is not resolvable.
+    return resolve(path, importerURL);
   } catch {
     return undefined;
   }
 }
 
-/**
- * Yield possible export entry subpaths from module path
- * longest subpath first.
- */
+/** Yield possible export subpaths from module path, longest first.
+ * Drops the last segment (element name) and iterates down. */
 function* exportSubpaths(mPath: string[]): Generator<string> {
-  const longest = mPath.length - 1; // drop the last segment (the element name)
+  const longest = mPath.length - 1;
   for (let i = longest; i >= 0; i--) {
-    const subPath = mPath.slice(0, i).join("/");
-    yield subPath;
+    yield mPath.slice(0, i).join("/");
   }
 }
 
-/** @return WeslBundle instances referenced by wesl sources
+/**
+ * Load WeslBundle instances referenced by WESL sources.
  *
- * Parse the WESL files to find references to external WESL modules,
- * and then load those modules (weslBundle.js files) using node dynamic imports.
+ * Parses sources to find external module references, then dynamically imports
+ * the corresponding weslBundle.js files.
  *
- * @param packageName - Optional current package name to exclude from dependencies
+ * @param weslSrc - Record of WESL source files by path
+ * @param projectDir - Project directory for resolving imports
+ * @param packageName - Optional current package name
+ * @param includeCurrentPackage - Include current package in results (default: false)
+ * @returns Loaded WeslBundle instances
  */
 export async function dependencyBundles(
   weslSrc: Record<string, string>,
   projectDir: string,
   packageName?: string,
+  includeCurrentPackage = false,
 ): Promise<WeslBundle[]> {
   const deps = parseDependencies(weslSrc, projectDir);
-  const filteredDeps = otherPackages(deps, packageName);
+  const filteredDeps = includeCurrentPackage
+    ? deps
+    : otherPackages(deps, packageName);
   const projectURL = projectDirURL(projectDir);
   const bundles = filteredDeps.map(async dep => {
     const url = resolve(dep, projectURL);
@@ -126,7 +117,7 @@ export async function dependencyBundles(
   return await Promise.all(bundles);
 }
 
-/** exclude the current package from a list of dependencies */
+/** Exclude current package from dependency list. */
 function otherPackages(deps: string[], packageName?: string): string[] {
   if (!packageName) return deps;
   return deps.filter(
@@ -134,8 +125,7 @@ function otherPackages(deps: string[], packageName?: string): string[] {
   );
 }
 
-/** Normalize a project directory to a file:// URL.
- * Handles both file:// URLs (from import.meta.url) and filesystem paths (from CLI). */
+/** Normalize project directory to file:// URL with trailing slash. */
 function projectDirURL(projectDir: string): string {
   if (projectDir.startsWith("file://")) {
     return projectDir.endsWith("/") ? projectDir : `${projectDir}/`;

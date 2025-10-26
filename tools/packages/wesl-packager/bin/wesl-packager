@@ -4,7 +4,7 @@ import process$1, { exit } from "node:process";
 import { hideBin } from "yargs/helpers";
 import * as actualFS from "node:fs";
 import fs, { realpathSync, statSync } from "node:fs";
-import { WeslParseError, filterMap, findUnboundIdents, noSuffix, parseIntoRegistry, parsedRegistry } from "wesl";
+import { ParsedRegistry, WeslParseError, bindIdentsRecursive, filterMap, findValidRootDecls, minimalMangle, noSuffix } from "wesl";
 import fs$1, { lstat, mkdir, readdir, readlink, realpath } from "node:fs/promises";
 import path, { posix, win32 } from "node:path";
 import { URL as URL$1, fileURLToPath, pathToFileURL } from "node:url";
@@ -42,6 +42,41 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	value: mod,
 	enumerable: true
 }) : target, mod));
+
+//#endregion
+//#region ../wesl-tooling/src/FindUnboundIdents.ts
+/**
+* Find unbound package references in library sources.
+*
+* Binds local references without following cross-package imports, revealing
+* which external packages are referenced but not resolved.
+*
+* @param registry - Pre-parsed modules to analyze
+* @returns Array of unbound module paths, each as an array of path segments
+*   (e.g., [['foo', 'bar', 'baz'], ['other', 'pkg']])
+*/
+function findUnboundIdents(registry) {
+	const bindContext = {
+		resolver: registry,
+		conditions: {},
+		knownDecls: /* @__PURE__ */ new Set(),
+		foundScopes: /* @__PURE__ */ new Set(),
+		globalNames: /* @__PURE__ */ new Set(),
+		globalStatements: /* @__PURE__ */ new Map(),
+		mangler: minimalMangle,
+		unbound: [],
+		dontFollowDecls: true
+	};
+	for (const [_modulePath, ast] of registry.allModules()) {
+		const declEntries = findValidRootDecls(ast.rootScope, {}).map((d) => [d.originalName, d]);
+		const liveDecls = {
+			decls: new Map(declEntries),
+			parent: null
+		};
+		bindIdentsRecursive(ast.rootScope, bindContext, liveDecls, true);
+	}
+	return bindContext.unbound;
+}
 
 //#endregion
 //#region ../../node_modules/.pnpm/@isaacs+balanced-match@4.0.1/node_modules/@isaacs/balanced-match/dist/esm/index.js
@@ -10949,27 +10984,29 @@ function resolve(specifier, parent) {
 //#endregion
 //#region ../wesl-tooling/src/ParseDependencies.ts
 /**
-* Find the wesl package dependencies in a set of WESL files
-* (for packaging WESL files into a library)
+* Find package dependencies in WESL source files.
 *
-* Parse the WESL files and partially bind the identifiers,
-* returning any identifiers that are not succesfully bound.
-* Those identifiers are the package dependencies.
+* Parses sources and partially binds identifiers to reveal unresolved package
+* references. Returns the longest resolvable npm subpath for each dependency.
 *
-* The dependency might be a default export bundle or
-* a named export bundle. e.g. for 'foo::bar::baz', it could be
-*    . package foo, export '.' bundle, module bar
-*    . package foo, export './bar' bundle, element baz
-*    . package foo, export './bar/baz' bundle, module lib.wesl, element baz
-* To distinguish these, we node resolve the longest path we can.
+* For example, 'foo::bar::baz' could resolve to:
+*   - 'foo/bar' (package foo, export './bar' bundle)
+*   - 'foo' (package foo, default export)
+*
+* @param weslSrc - Record of WESL source files by path
+* @param projectDir - Project directory for resolving package imports
+* @returns Dependency paths in npm format (e.g., 'foo/bar', 'foo')
 */
 function parseDependencies(weslSrc, projectDir) {
-	const registry = parsedRegistry();
+	let registry;
 	try {
-		parseIntoRegistry(weslSrc, registry);
+		registry = new ParsedRegistry(weslSrc);
 	} catch (e) {
-		if (e.cause instanceof WeslParseError) console.error(e.message, "\n");
-		else throw e;
+		if (e.cause instanceof WeslParseError) {
+			console.error(e.message, "\n");
+			return [];
+		}
+		throw e;
 	}
 	const unbound = findUnboundIdents(registry);
 	if (!unbound) return [];
@@ -10979,18 +11016,16 @@ function parseDependencies(weslSrc, projectDir) {
 	const deps = filterMap(pkgRefs, (mPath) => unboundToDependency(mPath, projectURL));
 	return [...new Set(deps)];
 }
-/**
-* Find the longest resolvable npm subpath from a module path.
+/** Find longest resolvable npm subpath from module path segments.
 *
-* @param mPath module path, e.g. ['foo', 'bar', 'baz', 'elem']
-* @param importerURL URL of the importer, e.g. 'file:///path/to/project/foo/bar/baz.wesl' (doesn't need to be a real file)
-* @returns longest resolvable subpath of mPath, e.g. 'foo/bar/baz' or 'foo/bar'
+* @param mPath - Module path segments (e.g., ['foo', 'bar', 'baz', 'elem'])
+* @param importerURL - Base URL for resolution (e.g., 'file:///path/to/project/')
+* @returns Longest resolvable subpath (e.g., 'foo/bar/baz' or 'foo')
 */
 function unboundToDependency(mPath, importerURL) {
 	return [...exportSubpaths(mPath)].find((subPath) => tryResolve(subPath, importerURL));
 }
-/** Try to resolve a path using node's resolve algorithm.
-* @return the resolved path */
+/** Try Node.js module resolution; returns undefined if unresolvable. */
 function tryResolve(path$2, importerURL) {
 	try {
 		return resolve(path$2, importerURL);
@@ -10998,16 +11033,13 @@ function tryResolve(path$2, importerURL) {
 		return;
 	}
 }
-/**
-* Yield possible export entry subpaths from module path
-* longest subpath first.
-*/
+/** Yield possible export subpaths from module path, longest first.
+* Drops the last segment (element name) and iterates down. */
 function* exportSubpaths(mPath) {
 	const longest = mPath.length - 1;
 	for (let i = longest; i >= 0; i--) yield mPath.slice(0, i).join("/");
 }
-/** Normalize a project directory to a file:// URL.
-* Handles both file:// URLs (from import.meta.url) and filesystem paths (from CLI). */
+/** Normalize project directory to file:// URL with trailing slash. */
 function projectDirURL(projectDir) {
 	if (projectDir.startsWith("file://")) return projectDir.endsWith("/") ? projectDir : `${projectDir}/`;
 	const fileUrl = pathToFileURL(projectDir).href;

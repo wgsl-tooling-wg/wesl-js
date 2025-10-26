@@ -1,11 +1,5 @@
 import { expect, test } from "vitest";
-import {
-  parsedRegistry,
-  parseIntoRegistry,
-  publicDecl,
-  RegistryResolver,
-  resetScopeIds,
-} from "wesl";
+import { ParsedRegistry, publicDecl, resetScopeIds } from "wesl";
 import { bindIdents } from "../BindIdents.ts";
 import { scopeToStringLong } from "../debug/ScopeToString.ts";
 import { bindTest, parseTest } from "./TestUtil.ts";
@@ -24,7 +18,7 @@ test("nested scopes binding", () => {
   `;
 
   const { registry } = bindTest(src);
-  const ast = registry.modules["package::test"];
+  const ast = registry.resolveModule("package::test")!;
 
   expect(scopeToStringLong(ast.rootScope)).toMatchInlineSnapshot(`
   "{ 
@@ -45,12 +39,12 @@ test("@location attribute const", () => {
     const pos = 0;
 
     @fragment
-    fn fragmentMain(@location(0) pos : vec3f) -> @location(pos) vec4f { 
+    fn fragmentMain(@location(0) pos : vec3f) -> @location(pos) vec4f {
       let x = pos;
     }
   `;
   const { registry } = bindTest(src);
-  const ast = registry.modules["package::test"];
+  const ast = registry.resolveModule("package::test")!;
   expect(scopeToStringLong(ast.rootScope)).toMatchInlineSnapshot(`
     "{ 
       -{ %pos(pos) #1  
@@ -81,10 +75,9 @@ test("collect unbound references", async () => {
    `;
 
   resetScopeIds();
-  const registry = parsedRegistry();
-  parseIntoRegistry({ main }, registry);
-  const rootAst = registry.modules["package::main"];
-  const resolver = new RegistryResolver(registry);
+  const registry = new ParsedRegistry({ main });
+  const rootAst = registry.resolveModule("package::main")!;
+  const resolver = registry;
   const bindResult = bindIdents({ resolver, rootAst, accumulateUnbound: true });
 
   const expected = ["pkg1::bar::baz", "pkg2::foo"];

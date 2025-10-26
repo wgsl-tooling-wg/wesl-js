@@ -7,8 +7,7 @@ import type { FlatImport } from "./FlattenTreeImport.ts";
 import type { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
 import { type LiveDecls, makeLiveDecls } from "./LiveDeclarations.ts";
 import { type ManglerFn, minimalMangle } from "./Mangler.ts";
-import { type ModuleResolver, RegistryResolver } from "./ModuleResolver.ts";
-import type { ParsedRegistry } from "./ParsedRegistry.ts";
+import type { ModuleResolver } from "./ModuleResolver.ts";
 import { flatImports, parseSrcModule, type WeslAST } from "./ParseWESL.ts";
 import type {
   Conditions,
@@ -150,33 +149,6 @@ function initializeRootDecls(validRootDecls: DeclIdent[]): {
   return { globalNames, knownDecls };
 }
 
-/** bind local references in library sources to reveal references to external packages
- * NOTE: This function still uses ParsedRegistry for now, as it's primarily used for
- * libraries which are still eagerly loaded. */
-export function findUnboundIdents(registry: ParsedRegistry): string[][] {
-  const resolver = new RegistryResolver(registry);
-  const bindContext = {
-    resolver,
-    conditions: {},
-    knownDecls: new Set<DeclIdent>(),
-    foundScopes: new Set<Scope>(),
-    globalNames: new Set<string>(),
-    globalStatements: new Map<AbstractElem, EmittableElem>(),
-    mangler: minimalMangle,
-    unbound: [],
-    dontFollowDecls: true,
-  };
-
-  Object.entries(registry.modules).forEach(([_module, ast]) => {
-    const rootDecls = findValidRootDecls(ast.rootScope, {});
-    const declEntries = rootDecls.map(d => [d.originalName, d] as const);
-    const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
-    bindIdentsRecursive(ast.rootScope, bindContext, liveDecls, true);
-  });
-
-  return bindContext.unbound;
-}
-
 /**
  * Find all conditionally valid declarations at the root level.
  * Declarations are either directly in the root scope or in conditionally valid partial scopes.
@@ -285,7 +257,7 @@ interface BindContext {
  * @param isRoot liveDecls refers to a prepopulated root scope
  *  (root scope declarations may appear in any order)
  */
-function bindIdentsRecursive(
+export function bindIdentsRecursive(
   scope: Scope,
   bindContext: BindContext,
   liveDecls: LiveDecls,

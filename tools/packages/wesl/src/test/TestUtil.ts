@@ -5,14 +5,7 @@ import {
   type TestParseResult,
   testParseWithStream,
 } from "mini-parse/test-util";
-import {
-  type BoundAndTransformed,
-  type ParsedRegistry,
-  parsedRegistry,
-  parseIntoRegistry,
-  RegistryResolver,
-  type SrcModule,
-} from "wesl";
+import { type BoundAndTransformed, ParsedRegistry, type SrcModule } from "wesl";
 import { bindAndTransform, type LinkParams, link } from "../Linker.ts";
 import {
   parseSrcModule,
@@ -120,13 +113,11 @@ export function bindTest(...rawWesl: string[]): BindTestResult {
   resetScopeIds();
   const weslSrc = makeTestBundle(rawWesl);
 
-  const registry = parsedRegistry();
-  parseIntoRegistry(weslSrc, registry, "package", "test");
-  const resolver = new RegistryResolver(registry);
+  const registry = new ParsedRegistry(weslSrc, "package", "test");
+  const resolver = registry;
   const bound = bindAndTransform({
     rootModuleName: "test",
     resolver,
-    registry,
   });
   return { bound, registry };
 }

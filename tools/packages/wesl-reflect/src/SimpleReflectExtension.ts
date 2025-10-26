@@ -41,7 +41,7 @@ function makeReflect(options: SimpleReflectOptions) {
   ): Promise<string> {
     const registry = await api.weslRegistry();
 
-    const astStructs = Object.entries(registry.modules).flatMap(([, module]) =>
+    const astStructs = [...registry.allModules()].flatMap(([, module]) =>
       module.moduleElem.contents.filter(e => e.kind === "struct"),
     );
 

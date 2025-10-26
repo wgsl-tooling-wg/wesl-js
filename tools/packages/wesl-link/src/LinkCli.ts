@@ -101,14 +101,14 @@ async function linkNormally(argv: CliArgs): Promise<void> {
     } catch (e) {
       console.error(e);
     }
-    Object.entries(registry.modules).forEach(([modulePath, ast]) => {
+    for (const [modulePath, ast] of registry.allModules()) {
       log(`---\n${modulePath}`);
       log(`\n->ast`);
       log(astToString(ast.moduleElem));
       log(`\n->scope`);
       log(scopeToString(ast.rootScope));
       log();
-    });
+    }
   }
 }
 

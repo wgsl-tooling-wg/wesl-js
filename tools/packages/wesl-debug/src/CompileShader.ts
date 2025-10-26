@@ -58,19 +58,27 @@ export async function compileShader(
     params;
   const { useSourceShaders = !process.env.TEST_BUNDLES } = params;
 
-  const packageName = useSourceShaders
-    ? await getPackageName(projectDir)
-    : undefined;
-  const libs = await dependencyBundles({ main: src }, projectDir, packageName);
+  const packageName = await getPackageName(projectDir);
+  const libs = await dependencyBundles(
+    { main: src },
+    projectDir,
+    packageName,
+    !useSourceShaders, // include current package when testing bundles
+  );
 
-  const resolver = useSourceShaders
-    ? await lazyFileResolver(projectDir, src, packageName)
-    : new RecordResolver({ main: src }, packageName);
+  let linkParams: Pick<LinkParams, "resolver" | "libs" | "weslSrc">;
+  if (useSourceShaders) {
+    // Use lazy file resolver for source shaders
+    const resolver = await lazyFileResolver(projectDir, src, packageName);
+    linkParams = { resolver, libs };
+  } else {
+    // Let linker create bundle resolvers from libs (including current package)
+    linkParams = { weslSrc: { main: src }, libs };
+  }
 
   const linked = await link({
-    resolver,
+    ...linkParams,
     rootModuleName: "main",
-    libs,
     virtualLibs,
     conditions,
     constants,

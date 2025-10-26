@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { glob } from "glob";
 import type { UnpluginBuildContext, UnpluginContext } from "unplugin";
-import { type ParsedRegistry, parsedRegistry, parseIntoRegistry } from "wesl";
+import { ParsedRegistry } from "wesl";
 import {
   findWeslToml,
   parseDependencies,
@@ -57,8 +57,7 @@ async function getRegistry(
   const loaded = await loadWesl(context, unpluginCtx);
   const { resolvedRoot } = await getWeslToml(context, unpluginCtx);
 
-  registry = parsedRegistry();
-  parseIntoRegistry(loaded, registry);
+  registry = new ParsedRegistry(loaded);
 
   // The paths are relative to the weslRoot, but vite needs actual filesystem paths
   const fullPaths = Object.keys(loaded).map(p => path.resolve(resolvedRoot, p));

@@ -4,6 +4,7 @@ export * from "./debug/ASTtoString.ts";
 export * from "./debug/ScopeToString.ts";
 export * from "./LinkedWesl.ts";
 export * from "./Linker.ts";
+export * from "./LiveDeclarations.ts";
 export * from "./Mangler.ts";
 export * from "./ModuleResolver.ts";
 export * from "./ParsedRegistry.ts";

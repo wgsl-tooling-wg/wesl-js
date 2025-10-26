@@ -9,16 +9,11 @@ import { LinkedWesl } from "./LinkedWesl.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
 import type { ManglerFn } from "./Mangler.ts";
 import {
+  BundleResolver,
   CompositeResolver,
   type ModuleResolver,
   RecordResolver,
-  RegistryResolver,
 } from "./ModuleResolver.ts";
-import {
-  type ParsedRegistry,
-  parsedRegistry,
-  parseLibsIntoRegistry,
-} from "./ParsedRegistry.ts";
 import type { WeslAST } from "./ParseWESL.ts";
 import type { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
 import { filterMap, mapValues } from "./Util.ts";
@@ -114,21 +109,55 @@ export async function link(params: LinkParams): Promise<LinkedWesl> {
 /** linker api for benchmarking */
 export function _linkSync(params: LinkParams): SrcMap {
   const { weslSrc, libs = [], packageName, debugWeslRoot } = params;
-  let { resolver } = params;
+  const { resolver } = params;
 
-  // If no resolver provided, create one from weslSrc (legacy API)
-  if (!resolver) {
-    if (!weslSrc) {
-      throw new Error("Either resolver or weslSrc must be provided");
-    }
-    resolver = new RecordResolver(weslSrc, packageName, debugWeslRoot);
+  const resolvers: ModuleResolver[] = [];
+
+  if (resolver) {
+    resolvers.push(resolver);
+  } else if (weslSrc) {
+    resolvers.push(new RecordResolver(weslSrc, packageName, debugWeslRoot));
+  } else {
+    throw new Error("Either resolver or weslSrc must be provided");
   }
 
-  // Libraries still use eager loading via ParsedRegistry
-  const libRegistry = parsedRegistry();
-  parseLibsIntoRegistry(libs, libRegistry);
+  if (libs.length > 0) {
+    const libResolvers = createLibraryResolvers(libs, debugWeslRoot);
+    resolvers.push(...libResolvers);
+  }
 
-  return linkRegistry({ resolver, registry: libRegistry, ...params });
+  const finalResolver =
+    resolvers.length === 1 ? resolvers[0] : new CompositeResolver(resolvers);
+
+  return linkRegistry({ resolver: finalResolver, ...params });
+}
+
+function createLibraryResolvers(
+  libs: WeslBundle[],
+  debugWeslRoot?: string,
+): ModuleResolver[] {
+  const flattened = flattenLibraryTree(libs);
+  return flattened.map(lib => new BundleResolver(lib, debugWeslRoot));
+}
+
+/** Flatten library dependency tree, deduplicating by object identity rather than package name.
+ *
+ * Some packages (like Lygia) provide multiple bundles in the same npm package
+ * to enable tree shaking. All bundles share the same package name, so we deduplicate
+ * by object identity to keep them distinct. Also handles circular dependencies correctly. */
+function flattenLibraryTree(libs: WeslBundle[]): WeslBundle[] {
+  const result: WeslBundle[] = [];
+  const seen = new Set<WeslBundle>();
+
+  function visit(bundle: WeslBundle) {
+    if (seen.has(bundle)) return;
+    seen.add(bundle);
+    result.push(bundle);
+    bundle.dependencies?.forEach(visit);
+  }
+
+  libs.forEach(visit);
+  return result;
 }
 
 export interface LinkRegistryParams
@@ -142,7 +171,6 @@ export interface LinkRegistryParams
     | "mangler"
   > {
   resolver: ModuleResolver;
-  registry?: ParsedRegistry; // temporary for libraries
 }
 
 /** Link wesl from a registry of already parsed modules.
@@ -177,21 +205,17 @@ export interface BoundAndTransformed {
 export function bindAndTransform(
   params: LinkRegistryParams,
 ): BoundAndTransformed {
-  const { resolver, registry, mangler, constants, config } = params;
+  const { resolver, mangler, constants, config } = params;
   const { rootModuleName = "main", conditions = {} } = params;
 
   const modulePath = normalizeModuleName(rootModuleName);
   const rootAst = getRootModule(resolver, modulePath, rootModuleName);
 
-  const finalResolver = registry
-    ? new CompositeResolver([resolver, new RegistryResolver(registry)])
-    : resolver;
-
   const virtuals = setupVirtualLibs(params.virtualLibs, constants);
 
   const bindParams = {
     rootAst,
-    resolver: finalResolver,
+    resolver,
     conditions,
     virtuals,
     mangler,
@@ -203,8 +227,8 @@ export function bindAndTransform(
   return { transformedAst, newDecls, newStatements };
 }
 
-/** Normalize module name to module path format.
- * Handles: module path (package::foo), file path (./foo.wesl), or simple name (foo) */
+/** Convert root module name to module path format.
+ * Accepts: module path (package::foo), file path (./foo.wesl), or name (foo) */
 function normalizeModuleName(name: string): string {
   if (name.includes("::")) return name;
   if (name.includes("/") || name.endsWith(".wesl") || name.endsWith(".wgsl")) {
@@ -214,7 +238,7 @@ function normalizeModuleName(name: string): string {
   return "package::" + name;
 }
 
-/** Get root module from resolver, throwing if not found */
+/** Resolve root module AST or throw if not found. */
 function getRootModule(
   resolver: ModuleResolver,
   modulePath: string,
@@ -232,7 +256,7 @@ function getRootModule(
   return rootAst;
 }
 
-/** Setup virtual modules from code generation or host constants */
+/** Create virtual library set from code generators and host constants. */
 function setupVirtualLibs(
   virtualLibs: Record<string, VirtualLibraryFn> | undefined,
   constants: Record<string, string | number> | undefined,

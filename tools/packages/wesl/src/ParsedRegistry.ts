@@ -1,56 +1,91 @@
 import type { WeslBundle } from "wesl";
+import type { ModuleResolver } from "./ModuleResolver.ts";
 import { parseSrcModule, type WeslAST } from "./ParseWESL.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
-import { resetScopeIds, type SrcModule } from "./Scope.ts";
+import type { SrcModule } from "./Scope.ts";
 
-export interface ParsedRegistry {
-  modules: Record<string, WeslAST>; // key is module path, e.g. "rand_pkg::foo::bar"
-}
-
-export function parsedRegistry(): ParsedRegistry {
-  resetScopeIds(); // for debug
-  return { modules: {} };
-}
-
-/** for debug */
-export function registryToString(registry: ParsedRegistry): string {
-  return `modules: ${[...Object.keys(registry.modules)]}`;
-}
-
-/** Look up a module with a flexible selector.
- *    :: separated module path,   package::util
- *    / separated file path       ./util.wesl (or ./util)
- *          - note: a file path should not include a weslRoot prefix, e.g. not ./shaders/util.wesl
- *    simpleName                  util
+/**
+ * Immutable module cache that implements ModuleResolver.
+ *
+ * Parses all sources at construction time and provides read-only access.
+ * Used for dependency analysis, tooling, and as a concrete ModuleResolver
+ * implementation for testing and batch processing.
  */
-export function selectModule(
-  parsed: ParsedRegistry,
-  selectPath: string,
-  packageName = "package",
-): WeslAST | undefined {
-  // dlog({reg: [...Object.keys(parsed.modules)]});
-  let modulePath: string;
-  if (selectPath.includes("::")) {
-    modulePath = selectPath;
-  } else if (
-    selectPath.includes("/") ||
-    selectPath.endsWith(".wesl") ||
-    selectPath.endsWith(".wgsl")
+export class ParsedRegistry implements ModuleResolver {
+  private readonly modules: Map<string, WeslAST>;
+
+  constructor(
+    sources: Record<string, string>,
+    packageName = "package",
+    debugWeslRoot?: string,
   ) {
-    modulePath = fileToModulePath(selectPath, packageName);
-  } else {
-    modulePath = packageName + "::" + selectPath;
+    this.modules = this.parseSources(sources, packageName, debugWeslRoot);
   }
 
-  return parsed.modules[modulePath];
+  private parseSources(
+    sources: Record<string, string>,
+    packageName: string,
+    debugWeslRoot?: string,
+  ): Map<string, WeslAST> {
+    const weslRoot = normalizeDebugRoot(debugWeslRoot);
+    const result = new Map<string, WeslAST>();
+
+    for (const [filePath, src] of Object.entries(sources)) {
+      const modulePath = fileToModulePath(filePath, packageName);
+      const ast = parseSrcModule({
+        modulePath,
+        debugFilePath: weslRoot + filePath,
+        src,
+      });
+      if (!result.has(modulePath)) result.set(modulePath, ast);
+    }
+
+    return result;
+  }
+
+  resolveModule(modulePath: string): WeslAST | undefined {
+    return this.modules.get(modulePath);
+  }
+
+  allModules(): Iterable<[string, WeslAST]> {
+    return this.modules.entries();
+  }
+}
+
+export function registryToString(registry: ParsedRegistry): string {
+  return `modules: ${[...registry.allModules()].map(([path]) => path)}`;
+}
+
+function normalizeDebugRoot(debugWeslRoot?: string): string {
+  if (debugWeslRoot === undefined) return "./";
+  if (debugWeslRoot === "") return "";
+  return debugWeslRoot.endsWith("/") ? debugWeslRoot : debugWeslRoot + "/";
+}
+
+const libRegex = /^lib\.w[eg]sl$/i;
+
+function fileToModulePath(filePath: string, packageName: string): string {
+  if (filePath.includes("::")) {
+    return filePath;
+  }
+  if (packageName !== "package" && libRegex.test(filePath)) {
+    return packageName;
+  }
+
+  const strippedPath = noSuffix(normalize(filePath));
+  const moduleSuffix = strippedPath.replaceAll("/", "::");
+  return packageName + "::" + moduleSuffix;
+}
+
+/** @deprecated Legacy test helper. Use `new ParsedRegistry({})` instead. */
+export function parsedRegistry(): ParsedRegistry {
+  return new ParsedRegistry({});
 }
 
 /**
- * @param srcFiles    map of source strings by file path
- *                    key is '/' separated relative path (relative to srcRoot, not absolute file path )
- *                    value is wesl source string
- * @param registry    add parsed modules to this registry
- * @param packageName name of package
+ * @deprecated Legacy mutating API. Use `new ParsedRegistry(sources)` instead.
+ *
+ * Mutates registry by parsing sources and adding to internal modules map.
  */
 export function parseIntoRegistry(
   srcFiles: Record<string, string>,
@@ -58,12 +93,7 @@ export function parseIntoRegistry(
   packageName = "package",
   debugWeslRoot?: string,
 ): void {
-  let weslRoot = debugWeslRoot;
-  if (weslRoot === undefined) {
-    weslRoot = "";
-  } else if (!weslRoot.endsWith("/")) {
-    weslRoot += "/";
-  }
+  const weslRoot = normalizeDebugRoot(debugWeslRoot);
   const srcModules: SrcModule[] = Object.entries(srcFiles).map(
     ([filePath, src]) => {
       const modulePath = fileToModulePath(filePath, packageName);
@@ -72,44 +102,27 @@ export function parseIntoRegistry(
   );
   srcModules.forEach(mod => {
     const parsed = parseSrcModule(mod);
-    if (registry.modules[mod.modulePath]) {
-      // Skip duplicate modules - first one wins for now (LATER hierarchical scoping)
-      return;
+    const existingModule = registry.resolveModule(mod.modulePath);
+    if (!existingModule) {
+      // @ts-expect-error - accessing private field for legacy API
+      registry.modules.set(mod.modulePath, parsed);
     }
-    registry.modules[mod.modulePath] = parsed;
   });
 }
 
+/**
+ * @deprecated Legacy mutating API. Use BundleResolver instead.
+ *
+ * Recursively parses library bundles and their dependencies into registry.
+ */
 export function parseLibsIntoRegistry(
   libs: WeslBundle[],
   registry: ParsedRegistry,
 ): void {
-  // libs.forEach(({ modules, name }) => dlog({name, modules}));
   libs.forEach(({ modules, name }) => {
     parseIntoRegistry(modules, registry, name);
   });
-  // TODO registry scoping should be hierarchical, not flat
   libs.forEach(({ dependencies }) => {
     parseLibsIntoRegistry(dependencies || [], registry);
   });
-}
-
-const libRegex = /^lib\.w[eg]sl$/i;
-
-/** convert a file path (./foo/bar.wesl)
- *  to a module path (package::foo::bar) */
-function fileToModulePath(filePath: string, packageName: string): string {
-  if (filePath.includes("::")) {
-    // already a module path
-    return filePath;
-  }
-  if (packageName !== "package" && libRegex.test(filePath)) {
-    // special case for lib.wesl files in external packages
-    return packageName;
-  }
-
-  const strippedPath = noSuffix(normalize(filePath));
-  const moduleSuffix = strippedPath.replaceAll("/", "::");
-  const modulePath = packageName + "::" + moduleSuffix;
-  return modulePath;
 }
