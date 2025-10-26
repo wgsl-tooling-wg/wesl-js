@@ -4,13 +4,14 @@ Utilities for testing WESL/WGSL shaders in Node.js environments.
 
 ## Overview
 
-`wesl-debug` provides simple test harnesses 
+`wesl-debug` provides simple test harnesses
 for quickly running fragment and compute shaders GPU
 tests.
 
 * Write shader code in either WESL or WGSL.
-* Shader library imports in WESL are 
-  resolved automatically from `node_modules`. 
+* Shader library imports in WESL are
+  resolved automatically from `node_modules`.
+* Test against built bundles before publishing.
 * Shaders are run using Dawn,
   the WebGPU engine used inside the Chrome browser.
 
@@ -171,6 +172,30 @@ const result = await testFragmentShader({
 - `@binding(0)` - Uniform buffer (automatically provided, contains test::Uniforms)
 - `inputTextures[0]` → texture at `@binding(1)`, sampler at `@binding(2)`
 - `inputTextures[1]` → texture at `@binding(3)`, sampler at `@binding(4)`
+
+## Working with Local Shader Packages
+
+Import from local shader files using `package::` or your actual package name:
+
+```typescript
+const src = `
+  import package::utils::helper;      // generic package:: works
+  import my_shader_lib::math::compute; // or use actual package name
+  import test;
+
+  @compute @workgroup_size(1)
+  fn main() {
+    test::results[0] = helper() + compute();
+  }
+`;
+
+const result = await testComputeShader({ projectDir: import.meta.url, device, src });
+```
+
+**Testing built bundles** before publishing:
+```bash
+TEST_BUNDLES=true vitest  # or set useSourceShaders: false per-test
+```
 
 ## Image Testing & Visual Regression
 
@@ -346,7 +371,36 @@ test("compute shader writes results", async () => {
       test::results[0] = 123u;
     }
   `;
-  const result = await testComputeShader(projectDir, device, src, "u32");
+  const result = await testComputeShader({ projectDir, device, src });
   expect(result[0]).toBe(123);
+});
+
+test("use local shader library with package:: imports", async () => {
+  const src = `
+    import package::utils::helper;
+    import test;
+
+    @compute @workgroup_size(1)
+    fn main() {
+      test::results[0] = helper();  // calls fn from shaders/utils/helper.wesl
+    }
+  `;
+  const result = await testComputeShader({ projectDir, device, src });
+  expect(result[0]).toBe(42);
+});
+
+test("use external npm shader library", async () => {
+  const src = `
+    import random_wgsl::pcg_2u_3f;
+    import test;
+
+    @compute @workgroup_size(1)
+    fn main() {
+      let rand = pcg_2u_3f(vec2u(1u, 2u));
+      test::results[0] = u32(rand.x * 100.0);
+    }
+  `;
+  const result = await testComputeShader({ projectDir, device, src });
+  expect(result[0]).toBeGreaterThan(0);
 });
 ```

@@ -1,4 +1,3 @@
-import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolve } from "import-meta-resolve";
 import type { WeslBundle } from "wesl";
@@ -9,7 +8,6 @@ import {
   parseIntoRegistry,
   WeslParseError,
 } from "wesl";
-
 /**
  * Find the wesl package dependencies in a set of WESL files
  * (for packaging WESL files into a library)
@@ -50,8 +48,8 @@ export function parseDependencies(
   );
   if (pkgRefs.length === 0) return [];
 
-  const fullProjectDir = path.resolve(path.join(projectDir, "foo"));
-  const projectURL = pathToFileURL(fullProjectDir).href;
+  // Normalize projectDir to file:// URL for import-meta-resolve
+  const projectURL = projectDirURL(projectDir);
   const deps = filterMap(pkgRefs, mPath =>
     unboundToDependency(mPath, projectURL),
   );
@@ -112,8 +110,7 @@ export async function dependencyBundles(
   projectDir: string,
 ): Promise<WeslBundle[]> {
   const deps = parseDependencies(weslSrc, projectDir);
-  const projectDirAbs = path.resolve(path.join(projectDir, "dummy.js"));
-  const projectURL = pathToFileURL(projectDirAbs).href;
+  const projectURL = projectDirURL(projectDir);
   const bundles = deps.map(async dep => {
     const url = resolve(dep, projectURL);
     const module = await import(url);
@@ -121,4 +118,14 @@ export async function dependencyBundles(
   });
 
   return await Promise.all(bundles);
+}
+
+/** Normalize a project directory to a file:// URL.
+ * Handles both file:// URLs (from import.meta.url) and filesystem paths (from CLI). */
+function projectDirURL(projectDir: string): string {
+  if (projectDir.startsWith("file://")) {
+    return projectDir.endsWith("/") ? projectDir : `${projectDir}/`;
+  }
+  const fileUrl = pathToFileURL(projectDir).href;
+  return fileUrl.endsWith("/") ? fileUrl : `${fileUrl}/`;
 }

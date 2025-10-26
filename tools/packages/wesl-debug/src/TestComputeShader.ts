@@ -35,6 +35,10 @@ export interface ComputeTestParams {
   /** constants for shader compilation.
    * useful to inject host-provided values via the `constants::` namespace.  */
   constants?: LinkParams["constants"];
+
+  /** Use source shaders from current package instead of built bundles.
+   * Default: true for faster iteration during development. */
+  useSourceShaders?: boolean;
 }
 
 /**
@@ -59,6 +63,7 @@ export async function testComputeShader(
     size = defaultResultSize,
     conditions = {},
     constants,
+    useSourceShaders,
   } = params;
 
   const arraySize = size / elementStride(resultFormat);
@@ -67,15 +72,15 @@ export async function testComputeShader(
     test: () =>
       `@group(0) @binding(0) var <storage, read_write> results: ${arrayType};`,
   };
-  const shaderParams = {
+  const module = await compileShader({
     projectDir,
     device,
     src,
     conditions,
     constants,
     virtualLibs,
-  };
-  const module = await compileShader(shaderParams);
+    useSourceShaders,
+  });
   return await runCompute(device, module, resultFormat, size);
 }
 
@@ -103,39 +108,39 @@ export async function runCompute(
   size = defaultResultSize,
 ): Promise<number[]> {
   return await withErrorScopes(device, async () => {
-    const bgLayout = makeBindGroupLayout(device);
-    const pipelineLayout = device.createPipelineLayout({
-      bindGroupLayouts: [bgLayout],
+    const bgLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: { type: "storage" },
+        },
+      ],
     });
     const pipeline = device.createComputePipeline({
-      layout: pipelineLayout,
+      layout: device.createPipelineLayout({ bindGroupLayouts: [bgLayout] }),
       compute: { module },
     });
 
-    const storageBuffer = initStorageBuffer(device, size);
+    const storageBuffer = createStorageBuffer(device, size);
     const bindGroup = device.createBindGroup({
       layout: bgLayout,
       entries: [{ binding: 0, resource: { buffer: storageBuffer } }],
     });
 
-    runComputePass(device, pipeline, bindGroup);
+    const commands = device.createCommandEncoder();
+    const pass = commands.beginComputePass();
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, bindGroup);
+    pass.dispatchWorkgroups(1);
+    pass.end();
+    device.queue.submit([commands.finish()]);
+
     return await copyBuffer(device, storageBuffer, resultFormat);
   });
 }
 
-function makeBindGroupLayout(device: GPUDevice): GPUBindGroupLayout {
-  return device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.COMPUTE,
-        buffer: { type: "storage" },
-      },
-    ],
-  });
-}
-
-function initStorageBuffer(device: GPUDevice, size: number): GPUBuffer {
+function createStorageBuffer(device: GPUDevice, size: number): GPUBuffer {
   const buffer = device.createBuffer({
     label: "storage",
     size,
@@ -143,22 +148,7 @@ function initStorageBuffer(device: GPUDevice, size: number): GPUBuffer {
     mappedAtCreation: true,
   });
   // Initialize with sentinel values to detect unwritten results
-  const mappedBuffer = new Float32Array(buffer.getMappedRange());
-  mappedBuffer.fill(-999.0);
+  new Float32Array(buffer.getMappedRange()).fill(-999.0);
   buffer.unmap();
   return buffer;
-}
-
-function runComputePass(
-  device: GPUDevice,
-  pipeline: GPUComputePipeline,
-  bindGroup: GPUBindGroup,
-) {
-  const commands = device.createCommandEncoder();
-  const pass = commands.beginComputePass();
-  pass.setPipeline(pipeline);
-  pass.setBindGroup(0, bindGroup);
-  pass.dispatchWorkgroups(1);
-  pass.end();
-  device.queue.submit([commands.finish()]);
 }

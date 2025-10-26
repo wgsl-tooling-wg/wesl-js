@@ -68,6 +68,10 @@ export interface FragmentTestParams {
     texture: GPUTexture;
     sampler: GPUSampler;
   }>;
+
+  /** Use source shaders from current package instead of built bundles.
+   * Default: true for faster iteration during development. */
+  useSourceShaders?: boolean;
 }
 
 /** Run a fragment shader and returns pixel (0,0) for validation.  */
@@ -118,7 +122,7 @@ export async function testAnimatedShader(
 
 /** Compile and run a fragment shader for testing. */
 async function runFragment(params: FragmentTestParams): Promise<number[]> {
-  const { projectDir, device, src, conditions = {}, constants } = params;
+  const { projectDir, device, src, conditions = {}, constants, useSourceShaders } = params;
   const { textureFormat = "rgba32float", size = [1, 1] } = params;
   const { inputTextures, uniforms = {} } = params;
 
@@ -133,6 +137,7 @@ async function runFragment(params: FragmentTestParams): Promise<number[]> {
     conditions,
     constants,
     virtualLibs,
+    useSourceShaders,
   });
 
   return await simpleRender({
