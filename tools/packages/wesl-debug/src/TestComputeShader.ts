@@ -6,34 +6,30 @@ import { withErrorScopes } from "./ErrorScopes.ts";
 const defaultResultSize = 16; // 4x4 bytes
 
 export interface ComputeTestParams {
-  /** WESL/WGSL source code for a compute shader to test*/
+  /** WESL/WGSL source code for the compute shader to test. */
   src: string;
 
-  /** directory in your project. Used so that the test library
-   * can find installed npm shader libraries.
-   * That way your fragment shader can use import statements
-   * from shader npm libraries.
-   * (typically use import.meta.url) */
+  /** Project directory for resolving shader dependencies.
+   * Allows the shader to import from npm shader libraries.
+   * Typically use `import.meta.url`. */
   projectDir: string;
 
-  /** gpu device for running the tests.
-   * (typically use getGPUDevice() from wesl-debug) */
+  /** GPU device for running the tests.
+   * Typically use `getGPUDevice()` from wesl-debug. */
   device: GPUDevice;
 
-  /** format of result buffer
-   * default: "u32" */
+  /** Format of the result buffer. Default: "u32" */
   resultFormat?: WgslElementType;
 
-  /** size of result buffer in bytes
-   * default: 16 */
+  /** Size of result buffer in bytes. Default: 16 */
   size?: number;
 
-  /** flags for conditional compilation for testing shader specialization.
-   * useful to test `@if` statements in the shader.  */
+  /** Flags for conditional compilation to test shader specialization.
+   * Useful for testing `@if` statements in the shader. */
   conditions?: LinkParams["conditions"];
 
-  /** constants for shader compilation.
-   * useful to inject host-provided values via the `constants::` namespace.  */
+  /** Constants for shader compilation.
+   * Injects host-provided values via the `constants::` namespace. */
   constants?: LinkParams["constants"];
 
   /** Use source shaders from current package instead of built bundles.
@@ -42,29 +38,28 @@ export interface ComputeTestParams {
 }
 
 /**
- * Transpiles and runs a simple compute shader on the GPU for testing.
+ * Compiles and runs a compute shader on the GPU for testing.
  *
- * A storage buffer is available for the shader to write test results.
- * `test::results[0]` is the first element of the buffer in wesl.
- * After execution the storage buffer is copied back to the CPU and returned
- * for test validation.
+ * Provides a storage buffer available at `test::results` where the shader
+ * can write test output. After execution, the storage buffer is copied back
+ * to the CPU and returned for validation.
  *
- * Shader libraries mentioned in the shader source are attached automatically
- * if they are in node_modules.
+ * Shader libraries mentioned in the source are automatically resolved from node_modules.
  *
- * @returns storage result array (typically four numbers if the buffer format is u32 or f32)
+ * @returns Array of numbers from the storage buffer (typically 4 elements for u32/f32 format)
  */
 export async function testComputeShader(
   params: ComputeTestParams,
 ): Promise<number[]> {
-  const { projectDir, device, src } = params;
   const {
-    resultFormat = "u32",
-    size = defaultResultSize,
+    projectDir,
+    device,
+    src,
     conditions = {},
     constants,
     useSourceShaders,
   } = params;
+  const { resultFormat = "u32", size = defaultResultSize } = params;
 
   const arraySize = size / elementStride(resultFormat);
   const arrayType = `array<${resultFormat}, ${arraySize}>`;
@@ -72,6 +67,7 @@ export async function testComputeShader(
     test: () =>
       `@group(0) @binding(0) var <storage, read_write> results: ${arrayType};`,
   };
+
   const module = await compileShader({
     projectDir,
     device,
@@ -81,25 +77,21 @@ export async function testComputeShader(
     virtualLibs,
     useSourceShaders,
   });
+
   return await runCompute(device, module, resultFormat, size);
 }
 
 /**
- * Transpiles and runs a simple compute shader on the GPU for testing.
+ * Runs a compiled compute shader and returns the result buffer.
  *
- * a storage buffer is available for the shader at `@group(0) @binding(0)`.
- * Compute shaders can write test results into the buffer.
- * After execution the storage buffer is copied back to the CPU and returned
- * for test validation.
+ * Creates a storage buffer at @group(0) @binding(0) where the shader can
+ * write output. The shader is invoked once, then the buffer is copied back
+ * to the CPU for reading.
  *
- * Shader libraries mentioned in the shader source are attached automatically
- * if they are in node_modules.
- *
- * @param module - The compiled GPUShaderModule containing the compute shader.
- * The shader is invoked once.
- * @param resultFormat - format for interpreting the result buffer data. (default u32)
- * @param size - size of result buffer in bytes (default 16)
- * @returns storage result array
+ * @param module - The compiled GPUShaderModule containing the compute shader
+ * @param resultFormat - Format for interpreting result buffer data (default: u32)
+ * @param size - Size of result buffer in bytes (default: 16)
+ * @returns Array containing the shader's output from the storage buffer
  */
 export async function runCompute(
   device: GPUDevice,
@@ -117,6 +109,7 @@ export async function runCompute(
         },
       ],
     });
+
     const pipeline = device.createComputePipeline({
       layout: device.createPipelineLayout({ bindGroupLayouts: [bgLayout] }),
       compute: { module },
@@ -147,7 +140,7 @@ function createStorageBuffer(device: GPUDevice, size: number): GPUBuffer {
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
     mappedAtCreation: true,
   });
-  // Initialize with sentinel values to detect unwritten results
+  // Sentinel values to detect unwritten results
   new Float32Array(buffer.getMappedRange()).fill(-999.0);
   buffer.unmap();
   return buffer;

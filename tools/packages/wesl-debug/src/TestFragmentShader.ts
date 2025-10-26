@@ -12,58 +12,54 @@ import { simpleRender } from "./SimpleRender.ts";
 export const fullscreenTriangleVertex = `
   @vertex
   fn vs_main(@builtin(vertex_index) idx: u32) -> @builtin(position) vec4f {
-    // Fullscreen triangle: covers viewport with 3 vertices, no vertex buffer needed
+    // Covers viewport with 3 vertices, no vertex buffer needed
     var pos: vec2f;
     if (idx == 0u) {
-      pos = vec2f(-1.0, -1.0); // Vertex 0: bottom-left (-1, -1)
+      pos = vec2f(-1.0, -1.0);
     } else if (idx == 1u) {
-      pos = vec2f(3.0, -1.0);  // Vertex 1: bottom-right beyond viewport (3, -1)
+      pos = vec2f(3.0, -1.0);
     } else {
-      pos = vec2f(-1.0, 3.0);  // Vertex 2: top-left beyond viewport (-1, 3)
+      pos = vec2f(-1.0, 3.0);
     }
     return vec4f(pos, 0.0, 1.0);
   }`;
 
 export interface FragmentTestParams {
-  /** WESL/WGSL source code for a fragment shader to test*/
+  /** WESL/WGSL source code for the fragment shader to test. */
   src: string;
 
-  /** directory in your project. Used so that the test library
-   * can find installed npm shader libraries.
-   * That way your fragment shader can use import statements
-   * from shader npm libraries.
-   * (typically use import.meta.url) */
+  /** Project directory for resolving shader dependencies.
+   * Allows the shader to import from npm shader libraries.
+   * Typically use `import.meta.url`. */
   projectDir: string;
 
-  /** gpu device for running the tests.
-   * (typically use getGPUDevice() from wesl-debug) */
+  /** GPU device for running the tests.
+   * Typically use `getGPUDevice()` from wesl-debug. */
   device: GPUDevice;
 
-  /** optionally select the texture format for the output texture
-   * default: "rgba32float" */
+  /** Texture format for the output texture. Default: "rgba32float" */
   textureFormat?: GPUTextureFormat;
 
-  /** optionally specify the size of the output texture.
-   * default: [1, 1] for simple color tests.
-   * Use [2, 2] for derivative tests (forms a complete 2x2 quad for dpdx/dpdy) */
+  /** Size of the output texture. Default: [1, 1] for simple color tests.
+   * Use [2, 2] for derivative tests (forms a complete 2x2 quad for dpdx/dpdy). */
   size?: [width: number, height: number];
 
-  /** flags for conditional compilation for testing shader specialization.
-   * useful to test `@if` statements in the shader.  */
+  /** Flags for conditional compilation to test shader specialization.
+   * Useful for testing `@if` statements in the shader. */
   conditions?: LinkParams["conditions"];
 
-  /** constants for shader compilation.
-   * useful to inject host-provided values via the `constants::` namespace.  */
+  /** Constants for shader compilation.
+   * Injects host-provided values via the `constants::` namespace. */
   constants?: LinkParams["constants"];
 
-  /** uniform values for the shader (time, mouse).
-   * resolution is auto-populated from size parameter.
-   * Creates test::Uniforms struct available in shader. */
+  /** Uniform values for the shader (time, mouse).
+   * Resolution is auto-populated from the size parameter.
+   * Creates test::Uniforms struct available in the shader. */
   uniforms?: RenderUniforms;
 
-  /** input textures + samplers for the shader.
-   * binds sequentially: [1]=texture, [2]=sampler, [3]=texture, [4]=sampler, ...
-   * (binding 0 is reserved for uniforms) */
+  /** Input textures and samplers for the shader.
+   * Bound sequentially: [1]=texture, [2]=sampler, [3]=texture, [4]=sampler, etc.
+   * Binding 0 is reserved for uniforms. */
   inputTextures?: Array<{
     texture: GPUTexture;
     sampler: GPUSampler;
@@ -74,7 +70,13 @@ export interface FragmentTestParams {
   useSourceShaders?: boolean;
 }
 
-/** Run a fragment shader and returns pixel (0,0) for validation.  */
+/**
+ * Renders a fragment shader and returns pixel (0,0) color values for validation.
+ *
+ * Useful for simple color tests where you only need to check a single pixel result.
+ *
+ * @returns Array of color component values from pixel (0,0)
+ */
 export async function testFragmentShader(
   params: FragmentTestParams,
 ): Promise<number[]> {
@@ -84,7 +86,13 @@ export async function testFragmentShader(
   return data.slice(0, count);
 }
 
-/** Run a fragment shader and return the rendered image. */
+/**
+ * Renders a fragment shader and returns the complete rendered image.
+ *
+ * Useful for image snapshot testing or when you need to validate the entire output.
+ *
+ * @returns ImageData containing the full rendered output
+ */
 export async function testFragmentShaderImage(
   params: FragmentTestParams,
 ): Promise<ImageData> {
@@ -99,13 +107,7 @@ export async function testFragmentShaderImage(
   } as ImageData;
 }
 
-/**
- * Tests an animated shader at multiple time points.
- * Useful for validating that shaders change over time.
- *
- * @param params - Same as testFragmentShader, plus timePoints array
- * @returns Array of image arrays, one per time point
- */
+/** Tests a shader at multiple time points to validate animation. */
 export async function testAnimatedShader(
   params: FragmentTestParams & { timePoints: number[] },
 ): Promise<number[][]> {
@@ -120,11 +122,21 @@ export async function testAnimatedShader(
   );
 }
 
-/** Compile and run a fragment shader for testing. */
 async function runFragment(params: FragmentTestParams): Promise<number[]> {
-  const { projectDir, device, src, conditions = {}, constants, useSourceShaders } = params;
-  const { textureFormat = "rgba32float", size = [1, 1] } = params;
-  const { inputTextures, uniforms = {} } = params;
+  const {
+    projectDir,
+    device,
+    src,
+    conditions = {},
+    constants,
+    useSourceShaders,
+  } = params;
+  const {
+    textureFormat = "rgba32float",
+    size = [1, 1],
+    inputTextures,
+    uniforms = {},
+  } = params;
 
   const uniformBuffer = renderUniformBuffer(device, size, uniforms);
   const virtualLibs = createUniformsVirtualLib();
@@ -150,11 +162,7 @@ async function runFragment(params: FragmentTestParams): Promise<number[]> {
   });
 }
 
-/** Convert typed data created from a gpu texture to an RGBA Uint8ClampedArray.
- *
- * (note that withTextureCopy() has already unpacked the texture data,
- * but here we convert to 8-bit RGBA for image comparison/saving)
- */
+/** Convert texture data to RGBA Uint8ClampedArray for image comparison. */
 function imageToUint8(
   data: ArrayLike<number>,
   format: GPUTextureFormat,
@@ -166,14 +174,12 @@ function imageToUint8(
   const byteSize = componentByteSize(format);
   const texelType = texelLoadType(format);
 
-  // Already 8-bit normalized - ensure Uint8ClampedArray type
   if (byteSize === 1 && format.includes("unorm")) {
     return data instanceof Uint8ClampedArray
       ? data
       : new Uint8ClampedArray(Array.from(data));
   }
 
-  // Float data (f32/f16) - normalize [0,1] and convert to [0,255]
   if (texelType === "f32") {
     const uint8Data = new Uint8ClampedArray(totalPixels * 4);
     for (let i = 0; i < totalPixels * components; i++) {

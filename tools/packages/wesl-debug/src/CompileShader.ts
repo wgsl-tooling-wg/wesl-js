@@ -8,22 +8,26 @@ import {
 import { loadModules } from "../../wesl-tooling/src/LoadModules.ts";
 
 export interface CompileShaderParams {
-  /** The project directory, used for resolving dependencies. */
+  /** Project directory for resolving shader dependencies.
+   * Used to locate installed npm shader libraries. */
   projectDir: string;
 
-  /** The GPUDevice to use for shader compilation. */
+  /** GPU device to use for shader compilation. */
   device: GPUDevice;
 
-  /** The WGSL/WESL shader source code. */
+  /** WESL/WGSL shader source code to compile. */
   src: string;
 
-  /** Optional conditions for shader compilation. */
+  /** Conditions for conditional compilation.
+   * Used to control `@if` directives in the shader. */
   conditions?: LinkParams["conditions"];
 
-  /** Optional constants for shader compilation. */
+  /** Constants for shader compilation.
+   * Injects host-provided values via the `constants::` namespace. */
   constants?: LinkParams["constants"];
 
-  /** Optional virtual libraries to include in the shader. */
+  /** Virtual libraries to include in the shader.
+   * Allows dynamic generation of shader code at runtime. */
   virtualLibs?: LinkParams["virtualLibs"];
 
   /** Use source shaders from current package instead of built bundles.
@@ -36,12 +40,14 @@ export interface CompileShaderParams {
 }
 
 /**
- * Compiles a single WESL shader source string into a GPUShaderModule for testing
- * with automatic package detection.
+ * Compiles a WESL shader source string into a GPUShaderModule with automatic dependency resolution.
  *
- * Parses the shader source to find references to wesl packages, and
- * then searches installed npm packages to find the appropriate npm package
- * bundle to include in the link.
+ * Parses the shader source to detect references to shader packages, then automatically
+ * includes the required npm package bundles. By default, loads source shaders from the
+ * current package for fast iteration without requiring rebuilds.
+ *
+ * @returns Compiled GPUShaderModule ready for use in render or compute pipelines
+ * @throws Error if shader compilation fails with compilation error details
  */
 export async function compileShader(
   params: CompileShaderParams,
@@ -108,13 +114,12 @@ async function getPackageName(projectDir: string): Promise<string | undefined> {
 
 /** Verify shader compilation succeeded, throw on errors. */
 async function verifyCompilation(module: GPUShaderModule): Promise<void> {
-  // Check for compilation errors
-  const compilationInfo = await module.getCompilationInfo();
-  const errors = compilationInfo.messages.filter(msg => msg.type === "error");
+  const info = await module.getCompilationInfo();
+  const errors = info.messages.filter(msg => msg.type === "error");
   if (errors.length > 0) {
-    const errorMessages = errors
+    const messages = errors
       .map(e => `${e.lineNum}:${e.linePos} ${e.message}`)
       .join("\n");
-    throw new Error(`Shader compilation failed:\n${errorMessages}`);
+    throw new Error(`Shader compilation failed:\n${messages}`);
   }
 }
