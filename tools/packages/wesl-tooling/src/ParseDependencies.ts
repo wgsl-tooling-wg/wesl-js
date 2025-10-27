@@ -1,7 +1,7 @@
 import { pathToFileURL } from "node:url";
 import { resolve } from "import-meta-resolve";
 import type { WeslBundle } from "wesl";
-import { filterMap, ParsedRegistry, WeslParseError } from "wesl";
+import { filterMap, RecordResolver, WeslParseError } from "wesl";
 import { findUnboundIdents } from "./FindUnboundIdents.ts";
 
 /**
@@ -22,9 +22,9 @@ export function parseDependencies(
   weslSrc: Record<string, string>,
   projectDir: string,
 ): string[] {
-  let registry: ParsedRegistry;
+  let resolver: RecordResolver;
   try {
-    registry = new ParsedRegistry(weslSrc);
+    resolver = new RecordResolver(weslSrc);
   } catch (e: any) {
     if (e.cause instanceof WeslParseError) {
       console.error(e.message, "\n");
@@ -33,7 +33,7 @@ export function parseDependencies(
     throw e;
   }
 
-  const unbound = findUnboundIdents(registry);
+  const unbound = findUnboundIdents(resolver);
   if (!unbound) return [];
 
   // Filter: skip builtins (1 segment) and linker virtuals ('constants')

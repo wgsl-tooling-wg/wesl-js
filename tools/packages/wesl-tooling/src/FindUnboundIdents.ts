@@ -1,9 +1,9 @@
 import type {
   AbstractElem,
+  BatchModuleResolver,
   DeclIdent,
   EmittableElem,
   LiveDecls,
-  ParsedRegistry,
   Scope,
 } from "wesl";
 import { bindIdentsRecursive, findValidRootDecls, minimalMangle } from "wesl";
@@ -14,13 +14,13 @@ import { bindIdentsRecursive, findValidRootDecls, minimalMangle } from "wesl";
  * Binds local references without following cross-package imports, revealing
  * which external packages are referenced but not resolved.
  *
- * @param registry - Pre-parsed modules to analyze
+ * @param resolver - Module resolver that supports batch operations
  * @returns Array of unbound module paths, each as an array of path segments
  *   (e.g., [['foo', 'bar', 'baz'], ['other', 'pkg']])
  */
-export function findUnboundIdents(registry: ParsedRegistry): string[][] {
+export function findUnboundIdents(resolver: BatchModuleResolver): string[][] {
   const bindContext = {
-    resolver: registry,
+    resolver,
     conditions: {},
     knownDecls: new Set<DeclIdent>(),
     foundScopes: new Set<Scope>(),
@@ -31,7 +31,7 @@ export function findUnboundIdents(registry: ParsedRegistry): string[][] {
     dontFollowDecls: true,
   };
 
-  for (const [_modulePath, ast] of registry.allModules()) {
+  for (const [_modulePath, ast] of resolver.allModules()) {
     const rootDecls = findValidRootDecls(ast.rootScope, {});
     const declEntries = rootDecls.map(d => [d.originalName, d] as const);
     const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };

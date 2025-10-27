@@ -4,7 +4,7 @@ import process$1, { exit } from "node:process";
 import { hideBin } from "yargs/helpers";
 import * as actualFS from "node:fs";
 import fs, { realpathSync, statSync } from "node:fs";
-import { ParsedRegistry, WeslParseError, bindIdentsRecursive, filterMap, findValidRootDecls, minimalMangle, noSuffix } from "wesl";
+import { RecordResolver, WeslParseError, bindIdentsRecursive, filterMap, findValidRootDecls, minimalMangle, noSuffix } from "wesl";
 import fs$1, { lstat, mkdir, readdir, readlink, realpath } from "node:fs/promises";
 import path, { posix, win32 } from "node:path";
 import { URL as URL$1, fileURLToPath, pathToFileURL } from "node:url";
@@ -51,13 +51,13 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 * Binds local references without following cross-package imports, revealing
 * which external packages are referenced but not resolved.
 *
-* @param registry - Pre-parsed modules to analyze
+* @param resolver - Module resolver that supports batch operations
 * @returns Array of unbound module paths, each as an array of path segments
 *   (e.g., [['foo', 'bar', 'baz'], ['other', 'pkg']])
 */
-function findUnboundIdents(registry) {
+function findUnboundIdents(resolver) {
 	const bindContext = {
-		resolver: registry,
+		resolver,
 		conditions: {},
 		knownDecls: /* @__PURE__ */ new Set(),
 		foundScopes: /* @__PURE__ */ new Set(),
@@ -67,7 +67,7 @@ function findUnboundIdents(registry) {
 		unbound: [],
 		dontFollowDecls: true
 	};
-	for (const [_modulePath, ast] of registry.allModules()) {
+	for (const [_modulePath, ast] of resolver.allModules()) {
 		const declEntries = findValidRootDecls(ast.rootScope, {}).map((d) => [d.originalName, d]);
 		const liveDecls = {
 			decls: new Map(declEntries),
@@ -10998,9 +10998,9 @@ function resolve(specifier, parent) {
 * @returns Dependency paths in npm format (e.g., 'foo/bar', 'foo')
 */
 function parseDependencies(weslSrc, projectDir) {
-	let registry;
+	let resolver;
 	try {
-		registry = new ParsedRegistry(weslSrc);
+		resolver = new RecordResolver(weslSrc);
 	} catch (e) {
 		if (e.cause instanceof WeslParseError) {
 			console.error(e.message, "\n");
@@ -11008,7 +11008,7 @@ function parseDependencies(weslSrc, projectDir) {
 		}
 		throw e;
 	}
-	const unbound = findUnboundIdents(registry);
+	const unbound = findUnboundIdents(resolver);
 	if (!unbound) return [];
 	const pkgRefs = unbound.filter((modulePath) => modulePath.length > 1 && modulePath[0] !== "constants");
 	if (pkgRefs.length === 0) return [];

@@ -2,17 +2,19 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolve } from "import-meta-resolve";
 import { enableTracing, log } from "mini-parse";
-import { astToString, link, scopeToString, type WeslBundle } from "wesl";
+import {
+  astToString,
+  link,
+  RecordResolver,
+  scopeToString,
+  type WeslBundle,
+} from "wesl";
 import {
   dependencyBundles,
   loadModules,
   versionFromPackageJson,
 } from "wesl-tooling";
 import yargs from "yargs";
-import {
-  parsedRegistry,
-  parseIntoRegistry,
-} from "../../wesl/src/ParsedRegistry.ts"; // LATER fix import
 
 type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 
@@ -95,13 +97,8 @@ async function linkNormally(argv: CliArgs): Promise<void> {
   }
 
   if (argv.details) {
-    const registry = parsedRegistry();
-    try {
-      parseIntoRegistry(weslSrc, registry, "package");
-    } catch (e) {
-      console.error(e);
-    }
-    for (const [modulePath, ast] of registry.allModules()) {
+    const resolver = new RecordResolver(weslSrc);
+    for (const [modulePath, ast] of resolver.allModules()) {
       log(`---\n${modulePath}`);
       log(`\n->ast`);
       log(astToString(ast.moduleElem));

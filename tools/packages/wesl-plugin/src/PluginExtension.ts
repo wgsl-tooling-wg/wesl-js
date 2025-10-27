@@ -1,4 +1,4 @@
-import type { ParsedRegistry, WeslJsPlugin } from "wesl";
+import type { BatchModuleResolver, WeslJsPlugin } from "wesl";
 import type { WeslTomlInfo } from "wesl-tooling";
 
 /** function type required for for emit extensions */
@@ -27,7 +27,7 @@ export interface PluginExtension extends WeslJsPlugin {
 export interface PluginExtensionApi {
   weslToml: () => Promise<WeslTomlInfo>;
   weslSrc: () => Promise<Record<string, string>>;
-  weslRegistry: () => Promise<ParsedRegistry>;
+  weslRegistry: () => Promise<BatchModuleResolver>;
   weslMain: (baseId: string) => Promise<string>;
   weslDependencies: () => Promise<string[]>;
 }

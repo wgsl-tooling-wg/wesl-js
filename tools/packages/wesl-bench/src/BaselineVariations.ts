@@ -36,8 +36,7 @@ export async function loadBaselineImports(args: {
     const baselineModule = await import(path);
     return {
       _linkSync: baselineModule._linkSync,
-      parsedRegistry: baselineModule.parsedRegistry,
-      parseIntoRegistry: baselineModule.parseIntoRegistry,
+      RecordResolver: baselineModule.RecordResolver,
       WeslStream: baselineModule.WeslStream,
     };
   } catch (error) {

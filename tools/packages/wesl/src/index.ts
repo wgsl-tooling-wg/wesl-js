@@ -7,7 +7,6 @@ export * from "./Linker.ts";
 export * from "./LiveDeclarations.ts";
 export * from "./Mangler.ts";
 export * from "./ModuleResolver.ts";
-export * from "./ParsedRegistry.ts";
 export * from "./ParseWESL.ts";
 export * from "./PathUtil.ts";
 export { WeslStream } from "./parse/WeslStream.ts";

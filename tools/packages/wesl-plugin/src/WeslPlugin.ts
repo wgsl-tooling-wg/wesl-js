@@ -9,7 +9,7 @@ import {
   type UnpluginContextMeta,
   type UnpluginOptions,
 } from "unplugin";
-import type { Conditions, ParsedRegistry } from "wesl";
+import type { Conditions, RecordResolver } from "wesl";
 import type { WeslToml, WeslTomlInfo } from "wesl-tooling";
 import { buildApi } from "./PluginApi.ts";
 import type { PluginExtension } from "./PluginExtension.ts";
@@ -22,7 +22,7 @@ export type { WeslToml, WeslTomlInfo };
  * (a plugin instance supports only one shader project)
  */
 interface PluginCache {
-  registry?: ParsedRegistry;
+  registry?: RecordResolver;
   weslToml?: WeslTomlInfo;
 }
 

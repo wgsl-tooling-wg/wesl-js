@@ -5,7 +5,7 @@ import {
   type TestParseResult,
   testParseWithStream,
 } from "mini-parse/test-util";
-import { type BoundAndTransformed, ParsedRegistry, type SrcModule } from "wesl";
+import { type BoundAndTransformed, RecordResolver, type SrcModule } from "wesl";
 import { bindAndTransform, type LinkParams, link } from "../Linker.ts";
 import {
   parseSrcModule,
@@ -105,21 +105,23 @@ export function parseTestRaw(src: string) {
 
 interface BindTestResult {
   bound: BoundAndTransformed;
-  registry: ParsedRegistry;
+  resolver: RecordResolver;
 }
 
-/** Parse and bind wesl source for testing. Returns bound result and registry for inspection. */
+/** Parse and bind wesl source for testing. Returns bound result and resolver for inspection. */
 export function bindTest(...rawWesl: string[]): BindTestResult {
   resetScopeIds();
   const weslSrc = makeTestBundle(rawWesl);
 
-  const registry = new ParsedRegistry(weslSrc, "package", "test");
-  const resolver = registry;
+  const resolver = new RecordResolver(weslSrc, {
+    packageName: "package",
+    debugWeslRoot: "test",
+  });
   const bound = bindAndTransform({
     rootModuleName: "test",
     resolver,
   });
-  return { bound, registry };
+  return { bound, resolver };
 }
 
 /** Synthesize test file bundle. Root module is ./test.wesl, others are ./file1.wesl, ./file2.wesl, etc. */

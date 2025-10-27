@@ -1,5 +1,8 @@
 import { parseSrcModule, type WeslAST } from "./ParseWESL.ts";
+import { normalize, noSuffix } from "./PathUtil.ts";
 import type { WeslBundle } from "./WeslBundle.ts";
+
+const libRegex = /^lib\.w[eg]sl$/i;
 
 /**
  * Resolves module paths to parsed ASTs.
@@ -16,8 +19,24 @@ export interface ModuleResolver {
   resolveModule(modulePath: string): WeslAST | undefined;
 }
 
-/** Lazy module resolver for in-memory source records. */
-export class RecordResolver implements ModuleResolver {
+/** Module resolver that supports batch enumeration of all modules. */
+export interface BatchModuleResolver extends ModuleResolver {
+  /**
+   * Return all modules, parsing them on-demand if needed.
+   * Implementations should ensure all sources are parsed before returning.
+   */
+  allModules(): Iterable<[string, WeslAST]>;
+}
+
+export interface RecordResolverOptions {
+  /** Package name for module path resolution (default: "package") */
+  packageName?: string;
+  /** Debug path prefix for error messages */
+  debugWeslRoot?: string;
+}
+
+/** Module resolver for in-memory source records. Lazy by default. */
+export class RecordResolver implements BatchModuleResolver {
   readonly astCache = new Map<string, WeslAST>();
   readonly sources: Record<string, string>;
   readonly packageName: string;
@@ -25,9 +44,9 @@ export class RecordResolver implements ModuleResolver {
 
   constructor(
     sources: Record<string, string>,
-    packageName = "package",
-    debugWeslRoot?: string,
+    options: RecordResolverOptions = {},
   ) {
+    const { packageName = "package", debugWeslRoot } = options;
     this.sources = sources;
     this.packageName = packageName;
     this.debugWeslRoot = normalizeDebugRoot(debugWeslRoot);
@@ -71,6 +90,19 @@ export class RecordResolver implements ModuleResolver {
   private modulePathToDebugPath(modulePath: string): string {
     const filePath = this.moduleToFilePath(modulePath);
     return this.debugWeslRoot + filePath + ".wesl";
+  }
+
+  /** Return all modules, parsing them on-demand if needed. */
+  allModules(): Iterable<[string, WeslAST]> {
+    for (const filePath of Object.keys(this.sources)) {
+      const modulePath = fileToModulePath(
+        filePath,
+        this.packageName,
+        this.packageName !== "package",
+      );
+      this.resolveModule(modulePath);
+    }
+    return this.astCache.entries();
   }
 }
 
@@ -152,6 +184,24 @@ export class BundleResolver implements ModuleResolver {
     const filePath = this.moduleToFilePath(modulePath);
     return this.debugWeslRoot + this.packageName + "/" + filePath + ".wesl";
   }
+}
+
+/** Convert file path to module path (e.g., "foo/bar.wesl" -> "package::foo::bar"). */
+function fileToModulePath(
+  filePath: string,
+  packageName: string,
+  treatLibAsRoot: boolean,
+): string {
+  if (filePath.includes("::")) return filePath;
+
+  // Special case: lib.wesl/lib.wgsl becomes just the package name
+  if (treatLibAsRoot && libRegex.test(filePath)) {
+    return packageName;
+  }
+
+  const strippedPath = noSuffix(normalize(filePath));
+  const moduleSuffix = strippedPath.replaceAll("/", "::");
+  return packageName + "::" + moduleSuffix;
 }
 
 /** Normalize debug root to end with / or be empty. */

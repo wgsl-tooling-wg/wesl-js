@@ -116,7 +116,7 @@ export function _linkSync(params: LinkParams): SrcMap {
   if (resolver) {
     resolvers.push(resolver);
   } else if (weslSrc) {
-    resolvers.push(new RecordResolver(weslSrc, packageName, debugWeslRoot));
+    resolvers.push(new RecordResolver(weslSrc, { packageName, debugWeslRoot }));
   } else {
     throw new Error("Either resolver or weslSrc must be provided");
   }

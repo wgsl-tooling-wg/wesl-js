@@ -97,7 +97,7 @@ async function lazyFileResolver(
   mainSrc: string,
   packageName: string | undefined,
 ): Promise<CompositeResolver> {
-  const mainResolver = new RecordResolver({ main: mainSrc }, packageName);
+  const mainResolver = new RecordResolver({ main: mainSrc }, { packageName });
   const projectPath = fileURLToPath(projectDir);
   const tomlInfo = await findWeslToml(projectPath);
   const baseDir = path.isAbsolute(tomlInfo.resolvedRoot)

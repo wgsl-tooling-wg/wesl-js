@@ -1,4 +1,4 @@
-import { _linkSync, parsedRegistry, parseIntoRegistry, WeslStream } from "wesl";
+import { _linkSync, RecordResolver, WeslStream } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import { srcToText, tokenize } from "./BenchUtils.ts";
 import type { WeslSource } from "./LoadExamples.ts";
@@ -8,8 +8,7 @@ export type ParserVariant = "link" | "parse" | "tokenize" | "wgsl-reflect";
 /** WESL imports for creating parser variations */
 export interface WeslImports {
   _linkSync: typeof _linkSync;
-  parsedRegistry: typeof parsedRegistry;
-  parseIntoRegistry: typeof parseIntoRegistry;
+  RecordResolver: typeof RecordResolver;
   WeslStream: typeof WeslStream;
 }
 
@@ -17,15 +16,14 @@ export interface WeslImports {
 export function parserVariation(variant: ParserVariant) {
   return makeVariation(variant, {
     _linkSync,
-    parsedRegistry,
-    parseIntoRegistry,
+    RecordResolver,
     WeslStream,
   });
 }
 
 /** @return benchmark function with custom imports */
 export function makeVariation(variant: ParserVariant, imports: WeslImports) {
-  const { _linkSync, parsedRegistry, parseIntoRegistry, WeslStream } = imports;
+  const { _linkSync, RecordResolver, WeslStream } = imports;
 
   switch (variant) {
     case "link":
@@ -36,9 +34,7 @@ export function makeVariation(variant: ParserVariant, imports: WeslImports) {
     case "parse":
       return (source: WeslSource) => {
         const { weslSrc } = source;
-        const registry = parsedRegistry();
-        parseIntoRegistry(weslSrc, registry, "package");
-        return registry;
+        return new RecordResolver(weslSrc);
       };
     case "tokenize":
       return (source: WeslSource) =>

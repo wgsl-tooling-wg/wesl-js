@@ -1,4 +1,4 @@
-import { _linkSync, parsedRegistry, parseIntoRegistry, WeslStream } from "wesl";
+import { _linkSync, RecordResolver, WeslStream } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import { srcToText, tokenize } from "./BenchUtils.ts";
 import type { WeslSource } from "./LoadExamples.ts";
@@ -21,9 +21,7 @@ export function runBenchmark(params: BenchParams) {
     }
     case "parse": {
       const { weslSrc } = source;
-      const registry = parsedRegistry();
-      parseIntoRegistry(weslSrc, registry, "package");
-      return registry;
+      return new RecordResolver(weslSrc);
     }
     case "tokenize": {
       const { weslSrc } = source;

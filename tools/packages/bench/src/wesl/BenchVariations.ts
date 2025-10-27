@@ -1,6 +1,6 @@
 import path from "node:path";
-import type { ParsedRegistry } from "wesl";
-import { link, parsedRegistry, parseIntoRegistry, WeslStream } from "wesl";
+import type { RecordResolver } from "wesl";
+import { link, RecordResolver as RecResolver, WeslStream } from "wesl";
 import { WgslReflect } from "wgsl_reflect";
 import { baselineDir } from "./WeslBenchmarks.ts";
 
@@ -23,8 +23,7 @@ type FnAndBaseline = {
 
 interface BaselineImports {
   link?: typeof link;
-  parseIntoRegistry?: typeof parseIntoRegistry;
-  parsedRegistry?: typeof parsedRegistry;
+  RecordResolver?: typeof RecResolver;
   WeslStream?: typeof WeslStream;
 }
 
@@ -68,20 +67,15 @@ export async function createVariantFunction(
 
 /** return benchmark functions for "parse" variant  */
 function parseFns(baselineImports: BaselineImports | undefined): FnAndBaseline {
-  function current(args: { weslSrc: Record<string, string> }): ParsedRegistry {
-    const registry = parsedRegistry();
-    parseIntoRegistry(args.weslSrc, registry, "package");
-    return registry;
+  function current(args: { weslSrc: Record<string, string> }): RecordResolver {
+    return new RecResolver(args.weslSrc);
   }
 
-  const basedParseIntoRegistry = baselineImports?.parseIntoRegistry;
-  const basedParsedRegistry = baselineImports?.parsedRegistry;
+  const BasedRecordResolver = baselineImports?.RecordResolver;
   let baseline: BenchFunction | undefined;
-  if (basedParseIntoRegistry && basedParsedRegistry) {
+  if (BasedRecordResolver) {
     baseline = ({ weslSrc }) => {
-      const registry = basedParsedRegistry();
-      basedParseIntoRegistry(weslSrc, registry, "package");
-      return registry;
+      return new BasedRecordResolver(weslSrc);
     };
   }
 
