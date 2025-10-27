@@ -1,4 +1,3 @@
-/// <reference types="./vitest.d.ts" />
 import { expect } from "vitest";
 import { getCurrentTest } from "vitest/suite";
 import {
@@ -81,6 +80,7 @@ async function toMatchImage(
   if (!comparison.pass) {
     const currentTest = getCurrentTest();
     if (currentTest) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (currentTest.meta as any).imageSnapshotFailure = {
         actualPath: manager.actualPath(snapshotName),
         expectedPath: manager.referencePath(snapshotName),

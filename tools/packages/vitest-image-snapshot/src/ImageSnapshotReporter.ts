@@ -1,7 +1,15 @@
 import * as path from "node:path";
 import type { Reporter, TestCase, Vitest } from "vitest/node";
 import { generateDiffReport, type ImageSnapshotFailure } from "./DiffReport.ts";
-import type { ImageSnapshotFailureData } from "./vitest.d.ts";
+
+/** metadata saved at failure for future report */
+interface ImageSnapshotFailureData {
+  actualPath: string;
+  expectedPath: string;
+  diffPath: string;
+  mismatchedPixels: number;
+  mismatchedPixelRatio: number;
+}
 
 export interface ImageSnapshotReporterOptions {
   /** Report directory (relative to config.root or absolute) */
