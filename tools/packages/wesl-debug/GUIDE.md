@@ -6,6 +6,7 @@ Complete API documentation for testing WGSL/WESL shaders.
 
 - [testComputeShader()](#testcomputeshader)
 - [testFragmentShader()](#testfragmentshader)
+- [expectFragmentImage()](#expectfragmentimage)
 - [Texture Helper Functions](#texture-helper-functions)
 - [Working with Local Shader Packages](#working-with-local-shader-packages)
 - [Complete Test Example](#complete-test-example)
@@ -155,12 +156,72 @@ const result = await testFragmentShader({
 ### Parameters
 
 - `device: GPUDevice` - WebGPU device
-- `src: string` - Shader source code (WGSL or WESL)
+- `src?: string` - Shader source code (WGSL or WESL). Either `src` or `moduleName` required.
+- `moduleName?: string` - Shader file to load (e.g., "effects/blur.wgsl"). Either `src` or `moduleName` required.
 - `projectDir?: string` - Import path base (usually `import.meta.url`). Optional, but helpful in monorepos.
 - `textureFormat?: string` - Output texture format (default: "rgba32float")
 - `size?: [number, number]` - Render size in pixels (default: [1, 1])
 - `inputTextures?: Array<{texture: GPUTexture, sampler: GPUSampler}>` - Input textures
 - `uniforms?: {time?: number, mouse?: [number, number]}` - Custom uniform values
+
+**Note**: Provide either `src` (inline shader) or `moduleName` (load from file), but not both.
+
+## expectFragmentImage()
+
+Loads a shader from a file, renders it, and automatically compares against a snapshot. Simplest API for visual regression testing of shader files.
+
+### Basic Usage
+
+```typescript
+import { expectFragmentImage } from "wesl-test";
+
+test("blur shader matches snapshot", async () => {
+  await expectFragmentImage(device, "effects/blur.wgsl", {
+    projectDir: import.meta.url,
+    size: [256, 256],
+  });
+  // Snapshot name automatically derived: "effects-blur"
+});
+```
+
+### Shader Name Formats
+
+The `moduleName` parameter supports three formats:
+
+- **Bare name**: `"blur.wgsl"` → resolves to `shaders/blur.wgsl`
+- **Relative path**: `"effects/blur.wgsl"` → resolves to `shaders/effects/blur.wgsl`
+- **Module path**: `"package::effects::blur"` → same as relative path
+
+The root directory (`shaders/`) is determined by `wesl.toml` configuration.
+
+### Custom Snapshot Names
+
+Override the automatic snapshot name for testing shader variations:
+
+```typescript
+test("blur with high radius", async () => {
+  await expectFragmentImage(device, "effects/blur.wgsl", {
+    projectDir: import.meta.url,
+    snapshotName: "blur-radius-10",
+    uniforms: { radius: 10 },
+    size: [256, 256],
+  });
+});
+```
+
+### Parameters
+
+- `device: GPUDevice` - WebGPU device
+- `moduleName: string` - Shader file to load
+- `opts?:` - Optional parameters:
+  - `projectDir?: string` - Import path base (usually `import.meta.url`)
+  - `snapshotName?: string` - Override automatic snapshot name
+  - `size?: [number, number]` - Render size (default: [256, 256])
+  - `textureFormat?: string` - Texture format (default: "rgba32float")
+  - `inputTextures?: Array<{texture, sampler}>` - Input textures
+  - `uniforms?: {time?, mouse?}` - Custom uniform values
+
+**See also**: [IMAGE_TESTING.md](./IMAGE_TESTING.md) for complete visual regression testing workflow.
 
 ## Texture Helper Functions
 

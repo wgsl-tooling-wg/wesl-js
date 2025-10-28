@@ -18,9 +18,7 @@ npm install wesl-test
 Quick start in 3 steps:
 
 1. Write your shader function in WGSL or WESL as normal
-2. Use `testComputeShader()`, 
-`testFragmentShader()`, or `testFragmentShaderImage()` 
-to call your shader function with test data.
+2. Use `testComputeShader()`, `testFragmentShader()`, `testFragmentShaderImage()`, or `expectFragmentImage()` to test your shader with inline source or from files
 3. Assert the results with your test framework
 
 ## Testing Compute Shaders
@@ -79,7 +77,17 @@ const result = await testFragmentShader({ device, src });
 Test complete rendered images and catch visual changes automatically:
 
 ```typescript
-TBD
+import { expectFragmentImage, imageMatcher } from "wesl-test";
+
+imageMatcher(); // Setup once
+
+test("blur shader matches snapshot", async () => {
+  await expectFragmentImage(device, "effects/blur.wgsl", {
+    projectDir: import.meta.url,
+    size: [256, 256],
+  });
+  // Snapshot automatically compared against __image_snapshots__/effects-blur.png
+});
 ```
 
 Snapshot comparison automatically detects rendering changes. Update snapshots with `vitest -u` when changes are intentional.

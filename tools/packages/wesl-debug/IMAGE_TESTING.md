@@ -17,9 +17,19 @@ Use `testFragmentShaderImage()` to get the complete rendered image instead of ju
 ```typescript
 import { testFragmentShaderImage } from "wesl-test";
 
+// Inline shader source
 const result = await testFragmentShaderImage({
   device,
   src: blurShaderSource,
+  size: [256, 256],
+  inputTextures: [{ texture: inputTex, sampler }]
+});
+
+// Or load shader from file
+const result = await testFragmentShaderImage({
+  device,
+  moduleName: "effects/blur.wgsl",
+  projectDir: import.meta.url,
   size: [256, 256],
   inputTextures: [{ texture: inputTex, sampler }]
 });
@@ -72,7 +82,40 @@ import { imageMatcher } from "vitest-image-snapshot";
 imageMatcher();
 ```
 
-### Basic Usage
+### File-Based Snapshot Testing
+
+Use `expectFragmentImage()` for the simplest workflow when testing shader files:
+
+```typescript
+import { expectFragmentImage } from "wesl-test";
+
+test("blur shader matches snapshot", async () => {
+  await expectFragmentImage(device, "effects/blur.wgsl", {
+    projectDir: import.meta.url,
+    size: [256, 256],
+    inputTextures: [{ texture: inputTex, sampler }]
+  });
+  // Snapshot name automatically derived: "effects-blur"
+});
+
+// Custom snapshot name for variations
+test("blur with high radius", async () => {
+  await expectFragmentImage(device, "effects/blur.wgsl", {
+    projectDir: import.meta.url,
+    snapshotName: "blur-radius-10",
+    uniforms: { radius: 10 }
+  });
+});
+```
+
+Supported shader name formats:
+- Bare name: `"blur.wgsl"` → resolves to `shaders/blur.wgsl`
+- Relative path: `"effects/blur.wgsl"` → resolves to `shaders/effects/blur.wgsl`
+- Module path: `"package::effects::blur"` → same as above
+
+### Inline Shader Testing
+
+For inline shaders or custom validation, use `testFragmentShaderImage()`:
 
 ```typescript
 import { testFragmentShaderImage } from "wesl-test";

@@ -26,8 +26,14 @@ export const fullscreenTriangleVertex = `
   }`;
 
 export interface FragmentTestParams {
-  /** WESL/WGSL source code for the fragment shader to test. */
-  src: string;
+  /** WESL/WGSL source code for the fragment shader to test.
+   * Either src or moduleName must be provided, but not both. */
+  src?: string;
+
+  /** Name of shader module to load from filesystem.
+   * Supports: bare name (blur.wgsl), path (effects/blur.wgsl), or module path (package::effects::blur).
+   * Either src or moduleName must be provided, but not both. */
+  moduleName?: string;
 
   /** Project directory for resolving shader dependencies.
    * Allows the shader to import from npm shader libraries.
@@ -73,35 +79,14 @@ export interface FragmentTestParams {
 }
 
 export interface FragmentImageTestParams
-  extends Omit<FragmentTestParams, "src" | "device"> {
+  extends Omit<FragmentTestParams, "src" | "moduleName" | "device"> {
   /** Optional snapshot name override. If not provided, derived from shader name. */
   snapshotName?: string;
 }
 
-/** Convert module path to snapshot name (e.g., "package::effects::blur" → "effects-blur") */
-function moduleNameToSnapshotName(moduleName: string): string {
-  const normalized = normalizeModuleName(moduleName);
-  return normalized
-    .replace(/^package::/, "") // Strip "package::" prefix
-    .replaceAll("::", "-"); // Replace :: with -
-}
-
-/** Load shader source from module name using resolver.
- * Supports: bare name (blur), file path (effects/blur.wgsl), or module path (package::effects::blur). */
-async function loadShaderSourceFromModule(
-  moduleName: string,
-  projectDir?: string,
-): Promise<string> {
-  const resolver = await createProjectResolver(projectDir);
-  const normalizedName = normalizeModuleName(moduleName);
-  const ast = resolver.resolveModule(normalizedName);
-  if (!ast) throw new Error(`Could not resolve module: ${moduleName}`);
-  return ast.srcModule.src;
-}
-
 /** Run a fragment shader test and validate image snapshot.
  * @param device GPU device for rendering
- * @param name Shader name to load - supports:
+ * @param moduleName Shader name to load - supports:
  *   - Bare name: "blur.wgsl" → resolves to shaders/blur.wgsl
  *   - Relative path: "effects/blur.wgsl" → resolves to shaders/effects/blur.wgsl
  *   - Module path: "package::effects::blur" → same resolution
@@ -109,25 +94,21 @@ async function loadShaderSourceFromModule(
  */
 export async function expectFragmentImage(
   device: GPUDevice,
-  name: string,
+  moduleName: string,
   opts: FragmentImageTestParams = {},
 ): Promise<void> {
   const { textureFormat = "rgba32float", size = [256, 256] } = opts;
 
-  // Load shader source from module name (testFragmentShaderImage will append vertex shader)
-  const fragmentSrc = await loadShaderSourceFromModule(name, opts.projectDir);
-
-  // Render shader image
+  // Render shader image using moduleName
   const imageData = await testFragmentShaderImage({
     ...opts,
     device,
-    src: fragmentSrc,
-    projectDir: opts.projectDir,
+    moduleName,
     textureFormat,
     size,
   });
 
-  const snapshotName = opts.snapshotName ?? moduleNameToSnapshotName(name);
+  const snapshotName = opts.snapshotName ?? moduleNameToSnapshotName(moduleName);
   const { imageMatcher } = await import("vitest-image-snapshot");
   imageMatcher();
   const { expect } = await import("vitest");
@@ -154,6 +135,7 @@ export async function testFragmentShader(
  * Renders a fragment shader and returns the complete rendered image.
  *
  * Useful for image snapshot testing or when you need to validate the entire output.
+ * For snapshot testing shader files, consider using `expectFragmentImage` instead.
  *
  * @returns ImageData containing the full rendered output
  */
@@ -191,6 +173,7 @@ async function runFragment(params: FragmentTestParams): Promise<number[]> {
     projectDir,
     device,
     src,
+    moduleName,
     conditions = {},
     constants,
     useSourceShaders,
@@ -202,9 +185,22 @@ async function runFragment(params: FragmentTestParams): Promise<number[]> {
     uniforms = {},
   } = params;
 
+  // Runtime validation
+  if (!src && !moduleName) {
+    throw new Error("Either src or moduleName must be provided");
+  }
+  if (src && moduleName) {
+    throw new Error("Cannot provide both src and moduleName");
+  }
+
+  // Load source if moduleName provided
+  const fragmentSrc = moduleName
+    ? await loadShaderSourceFromModule(moduleName, projectDir)
+    : src!;
+
   const uniformBuffer = renderUniformBuffer(device, size, uniforms);
   const virtualLibs = createUniformsVirtualLib();
-  const completeSrc = src + "\n\n" + fullscreenTriangleVertex;
+  const completeSrc = fragmentSrc + "\n\n" + fullscreenTriangleVertex;
 
   const module = await compileShader({
     projectDir,
@@ -253,4 +249,25 @@ function imageToUint8(
   }
 
   throw new Error(`Unsupported texture format for image export: ${format}`);
+}
+
+/** Convert module path to snapshot name (e.g., "package::effects::blur" → "effects-blur") */
+function moduleNameToSnapshotName(moduleName: string): string {
+  const normalized = normalizeModuleName(moduleName);
+  return normalized
+    .replace(/^package::/, "") // Strip "package::" prefix
+    .replaceAll("::", "-"); // Replace :: with -
+}
+
+/** Load shader source from module name using resolver.
+ * Supports: bare name (blur), file path (effects/blur.wgsl), or module path (package::effects::blur). */
+async function loadShaderSourceFromModule(
+  moduleName: string,
+  projectDir?: string,
+): Promise<string> {
+  const resolver = await createProjectResolver(projectDir);
+  const normalizedName = normalizeModuleName(moduleName);
+  const ast = resolver.resolveModule(normalizedName);
+  if (!ast) throw new Error(`Could not resolve module: ${moduleName}`);
+  return ast.srcModule.src;
 }
