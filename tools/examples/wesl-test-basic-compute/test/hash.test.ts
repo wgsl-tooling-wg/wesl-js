@@ -3,7 +3,7 @@ import {
   destroySharedDevice,
   getGPUDevice,
   testComputeShader,
-} from "wesl-debug";
+} from "wesl-test";
 
 const projectDir = new URL("..", import.meta.url).href;
 let device: GPUDevice;

@@ -175,7 +175,7 @@ interface MatchImageOptions {
 
 ```typescript
 import { imageMatcher } from "vitest-image-snapshot";
-import { testFragmentShaderImage } from "wesl-debug";
+import { testFragmentShaderImage } from "wesl-test";
 
 imageMatcher();
 

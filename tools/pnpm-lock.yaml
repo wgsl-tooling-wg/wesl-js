@@ -220,9 +220,9 @@ importers:
       webgpu:
         specifier: ^0.3.8
         version: 0.3.8
-      wesl-debug:
-        specifier: workspace:*
-        version: link:../../packages/wesl-debug
+      wesl-test:
+        specifier: workspace:x
+        version: link:../../packages/wesl-test
 
   examples/wesl-vite:
     dependencies:
@@ -496,31 +496,6 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
 
-  packages/wesl-debug:
-    dependencies:
-      pngjs:
-        specifier: ^7.0.0
-        version: 7.0.0
-      thimbleberry:
-        specifier: ^0.2.10
-        version: 0.2.10
-      wesl:
-        specifier: workspace:^
-        version: link:../wesl
-    devDependencies:
-      '@types/pngjs':
-        specifier: ^6.0.0
-        version: 6.0.5
-      dependent_package:
-        specifier: workspace:x
-        version: link:../test_pkg/dependent_package
-      vitest-image-snapshot:
-        specifier: workspace:x
-        version: link:../vitest-image-snapshot
-      webgpu:
-        specifier: ^0.3.8
-        version: 0.3.8
-
   packages/wesl-link:
     dependencies:
       import-meta-resolve:
@@ -730,6 +705,31 @@ importers:
       wesl-plugin:
         specifier: workspace:*
         version: link:../wesl-plugin
+
+  packages/wesl-test:
+    dependencies:
+      pngjs:
+        specifier: ^7.0.0
+        version: 7.0.0
+      thimbleberry:
+        specifier: ^0.2.10
+        version: 0.2.10
+      wesl:
+        specifier: workspace:^
+        version: link:../wesl
+    devDependencies:
+      '@types/pngjs':
+        specifier: ^6.0.0
+        version: 6.0.5
+      dependent_package:
+        specifier: workspace:x
+        version: link:../test_pkg/dependent_package
+      vitest-image-snapshot:
+        specifier: workspace:x
+        version: link:../vitest-image-snapshot
+      webgpu:
+        specifier: ^0.3.8
+        version: 0.3.8
 
   packages/wesl-tooling:
     dependencies:

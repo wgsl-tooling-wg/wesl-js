@@ -1,7 +1,7 @@
 {
   "name": "test_shader_pkg",
   "private": true,
-  "description": "Test fixture for wesl-debug package imports",
+  "description": "Test fixture for wesl-test package imports",
   "exports": {
     ".": {
       "import": "./weslBundle.js"
