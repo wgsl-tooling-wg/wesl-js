@@ -394,4 +394,3 @@ test("shader with uniforms and texture", async () => {
   // 0.5 (texture) + 1.0 (time * 0.1 where time=10) = 1.5
   expect(result[0]).toBeCloseTo(1.5, 2);
 });
-

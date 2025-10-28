@@ -3,10 +3,7 @@ import { createProjectResolver } from "./CompileShader.ts";
 
 /** Validates that exactly one of src or moduleName is provided.
  * @throws Error if neither or both are provided */
-export function validateSourceParams(
-  src?: string,
-  moduleName?: string,
-): void {
+export function validateSourceParams(src?: string, moduleName?: string): void {
   if (!src && !moduleName) {
     throw new Error("Either src or moduleName must be provided");
   }

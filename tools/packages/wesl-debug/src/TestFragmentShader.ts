@@ -109,7 +109,8 @@ export async function expectFragmentImage(
     size,
   });
 
-  const snapshotName = opts.snapshotName ?? moduleNameToSnapshotName(moduleName);
+  const snapshotName =
+    opts.snapshotName ?? moduleNameToSnapshotName(moduleName);
   const { imageMatcher } = await import("vitest-image-snapshot");
   imageMatcher();
   const { expect } = await import("vitest");
@@ -234,4 +235,3 @@ function moduleNameToSnapshotName(moduleName: string): string {
     .replace(/^package::/, "") // Strip "package::" prefix
     .replaceAll("::", "-"); // Replace :: with -
 }
-

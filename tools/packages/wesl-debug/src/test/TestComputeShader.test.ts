@@ -195,7 +195,8 @@ test("uses custom buffer size", async () => {
 });
 
 test("testComputeShader with moduleName - bare name", async () => {
-  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url).href;
+  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
+    .href;
   const result = await testComputeShader({
     projectDir: testPkgDir,
     device,
@@ -206,7 +207,8 @@ test("testComputeShader with moduleName - bare name", async () => {
 });
 
 test("testComputeShader with moduleName - relative path", async () => {
-  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url).href;
+  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
+    .href;
   const result = await testComputeShader({
     projectDir: testPkgDir,
     device,
@@ -217,7 +219,8 @@ test("testComputeShader with moduleName - relative path", async () => {
 });
 
 test("testComputeShader with moduleName - module path", async () => {
-  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url).href;
+  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
+    .href;
   const result = await testComputeShader({
     projectDir: testPkgDir,
     device,
