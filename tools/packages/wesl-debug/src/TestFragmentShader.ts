@@ -154,21 +154,6 @@ export async function testFragmentShaderImage(
   } as ImageData;
 }
 
-/** Tests a shader at multiple time points to validate animation. */
-export async function testAnimatedShader(
-  params: FragmentTestParams & { timePoints: number[] },
-): Promise<number[][]> {
-  const { timePoints, ...baseParams } = params;
-  return await Promise.all(
-    timePoints.map(time =>
-      testFragmentShader({
-        ...baseParams,
-        uniforms: { ...baseParams.uniforms, time },
-      }),
-    ),
-  );
-}
-
 async function runFragment(params: FragmentTestParams): Promise<number[]> {
   const {
     projectDir,

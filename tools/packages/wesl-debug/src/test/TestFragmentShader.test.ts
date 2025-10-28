@@ -5,10 +5,7 @@ import {
   gradientTexture,
   solidTexture,
 } from "../ExampleTextures.ts";
-import {
-  testAnimatedShader,
-  testFragmentShader,
-} from "../TestFragmentShader.ts";
+import { testFragmentShader } from "../TestFragmentShader.ts";
 import { destroySharedDevice, getGPUDevice } from "../WebGPUTestSetup.ts";
 
 let device: GPUDevice;
@@ -398,25 +395,3 @@ test("shader with uniforms and texture", async () => {
   expect(result[0]).toBeCloseTo(1.5, 2);
 });
 
-test("multi-frame animation", async () => {
-  const src = `
-    @group(0) @binding(0) var<uniform> u: test::Uniforms;
-
-    @fragment
-    fn fs_main() -> @location(0) vec4f {
-      let phase = sin(u.time);
-      return vec4f(phase, 0.0, 0.0, 1.0);
-    }
-  `;
-
-  const frames = await testAnimatedShader({
-    projectDir: import.meta.url,
-    device,
-    src,
-    timePoints: [0.0, 1.57, 3.14], // 0, π/2, π
-  });
-
-  expect(frames[0][0]).toBeCloseTo(0.0, 2); // sin(0) = 0
-  expect(frames[1][0]).toBeCloseTo(1.0, 2); // sin(π/2) = 1
-  expect(frames[2][0]).toBeCloseTo(0.0, 2); // sin(π) ≈ 0
-});
