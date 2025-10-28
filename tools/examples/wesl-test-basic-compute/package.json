@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "vitest": "^3.2.4",
-    "wesl-debug": "workspace:*",
-    "webgpu": "^0.3.8"
+    "webgpu": "^0.3.8",
+    "wesl-debug": "workspace:x"
   }
 }

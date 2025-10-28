@@ -7,6 +7,7 @@ import {
   createSampler,
   destroySharedDevice,
   edgePatternTexture,
+  expectFragmentImage,
   getGPUDevice,
   testFragmentShaderImage,
 } from "../index.ts";
@@ -167,4 +168,41 @@ test("sharpen filter on photo sample", async () => {
   });
 
   await expect(result).toMatchImage("lemur-sharpen");
+});
+
+test("expectFragmentImage with bare name", async () => {
+  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
+    .href;
+  await expectFragmentImage(device, "solid_red", {
+    projectDir: testPkgDir,
+    size: [128, 128],
+  });
+});
+
+test("expectFragmentImage with relative path", async () => {
+  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
+    .href;
+  await expectFragmentImage(device, "effects/checkerboard.wgsl", {
+    projectDir: testPkgDir,
+    size: [128, 128],
+  });
+});
+
+test("expectFragmentImage with module path", async () => {
+  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
+    .href;
+  await expectFragmentImage(device, "package::solid_red", {
+    projectDir: testPkgDir,
+    size: [128, 128],
+  });
+});
+
+test("expectFragmentImage with custom snapshot name", async () => {
+  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
+    .href;
+  await expectFragmentImage(device, "solid_red.wgsl", {
+    projectDir: testPkgDir,
+    size: [64, 64],
+    snapshotName: "solid-red-small",
+  });
 });

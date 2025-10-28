@@ -35,14 +35,14 @@
     "wesl": "workspace:^"
   },
   "keywords": [
-    "WGSL",
-    "WebGPU",
-    "testing",
     "shader",
+    "snapshot",
     "test",
+    "testing",
     "unit-test",
     "visual-regression",
-    "snapshot",
-    "WESL"
+    "WebGPU",
+    "WESL",
+    "WGSL"
   ]
 }

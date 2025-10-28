@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { LinkParams } from "wesl";
+import type { LinkParams, ModuleResolver } from "wesl";
 import { CompositeResolver, link, RecordResolver } from "wesl";
 import {
   dependencyBundles,
@@ -92,6 +92,27 @@ export async function compileShader(
   return module;
 }
 
+/** Create a project resolver for loading modules from the filesystem.
+ * Handles wesl.toml configuration and creates FileModuleResolver with correct baseDir.
+ *
+ * @param projectDir Project directory (defaults to cwd)
+ * @param packageName Package name for module resolution (optional)
+ * @returns FileModuleResolver configured for the project
+ */
+export async function createProjectResolver(
+  projectDir?: string,
+  packageName?: string,
+): Promise<ModuleResolver> {
+  const resolved = await resolveProjectDir(projectDir);
+  const projectPath = fileURLToPath(resolved);
+  const tomlInfo = await findWeslToml(projectPath);
+  const baseDir = path.isAbsolute(tomlInfo.resolvedRoot)
+    ? tomlInfo.resolvedRoot
+    : path.join(projectPath, tomlInfo.resolvedRoot);
+
+  return new FileModuleResolver(baseDir, packageName);
+}
+
 /** Create a lazy resolver that loads local shaders on-demand from the filesystem.
  * Laziness allows testing without rebuilding the current package after edits. */
 async function lazyFileResolver(
@@ -100,13 +121,7 @@ async function lazyFileResolver(
   packageName: string | undefined,
 ): Promise<CompositeResolver> {
   const mainResolver = new RecordResolver({ main: mainSrc }, { packageName });
-  const projectPath = fileURLToPath(projectDir);
-  const tomlInfo = await findWeslToml(projectPath);
-  const baseDir = path.isAbsolute(tomlInfo.resolvedRoot)
-    ? tomlInfo.resolvedRoot
-    : path.join(projectPath, tomlInfo.resolvedRoot);
-
-  const fileResolver = new FileModuleResolver(baseDir, packageName);
+  const fileResolver = await createProjectResolver(projectDir, packageName);
   return new CompositeResolver([mainResolver, fileResolver]);
 }
 

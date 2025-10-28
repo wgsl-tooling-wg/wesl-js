@@ -229,7 +229,7 @@ export function bindAndTransform(
 
 /** Convert root module name to module path format.
  * Accepts: module path (package::foo), file path (./foo.wesl), or name (foo) */
-function normalizeModuleName(name: string): string {
+export function normalizeModuleName(name: string): string {
   if (name.includes("::")) return name;
   if (name.includes("/") || name.endsWith(".wesl") || name.endsWith(".wgsl")) {
     const stripped = name.replace(/\.(wesl|wgsl)$/, "").replace(/^\.\//, "");

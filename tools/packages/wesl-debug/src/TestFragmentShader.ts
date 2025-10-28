@@ -1,7 +1,8 @@
 import { componentByteSize, numComponents, texelLoadType } from "thimbleberry";
 import type { ImageData } from "vitest-image-snapshot";
 import type { LinkParams } from "wesl";
-import { compileShader } from "./CompileShader.ts";
+import { normalizeModuleName } from "wesl";
+import { compileShader, createProjectResolver } from "./CompileShader.ts";
 import {
   createUniformsVirtualLib,
   type RenderUniforms,
@@ -69,6 +70,80 @@ export interface FragmentTestParams {
   /** Use source shaders from current package instead of built bundles.
    * Default: true for faster iteration during development. */
   useSourceShaders?: boolean;
+}
+
+export interface FragmentImageTestParams
+  extends Omit<FragmentTestParams, "src" | "device"> {
+  /** Optional snapshot name override. If not provided, derived from shader name. */
+  snapshotName?: string;
+}
+
+/** Convert module path to snapshot name (e.g., "package::effects::blur" → "effects-blur") */
+function moduleNameToSnapshotName(moduleName: string): string {
+  const normalized = normalizeModuleName(moduleName);
+  return normalized
+    .replace(/^package::/, "") // Strip "package::" prefix
+    .replaceAll("::", "-"); // Replace :: with -
+}
+
+/** run a test fragment shader, validate an image snapshot
+ * map the filename to a snapshot name by replacing separators with dashes
+ * - allow an optional snapshotName override in opts
+ * @param name: name of the fragment shader to load
+ *  name is used to locate the shader from the current package (typically in shaders/)
+ *  name can be a file path foo/zap.wgsl (which should resolve shaders/foo/zap.wgsl)
+ *  name can also be a module path like package::foo::zap
+ *  see FileModuleResolver
+ * @param opts: FragmentImageTestParams (but not src or device)
+ */
+/** Load shader source from module name using resolver.
+ * Supports: bare name (blur), file path (effects/blur.wgsl), or module path (package::effects::blur). */
+async function loadShaderSourceFromModule(
+  moduleName: string,
+  projectDir?: string,
+): Promise<string> {
+  const resolver = await createProjectResolver(projectDir);
+  const normalizedName = normalizeModuleName(moduleName);
+  const ast = resolver.resolveModule(normalizedName);
+  if (!ast) throw new Error(`Could not resolve module: ${moduleName}`);
+  return ast.srcModule.src;
+}
+
+/** run a test fragment shader, validate an image snapshot
+ * map the filename to a snapshot name by replacing separators with dashes
+ * - allow an optional snapshotName override in opts
+ * @param name: name of the fragment shader to load
+ *  name is used to locate the shader from the current package (typically in shaders/)
+ *  name can be a file path foo/zap.wgsl (which should resolve shaders/foo/zap.wgsl)
+ *  name can also be a module path like package::foo::zap
+ *  see FileModuleResolver
+ * @param opts: FragmentImageTestParams (but not src or device)
+ */
+export async function expectFragmentImage(
+  device: GPUDevice,
+  name: string,
+  opts: FragmentImageTestParams = {},
+): Promise<void> {
+  const { textureFormat = "rgba32float", size = [256, 256] } = opts;
+
+  // Load shader source from module name (testFragmentShaderImage will append vertex shader)
+  const fragmentSrc = await loadShaderSourceFromModule(name, opts.projectDir);
+
+  // Render shader image
+  const imageData = await testFragmentShaderImage({
+    ...opts,
+    device,
+    src: fragmentSrc,
+    projectDir: opts.projectDir,
+    textureFormat,
+    size,
+  });
+
+  const snapshotName = opts.snapshotName ?? moduleNameToSnapshotName(name);
+  const { imageMatcher } = await import("vitest-image-snapshot");
+  imageMatcher();
+  const { expect } = await import("vitest");
+  await expect(imageData).toMatchImage(snapshotName);
 }
 
 /**
