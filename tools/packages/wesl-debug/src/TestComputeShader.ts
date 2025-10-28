@@ -3,7 +3,7 @@ import type { LinkParams } from "wesl";
 import { compileShader } from "./CompileShader.ts";
 import { withErrorScopes } from "./ErrorScopes.ts";
 
-const defaultResultSize = 16; // 4x4 bytes
+const defaultResultSize = 4; // 4 elements
 
 export interface ComputeTestParams {
   /** WESL/WGSL source code for the compute shader to test. */
@@ -21,7 +21,7 @@ export interface ComputeTestParams {
   /** Format of the result buffer. Default: "u32" */
   resultFormat?: WgslElementType;
 
-  /** Size of result buffer in bytes. Default: 16 */
+  /** Size of result buffer in elements. Default: 4 */
   size?: number;
 
   /** Flags for conditional compilation to test shader specialization.
@@ -35,6 +35,10 @@ export interface ComputeTestParams {
   /** Use source shaders from current package instead of built bundles.
    * Default: true for faster iteration during development. */
   useSourceShaders?: boolean;
+
+  /** Number of workgroups to dispatch. Default: 1
+   * Can be a single number or [x, y, z] for multi-dimensional dispatch. */
+  dispatchWorkgroups?: number | [number, number, number];
 }
 
 /**
@@ -58,11 +62,11 @@ export async function testComputeShader(
     conditions = {},
     constants,
     useSourceShaders,
+    dispatchWorkgroups = 1,
   } = params;
   const { resultFormat = "u32", size = defaultResultSize } = params;
 
-  const arraySize = size / elementStride(resultFormat);
-  const arrayType = `array<${resultFormat}, ${arraySize}>`;
+  const arrayType = `array<${resultFormat}, ${size}>`;
   const virtualLibs = {
     test: () =>
       `@group(0) @binding(0) var <storage, read_write> results: ${arrayType};`,
@@ -78,7 +82,13 @@ export async function testComputeShader(
     useSourceShaders,
   });
 
-  return await runCompute(device, module, resultFormat, size);
+  return await runCompute(
+    device,
+    module,
+    resultFormat,
+    size,
+    dispatchWorkgroups,
+  );
 }
 
 /**
@@ -91,13 +101,15 @@ export async function testComputeShader(
  * @param module - The compiled GPUShaderModule containing the compute shader
  * @param resultFormat - Format for interpreting result buffer data (default: u32)
  * @param size - Size of result buffer in bytes (default: 16)
+ * @param dispatchWorkgroups - Number of workgroups to dispatch (default: 1)
  * @returns Array containing the shader's output from the storage buffer
  */
 export async function runCompute(
   device: GPUDevice,
   module: GPUShaderModule,
-  resultFormat?: WgslElementType,
+  resultFormat: WgslElementType = "u32",
   size = defaultResultSize,
+  dispatchWorkgroups: number | [number, number, number] = 1,
 ): Promise<number[]> {
   return await withErrorScopes(device, async () => {
     const bgLayout = device.createBindGroupLayout({
@@ -115,7 +127,10 @@ export async function runCompute(
       compute: { module },
     });
 
-    const storageBuffer = createStorageBuffer(device, size);
+    const storageBuffer = createStorageBuffer(
+      device,
+      size * elementStride(resultFormat),
+    );
     const bindGroup = device.createBindGroup({
       layout: bgLayout,
       entries: [{ binding: 0, resource: { buffer: storageBuffer } }],
@@ -125,7 +140,11 @@ export async function runCompute(
     const pass = commands.beginComputePass();
     pass.setPipeline(pipeline);
     pass.setBindGroup(0, bindGroup);
-    pass.dispatchWorkgroups(1);
+    if (typeof dispatchWorkgroups === "number") {
+      pass.dispatchWorkgroups(dispatchWorkgroups);
+    } else {
+      pass.dispatchWorkgroups(...dispatchWorkgroups);
+    }
     pass.end();
     device.queue.submit([commands.finish()]);
 
@@ -133,10 +152,10 @@ export async function runCompute(
   });
 }
 
-function createStorageBuffer(device: GPUDevice, size: number): GPUBuffer {
+function createStorageBuffer(device: GPUDevice, targetSize: number): GPUBuffer {
   const buffer = device.createBuffer({
     label: "storage",
-    size,
+    size: targetSize,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
     mappedAtCreation: true,
   });

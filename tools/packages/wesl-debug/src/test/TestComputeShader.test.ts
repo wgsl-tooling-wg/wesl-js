@@ -180,7 +180,7 @@ test("uses custom buffer size", async () => {
     device,
     src,
     resultFormat: "u32",
-    size: 32,
+    size: 8,
   });
 
   expect(result).toHaveLength(8);
