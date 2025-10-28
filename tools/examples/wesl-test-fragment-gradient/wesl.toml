@@ -1,0 +1,3 @@
+include = ["shaders/**/*.w[eg]sl"]
+root = "shaders"
+dependencies = []

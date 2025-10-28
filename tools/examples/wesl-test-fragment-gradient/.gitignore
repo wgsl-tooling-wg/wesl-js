@@ -1,0 +1,5 @@
+# Image test outputs (don't commit)
+__image_diffs__/
+__image_actual__/
+__image_dev__/
+__image_diff_report__/
