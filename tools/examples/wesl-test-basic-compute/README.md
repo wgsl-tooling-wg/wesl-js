@@ -37,4 +37,4 @@ This demonstrates a realistic testing workflow for shader utilities!
 ## Learn More
 
 - [wesl-test README](../../packages/wesl-test/README.md) - Quick start guide
-- [wesl-test GUIDE](../../packages/wesl-test/GUIDE.md) - Complete API reference
+- [wesl-test API](../../packages/wesl-test/API.md) - Complete API reference

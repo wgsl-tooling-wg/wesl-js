@@ -45,7 +45,7 @@ const result = await testComputeShader({ device, src, size: 2 });
 // TODO use hash fn
 ```
 
-**[See GUIDE.md for complete API documentation →](./GUIDE.md)**
+**[See API.md for complete API documentation →](./API.md)**
 
 ## Testing Fragment Shaders
 
@@ -70,7 +70,7 @@ const result = await testFragmentShader({ device, src });
 // result = TBD
 ```
 
-**[See GUIDE.md for derivatives, input textures, uniforms, and more →](./GUIDE.md)**
+**[See API.md for derivatives, input textures, uniforms, and more →](./API.md)**
 
 ## Visual Regression Testing
 
@@ -102,7 +102,7 @@ TBD
 
 ## What's Next
 
-- **[GUIDE.md](./GUIDE.md)** - API reference for `testComputeShader()` and `testFragmentShader()`
+- **[API.md](./API.md)** - API reference for `testComputeShader()` and `testFragmentShader()`
 - **[IMAGE_TESTING.md](./IMAGE_TESTING.md)** - Visual regression testing guide with snapshot workflow
 - **[Examples](../../examples/)** - Tiny standalone examples.
 

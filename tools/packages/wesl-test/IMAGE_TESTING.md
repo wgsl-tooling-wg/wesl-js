@@ -240,5 +240,5 @@ imageMatcher({
 
 ## See Also
 
-- [GUIDE.md](./GUIDE.md) - Complete API reference
+- [API.md](./API.md) - Complete API reference
 - [README.md](./README.md) - Quick start guide
