@@ -86,16 +86,6 @@ function moduleNameToSnapshotName(moduleName: string): string {
     .replaceAll("::", "-"); // Replace :: with -
 }
 
-/** run a test fragment shader, validate an image snapshot
- * map the filename to a snapshot name by replacing separators with dashes
- * - allow an optional snapshotName override in opts
- * @param name: name of the fragment shader to load
- *  name is used to locate the shader from the current package (typically in shaders/)
- *  name can be a file path foo/zap.wgsl (which should resolve shaders/foo/zap.wgsl)
- *  name can also be a module path like package::foo::zap
- *  see FileModuleResolver
- * @param opts: FragmentImageTestParams (but not src or device)
- */
 /** Load shader source from module name using resolver.
  * Supports: bare name (blur), file path (effects/blur.wgsl), or module path (package::effects::blur). */
 async function loadShaderSourceFromModule(
@@ -109,15 +99,13 @@ async function loadShaderSourceFromModule(
   return ast.srcModule.src;
 }
 
-/** run a test fragment shader, validate an image snapshot
- * map the filename to a snapshot name by replacing separators with dashes
- * - allow an optional snapshotName override in opts
- * @param name: name of the fragment shader to load
- *  name is used to locate the shader from the current package (typically in shaders/)
- *  name can be a file path foo/zap.wgsl (which should resolve shaders/foo/zap.wgsl)
- *  name can also be a module path like package::foo::zap
- *  see FileModuleResolver
- * @param opts: FragmentImageTestParams (but not src or device)
+/** Run a fragment shader test and validate image snapshot.
+ * @param device GPU device for rendering
+ * @param name Shader name to load - supports:
+ *   - Bare name: "blur.wgsl" → resolves to shaders/blur.wgsl
+ *   - Relative path: "effects/blur.wgsl" → resolves to shaders/effects/blur.wgsl
+ *   - Module path: "package::effects::blur" → same resolution
+ * @param opts Test parameters (size defaults to 256×256 for snapshots)
  */
 export async function expectFragmentImage(
   device: GPUDevice,
