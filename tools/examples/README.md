@@ -1,7 +1,12 @@
 # WESL JS Shader Examples
 
-Most examples are available as stackblitz demos that run in 
+Most examples are available as stackblitz demos that run in
 the browser. Or use [degit](https://github.com/Rich-Harris/degit/tree/master) to make a convenient local copy.
+
+**wesl-test-basic-compute** - Test WGSL compute shaders with unit tests.
+  - `degit github:wgsl-tooling-wg/examples/wesl-test-basic-compute`
+
+<br/>
 
 **wesl-vite-minimal** - Minimal vite front end app, shows transpiled code.
 [Demo](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/wesl-vite-minimal?startScript=dev)

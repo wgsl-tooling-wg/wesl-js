@@ -34,5 +34,15 @@
   "peerDependencies": {
     "wesl": "workspace:^"
   },
-  "keywords": ["debug", "WebGPU", "WESL", "WGSL"]
+  "keywords": [
+    "WGSL",
+    "WebGPU",
+    "testing",
+    "shader",
+    "test",
+    "unit-test",
+    "visual-regression",
+    "snapshot",
+    "WESL"
+  ]
 }
