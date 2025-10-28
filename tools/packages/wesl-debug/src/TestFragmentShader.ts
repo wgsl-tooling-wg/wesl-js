@@ -2,12 +2,13 @@ import { componentByteSize, numComponents, texelLoadType } from "thimbleberry";
 import type { ImageData } from "vitest-image-snapshot";
 import type { LinkParams } from "wesl";
 import { normalizeModuleName } from "wesl";
-import { compileShader, createProjectResolver } from "./CompileShader.ts";
+import { compileShader } from "./CompileShader.ts";
 import {
   createUniformsVirtualLib,
   type RenderUniforms,
   renderUniformBuffer,
 } from "./RenderUniforms.ts";
+import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 import { simpleRender } from "./SimpleRender.ts";
 
 export const fullscreenTriangleVertex = `
@@ -185,18 +186,8 @@ async function runFragment(params: FragmentTestParams): Promise<number[]> {
     uniforms = {},
   } = params;
 
-  // Runtime validation
-  if (!src && !moduleName) {
-    throw new Error("Either src or moduleName must be provided");
-  }
-  if (src && moduleName) {
-    throw new Error("Cannot provide both src and moduleName");
-  }
-
-  // Load source if moduleName provided
-  const fragmentSrc = moduleName
-    ? await loadShaderSourceFromModule(moduleName, projectDir)
-    : src!;
+  // Resolve shader source from either src or moduleName
+  const fragmentSrc = await resolveShaderSource(src, moduleName, projectDir);
 
   const uniformBuffer = renderUniformBuffer(device, size, uniforms);
   const virtualLibs = createUniformsVirtualLib();
@@ -259,15 +250,3 @@ function moduleNameToSnapshotName(moduleName: string): string {
     .replaceAll("::", "-"); // Replace :: with -
 }
 
-/** Load shader source from module name using resolver.
- * Supports: bare name (blur), file path (effects/blur.wgsl), or module path (package::effects::blur). */
-async function loadShaderSourceFromModule(
-  moduleName: string,
-  projectDir?: string,
-): Promise<string> {
-  const resolver = await createProjectResolver(projectDir);
-  const normalizedName = normalizeModuleName(moduleName);
-  const ast = resolver.resolveModule(normalizedName);
-  if (!ast) throw new Error(`Could not resolve module: ${moduleName}`);
-  return ast.srcModule.src;
-}

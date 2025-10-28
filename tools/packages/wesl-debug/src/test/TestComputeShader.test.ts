@@ -193,3 +193,36 @@ test("uses custom buffer size", async () => {
   expect(result[6]).toBe(60);
   expect(result[7]).toBe(70);
 });
+
+test("testComputeShader with moduleName - bare name", async () => {
+  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url).href;
+  const result = await testComputeShader({
+    projectDir: testPkgDir,
+    device,
+    moduleName: "compute_sum.wgsl",
+  });
+  expect(result[0]).toBe(3);
+  expect(result[1]).toBe(30);
+});
+
+test("testComputeShader with moduleName - relative path", async () => {
+  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url).href;
+  const result = await testComputeShader({
+    projectDir: testPkgDir,
+    device,
+    moduleName: "algorithms/compute_multiply.wgsl",
+  });
+  expect(result[0]).toBe(12);
+  expect(result[1]).toBe(30);
+});
+
+test("testComputeShader with moduleName - module path", async () => {
+  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url).href;
+  const result = await testComputeShader({
+    projectDir: testPkgDir,
+    device,
+    moduleName: "package::compute_sum",
+  });
+  expect(result[0]).toBe(3);
+  expect(result[1]).toBe(30);
+});

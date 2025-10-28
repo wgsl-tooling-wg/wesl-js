@@ -2,12 +2,19 @@ import { copyBuffer, elementStride, type WgslElementType } from "thimbleberry";
 import type { LinkParams } from "wesl";
 import { compileShader } from "./CompileShader.ts";
 import { withErrorScopes } from "./ErrorScopes.ts";
+import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 
 const defaultResultSize = 4; // 4 elements
 
 export interface ComputeTestParams {
-  /** WESL/WGSL source code for the compute shader to test. */
-  src: string;
+  /** WESL/WGSL source code for the compute shader to test.
+   * Either src or moduleName must be provided, but not both. */
+  src?: string;
+
+  /** Name of shader module to load from filesystem.
+   * Supports: bare name (sum.wgsl), path (algorithms/sum.wgsl), or module path (package::algorithms::sum).
+   * Either src or moduleName must be provided, but not both. */
+  moduleName?: string;
 
   /** Project directory for resolving shader dependencies.
    * Allows the shader to import from npm shader libraries.
@@ -60,12 +67,16 @@ export async function testComputeShader(
     projectDir,
     device,
     src,
+    moduleName,
     conditions = {},
     constants,
     useSourceShaders,
     dispatchWorkgroups = 1,
   } = params;
   const { resultFormat = "u32", size = defaultResultSize } = params;
+
+  // Resolve shader source from either src or moduleName
+  const shaderSrc = await resolveShaderSource(src, moduleName, projectDir);
 
   const arrayType = `array<${resultFormat}, ${size}>`;
   const virtualLibs = {
@@ -76,7 +87,7 @@ export async function testComputeShader(
   const module = await compileShader({
     projectDir,
     device,
-    src,
+    src: shaderSrc,
     conditions,
     constants,
     virtualLibs,
