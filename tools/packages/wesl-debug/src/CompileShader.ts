@@ -6,13 +6,15 @@ import {
   dependencyBundles,
   FileModuleResolver,
   readPackageJson,
+  resolveProjectDir,
 } from "../../wesl-tooling/src/index.ts";
 import { findWeslToml } from "../../wesl-tooling/src/LoadWeslToml.ts";
 
 export interface CompileShaderParams {
   /** Project directory for resolving shader dependencies.
-   * Used to locate installed npm shader libraries. */
-  projectDir: string;
+   * Used to locate installed npm shader libraries.
+   * Optional: defaults to searching upward from cwd for package.json or wesl.toml. */
+  projectDir?: string;
 
   /** GPU device to use for shader compilation. */
   device: GPUDevice;
@@ -54,9 +56,9 @@ export interface CompileShaderParams {
 export async function compileShader(
   params: CompileShaderParams,
 ): Promise<GPUShaderModule> {
-  const { projectDir, device, src, conditions, constants, virtualLibs } =
-    params;
+  const { device, src, conditions, constants, virtualLibs } = params;
   const { useSourceShaders = !process.env.TEST_BUNDLES } = params;
+  const projectDir = await resolveProjectDir(params.projectDir);
 
   const packageName = await getPackageName(projectDir);
   const libs = await dependencyBundles(

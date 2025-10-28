@@ -11,8 +11,9 @@ export interface ComputeTestParams {
 
   /** Project directory for resolving shader dependencies.
    * Allows the shader to import from npm shader libraries.
+   * Optional: defaults to searching upward from cwd for package.json or wesl.toml.
    * Typically use `import.meta.url`. */
-  projectDir: string;
+  projectDir?: string;
 
   /** GPU device for running the tests.
    * Typically use `getGPUDevice()` from wesl-debug. */
