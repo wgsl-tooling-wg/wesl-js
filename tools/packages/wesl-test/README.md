@@ -15,17 +15,17 @@ npm install wesl-test
 Quick start in 3 steps:
 
 1. Write your shader function in WGSL or WESL as normal
-2. Use `testComputeShader()`, `testFragmentShader()`, `testFragmentShaderImage()`, or `expectFragmentImage()` to test your shader with inline source or from files
+2. Use `testCompute()`, `testFragment()`, `testFragmentImage()`, or `expectFragmentImage()` to test your shader with inline source or from files
 3. Assert the results with your test framework
 
 ## Testing Compute Shaders
 
 The default choice for unit testing shader functions. Flexible and explicit.
 
-Use `testComputeShader()` to test compute shader logic. A `test::results` buffer is automatically provided:
+Use `testCompute()` to test compute shader logic. A `test::results` buffer is automatically provided:
 
 ```typescript
-import { testComputeShader, getGPUDevice } from "wesl-test";
+import { testCompute, getGPUDevice } from "wesl-test";
 
 const device = await getGPUDevice();
 
@@ -39,17 +39,17 @@ const src = `
   }
 `;
 
-const result = await testComputeShader({ device, src, size: 2 });
+const result = await testCompute({ device, src, size: 2 });
 // result = [0, 388445122]
 ```
 
-**[See API.md for complete API documentation →](./API.md#testcomputeshader)**
+**[See API.md for complete API documentation →](./API.md#testcompute)**
 
 ## Testing Fragment Shaders
 
 For unit testing shader functions that only run in fragment shaders. Tests a single pixel output.
 
-Use `testFragmentShader()` to test fragment shader rendering. 
+Use `testFragment()` to test fragment shader rendering. 
 
 ```rs
 /// shaders/foo.wesl
@@ -66,7 +66,7 @@ const src = `
   }
 `;
 
-const result = await testFragmentShader({ device, src });
+const result = await testFragment({ device, src });
 // result = [2.828, 1.414, 0.0, 2.0]  // vec4f color at pixel (0,0)
 ```
 

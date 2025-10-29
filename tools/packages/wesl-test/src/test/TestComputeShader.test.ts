@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { testComputeShader } from "../TestComputeShader.ts";
+import { testCompute } from "../TestComputeShader.ts";
 import { destroySharedDevice, getGPUDevice } from "../WebGPUTestSetup.ts";
 
 let device: GPUDevice;
@@ -24,7 +24,7 @@ test("writes simple constant values to storage buffer", async () => {
   `;
   const projectDir = import.meta.url;
   const resultFormat = "u32";
-  const r = await testComputeShader({ projectDir, device, src, resultFormat });
+  const r = await testCompute({ projectDir, device, src, resultFormat });
 
   expect(r).toHaveLength(4);
   expect(r[0]).toBe(42);
@@ -43,7 +43,7 @@ test("performs computation and writes float results", async () => {
       test::results[3] = 1.0 + 2.0 + 3.0;
     }
   `;
-  const result = await testComputeShader({
+  const result = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
@@ -67,7 +67,7 @@ test("uses scalar constant from constants namespace", async () => {
       test::results[1] = PI * 2.0;
     }
   `;
-  const result = await testComputeShader({
+  const result = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
@@ -90,7 +90,7 @@ test("uses vector constant from constants namespace", async () => {
       test::results[1] = c.y;
     }
   `;
-  const result = await testComputeShader({
+  const result = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
@@ -112,7 +112,7 @@ test("uses conditions for conditional compilation", async () => {
       test::results[0] = 99u;
     }
   `;
-  const resultTrue = await testComputeShader({
+  const resultTrue = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
@@ -121,7 +121,7 @@ test("uses conditions for conditional compilation", async () => {
 
   expect(resultTrue[0]).toBe(42);
 
-  const resultFalse = await testComputeShader({
+  const resultFalse = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
@@ -144,7 +144,7 @@ test("uses both conditions and constants together", async () => {
       test::results[0] = 1.0;
     }
   `;
-  const resultWithConstant = await testComputeShader({
+  const resultWithConstant = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
@@ -155,7 +155,7 @@ test("uses both conditions and constants together", async () => {
 
   expect(resultWithConstant[0]).toBeCloseTo(42.0);
 
-  const resultWithoutConstant = await testComputeShader({
+  const resultWithoutConstant = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
@@ -175,7 +175,7 @@ test("uses custom buffer size", async () => {
       }
     }
   `;
-  const result = await testComputeShader({
+  const result = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
@@ -194,10 +194,10 @@ test("uses custom buffer size", async () => {
   expect(result[7]).toBe(70);
 });
 
-test("testComputeShader with moduleName - bare name", async () => {
+test("testCompute with moduleName - bare name", async () => {
   const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
     .href;
-  const result = await testComputeShader({
+  const result = await testCompute({
     projectDir: testPkgDir,
     device,
     moduleName: "compute_sum.wgsl",
@@ -206,10 +206,10 @@ test("testComputeShader with moduleName - bare name", async () => {
   expect(result[1]).toBe(30);
 });
 
-test("testComputeShader with moduleName - relative path", async () => {
+test("testCompute with moduleName - relative path", async () => {
   const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
     .href;
-  const result = await testComputeShader({
+  const result = await testCompute({
     projectDir: testPkgDir,
     device,
     moduleName: "algorithms/compute_multiply.wgsl",
@@ -218,10 +218,10 @@ test("testComputeShader with moduleName - relative path", async () => {
   expect(result[1]).toBe(30);
 });
 
-test("testComputeShader with moduleName - module path", async () => {
+test("testCompute with moduleName - module path", async () => {
   const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
     .href;
-  const result = await testComputeShader({
+  const result = await testCompute({
     projectDir: testPkgDir,
     device,
     moduleName: "package::compute_sum",

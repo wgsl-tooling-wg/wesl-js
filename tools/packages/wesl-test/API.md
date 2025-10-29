@@ -3,8 +3,8 @@
 Complete API documentation for testing WGSL/WESL shaders.
 
 ## Core Functions
-- [testComputeShader()](#testcomputeshader) - Run compute shaders and retrieve results
-- [testFragmentShader()](#testfragmentshader) - Test fragment shaders, returns single pixel color
+- [testCompute()](#testcompute) - Run compute shaders and retrieve results
+- [testFragment()](#testfragment) - Test fragment shaders, returns single pixel color
 - [expectFragmentImage()](#expectfragmentimage) - Visual regression testing with snapshot comparison
 
 ## Fragment Shader Configuration
@@ -22,9 +22,9 @@ Complete API documentation for testing WGSL/WESL shaders.
 - [Complete Test Example](#complete-test-example) - Full vitest setup with beforeAll/afterAll
 
 ## Advanced
-- [testFragmentShaderImage()](#advanced-testfragmentshaderimage) - Full image data access for custom validation
+- [testFragmentImage()](#advanced-testfragmentimage) - Full image data access for custom validation
 
-## testComputeShader()
+## testCompute()
 
 Tests WGSL functions by running a compute shader. Write a shader that calls the function under test and stores results in the `test::results` buffer. The buffer is automatically provided and accessed via `test::results[index]`. Buffer elements not written by the shader are initialized to -999.
 
@@ -49,7 +49,7 @@ const src = `
   }
 `;
 
-const result = await testComputeShader({
+const result = await testCompute({
   device,
   src,
   resultFormat: "u32",
@@ -103,9 +103,9 @@ All bindings are in group(0):
 - `inputTextures[1]` → texture at `@binding(3)`, sampler at `@binding(4)`
 - Pattern continues for additional textures
 
-### testFragmentShader()
+### testFragment()
 
-Returns the color values at pixel (0,0). For full image retrieval, use `testFragmentShaderImage()`.
+Returns the color values at pixel (0,0). For full image retrieval, use `testFragmentImage()`.
 
 **Parameters**
 
@@ -123,7 +123,7 @@ Either `src` or `moduleName` is required.
 **Example**
 
 ```typescript
-import { testFragmentShader, solidTexture, createSampler } from "wesl-test";
+import { testFragment, solidTexture, createSampler } from "wesl-test";
 
 const inputTex = solidTexture(device, [0.8, 0.2, 0.4, 1.0], 256, 256);
 const sampler = createSampler(device);
@@ -140,7 +140,7 @@ const src = `
   }
 `;
 
-const result = await testFragmentShader({
+const result = await testFragment({
   device,
   src,
   inputTextures: [{ texture: inputTex, sampler }]
@@ -261,7 +261,7 @@ For advanced configuration and detailed information, see the [vitest-image-snaps
 
 ```typescript
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { testComputeShader, destroySharedDevice, getGPUDevice } from "wesl-test";
+import { testCompute, destroySharedDevice, getGPUDevice } from "wesl-test";
 
 let device: GPUDevice;
 
@@ -283,7 +283,7 @@ test("hash function from file", async () => {
     }
   `;
 
-  const result = await testComputeShader({ device, src, size: 256 });
+  const result = await testCompute({ device, src, size: 256 });
 
   // Validate hash distribution
   const mean = result.reduce((a, b) => a + b, 0) / result.length;
@@ -321,7 +321,7 @@ const src = /* wesl */`
   }
 `;
 
-const result = await testComputeShader({ device, src });
+const result = await testCompute({ device, src });
 ```
 
 #### Loading Shaders by Module Name
@@ -329,7 +329,7 @@ const result = await testComputeShader({ device, src });
 Or use `moduleName` to load the test snippet from your shader directory:
 
 ```typescript
-const result = await testComputeShader({
+const result = await testCompute({
   device,
   moduleName: "tests/compute_sum"  // loads from shaders/compute_sum.wesl
 });
@@ -344,15 +344,15 @@ You can test your built shader bundles before publishing:
 TEST_BUNDLES=true vitest  # Tests use built bundles instead of source
 ```
 
-## Advanced: testFragmentShaderImage()
+## Advanced: testFragmentImage()
 
 For special situations where you want to write validation code for fragment shaders across multiple pixels.
 
-`testFragmentShaderImage()` returns the complete rendered image (not just pixel 0,0 as `testFragmentShader()` does). Most users should use [`testFragmentShader()`](#testfragmentshader) for single-pixel tests or [`expectFragmentImage()`](#expectfragmentimage) for visual regression testing.
+`testFragmentImage()` returns the complete rendered image (not just pixel 0,0 as `testFragment()` does). Most users should use [`testFragment()`](#testfragment) for single-pixel tests or [`expectFragmentImage()`](#expectfragmentimage) for visual regression testing.
 
 **Parameters**
 
-Same as [`testFragmentShader()`](#testfragmentshader).
+Same as [`testFragment()`](#testfragment).
 
 **Returns**
 
@@ -361,9 +361,9 @@ Same as [`testFragmentShader()`](#testfragmentshader).
 **Example**
 
 ```typescript
-import { testFragmentShaderImage } from "wesl-test";
+import { testFragmentImage } from "wesl-test";
 
-const result = await testFragmentShaderImage({
+const result = await testFragmentImage({
   device,
   moduleName: "effects/blur",
   size: [256, 256],

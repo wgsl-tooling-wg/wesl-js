@@ -175,12 +175,12 @@ interface MatchImageOptions {
 
 ```typescript
 import { imageMatcher } from "vitest-image-snapshot";
-import { testFragmentShaderImage } from "wesl-test";
+import { testFragmentImage } from "wesl-test";
 
 imageMatcher();
 
 test("shader output matches snapshot", async () => {
-  const result = await testFragmentShaderImage({
+  const result = await testFragmentImage({
     projectDir: import.meta.url,
     device,
     src: `@fragment fn fs_main() -> @location(0) vec4f { return vec4f(1.0, 0.0, 0.0, 1.0); }`,

@@ -60,7 +60,7 @@ export interface ComputeTestParams {
  *
  * @returns Array of numbers from the storage buffer (typically 4 elements for u32/f32 format)
  */
-export async function testComputeShader(
+export async function testCompute(
   params: ComputeTestParams,
 ): Promise<number[]> {
   const {

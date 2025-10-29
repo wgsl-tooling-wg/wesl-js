@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { testComputeShader } from "../TestComputeShader.ts";
+import { testCompute } from "../TestComputeShader.ts";
 import { destroySharedDevice, getGPUDevice } from "../WebGPUTestSetup.ts";
 
 let device: GPUDevice;
@@ -14,7 +14,7 @@ afterAll(() => {
 });
 
 async function runTest(src: string, options = {}) {
-  return await testComputeShader({
+  return await testCompute({
     projectDir: testPkgDir,
     device,
     src,

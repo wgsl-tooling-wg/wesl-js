@@ -159,7 +159,7 @@ Extends `vitest` module's `Assertion` and `AsymmetricMatchersContaining` interfa
 
 **Node.js Environment**:
 - No polyfill needed - uses plain objects with type assertions
-- `testFragmentShaderImage()` returns: `{ data, width, height, colorSpace } as ImageData`
+- `testFragmentImage()` returns: `{ data, width, height, colorSpace } as ImageData`
 - TypeScript structural typing accepts plain objects matching the interface
 - Runtime code only reads properties (never checks `instanceof ImageData`)
 
@@ -300,7 +300,7 @@ Test full flow with real Vitest:
 
 ```typescript
 test("generates report on failure", async () => {
-  const result = await testFragmentShaderImage({...});
+  const result = await testFragmentImage({...});
   await expect(result).toMatchImage("test");
 
   // Verify report exists

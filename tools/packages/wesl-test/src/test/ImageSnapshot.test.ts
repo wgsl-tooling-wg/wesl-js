@@ -9,7 +9,7 @@ import {
   edgePatternTexture,
   expectFragmentImage,
   getGPUDevice,
-  testFragmentShaderImage,
+  testFragmentImage,
 } from "../index.ts";
 
 imageMatcher();
@@ -50,7 +50,7 @@ test("simple box blur", async () => {
     }
   `;
 
-  const result = await testFragmentShaderImage({
+  const result = await testFragmentImage({
     projectDir: import.meta.url,
     device,
     src,
@@ -89,7 +89,7 @@ test("simple edge detection", async () => {
     }
   `;
 
-  const result = await testFragmentShaderImage({
+  const result = await testFragmentImage({
     projectDir: import.meta.url,
     device,
     src,
@@ -123,7 +123,7 @@ test("grayscale conversion", async () => {
     }
   `;
 
-  const result = await testFragmentShaderImage({
+  const result = await testFragmentImage({
     projectDir: import.meta.url,
     device,
     src,
@@ -159,7 +159,7 @@ test("sharpen filter on photo sample", async () => {
     }
   `;
 
-  const result = await testFragmentShaderImage({
+  const result = await testFragmentImage({
     projectDir: import.meta.url,
     device,
     src,

@@ -5,7 +5,7 @@ import {
   gradientTexture,
   solidTexture,
 } from "../ExampleTextures.ts";
-import { testFragmentShader } from "../TestFragmentShader.ts";
+import { testFragment } from "../TestFragmentShader.ts";
 import { destroySharedDevice, getGPUDevice } from "../WebGPUTestSetup.ts";
 
 let device: GPUDevice;
@@ -28,7 +28,7 @@ test("renders simple constant color", async () => {
   const projectDir = import.meta.url;
   const textureFormat: GPUTextureFormat = "rgba32float";
   const params = { projectDir, device, src, textureFormat };
-  const result = await testFragmentShader(params);
+  const result = await testFragment(params);
 
   expect(result).toHaveLength(4);
   expect(result[0]).toBeCloseTo(0.5);
@@ -45,7 +45,7 @@ test("derivative of x coordinate", async () => {
       return vec4f(pos.x, dx, 0.0, 1.0);
     }
   `;
-  const result = await testFragmentShader({
+  const result = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -74,7 +74,7 @@ test("samples solid color texture", async () => {
     }
   `;
 
-  const result = await testFragmentShader({
+  const result = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -101,7 +101,7 @@ test("samples gradient texture at center", async () => {
     }
   `;
 
-  const result = await testFragmentShader({
+  const result = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -128,7 +128,7 @@ test("samples checkerboard texture", async () => {
     }
   `;
 
-  const result = await testFragmentShader({
+  const result = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -160,7 +160,7 @@ test("samples multiple textures", async () => {
     }
   `;
 
-  const result = await testFragmentShader({
+  const result = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -185,7 +185,7 @@ test("uses scalar constant from constants namespace", async () => {
     }
   `;
 
-  const result = await testFragmentShader({
+  const result = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -205,7 +205,7 @@ test("uses vector constant from constants namespace", async () => {
     }
   `;
 
-  const result = await testFragmentShader({
+  const result = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -229,7 +229,7 @@ test("uses conditions for conditional compilation", async () => {
     }
   `;
 
-  const resultRed = await testFragmentShader({
+  const resultRed = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -239,7 +239,7 @@ test("uses conditions for conditional compilation", async () => {
   expect(resultRed[0]).toBeCloseTo(1.0);
   expect(resultRed[1]).toBeCloseTo(0.0);
 
-  const resultGreen = await testFragmentShader({
+  const resultGreen = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -264,7 +264,7 @@ test("uses both conditions and constants together", async () => {
     }
   `;
 
-  const resultWithColor = await testFragmentShader({
+  const resultWithColor = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -276,7 +276,7 @@ test("uses both conditions and constants together", async () => {
   expect(resultWithColor[1]).toBeCloseTo(0.6);
   expect(resultWithColor[2]).toBeCloseTo(0.0);
 
-  const resultWithoutColor = await testFragmentShader({
+  const resultWithoutColor = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -299,7 +299,7 @@ test("shader with resolution uniform (auto-populated)", async () => {
     }
   `;
 
-  const result = await testFragmentShader({
+  const result = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -325,7 +325,7 @@ test("shader with time uniform", async () => {
     }
   `;
 
-  const result = await testFragmentShader({
+  const result = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -350,7 +350,7 @@ test("shader with mouse uniform", async () => {
     }
   `;
 
-  const result = await testFragmentShader({
+  const result = await testFragment({
     projectDir: import.meta.url,
     device,
     src,
@@ -382,7 +382,7 @@ test("shader with uniforms and texture", async () => {
     }
   `;
 
-  const result = await testFragmentShader({
+  const result = await testFragment({
     projectDir: import.meta.url,
     device,
     src,

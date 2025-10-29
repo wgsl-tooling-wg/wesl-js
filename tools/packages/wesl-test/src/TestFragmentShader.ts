@@ -101,7 +101,7 @@ export async function expectFragmentImage(
   const { textureFormat = "rgba32float", size = [256, 256] } = opts;
 
   // Render shader image using moduleName
-  const imageData = await testFragmentShaderImage({
+  const imageData = await testFragmentImage({
     ...opts,
     device,
     moduleName,
@@ -124,7 +124,7 @@ export async function expectFragmentImage(
  *
  * @returns Array of color component values from pixel (0,0)
  */
-export async function testFragmentShader(
+export async function testFragment(
   params: FragmentTestParams,
 ): Promise<number[]> {
   const { textureFormat = "rgba32float" } = params;
@@ -141,7 +141,7 @@ export async function testFragmentShader(
  *
  * @returns ImageData containing the full rendered output
  */
-export async function testFragmentShaderImage(
+export async function testFragmentImage(
   params: FragmentTestParams,
 ): Promise<ImageData> {
   const { textureFormat = "rgba32float", size = [1, 1] } = params;

@@ -1,9 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
-import {
-  destroySharedDevice,
-  getGPUDevice,
-  testComputeShader,
-} from "wesl-test";
+import { destroySharedDevice, getGPUDevice, testCompute } from "wesl-test";
 
 const projectDir = new URL("..", import.meta.url).href;
 let device: GPUDevice;
@@ -26,7 +22,7 @@ test("hash::lowbias32 is well-distributed", async () => {
   `;
 
   const params = { projectDir, device, src, size: 256 };
-  const result = await testComputeShader(params); // run test
+  const result = await testCompute(params); // run test
 
   const { meanDiff, uniqueValues } = distStats(result, 2 ** 32 / 2);
   expect(meanDiff).toBeLessThan(0.05); // validate within 5% of expected mean
