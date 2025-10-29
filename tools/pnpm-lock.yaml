@@ -224,7 +224,7 @@ importers:
         specifier: workspace:x
         version: link:../../packages/wesl-test
 
-  examples/wesl-test-fragment-gradient:
+  examples/wesl-test-fragment-image:
     dependencies:
       wesl:
         specifier: workspace:*
