@@ -5,10 +5,10 @@ import { CompositeResolver, link, RecordResolver } from "wesl";
 import {
   dependencyBundles,
   FileModuleResolver,
+  findWeslToml,
   readPackageJson,
   resolveProjectDir,
 } from "wesl-tooling";
-import { findWeslToml } from "../../wesl-tooling/src/LoadWeslToml.ts";
 
 export interface CompileShaderParams {
   /** Project directory for resolving shader dependencies.
