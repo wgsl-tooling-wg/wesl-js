@@ -20,7 +20,7 @@ WESL adds features:
 - **shader libraries** on npm and cargo, for community sharing of shader code modules
 
 This [wesl] library contains a **TypeScript** WESL linker.
-[wesl] can be used at runtime or at build time to assemble WESL and WGSL modules for WebGPUk
+[wesl] can be used at runtime or at build time to assemble WESL and WGSL modules for WebGPU.
 
 <img style="margin:10px 0px -10px 40px" src="https://docs.google.com/drawings/d/e/2PACX-1vRKxcnMB-U-UVcDRO6N6UMJESTodUBRnV6cVrrS_XwJetucnOfYCU9ztk9veXoqLJ7DinBdDnR9EiK-/pub?w=400&amp;h=300">
 
