@@ -7,7 +7,7 @@ import {
   FileModuleResolver,
   readPackageJson,
   resolveProjectDir,
-} from "../../wesl-tooling/src/index.ts";
+} from "wesl-tooling";
 import { findWeslToml } from "../../wesl-tooling/src/LoadWeslToml.ts";
 
 export interface CompileShaderParams {

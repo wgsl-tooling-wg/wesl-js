@@ -746,6 +746,9 @@ importers:
       webgpu:
         specifier: ^0.3.8
         version: 0.3.8
+      wesl-tooling:
+        specifier: workspace:x
+        version: link:../wesl-tooling
 
   packages/wesl-tooling:
     dependencies:
