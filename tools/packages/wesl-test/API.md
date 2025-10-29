@@ -2,30 +2,42 @@
 
 Complete API documentation for testing WGSL/WESL shaders.
 
-## Table of Contents
+## Core Functions
+- [testComputeShader()](#testcomputeshader) - Run compute shaders and retrieve results
+- [testFragmentShader()](#testfragmentshader) - Test fragment shaders, returns single pixel color
+- [expectFragmentImage()](#expectfragmentimage) - Visual regression testing with snapshot comparison
 
-- [testComputeShader()](#testcomputeshader)
-- [testFragmentShader()](#testfragmentshader)
-- [expectFragmentImage()](#expectfragmentimage)
-- [Texture Helper Functions](#texture-helper-functions)
-- [Working with Local Shader Packages](#working-with-local-shader-packages)
-- [Complete Test Example](#complete-test-example)
+## Fragment Shader Configuration
+- [Standard Uniform Buffer](#standard-uniform-buffer) - Built-in uniforms (resolution, time, mouse)
+- [Binding Convention](#binding-convention) - Texture and uniform binding layout
+
+## Helpers
+- [Texture Helper Functions](#texture-helper-functions) - Generate test textures
+- [Working with Local Shader Files](#working-with-local-shader-files) - Import and organize shader code
+
+## Visual Regression Testing
+- [Visual Regression Testing](#visual-regression-testing) - Snapshot workflow and configuration
+
+## Examples
+- [Complete Test Example](#complete-test-example) - Full vitest setup with beforeAll/afterAll
+
+## Advanced
+- [testFragmentShaderImage()](#advanced-testfragmentshaderimage) - Full image data access for custom validation
 
 ## testComputeShader()
 
-Runs a compute shader and returns result buffer values.
+Tests WGSL functions by running a compute shader. Write a shader that calls the function under test and stores results in the `test::results` buffer. The buffer is automatically provided and accessed via `test::results[index]`. Buffer elements not written by the shader are initialized to -999.
 
-### Storage Buffer
+### Parameters
 
-The `test::results` buffer is automatically provided:
-- **Default size**: 4 elements
-- **Custom size**: Use the `size` parameter to specify buffer size in elements
-- **Access**: Via `test::results[index]`
-- **Unwritten values**: Filled with -999
+- `device: GPUDevice` - WebGPU device
+- `src: string` - Shader source code (WGSL or WESL)
+- `projectDir?: string` - Import path base (usually `import.meta.url`). Optional, but helpful in monorepos where tests may run from different directories.
+- `resultFormat?: string` - Result buffer format: "u32" (default), "f32", "i32"
+- `size?: number` - Result buffer size in elements (default: 4)
+- `dispatchWorkgroups?: number | [number, number, number]` - Number of workgroups to dispatch (default: 1)
 
-### Multiple Invocations with Custom Buffer Size
-
-For shaders that process multiple values, combine `size`, `@workgroup_size`, and `dispatchWorkgroups`:
+### Example
 
 ```typescript
 const src = `
@@ -41,60 +53,79 @@ const result = await testComputeShader({
   device,
   src,
   resultFormat: "u32",
-  size: 1024, // 1024 u32 elements
-  dispatchWorkgroups: 4 // 4 workgroups × 256 threads = 1024 invocations
+  size: 1024,
+  dispatchWorkgroups: 4 // 4 workgroups × 256 threads
 });
 ```
 
-### Parameters
+## Fragment Shader Testing
+
+Three functions for testing fragment shaders, ranging from simple color validation to full visual regression testing.
+
+### Standard Uniform Buffer
+
+The `test::` module is available in fragment shader tests and contains:
+
+```wgsl
+struct Uniforms {
+  resolution: vec2f,  // Output size in pixels (default: [256, 256])
+  time: f32,          // Animation time (default: 0.0)
+  mouse: vec2f,       // Mouse position [0-1] (default: [0.0, 0.0])
+}
+```
+
+Access it by binding to `@group(0) @binding(0)`:
+
+```wgsl
+@group(0) @binding(0) var<uniform> u: test::Uniforms;
+
+@fragment
+fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let st = pos.xy / u.resolution;  // Normalized coordinates
+  let wave = sin(st.x * 10.0 + u.time);
+  return vec4f(st, wave, 1.0);
+}
+```
+
+Pass custom uniform values when calling test functions:
+
+```typescript
+await expectFragmentImage(device, "animated/wave", {
+  uniforms: { time: 5.0, mouse: [0.5, 0.5] }
+});
+```
+
+### Binding Convention
+
+All bindings are in group(0):
+- `@binding(0)` - Uniform buffer (automatically provided)
+- `inputTextures[0]` → texture at `@binding(1)`, sampler at `@binding(2)`
+- `inputTextures[1]` → texture at `@binding(3)`, sampler at `@binding(4)`
+- Pattern continues for additional textures
+
+### testFragmentShader()
+
+Returns the color values at pixel (0,0). For full image retrieval, use `testFragmentShaderImage()`.
+
+**Parameters**
 
 - `device: GPUDevice` - WebGPU device
-- `src: string` - Shader source code (WGSL or WESL)
-- `projectDir?: string` - Import path base (usually `import.meta.url`). Optional, but helpful in monorepos where tests may run from different directories.
-- `resultFormat?: string` - Result buffer format: "u32" (default), "f32", "i32"
-- `size?: number` - Result buffer size in elements (default: 4)
-- `dispatchWorkgroups?: number | [number, number, number]` - Number of workgroups to dispatch (default: 1)
+- `src?: string` - Shader source code (WGSL or WESL)
+- `moduleName?: string` - Shader file to load
+- `projectDir?: string` - Import path base (usually `import.meta.url`)
+- `textureFormat?: string` - Output texture format (default: "rgba32float")
+- `size?: [number, number]` - Render size in pixels (default: [1, 1])
+- `inputTextures?: Array<{texture: GPUTexture, sampler: GPUSampler}>` - Input textures
+- `uniforms?: {time?: number, mouse?: [number, number]}` - Custom uniform values
 
-## testFragmentShader()
+Either `src` or `moduleName` is required.
 
-Renders a fragment shader and returns pixel (0,0) color values.
-
-### Testing with Derivatives
-
-Derivative functions (`dpdx`, `dpdy`, `fwidth`) require at least a 2×2 pixel quad. Use the `size` parameter:
+**Example**
 
 ```typescript
-const src = `
-  @fragment
-  fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-    let dx = dpdx(pos.x);
-    return vec4f(pos.x, dx, 0.0, 1.0);
-  }
-`;
-const result = await testFragmentShader({
-  device,
-  src,
-  textureFormat: "rg32float",
-  size: [2, 2]
-});
-const [x, dx] = result;
-// x = 0.5, dx = 1.0
-```
+import { testFragmentShader, solidTexture, createSampler } from "wesl-test";
 
-**Note**: The function always samples pixel (0,0) from the rendered texture.
-
-### Testing with Input Textures
-
-Use `inputTextures` to test shaders that sample from textures:
-
-```typescript
-import {
-  testFragmentShader,
-  solidTexture,
-  createSampler
-} from "wesl-test";
-
-const inputTex = solidTexture(device, [0.5, 0.5, 0.5, 1.0], 256, 256);
+const inputTex = solidTexture(device, [0.8, 0.2, 0.4, 1.0], 256, 256);
 const sampler = createSampler(device);
 
 const src = `
@@ -104,7 +135,8 @@ const src = `
   @fragment
   fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     let uv = pos.xy / 256.0;
-    return textureSample(input_tex, input_samp, uv);
+    let color = textureSample(input_tex, input_samp, uv);
+    return color * 0.5;  // Darken by half
   }
 `;
 
@@ -113,103 +145,14 @@ const result = await testFragmentShader({
   src,
   inputTextures: [{ texture: inputTex, sampler }]
 });
-// result = [0.5, 0.5, 0.5, 1.0]
+// result = [0.4, 0.1, 0.2, 0.5] - RGBA values at pixel (0,0)
 ```
 
-### Binding Convention
+### expectFragmentImage()
 
-Bindings in group 0:
-- `@binding(0)` - Uniform buffer (automatically provided, contains `test::Uniforms`)
-- `inputTextures[0]` → texture at `@binding(1)`, sampler at `@binding(2)`
-- `inputTextures[1]` → texture at `@binding(3)`, sampler at `@binding(4)`
-- Pattern continues for additional textures
+Renders a shader file and compares against a snapshot. Simplest API for visual regression testing. See [Visual Regression Testing](#visual-regression-testing) for complete workflow.
 
-### Uniform Buffer
-
-Fragment shaders can access standard uniforms via `test::Uniforms`:
-
-```wgsl
-@group(0) @binding(0) var<uniform> u: test::Uniforms;
-
-@fragment
-fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  let st = pos.xy / u.resolution;  // Normalized coordinates
-  return vec4f(st, 0.0, 1.0);
-}
-```
-
-**Available uniforms:**
-- `resolution: vec2f` - Auto-populated from `size` parameter
-- `time: f32` - Animation time (default: 0.0)
-- `mouse: vec2f` - Mouse position in [0,1] (default: [0.0, 0.0])
-
-Pass custom values via the `uniforms` parameter:
-
-```typescript
-const result = await testFragmentShader({
-  device,
-  src,
-  uniforms: { time: 5.0, mouse: [0.5, 0.5] }
-});
-```
-
-### Parameters
-
-- `device: GPUDevice` - WebGPU device
-- `src?: string` - Shader source code (WGSL or WESL). Either `src` or `moduleName` required.
-- `moduleName?: string` - Shader file to load (e.g., "effects/blur.wgsl"). Either `src` or `moduleName` required.
-- `projectDir?: string` - Import path base (usually `import.meta.url`). Optional, but helpful in monorepos.
-- `textureFormat?: string` - Output texture format (default: "rgba32float")
-- `size?: [number, number]` - Render size in pixels (default: [1, 1])
-- `inputTextures?: Array<{texture: GPUTexture, sampler: GPUSampler}>` - Input textures
-- `uniforms?: {time?: number, mouse?: [number, number]}` - Custom uniform values
-
-**Note**: Provide either `src` (inline shader) or `moduleName` (load from file), but not both.
-
-## expectFragmentImage()
-
-Loads a shader from a file, renders it, and automatically compares against a snapshot. Simplest API for visual regression testing of shader files.
-
-### Basic Usage
-
-```typescript
-import { expectFragmentImage } from "wesl-test";
-
-test("blur shader matches snapshot", async () => {
-  await expectFragmentImage(device, "effects/blur.wgsl", {
-    projectDir: import.meta.url,
-    size: [256, 256],
-  });
-  // Snapshot name automatically derived: "effects-blur"
-});
-```
-
-### Shader Name Formats
-
-The `moduleName` parameter supports three formats:
-
-- **Bare name**: `"blur.wgsl"` → resolves to `shaders/blur.wgsl`
-- **Relative path**: `"effects/blur.wgsl"` → resolves to `shaders/effects/blur.wgsl`
-- **Module path**: `"package::effects::blur"` → same as relative path
-
-The root directory (`shaders/`) is determined by `wesl.toml` configuration.
-
-### Custom Snapshot Names
-
-Override the automatic snapshot name for testing shader variations:
-
-```typescript
-test("blur with high radius", async () => {
-  await expectFragmentImage(device, "effects/blur.wgsl", {
-    projectDir: import.meta.url,
-    snapshotName: "blur-radius-10",
-    uniforms: { radius: 10 },
-    size: [256, 256],
-  });
-});
-```
-
-### Parameters
+**Parameters**
 
 - `device: GPUDevice` - WebGPU device
 - `moduleName: string` - Shader file to load
@@ -221,112 +164,104 @@ test("blur with high radius", async () => {
   - `inputTextures?: Array<{texture, sampler}>` - Input textures
   - `uniforms?: {time?, mouse?}` - Custom uniform values
 
-**See also**: [IMAGE_TESTING.md](./IMAGE_TESTING.md) for complete visual regression testing workflow.
+**Example**
+
+```typescript
+import { expectFragmentImage } from "wesl-test";
+
+// Simple - defaults to 256×256, no .wgsl suffix needed
+test("red-blue gradient", async () => {
+  await expectFragmentImage(device, "effects/gradient_red_blue");
+});
+
+// With options
+test("blur with high radius", async () => {
+  await expectFragmentImage(device, "effects/blur", {
+    snapshotName: "blur-radius-10",
+    inputTextures: [{ texture: inputTex, sampler }],
+    uniforms: { time: 5.0 }
+  });
+});
+```
+
+Supported shader name formats:
+- Bare name: `"gradient"` → resolves to `shaders/gradient.wgsl`
+- Relative path: `"effects/blur"` → resolves to `shaders/effects/blur.wgsl`
+- Module path: `"package::effects::blur"` → same as above
 
 ## Texture Helper Functions
 
-Helper functions for creating test textures:
-
-### Basic Helpers
-
-```typescript
-import {
-  solidTexture,
-  gradientTexture,
-  checkerboardTexture,
-  createSampler
-} from "wesl-test";
-
-// Uniform color texture
-const solid = solidTexture(device, [1.0, 0.0, 0.0, 1.0], 256, 256);
-
-// Gradient (horizontal or vertical)
-const gradient = gradientTexture(device, 256, 256, "horizontal");
-
-// Checkerboard pattern
-const checker = checkerboardTexture(device, 256, 256, 32); // 32px cells
-
-// Texture sampler
-const sampler = createSampler(device, {
-  addressModeU: "repeat",
-  addressModeV: "repeat",
-  magFilter: "linear",
-  minFilter: "linear"
-});
-```
-
-### Function Signatures
-
-- `solidTexture(device, color, width, height)` - Creates uniform color texture
+- `solidTexture(device, color, width, height)` → `GPUTexture` - Creates uniform color texture
   - `color: [number, number, number, number]` - RGBA values [0-1]
 
-- `gradientTexture(device, width, height, direction?)` - Creates gradient
+- `gradientTexture(device, width, height, direction?)` → `GPUTexture` - Creates gradient
   - `direction?: "horizontal" | "vertical"` - Gradient direction (default: "horizontal")
 
-- `checkerboardTexture(device, width, height, cellSize?)` - Creates checkerboard
+- `checkerboardTexture(device, width, height, cellSize?)` → `GPUTexture` - Creates checkerboard
   - `cellSize?: number` - Size of each square in pixels (default: 16)
 
-- `createSampler(device, options?)` - Creates texture sampler
+- `createSampler(device, options?)` → `GPUSampler` - Creates texture sampler
   - `options?: GPUSamplerDescriptor` - Sampler options (defaults to linear filtering, clamp-to-edge)
 
-See [IMAGE_TESTING.md](./IMAGE_TESTING.md) for advanced texture generators.
+**Advanced Test Textures**
 
-## Working with Local Shader Packages
+Additional texture generators for image processing tests:
 
-### Shader File Organization
+- `radialGradientTexture(device, size)` → `GPUTexture` - Circular gradient from white center to black edge
+- `edgePatternTexture(device, size)` → `GPUTexture` - Sharp horizontal and vertical lines for edge detection
+- `colorBarsTexture(device, size)` → `GPUTexture` - Vertical bars of RGB primaries and secondaries
+- `noiseTexture(device, size, seed?)` → `GPUTexture` - Deterministic pseudo-random noise
+- `pngToTexture(device, path)` → `GPUTexture` - Loads a PNG file as a texture
+- `lemurTexture(device)` → `GPUTexture` - Bundled 512×512 test photo
 
-By default, place your shader files in a `shaders/` directory. You can customize this using a `wesl.toml` file:
+## Visual Regression Testing
 
-```toml
-include = ["shaders/**/*.w[eg]sl"]
-root = "shaders"
-dependencies = []
-```
+Automatically compare rendered images against reference snapshots to detect visual regressions.
 
-See the [wesl.toml documentation](https://wesl-lang.dev/docs/Getting-Started-JavaScript#wesltoml) for more configuration options.
-
-### Importing Shader Functions
-
-Import from local shader files using `package::` or your actual package name:
+### Setup
 
 ```typescript
-const src = `
-  import package::utils::helper;      // generic package:: works
-  import my_shader_lib::math::compute; // or use actual package name
+import { imageMatcher } from "vitest-image-snapshot";
 
-  @compute @workgroup_size(1)
-  fn main() {
-    test::results[0] = helper() + compute();
-  }
-`;
-
-const result = await testComputeShader({ device, src });
+// In test setup file or at top of test
+imageMatcher();
 ```
 
-### Testing Built Bundles
+See the [vitest-image-snapshot documentation][vitest-image-snapshot] for reporter configuration to enable HTML diff reports in your vitest config.
 
-Test your built shader bundles before publishing:
+### Snapshot Workflow
 
 ```bash
-TEST_BUNDLES=true vitest  # Tests use built bundles instead of source
+# First run - creates reference snapshots
+pnpm vitest
+
+# Review generated snapshots in __image_snapshots__/
+# Commit if they look correct
+git add __image_snapshots__/
+git commit -m "Add visual regression tests"
+
+# After code changes - tests fail if output differs
+pnpm vitest  # Shows diffs in __image_diffs__/
+
+# If changes are intentional - update snapshots
+pnpm vitest -- -u
 ```
 
-Or configure per-test:
+### Advanced Configuration
 
-```typescript
-const result = await testComputeShader({
-  device,
-  src,
-  useSourceShaders: false  // Use built bundle
-});
-```
+For advanced configuration and detailed information, see the [vitest-image-snapshot documentation][vitest-image-snapshot]:
+
+- **Comparison options** - Fine-tune snapshot matching with `threshold`, `allowedPixels`, and `allowedPixelRatio`
+- **Directory structure** - Understanding `__image_snapshots__/`, `__image_actual__/`, and `__image_diffs__/`
+- **HTML diff report** - Setup and customization for visual test failure reports
+
+[vitest-image-snapshot]: https://github.com/wgsl-tooling-wg/wesl-js/tree/main/tools/packages/vitest-image-snapshot
 
 ## Complete Test Example
 
 ```typescript
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { testComputeShader, destroySharedDevice, getGPUDevice } from "wesl-test";
-import shaderSource from "./shaders/hash.wgsl?raw";
 
 let device: GPUDevice;
 
@@ -352,13 +287,94 @@ test("hash function from file", async () => {
 
   // Validate hash distribution
   const mean = result.reduce((a, b) => a + b, 0) / result.length;
-  const expectedMean = 0xFFFFFFFF / 2;
-  expect(mean).toBeGreaterThan(expectedMean * 0.3);
-  expect(mean).toBeLessThan(expectedMean * 0.7);
+  const expectedMean = 2 ** 32 / 2;
+  expect(mean).toBeGreaterThan(expectedMean * 0.4);
+  expect(mean).toBeLessThan(expectedMean * 0.6);
 });
+```
+
+## Working with Local Shader Files
+
+### Shader File Organization
+
+Conventionally, place your shader files in a `shaders/` directory.
+Or see the [wesl.toml](https://wesl-lang.dev/docs/Getting-Started-JavaScript#wesltoml)
+documentation for options.
+
+### Shader Unit Tests
+For unit tests, write an WESL snippet to call the shader functions you want to test.
+Import from local shader files using `import package::`
+
+(For image regression tests, see [visual regression testing](#visual-regression-testing)).
+
+#### Importing Shader Functions
+
+You can write the WESL snippet as a TypeScript string.
+
+```typescript
+const src = /* wesl */`
+  import package::utils::{helper, compute};
+
+  @compute @workgroup_size(1)
+  fn main() {
+    test::results[0] = helper() + compute();
+  }
+`;
+
+const result = await testComputeShader({ device, src });
+```
+
+#### Loading Shaders by Module Name
+
+Or use `moduleName` to load the test snippet from your shader directory:
+
+```typescript
+const result = await testComputeShader({
+  device,
+  moduleName: "tests/compute_sum"  // loads from shaders/compute_sum.wesl
+});
+```
+
+
+### Testing Built Bundles
+
+You can test your built shader bundles before publishing:
+
+```bash
+TEST_BUNDLES=true vitest  # Tests use built bundles instead of source
+```
+
+## Advanced: testFragmentShaderImage()
+
+For special situations where you want to write validation code for fragment shaders across multiple pixels.
+
+`testFragmentShaderImage()` returns the complete rendered image (not just pixel 0,0 as `testFragmentShader()` does). Most users should use [`testFragmentShader()`](#testfragmentshader) for single-pixel tests or [`expectFragmentImage()`](#expectfragmentimage) for visual regression testing.
+
+**Parameters**
+
+Same as [`testFragmentShader()`](#testfragmentshader).
+
+**Returns**
+
+`ImageData` object containing the rendered image (width, height, and data array).
+
+**Example**
+
+```typescript
+import { testFragmentShaderImage } from "wesl-test";
+
+const result = await testFragmentShaderImage({
+  device,
+  moduleName: "effects/blur",
+  size: [256, 256],
+  inputTextures: [{ texture: inputTex, sampler }]
+});
+
+// result is ImageData with full 256×256 pixel data
+// Inspect specific pixels or process the entire image
+const pixel = result.data.slice(0, 4); // First pixel RGBA
 ```
 
 ## See Also
 
-- [IMAGE_TESTING.md](./IMAGE_TESTING.md) - Visual regression testing guide
 - [README.md](./README.md) - Quick start guide

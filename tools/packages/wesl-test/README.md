@@ -1,9 +1,6 @@
 # wesl-test
 
-Unit tests and visual regression tests for WGSL and WESL shaders. 
-Use vitest or your favorite Node.js test framework. 
-
-## Why wesl-test?
+Write GPU shader tests as easily as regular unit tests. Test WGSL and WESL shaders with vitest or your favorite Node.js test framework.
 
 - **Test WGSL shaders** - Works with standard `.wgsl` files, no new syntax required
 - **Test WESL shaders** - Import and compose shader dependencies via WESL
@@ -23,6 +20,8 @@ Quick start in 3 steps:
 
 ## Testing Compute Shaders
 
+The default choice for unit testing shader functions. Flexible and explicit.
+
 Use `testComputeShader()` to test compute shader logic. A `test::results` buffer is automatically provided:
 
 ```typescript
@@ -31,23 +30,24 @@ import { testComputeShader, getGPUDevice } from "wesl-test";
 const device = await getGPUDevice();
 
 const src = `
-  import package::myShader::myFun;
+  import package::hash::lowbias32;
 
   @compute @workgroup_size(1)
   fn main() {
-    test::results[0] = myFun(0);
-    test::results[1] = myFun(42);
+    test::results[0] = lowbias32(0u);
+    test::results[1] = lowbias32(42u);
   }
 `;
 
 const result = await testComputeShader({ device, src, size: 2 });
-// result = [0, 42]
-// TODO use hash fn
+// result = [0, 388445122]
 ```
 
-**[See API.md for complete API documentation →](./API.md)**
+**[See API.md for complete API documentation →](./API.md#testcomputeshader)**
 
 ## Testing Fragment Shaders
+
+For unit testing shader functions that only run in fragment shaders. Tests a single pixel output.
 
 Use `testFragmentShader()` to test fragment shader rendering. 
 
@@ -67,14 +67,16 @@ const src = `
 `;
 
 const result = await testFragmentShader({ device, src });
-// result = TBD
+// result = [2.828, 1.414, 0.0, 2.0]  // vec4f color at pixel (0,0)
 ```
 
-**[See API.md for derivatives, input textures, uniforms, and more →](./API.md)**
+**[See API.md for derivatives, input textures, uniforms, and more →](./API.md#testfragmentshader)**
 
 ## Visual Regression Testing
 
-Test complete rendered images and catch visual changes automatically:
+Higher level testing, good for regression. Tests don't provide much numeric descriptive value but catch visual changes automatically.
+
+Test complete rendered images:
 
 ```typescript
 import { expectFragmentImage, imageMatcher } from "wesl-test";
@@ -92,19 +94,13 @@ test("blur shader matches snapshot", async () => {
 
 Snapshot comparison automatically detects rendering changes. Update snapshots with `vitest -u` when changes are intentional.
 
-**[See IMAGE_TESTING.md for snapshot workflow, comparison options, and more →](./IMAGE_TESTING.md)**
+**[See API.md for snapshot workflow and visual regression testing →](./API.md#visual-regression-testing)**
 
-## Complete Test Example
+## API Documentation
 
-```typescript
-TBD
-```
-
-## What's Next
-
-- **[API.md](./API.md)** - API reference for `testComputeShader()` and `testFragmentShader()`
-- **[IMAGE_TESTING.md](./IMAGE_TESTING.md)** - Visual regression testing guide with snapshot workflow
-- **[Examples](../../examples/)** - Tiny standalone examples.
+- **[API.md](./API.md)** - Complete API reference with detailed examples
+- **[API.md#complete-test-example](./API.md#complete-test-example)** - Full vitest test setup with beforeAll/afterAll
+- **[Examples](../../examples/)** - Tiny standalone examples
 
 ## Future 
 What would you like to see next in wesl-test? 
