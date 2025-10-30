@@ -7,6 +7,7 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   platform: "neutral",
+  noExternal: ["wesl-tooling"],
   external: [
     "fs",
     "module",
