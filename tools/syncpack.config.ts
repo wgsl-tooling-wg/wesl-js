@@ -20,6 +20,7 @@ export default {
     "dependencies",
     "devDependencies",
     "peerDependencies",
+    "peerDependenciesMeta",
     "license",
     "keywords",
     "packageManager",

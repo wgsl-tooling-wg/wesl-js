@@ -29,8 +29,8 @@
     "pngjs": "^7.0.0",
     "thimbleberry": "^0.2.10",
     "webgpu": "^0.3.8",
-    "wesl": "workspace:^",
-    "wesl-tooling": "workspace:x"
+    "wesl": "workspace:*",
+    "wesl-tooling": "workspace:*"
   },
   "devDependencies": {
     "@types/pngjs": "^6.0.0",
@@ -38,7 +38,7 @@
   },
   "peerDependencies": {
     "vitest": "^3.2.4",
-    "vitest-image-snapshot": "workspace:x"
+    "vitest-image-snapshot": "workspace:^"
   },
   "peerDependenciesMeta": {
     "vitest": {

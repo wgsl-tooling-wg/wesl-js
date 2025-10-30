@@ -69,16 +69,6 @@
     "vite": ">=3",
     "webpack": "^4 || ^5"
   },
-  "keywords": [
-    "rollup",
-    "unplugin",
-    "vite",
-    "webgpu",
-    "webpack",
-    "wesl",
-    "wgsl"
-  ],
-  "packageManager": "pnpm@10.2.0",
   "peerDependenciesMeta": {
     "@farmfe/core": {
       "optional": true
@@ -102,6 +92,16 @@
       "optional": true
     }
   },
+  "keywords": [
+    "rollup",
+    "unplugin",
+    "vite",
+    "webgpu",
+    "webpack",
+    "wesl",
+    "wgsl"
+  ],
+  "packageManager": "pnpm@10.2.0",
   "typesVersions": {
     "*": {
       "*": ["./dist/plugins/*", "./dist/*", "./*"]
