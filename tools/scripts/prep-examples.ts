@@ -21,6 +21,7 @@ interface Versions {
   "wesl-plugin": string;
   "wesl-link": string;
   random_wgsl: string;
+  [key: string]: string | undefined;
 }
 
 const toolsPath = path.join(fileURLToPath(import.meta.url), "../..");
