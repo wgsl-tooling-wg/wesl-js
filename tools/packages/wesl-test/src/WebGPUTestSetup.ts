@@ -1,3 +1,5 @@
+import * as webgpu from "webgpu";
+
 let sharedGpu: GPU | undefined;
 let sharedDevice: GPUDevice | undefined;
 
@@ -21,7 +23,6 @@ export function destroySharedDevice(): void {
 /** initialize WebGPU for testing */
 async function setupWebGPU(): Promise<GPU> {
   if (!sharedGpu) {
-    const webgpu = await import("webgpu");
     Object.assign(globalThis, webgpu.globals);
     sharedGpu = webgpu.create([]);
   }

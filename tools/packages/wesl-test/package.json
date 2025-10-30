@@ -23,17 +23,26 @@
   },
   "dependencies": {
     "pngjs": "^7.0.0",
-    "thimbleberry": "^0.2.10"
+    "thimbleberry": "^0.2.10",
+    "webgpu": "^0.3.8",
+    "wesl": "workspace:^",
+    "wesl-tooling": "workspace:x"
   },
   "devDependencies": {
     "@types/pngjs": "^6.0.0",
-    "dependent_package": "workspace:x",
-    "vitest-image-snapshot": "workspace:x",
-    "webgpu": "^0.3.8",
-    "wesl-tooling": "workspace:x"
+    "dependent_package": "workspace:x"
   },
   "peerDependencies": {
-    "wesl": "workspace:^"
+    "vitest": "^3.2.4",
+    "vitest-image-snapshot": "workspace:x"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    },
+    "vitest-image-snapshot": {
+      "optional": true
+    }
   },
   "keywords": [
     "shader",

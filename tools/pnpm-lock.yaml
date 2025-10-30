@@ -730,9 +730,15 @@ importers:
       thimbleberry:
         specifier: ^0.2.10
         version: 0.2.10
+      vitest-image-snapshot:
+        specifier: workspace:x
+        version: link:../vitest-image-snapshot
       wesl:
         specifier: workspace:^
         version: link:../wesl
+      wesl-tooling:
+        specifier: workspace:x
+        version: link:../wesl-tooling
     devDependencies:
       '@types/pngjs':
         specifier: ^6.0.0
@@ -740,15 +746,9 @@ importers:
       dependent_package:
         specifier: workspace:x
         version: link:../test_pkg/dependent_package
-      vitest-image-snapshot:
-        specifier: workspace:x
-        version: link:../vitest-image-snapshot
       webgpu:
         specifier: ^0.3.8
         version: 0.3.8
-      wesl-tooling:
-        specifier: workspace:x
-        version: link:../wesl-tooling
 
   packages/wesl-tooling:
     dependencies:
