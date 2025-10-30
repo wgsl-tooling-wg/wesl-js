@@ -734,16 +734,16 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.7.2)(@vitest/ui@3.2.4)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.0)
       vitest-image-snapshot:
-        specifier: workspace:x
+        specifier: workspace:^
         version: link:../vitest-image-snapshot
       webgpu:
         specifier: ^0.3.8
         version: 0.3.8
       wesl:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../wesl
       wesl-tooling:
-        specifier: workspace:x
+        specifier: workspace:*
         version: link:../wesl-tooling
     devDependencies:
       '@types/pngjs':
