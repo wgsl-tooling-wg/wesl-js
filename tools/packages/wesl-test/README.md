@@ -43,7 +43,7 @@ const result = await testCompute({ device, src, size: 2 });
 // result = [0, 388445122]
 ```
 
-**[See API.md for complete API documentation →](./API.md#testcompute)**
+**[See API.md for complete API documentation →](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wesl-test/API.md#testcompute)**
 
 ## Testing Fragment Shaders
 
@@ -70,7 +70,7 @@ const result = await testFragment({ device, src });
 // result = [2.828, 1.414, 0.0, 2.0]  // vec4f color at pixel (0,0)
 ```
 
-**[See API.md for derivatives, input textures, uniforms, and more →](./API.md#testfragmentshader)**
+**[See API.md for derivatives, input textures, uniforms, and more →](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wesl-test/API.md#testfragment)**
 
 ## Visual Regression Testing
 
@@ -94,13 +94,13 @@ test("blur shader matches snapshot", async () => {
 
 Snapshot comparison automatically detects rendering changes. Update snapshots with `vitest -u` when changes are intentional.
 
-**[See API.md for snapshot workflow and visual regression testing →](./API.md#visual-regression-testing)**
+**[See API.md for snapshot workflow and visual regression testing →](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wesl-test/API.md#visual-regression-testing)**
 
 ## API Documentation
 
-- **[API.md](./API.md)** - Complete API reference with detailed examples
-- **[API.md#complete-test-example](./API.md#complete-test-example)** - Full vitest test setup with beforeAll/afterAll
-- **[Examples](../../examples/)** - Tiny standalone examples
+- **[API.md](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wesl-test/API.md)** - Complete API reference with detailed examples
+- **[API.md#complete-test-example](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wesl-test/API.md#complete-test-example)** - Full vitest test setup with beforeAll/afterAll
+- **[Examples](https://github.com/wgsl-tooling-wg/wesl-js/tree/main/tools/examples)** - Tiny standalone examples
 
 ## Future 
 What would you like to see next in wesl-test? 

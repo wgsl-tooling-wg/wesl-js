@@ -377,4 +377,4 @@ const pixel = result.data.slice(0, 4); // First pixel RGBA
 
 ## See Also
 
-- [README.md](./README.md) - Quick start guide
+- [README.md](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wesl-test/README.md) - Quick start guide
