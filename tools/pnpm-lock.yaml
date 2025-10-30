@@ -742,9 +742,6 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
-      wesl-tooling:
-        specifier: workspace:*
-        version: link:../wesl-tooling
     devDependencies:
       '@types/pngjs':
         specifier: ^6.0.0
@@ -752,6 +749,9 @@ importers:
       dependent_package:
         specifier: workspace:x
         version: link:../test_pkg/dependent_package
+      wesl-tooling:
+        specifier: workspace:x
+        version: link:../wesl-tooling
 
   packages/wesl-tooling:
     dependencies:
