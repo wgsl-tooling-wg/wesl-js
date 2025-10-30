@@ -6,8 +6,14 @@
   Best to put interim commits on a branch that's merged to main.
 
 ### prepush script
-- the `pnpm prepush` script verifies tests, linting, 
+- the `pnpm prepush` script verifies tests, linting,
   formatting before pushing to the main branch of the shared repository
+
+### version bumps and releases
+- version bumps should be done on the `tomain` branch
+- after bumping, push with tags: `git push && git push --tags`
+- the auto-merge workflow will promote `tomain` to `main` after CI passes
+- then run `bb publish:all` and `bb prep:examples` to complete the release
 
 ### continuous integration
 - we run CI on macos and windows.
