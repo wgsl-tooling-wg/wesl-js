@@ -34,9 +34,10 @@
     "test:integration": "pnpm --filter \"./packages/**\" test:integration",
     "test:linkExtension": "nodemon --config nodemon-link-extension.json",
     "test:unit": "cross-env NODE_OPTIONS=--expose-gc vitest --run",
-    "typecheck:all": "run-p typecheck:packages typecheck:examples",
+    "typecheck:all": "run-p typecheck:packages typecheck:examples typecheck:scripts",
     "typecheck:examples": "pnpm --parallel --filter \"./examples/**\" --filter \"!lygia-cli-example\" exec tsgo",
     "typecheck:packages": "pnpm --parallel --filter \"./packages/**\" typecheck",
+    "typecheck:scripts": "tsgo --project tsconfig.json",
     "typecheck:watch": "nodemon --config nodemon-typecheck-watch.json"
   },
   "devDependencies": {
