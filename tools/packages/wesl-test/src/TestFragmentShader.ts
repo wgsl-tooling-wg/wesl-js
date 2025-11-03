@@ -66,13 +66,14 @@ export interface FragmentTestParams {
    * Creates test::Uniforms struct available in the shader. */
   uniforms?: RenderUniforms;
 
-  /** Input textures and samplers for the shader.
-   * Bound sequentially: [1]=texture, [2]=sampler, [3]=texture, [4]=sampler, etc.
+  /** Input textures for the shader.
+   * Bindings: textures at [1..n], samplers at [n+1..n+m].
    * Binding 0 is reserved for uniforms. */
-  inputTextures?: Array<{
-    texture: GPUTexture;
-    sampler: GPUSampler;
-  }>;
+  textures?: GPUTexture[];
+
+  /** Samplers for the input textures.
+   * Must be length 1 (reused for all textures) or match textures.length exactly. */
+  samplers?: GPUSampler[];
 
   /** Use source shaders from current package instead of built bundles.
    * Default: true for faster iteration during development. */
@@ -168,7 +169,8 @@ async function runFragment(params: FragmentTestParams): Promise<number[]> {
   const {
     textureFormat = "rgba32float",
     size = [1, 1],
-    inputTextures,
+    textures,
+    samplers,
     uniforms = {},
   } = params;
 
@@ -194,7 +196,8 @@ async function runFragment(params: FragmentTestParams): Promise<number[]> {
     module,
     outputFormat: textureFormat,
     size,
-    inputTextures,
+    textures,
+    samplers,
     uniformBuffer,
   });
 }

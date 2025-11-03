@@ -99,9 +99,12 @@ await expectFragmentImage(device, "animated/wave", {
 
 All bindings are in group(0):
 - `@binding(0)` - Uniform buffer (automatically provided)
-- `inputTextures[0]` → texture at `@binding(1)`, sampler at `@binding(2)`
-- `inputTextures[1]` → texture at `@binding(3)`, sampler at `@binding(4)`
-- Pattern continues for additional textures
+- `@binding(1..n)` - Textures (textures[0..n-1])
+- `@binding(n+1..n+m)` - Samplers (samplers[0..m-1])
+
+**Sampler Rules**:
+- Provide 1 sampler to reuse it for all textures
+- Or provide exactly as many samplers as textures for 1-to-1 pairing
 
 ### testFragment()
 
@@ -115,7 +118,8 @@ Returns the color values at pixel (0,0). For full image retrieval, use `testFrag
 - `projectDir?: string` - Import path base (usually `import.meta.url`)
 - `textureFormat?: string` - Output texture format (default: "rgba32float")
 - `size?: [number, number]` - Render size in pixels (default: [1, 1])
-- `inputTextures?: Array<{texture: GPUTexture, sampler: GPUSampler}>` - Input textures
+- `textures?: GPUTexture[]` - Input textures
+- `samplers?: GPUSampler[]` - Samplers for input textures
 - `uniforms?: {time?: number, mouse?: [number, number]}` - Custom uniform values
 
 Either `src` or `moduleName` is required.
@@ -143,7 +147,8 @@ const src = `
 const result = await testFragment({
   device,
   src,
-  inputTextures: [{ texture: inputTex, sampler }]
+  textures: [inputTex],
+  samplers: [sampler]
 });
 // result = [0.4, 0.1, 0.2, 0.5] - RGBA values at pixel (0,0)
 ```
@@ -161,7 +166,8 @@ Renders a shader file and compares against a snapshot. Simplest API for visual r
   - `snapshotName?: string` - Override automatic snapshot name
   - `size?: [number, number]` - Render size (default: [256, 256])
   - `textureFormat?: string` - Texture format (default: "rgba32float")
-  - `inputTextures?: Array<{texture, sampler}>` - Input textures
+  - `textures?: GPUTexture[]` - Input textures
+  - `samplers?: GPUSampler[]` - Samplers for input textures
   - `uniforms?: {time?, mouse?}` - Custom uniform values
 
 **Example**
@@ -178,7 +184,8 @@ test("red-blue gradient", async () => {
 test("blur with high radius", async () => {
   await expectFragmentImage(device, "effects/blur", {
     snapshotName: "blur-radius-10",
-    inputTextures: [{ texture: inputTex, sampler }],
+    textures: [inputTex],
+    samplers: [sampler],
     uniforms: { time: 5.0 }
   });
 });
@@ -367,7 +374,8 @@ const result = await testFragmentImage({
   device,
   moduleName: "effects/blur",
   size: [256, 256],
-  inputTextures: [{ texture: inputTex, sampler }]
+  textures: [inputTex],
+  samplers: [sampler]
 });
 
 // result is ImageData with full 256×256 pixel data

@@ -78,7 +78,8 @@ test("samples solid color texture", async () => {
     projectDir: import.meta.url,
     device,
     src,
-    inputTextures: [{ texture: inputTex, sampler }],
+    textures: [inputTex],
+    samplers: [sampler],
   });
 
   expect(result[0]).toBeCloseTo(0.5);
@@ -105,7 +106,8 @@ test("samples gradient texture at center", async () => {
     projectDir: import.meta.url,
     device,
     src,
-    inputTextures: [{ texture: inputTex, sampler }],
+    textures: [inputTex],
+    samplers: [sampler],
   });
 
   expect(result[0]).toBeCloseTo(0.5, 1);
@@ -132,7 +134,8 @@ test("samples checkerboard texture", async () => {
     projectDir: import.meta.url,
     device,
     src,
-    inputTextures: [{ texture: inputTex, sampler }],
+    textures: [inputTex],
+    samplers: [sampler],
   });
 
   expect(result[0]).toBeCloseTo(0.0);
@@ -147,15 +150,14 @@ test("samples multiple textures", async () => {
 
   const src = `
     @group(0) @binding(1) var tex1: texture_2d<f32>;
-    @group(0) @binding(2) var samp1: sampler;
-    @group(0) @binding(3) var tex2: texture_2d<f32>;
-    @group(0) @binding(4) var samp2: sampler;
+    @group(0) @binding(2) var tex2: texture_2d<f32>;
+    @group(0) @binding(3) var samp: sampler;
 
     @fragment
     fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       let uv = vec2f(0.5, 0.5);
-      let c1 = textureSample(tex1, samp1, uv);
-      let c2 = textureSample(tex2, samp2, uv);
+      let c1 = textureSample(tex1, samp, uv);
+      let c2 = textureSample(tex2, samp, uv);
       return c1 * 0.5 + c2 * 0.5;
     }
   `;
@@ -164,10 +166,8 @@ test("samples multiple textures", async () => {
     projectDir: import.meta.url,
     device,
     src,
-    inputTextures: [
-      { texture: tex1, sampler },
-      { texture: tex2, sampler },
-    ],
+    textures: [tex1, tex2],
+    samplers: [sampler],
   });
 
   expect(result[0]).toBeCloseTo(0.5); // (1.0 + 0.0) / 2
@@ -388,7 +388,8 @@ test("shader with uniforms and texture", async () => {
     src,
     size: [64, 64],
     uniforms: { time: 10.0 },
-    inputTextures: [{ texture: inputTex, sampler }],
+    textures: [inputTex],
+    samplers: [sampler],
   });
 
   // 0.5 (texture) + 1.0 (time * 0.1 where time=10) = 1.5

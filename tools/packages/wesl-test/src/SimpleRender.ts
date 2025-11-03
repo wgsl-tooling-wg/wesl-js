@@ -15,8 +15,13 @@ export interface SimpleRenderParams {
    * Use [512, 512] for visual image tests */
   size?: [number, number];
 
-  /**  bind these textures and samplers in group 0, starting from binding 1 */
-  inputTextures?: Array<{ texture: GPUTexture; sampler: GPUSampler }>;
+  /** Input textures to bind in group 0.
+   * Bindings: textures at [1..n], samplers at [n+1..n+m]. */
+  textures?: GPUTexture[];
+
+  /** Samplers for the input textures.
+   * Must be length 1 (reused for all textures) or match textures.length exactly. */
+  samplers?: GPUSampler[];
 
   /** pass these uniforms to the shader in group 0 binding 0 */
   uniformBuffer?: GPUBuffer;
@@ -32,7 +37,7 @@ export async function simpleRender(
 ): Promise<number[]> {
   const { device, module } = params;
   const { outputFormat = "rgba32float", size = [1, 1] } = params;
-  const { inputTextures = [], uniformBuffer } = params;
+  const { textures = [], samplers = [], uniformBuffer } = params;
 
   return await withErrorScopes(device, async () => {
     const texture = device.createTexture({
@@ -42,8 +47,8 @@ export async function simpleRender(
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
     const bindings =
-      uniformBuffer || inputTextures.length > 0
-        ? createBindGroup(device, uniformBuffer, inputTextures)
+      uniformBuffer || textures.length > 0
+        ? createBindGroup(device, uniformBuffer, textures, samplers)
         : undefined;
     const pipelineLayout = bindings
       ? device.createPipelineLayout({ bindGroupLayouts: [bindings.layout] })
@@ -65,16 +70,28 @@ export async function simpleRender(
 }
 
 /**
- * Create bind group with optional uniforms and textures.
- * Binding layout: 0=uniform buffer (if provided), 1=tex0, 2=samp0, 3=tex1, 4=samp1, ...
+ * Create bind group with optional uniforms, textures, and samplers.
+ * Binding layout: 0=uniform buffer (if provided), 1..n=textures, n+1..n+m=samplers.
+ * Samplers must be length 1 (reused for all textures) or match textures.length exactly.
  */
 export function createBindGroup(
   device: GPUDevice,
   uniformBuffer: GPUBuffer | undefined,
-  inputTextures: Array<{ texture: GPUTexture; sampler: GPUSampler }> = [],
+  textures: GPUTexture[] = [],
+  samplers: GPUSampler[] = [],
 ): { layout: GPUBindGroupLayout; bindGroup: GPUBindGroup } {
+  // Validate sampler count
+  if (textures.length > 0 && samplers.length > 0) {
+    if (samplers.length !== 1 && samplers.length !== textures.length) {
+      throw new Error(
+        `Invalid sampler count: expected 1 or ${textures.length} samplers for ${textures.length} textures, got ${samplers.length}`,
+      );
+    }
+  }
+
   const entries: GPUBindGroupLayoutEntry[] = [];
   const bindGroupEntries: GPUBindGroupEntry[] = [];
+
   if (uniformBuffer) {
     entries.push({
       binding: 0,
@@ -83,24 +100,30 @@ export function createBindGroup(
     });
     bindGroupEntries.push({ binding: 0, resource: { buffer: uniformBuffer } });
   }
-  inputTextures.forEach((input, i) => {
-    const [texBinding, sampBinding] = [i * 2 + 1, i * 2 + 2];
+
+  textures.forEach((texture, i) => {
+    const binding = i + 1;
     entries.push({
-      binding: texBinding,
+      binding,
       visibility: GPUShaderStage.FRAGMENT,
       texture: { sampleType: "float" },
     });
+    bindGroupEntries.push({ binding, resource: texture.createView() });
+  });
+
+  // If only one sampler provided, reuse it for all textures
+  const singleSampler = samplers.length === 1 ? samplers[0] : undefined;
+  for (let i = 0; i < textures.length; i++) {
+    const binding = textures.length + i + 1;
+    const sampler = singleSampler ?? samplers[i];
     entries.push({
-      binding: sampBinding,
+      binding,
       visibility: GPUShaderStage.FRAGMENT,
       sampler: { type: "filtering" },
     });
-    bindGroupEntries.push({
-      binding: texBinding,
-      resource: input.texture.createView(),
-    });
-    bindGroupEntries.push({ binding: sampBinding, resource: input.sampler });
-  });
+    bindGroupEntries.push({ binding, resource: sampler });
+  }
+
   const layout = device.createBindGroupLayout({ entries });
   const bindGroup = device.createBindGroup({
     layout,

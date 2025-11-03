@@ -55,7 +55,8 @@ test("simple box blur", async () => {
     device,
     src,
     size: [128, 128],
-    inputTextures: [{ texture: inputTex, sampler }],
+    textures: [inputTex],
+    samplers: [sampler],
   });
 
   await expect(result).toMatchImage("box-blur");
@@ -94,7 +95,8 @@ test("simple edge detection", async () => {
     device,
     src,
     size: [128, 128],
-    inputTextures: [{ texture: inputTex, sampler }],
+    textures: [inputTex],
+    samplers: [sampler],
   });
 
   await expect(result).toMatchImage({
@@ -128,7 +130,8 @@ test("grayscale conversion", async () => {
     device,
     src,
     size: [128, 128],
-    inputTextures: [{ texture: inputTex, sampler }],
+    textures: [inputTex],
+    samplers: [sampler],
   });
 
   await expect(result).toMatchImage("grayscale");
@@ -164,7 +167,8 @@ test("sharpen filter on photo sample", async () => {
     device,
     src,
     size: [512, 512],
-    inputTextures: [{ texture: inputTex, sampler }],
+    textures: [inputTex],
+    samplers: [sampler],
   });
 
   await expect(result).toMatchImage("lemur-sharpen");
