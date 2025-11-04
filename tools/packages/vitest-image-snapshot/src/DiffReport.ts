@@ -85,6 +85,9 @@ async function copyImageSet(
   configRoot: string,
 ): Promise<{ reference: string; actual: string; diff: string }> {
   const copy = async (sourcePath: string): Promise<string> => {
+    if (!fs.existsSync(sourcePath)) {
+      return "";
+    }
     const relativePath = path.relative(configRoot, sourcePath);
     const destPath = path.join(reportDir, relativePath);
     const destDir = path.dirname(destPath);
@@ -112,6 +115,12 @@ function createReportHTML(failures: ImageSnapshotFailure[]): string {
     .map(failure => {
       const { testName, snapshotName, comparison, paths } = failure;
       const { mismatchedPixels, mismatchedPixelRatio } = comparison;
+      const diffCell = paths.diff
+        ? `<a href="${paths.diff}" target="_blank">
+            <img src="${paths.diff}" alt="Diff" />
+          </a>
+          <div class="label">Diff</div>`
+        : `<div class="no-diff">No diff image<br/>(dimension mismatch)</div>`;
 
       return `
       <tr>
@@ -132,10 +141,7 @@ function createReportHTML(failures: ImageSnapshotFailure[]): string {
           <div class="label">Actual</div>
         </td>
         <td class="image-cell">
-          <a href="${paths.diff}" target="_blank">
-            <img src="${paths.diff}" alt="Diff" />
-          </a>
-          <div class="label">Diff</div>
+          ${diffCell}
         </td>
         <td class="stats">
           <div><strong>${mismatchedPixels}</strong> pixels</div>
@@ -253,6 +259,13 @@ function createReportHTML(failures: ImageSnapshotFailure[]): string {
       font-size: 12px;
       color: #666;
       font-weight: 500;
+    }
+    .no-diff {
+      color: #999;
+      font-size: 13px;
+      font-style: italic;
+      padding: 20px;
+      text-align: center;
     }
     .stats {
       text-align: center;
