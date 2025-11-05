@@ -1,6 +1,6 @@
 {
   "name": "random_wgsl",
-  "version": "0.6.26",
+  "version": "0.6.27",
   "type": "module",
   "files": ["src", "dist"],
   "scripts": {
