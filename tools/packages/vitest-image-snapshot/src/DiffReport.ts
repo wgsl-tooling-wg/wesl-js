@@ -84,27 +84,32 @@ async function copyImageSet(
   reportDir: string,
   configRoot: string,
 ): Promise<{ reference: string; actual: string; diff: string }> {
-  const copy = async (sourcePath: string): Promise<string> => {
-    if (!fs.existsSync(sourcePath)) {
-      return "";
-    }
-    const relativePath = path.relative(configRoot, sourcePath);
-    const destPath = path.join(reportDir, relativePath);
-    const destDir = path.dirname(destPath);
-
-    if (!fs.existsSync(destDir)) {
-      fs.mkdirSync(destDir, { recursive: true });
-    }
-
-    await fs.promises.copyFile(sourcePath, destPath);
-    return relativePath;
-  };
-
   return {
-    reference: await copy(paths.reference),
-    actual: await copy(paths.actual),
-    diff: await copy(paths.diff),
+    reference: await copyImage(paths.reference, reportDir, configRoot),
+    actual: await copyImage(paths.actual, reportDir, configRoot),
+    diff: await copyImage(paths.diff, reportDir, configRoot),
   };
+}
+
+/** Copy single image to report dir, preserving directory structure relative to configRoot */
+async function copyImage(
+  sourcePath: string,
+  reportDir: string,
+  configRoot: string,
+): Promise<string> {
+  if (!fs.existsSync(sourcePath)) {
+    return "";
+  }
+  const relativePath = path.relative(configRoot, sourcePath);
+  const destPath = path.join(reportDir, relativePath);
+  const destDir = path.dirname(destPath);
+
+  if (!fs.existsSync(destDir)) {
+    fs.mkdirSync(destDir, { recursive: true });
+  }
+
+  await fs.promises.copyFile(sourcePath, destPath);
+  return relativePath;
 }
 
 function createReportHTML(failures: ImageSnapshotFailure[]): string {
