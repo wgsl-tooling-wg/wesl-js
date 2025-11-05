@@ -114,12 +114,6 @@ function createReportHTML(failures: ImageSnapshotFailure[]): string {
     .map(failure => {
       const { testName, snapshotName, comparison, paths } = failure;
       const { mismatchedPixels, mismatchedPixelRatio } = comparison;
-      const diffCell = paths.diff
-        ? `<a href="${paths.diff}" target="_blank">
-            <img src="${paths.diff}" alt="Diff" />
-          </a>
-          <div class="label">Diff</div>`
-        : `<div class="no-diff">No diff image<br/>(dimension mismatch)</div>`;
 
       return `
       <tr>
@@ -140,7 +134,7 @@ function createReportHTML(failures: ImageSnapshotFailure[]): string {
           <div class="label">Actual</div>
         </td>
         <td class="image-cell">
-          ${diffCell}
+          ${diffCellHTML(paths.diff)}
         </td>
         <td class="stats">
           <div><strong>${mismatchedPixels}</strong> pixels</div>
@@ -325,4 +319,14 @@ function escapeHtml(text: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function diffCellHTML(diffPath: string): string {
+  if (!diffPath) {
+    return `<div class="no-diff">No diff image<br/>(dimension mismatch)</div>`;
+  }
+  return `<a href="${diffPath}" target="_blank">
+            <img src="${diffPath}" alt="Diff" />
+          </a>
+          <div class="label">Diff</div>`;
 }
