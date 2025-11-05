@@ -1,6 +1,6 @@
 {
   "name": "wesl",
-  "version": "0.6.24",
+  "version": "0.6.25",
   "type": "module",
   "files": ["dist", "src"],
   "repository": "github:wgsl-tooling-wg/wesl-js",
