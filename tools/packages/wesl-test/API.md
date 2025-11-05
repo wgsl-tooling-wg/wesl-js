@@ -219,7 +219,7 @@ Additional texture generators for image processing tests:
 - `colorBarsTexture(device, size)` → `GPUTexture` - Vertical bars of RGB primaries and secondaries
 - `noiseTexture(device, size, seed?)` → `GPUTexture` - Deterministic pseudo-random noise
 - `pngToTexture(device, path)` → `GPUTexture` - Loads a PNG file as a texture
-- `lemurTexture(device)` → `GPUTexture` - Bundled 512×512 test photo
+- `lemurTexture(device, size?)` → `GPUTexture` - Bundled test photo (256×256 or 512×512, defaults to 512)
 
 ## Visual Regression Testing
 
