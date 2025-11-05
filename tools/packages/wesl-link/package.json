@@ -1,6 +1,6 @@
 {
   "name": "wesl-link",
-  "version": "0.6.27",
+  "version": "0.6.28",
   "type": "module",
   "bin": "bin/wesl-link",
   "files": ["bin"],
