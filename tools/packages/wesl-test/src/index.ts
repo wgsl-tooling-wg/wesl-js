@@ -1,3 +1,4 @@
+/* oxlint-disable no-unused-vars */
 export type { WgslElementType } from "thimbleberry";
 export type { ImageData } from "vitest-image-snapshot";
 export * from "./CompileShader.ts";
