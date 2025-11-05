@@ -34,9 +34,7 @@ export async function generateDiffReport(
 
   if (failures.length === 0) return;
 
-  if (!fs.existsSync(reportDir)) {
-    fs.mkdirSync(reportDir, { recursive: true });
-  }
+  await fs.promises.mkdir(reportDir, { recursive: true });
 
   const withCopiedImages = await copyImagesToReport(
     failures,
@@ -97,17 +95,13 @@ async function copyImage(
   reportDir: string,
   configRoot: string,
 ): Promise<string> {
-  if (!fs.existsSync(sourcePath)) {
-    return "";
-  }
+  if (!fs.existsSync(sourcePath)) return "";
+
   const relativePath = path.relative(configRoot, sourcePath);
   const destPath = path.join(reportDir, relativePath);
   const destDir = path.dirname(destPath);
 
-  if (!fs.existsSync(destDir)) {
-    fs.mkdirSync(destDir, { recursive: true });
-  }
-
+  await fs.promises.mkdir(destDir, { recursive: true });
   await fs.promises.copyFile(sourcePath, destPath);
   return relativePath;
 }
