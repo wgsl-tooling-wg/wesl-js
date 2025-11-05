@@ -20,5 +20,5 @@
     "vite": "^7.1.9",
     "wesl-plugin": "workspace:x"
   },
-  "packageManager": "pnpm@10.2.0"
+  "packageManager": "pnpm@10.19.0"
 }
