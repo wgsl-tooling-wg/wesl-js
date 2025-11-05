@@ -26,7 +26,7 @@
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
     "prepush": "run-s fix:all prepush:parallel",
     "prepush:parallel": "run-p lint:all build:all typecheck:all test:all bench:validate",
-    "publish:all": "pnpm --workspace-concurrency=1 --filter \"./packages/**\" publish",
+    "publish:all": "pnpm --filter \"./packages/**\" publish",
     "test": "cross-env FORCE_COLOR=1 NODE_OPTIONS=--expose-gc vitest",
     "test:all": "run-p test:unit test:built test:examples",
     "test:built": "pnpm --filter built-test test:built",
