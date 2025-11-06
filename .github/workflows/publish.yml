@@ -1,0 +1,43 @@
+name: Publish to NPM
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write  # Required for OIDC trusted publishing
+
+jobs:
+  publish:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'  # Includes npm 11.6.0 with OIDC support
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: tools
+
+      - name: Build packages
+        run: pnpm build:all
+        working-directory: tools
+
+      - name: Publish to npm
+        run: pnpm publish:all --no-git-checks
+        working-directory: tools
+        # npm auto-detects OIDC environment, no token needed
