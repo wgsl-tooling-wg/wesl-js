@@ -1,6 +1,6 @@
 {
   "name": "mini-parse",
-  "version": "0.6.32",
+  "version": "0.6.33",
   "type": "module",
   "files": ["dist", "src"],
   "repository": "github:wgsl-tooling-wg/wesl-js",
