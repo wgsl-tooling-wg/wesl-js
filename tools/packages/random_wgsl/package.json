@@ -1,6 +1,6 @@
 {
   "name": "random_wgsl",
-  "version": "0.6.30",
+  "version": "0.6.31",
   "type": "module",
   "files": ["src", "dist"],
   "repository": "github:wgsl-tooling-wg/wesl-js",
