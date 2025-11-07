@@ -1,6 +1,6 @@
 {
   "name": "vitest-image-snapshot",
-  "version": "0.6.29",
+  "version": "0.6.30",
   "type": "module",
   "files": ["dist", "src"],
   "repository": "github:wgsl-tooling-wg/wesl-js",
