@@ -4,6 +4,7 @@
   "type": "module",
   "bin": "bin/wesl-packager",
   "files": ["bin"],
+  "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",
     "build:watch": "tsdown --watch",

@@ -3,6 +3,7 @@
   "version": "0.6.30",
   "type": "module",
   "files": ["src", "dist"],
+  "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "wesl-packager"
   },
