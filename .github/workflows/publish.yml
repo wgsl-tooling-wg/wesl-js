@@ -2,41 +2,34 @@ name: Publish to NPM
 
 on:
   push:
-    branches: [main]
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
   id-token: write  # Required for OIDC trusted publishing
 
 jobs:
-  check-tag:
-    runs-on: ubuntu-latest
-    outputs:
-      has_tag: ${{ steps.check.outputs.has_tag }}
+  publish:
+    runs-on: macos-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Check for version tag
-        id: check
+      - name: Verify tag is at HEAD of main
         run: |
-          TAGS=$(git tag --points-at HEAD | grep '^v' || true)
-          if [ -z "$TAGS" ]; then
-            echo "No version tag found, skipping publish"
-            echo "has_tag=false" >> $GITHUB_OUTPUT
-          else
-            echo "Found version tag(s): $TAGS"
-            echo "has_tag=true" >> $GITHUB_OUTPUT
+          git fetch origin main
+          MAIN_SHA=$(git rev-parse origin/main)
+          TAG_SHA=$(git rev-parse $GITHUB_SHA)
+          if [ "$MAIN_SHA" != "$TAG_SHA" ]; then
+            echo "Error: Tag must be at HEAD of main"
+            echo "  main HEAD: $MAIN_SHA"
+            echo "  tag SHA:   $TAG_SHA"
+            exit 1
           fi
-
-  publish:
-    needs: check-tag
-    if: needs.check-tag.outputs.has_tag == 'true'
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v4
+          echo "✓ Tag is at HEAD of main branch"
 
       - uses: pnpm/action-setup@v4
         with:
