@@ -75,7 +75,7 @@ export interface LinkParams {
 
   /** package name for the local sources (in addition to default "package::").
    * Enables imports like `import mypkg::foo` alongside `import package::foo`.
-   * Package names with hyphens should be normalized to underscores. */
+   * Should be a valid WGSL identifier (use underscores, not hyphens or slashes). */
   packageName?: string;
 
   /** plugins and other configuration to use while linking */

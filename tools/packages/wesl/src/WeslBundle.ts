@@ -1,13 +1,14 @@
 export interface WeslBundle {
-  /** name of the package, e.g. random_wgsl */
+  /** npm package name sanitized to be a valid WESL identifier
+   * (@ removed, / ==> __, - ==> _) */
   name: string;
 
-  /** wesl edition of the code e.g. unstable_2025_1 */
+  /** WESL edition of the code e.g. unstable_2025_1 */
   edition: string;
 
-  /** map of wesl/wgsl modules:
+  /** map of WESL/WGSL modules:
    *    keys are file paths, relative to package root (e.g. "./lib.wgsl")
-   *    values are wgsl/wesl code strings
+   *    values are WESL/WGSL code strings
    */
   modules: Record<string, string>;
 

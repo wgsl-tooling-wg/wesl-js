@@ -3,6 +3,7 @@ import { resolve } from "import-meta-resolve";
 import type { WeslBundle } from "wesl";
 import { filterMap, RecordResolver, WeslParseError } from "wesl";
 import { findUnboundIdents } from "./FindUnboundIdents.ts";
+import { npmResolveWESL } from "./NpmResolver.ts";
 
 /**
  * Find package dependencies in WESL source files.
@@ -43,46 +44,10 @@ export function parseDependencies(
   if (pkgRefs.length === 0) return [];
 
   const projectURL = projectDirURL(projectDir);
-  const deps = filterMap(pkgRefs, mPath =>
-    unboundToDependency(mPath, projectURL),
-  );
+  const deps = filterMap(pkgRefs, mPath => npmResolveWESL(mPath, projectURL));
   const uniqueDeps = [...new Set(deps)];
 
   return uniqueDeps;
-}
-
-/** Find longest resolvable npm subpath from module path segments.
- *
- * @param mPath - Module path segments (e.g., ['foo', 'bar', 'baz', 'elem'])
- * @param importerURL - Base URL for resolution (e.g., 'file:///path/to/project/')
- * @returns Longest resolvable subpath (e.g., 'foo/bar/baz' or 'foo')
- */
-function unboundToDependency(
-  mPath: string[],
-  importerURL: string,
-): string | undefined {
-  // Try longest subpaths first; resolved file may not exist yet (e.g., dist/weslBundle.js)
-  return [...exportSubpaths(mPath)].find(subPath =>
-    tryResolve(subPath, importerURL),
-  );
-}
-
-/** Try Node.js module resolution; returns undefined if unresolvable. */
-function tryResolve(path: string, importerURL: string): string | undefined {
-  try {
-    return resolve(path, importerURL);
-  } catch {
-    return undefined;
-  }
-}
-
-/** Yield possible export subpaths from module path, longest first.
- * Drops the last segment (element name) and iterates down. */
-function* exportSubpaths(mPath: string[]): Generator<string> {
-  const longest = mPath.length - 1;
-  for (let i = longest; i >= 0; i--) {
-    yield mPath.slice(0, i).join("/");
-  }
 }
 
 /**

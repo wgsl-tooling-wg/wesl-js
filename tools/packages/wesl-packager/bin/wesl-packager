@@ -9760,6 +9760,90 @@ function zip(as, bs) {
 }
 
 //#endregion
+//#region ../wesl-tooling/src/PackageNameUtils.ts
+/** Package name sanitization for WESL.
+*
+* Converts typical npm package names to WGSL-safe identifiers using double-underscore encoding.
+* NPM package names can contain `@`, `/`, and `-`, which are not allowed in WGSL identifiers.
+*
+* ## Encoding Scheme
+*
+* ```
+* @     ==>  (remove)
+* /     ==>  __  (double underscore)
+* -     ==>  _   (single underscore)
+* ```
+*
+* ## Forward Mapping (npm ==> WGSL identifier)
+*
+* ```
+* my_package          ==>  my_package
+* random-wgsl         ==>  random_wgsl
+* @scope/my-pkg       ==>  scope__my_pkg
+* ```
+*
+* ## Reverse Mapping (WGSL identifier ==> npm package)
+*
+* ```
+* scope__my_pkg       ==>  try: @scope/my_pkg, @scope/my-pkg
+* random_wgsl         ==>  try: random_wgsl, random-wgsl
+* ```
+*
+* ## package.json Subpath Exports
+*
+* Subpaths don't create ambiguity because WeslBundle `name` field only contains package name:
+*
+* Scoped package:
+* ```
+* npm:        @foo/shader-utils
+* weslBundle: { name: "foo__shader_utils", modules: {...} }
+* WESL:       import foo__shader_utils::color::rgb2hsv
+* ```
+*
+* Unscoped package with subpath export:
+* ```
+* npm:        "foo"  (with exports: "./shader-utils": "./dist/...")
+* weslBundle: { name: "foo", modules: {...} }  // NOT foo__shader_utils!
+* WESL:       import foo::shader_utils::color::rgb2hsv  // Different identifier!
+* ```
+*
+* The `__` only appears when the package name itself contains `/`, never for subpaths.
+*/
+/** Convert npm package name to WGSL-safe identifier using double-underscore encoding. */
+function sanitizePackageName(npmName) {
+	return npmName.replace(/^@/, "").replaceAll("/", "__").replaceAll("-", "_");
+}
+/** Generate npm package name variations from sanitized WESL identifier.
+*
+* Uses double-underscore encoding to distinguish scoped vs unscoped packages:
+* - Has __ → scoped package (try @scope/pkg variants)
+* - No __ → unscoped package (try pkg variants)
+*
+* Examples:
+*   "lygia__shader_utils" → ["@lygia/shader_utils", "@lygia/shader-utils"]
+*   "random_wgsl" → ["random_wgsl", "random-wgsl"]
+*/
+function* npmNameVariations(sanitizedPath) {
+	const [pkg, sub] = breakAt(sanitizedPath, "/");
+	let pkgName = pkg;
+	let scopePrefix = "";
+	if (pkg.includes("__")) {
+		const [scope, ...rest] = pkg.split("__");
+		pkgName = rest.join("__");
+		scopePrefix = `@${scope}/`;
+	}
+	yield `${scopePrefix}${pkgName}${sub}`;
+	yield `${scopePrefix}${pkgName.replaceAll("_", "-")}${sub}`;
+}
+/** Break string at first occurrence of delimiter.
+* @returns [before, after] where after includes the delimiter */
+function breakAt(str, delimiter) {
+	const index = str.indexOf(delimiter);
+	if (index === -1) return [str, ""];
+	return [str.slice(0, index), str.slice(index)];
+}
+
+//#endregion
 //#region ../../node_modules/.pnpm/import-meta-resolve@4.1.0/node_modules/import-meta-resolve/lib/errors.js
 const own$1 = {}.hasOwnProperty;
 const classRegExp = /^([A-Z][a-z\d]*)+$/;
@@ -10982,6 +11066,49 @@ function resolve(specifier, parent) {
 }
 
 //#endregion
+//#region ../wesl-tooling/src/NpmResolver.ts
+/** Find longest resolvable npm subpath from WESL module path segments.
+*
+* A WESL statement containing a WESL module path like 'import foo__bar::baz::elem;' references
+* an npm package, an export within that package, a module within the WeslBundle,
+* and an element within the WESL module.
+* This function returns the npm package and export portion from the module path.
+* The return value is usable to dynamically import the corresponding weslBundle.js file.
+*
+* Translation from a WESL module path to an npm package path involves:
+* - Mapping WESL package names to their npm counterparts (e.g., 'foo__bar' -> '@foo/bar')
+* - Probing to find the longest valid export subpath within the package
+*   - package.json allows export subpaths, so 'mypkg::gpu' could be 'mypkg/gpu' or just 'mypkg' in npm
+* - Probing to handle variations in package naming
+*   - foo_bar could be foo-bar in npm
+*
+* Note that the resolution is based on package.json.
+* The resolved file itself may not exist yet. (e.g. dist/weslBundle.js may not have been built yet)
+*
+* @param mPath - Module path segments
+* @param importerURL - Base URL for resolution (e.g., 'file:///path/to/project/')
+* @returns Longest resolvable subpath (e.g., 'foo/bar/baz' or 'foo')
+*/
+function npmResolveWESL(mPath, importerURL) {
+	for (const subPath of exportSubpaths(mPath)) for (const npmPath of npmNameVariations(subPath)) if (tryResolve(npmPath, importerURL)) return npmPath;
+}
+/** Try Node.js module resolution.
+* @return undefined if unresolvable. */
+function tryResolve(path$2, importerURL) {
+	try {
+		return resolve(path$2, importerURL);
+	} catch {
+		return;
+	}
+}
+/** Yield possible export subpaths from module path, longest first.
+* Drops the last segment (element name) and iterates down. */
+function* exportSubpaths(mPath) {
+	const longest = mPath.length - 1;
+	for (let i = longest; i >= 0; i--) yield mPath.slice(0, i).join("/");
+}
+
+//#endregion
 //#region ../wesl-tooling/src/ParseDependencies.ts
 /**
 * Find package dependencies in WESL source files.
@@ -11013,31 +11140,8 @@ function parseDependencies(weslSrc, projectDir) {
 	const pkgRefs = unbound.filter((modulePath) => modulePath.length > 1 && modulePath[0] !== "constants");
 	if (pkgRefs.length === 0) return [];
 	const projectURL = projectDirURL(projectDir);
-	const deps = filterMap(pkgRefs, (mPath) => unboundToDependency(mPath, projectURL));
+	const deps = filterMap(pkgRefs, (mPath) => npmResolveWESL(mPath, projectURL));
 	return [...new Set(deps)];
-}
-/** Find longest resolvable npm subpath from module path segments.
-*
-* @param mPath - Module path segments (e.g., ['foo', 'bar', 'baz', 'elem'])
-* @param importerURL - Base URL for resolution (e.g., 'file:///path/to/project/')
-* @returns Longest resolvable subpath (e.g., 'foo/bar/baz' or 'foo')
-*/
-function unboundToDependency(mPath, importerURL) {
-	return [...exportSubpaths(mPath)].find((subPath) => tryResolve(subPath, importerURL));
-}
-/** Try Node.js module resolution; returns undefined if unresolvable. */
-function tryResolve(path$2, importerURL) {
-	try {
-		return resolve(path$2, importerURL);
-	} catch {
-		return;
-	}
-}
-/** Yield possible export subpaths from module path, longest first.
-* Drops the last segment (element name) and iterates down. */
-function* exportSubpaths(mPath) {
-	const longest = mPath.length - 1;
-	for (let i = longest; i >= 0; i--) yield mPath.slice(0, i).join("/");
 }
 /** Normalize project directory to file:// URL with trailing slash. */
 function projectDirURL(projectDir) {
@@ -11065,7 +11169,7 @@ async function versionFromPackageJson(projectDir) {
 
 //#endregion
 //#region \0raw:../wesl/src/WeslBundle.ts
-var WeslBundle_default = "export interface WeslBundle {\n  /** name of the package, e.g. random_wgsl */\n  name: string;\n\n  /** wesl edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of wesl/wgsl modules:\n   *    keys are file paths, relative to package root (e.g. \"./lib.wgsl\")\n   *    values are wgsl/wesl code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n";
+var WeslBundle_default = "export interface WeslBundle {\n  /** npm package name sanitized to be a valid WESL identifier\n   * (@ removed, / ==> __, - ==> _) */\n  name: string;\n\n  /** WESL edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of WESL/WGSL modules:\n   *    keys are file paths, relative to package root (e.g. \"./lib.wgsl\")\n   *    values are WESL/WGSL code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n";
 
 //#endregion
 //#region src/PackageWesl.ts
@@ -11080,7 +11184,7 @@ async function packageWgsl(args) {
 	else {
 		const deps = parseDependencies(modules, projectDir);
 		await writeJsBundle({
-			name,
+			name: sanitizePackageName(name),
 			edition,
 			modules
 		}, deps, outDir);
@@ -11129,10 +11233,11 @@ function insertExports(pkgJson, exports) {
 }
 /** create one bundle per source module */
 async function writeMultiBundle(modules, name, edition, projectDir, outDir) {
+	const sanitized = sanitizePackageName(name);
 	for (const [moduleName, moduleSrc] of Object.entries(modules)) {
 		const oneModule = { [moduleName]: moduleSrc };
 		const moduleBundle = {
-			name,
+			name: sanitized,
 			edition,
 			modules: oneModule
 		};
