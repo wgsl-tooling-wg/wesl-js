@@ -1,6 +1,6 @@
 {
   "name": "@test-scope/my-shaders",
-  "version": "0.6.35",
+  "version": "0.6.36",
   "private": true,
   "type": "module",
   "exports": {
