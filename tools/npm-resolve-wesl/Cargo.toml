@@ -1,0 +1,32 @@
+[package]
+name = "npm-resolve-wesl"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.91"
+authors = ["lee@underneath.ca"]
+description = "Resolve WESL module paths to npm packages and parse weslBundle.js files"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/wgsl-tooling-wg/wesl-js"
+homepage = "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/tools/npm-resolve-wesl"
+documentation = "https://docs.rs/npm-resolve-wesl"
+keywords = ["WESL", "WGSL", "WebGPU", "shader", "npm"]
+categories = ["development-tools", "parsing", "graphics"]
+
+
+[dependencies]
+oxc_allocator = "0.40"
+oxc_parser = "0.40"
+oxc_ast = "0.40"
+oxc_span = "0.40"
+oxc_resolver = "11.13"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+clap = { version = "4.5", features = ["derive"] }
+
+[dev-dependencies]
+walkdir = "2.5"
+
+[[bin]]
+name = "npm-resolve-wesl"
+path = "src/main.rs"
