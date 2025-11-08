@@ -26,7 +26,7 @@ test("package two wgsl files into one bundle", async () => {
   const normalized = contents.replace(/\r\n/g, "\n"); // normalize line endings to LF
   expect(normalized).toMatchInlineSnapshot(`
     "export const weslBundle = {
-      name: "test-wesl-package",
+      name: "test_wesl_package",
       edition: "unstable_2025_1",
       modules: {
         "util.wgsl": "fn foo() {}",

@@ -3,7 +3,12 @@ import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { Biome, Distribution } from "@biomejs/js-api";
 import { noSuffix, type WeslBundle } from "wesl";
-import { loadModules, parseDependencies, zip } from "wesl-tooling";
+import {
+  loadModules,
+  parseDependencies,
+  sanitizePackageName,
+  zip,
+} from "wesl-tooling";
 import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
 import type { CliArgs } from "./PackagerCli.ts";
 
@@ -21,7 +26,9 @@ export async function packageWgsl(args: CliArgs): Promise<void> {
     await writeMultiBundle(modules, name, edition, projectDir, outDir);
   } else {
     const deps = parseDependencies(modules, projectDir);
-    await writeJsBundle({ name, edition, modules }, deps, outDir);
+    const sanitized = sanitizePackageName(name);
+    const bundle: WeslBundle = { name: sanitized, edition, modules };
+    await writeJsBundle(bundle, deps, outDir);
   }
   await writeTypeScriptDts(outDir);
   if (args.updatePackageJson) {
@@ -89,10 +96,11 @@ async function writeMultiBundle(
   projectDir: string,
   outDir: string,
 ): Promise<void> {
+  const sanitized = sanitizePackageName(name);
   for (const [moduleName, moduleSrc] of Object.entries(modules)) {
     const oneModule = { [moduleName]: moduleSrc };
     const moduleBundle: WeslBundle = {
-      name,
+      name: sanitized,
       edition,
       modules: oneModule,
     };

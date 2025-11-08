@@ -4,7 +4,7 @@ import process$1, { exit } from "node:process";
 import { hideBin } from "yargs/helpers";
 import * as actualFS from "node:fs";
 import fs, { realpathSync, statSync } from "node:fs";
-import { RecordResolver, WeslParseError, bindIdentsRecursive, filterMap, findValidRootDecls, minimalMangle, noSuffix } from "wesl";
+import { RecordResolver, WeslParseError, bindIdentsRecursive, filterMap, findValidRootDecls, minimalMangle, noSuffix, sanitizePackageName } from "wesl";
 import fs$1, { lstat, mkdir, readdir, readlink, realpath } from "node:fs/promises";
 import path, { posix, win32 } from "node:path";
 import { URL as URL$1, fileURLToPath, pathToFileURL } from "node:url";
@@ -11023,7 +11023,7 @@ function parseDependencies(weslSrc, projectDir) {
 * @returns Longest resolvable subpath (e.g., 'foo/bar/baz' or 'foo')
 */
 function unboundToDependency(mPath, importerURL) {
-	return [...exportSubpaths(mPath)].find((subPath) => tryResolve(subPath, importerURL));
+	for (const subPath of exportSubpaths(mPath)) for (const npmPath of npmNameVariations(subPath)) if (tryResolve(npmPath, importerURL)) return npmPath;
 }
 /** Try Node.js module resolution; returns undefined if unresolvable. */
 function tryResolve(path$2, importerURL) {
@@ -11038,6 +11038,29 @@ function tryResolve(path$2, importerURL) {
 function* exportSubpaths(mPath) {
 	const longest = mPath.length - 1;
 	for (let i = longest; i >= 0; i--) yield mPath.slice(0, i).join("/");
+}
+/** Generate npm package name variations from sanitized WESL identifier.
+*
+* Uses double-underscore encoding to distinguish scoped vs unscoped packages:
+* - Has __ → scoped package (try @scope/pkg variants)
+* - No __ → unscoped package (try pkg variants)
+*
+* Examples:
+*   "lygia__shader_utils" → ["@lygia/shader_utils", "@lygia/shader-utils"]
+*   "random_wgsl" → ["random_wgsl", "random-wgsl"]
+*/
+function* npmNameVariations(sanitizedPath) {
+	const [pkg, ...subpath] = sanitizedPath.split("/");
+	const sub = subpath.length > 0 ? `/${subpath.join("/")}` : "";
+	if (pkg.includes("__")) {
+		const [scope, ...rest] = pkg.split("__");
+		const pkgName = rest.join("__");
+		yield `@${scope}/${pkgName}${sub}`;
+		yield `@${scope}/${pkgName.replaceAll("_", "-")}${sub}`;
+	} else {
+		yield `${pkg}${sub}`;
+		yield `${pkg.replaceAll("_", "-")}${sub}`;
+	}
 }
 /** Normalize project directory to file:// URL with trailing slash. */
 function projectDirURL(projectDir) {
@@ -11065,7 +11088,7 @@ async function versionFromPackageJson(projectDir) {
 
 //#endregion
 //#region \0raw:../wesl/src/WeslBundle.ts
-var WeslBundle_default = "export interface WeslBundle {\n  /** name of the package, e.g. random_wgsl */\n  name: string;\n\n  /** wesl edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of wesl/wgsl modules:\n   *    keys are file paths, relative to package root (e.g. \"./lib.wgsl\")\n   *    values are wgsl/wesl code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n";
+var WeslBundle_default = "export interface WeslBundle {\n  /** name of the package as WGSL identifier (e.g. \"lygia__shader_utils\", \"random_wgsl\") */\n  name: string;\n\n  /** wesl edition of the code e.g. unstable_2025_1 */\n  edition: string;\n\n  /** map of wesl/wgsl modules:\n   *    keys are file paths, relative to package root (e.g. \"./lib.wgsl\")\n   *    values are wgsl/wesl code strings\n   */\n  modules: Record<string, string>;\n\n  /** packages referenced by this package */\n  dependencies?: WeslBundle[];\n}\n";
 
 //#endregion
 //#region src/PackageWesl.ts
@@ -11080,7 +11103,7 @@ async function packageWgsl(args) {
 	else {
 		const deps = parseDependencies(modules, projectDir);
 		await writeJsBundle({
-			name,
+			name: sanitizePackageName(name),
 			edition,
 			modules
 		}, deps, outDir);
@@ -11129,10 +11152,11 @@ function insertExports(pkgJson, exports) {
 }
 /** create one bundle per source module */
 async function writeMultiBundle(modules, name, edition, projectDir, outDir) {
+	const sanitized = sanitizePackageName(name);
 	for (const [moduleName, moduleSrc] of Object.entries(modules)) {
 		const oneModule = { [moduleName]: moduleSrc };
 		const moduleBundle = {
-			name,
+			name: sanitized,
 			edition,
 			modules: oneModule
 		};
