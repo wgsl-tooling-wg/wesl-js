@@ -4,7 +4,7 @@ import {
   createSampler,
   gradientTexture,
   solidTexture,
-} from "../ExampleTextures.ts";
+} from "wesl-gpu";
 import { testFragment } from "../TestFragmentShader.ts";
 import { destroySharedDevice, getGPUDevice } from "../WebGPUTestSetup.ts";
 

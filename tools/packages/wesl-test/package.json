@@ -34,7 +34,8 @@
     "pngjs": "^7.0.0",
     "thimbleberry": "^0.2.10",
     "webgpu": "^0.3.8",
-    "wesl": "workspace:*"
+    "wesl": "workspace:*",
+    "wesl-gpu": "workspace:*"
   },
   "devDependencies": {
     "@types/pngjs": "^6.0.0",

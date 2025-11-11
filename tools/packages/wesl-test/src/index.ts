@@ -1,12 +1,30 @@
 /* oxlint-disable no-unused-vars */
 export type { WgslElementType } from "thimbleberry";
 export type { ImageData } from "vitest-image-snapshot";
+
+// Re-export from wesl-gpu for convenience
+export type { RenderUniforms, SamplerOptions } from "wesl-gpu";
+export {
+  checkerboardTexture,
+  colorBarsTexture,
+  createSampler,
+  createUniformsVirtualLib,
+  DeviceCache,
+  edgePatternTexture,
+  fullscreenTriangleVertex,
+  gradientTexture,
+  noiseTexture,
+  radialGradientTexture,
+  renderUniformBuffer,
+  simpleRender,
+  solidTexture,
+  updateRenderUniforms,
+  withErrorScopes,
+} from "wesl-gpu";
+
 export * from "./CompileShader.ts";
-export * from "./ErrorScopes.ts";
 export * from "./ExampleImages.ts";
-export * from "./ExampleTextures.ts";
 export * from "./ImageHelpers.ts";
-export * from "./RenderUniforms.ts";
 export * from "./TestComputeShader.ts";
 export * from "./TestFragmentShader.ts";
 export * from "./WebGPUTestSetup.ts";

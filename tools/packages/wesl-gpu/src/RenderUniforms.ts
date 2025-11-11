@@ -59,6 +59,36 @@ export function renderUniformBuffer(
 }
 
 /**
+ * Updates an existing uniform buffer with new values.
+ * Use this for per-frame updates in render loops (avoids buffer recreation).
+ *
+ * @param buffer - Existing uniform buffer to update
+ * @param device - GPU device
+ * @param resolution - Output texture dimensions
+ * @param time - Elapsed time in seconds
+ * @param mouse - Mouse position [0,1] normalized coords
+ */
+export function updateRenderUniforms(
+  buffer: GPUBuffer,
+  device: GPUDevice,
+  resolution: [number, number],
+  time: number,
+  mouse: [number, number] = [0.0, 0.0],
+): void {
+  const data = new Float32Array([
+    resolution[0],
+    resolution[1],
+    time,
+    0.0, // padding for vec2f alignment
+    mouse[0],
+    mouse[1],
+    0.0, // struct padding
+    0.0, // struct padding
+  ]);
+  device.queue.writeBuffer(buffer, 0, data);
+}
+
+/**
  * return the WGSL struct for use in shaders as test::Uniforms.
  *
  * @returns virtual library object for passing to compileShader()

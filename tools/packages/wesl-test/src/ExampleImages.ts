@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { DeviceCache } from "./DeviceCache.ts";
+import { DeviceCache } from "wesl-gpu";
 import { pngToTexture } from "./ImageHelpers.ts";
 
 const textureCache = new DeviceCache<GPUTexture>();

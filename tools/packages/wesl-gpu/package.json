@@ -1,0 +1,37 @@
+{
+  "name": "wesl-gpu",
+  "description": "Browser-compatible WebGPU utilities for shader testing and rendering",
+  "version": "0.1.0",
+  "type": "module",
+  "repository": "github:wgsl-tooling-wg/wesl-js",
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "prepublishOnly": "run-s build",
+    "test": "cross-env FORCE_COLOR=1 vitest",
+    "test:once": "vitest run",
+    "typecheck": "tsgo"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    },
+    "main": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "thimbleberry": "^0.2.10",
+    "wesl": "workspace:*"
+  },
+  "devDependencies": {
+    "@webgpu/types": "^0.1.65"
+  },
+  "keywords": ["rendering", "shader", "testing", "WebGPU", "WESL", "WGSL"]
+}

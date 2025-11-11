@@ -1,7 +1,7 @@
 import { copyBuffer, elementStride, type WgslElementType } from "thimbleberry";
 import type { LinkParams } from "wesl";
+import { withErrorScopes } from "wesl-gpu";
 import { compileShader } from "./CompileShader.ts";
-import { withErrorScopes } from "./ErrorScopes.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 
 const defaultResultSize = 4; // 4 elements
