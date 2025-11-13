@@ -62,9 +62,6 @@ importers:
       knip:
         specifier: ^5.64.3
         version: 5.64.3(@types/node@24.7.2)(typescript@5.9.3)
-      monobump:
-        specifier: file:/tmp/monobump-0.1.1.tgz
-        version: file:../../../../../tmp/monobump-0.1.1.tgz(pnpm@10.21.0)
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
@@ -5287,14 +5284,6 @@ packages:
     engines: {node: '>= 0.8.0'}
     hasBin: true
 
-  monobump@file:../../../../../tmp/monobump-0.1.1.tgz:
-    resolution: {integrity: sha512-xPvTRFyzxTcej0MDzCCxPFSvv31clmRJK1M9WZGaFHO5y4R0PMhrV2S4ac5Tcrg2FjPINdH0ocbNpw5XOLJWkQ==, tarball: file:../../../../../tmp/monobump-0.1.1.tgz}
-    version: 0.1.1
-    engines: {node: '>=22.0.0'}
-    hasBin: true
-    peerDependencies:
-      pnpm: '>=9.0.0'
-
   morphdom@2.7.5:
     resolution: {integrity: sha512-z6bfWFMra7kBqDjQGHud1LSXtq5JJC060viEkQFMBX6baIecpkNr2Ywrn2OQfWP3rXiNFQRPoFjD8/TvJcWcDg==}
 
@@ -5682,11 +5671,6 @@ packages:
   pngjs@7.0.0:
     resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
     engines: {node: '>=14.19.0'}
-
-  pnpm@10.21.0:
-    resolution: {integrity: sha512-2jM3Jn5AD909R5psaAeaxtsB2MpPZ1cgg+cid1p5Z4inqZVmE3SeAA+sINQktZT3p5Gl9OLhNYHF75R/JpaKQA==}
-    engines: {node: '>=18.12'}
-    hasBin: true
 
   possible-typed-array-names@1.1.0:
     resolution: {integrity: sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==}
@@ -7883,8 +7867,8 @@ snapshots:
 
   '@jridgewell/source-map@0.3.10':
     dependencies:
-      '@jridgewell/gen-mapping': 0.3.12
-      '@jridgewell/trace-mapping': 0.3.29
+      '@jridgewell/gen-mapping': 0.3.13
+      '@jridgewell/trace-mapping': 0.3.31
 
   '@jridgewell/sourcemap-codec@1.5.4': {}
 
@@ -11668,10 +11652,6 @@ snapshots:
       through2: 2.0.5
       xtend: 4.0.2
 
-  monobump@file:../../../../../tmp/monobump-0.1.1.tgz(pnpm@10.21.0):
-    dependencies:
-      pnpm: 10.21.0
-
   morphdom@2.7.5: {}
 
   mri@1.2.0: {}
@@ -12088,8 +12068,6 @@ snapshots:
       fsevents: 2.3.2
 
   pngjs@7.0.0: {}
-
-  pnpm@10.21.0: {}
 
   possible-typed-array-names@1.1.0: {}
 
