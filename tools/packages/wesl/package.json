@@ -2,10 +2,7 @@
   "name": "wesl",
   "version": "0.6.37",
   "type": "module",
-  "files": [
-    "dist",
-    "src"
-  ],
+  "files": ["dist", "src"],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",
@@ -48,9 +45,5 @@
     "wrangler": "^4.22.0"
   },
   "license": "MIT",
-  "keywords": [
-    "webgpu",
-    "wesl",
-    "wgsl"
-  ]
+  "keywords": ["webgpu", "wesl", "wgsl"]
 }
