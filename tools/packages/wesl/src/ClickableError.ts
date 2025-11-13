@@ -75,7 +75,7 @@ export function throwClickableError(params: ClickableErrorParams): void {
   let oldLimit = 0;
   // Supported on Chrome https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/stackTraceLimit
   if ("stackTraceLimit" in Error) {
-    oldLimit = Error.stackTraceLimit;
+    oldLimit = Error.stackTraceLimit as number;
     Error.stackTraceLimit = 1;
   }
 
