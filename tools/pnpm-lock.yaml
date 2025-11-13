@@ -63,8 +63,8 @@ importers:
         specifier: ^5.64.3
         version: 5.64.3(@types/node@24.7.2)(typescript@5.9.3)
       monobump:
-        specifier: ^0.1.1
-        version: 0.1.1(pnpm@10.21.0)
+        specifier: ^0.1.2
+        version: 0.1.2(pnpm@10.21.0)
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
@@ -5287,8 +5287,8 @@ packages:
     engines: {node: '>= 0.8.0'}
     hasBin: true
 
-  monobump@0.1.1:
-    resolution: {integrity: sha512-xPvTRFyzxTcej0MDzCCxPFSvv31clmRJK1M9WZGaFHO5y4R0PMhrV2S4ac5Tcrg2FjPINdH0ocbNpw5XOLJWkQ==}
+  monobump@0.1.2:
+    resolution: {integrity: sha512-WKZM3YJq4qAcarH+i9LOnrZ3AJ5gKg6Ld09RG7bl+wqJwM+ZqpEuNIVDE4r4sssWytpZjjsJgpF7ytkjYpi6Hw==}
     engines: {node: '>=22.0.0'}
     hasBin: true
     peerDependencies:
@@ -11667,7 +11667,7 @@ snapshots:
       through2: 2.0.5
       xtend: 4.0.2
 
-  monobump@0.1.1(pnpm@10.21.0):
+  monobump@0.1.2(pnpm@10.21.0):
     dependencies:
       pnpm: 10.21.0
 
