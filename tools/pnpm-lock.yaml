@@ -62,6 +62,9 @@ importers:
       knip:
         specifier: ^5.64.3
         version: 5.64.3(@types/node@24.7.2)(typescript@5.9.3)
+      monobump:
+        specifier: file:/tmp/monobump-0.1.1.tgz
+        version: file:../../../../../tmp/monobump-0.1.1.tgz(pnpm@10.21.0)
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
@@ -4995,6 +4998,7 @@ packages:
   keygrip@1.1.0:
     resolution: {integrity: sha512-iYSchDJ+liQ8iwbSI2QqsQOvqv58eJCEanyJPJi+Khyu8smkcKSFUCbPwzFcL7YVtZ6eONjqRX/38caJ7QjRAQ==}
     engines: {node: '>= 0.6'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -5282,6 +5286,14 @@ packages:
     resolution: {integrity: sha512-fg7OZaQBcL4/L+AK5f4iVqf9OMbCclXfy/znXRxTVhJSeW5AIlS9AwheYwDaXM3lVW7OBeaeUEY3gbaC6cLlSA==}
     engines: {node: '>= 0.8.0'}
     hasBin: true
+
+  monobump@file:../../../../../tmp/monobump-0.1.1.tgz:
+    resolution: {integrity: sha512-xPvTRFyzxTcej0MDzCCxPFSvv31clmRJK1M9WZGaFHO5y4R0PMhrV2S4ac5Tcrg2FjPINdH0ocbNpw5XOLJWkQ==, tarball: file:../../../../../tmp/monobump-0.1.1.tgz}
+    version: 0.1.1
+    engines: {node: '>=22.0.0'}
+    hasBin: true
+    peerDependencies:
+      pnpm: '>=9.0.0'
 
   morphdom@2.7.5:
     resolution: {integrity: sha512-z6bfWFMra7kBqDjQGHud1LSXtq5JJC060viEkQFMBX6baIecpkNr2Ywrn2OQfWP3rXiNFQRPoFjD8/TvJcWcDg==}
@@ -5670,6 +5682,11 @@ packages:
   pngjs@7.0.0:
     resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
     engines: {node: '>=14.19.0'}
+
+  pnpm@10.21.0:
+    resolution: {integrity: sha512-2jM3Jn5AD909R5psaAeaxtsB2MpPZ1cgg+cid1p5Z4inqZVmE3SeAA+sINQktZT3p5Gl9OLhNYHF75R/JpaKQA==}
+    engines: {node: '>=18.12'}
+    hasBin: true
 
   possible-typed-array-names@1.1.0:
     resolution: {integrity: sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==}
@@ -11651,6 +11668,10 @@ snapshots:
       through2: 2.0.5
       xtend: 4.0.2
 
+  monobump@file:../../../../../tmp/monobump-0.1.1.tgz(pnpm@10.21.0):
+    dependencies:
+      pnpm: 10.21.0
+
   morphdom@2.7.5: {}
 
   mri@1.2.0: {}
@@ -12067,6 +12088,8 @@ snapshots:
       fsevents: 2.3.2
 
   pngjs@7.0.0: {}
+
+  pnpm@10.21.0: {}
 
   possible-typed-array-names@1.1.0: {}
 
