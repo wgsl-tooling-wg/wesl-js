@@ -15,3 +15,4 @@ minimumReleaseAgeExclude:
 - '@typescript/*'
 - 'webgpu'
 - '@webgpu/*'
+- 'monobump'
