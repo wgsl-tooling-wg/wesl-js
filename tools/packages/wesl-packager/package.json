@@ -1,9 +1,11 @@
 {
   "name": "wesl-packager",
-  "version": "0.6.36",
+  "version": "0.6.37",
   "type": "module",
   "bin": "bin/wesl-packager",
-  "files": ["bin"],
+  "files": [
+    "bin"
+  ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",
