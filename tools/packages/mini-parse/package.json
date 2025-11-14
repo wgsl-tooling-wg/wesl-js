@@ -2,7 +2,10 @@
   "name": "mini-parse",
   "version": "0.6.36",
   "type": "module",
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",

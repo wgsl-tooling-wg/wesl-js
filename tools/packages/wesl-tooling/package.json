@@ -2,7 +2,9 @@
   "name": "wesl-tooling",
   "private": true,
   "type": "module",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "cross-env FORCE_COLOR=1 vitest",
     "test:once": "vitest run",

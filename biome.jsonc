@@ -112,14 +112,6 @@
           "allowTrailingCommas": true
         }
       }
-    },
-    {
-      "includes": ["**/package.json"],
-      "json": {
-        "formatter": {
-          "expand": "auto"
-        }
-      }
     }
   ]
 }
