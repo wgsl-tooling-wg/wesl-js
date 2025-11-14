@@ -26,6 +26,7 @@ test("verify ?link", async () => {
   expect(firstDep.name).toMatchInlineSnapshot(`"random_wgsl"`);
   expect([...Object.keys(firstDep.modules)]).toMatchInlineSnapshot(`
     [
+      "randomTest.wgsl",
       "lib.wgsl",
     ]
   `);
