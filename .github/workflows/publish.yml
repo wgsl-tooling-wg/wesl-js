@@ -2,8 +2,8 @@ name: Publish to NPM
 
 on:
   push:
-    tags:
-      - '*\@*'
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -12,24 +12,12 @@ permissions:
 jobs:
   publish:
     runs-on: macos-latest
+    if: startsWith(github.event.head_commit.message, 'chore: release')
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Verify tag is at HEAD of main
-        run: |
-          git fetch origin main
-          MAIN_SHA=$(git rev-parse origin/main)
-          TAG_SHA=$(git rev-parse $GITHUB_SHA)
-          if [ "$MAIN_SHA" != "$TAG_SHA" ]; then
-            echo "Error: Tag must be at HEAD of main"
-            echo "  main HEAD: $MAIN_SHA"
-            echo "  tag SHA:   $TAG_SHA"
-            exit 1
-          fi
-          echo "✓ Tag is at HEAD of main branch"
 
       - uses: pnpm/action-setup@v4
         with:
