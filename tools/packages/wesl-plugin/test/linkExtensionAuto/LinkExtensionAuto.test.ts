@@ -8,7 +8,7 @@ const exec = util.promisify((process as any).exec); // not sure why @types/node 
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 
-test("verify ?link", async () => {
+test("verify ?link", { timeout: 30000 }, async () => {
   // build test program
   const buildResult = await exec(`pnpm vite build`, {
     cwd: testDir,
