@@ -11182,9 +11182,11 @@ async function packageWgsl(args) {
 	const edition = "unstable_2025_1";
 	if (args.multiBundle) await writeMultiBundle(modules, name, edition, projectDir, outDir);
 	else {
-		const deps = parseDependencies(modules, projectDir);
+		const allDeps = parseDependencies(modules, projectDir);
+		const sanitized = sanitizePackageName(name);
+		const deps = filterSelfDeps(allDeps, sanitized);
 		await writeJsBundle({
-			name: sanitizePackageName(name),
+			name: sanitized,
 			edition,
 			modules
 		}, deps, outDir);
@@ -11287,6 +11289,10 @@ function bundleToJsString(bundle, dependencies) {
 		const dependenciesStr = `: [${dependencies.join(", ")}]`;
 		return jsonString.replace(": 99", dependenciesStr);
 	} else return jsonString;
+}
+/** Filter out self-dependencies from the dependency list */
+function filterSelfDeps(deps, packageName) {
+	return deps.filter((dep) => dep !== packageName && !dep.startsWith(`${packageName}/`));
 }
 /** parse and extract fields from package.json that we care about
 * (the name of the package) */

@@ -25,8 +25,9 @@ export async function packageWgsl(args: CliArgs): Promise<void> {
   if (args.multiBundle) {
     await writeMultiBundle(modules, name, edition, projectDir, outDir);
   } else {
-    const deps = parseDependencies(modules, projectDir);
+    const allDeps = parseDependencies(modules, projectDir);
     const sanitized = sanitizePackageName(name);
+    const deps = filterSelfDeps(allDeps, sanitized);
     const bundle: WeslBundle = { name: sanitized, edition, modules };
     await writeJsBundle(bundle, deps, outDir);
   }
@@ -174,6 +175,13 @@ function bundleToJsString(bundle: WeslBundle, dependencies: string[]): string {
   } else {
     return jsonString;
   }
+}
+
+/** Filter out self-dependencies from the dependency list */
+function filterSelfDeps(deps: string[], packageName: string): string[] {
+  return deps.filter(
+    dep => dep !== packageName && !dep.startsWith(`${packageName}/`),
+  );
 }
 
 interface PkgFields {
