@@ -436,12 +436,18 @@ importers:
 
   packages/random_wgsl:
     devDependencies:
+      vitest-image-snapshot:
+        specifier: workspace:x
+        version: link:../vitest-image-snapshot
       wesl:
         specifier: workspace:x
         version: link:../wesl
       wesl-packager:
         specifier: workspace:x
         version: link:../wesl-packager
+      wesl-test:
+        specifier: workspace:x
+        version: link:../wesl-test
 
   packages/test_pkg/dependent_package: {}
 

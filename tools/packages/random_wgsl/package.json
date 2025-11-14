@@ -5,7 +5,9 @@
   "files": ["src", "dist"],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "build": "wesl-packager"
+    "build": "wesl-packager",
+    "test": "vitest run",
+    "typecheck": "tsgo"
   },
   "exports": {
     ".": {
@@ -14,7 +16,9 @@
     }
   },
   "devDependencies": {
+    "vitest-image-snapshot": "workspace:x",
     "wesl": "workspace:x",
-    "wesl-packager": "workspace:x"
+    "wesl-packager": "workspace:x",
+    "wesl-test": "workspace:x"
   }
 }
