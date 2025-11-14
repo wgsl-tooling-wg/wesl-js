@@ -1,9 +1,12 @@
 {
   "name": "wesl-plugin",
   "description": "",
-  "version": "0.6.37",
+  "version": "0.6.38",
   "type": "module",
-  "files": ["src", "dist"],
+  "files": [
+    "src",
+    "dist"
+  ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",
@@ -104,7 +107,11 @@
   "packageManager": "pnpm@10.19.0",
   "typesVersions": {
     "*": {
-      "*": ["./dist/plugins/*", "./dist/*", "./*"]
+      "*": [
+        "./dist/plugins/*",
+        "./dist/*",
+        "./*"
+      ]
     }
   }
 }
