@@ -3,7 +3,7 @@ name: Publish to NPM
 on:
   push:
     tags:
-      - '*@*'
+      - '*\@*'
 
 permissions:
   contents: read
