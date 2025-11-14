@@ -15,9 +15,9 @@ _WESL is an extended version of WebGPU's [WGSL](https://www.w3.org/TR/WGSL/#intr
 
 WESL adds features:
 
-- **imports** to split shaders into modular, reusable files
-- **conditional compiliation** to configure shader variations at compile time or run time
-- **shader libraries** on npm and cargo, for community sharing of shader code modules
+- **imports** to split shaders into modular, reusable files.
+- **conditional compiliation** to configure shader variations at compile time or run time.
+- **shader libraries** on npm and cargo, for community sharing of shader code modules.
 
 This [wesl] library contains a **TypeScript** WESL linker.
 [wesl] can be used at runtime or at build time to assemble WESL and WGSL modules for WebGPU.
