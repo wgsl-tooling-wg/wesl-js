@@ -7,7 +7,7 @@ regex based lexer.
   You write a grammar by combining simple TypeScript
   functions like `or()`, `repeat()`, and `seq()`.
   It's just TypeScript so it's easy to mix with your existing code,
-  IDE, test frameworks, etc..
+  IDE, test frameworks, etc.
 - **MiniParse** is a Parsing Expression Grammar (PEG) parser.
   Parsing is simple to understand, top down, using recursive descent with backtracking.
 - Parsers are modular - every grammar fragment is also a parser and can be tested
