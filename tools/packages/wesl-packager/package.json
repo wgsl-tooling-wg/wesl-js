@@ -3,9 +3,7 @@
   "version": "0.6.38",
   "type": "module",
   "bin": "bin/wesl-packager",
-  "files": [
-    "bin"
-  ],
+  "files": ["bin"],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",

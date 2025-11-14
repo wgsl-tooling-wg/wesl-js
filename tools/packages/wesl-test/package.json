@@ -2,11 +2,7 @@
   "name": "wesl-test",
   "version": "0.6.38",
   "type": "module",
-  "files": [
-    "dist",
-    "images",
-    "src"
-  ],
+  "files": ["dist", "images", "src"],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",

@@ -3,9 +3,7 @@
   "version": "0.6.38",
   "type": "module",
   "bin": "bin/wesl-link",
-  "files": [
-    "bin"
-  ],
+  "files": ["bin"],
   "repository": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli",
   "homepage": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli#readme",
   "scripts": {
