@@ -9,6 +9,7 @@
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "wesl-packager",
+    "prepublishOnly": "run-s build",
     "test": "vitest run",
     "typecheck": "tsgo"
   },
