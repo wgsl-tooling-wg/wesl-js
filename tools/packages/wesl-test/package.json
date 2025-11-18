@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@types/pngjs": "^6.0.0",
+    "@webgpu/types": "^0.1.65",
     "dependent_package": "workspace:x",
     "wesl-tooling": "workspace:x"
   },

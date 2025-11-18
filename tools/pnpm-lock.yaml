@@ -802,6 +802,9 @@ importers:
       '@types/pngjs':
         specifier: ^6.0.0
         version: 6.0.5
+      '@webgpu/types':
+        specifier: ^0.1.65
+        version: 0.1.65
       dependent_package:
         specifier: workspace:x
         version: link:../test_pkg/dependent_package
