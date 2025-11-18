@@ -1,3 +1,6 @@
+/** Number of vertices drawn for fullscreen quad using triangle-strip topology */
+export const fullscreenVertexCount = 4;
+
 /** Fullscreen triangle vertex shader that covers viewport with 3 vertices, no vertex buffer needed */
 export const fullscreenTriangleVertex = `
   @vertex

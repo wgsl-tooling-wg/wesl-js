@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WESL Toy Viewer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>WESL Toy Viewer</h1>
+      <div class="main-content">
+        <div class="left-panel">
+          <div class="controls">
+            <div class="control-group">
+              <label for="package-select">Package</label>
+              <select id="package-select">
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="package-input">Or Package URL/Name</label>
+              <input type="text" id="package-input" placeholder="npm package or https://..." />
+            </div>
+            <div class="control-group">
+              <label for="shader-select"><span id="package-label">Shaders</span></label>
+              <select id="shader-select">
+                <option>Loading...</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="custom-url">Or Shader URL</label>
+              <input type="text" id="custom-url" placeholder="https://..." />
+            </div>
+            <div class="button-group">
+              <button id="play-pause">Pause</button>
+              <button id="rewind">Rewind</button>
+            </div>
+          </div>
+          <canvas id="canvas" width="512" height="512"></canvas>
+          <div id="error"></div>
+        </div>
+        <div class="right-panel">
+          <div class="source-display">
+            <h3>Source Code</h3>
+            <pre id="source-code">Loading...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

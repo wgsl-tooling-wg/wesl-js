@@ -1,5 +1,6 @@
 packages:
 - 'packages/*'
+- 'packages/labs/*'
 - 'packages/test_pkg/*'
 - 'packages/wesl-packager/src/test/multi_package'
 - 'packages/wesl-plugin/test/*'

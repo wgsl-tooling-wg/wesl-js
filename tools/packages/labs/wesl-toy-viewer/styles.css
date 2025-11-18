@@ -1,0 +1,104 @@
+body {
+  margin: 0;
+  padding: 20px;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+h1 {
+  margin: 0 0 20px 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+.main-content {
+  display: flex;
+  gap: 20px;
+}
+.left-panel {
+  flex-shrink: 0;
+}
+.right-panel {
+  flex: 1;
+  min-width: 0;
+}
+.controls {
+  margin-bottom: 15px;
+}
+.control-group {
+  margin-bottom: 12px;
+}
+label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #aaa;
+}
+select,
+input[type="text"] {
+  width: 100%;
+  padding: 6px 8px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 13px;
+}
+canvas {
+  border: 1px solid #444;
+  display: block;
+}
+.button-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+button {
+  padding: 6px 12px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 13px;
+  cursor: pointer;
+}
+button:hover {
+  background: #404040;
+}
+button:active {
+  background: #2a2a2a;
+}
+.source-display {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 12px;
+  overflow: auto;
+  max-height: 568px;
+}
+.source-display pre {
+  margin: 0;
+  font-family: "SF Mono", Monaco, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #e0e0e0;
+}
+.source-display h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #aaa;
+}
+#error {
+  background: #3a1a1a;
+  border: 1px solid #844;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 12px;
+  color: #faa;
+  font-size: 13px;
+  display: none;
+}

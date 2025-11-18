@@ -1,0 +1,26 @@
+{
+  "name": "wesl-toy-viewer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc && vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "test": "vitest",
+    "typecheck": "tsgo"
+  },
+  "dependencies": {
+    "es-module-lexer": "^1.7.0",
+    "fflate": "^0.8.2",
+    "nanotar": "^0.2.0",
+    "wesl": "workspace:*",
+    "wesl-gpu": "workspace:*"
+  },
+  "devDependencies": {
+    "@webgpu/types": "^0.1.65",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.9",
+    "vitest": "^3.2.4",
+    "wesl-plugin": "workspace:x"
+  }
+}

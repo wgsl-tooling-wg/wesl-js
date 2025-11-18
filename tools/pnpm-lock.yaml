@@ -414,6 +414,40 @@ importers:
         specifier: workspace:x
         version: link:../wesl-plugin
 
+  packages/labs/wesl-toy-viewer:
+    dependencies:
+      es-module-lexer:
+        specifier: ^1.7.0
+        version: 1.7.0
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.2
+      nanotar:
+        specifier: ^0.2.0
+        version: 0.2.0
+      wesl:
+        specifier: workspace:*
+        version: link:../../wesl
+      wesl-gpu:
+        specifier: workspace:*
+        version: link:../../wesl-gpu
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.65
+        version: 0.1.65
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.1.9
+        version: 7.1.9(@types/node@24.7.2)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.0)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.7.2)(@vitest/ui@3.2.4)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.0)
+      wesl-plugin:
+        specifier: workspace:x
+        version: link:../../wesl-plugin
+
   packages/mini-parse: {}
 
   packages/plugin-test:
@@ -517,6 +551,19 @@ importers:
       wgsl_reflect:
         specifier: ^1.2.1
         version: 1.2.1
+
+  packages/wesl-gpu:
+    dependencies:
+      thimbleberry:
+        specifier: ^0.2.10
+        version: 0.2.10
+      wesl:
+        specifier: workspace:*
+        version: link:../wesl
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.65
+        version: 0.1.65
 
   packages/wesl-link:
     dependencies:
@@ -748,6 +795,9 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
+      wesl-gpu:
+        specifier: workspace:*
+        version: link:../wesl-gpu
     devDependencies:
       '@types/pngjs':
         specifier: ^6.0.0
@@ -5336,6 +5386,9 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
+  nanotar@0.2.0:
+    resolution: {integrity: sha512-9ca1h0Xjvo9bEkE4UOxgAzLV0jHKe6LMaxo37ND2DAhhAtd0j8pR1Wxz+/goMrZO8AEZTWCmyaOsFI/W5AdpCQ==}
+
   natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
 
@@ -7868,7 +7921,7 @@ snapshots:
 
   '@jridgewell/gen-mapping@0.3.12':
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.4
+      '@jridgewell/sourcemap-codec': 1.5.5
       '@jridgewell/trace-mapping': 0.3.29
 
   '@jridgewell/gen-mapping@0.3.13':
@@ -8487,7 +8540,7 @@ snapshots:
   '@sveltejs/vite-plugin-svelte-inspector@5.0.0(@sveltejs/vite-plugin-svelte@6.1.2(svelte@5.38.1)(vite@7.1.9(@types/node@24.7.2)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.0)))(svelte@5.38.1)(vite@7.1.9(@types/node@24.7.2)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.0))':
     dependencies:
       '@sveltejs/vite-plugin-svelte': 6.1.2(svelte@5.38.1)(vite@7.1.9(@types/node@24.7.2)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.0))
-      debug: 4.4.1
+      debug: 4.4.3(supports-color@5.5.0)
       svelte: 5.38.1
       vite: 7.1.9(@types/node@24.7.2)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.0)
     transitivePeerDependencies:
@@ -11714,6 +11767,8 @@ snapshots:
       transform-ast: 2.4.4
 
   nanoid@3.3.11: {}
+
+  nanotar@0.2.0: {}
 
   natural-compare@1.4.0: {}
 
