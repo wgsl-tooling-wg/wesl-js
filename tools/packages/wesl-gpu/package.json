@@ -33,5 +33,12 @@
   "devDependencies": {
     "@webgpu/types": "^0.1.65"
   },
-  "keywords": ["rendering", "shader", "testing", "WebGPU", "WESL", "WGSL"]
+  "keywords": [
+    "rendering",
+    "shader",
+    "testing",
+    "WebGPU",
+    "WESL",
+    "WGSL"
+  ]
 }

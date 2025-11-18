@@ -3,7 +3,7 @@ import { loadNewPackage, selectPackage } from "./PackageControl.ts";
 import { loadAndCompileShader, loadShaderFromUrl } from "./ShaderLoader.ts";
 
 /** Set up UI event handlers for shader selection and playback controls. */
-export function setupControls(state: LoadedAppState): void{
+export function setupControls(state: LoadedAppState): void {
   const elements = getRequiredElements();
   setupPackageControls(state, elements);
   setupShaderControls(state, elements);
