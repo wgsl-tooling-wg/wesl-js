@@ -18,5 +18,5 @@ export async function versionFromPackageJson(
   projectDir: string,
 ): Promise<string> {
   const pkg = await readPackageJson(projectDir);
-  return pkg.version as string;
+  return pkg.version;
 }
