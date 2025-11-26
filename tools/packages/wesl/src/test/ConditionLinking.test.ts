@@ -3,7 +3,7 @@ import { testLink } from "./TestLink.ts";
 
 // LATER move these to cond cases? (or drop if duplicative)
 
-test("conditional statement", async () => {
+test("conditional declaration ", async () => {
   const app = `
     fn main() {
       @if(false) let x = 1;
@@ -12,6 +12,22 @@ test("conditional statement", async () => {
 
   const expectWgsl = `
     fn main() {
+    }
+  `;
+  await testLink({ app: app }, "app", expectWgsl);
+});
+
+test("conditional assignment", async () => {
+  const app = `
+    fn main() {
+      var x = 1;
+      @if(false) x = 2;
+    }
+  `;
+
+  const expectWgsl = `
+    fn main() {
+      var x = 1;
     }
   `;
   await testLink({ app: app }, "app", expectWgsl);
