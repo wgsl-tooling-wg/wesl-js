@@ -27,3 +27,4 @@ CLAUDE.md
 GEMINI.md
 agent-*.md
 .agent
+.playwright-mcp/
