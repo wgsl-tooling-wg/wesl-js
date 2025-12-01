@@ -3,10 +3,13 @@ import { setupControls } from "./Controls.ts";
 import { initGpu, startRenderLoop } from "./Gpu.ts";
 import { loadNewPackage } from "./PackageControl.ts";
 
+// HACK: lygia npm package is out of date, use custom tgz URL
+export const lygiaUrl =
+  "https://raw.githubusercontent.com/mighdoll/big-files/refs/heads/main/lygia-1.3.5-rc.2.tgz";
+
 const defaultPackages = {
   random_wgsl: "random_wgsl",
-  lygia:
-    "https://raw.githubusercontent.com/mighdoll/big-files/refs/heads/main/lygia-1.3.5-rc.2.tgz",
+  lygia: lygiaUrl,
 };
 
 main();
