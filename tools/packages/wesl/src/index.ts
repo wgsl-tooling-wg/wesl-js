@@ -2,6 +2,8 @@ export * from "./AbstractElems.ts";
 export * from "./BindIdents.ts";
 export * from "./debug/ASTtoString.ts";
 export * from "./debug/ScopeToString.ts";
+export * from "./discovery/FindUnboundIdents.ts";
+export * from "./discovery/PackageNameUtils.ts";
 export * from "./LinkedWesl.ts";
 export * from "./Linker.ts";
 export * from "./LiveDeclarations.ts";

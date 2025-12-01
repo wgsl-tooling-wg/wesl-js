@@ -25,26 +25,6 @@
  * scope__my_pkg       ==>  try: @scope/my_pkg, @scope/my-pkg
  * random_wgsl         ==>  try: random_wgsl, random-wgsl
  * ```
- *
- * ## package.json Subpath Exports
- *
- * Subpaths don't create ambiguity because WeslBundle `name` field only contains package name:
- *
- * Scoped package:
- * ```
- * npm:        @foo/shader-utils
- * weslBundle: { name: "foo__shader_utils", modules: {...} }
- * WESL:       import foo__shader_utils::color::rgb2hsv
- * ```
- *
- * Unscoped package with subpath export:
- * ```
- * npm:        "foo"  (with exports: "./shader-utils": "./dist/...")
- * weslBundle: { name: "foo", modules: {...} }  // NOT foo__shader_utils!
- * WESL:       import foo::shader_utils::color::rgb2hsv  // Different identifier!
- * ```
- *
- * The `__` only appears when the package name itself contains `/`, never for subpaths.
  */
 
 /** Convert npm package name to WGSL-safe identifier using double-underscore encoding. */

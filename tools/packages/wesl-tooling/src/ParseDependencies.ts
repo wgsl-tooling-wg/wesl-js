@@ -1,8 +1,12 @@
 import { pathToFileURL } from "node:url";
 import { resolve } from "import-meta-resolve";
 import type { WeslBundle } from "wesl";
-import { filterMap, RecordResolver, WeslParseError } from "wesl";
-import { findUnboundIdents } from "./FindUnboundIdents.ts";
+import {
+  filterMap,
+  findUnboundIdents,
+  RecordResolver,
+  WeslParseError,
+} from "wesl";
 import { npmResolveWESL } from "./NpmResolver.ts";
 
 /**

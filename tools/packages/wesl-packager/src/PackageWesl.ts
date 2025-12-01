@@ -2,13 +2,8 @@
 import fs, { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { Biome, Distribution } from "@biomejs/js-api";
-import { noSuffix, type WeslBundle } from "wesl";
-import {
-  loadModules,
-  parseDependencies,
-  sanitizePackageName,
-  zip,
-} from "wesl-tooling";
+import { noSuffix, sanitizePackageName, type WeslBundle } from "wesl";
+import { loadModules, parseDependencies, zip } from "wesl-tooling";
 import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
 import type { CliArgs } from "./PackagerCli.ts";
 

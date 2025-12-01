@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { sanitizePackageName } from "../src/PackageNameUtils.ts";
+import { sanitizePackageName } from "../discovery/PackageNameUtils.ts";
 
 test("my_package", () => {
   expect(sanitizePackageName("my_package")).toBe("my_package");

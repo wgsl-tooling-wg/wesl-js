@@ -1,12 +1,13 @@
-import type {
-  AbstractElem,
-  BatchModuleResolver,
-  DeclIdent,
-  EmittableElem,
-  LiveDecls,
-  Scope,
-} from "wesl";
-import { bindIdentsRecursive, findValidRootDecls, minimalMangle } from "wesl";
+import type { AbstractElem } from "../AbstractElems.ts";
+import {
+  bindIdentsRecursive,
+  type EmittableElem,
+  findValidRootDecls,
+} from "../BindIdents.ts";
+import type { LiveDecls } from "../LiveDeclarations.ts";
+import { minimalMangle } from "../Mangler.ts";
+import type { BatchModuleResolver } from "../ModuleResolver.ts";
+import type { DeclIdent, Scope } from "../Scope.ts";
 
 /**
  * Find unbound package references in library sources.
@@ -27,7 +28,7 @@ export function findUnboundIdents(resolver: BatchModuleResolver): string[][] {
     globalNames: new Set<string>(),
     globalStatements: new Map<AbstractElem, EmittableElem>(),
     mangler: minimalMangle,
-    unbound: [],
+    unbound: [] as string[][],
     dontFollowDecls: true,
   };
 
