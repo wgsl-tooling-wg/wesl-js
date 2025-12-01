@@ -434,7 +434,7 @@ function findQualifiedImport(
     matchingImport(identParts, flatImps) ?? qualifiedIdent(identParts);
 
   if (!modulePathParts) {
-    if (unbound) unbound.push(identParts);
+    if (unbound && !stdWgsl(refIdent.originalName)) unbound.push(identParts);
     return undefined;
   }
 
