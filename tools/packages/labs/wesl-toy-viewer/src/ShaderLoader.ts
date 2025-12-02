@@ -1,8 +1,8 @@
 import type { WeslBundle } from "wesl";
 import { findUnboundIdents, npmNameVariations, RecordResolver } from "wesl";
 import type { LoadedAppState } from "./AppState.ts";
-import type { BundleFile } from "./BundleEvaluator.ts";
-import { buildBundleRegistry, evaluateBundleRegistry } from "./BundleEvaluator.ts";
+import type { BundleFile } from "./BundleHydrator.ts";
+import { buildBundleRegistry, hydrateBundleRegistry } from "./BundleHydrator.ts";
 import { fetchBundleFilesFromNpm, fetchBundleFilesFromUrl } from "./BundleLoader.ts";
 import { showError } from "./Controls.ts";
 import { toyRenderPipeline } from "./Gpu.ts";
@@ -107,8 +107,8 @@ async function fetchPackages(pkgIds: string[]): Promise<WeslBundle[]> {
   const initialFiles = await Promise.all(pkgIds.map(id => fetchOnePackage(id, loaded)));
   const registry = await buildBundleRegistry(initialFiles.flat());
 
-  // Evaluate with auto-fetching of transitive deps
-  return evaluateBundleRegistry(registry, id => fetchOnePackage(id, loaded));
+  // Hydrate with auto-fetching of transitive deps
+  return hydrateBundleRegistry(registry, id => fetchOnePackage(id, loaded));
 }
 
 /** Fetch bundle files for a single package, mark as loaded. */

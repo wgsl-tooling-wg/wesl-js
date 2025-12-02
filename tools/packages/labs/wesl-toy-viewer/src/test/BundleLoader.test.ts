@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 import { gunzipSync } from "fflate";
 import { parseTar } from "nanotar";
 import { expect, test } from "vitest";
-import type { BundleFile } from "../BundleEvaluator.ts";
-import { loadBundlesFromFiles } from "../BundleEvaluator.ts";
+import type { BundleFile } from "../BundleHydrator.ts";
+import { loadBundlesFromFiles } from "../BundleHydrator.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

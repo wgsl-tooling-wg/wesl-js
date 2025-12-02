@@ -1,8 +1,8 @@
 import { gunzipSync } from "fflate";
 import { type ParsedTarFileItem, parseTar } from "nanotar";
 import type { WeslBundle } from "wesl";
-import type { BundleFile } from "./BundleEvaluator.ts";
-import { loadBundlesFromFiles } from "./BundleEvaluator.ts";
+import type { BundleFile } from "./BundleHydrator.ts";
+import { loadBundlesFromFiles } from "./BundleHydrator.ts";
 
 export { fetchBundleFilesFromNpm, fetchBundleFilesFromUrl, npmPackageToUrl };
 

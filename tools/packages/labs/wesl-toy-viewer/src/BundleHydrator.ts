@@ -2,7 +2,7 @@ import { init, parse } from "es-module-lexer";
 import type { WeslBundle } from "wesl";
 
 /**
- * Bundle evaluation for WESL packages.
+ * Bundle hydration for WESL packages.
  *
  * Takes bundle JS source files (strings) and returns WeslBundle objects with
  * resolved cross-references. Each bundle file is an ES module that exports a
@@ -13,7 +13,7 @@ import type { WeslBundle } from "wesl";
  *   export const weslBundle = { ..., dependencies: [dependency] };
  *
  * We use es-module-lexer to parse imports without executing code, reconstruct
- * the dependency graph, then evaluate bundles in dependency order using
+ * the dependency graph, then hydrate bundles in dependency order using
  * Function() constructor with dependency injection. Returns WeslBundle objects
  * where dependency references are resolved to actual bundle objects.
  */
@@ -41,10 +41,10 @@ export async function loadBundlesFromFiles(
   bundleFiles: BundleFile[],
 ): Promise<WeslBundle[]> {
   const registry = await buildBundleRegistry(bundleFiles);
-  return evaluateBundleRegistry(registry); // no fetcher = throws on missing deps
+  return hydrateBundleRegistry(registry); // no fetcher = throws on missing deps
 }
 
-/** Parse bundle files into a registry without evaluating. */
+/** Parse bundle files into a registry without hydrating. */
 export async function buildBundleRegistry(
   bundleFiles: BundleFile[],
   registry: BundleRegistry = new Map(),
@@ -66,19 +66,19 @@ export async function buildBundleRegistry(
 export type PackageFetcher = (pkgName: string) => Promise<BundleFile[]>;
 
 /**
- * Evaluate bundles, optionally fetching missing packages on-demand.
- * If fetcher provided: auto-fetches missing deps during evaluation.
+ * Hydrate bundles, optionally fetching missing packages on-demand.
+ * If fetcher provided: auto-fetches missing deps during hydration.
  * If no fetcher: skips bundles with missing deps (partial load).
  */
-export async function evaluateBundleRegistry(
+export async function hydrateBundleRegistry(
   registry: BundleRegistry,
   fetcher?: PackageFetcher,
 ): Promise<WeslBundle[]> {
-  const evaluated = new Map<string, WeslBundle>();
+  const hydrated = new Map<string, WeslBundle>();
   const bundles: WeslBundle[] = [];
   for (const path of registry.keys()) {
     try {
-      bundles.push(await evaluateBundle(path, registry, evaluated, fetcher));
+      bundles.push(await hydrateBundle(path, registry, hydrated, fetcher));
     } catch (e) {
       // Skip bundles with missing deps when no fetcher provided
       if (fetcher) throw e;
@@ -140,7 +140,7 @@ export function filePathToModulePath(
 }
 
 /**
- * Recursively evaluate a bundle with dependency injection.
+ * Recursively hydrate a bundle with dependency injection.
  *
  * Uses Function() constructor to evaluate the bundle object literal with
  * dependencies injected as parameters. Supports circular dependencies via
@@ -149,13 +149,13 @@ export function filePathToModulePath(
  * If fetcher is provided and a dependency is missing, fetches the package
  * on-demand, adds to registry, and continues. Otherwise throws on missing deps.
  */
-async function evaluateBundle(
+async function hydrateBundle(
   path: string,
   registry: BundleRegistry,
-  evaluated: Map<string, WeslBundle>,
+  hydrated: Map<string, WeslBundle>,
   fetcher?: PackageFetcher,
 ): Promise<WeslBundle> {
-  const cached = evaluated.get(path);
+  const cached = hydrated.get(path);
   if (cached) return cached;
 
   let info = registry.get(path);
@@ -174,17 +174,17 @@ async function evaluateBundle(
 
   // Create placeholder before recursing to handle cycles
   const placeholder = {} as WeslBundle;
-  evaluated.set(path, placeholder);
+  hydrated.set(path, placeholder);
 
-  // Recursively evaluate dependencies (will auto-fetch if missing)
+  // Recursively hydrate dependencies (will auto-fetch if missing)
   const paramNames = info.imports.map(imp => imp.varName);
   const paramValues = await Promise.all(
     info.imports.map(imp =>
-      evaluateBundle(imp.path, registry, evaluated, fetcher),
+      hydrateBundle(imp.path, registry, hydrated, fetcher),
     ),
   );
 
-  // Evaluate and fill placeholder with actual bundle data
+  // Hydrate and fill placeholder with actual bundle data
   const fn = new Function(...paramNames, `'use strict'; return ${info.code}`);
   const bundle = fn(...paramValues) as WeslBundle;
   Object.assign(placeholder, bundle);
