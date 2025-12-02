@@ -33,37 +33,57 @@ interface BundleInfo {
   imports: Array<{ varName: string; path: string }>;
 }
 
+/** Registry of parsed bundle info, keyed by import path. */
+export type BundleRegistry = Map<string, BundleInfo>;
+
 /** Load WeslBundle objects from BundleFile sources. */
 export async function loadBundlesFromFiles(
   bundleFiles: BundleFile[],
 ): Promise<WeslBundle[]> {
-  await initPromise;
+  const registry = await buildBundleRegistry(bundleFiles);
+  return evaluateBundleRegistry(registry); // no fetcher = throws on missing deps
+}
 
-  // Build registry of bundle code strings + imports (not yet evaluated)
-  const registry = new Map<string, BundleInfo>();
+/** Parse bundle files into a registry without evaluating. */
+export async function buildBundleRegistry(
+  bundleFiles: BundleFile[],
+  registry: BundleRegistry = new Map(),
+): Promise<BundleRegistry> {
+  await initPromise;
   for (const file of bundleFiles) {
     try {
       const bundleInfo = parseBundleImports(file.content);
-      const importPath = filePathToImportPath(file.name, file.packageName);
-      registry.set(importPath, bundleInfo);
+      const modulePath = filePathToModulePath(file.name, file.packageName);
+      registry.set(modulePath, bundleInfo);
     } catch (error) {
       console.warn(`Failed to parse bundle ${file.name}:`, error);
     }
   }
+  return registry;
+}
 
-  // Evaluate bundles in dependency order to create WeslBundle objects
+/** Fetcher callback for loading missing packages on-demand. */
+export type PackageFetcher = (pkgName: string) => Promise<BundleFile[]>;
+
+/**
+ * Evaluate bundles, optionally fetching missing packages on-demand.
+ * If fetcher provided: auto-fetches missing deps during evaluation.
+ * If no fetcher: skips bundles with missing deps (partial load).
+ */
+export async function evaluateBundleRegistry(
+  registry: BundleRegistry,
+  fetcher?: PackageFetcher,
+): Promise<WeslBundle[]> {
   const evaluated = new Map<string, WeslBundle>();
   const bundles: WeslBundle[] = [];
-
-  for (const [path] of registry) {
+  for (const path of registry.keys()) {
     try {
-      const bundle = evaluateBundle(path, registry, evaluated);
-      bundles.push(bundle);
-    } catch (error) {
-      console.warn(`Failed to evaluate bundle ${path}:`, error);
+      bundles.push(await evaluateBundle(path, registry, evaluated, fetcher));
+    } catch (e) {
+      // Skip bundles with missing deps when no fetcher provided
+      if (fetcher) throw e;
     }
   }
-
   return bundles;
 }
 
@@ -90,7 +110,7 @@ export function parseBundleImports(code: string): BundleInfo {
         `Could not parse import variable name from: ${statement}`,
       );
     }
-    return { varName: match[1], path: imp.n! };
+    return { varName: match[1], path: imp.n!.replace(/\//g, "::") };
   });
 
   return { code: exportMatch[1], imports: parsedImports };
@@ -102,13 +122,16 @@ const nestedBundlePattern = /package\/dist\/(.+)\/weslBundle\.js$/;
 // Matches: package/dist/weslBundle.js
 const rootBundlePattern = /package\/dist\/weslBundle\.js$/;
 
-/** Convert bundle file path to import path (e.g., "package/dist/math/consts/weslBundle.js" => "pkg/math/consts"). */
-export function filePathToImportPath(
+/** Convert bundle file path to module path (e.g., "package/dist/math/consts/weslBundle.js" => "pkg::math::consts"). */
+export function filePathToModulePath(
   filePath: string,
   packageName: string,
 ): string {
   const multiMatch = filePath.match(nestedBundlePattern);
-  if (multiMatch) return `${packageName}/${multiMatch[1]}`;
+  if (multiMatch) {
+    const subpath = multiMatch[1].replace(/\//g, "::");
+    return `${packageName}::${subpath}`;
+  }
 
   const singleMatch = filePath.match(rootBundlePattern);
   if (singleMatch) return packageName;
@@ -120,39 +143,48 @@ export function filePathToImportPath(
  * Recursively evaluate a bundle with dependency injection.
  *
  * Uses Function() constructor to evaluate the bundle object literal with
- * dependencies injected as parameters. This avoids eval() while still allowing
- * dynamic evaluation. The dependency graph is traversed depth-first.
+ * dependencies injected as parameters. Supports circular dependencies via
+ * placeholder objects.
  *
- * Supports circular dependencies by creating a placeholder bundle before
- * evaluating dependencies, which allows cycles to resolve.
- *
- * Throws if bundle or its dependencies are not found in registry.
+ * If fetcher is provided and a dependency is missing, fetches the package
+ * on-demand, adds to registry, and continues. Otherwise throws on missing deps.
  */
-function evaluateBundle(
+async function evaluateBundle(
   path: string,
-  registry: Map<string, BundleInfo>,
+  registry: BundleRegistry,
   evaluated: Map<string, WeslBundle>,
-): WeslBundle {
+  fetcher?: PackageFetcher,
+): Promise<WeslBundle> {
   const cached = evaluated.get(path);
   if (cached) return cached;
 
-  const info = registry.get(path);
+  let info = registry.get(path);
   if (!info) {
-    throw new Error(`Bundle not found in registry: ${path}`);
+    if (!fetcher) throw new Error(`Bundle not found in registry: ${path}`);
+
+    // Fetch missing package and add to registry
+    // LATER: read package.json from tgz to get version constraints for deps,
+    // then fetch specific versions instead of latest
+    const pkgName = path.split("::")[0];
+    const files = await fetcher(pkgName);
+    await buildBundleRegistry(files, registry);
+    info = registry.get(path);
+    if (!info) throw new Error(`Bundle not found after fetch: ${path}`);
   }
 
   // Create placeholder before recursing to handle cycles
   const placeholder = {} as WeslBundle;
   evaluated.set(path, placeholder);
 
-  // Recursively evaluate dependencies, building parameter list
+  // Recursively evaluate dependencies (will auto-fetch if missing)
   const paramNames = info.imports.map(imp => imp.varName);
-  const paramValues = info.imports.map(imp =>
-    evaluateBundle(imp.path, registry, evaluated),
+  const paramValues = await Promise.all(
+    info.imports.map(imp =>
+      evaluateBundle(imp.path, registry, evaluated, fetcher),
+    ),
   );
 
   // Evaluate and fill placeholder with actual bundle data
-  // E.g., new Function('dep', 'return { ..., dependencies: [dep] }')(depValue)
   const fn = new Function(...paramNames, `'use strict'; return ${info.code}`);
   const bundle = fn(...paramValues) as WeslBundle;
   Object.assign(placeholder, bundle);

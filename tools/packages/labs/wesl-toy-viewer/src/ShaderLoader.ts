@@ -1,7 +1,9 @@
 import type { WeslBundle } from "wesl";
 import { findUnboundIdents, npmNameVariations, RecordResolver } from "wesl";
 import type { LoadedAppState } from "./AppState.ts";
-import { loadBundlesWithPackageName } from "./BundleLoader.ts";
+import type { BundleFile } from "./BundleEvaluator.ts";
+import { buildBundleRegistry, evaluateBundleRegistry } from "./BundleEvaluator.ts";
+import { fetchBundleFilesFromNpm, fetchBundleFilesFromUrl } from "./BundleLoader.ts";
 import { showError } from "./Controls.ts";
 import { toyRenderPipeline } from "./Gpu.ts";
 import { lygiaUrl } from "./main.ts";
@@ -97,27 +99,38 @@ function detectPackageDeps(source: string): string[] {
   return [...new Set(pkgIds)];
 }
 
-/** Fetch WESL bundles for detected packages from npm. */
+/** Fetch WESL bundles for packages, auto-fetching transitive deps on demand. */
 async function fetchPackages(pkgIds: string[]): Promise<WeslBundle[]> {
-  const results = await Promise.all(pkgIds.map(loadPackage));
-  return results.flat();
+  const loaded = new Set<string>();
+
+  // Fetch initial packages
+  const initialFiles = await Promise.all(pkgIds.map(id => fetchOnePackage(id, loaded)));
+  const registry = await buildBundleRegistry(initialFiles.flat());
+
+  // Evaluate with auto-fetching of transitive deps
+  return evaluateBundleRegistry(registry, id => fetchOnePackage(id, loaded));
 }
 
-/** Load package by trying npm name variations sequentially. */
-async function loadPackage(pkgId: string): Promise<WeslBundle[]> {
-  // Special case for lygia - use custom URL instead of npm
+/** Fetch bundle files for a single package, mark as loaded. */
+async function fetchOnePackage(
+  pkgId: string,
+  loaded: Set<string>,
+): Promise<BundleFile[]> {
+  if (loaded.has(pkgId)) return []; // already loaded
+  loaded.add(pkgId);
+
+  // Special case for lygia - use custom tgz URL (npm package is outdated)
   if (pkgId === "lygia") {
-    const { bundles } = await loadBundlesWithPackageName(lygiaUrl);
-    return bundles;
+    return fetchBundleFilesFromUrl(lygiaUrl);
   }
 
   for (const npmName of npmNameVariations(pkgId)) {
     try {
-      const { bundles } = await loadBundlesWithPackageName(npmName);
-      return bundles;
+      return await fetchBundleFilesFromNpm(npmName);
     } catch {
       // Try next variation
     }
   }
-  throw new Error(`Package not found: ${pkgId}`);
+  console.warn(`Package not found: ${pkgId}`);
+  return [];
 }

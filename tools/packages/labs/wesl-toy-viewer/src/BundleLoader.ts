@@ -1,8 +1,10 @@
 import { gunzipSync } from "fflate";
-import { parseTar } from "nanotar";
+import { type ParsedTarFileItem, parseTar } from "nanotar";
 import type { WeslBundle } from "wesl";
 import type { BundleFile } from "./BundleEvaluator.ts";
 import { loadBundlesFromFiles } from "./BundleEvaluator.ts";
+
+export { fetchBundleFilesFromNpm, fetchBundleFilesFromUrl, npmPackageToUrl };
 
 /** Load and extract WESL bundles from tgz archives (URLs or npm packages). */
 
@@ -71,7 +73,9 @@ function extractPackageName(bundleContent: string): string {
 }
 
 /** Fetch and extract tgz file, returning tar entries. */
-async function fetchAndExtractTgz(tgzUrl: string) {
+async function fetchAndExtractTgz(
+  tgzUrl: string,
+): Promise<ParsedTarFileItem[]> {
   const response = await fetch(tgzUrl);
   if (!response.ok) {
     throw new Error(`Failed to fetch package: HTTP ${response.status}`);
@@ -79,6 +83,27 @@ async function fetchAndExtractTgz(tgzUrl: string) {
   const gzipData = new Uint8Array(await response.arrayBuffer());
   const tarData = gunzipSync(gzipData);
   return parseTar(tarData);
+}
+
+/** Fetch bundle files from a tgz URL (without evaluating). */
+async function fetchBundleFilesFromUrl(tgzUrl: string): Promise<BundleFile[]> {
+  const entries = await fetchAndExtractTgz(tgzUrl);
+  const bundleFilesWithoutPkg = entries
+    .filter(f => f.name.endsWith("weslBundle.js"))
+    .map(f => ({ name: f.name, content: f.text }));
+
+  if (bundleFilesWithoutPkg.length === 0) return [];
+
+  const pkgName = extractPackageName(bundleFilesWithoutPkg[0].content);
+  return bundleFilesWithoutPkg.map(f => ({ ...f, packageName: pkgName }));
+}
+
+/** Fetch bundle files from an npm package (without evaluating). */
+async function fetchBundleFilesFromNpm(
+  packageName: string,
+): Promise<BundleFile[]> {
+  const tgzUrl = await npmPackageToUrl(packageName);
+  return fetchBundleFilesFromUrl(tgzUrl);
 }
 
 /** Fetch npm package tarball URL from registry metadata. */
