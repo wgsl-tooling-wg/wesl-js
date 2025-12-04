@@ -1,4 +1,5 @@
 {
+  "biome.lsp.bin": "tools/node_modules/@biomejs/biome/bin/biome",
   "typescript.preferences.autoImportSpecifierExcludeRegexes": [
     "node:inspector/promises",
     "inspector/promises",

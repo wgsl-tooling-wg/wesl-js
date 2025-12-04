@@ -6,7 +6,7 @@ import { encode as encodePng } from "png";
 import { link } from "wesl";
 
 const adapter = await navigator.gpu.requestAdapter();
-const device = await adapter?.requestDevice()!;
+const device = await adapter!.requestDevice();
 
 const dimensions = {
   width: 200,

@@ -58,28 +58,24 @@ export type ParserFromRepeatArg<A extends CombinatorArg> = Parser<
 >;
 
 /** Result value type returned by a parser specified by a CombinatorArg */
-export type ResultFromArg<A extends CombinatorArg> = A extends Parser<
-  any,
-  infer R
->
-  ? R
-  : A extends string
-    ? string
-    : A extends () => Parser<any, infer R>
-      ? R
-      : never;
+export type ResultFromArg<A extends CombinatorArg> =
+  A extends Parser<any, infer R>
+    ? R
+    : A extends string
+      ? string
+      : A extends () => Parser<any, infer R>
+        ? R
+        : never;
 
 /** Result value type returned by a parser specified by a CombinatorArg */
-export type InputFromArg<A extends CombinatorArg> = A extends Parser<
-  infer R,
-  any
->
-  ? R
-  : A extends string
-    ? ParserStream
-    : A extends () => Parser<infer R, any>
-      ? R
-      : never;
+export type InputFromArg<A extends CombinatorArg> =
+  A extends Parser<infer R, any>
+    ? R
+    : A extends string
+      ? ParserStream
+      : A extends () => Parser<infer R, any>
+        ? R
+        : never;
 
 /** Parser type returned by seq(),
  *    concatenates the argument result types into an array
