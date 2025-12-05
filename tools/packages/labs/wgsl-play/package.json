@@ -1,0 +1,25 @@
+{
+  "name": "wgsl-play",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite test-page",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "typecheck": "tsgo"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./element": "./src/WgslPlay.ts"
+  },
+  "dependencies": {
+    "es-module-lexer": "^1.7.0",
+    "fflate": "^0.8.2",
+    "nanotar": "^0.2.0",
+    "wesl": "workspace:*",
+    "wesl-gpu": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.2"
+  }
+}
