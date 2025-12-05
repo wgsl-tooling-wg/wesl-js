@@ -3,13 +3,12 @@ import type { ImageData } from "vitest-image-snapshot";
 import type { LinkParams } from "wesl";
 import { normalizeModuleName } from "wesl";
 import {
-  createUniformsVirtualLib,
-  fullscreenTriangleVertex,
+  linkFragmentShader,
   type RenderUniforms,
   renderUniformBuffer,
   simpleRender,
 } from "wesl-gpu";
-import { compileShader } from "./CompileShader.ts";
+import { resolveShaderContext } from "./CompileShader.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 
 export interface FragmentTestParams {
@@ -143,40 +142,31 @@ export async function testFragmentImage(
 }
 
 async function runFragment(params: FragmentTestParams): Promise<number[]> {
-  const {
-    projectDir,
-    device,
-    src,
-    moduleName,
-    conditions = {},
-    constants,
-    useSourceShaders,
-  } = params;
-  const {
-    textureFormat = "rgba32float",
-    size = [1, 1],
-    textures,
-    samplers,
-    uniforms = {},
-  } = params;
+  const { projectDir, device, src, moduleName, useSourceShaders } = params;
+  const { conditions = {}, constants } = params;
+  const { textureFormat = "rgba32float", size = [1, 1] } = params;
+  const { textures, samplers, uniforms = {} } = params;
 
   // Resolve shader source from either src or moduleName
   const fragmentSrc = await resolveShaderSource(src, moduleName, projectDir);
 
-  const uniformBuffer = renderUniformBuffer(device, size, uniforms);
-  const virtualLibs = createUniformsVirtualLib();
-  const completeSrc = fragmentSrc + "\n\n" + fullscreenTriangleVertex;
-
-  const module = await compileShader({
+  const ctx = await resolveShaderContext({
+    src: fragmentSrc,
     projectDir,
-    device,
-    src: completeSrc,
-    conditions,
-    constants,
-    virtualLibs,
     useSourceShaders,
   });
 
+  const module = await linkFragmentShader({
+    device,
+    fragmentSource: fragmentSrc,
+    bundles: ctx.libs,
+    resolver: ctx.resolver,
+    packageName: ctx.packageName,
+    conditions,
+    constants,
+  });
+
+  const uniformBuffer = renderUniformBuffer(device, size, uniforms);
   return await simpleRender({
     device,
     module,

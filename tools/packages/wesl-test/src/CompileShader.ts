@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { LinkParams, ModuleResolver } from "wesl";
+import type { LinkParams, ModuleResolver, WeslBundle } from "wesl";
 import { CompositeResolver, link, RecordResolver } from "wesl";
 import {
   dependencyBundles,
@@ -9,6 +9,28 @@ import {
   readPackageJson,
   resolveProjectDir,
 } from "wesl-tooling";
+
+export interface ShaderContext {
+  /** Dependency bundles for the shader. */
+  libs: WeslBundle[];
+
+  /** Resolver for lazy loading (when useSourceShaders is true). */
+  resolver?: ModuleResolver;
+
+  /** Package name for module resolution. */
+  packageName?: string;
+}
+
+export interface ResolveContextParams {
+  /** WESL/WGSL shader source code. */
+  src: string;
+
+  /** Project directory for resolving dependencies. */
+  projectDir?: string;
+
+  /** Use source shaders instead of built bundles. Default: true. */
+  useSourceShaders?: boolean;
+}
 
 export interface CompileShaderParams {
   /** Project directory for resolving shader dependencies.
@@ -57,25 +79,17 @@ export async function compileShader(
   params: CompileShaderParams,
 ): Promise<GPUShaderModule> {
   const { device, src, conditions, constants, virtualLibs } = params;
-  const { useSourceShaders = !process.env.TEST_BUNDLES } = params;
-  const projectDir = await resolveProjectDir(params.projectDir);
-
-  const packageName = await getPackageName(projectDir);
-  const libs = await dependencyBundles(
-    { main: src },
-    projectDir,
-    packageName,
-    !useSourceShaders, // include current package when testing bundles
-  );
+  const ctx = await resolveShaderContext({
+    src,
+    projectDir: params.projectDir,
+    useSourceShaders: params.useSourceShaders,
+  });
 
   let linkParams: Pick<LinkParams, "resolver" | "libs" | "weslSrc">;
-  if (useSourceShaders) {
-    // Use lazy file resolver for source shaders
-    const resolver = await lazyFileResolver(projectDir, src, packageName);
-    linkParams = { resolver, libs };
+  if (ctx.resolver) {
+    linkParams = { resolver: ctx.resolver, libs: ctx.libs };
   } else {
-    // Let linker create bundle resolvers from libs (including current package)
-    linkParams = { weslSrc: { main: src }, libs };
+    linkParams = { weslSrc: { main: src }, libs: ctx.libs };
   }
 
   const linked = await link({
@@ -84,12 +98,34 @@ export async function compileShader(
     virtualLibs,
     conditions,
     constants,
-    packageName,
+    packageName: ctx.packageName,
   });
   const module = linked.createShaderModule(device);
 
   await verifyCompilation(module);
   return module;
+}
+
+/** Resolve project context for shader compilation: bundles, resolver, and package name. */
+export async function resolveShaderContext(
+  params: ResolveContextParams,
+): Promise<ShaderContext> {
+  const { src, useSourceShaders = !process.env.TEST_BUNDLES } = params;
+  const projectDir = await resolveProjectDir(params.projectDir);
+  const packageName = await getPackageName(projectDir);
+
+  const libs = await dependencyBundles(
+    { main: src },
+    projectDir,
+    packageName,
+    !useSourceShaders, // include current package when testing bundles
+  );
+
+  const resolver = useSourceShaders
+    ? await lazyFileResolver(projectDir, src, packageName)
+    : undefined;
+
+  return { libs, resolver, packageName };
 }
 
 /** Create a project resolver for loading modules from the filesystem.

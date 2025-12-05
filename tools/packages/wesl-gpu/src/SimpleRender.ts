@@ -1,5 +1,6 @@
 import { withTextureCopy } from "thimbleberry";
 import { withErrorScopes } from "./ErrorScopes.ts";
+import { renderFrame } from "./FragmentRender.ts";
 
 export interface SimpleRenderParams {
   device: GPUDevice;
@@ -59,7 +60,12 @@ export async function simpleRender(
       fragment: { module, targets: [{ format: outputFormat }] },
       primitive: { topology: "triangle-list" },
     });
-    executeRenderPass(device, pipeline, texture, bindings?.bindGroup);
+    renderFrame({
+      device,
+      pipeline,
+      bindGroup: bindings?.bindGroup,
+      targetView: texture.createView(),
+    });
     const data = await withTextureCopy(device, texture, texData =>
       Array.from(texData),
     );
@@ -130,29 +136,4 @@ export function createBindGroup(
     entries: bindGroupEntries,
   });
   return { layout, bindGroup };
-}
-
-/** Execute render pass and submit commands. */
-function executeRenderPass(
-  device: GPUDevice,
-  pipeline: GPURenderPipeline,
-  texture: GPUTexture,
-  bindGroup?: GPUBindGroup,
-): void {
-  const commandEncoder = device.createCommandEncoder();
-  const renderPass = commandEncoder.beginRenderPass({
-    colorAttachments: [
-      {
-        view: texture.createView(),
-        loadOp: "clear",
-        clearValue: { r: 0, g: 0, b: 0, a: 0 },
-        storeOp: "store",
-      },
-    ],
-  });
-  renderPass.setPipeline(pipeline);
-  if (bindGroup) renderPass.setBindGroup(0, bindGroup);
-  renderPass.draw(3);
-  renderPass.end();
-  device.queue.submit([commandEncoder.finish()]);
 }
