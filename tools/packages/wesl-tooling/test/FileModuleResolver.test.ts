@@ -5,7 +5,7 @@ import { expect, test } from "vitest";
 import { FileModuleResolver } from "../src/FileModuleResolver.ts";
 
 test("FileModuleResolver uses debugWeslRoot for error paths", () => {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "wesl-test-"));
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "wesl-tooling-test-"));
   try {
     const testFile = path.join(tempDir, "main.wesl");
     fs.writeFileSync(testFile, "fn main() { }");
