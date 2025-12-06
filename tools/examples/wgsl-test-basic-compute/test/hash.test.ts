@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { destroySharedDevice, getGPUDevice, testCompute } from "wesl-test";
+import { destroySharedDevice, getGPUDevice, testCompute } from "wgsl-test";
 
 const projectDir = new URL("..", import.meta.url).href;
 let device: GPUDevice;

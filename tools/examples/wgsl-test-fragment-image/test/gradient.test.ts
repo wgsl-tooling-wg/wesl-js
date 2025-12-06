@@ -3,7 +3,7 @@ import {
   destroySharedDevice,
   expectFragmentImage,
   getGPUDevice,
-} from "wesl-test";
+} from "wgsl-test";
 
 const projectDir = import.meta.url;
 let device: GPUDevice;

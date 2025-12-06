@@ -1,4 +1,4 @@
-# wesl-test API Reference
+# wgsl-test API Reference
 
 Complete API documentation for testing WGSL/WESL shaders.
 
@@ -127,7 +127,7 @@ Either `src` or `moduleName` is required.
 **Example**
 
 ```typescript
-import { testFragment, solidTexture, createSampler } from "wesl-test";
+import { testFragment, solidTexture, createSampler } from "wgsl-test";
 
 const inputTex = solidTexture(device, [0.8, 0.2, 0.4, 1.0], 256, 256);
 const sampler = createSampler(device);
@@ -173,7 +173,7 @@ Renders a shader file and compares against a snapshot. Simplest API for visual r
 **Example**
 
 ```typescript
-import { expectFragmentImage } from "wesl-test";
+import { expectFragmentImage } from "wgsl-test";
 
 // Simple - defaults to 256×256, no .wgsl suffix needed
 test("red-blue gradient", async () => {
@@ -268,7 +268,7 @@ For advanced configuration and detailed information, see the [vitest-image-snaps
 
 ```typescript
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { testCompute, destroySharedDevice, getGPUDevice } from "wesl-test";
+import { testCompute, destroySharedDevice, getGPUDevice } from "wgsl-test";
 
 let device: GPUDevice;
 
@@ -368,7 +368,7 @@ Same as [`testFragment()`](#testfragment).
 **Example**
 
 ```typescript
-import { testFragmentImage } from "wesl-test";
+import { testFragmentImage } from "wgsl-test";
 
 const result = await testFragmentImage({
   device,
@@ -385,4 +385,4 @@ const pixel = result.data.slice(0, 4); // First pixel RGBA
 
 ## See Also
 
-- [README.md](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wesl-test/README.md) - Quick start guide
+- [README.md](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wgsl-test/README.md) - Quick start guide

@@ -1,5 +1,5 @@
 {
-  "name": "wesl-test-fragment-gradient",
+  "name": "wgsl-test-fragment-gradient",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,6 +11,6 @@
   "devDependencies": {
     "vitest": "^3.2.4",
     "webgpu": "^0.3.8",
-    "wesl-test": "workspace:x"
+    "wgsl-test": "workspace:x"
   }
 }

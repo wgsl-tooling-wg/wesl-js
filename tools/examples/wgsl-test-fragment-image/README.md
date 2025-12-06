@@ -1,6 +1,6 @@
-# wesl-test Fragment Gradient Example
+# wgsl-test Fragment Gradient Example
 
-This example shows how to test a WGSL fragment shader using visual regression testing with wesl-test.
+This example shows how to test a WGSL fragment shader using visual regression testing with wgsl-test.
 
 ## Structure
 
@@ -45,5 +45,5 @@ This updates the snapshot to the new expected output.
 
 ## Learn More
 
-- [wesl-test README](../../packages/wesl-test/README.md) - Quick start guide
-- [wesl-test IMAGE_TESTING](../../packages/wesl-test/IMAGE_TESTING.md) - Visual regression guide
+- [wgsl-test README](../../packages/wgsl-test/README.md) - Quick start guide
+- [wgsl-test IMAGE_TESTING](../../packages/wgsl-test/IMAGE_TESTING.md) - Visual regression guide

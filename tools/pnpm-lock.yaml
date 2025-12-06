@@ -208,38 +208,6 @@ importers:
         specifier: workspace:x
         version: link:../../packages/wesl-plugin
 
-  examples/wesl-test-basic-compute:
-    dependencies:
-      wesl:
-        specifier: workspace:*
-        version: link:../../packages/wesl
-    devDependencies:
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.7.2)(@vitest/ui@3.2.4)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.0)
-      webgpu:
-        specifier: ^0.3.8
-        version: 0.3.8
-      wesl-test:
-        specifier: workspace:x
-        version: link:../../packages/wesl-test
-
-  examples/wesl-test-fragment-image:
-    dependencies:
-      wesl:
-        specifier: workspace:*
-        version: link:../../packages/wesl
-    devDependencies:
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.7.2)(@vitest/ui@3.2.4)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.0)
-      webgpu:
-        specifier: ^0.3.8
-        version: 0.3.8
-      wesl-test:
-        specifier: workspace:x
-        version: link:../../packages/wesl-test
-
   examples/wesl-vite:
     dependencies:
       random_wgsl:
@@ -292,6 +260,38 @@ importers:
       wesl-plugin:
         specifier: workspace:x
         version: link:../../packages/wesl-plugin
+
+  examples/wgsl-test-basic-compute:
+    dependencies:
+      wesl:
+        specifier: workspace:*
+        version: link:../../packages/wesl
+    devDependencies:
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.7.2)(@vitest/ui@3.2.4)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.0)
+      webgpu:
+        specifier: ^0.3.8
+        version: 0.3.8
+      wgsl-test:
+        specifier: workspace:x
+        version: link:../../packages/wgsl-test
+
+  examples/wgsl-test-fragment-image:
+    dependencies:
+      wesl:
+        specifier: workspace:*
+        version: link:../../packages/wesl
+    devDependencies:
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.7.2)(@vitest/ui@3.2.4)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.0)
+      webgpu:
+        specifier: ^0.3.8
+        version: 0.3.8
+      wgsl-test:
+        specifier: workspace:x
+        version: link:../../packages/wgsl-test
 
   packages/bench:
     dependencies:
@@ -507,9 +507,9 @@ importers:
       wesl-packager:
         specifier: workspace:x
         version: link:../wesl-packager
-      wesl-test:
+      wgsl-test:
         specifier: workspace:x
-        version: link:../wesl-test
+        version: link:../wgsl-test
 
   packages/test_pkg/dependent_package: {}
 
@@ -803,7 +803,26 @@ importers:
         specifier: workspace:*
         version: link:../wesl-plugin
 
-  packages/wesl-test:
+  packages/wesl-tooling:
+    dependencies:
+      glob:
+        specifier: ^11.0.3
+        version: 11.0.3
+      import-meta-resolve:
+        specifier: ^4.1.0
+        version: 4.1.0
+      toml:
+        specifier: ^3.0.0
+        version: 3.0.0
+      wesl:
+        specifier: workspace:^
+        version: link:../wesl
+    devDependencies:
+      dependent_package:
+        specifier: workspace:x
+        version: link:../test_pkg/dependent_package
+
+  packages/wgsl-test:
     dependencies:
       pngjs:
         specifier: ^7.0.0
@@ -839,25 +858,6 @@ importers:
       wesl-tooling:
         specifier: workspace:x
         version: link:../wesl-tooling
-
-  packages/wesl-tooling:
-    dependencies:
-      glob:
-        specifier: ^11.0.3
-        version: 11.0.3
-      import-meta-resolve:
-        specifier: ^4.1.0
-        version: 4.1.0
-      toml:
-        specifier: ^3.0.0
-        version: 3.0.0
-      wesl:
-        specifier: workspace:^
-        version: link:../wesl
-    devDependencies:
-      dependent_package:
-        specifier: workspace:x
-        version: link:../test_pkg/dependent_package
 
 packages:
 

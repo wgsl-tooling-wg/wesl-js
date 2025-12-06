@@ -1,6 +1,6 @@
-# wesl-test Basic Compute Example
+# wgsl-test Basic Compute Example
 
-This example shows how to test a WGSL compute shader using wesl-test.
+This example shows how to test a WGSL compute shader using wgsl-test.
 
 ## Structure
 
@@ -36,5 +36,5 @@ This demonstrates a realistic testing workflow for shader utilities!
 
 ## Learn More
 
-- [wesl-test README](../../packages/wesl-test/README.md) - Quick start guide
-- [wesl-test API](../../packages/wesl-test/API.md) - Complete API reference
+- [wgsl-test README](../../packages/wgsl-test/README.md) - Quick start guide
+- [wgsl-test API](../../packages/wgsl-test/API.md) - Complete API reference

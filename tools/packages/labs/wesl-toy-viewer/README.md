@@ -26,6 +26,6 @@ The viewer scans bundle files for `@toy` comments and populates the shader dropd
 
 ## Purpose
 
-Originally designed for viewing [wesl-test](https://github.com/wgsl-tooling-wg/wesl-js/tree/main/tools/packages/wesl-test) image test shaders. Provides interactive playground for WESL shader libraries without manual configuration.
+Originally designed for viewing [wgsl-test](https://github.com/wgsl-tooling-wg/wesl-js/tree/main/tools/packages/wgsl-test) image test shaders. Provides interactive playground for WESL shader libraries without manual configuration.
 
-See [wesl-test visual regression testing](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wesl-test/API.md#visual-regression-testing) for the testing workflow this viewer complements.
+See [wgsl-test visual regression testing](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wgsl-test/API.md#visual-regression-testing) for the testing workflow this viewer complements.

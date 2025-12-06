@@ -3,8 +3,8 @@
 Most examples are available as stackblitz demos that run in
 the browser. Or use [degit](https://github.com/Rich-Harris/degit/tree/master) to make a convenient local copy.
 
-**wesl-test-basic-compute** - Test WGSL compute shaders with unit tests.
-  - `degit github:wgsl-tooling-wg/examples/wesl-test-basic-compute`
+**wgsl-test-basic-compute** - Test WGSL compute shaders with unit tests.
+  - `degit github:wgsl-tooling-wg/examples/wgsl-test-basic-compute`
 
 <br/>
 

@@ -28,7 +28,7 @@ export interface FragmentTestParams {
   projectDir?: string;
 
   /** GPU device for running the tests.
-   * Typically use `getGPUDevice()` from wesl-test. */
+   * Typically use `getGPUDevice()` from wgsl-test. */
   device: GPUDevice;
 
   /** Texture format for the output texture. Default: "rgba32float" */

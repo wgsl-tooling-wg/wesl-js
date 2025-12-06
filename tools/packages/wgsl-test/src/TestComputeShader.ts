@@ -23,7 +23,7 @@ export interface ComputeTestParams {
   projectDir?: string;
 
   /** GPU device for running the tests.
-   * Typically use `getGPUDevice()` from wesl-test. */
+   * Typically use `getGPUDevice()` from wgsl-test. */
   device: GPUDevice;
 
   /** Format of the result buffer. Default: "u32" */

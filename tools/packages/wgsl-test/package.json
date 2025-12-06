@@ -1,6 +1,6 @@
 {
-  "name": "wesl-test",
-  "version": "0.6.46",
+  "name": "wgsl-test",
+  "version": "0.2.0",
   "type": "module",
   "files": [
     "dist",

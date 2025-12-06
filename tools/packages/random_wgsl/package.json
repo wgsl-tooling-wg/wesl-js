@@ -23,6 +23,6 @@
     "vitest-image-snapshot": "workspace:x",
     "wesl": "workspace:x",
     "wesl-packager": "workspace:x",
-    "wesl-test": "workspace:x"
+    "wgsl-test": "workspace:x"
   }
 }
