@@ -1,5 +1,12 @@
 import type { WeslBundle } from "wesl";
-import type { ToyShaderInfo } from "./BundleLoader.ts";
+
+/** Shader metadata for @toy-annotated shaders in the viewer dropdown. */
+export interface ToyShaderInfo {
+  /** Human-readable name displayed in the UI dropdown. */
+  displayName: string;
+  /** File path in the bundle (e.g., "test/shaders/draw-shapes.wesl"). */
+  filePath: string;
+}
 
 /** Package metadata for a WESL package containing wesl-toy shaders. */
 export interface ToyPackage {

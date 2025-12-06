@@ -1,12 +1,7 @@
 import type { WeslBundle } from "wesl";
-import { findUnboundIdents, npmNameVariations, RecordResolver } from "wesl";
+import { fetchDependenciesForSource } from "wgsl-play";
 import type { LoadedAppState } from "./AppState.ts";
-import type { BundleFile } from "./BundleHydrator.ts";
-import { buildBundleRegistry, hydrateBundleRegistry } from "./BundleHydrator.ts";
-import { fetchBundleFilesFromNpm, fetchBundleFilesFromUrl } from "./BundleLoader.ts";
-import { showError } from "./Controls.ts";
-import { toyRenderPipeline } from "./Gpu.ts";
-import { lygiaUrl } from "./main.ts";
+import { getPlayer } from "./Controls.ts";
 
 /** Load shader from package bundles, compile with WESL, create render pipeline. */
 export async function loadAndCompileShader(
@@ -38,8 +33,7 @@ export async function loadShaderFromUrl(
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     const source = await response.text();
-    const packageNames = detectPackageDeps(source);
-    const bundles = await fetchPackages(packageNames);
+    const bundles = await fetchDependenciesForSource(source);
     await compileAndRender(state, source, bundles);
   });
 }
@@ -56,26 +50,32 @@ function findShaderSource(
   return undefined;
 }
 
-async function compileAndRender(
+function compileAndRender(
   state: LoadedAppState,
   source: string,
   bundles: WeslBundle[],
   packageName?: string,
-): Promise<void> {
+): void {
   state.currentShaderSource = source;
   displaySource(source);
-  await toyRenderPipeline(state, source, bundles, packageName);
+  getPlayer().project = {
+    weslSrc: { main: source },
+    rootModuleName: "main",
+    libs: bundles,
+    packageName,
+  };
 }
 
 async function withErrorHandling(
   operation: string,
   fn: () => Promise<void>,
 ): Promise<void> {
+  const player = getPlayer();
   try {
-    showError("");
+    player.showError("");
     await fn();
   } catch (error) {
-    showError(`Failed to ${operation}: ${error}`);
+    player.showError(`Failed to ${operation}: ${error}`);
     console.error(error);
   }
 }
@@ -86,51 +86,4 @@ function displaySource(source: string): void {
   if (sourceEl) {
     sourceEl.textContent = source;
   }
-}
-
-/** Detect external package dependencies from shader source. */
-function detectPackageDeps(source: string): string[] {
-  const resolver = new RecordResolver({ "./main.wesl": source });
-  const unbound = findUnboundIdents(resolver);
-  // Filter: skip virtual modules (constants, test)
-  const pkgRefs = unbound.filter(p => p[0] !== "constants" && p[0] !== "test");
-  // Extract unique first segments (WESL package identifiers)
-  const pkgIds = pkgRefs.map(p => p[0]);
-  return [...new Set(pkgIds)];
-}
-
-/** Fetch WESL bundles for packages, auto-fetching transitive deps on demand. */
-async function fetchPackages(pkgIds: string[]): Promise<WeslBundle[]> {
-  const loaded = new Set<string>();
-
-  // Fetch initial packages
-  const initialFiles = await Promise.all(pkgIds.map(id => fetchOnePackage(id, loaded)));
-  const registry = await buildBundleRegistry(initialFiles.flat());
-
-  // Hydrate with auto-fetching of transitive deps
-  return hydrateBundleRegistry(registry, id => fetchOnePackage(id, loaded));
-}
-
-/** Fetch bundle files for a single package, mark as loaded. */
-async function fetchOnePackage(
-  pkgId: string,
-  loaded: Set<string>,
-): Promise<BundleFile[]> {
-  if (loaded.has(pkgId)) return []; // already loaded
-  loaded.add(pkgId);
-
-  // Special case for lygia - use custom tgz URL (npm package is outdated)
-  if (pkgId === "lygia") {
-    return fetchBundleFilesFromUrl(lygiaUrl);
-  }
-
-  for (const npmName of npmNameVariations(pkgId)) {
-    try {
-      return await fetchBundleFilesFromNpm(npmName);
-    } catch {
-      // Try next variation
-    }
-  }
-  console.warn(`Package not found: ${pkgId}`);
-  return [];
 }

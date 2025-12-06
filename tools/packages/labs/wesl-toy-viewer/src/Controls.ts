@@ -1,6 +1,14 @@
+import type { WgslPlay } from "wgsl-play";
 import type { LoadedAppState } from "./AppState.ts";
 import { loadNewPackage, selectPackage } from "./PackageControl.ts";
 import { loadAndCompileShader, loadShaderFromUrl } from "./ShaderLoader.ts";
+
+/** Get the wgsl-play element from the page. */
+export function getPlayer(): WgslPlay {
+  const player = document.querySelector<WgslPlay>("#player");
+  if (!player) throw new Error("wgsl-play element not found");
+  return player;
+}
 
 /** Set up UI event handlers for shader selection and playback controls. */
 export function setupControls(state: LoadedAppState): void {
@@ -8,15 +16,6 @@ export function setupControls(state: LoadedAppState): void {
   setupPackageControls(state, elements);
   setupShaderControls(state, elements);
   setupPlaybackControls(state, elements);
-}
-
-/** Display or hide error message in the UI. */
-export function showError(message: string): void {
-  const errorEl = document.querySelector<HTMLDivElement>("#error");
-  if (!errorEl) return;
-
-  errorEl.textContent = message;
-  errorEl.style.display = message ? "block" : "none";
 }
 
 interface ControlElements {
@@ -99,22 +98,22 @@ function setupShaderControls(
 
 /** Attach event handlers for play/pause and rewind buttons. */
 function setupPlaybackControls(
-  state: LoadedAppState,
+  _state: LoadedAppState,
   elements: ControlElements,
 ): void {
-  elements.playPauseBtn.addEventListener("click", () => {
-    state.isPlaying = !state.isPlaying;
-    elements.playPauseBtn.textContent = state.isPlaying ? "Pause" : "Play";
+  const player = getPlayer();
 
-    if (state.isPlaying) {
-      state.startTime = performance.now() - state.pausedDuration;
+  elements.playPauseBtn.addEventListener("click", () => {
+    if (player.isPlaying) {
+      player.pause();
+      elements.playPauseBtn.textContent = "Play";
     } else {
-      state.pausedDuration = performance.now() - state.startTime;
+      player.play();
+      elements.playPauseBtn.textContent = "Pause";
     }
   });
 
   elements.rewindBtn.addEventListener("click", () => {
-    state.startTime = performance.now();
-    state.pausedDuration = 0;
+    player.rewind();
   });
 }

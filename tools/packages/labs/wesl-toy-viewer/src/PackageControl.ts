@@ -1,7 +1,7 @@
 import type { WeslBundle } from "wesl";
-import type { AppState, InitAppState, LoadedAppState } from "./AppState.ts";
-import { loadBundlesWithPackageName } from "./BundleLoader.ts";
-import { showError } from "./Controls.ts";
+import { loadBundlesWithPackageName } from "wgsl-play";
+import type { InitAppState, LoadedAppState } from "./AppState.ts";
+import { getPlayer } from "./Controls.ts";
 import { loadAndCompileShader } from "./ShaderLoader.ts";
 import { collectToyShaders, type ToyPackage } from "./ToyPackage.ts";
 
@@ -12,8 +12,8 @@ const toyPackages: Record<string, ToyPackage> = {};
 export async function loadNewPackage(
   state: InitAppState,
   input: string,
-): Promise<AppState> {
-  showError("");
+): Promise<LoadedAppState> {
+  getPlayer().showError("");
   const { bundles, packageName, tgzUrl } =
     await loadBundlesWithPackageName(input);
   const info = collectToyShaders(tgzUrl, bundles, packageName);
@@ -22,7 +22,7 @@ export async function loadNewPackage(
   addPackageToDropdown(packageName, input);
   await compileFirstShader(state, packageName);
 
-  return state as AppState;
+  return state as LoadedAppState;
 }
 
 /** Select package from dropdown, load bundles, compile first shader. */
@@ -31,7 +31,7 @@ export async function selectPackage(
   packageId: string,
 ): Promise<void> {
   try {
-    showError("");
+    getPlayer().showError("");
     const packageInfo = toyPackages[packageId];
     if (!packageInfo) {
       throw new Error(`Unknown package: ${packageId}`);
@@ -45,7 +45,7 @@ export async function selectPackage(
     toyPackages[packageId] = info;
     await compileFirstShader(state, packageName);
   } catch (error) {
-    showError(`Failed to load package: ${error}`);
+    getPlayer().showError(`Failed to load package: ${error}`);
     console.error(error);
   }
 }
@@ -81,7 +81,7 @@ async function compileFirstShader(
 ): Promise<void> {
   const firstShader = state.toyPackages.shaders[0]?.filePath;
   if (!firstShader) {
-    showError(`No @toy shaders found in package: ${packageName}`);
+    getPlayer().showError(`No @toy shaders found in package: ${packageName}`);
     return;
   }
   await loadAndCompileShader(state as LoadedAppState, firstShader);

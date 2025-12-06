@@ -51,6 +51,12 @@ canvas {
   border: 1px solid #444;
   display: block;
 }
+wgsl-play {
+  width: 512px;
+  height: 512px;
+  border: 1px solid #444;
+  display: block;
+}
 .button-group {
   display: flex;
   gap: 8px;
@@ -91,14 +97,4 @@ button:active {
   font-size: 14px;
   font-weight: 600;
   color: #aaa;
-}
-#error {
-  background: #3a1a1a;
-  border: 1px solid #844;
-  border-radius: 4px;
-  padding: 12px;
-  margin-top: 12px;
-  color: #faa;
-  font-size: 13px;
-  display: none;
 }

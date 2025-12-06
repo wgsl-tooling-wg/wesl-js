@@ -7,6 +7,7 @@
     "dev": "vite",
     "preview": "vite preview",
     "test": "vitest",
+    "test:e2e": "playwright test",
     "typecheck": "tsgo"
   },
   "dependencies": {
@@ -14,9 +15,11 @@
     "fflate": "^0.8.2",
     "nanotar": "^0.2.0",
     "wesl": "workspace:*",
-    "wesl-gpu": "workspace:*"
+    "wesl-gpu": "workspace:*",
+    "wgsl-play": "workspace:*"
   },
   "devDependencies": {
+    "@playwright/test": "^1.53.2",
     "@webgpu/types": "^0.1.65",
     "typescript": "^5.9.3",
     "vite": "^7.1.9",
