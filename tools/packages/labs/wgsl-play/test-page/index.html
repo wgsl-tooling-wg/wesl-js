@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>wgsl-play test</title>
+    <style>
+      body { margin: 20px; background: #1a1a1a; color: #e0e0e0; font-family: sans-serif; }
+      wgsl-play { width: 512px; height: 512px; display: block; }
+      .controls { margin-bottom: 10px; }
+      button { padding: 6px 12px; margin-right: 8px; }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <button id="play">Play</button>
+      <button id="pause">Pause</button>
+      <button id="rewind">Rewind</button>
+    </div>
+    <wgsl-play id="player">
+      @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+        let uv = pos.xy / 512.0;
+        return vec4f(uv, 0.5, 1.0);
+      }
+    </wgsl-play>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

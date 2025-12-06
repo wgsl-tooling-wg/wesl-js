@@ -15,3 +15,7 @@ dist
 
 # Image test outputs (don't commit)
 __image_diff_report__/
+
+# Playwright test artifacts
+playwright-report/
+test-results/
