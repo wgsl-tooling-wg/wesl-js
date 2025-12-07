@@ -2,15 +2,13 @@
   "name": "wesl-packager",
   "version": "0.6.47",
   "type": "module",
-  "bin": "bin/wesl-packager",
+  "bin": "bin/wesl-packager.js",
   "files": [
-    "bin"
+    "bin",
+    "src"
   ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "build": "tsdown",
-    "build:watch": "tsdown --watch",
-    "prepublishOnly": "run-s build",
     "test": "cross-env FORCE_COLOR=1 vitest",
     "test:once": "vitest run",
     "typecheck": "tsgo"
@@ -19,13 +17,12 @@
     "@biomejs/js-api": "^1.0.0",
     "@biomejs/wasm-nodejs": "^2.0.6",
     "wesl": "workspace:*",
+    "wesl-tooling": "workspace:*",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
     "dependent_package": "workspace:x",
     "dir-compare": "^5.0.0",
-    "picocolors": "^1.1.1",
-    "rollup": "^4.44.1",
-    "wesl-tooling": "workspace:x"
+    "picocolors": "^1.1.1"
   }
 }

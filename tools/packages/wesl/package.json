@@ -25,6 +25,9 @@
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
+      },
+      "./bundle-decl": {
+        "import": "./src/weslBundleDeclUrl.ts"
       }
     },
     "main": "dist/index.js"
@@ -32,6 +35,9 @@
   "exports": {
     ".": {
       "import": "./src/index.ts"
+    },
+    "./bundle-decl": {
+      "import": "./src/weslBundleDeclUrl.ts"
     }
   },
   "types": "dist/index.d.ts",

@@ -1,11 +1,12 @@
-/// <reference types="vite/client" />
-import fs, { mkdir } from "node:fs/promises";
+import fs, { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { Biome, Distribution } from "@biomejs/js-api";
 import { noSuffix, sanitizePackageName, type WeslBundle } from "wesl";
+import { weslBundleDeclUrl } from "wesl/bundle-decl";
 import { loadModules, parseDependencies, zip } from "wesl-tooling";
-import weslBundleDecl from "../../wesl/src/WeslBundle.ts?raw";
 import type { CliArgs } from "./PackagerCli.ts";
+
+const weslBundleDecl = await readFile(new URL(weslBundleDeclUrl), "utf8");
 
 const { biome, projectKey: biomeKey } = await setupBiome();
 

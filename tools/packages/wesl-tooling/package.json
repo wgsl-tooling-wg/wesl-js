@@ -1,9 +1,9 @@
 {
   "name": "wesl-tooling",
-  "private": true,
+  "version": "0.6.10",
   "type": "module",
   "files": [
-    "dist"
+    "src"
   ],
   "scripts": {
     "test": "cross-env FORCE_COLOR=1 vitest",

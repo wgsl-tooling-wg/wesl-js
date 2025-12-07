@@ -604,13 +604,12 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
+      wesl-tooling:
+        specifier: workspace:*
+        version: link:../wesl-tooling
       yargs:
         specifier: ^18.0.0
         version: 18.0.0
-    devDependencies:
-      wesl-tooling:
-        specifier: workspace:x
-        version: link:../wesl-tooling
 
   packages/wesl-packager:
     dependencies:
@@ -623,6 +622,9 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
+      wesl-tooling:
+        specifier: workspace:*
+        version: link:../wesl-tooling
       yargs:
         specifier: ^18.0.0
         version: 18.0.0
@@ -639,9 +641,6 @@ importers:
       rollup:
         specifier: ^4.44.1
         version: 4.44.1
-      wesl-tooling:
-        specifier: workspace:x
-        version: link:../wesl-tooling
 
   packages/wesl-packager/src/test/multi_package:
     dependencies:

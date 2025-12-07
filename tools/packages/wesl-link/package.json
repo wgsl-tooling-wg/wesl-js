@@ -2,15 +2,14 @@
   "name": "wesl-link",
   "version": "0.6.47",
   "type": "module",
-  "bin": "bin/wesl-link",
+  "bin": "bin/wesl-link.js",
   "files": [
-    "bin"
+    "bin",
+    "src"
   ],
   "repository": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli",
   "homepage": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli#readme",
   "scripts": {
-    "build": "tsdown",
-    "prepublishOnly": "run-s build",
     "test": "vitest --hideSkippedTests",
     "test:once": "vitest run",
     "typecheck": "tsgo"
@@ -19,9 +18,7 @@
     "import-meta-resolve": "^4.1.0",
     "mini-parse": "workspace:*",
     "wesl": "workspace:*",
+    "wesl-tooling": "workspace:*",
     "yargs": "^18.0.0"
-  },
-  "devDependencies": {
-    "wesl-tooling": "workspace:x"
   }
 }
