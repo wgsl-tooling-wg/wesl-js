@@ -5,6 +5,7 @@
   "files": [
     "src"
   ],
+  "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "test": "cross-env FORCE_COLOR=1 vitest",
     "test:once": "vitest run",
