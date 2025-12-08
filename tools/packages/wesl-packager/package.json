@@ -1,6 +1,6 @@
 {
   "name": "wesl-packager",
-  "version": "0.6.47",
+  "version": "0.6.48",
   "type": "module",
   "bin": "bin/wesl-packager.js",
   "files": [
