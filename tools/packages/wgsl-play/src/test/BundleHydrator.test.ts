@@ -9,7 +9,7 @@ import { loadBundlesFromFiles } from "../BundleHydrator.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const testPkgDir = join(__dirname, "../../../../test_pkg");
+const testPkgDir = join(__dirname, "../../../test_pkg");
 
 function loadBundlesFromTgz(tgzPath: string, packageName: string) {
   const gzipData = readFileSync(tgzPath);
