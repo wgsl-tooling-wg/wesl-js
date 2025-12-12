@@ -1,109 +1,135 @@
-# **WESL Plugin**
+# WESL Plugin
 
 [![NPM Version](https://img.shields.io/npm/v/wesl-plugin)](https://www.npmjs.com/package/wesl-plugin)
 [![Static Badge](https://img.shields.io/badge/Read%20the%20-Docs-blue)](https://wesl-lang.dev/)
 
-> The wesl-plugin handles `.wesl` and `.wgsl` files
-in JavaScript bundlers to make using webgpu shaders more convenient.
-
-Plugin features are accessed from JavaScript and TypeScript with `import` statements:
-
-```ts
-import linkConfig from "./shaders/app.wesl?link";
-```
-
-```ts
-import linkConfig from "./shaders/app.wesl?static";
-```
-
-Each plugin ?feature is enabled by its own wesl-plugin [extension](#extensions).
+Bundler plugin for importing `.wesl` and `.wgsl` shader files in JavaScript/TypeScript.
 
 ## Install
 
 ```
-npm install wesl
-npm install wesl-plugin
+npm install wesl wesl-plugin
 ```
 
-### Vite Configuration
+## Quick Start
 
-Add the wesl-plugin along with any selected extensions to `vite.config.ts`:
+### Build-time linking (?static)
+
+Link shaders at build time for the smallest application bundle size. 
 
 ```ts
-import { UserConfig } from "vite";
-import weslPlugin from "wesl-plugin/vite";
-import { linkBuildExtension } from "wesl-plugin";
+// vite.config.ts
+import { staticBuildExtension } from "wesl-plugin";
+import viteWesl from "wesl-plugin/vite";
 
-const config: UserConfig = {
-  plugins: [ weslPlugin({ extensions: [linkBuildExtension] }) ],
+export default {
+  plugins: [viteWesl({ extensions: [staticBuildExtension] })]
 };
-
-export default config;
 ```
-
-In your JavaScript or TypeScript program you can then import
-wesl or wgsl shaders with a `?link` suffix and link them into WGSL at runtime.
 
 ```ts
-import linkConfig from "./shaders/app.wesl?link";
+// app.ts
+import wgsl from "./shaders/main.wesl?static";
 
-function makeShaders() {
-  const vertShader = await link({
-    ...linkConfig, 
-    rootModuleName: "myVerts.wesl",
-    conditions: {mobileGPU: true}
-  });
-  const computeShader = await link({
-    ...linkConfig, 
-    rootModuleName: "myCompute.wesl",
-    constants: {num_lights: 1}
-  });
-}
-
+const module = device.createShaderModule({ code: wgsl });
 ```
 
-### Other Bundlers
+### Runtime linking (?link)
 
-The wesl-plugin is available for many popular bundlers:
+Link shaders at runtime when you need dynamic conditions or constants:
 
-``` ts
-import weslPlugin from "wesl-plugin/esbuild"; 
-import weslPlugin from "wesl-plugin/rollup"; 
-import weslPlugin from "wesl-plugin/webpack"; 
-import weslPlugin from "wesl-plugin/nuxt"; 
-import weslPlugin from "wesl-plugin/farm"; 
-import weslPlugin from "wesl-plugin/rpack"; 
-// etc.
+```ts
+// vite.config.ts
+import { linkBuildExtension } from "wesl-plugin";
+import viteWesl from "wesl-plugin/vite";
+
+export default {
+  plugins: [viteWesl({ extensions: [linkBuildExtension] })]
+};
+```
+
+```ts
+// app.ts
+import { link } from "wesl";
+import shaderConfig from "./shaders/main.wesl?link";
+
+const linked = await link({
+  ...shaderConfig,
+  conditions: { MOBILE: isMobileGPU },
+  constants: { num_lights: 4 }
+});
+
+const module = linked.createShaderModule(device, {});
+```
+
+## Other Bundlers
+
+```ts
+import viteWesl from "wesl-plugin/vite";
+import esbuildWesl from "wesl-plugin/esbuild";
+import rollupWesl from "wesl-plugin/rollup";
+import webpackWesl from "wesl-plugin/webpack";
+// Also: nuxt, farm, rspack, astro
 ```
 
 ## Extensions
 
-- **LinkExtension** - import `?link` in JavaScript/TypeScript programs to conveniently assemble shader files and libraries for linking at runtime.
-Reads the `wesl.toml` file to find local shader files and libraries,
-Returns a `LinkParams` object ready to use for runtime linking.
+Extensions enable different import suffixes:
 
-- **StaticExtension** - import `?static` in JavaScript/TypeScript programs to
-link shader files at build time.
-Reads the `wesl.toml` file to find local shader files and libraries,
-Returns a wgsl string ready to use for `createShaderModule`.
+| Extension | Suffix | Output | Use Case |
+|-----------|--------|--------|----------|
+| `staticBuildExtension` | `?static` | WGSL string | Build-time linking, simplest |
+| `linkBuildExtension` | `?link` | LinkParams object | Runtime conditions/constants |
 
-### Prototype Extensions
+### Combining Extensions
 
-- **SimpleReReflectExtension** - (_demo for extension writers_) import `?simple_reflect` to
-translate some wgsl `struct` elements into JavaScript and TypeScript.
-Demonstrates to wesl-plugin extension authors how to connect
-to the wesl-plugin, how to produce JavaScript, and how to produce TypeScript.
-- **BindingLayoutExtension** - (_prototype_) import `?bindingLayout` to collect JavaScript
-`BindingGroupLayout` objects.
-Works in concert with the `bindingStructsPlugin` to translate a proposed new WGSL
-feature for defining binding group layouts in shaders [#4957](https://github.com/gpuweb/gpuweb/issues/4957).
+```ts
+import { staticBuildExtension, linkBuildExtension } from "wesl-plugin";
+import viteWesl from "wesl-plugin/vite";
 
-## Developing a wesl-plugin extension
+export default {
+  plugins: [viteWesl({
+    extensions: [staticBuildExtension, linkBuildExtension]
+  })]
+};
+```
 
-To add a new extension to the wesl-plugin:
+### Conditions in Import Path
 
-- Pick an import suffix (e.g. `?myExtension`).
-- Implement a function that returns a JavaScript string.
-  - Extensions have access to wgsl/wesl sources, a parsed abstract syntax tree for the sources, etc.
+For `?static`, you can specify conditions directly in the import:
 
-See [PluginExtension.ts](https://github.com/wgsl-tooling-wg/wesl-js/blob/master/tools/packages/wesl-plugin/src/PluginExtension.ts) for details.
+```ts
+import wgsl from "./app.wesl MOBILE=true DEBUG=false ?static";
+```
+
+## Configuration (wesl.toml)
+
+The plugin reads `wesl.toml` to find shader files and dependencies:
+
+```toml
+weslFiles = ["shaders/**/*.wesl"]
+weslRoot = "shaders"
+dependencies = ["auto"]  # Auto-detect from package.json
+```
+
+## Prototype Extensions
+
+- **SimpleReflectExtension** - Demo for extension authors showing how to generate JS/TS from shader structs
+- **BindingLayoutExtension** - Prototype for generating `BindGroupLayout` objects from shaders
+
+## Writing Custom Extensions
+
+```ts
+import type { PluginExtension } from "wesl-plugin";
+
+const myExtension: PluginExtension = {
+  extensionName: "myfeature",  // enables ?myfeature imports
+  emitFn: async (shaderPath, api, conditions) => {
+    const sources = await api.weslSrc();
+    // Return JavaScript code as a string
+    return `export default ${JSON.stringify(sources)};`;
+  }
+};
+```
+
+See [PluginExtension.ts](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wesl-plugin/src/PluginExtension.ts) for the full API.
