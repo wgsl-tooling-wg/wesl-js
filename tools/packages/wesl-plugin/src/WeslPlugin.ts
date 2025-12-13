@@ -50,6 +50,8 @@ export interface PluginContext {
   weslToml?: string;
 }
 
+type DebugLog = (msg: string, data?: Record<string, unknown>) => void;
+
 /**
  * A bundler plugin for processing WESL files.
  *
@@ -66,12 +68,16 @@ export function weslPlugin(
 ): UnpluginOptions {
   const cache: PluginCache = {};
   const context: PluginContext = { cache, meta, options };
+  const log = options.debug ? debugLog : noopLog;
+
+  log("init", { extensions: options.extensions?.map(e => e.extensionName) });
 
   return {
     name: "wesl-plugin",
-    resolveId: buildResolver(options, context),
-    load: buildLoader(context),
+    resolveId: buildResolver(options, context, log),
+    load: buildLoader(context, log),
     watchChange(id, _change) {
+      log("watchChange", { id });
       if (id.endsWith("wesl.toml")) {
         // The cache is shared for multiple imports
         cache.weslToml = undefined;
@@ -114,6 +120,7 @@ const resolvedPrefix = "^^";
 function buildResolver(
   options: WeslPluginOptions,
   context: PluginContext,
+  log: DebugLog,
 ): Resolver {
   const suffixes = pluginNames(options);
   return resolver;
@@ -141,6 +148,7 @@ function buildResolver(
       return id;
     }
     const matched = pluginSuffixMatch(id, suffixes);
+    log("resolveId", { id, matched: !!matched, suffixes });
     if (matched) {
       const { importParams, baseId, pluginName } = matched;
 
@@ -149,6 +157,7 @@ function buildResolver(
       const pathToShader = path.join(importerDir, baseId);
       const result =
         resolvedPrefix + pathToShader + importParams + "?" + pluginName;
+      log("resolveId resolved", { result });
       return result;
     }
     return matched ? id : null; // this case doesn't happen AFAIK
@@ -174,7 +183,7 @@ function pluginSuffixMatch(id: string, suffixes: string[]): PluginMatch | null {
 
 /** build plugin function for serving a javascript module in response to
  * an import of of our virtual import modules. */
-function buildLoader(context: PluginContext): Loader {
+function buildLoader(context: PluginContext, log: DebugLog): Loader {
   const { options } = context;
   const suffixes = pluginNames(options);
   const pluginsMap = pluginsByName(options);
@@ -185,6 +194,7 @@ function buildLoader(context: PluginContext): Loader {
     id: string,
   ) {
     const matched = pluginSuffixMatch(id, suffixes);
+    log("load", { id, matched: matched?.pluginName ?? null });
     if (matched) {
       const buildPluginApi = buildApi(context, this);
       const plugin = pluginsMap[matched.pluginName];
@@ -194,6 +204,7 @@ function buildLoader(context: PluginContext): Loader {
         ? baseId.slice(resolvedPrefix.length)
         : baseId;
 
+      log("load emitting", { shaderPath, conditions });
       return await plugin.emitFn(shaderPath, buildPluginApi, conditions);
     }
 
@@ -225,6 +236,16 @@ function importParamsToConditions(
   const conditions = Object.fromEntries(condEntries);
   return conditions;
 }
+
+function fmtDebugData(data?: Record<string, unknown>): string {
+  return data ? " " + JSON.stringify(data) : "";
+}
+
+function debugLog(msg: string, data?: Record<string, unknown>): void {
+  console.error(`[wesl-plugin] ${msg}${fmtDebugData(data)}`);
+}
+
+function noopLog(): void {}
 
 export const unplugin = createUnplugin(
   (options: WeslPluginOptions, meta: UnpluginContextMeta) => {
