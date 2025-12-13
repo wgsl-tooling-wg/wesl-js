@@ -106,12 +106,15 @@ function pluginsByName(
  * or
  *   foo/bar.wesl COND=false ?static
  *
+ * Bundlers may add extra query params (e.g. Vite adds ?import for dynamic imports,
+ * ?t=123 for cache busting), so we capture the full query and search within it.
+ *
  * someday it'd be nice to support import attributes like:
  *    import "foo.bar.wesl?static" with { COND: false};
  * (but that doesn't seem supported to be supported in the the bundler plugins yet)
  */
 const pluginMatch =
-  /(^^)?(?<baseId>.*\.w[eg]sl)(?<cond>(\s*\w+(=\w+)?\s*)*)\?(?<pluginName>[\w_-]+)$/;
+  /(^^)?(?<baseId>.*\.w[eg]sl)(?<cond>(\s*\w+(=\w+)?\s*)*)\?(?<query>.+)$/;
 
 const resolvedPrefix = "^^";
 
@@ -170,14 +173,21 @@ interface PluginMatch {
   pluginName: string;
 }
 
+/** Find matching plugin suffix in query string (handles ?import&static, ?t=123&static, etc.) */
 function pluginSuffixMatch(id: string, suffixes: string[]): PluginMatch | null {
-  const suffixMatch = id.match(pluginMatch);
-  const pluginName = suffixMatch?.groups?.pluginName;
-  if (!pluginName || !suffixes.includes(pluginName)) return null;
+  const match = id.match(pluginMatch);
+  const query = match?.groups?.query;
+  if (!query) return null;
+
+  // Query params are &-separated; find one that matches a configured suffix
+  const segments = query.split("&");
+  const pluginName = suffixes.find(s => segments.includes(s));
+  if (!pluginName) return null;
+
   return {
     pluginName,
-    baseId: suffixMatch.groups!.baseId,
-    importParams: suffixMatch.groups?.cond,
+    baseId: match.groups!.baseId,
+    importParams: match.groups?.cond,
   };
 }
 
