@@ -8,6 +8,7 @@ export * from "./LinkedWesl.ts";
 export * from "./Linker.ts";
 export * from "./LiveDeclarations.ts";
 export * from "./Mangler.ts";
+export * from "./ModulePathUtil.ts";
 export * from "./ModuleResolver.ts";
 export * from "./ParseWESL.ts";
 export * from "./PathUtil.ts";

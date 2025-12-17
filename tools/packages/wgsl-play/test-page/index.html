@@ -6,23 +6,106 @@
     <title>wgsl-play test</title>
     <style>
       body { margin: 20px; background: #1a1a1a; color: #e0e0e0; font-family: sans-serif; }
-      wgsl-play { width: 512px; height: 512px; display: block; }
+      wgsl-play { width: 128px; height: 128px; display: block; margin-bottom: 20px; }
       .controls { margin-bottom: 10px; }
       button { padding: 6px 12px; margin-right: 8px; }
+      .section { margin-bottom: 30px; padding: 15px; background: #2a2a2a; border-radius: 8px; }
+      h3 { margin-top: 0; }
+      pre { background: #333; padding: 10px; overflow-x: auto; font-size: 12px; }
     </style>
   </head>
   <body>
-    <div class="controls">
-      <button id="play">Play</button>
-      <button id="pause">Pause</button>
-      <button id="rewind">Rewind</button>
+    <h2>wgsl-play Test Page</h2>
+
+    <!-- Basic test (with uniforms import) -->
+    <div class="section">
+      <h3>1. Basic (test::Uniforms)</h3>
+      <wgsl-play id="player1">
+        <script type="text/wesl">
+          import test::Uniforms;
+          @group(0) @binding(0) var<uniform> u: Uniforms;
+
+          @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+            let uv = pos.xy / u.resolution;
+            return vec4f(uv, 0.5, 1.0);
+          }
+        </script>
+      </wgsl-play>
     </div>
-    <wgsl-play id="player">
-      @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-        let uv = pos.xy / 512.0;
-        return vec4f(uv, 0.5, 1.0);
-      }
-    </wgsl-play>
+
+    <!-- npm CDN test (external imports) -->
+    <div class="section">
+      <h3>2. npm CDN (animated)</h3>
+      <div class="controls">
+        <button id="load-npm">Load from npm</button>
+        <button id="play2">Play</button>
+        <button id="pause2">Pause</button>
+        <button id="rewind2">Rewind</button>
+      </div>
+      <wgsl-play id="player2"></wgsl-play>
+      <pre id="npm-status">Status: Ready</pre>
+    </div>
+
+    <!-- shaderRoot test (internal imports) -->
+    <div class="section">
+      <h3>3. shaderRoot (internal imports)</h3>
+      <p>Tests <code>package::</code> and <code>super::</code> imports from /shaders</p>
+      <div class="controls">
+        <button id="load-internal">Load from shaderRoot</button>
+      </div>
+      <wgsl-play id="player3" shader-root="/shaders"></wgsl-play>
+      <pre id="internal-status">Status: Ready</pre>
+    </div>
+
+    <!-- src attribute with shaderRoot -->
+    <div class="section">
+      <h3>4. src attribute with shaderRoot</h3>
+      <p>Loads shader file with <code>super::</code> and <code>package::</code> imports</p>
+      <div class="controls">
+        <button id="load-src">Load from src</button>
+      </div>
+      <wgsl-play id="player4" shader-root="/shaders"></wgsl-play>
+      <pre id="src-status">Status: Ready</pre>
+    </div>
+
+    <!-- ?static import test (wesl-plugin) -->
+    <div class="section">
+      <h3>5. ?static import (wesl-plugin)</h3>
+      <p>Tests build-time linking via <code>import wgsl from "./shader.wesl?static"</code></p>
+      <div class="controls">
+        <button id="load-static">Load ?static shader</button>
+      </div>
+      <wgsl-play id="player5"></wgsl-play>
+      <pre id="static-status">Status: Ready</pre>
+    </div>
+
+    <!-- ?link import test (wesl-plugin) -->
+    <div class="section">
+      <h3>6. ?link import (wesl-plugin)</h3>
+      <p>Tests runtime linking via <code>import config from "./shader.wesl?link"</code></p>
+      <div class="controls">
+        <button id="load-link">Load ?link shader</button>
+      </div>
+      <wgsl-play id="player6"></wgsl-play>
+      <pre id="link-status">Status: Ready</pre>
+    </div>
+
+    <!-- conditions test (project.conditions with inline shader) -->
+    <div class="section">
+      <h3>7. Conditions (project.conditions)</h3>
+      <p>Tests <code>project = { conditions: { RED: true } }</code> with inline shader</p>
+      <div class="controls">
+        <button id="load-conditions">Load with RED condition</button>
+      </div>
+      <wgsl-play id="player7">
+        @fragment fn fs_main() -> @location(0) vec4f {
+          @if(RED) { return vec4f(1.0, 0.0, 0.0, 1.0); }
+          @else { return vec4f(0.0, 1.0, 0.0, 1.0); }
+        }
+      </wgsl-play>
+      <pre id="conditions-status">Status: Ready</pre>
+    </div>
+
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

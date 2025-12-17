@@ -1,8 +1,7 @@
+import { moduleToRelativePath, normalizeDebugRoot } from "./ModulePathUtil.ts";
 import { parseSrcModule, type WeslAST } from "./ParseWESL.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
 import type { WeslBundle } from "./WeslBundle.ts";
-
-const libRegex = /^lib\.w[eg]sl$/i;
 
 /**
  * Resolves module paths to parsed ASTs.
@@ -35,6 +34,8 @@ export interface RecordResolverOptions {
   debugWeslRoot?: string;
 }
 
+const libRegex = /^lib\.w[eg]sl$/i;
+
 /** Module resolver for in-memory source records. Lazy by default. */
 export class RecordResolver implements BatchModuleResolver {
   readonly astCache = new Map<string, WeslAST>();
@@ -60,12 +61,7 @@ export class RecordResolver implements BatchModuleResolver {
     if (!source) return undefined;
 
     const debugFilePath = this.modulePathToDebugPath(modulePath);
-
-    const ast = parseSrcModule({
-      modulePath,
-      debugFilePath,
-      src: source,
-    });
+    const ast = parseSrcModule({ modulePath, debugFilePath, src: source });
     this.astCache.set(modulePath, ast);
     return ast;
   }
@@ -78,13 +74,7 @@ export class RecordResolver implements BatchModuleResolver {
   }
 
   private moduleToFilePath(modulePath: string): string {
-    const parts = modulePath.split("::");
-    if (parts[0] !== this.packageName && parts[0] !== "package") {
-      return modulePath;
-    }
-
-    const pathParts = parts.slice(1);
-    return pathParts.join("/");
+    return moduleToRelativePath(modulePath, this.packageName) ?? modulePath;
   }
 
   private modulePathToDebugPath(modulePath: string): string {
@@ -95,10 +85,11 @@ export class RecordResolver implements BatchModuleResolver {
   /** Return all modules, parsing them on-demand if needed. */
   allModules(): Iterable<[string, WeslAST]> {
     for (const filePath of Object.keys(this.sources)) {
+      const treatLibAsRoot = this.packageName !== "package";
       const modulePath = fileToModulePath(
         filePath,
         this.packageName,
-        this.packageName !== "package",
+        treatLibAsRoot,
       );
       this.resolveModule(modulePath);
     }
@@ -137,10 +128,8 @@ export class BundleResolver implements ModuleResolver {
   }
 
   resolveModule(modulePath: string): WeslAST | undefined {
-    if (
-      modulePath !== this.packageName &&
-      !modulePath.startsWith(this.packageName + "::")
-    ) {
+    const pkgPrefix = this.packageName + "::";
+    if (modulePath !== this.packageName && !modulePath.startsWith(pkgPrefix)) {
       return undefined;
     }
 
@@ -151,11 +140,7 @@ export class BundleResolver implements ModuleResolver {
     if (!source) return undefined;
 
     const debugFilePath = this.modulePathToDebugPath(modulePath);
-    const ast = parseSrcModule({
-      modulePath,
-      debugFilePath,
-      src: source,
-    });
+    const ast = parseSrcModule({ modulePath, debugFilePath, src: source });
     this.astCache.set(modulePath, ast);
     return ast;
   }
@@ -173,11 +158,7 @@ export class BundleResolver implements ModuleResolver {
   }
 
   private moduleToFilePath(modulePath: string): string {
-    const parts = modulePath.split("::");
-    if (parts[0] !== this.packageName) {
-      return modulePath;
-    }
-    return parts.slice(1).join("/");
+    return moduleToRelativePath(modulePath, this.packageName) ?? modulePath;
   }
 
   private modulePathToDebugPath(modulePath: string): string {
@@ -187,7 +168,7 @@ export class BundleResolver implements ModuleResolver {
 }
 
 /** Convert file path to module path (e.g., "foo/bar.wesl" -> "package::foo::bar"). */
-function fileToModulePath(
+export function fileToModulePath(
   filePath: string,
   packageName: string,
   treatLibAsRoot: boolean,
@@ -202,13 +183,6 @@ function fileToModulePath(
   const strippedPath = noSuffix(normalize(filePath));
   const moduleSuffix = strippedPath.replaceAll("/", "::");
   return packageName + "::" + moduleSuffix;
-}
-
-/** Normalize debug root to end with / or be empty. */
-function normalizeDebugRoot(debugWeslRoot?: string): string {
-  if (debugWeslRoot === undefined) return "./";
-  if (debugWeslRoot === "") return "";
-  return debugWeslRoot.endsWith("/") ? debugWeslRoot : debugWeslRoot + "/";
 }
 
 /** Try path variants with and without ./ prefix and extension suffixes. */

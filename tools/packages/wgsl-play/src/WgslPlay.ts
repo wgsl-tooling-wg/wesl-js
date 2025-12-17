@@ -1,9 +1,8 @@
 import type { LinkParams, WeslBundle } from "wesl";
+import { fileToModulePath } from "wesl";
+import type { WgslPlayConfig } from "./Config.ts";
 import { ErrorOverlay } from "./ErrorOverlay.ts";
-import {
-  fetchDependenciesForSource,
-  loadShaderFromUrl,
-} from "./PackageLoader.ts";
+import { fetchDependencies, loadShaderFromUrl } from "./PackageLoader.ts";
 import {
   createPipeline,
   initWebGPU,
@@ -13,6 +12,8 @@ import {
   startRenderLoop,
 } from "./Renderer.ts";
 import cssText from "./WgslPlay.css?inline";
+
+export { defaults, getConfig, resetConfig } from "./Config.ts";
 
 /** Project configuration for multi-file shaders (subset of wesl link() API). */
 export type WeslProject = Pick<
@@ -49,7 +50,7 @@ let template: HTMLTemplateElement | null = null;
  * </wgsl-play>
  */
 export class WgslPlay extends HTMLElement {
-  static observedAttributes = ["src"];
+  static observedAttributes = ["src", "shader-root"];
 
   private canvas: HTMLCanvasElement;
   private errorOverlay: ErrorOverlay;
@@ -63,9 +64,19 @@ export class WgslPlay extends HTMLElement {
     pausedDuration: 0,
   };
 
-  private _source = "";
+  private _weslSrc: Record<string, string> = {};
+  private _rootModuleName = "package::main";
+  private _libs?: WeslBundle[];
   private _linkOptions: LinkOptions = {};
+  private _fromFullProject = false;
   private _initialized = false;
+
+  /** Get config overrides from element attributes. */
+  private getConfigOverrides(): Partial<WgslPlayConfig> | undefined {
+    const shaderRoot = this.getAttribute("shader-root");
+    if (!shaderRoot) return undefined;
+    return { shaderRoot };
+  }
 
   constructor() {
     super();
@@ -110,33 +121,57 @@ export class WgslPlay extends HTMLElement {
     }
   }
 
-  /** Current shader source code. */
+  /** Current shader source code (main module). */
   get source(): string {
-    return this._source;
+    return this._weslSrc[this._rootModuleName] ?? "";
   }
 
   /** Set shader source directly. */
   set source(value: string) {
-    this._source = value;
-    this.compileSource(value);
+    this._weslSrc = { [this._rootModuleName]: value };
+    this._libs = undefined;
+    this._fromFullProject = false;
+    this.discoverAndRebuild();
   }
 
   /** Set project configuration (mirrors wesl link() API). */
   set project(value: WeslProject) {
     const { weslSrc, rootModuleName, libs } = value;
     const { packageName, conditions, constants } = value;
-    if (!weslSrc || !rootModuleName) return;
-    const mainSource = weslSrc[rootModuleName];
-    if (!mainSource) return;
 
-    this._source = mainSource;
-    this._linkOptions = { packageName, conditions, constants };
-
-    if (libs?.length) {
-      this.compileWithLibs(mainSource, libs);
-    } else {
-      this.compileSource(mainSource);
+    // Update link options if provided
+    if (packageName || conditions || constants) {
+      this._linkOptions = { packageName, conditions, constants };
     }
+    if (libs) this._libs = libs;
+
+    if (weslSrc) {
+      this.setProjectSources(weslSrc, rootModuleName);
+      return;
+    }
+
+    // Partial update - may need to refetch if conditions changed
+    if (Object.keys(this._weslSrc).length === 0) return;
+    if (this._fromFullProject) this.rebuildPipeline();
+    else this.discoverAndRebuild();
+  }
+
+  /** Set sources from a full project with weslSrc. */
+  private setProjectSources(
+    weslSrc: Record<string, string>,
+    rootModuleName?: string,
+  ): void {
+    // Convert file paths to module paths if needed (for ?link imports)
+    const entries = Object.entries(weslSrc).map(([k, v]) => [
+      toModulePath(k),
+      v,
+    ]);
+    this._weslSrc = Object.fromEntries(entries);
+    this._rootModuleName = rootModuleName
+      ? toModulePath(rootModuleName)
+      : "package::main";
+    this._fromFullProject = true;
+    this.rebuildPipeline();
   }
 
   /** Whether the shader is currently playing. */
@@ -146,10 +181,14 @@ export class WgslPlay extends HTMLElement {
 
   /** Current animation time in seconds. */
   get time(): number {
-    const currentTime = this.playback.isPlaying
-      ? performance.now()
-      : this.playback.startTime + this.playback.pausedDuration;
-    return (currentTime - this.playback.startTime) / 1000;
+    const { isPlaying, startTime, pausedDuration } = this.playback;
+    const now = isPlaying ? performance.now() : startTime + pausedDuration;
+    return (now - startTime) / 1000;
+  }
+
+  /** Number of frames rendered (for testing/debugging). */
+  get frameCount(): number {
+    return this.renderState?.frameCount ?? 0;
   }
 
   /** Whether there's a compilation error. */
@@ -164,10 +203,9 @@ export class WgslPlay extends HTMLElement {
 
   /** Start playback. */
   play(): void {
-    if (this.playback.isPlaying) return;
-    const pauseTime = this.playback.startTime + this.playback.pausedDuration;
-    this.playback.startTime =
-      performance.now() - (pauseTime - this.playback.startTime);
+    const { isPlaying, pausedDuration } = this.playback;
+    if (isPlaying) return;
+    this.playback.startTime = performance.now() - pausedDuration;
     this.setPlaying(true);
   }
 
@@ -194,23 +232,24 @@ export class WgslPlay extends HTMLElement {
 
   /** Display error message in overlay. Pass empty string to clear. */
   showError(message: string): void {
-    if (message) {
-      this.errorOverlay.show(message);
-      this.pause();
-    } else {
+    if (!message) {
       this.errorOverlay.hide();
+      return;
     }
+    this.errorOverlay.show(message);
+    this.pause();
   }
 
-  /** Set up WebGPU and load initial shader from src attribute or inline content. */
-  private async initialize(): Promise<void> {
-    if (this._initialized) return;
+  /** Set up WebGPU and load initial shader. Returns true if successful. */
+  private async initialize(): Promise<boolean> {
+    if (this._initialized) return !!this.renderState;
     this._initialized = true;
 
     try {
       this.renderState = await initWebGPU(this.canvas);
       await this.loadInitialContent();
       this.stopRenderLoop = startRenderLoop(this.renderState, this.playback);
+      return true;
     } catch (error) {
       const message = `WebGPU initialization failed: ${error}`;
       this.errorOverlay.show(message);
@@ -218,18 +257,26 @@ export class WgslPlay extends HTMLElement {
       this.dispatchEvent(
         new CustomEvent("init-error", { detail: { message } }),
       );
+      return false;
     }
   }
 
-  /** Load from src attribute or inline textContent. */
+  /** Load from src attribute, script child, or inline textContent. */
   private async loadInitialContent(): Promise<void> {
     const src = this.getAttribute("src");
-    if (src) {
-      await this.loadFromUrl(src);
-    } else {
-      const inlineSource = this.textContent?.trim();
-      if (inlineSource) await this.compileSource(inlineSource);
-    }
+    if (src) return this.loadFromUrl(src);
+
+    // Prefer <script type="text/wgsl"> or <script type="text/wesl"> (no HTML escaping needed)
+    const script = this.querySelector(
+      'script[type="text/wgsl"], script[type="text/wesl"]',
+    );
+    const inlineSource =
+      script?.textContent?.trim() ?? this.textContent?.trim();
+    if (!inlineSource) return;
+
+    this._weslSrc = { [this._rootModuleName]: inlineSource };
+    this._fromFullProject = false;
+    await this.discoverAndRebuild();
   }
 
   /** Fetch shader from URL, auto-fetching any imported dependencies. */
@@ -238,45 +285,73 @@ export class WgslPlay extends HTMLElement {
 
     try {
       this.errorOverlay.hide();
-      const { source, bundles } = await loadShaderFromUrl(url);
-      this._source = source;
-      await createPipeline(this.renderState, source, bundles);
-    } catch (error) {
-      this.handleCompileError(error);
-    }
-  }
-
-  /** Compile source string, auto-fetching any imported dependencies. */
-  private async compileSource(source: string): Promise<void> {
-    if (!this.renderState) return;
-
-    try {
-      this.errorOverlay.hide();
-      const bundles = await fetchDependenciesForSource(source);
-      await createPipeline(
-        this.renderState,
-        source,
-        bundles,
-        this._linkOptions,
+      const { weslSrc, libs, rootModuleName } = await loadShaderFromUrl(
+        url,
+        this.getConfigOverrides(),
       );
+      this._weslSrc = weslSrc;
+      this._libs = libs;
+      this._fromFullProject = false;
+      if (rootModuleName) this._rootModuleName = rootModuleName;
+
+      const mainSource = weslSrc[this._rootModuleName];
+      if (!mainSource) return;
+
+      await createPipeline(this.renderState, mainSource, {
+        ...this._linkOptions,
+        weslSrc,
+        libs,
+        rootModuleName: this._rootModuleName,
+      });
     } catch (error) {
       this.handleCompileError(error);
     }
   }
 
-  /** Compile with pre-loaded library bundles (no network fetch for libs). */
-  private async compileWithLibs(
-    source: string,
-    libs: WeslBundle[],
-  ): Promise<void> {
-    if (!this.renderState) {
-      await this.initialize();
-    }
-    if (!this.renderState) return;
+  /** Rebuild GPU pipeline using stored state. For full projects with all sources. */
+  private async rebuildPipeline(): Promise<void> {
+    if (!(await this.initialize())) return;
+
+    const mainSource = this._weslSrc[this._rootModuleName];
+    if (!mainSource) return;
 
     try {
       this.errorOverlay.hide();
-      await createPipeline(this.renderState, source, libs, this._linkOptions);
+      await createPipeline(this.renderState!, mainSource, {
+        ...this._linkOptions,
+        weslSrc: this._weslSrc,
+        libs: this._libs,
+        rootModuleName: this._rootModuleName,
+      });
+    } catch (error) {
+      this.handleCompileError(error);
+    }
+  }
+
+  /** Discover dependencies and rebuild. For HTTP/inline sources that may need fetching. */
+  private async discoverAndRebuild(): Promise<void> {
+    if (!(await this.initialize())) return;
+
+    const mainSource = this._weslSrc[this._rootModuleName];
+    if (!mainSource) return;
+
+    try {
+      this.errorOverlay.hide();
+      const { weslSrc, libs } = await fetchDependencies(
+        mainSource,
+        this.getConfigOverrides(),
+        undefined,
+        this._weslSrc,
+      );
+      this._weslSrc = { ...this._weslSrc, ...weslSrc };
+      this._libs = [...(this._libs ?? []), ...libs];
+
+      await createPipeline(this.renderState!, mainSource, {
+        ...this._linkOptions,
+        weslSrc: this._weslSrc,
+        libs: this._libs,
+        rootModuleName: this._rootModuleName,
+      });
     } catch (error) {
       this.handleCompileError(error);
     }
@@ -305,4 +380,9 @@ function getStyles(): CSSStyleSheet {
     styles.replaceSync(cssText);
   }
   return styles;
+}
+
+/** Convert file path to module path (e.g., "effects/main.wesl" -> "package::effects::main"). */
+function toModulePath(filePath: string): string {
+  return fileToModulePath(filePath, "package", false);
 }

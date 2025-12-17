@@ -804,6 +804,9 @@ importers:
       nanotar:
         specifier: ^0.2.0
         version: 0.2.0
+      resolve.exports:
+        specifier: ^2.0.3
+        version: 2.0.3
       wesl:
         specifier: workspace:*
         version: link:../wesl
@@ -814,6 +817,9 @@ importers:
       '@playwright/test':
         specifier: ^1.53.2
         version: 1.53.2
+      wesl-plugin:
+        specifier: workspace:x
+        version: link:../wesl-plugin
 
   packages/wgsl-test:
     dependencies:
@@ -5935,6 +5941,10 @@ packages:
 
   resolve-pkg-maps@1.0.0:
     resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
+
+  resolve.exports@2.0.3:
+    resolution: {integrity: sha512-OcXjMsGdhL4XnbShKpAcSqPMzQoYkYyhbEaeSko47MjRP9NfEQMhZkXL1DoFlt9LWQn4YttrdnV6X2OiyzBi+A==}
+    engines: {node: '>=10'}
 
   resolve@1.22.10:
     resolution: {integrity: sha512-NPRy+/ncIMeDlTAsuqwKIiferiawhefFJtkNSW0qZJEqMEb+qBt/77B/jGeeek+F0uOeN05CDa6HXbbIgtVX4w==}
@@ -12340,6 +12350,8 @@ snapshots:
       path-is-absolute: 1.0.1
 
   resolve-pkg-maps@1.0.0: {}
+
+  resolve.exports@2.0.3: {}
 
   resolve@1.22.10:
     dependencies:

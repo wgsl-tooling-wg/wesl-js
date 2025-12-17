@@ -1,5 +1,5 @@
 import type { WeslBundle } from "wesl";
-import { fetchDependenciesForSource } from "wgsl-play";
+import { fetchDependencies } from "wgsl-play";
 import type { LoadedAppState } from "./AppState.ts";
 import { getPlayer } from "./Controls.ts";
 
@@ -10,15 +10,9 @@ export async function loadAndCompileShader(
 ): Promise<void> {
   await withErrorHandling("load shader", async () => {
     const source = findShaderSource(state.bundles, filePath);
-    if (!source) {
-      throw new Error(`Shader source not found: ${filePath}`);
-    }
-    await compileAndRender(
-      state,
-      source,
-      state.bundles,
-      state.toyPackages.name,
-    );
+    if (!source) throw new Error(`Shader source not found: ${filePath}`);
+    const { bundles, toyPackages } = state;
+    await compileAndRender(state, source, bundles, toyPackages.name);
   });
 }
 
@@ -33,19 +27,25 @@ export async function loadShaderFromUrl(
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     const source = await response.text();
-    const bundles = await fetchDependenciesForSource(source);
-    await compileAndRender(state, source, bundles);
+    const { libs } = await fetchDependencies(source);
+    await compileAndRender(state, source, libs);
   });
 }
 
-function findShaderSource(
-  bundles: WeslBundle[],
-  filePath: string,
-): string | undefined {
+async function withErrorHandling(op: string, fn: () => Promise<void>) {
+  const player = getPlayer();
+  try {
+    player.showError("");
+    await fn();
+  } catch (error) {
+    player.showError(`Failed to ${op}: ${error}`);
+    console.error(error);
+  }
+}
+
+function findShaderSource(bundles: WeslBundle[], filePath: string) {
   for (const bundle of bundles) {
-    if (filePath in bundle.modules) {
-      return bundle.modules[filePath];
-    }
+    if (filePath in bundle.modules) return bundle.modules[filePath];
   }
   return undefined;
 }
@@ -53,37 +53,20 @@ function findShaderSource(
 function compileAndRender(
   state: LoadedAppState,
   source: string,
-  bundles: WeslBundle[],
+  libs: WeslBundle[],
   packageName?: string,
-): void {
+) {
   state.currentShaderSource = source;
   displaySource(source);
   getPlayer().project = {
     weslSrc: { main: source },
     rootModuleName: "main",
-    libs: bundles,
+    libs,
     packageName,
   };
 }
 
-async function withErrorHandling(
-  operation: string,
-  fn: () => Promise<void>,
-): Promise<void> {
-  const player = getPlayer();
-  try {
-    player.showError("");
-    await fn();
-  } catch (error) {
-    player.showError(`Failed to ${operation}: ${error}`);
-    console.error(error);
-  }
-}
-
-/** Display shader source code in the UI. */
-function displaySource(source: string): void {
+function displaySource(source: string) {
   const sourceEl = document.querySelector<HTMLPreElement>("#source-code");
-  if (sourceEl) {
-    sourceEl.textContent = source;
-  }
+  if (sourceEl) sourceEl.textContent = source;
 }

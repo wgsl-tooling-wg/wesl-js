@@ -1,5 +1,7 @@
 export * from "./BundleHydrator.ts";
 export * from "./BundleLoader.ts";
+export * from "./Config.ts";
+export * from "./HttpPackageLoader.ts";
 export * from "./PackageLoader.ts";
 export * from "./WgslPlay.ts";
 

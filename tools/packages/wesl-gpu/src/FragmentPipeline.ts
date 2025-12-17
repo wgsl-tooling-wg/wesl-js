@@ -1,29 +1,14 @@
-import type { LinkParams, ModuleResolver, WeslBundle } from "wesl";
 import { CompositeResolver, link, RecordResolver } from "wesl";
+import type { WeslOptions } from "./FragmentParams.ts";
 import { fullscreenTriangleVertex } from "./FullscreenVertex.ts";
 import { createUniformsVirtualLib } from "./RenderUniforms.ts";
 
-export interface LinkFragmentParams {
+export type LinkFragmentParams = WeslOptions & {
   device: GPUDevice;
 
   /** Fragment shader source (vertex shader is auto-provided) */
   fragmentSource: string;
-
-  /** WESL library bundles for dependencies */
-  bundles?: WeslBundle[];
-
-  /** Resolver for lazy file loading (e.g., useSourceShaders mode in tests) */
-  resolver?: ModuleResolver;
-
-  /** Conditional compilation flags */
-  conditions?: Record<string, boolean>;
-
-  /** Compile-time constants */
-  constants?: Record<string, string | number>;
-
-  /** Package name (allows imports to mention the current package by name instead of package::) */
-  packageName?: string;
-}
+};
 
 export interface LinkAndCreateParams extends LinkFragmentParams {
   format: GPUTextureFormat;
@@ -52,31 +37,36 @@ export async function linkAndCreatePipeline(
 export async function linkFragmentShader(
   params: LinkFragmentParams,
 ): Promise<GPUShaderModule> {
-  const { device, fragmentSource, bundles = [], resolver } = params;
-  const { conditions, constants, packageName } = params;
+  const { fragmentSource, conditions, constants, packageName, config } = params;
+  const { device, resolver, libs = [], rootModuleName = "main" } = params;
+  const { weslSrc, virtualLibs } = params;
 
   const fullSource = `${fragmentSource}\n\n${fullscreenTriangleVertex}`;
 
-  // Use provided resolver or fall back to simple weslSrc
-  let sourceParams: Pick<LinkParams, "resolver" | "weslSrc">;
-  if (resolver) {
-    const srcResolver = new RecordResolver(
-      { main: fullSource },
-      { packageName },
-    );
-    sourceParams = { resolver: new CompositeResolver([srcResolver, resolver]) };
-  } else {
-    sourceParams = { weslSrc: { main: fullSource } };
-  }
+  // Build resolver chain: fragmentSource first, then weslSrc, then provided resolver
+  const resolvers: RecordResolver[] = [];
+  resolvers.push(
+    new RecordResolver({ [rootModuleName]: fullSource }, { packageName }),
+  );
+  if (weslSrc) resolvers.push(new RecordResolver(weslSrc, { packageName }));
+
+  let finalResolver =
+    resolvers.length === 1 ? resolvers[0] : new CompositeResolver(resolvers);
+  if (resolver)
+    finalResolver = new CompositeResolver([finalResolver, resolver]);
+
+  // Merge user virtualLibs with default uniforms lib
+  const mergedVirtualLibs = { ...createUniformsVirtualLib(), ...virtualLibs };
 
   const linked = await link({
-    ...sourceParams,
-    rootModuleName: "main",
+    resolver: finalResolver,
+    rootModuleName,
     packageName,
-    libs: bundles,
-    virtualLibs: createUniformsVirtualLib(),
+    libs,
+    virtualLibs: mergedVirtualLibs,
     conditions,
     constants,
+    config,
   });
 
   return linked.createShaderModule(device);

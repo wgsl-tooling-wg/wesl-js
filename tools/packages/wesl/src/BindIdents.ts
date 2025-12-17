@@ -7,6 +7,7 @@ import type { FlatImport } from "./FlattenTreeImport.ts";
 import type { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
 import { type LiveDecls, makeLiveDecls } from "./LiveDeclarations.ts";
 import { type ManglerFn, minimalMangle } from "./Mangler.ts";
+import { resolveSuper } from "./ModulePathUtil.ts";
 import type { ModuleResolver } from "./ModuleResolver.ts";
 import { flatImports, parseSrcModule, type WeslAST } from "./ParseWESL.ts";
 import type {
@@ -485,7 +486,8 @@ function findExport(
   conditions: Conditions = {},
   virtuals?: VirtualLibrarySet,
 ): FoundDecl | undefined {
-  const fqPathParts = absoluteModulePath(modulePathParts, srcModule);
+  const srcModuleParts = srcModule.modulePath.split("::");
+  const fqPathParts = resolveSuper(modulePathParts, srcModuleParts);
   const modulePath = fqPathParts.slice(0, -1).join("::");
   const moduleAst =
     resolver.resolveModule(modulePath) ??
@@ -584,20 +586,6 @@ function stdWgsl(name: string): boolean {
 
 function qualifiedIdent(identParts: string[]): string[] | undefined {
   if (identParts.length > 1) return identParts;
-}
-
-/** Convert a module path with super:: elements to one with no super:: elements */
-function absoluteModulePath(
-  modulePathParts: string[],
-  srcModule: SrcModule,
-): string[] {
-  const lastSuper = modulePathParts.lastIndexOf("super");
-  if (lastSuper === -1) return modulePathParts;
-
-  const srcModuleParts = srcModule.modulePath.split("::");
-  const base = srcModuleParts.slice(0, -(lastSuper + 1));
-  const noSupers = modulePathParts.slice(lastSuper + 1);
-  return [...base, ...noSupers];
 }
 
 /** Collect all declarations in a scope (used when scope is already validated) */

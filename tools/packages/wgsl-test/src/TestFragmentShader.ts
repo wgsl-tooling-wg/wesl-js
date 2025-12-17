@@ -1,17 +1,15 @@
 import { componentByteSize, numComponents, texelLoadType } from "thimbleberry";
 import type { ImageData } from "vitest-image-snapshot";
-import type { LinkParams } from "wesl";
 import { normalizeModuleName } from "wesl";
 import {
-  linkFragmentShader,
-  type RenderUniforms,
-  renderUniformBuffer,
-  simpleRender,
+  type FragmentRenderParams,
+  runFragment as runFragmentCore,
+  type WeslOptions,
 } from "wesl-gpu";
 import { resolveShaderContext } from "./CompileShader.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 
-export interface FragmentTestParams {
+export interface FragmentTestParams extends WeslOptions, FragmentRenderParams {
   /** WESL/WGSL source code for the fragment shader to test.
    * Either src or moduleName must be provided, but not both. */
   src?: string;
@@ -26,39 +24,6 @@ export interface FragmentTestParams {
    * Optional: defaults to searching upward from cwd for package.json or wesl.toml.
    * Typically use `import.meta.url`. */
   projectDir?: string;
-
-  /** GPU device for running the tests.
-   * Typically use `getGPUDevice()` from wgsl-test. */
-  device: GPUDevice;
-
-  /** Texture format for the output texture. Default: "rgba32float" */
-  textureFormat?: GPUTextureFormat;
-
-  /** Size of the output texture. Default: [1, 1] for simple color tests.
-   * Use [2, 2] for derivative tests (forms a complete 2x2 quad for dpdx/dpdy). */
-  size?: [width: number, height: number];
-
-  /** Flags for conditional compilation to test shader specialization.
-   * Useful for testing `@if` statements in the shader. */
-  conditions?: LinkParams["conditions"];
-
-  /** Constants for shader compilation.
-   * Injects host-provided values via the `constants::` namespace. */
-  constants?: LinkParams["constants"];
-
-  /** Uniform values for the shader (time, mouse).
-   * Resolution is auto-populated from the size parameter.
-   * Creates test::Uniforms struct available in the shader. */
-  uniforms?: RenderUniforms;
-
-  /** Input textures for the shader.
-   * Bindings: textures at [1..n], samplers at [n+1..n+m].
-   * Binding 0 is reserved for uniforms. */
-  textures?: GPUTexture[];
-
-  /** Samplers for the input textures.
-   * Must be length 1 (reused for all textures) or match textures.length exactly. */
-  samplers?: GPUSampler[];
 
   /** Use source shaders from current package instead of built bundles.
    * Default: true for faster iteration during development. */
@@ -142,39 +107,25 @@ export async function testFragmentImage(
 }
 
 async function runFragment(params: FragmentTestParams): Promise<number[]> {
-  const { projectDir, device, src, moduleName, useSourceShaders } = params;
-  const { conditions = {}, constants } = params;
-  const { textureFormat = "rgba32float", size = [1, 1] } = params;
-  const { textures, samplers, uniforms = {} } = params;
+  const { projectDir, src, moduleName, useSourceShaders } = params;
 
   // Resolve shader source from either src or moduleName
   const fragmentSrc = await resolveShaderSource(src, moduleName, projectDir);
 
+  // Resolve context (libs, resolver, packageName) from project
   const ctx = await resolveShaderContext({
     src: fragmentSrc,
     projectDir,
     useSourceShaders,
   });
 
-  const module = await linkFragmentShader({
-    device,
-    fragmentSource: fragmentSrc,
-    bundles: ctx.libs,
-    resolver: ctx.resolver,
-    packageName: ctx.packageName,
-    conditions,
-    constants,
-  });
-
-  const uniformBuffer = renderUniformBuffer(device, size, uniforms);
-  return await simpleRender({
-    device,
-    module,
-    outputFormat: textureFormat,
-    size,
-    textures,
-    samplers,
-    uniformBuffer,
+  // Use shared runFragment with resolved source and context
+  return runFragmentCore({
+    ...params,
+    src: fragmentSrc,
+    libs: params.libs ?? ctx.libs,
+    resolver: params.resolver ?? ctx.resolver,
+    packageName: params.packageName ?? ctx.packageName,
   });
 }
 

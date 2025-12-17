@@ -4,7 +4,7 @@
   "type": "module",
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "dev": "vite test-page",
+    "dev": "vite test-page --config vite.config.ts",
     "test": "vitest",
     "test:e2e": "playwright test",
     "typecheck": "tsgo"
@@ -17,10 +17,12 @@
     "es-module-lexer": "^1.7.0",
     "fflate": "^0.8.2",
     "nanotar": "^0.2.0",
+    "resolve.exports": "^2.0.3",
     "wesl": "workspace:*",
     "wesl-gpu": "workspace:*"
   },
   "devDependencies": {
-    "@playwright/test": "^1.53.2"
+    "@playwright/test": "^1.53.2",
+    "wesl-plugin": "workspace:x"
   }
 }

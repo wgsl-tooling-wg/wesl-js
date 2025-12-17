@@ -1,9 +1,15 @@
-import type { LinkParams, WeslBundle } from "wesl";
-import { requestWeslDevice } from "wesl";
+import type { ModuleResolver } from "wesl";
+import {
+  BundleResolver,
+  CompositeResolver,
+  RecordResolver,
+  requestWeslDevice,
+} from "wesl";
 import {
   linkAndCreatePipeline,
   renderFrame,
   updateRenderUniforms,
+  type WeslOptions,
 } from "wesl-gpu";
 
 /** WebGPU state */
@@ -16,6 +22,7 @@ export interface RenderState {
   pipelineLayout: GPUPipelineLayout;
   bindGroup: GPUBindGroup;
   pipeline?: GPURenderPipeline;
+  frameCount: number;
 }
 
 /** Animation state */
@@ -24,6 +31,9 @@ export interface PlaybackState {
   startTime: number;
   pausedDuration: number;
 }
+
+/** Options for linking shaders - re-exports wesl-gpu's WeslOptions */
+export type LinkOptions = WeslOptions;
 
 /** Initialize WebGPU for a canvas element. */
 export async function initWebGPU(
@@ -68,30 +78,39 @@ export async function initWebGPU(
     uniformBuffer,
     pipelineLayout,
     bindGroup,
+    frameCount: 0,
   };
 }
-
-export type LinkOptions = Pick<
-  LinkParams,
-  "packageName" | "conditions" | "constants"
->;
 
 /** Compile WESL fragment shader and create render pipeline. */
 export async function createPipeline(
   state: RenderState,
   fragmentSource: string,
-  bundles: WeslBundle[],
   options?: LinkOptions,
 ): Promise<void> {
+  const { weslSrc, libs = [], conditions, constants } = options ?? {};
+  const { packageName, rootModuleName } = options ?? {};
+
+  // Build resolver from weslSrc/libs if provided
+  let resolver: ModuleResolver | undefined;
+  if (weslSrc || libs.length > 0) {
+    const resolvers: ModuleResolver[] = [];
+    if (weslSrc) resolvers.push(new RecordResolver(weslSrc));
+    for (const bundle of libs) resolvers.push(new BundleResolver(bundle));
+    resolver =
+      resolvers.length === 1 ? resolvers[0] : new CompositeResolver(resolvers);
+  }
+
   state.pipeline = await linkAndCreatePipeline({
     device: state.device,
     fragmentSource,
-    bundles,
+    resolver,
     format: state.presentationFormat,
     layout: state.pipelineLayout,
-    conditions: options?.conditions,
-    constants: options?.constants,
-    packageName: options?.packageName,
+    conditions,
+    constants,
+    packageName,
+    rootModuleName,
   });
 }
 
@@ -128,11 +147,11 @@ export function startRenderLoop(
       bindGroup: state.bindGroup,
       targetView: state.context.getCurrentTexture().createView(),
     });
+    state.frameCount++;
     animationId = requestAnimationFrame(render);
   }
 
   animationId = requestAnimationFrame(render);
-
   return () => cancelAnimationFrame(animationId);
 }
 
