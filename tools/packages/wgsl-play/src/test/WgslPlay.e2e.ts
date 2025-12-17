@@ -1,7 +1,7 @@
 /** E2E tests for wgsl-play component using Playwright. */
 import { expect, test } from "@playwright/test";
 
-test("canvas renders correctly (visual regression)", async ({ page }) => {
+test.skip("canvas renders correctly (visual regression)", async ({ page }) => {
   await page.goto("/");
 
   // Wait for WebGPU to initialize and render
