@@ -4,7 +4,7 @@ import type { LinkParams } from "wesl";
 import linkParams from "../shaders/foo/app.wesl?link";
 
 test("verify ?link", async () => {
-  expectTypeOf(linkParams).toMatchTypeOf<LinkParams>();
+  expectTypeOf(linkParams).toExtend<LinkParams>();
 
   const { rootModuleName, debugWeslRoot, weslSrc, libs } =
     linkParams as LinkParams;

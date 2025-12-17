@@ -3,7 +3,7 @@ import { expect, expectTypeOf, test } from "vitest";
 import wgsl from "../shaders/foo/app.wesl MOBILE=true FUN SAFE=false ?static";
 
 test("verify ?static", async () => {
-  expectTypeOf(wgsl).toMatchTypeOf<string>();
+  expectTypeOf(wgsl).toExtend<string>();
   expect(wgsl).toMatchInlineSnapshot(`
     "
 
