@@ -456,24 +456,6 @@ importers:
 
   packages/mini-parse: {}
 
-  packages/plugin-test:
-    dependencies:
-      mini-parse:
-        specifier: workspace:*
-        version: link:../mini-parse
-      thimbleberry:
-        specifier: ^0.2.10
-        version: 0.2.10
-      webgpu:
-        specifier: ^0.3.8
-        version: 0.3.8
-      wesl:
-        specifier: workspace:*
-        version: link:../wesl
-      wesl-plugin:
-        specifier: workspace:*
-        version: link:../wesl-plugin
-
   packages/random_wgsl:
     devDependencies:
       vitest-image-snapshot:
@@ -725,6 +707,21 @@ importers:
       webgpu:
         specifier: ^0.3.8
         version: 0.3.8
+      wesl-plugin:
+        specifier: workspace:*
+        version: link:../..
+
+  packages/wesl-plugin/test/linkGpu:
+    dependencies:
+      mini-parse:
+        specifier: workspace:*
+        version: link:../../../mini-parse
+      webgpu:
+        specifier: ^0.3.8
+        version: 0.3.8
+      wesl:
+        specifier: workspace:*
+        version: link:../../../wesl
       wesl-plugin:
         specifier: workspace:*
         version: link:../..

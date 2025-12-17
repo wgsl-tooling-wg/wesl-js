@@ -1,0 +1,15 @@
+{
+  "name": "link-gpu-test",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest",
+    "typecheck": "tsgo"
+  },
+  "dependencies": {
+    "mini-parse": "workspace:*",
+    "webgpu": "^0.3.8",
+    "wesl": "workspace:*",
+    "wesl-plugin": "workspace:*"
+  }
+}

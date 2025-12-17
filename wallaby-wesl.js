@@ -9,7 +9,6 @@ const config = () => ({
       filePatterns.push(`!**/cts/**/*`);
       filePatterns.push(`!**/examples/**/*`);
       filePatterns.push(`!**/mini-parse/**/*`);
-      filePatterns.push(`!**/plugin-test/**/*`);
       filePatterns.push(`!**/wesl-plugin/**/*`);
       filePatterns.push(`!**/wesl-packager/**/*`);
       filePatterns.push(`!**/wesl-bench/**/*`);

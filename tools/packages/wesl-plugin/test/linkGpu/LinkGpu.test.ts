@@ -8,12 +8,10 @@ let gpu: GPU;
 beforeAll(async () => {
   const webgpu = await import("webgpu");
   Object.assign(globalThis, (webgpu as any).globals); // LATER fix types upstream in webgpu package
-
   gpu = webgpu.create([]);
 });
 
 test("gpu execution w/?link", async () => {
-  // setup webgpu
   const adapter = await gpu.requestAdapter();
   const device = await adapter?.requestDevice();
   if (!device) {
@@ -22,15 +20,11 @@ test("gpu execution w/?link", async () => {
   }
 
   // import dynamically, so that import comes after globalThis has GPUShaderStage
-  const linkParams = (await import("../../shaders/linkTest/main.wesl?link"))
-    .default;
-
+  const linkParams = (await import("./shaders/main.wesl?link")).default;
   const code = (await link(linkParams)).dest;
 
-  // --- verify linked shader ---
   device.createShaderModule({ code }); // verify works for webgpu
 
-  // verify matches expected text
   expect(trimSrc(code)).toMatchInlineSnapshot(`
     "@group(0) @binding(0) var <uniform> u: Uniforms;
     @compute @workgroup_size(1) fn main() { }

@@ -1,15 +1,21 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignoreDependencies": ["wesl-testsuite"],
+  "ignoreDependencies": [
+    "wesl-testsuite"
+  ],
   "workspaces": {
     "packages/*": {
-      "entry": ["src/index.ts", "src/**/*.test.ts"],
-      "project": ["**/*.ts"]
+      "entry": [
+        "src/index.ts",
+        "src/**/*.test.ts"
+      ],
+      "project": [
+        "**/*.ts"
+      ]
     }
   },
   "ignoreWorkspaces": [
     "packages/wesl-plugin/test/**",
-    "packages/plugin-test/**",
     "packages/built-test/**",
     "examples/**"
   ],
