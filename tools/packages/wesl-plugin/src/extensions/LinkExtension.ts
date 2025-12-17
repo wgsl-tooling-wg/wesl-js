@@ -32,7 +32,7 @@ async function emitLinkJs(
     .map((p, i) => `import ${sanitizedDeps[i]} from "${p}";`)
     .join("\n");
 
-  const rootName = path.basename(rootModuleName);
+  const rootName = path.basename(rootModuleName).replace(/\W/g, "_");
   const paramsName = `link${rootName}Config`;
 
   const linkParams: LinkParams = {

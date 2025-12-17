@@ -2,6 +2,7 @@
 import { expect, expectTypeOf, test } from "vitest";
 import type { LinkParams } from "wesl";
 import linkParams from "../shaders/foo/app.wesl?link";
+import dashLinkParams from "../shaders/foo/app-test.wesl?link";
 
 test("verify ?link", async () => {
   expectTypeOf(linkParams).toExtend<LinkParams>();
@@ -14,6 +15,10 @@ test("verify ?link", async () => {
 
   expect(weslSrc).toMatchInlineSnapshot(`
     {
+      "app-test.wesl": "fn test_main() {
+       let x = 1u;
+    }
+    ",
       "app.wesl": "import random_wgsl::pcg_2u_3f;
 
     main() {
@@ -30,4 +35,10 @@ test("verify ?link", async () => {
       "lib.wgsl",
     ]
   `);
+});
+
+test("?link with dash in filename", async () => {
+  expectTypeOf(dashLinkParams).toExtend<LinkParams>();
+  const { rootModuleName } = dashLinkParams as LinkParams;
+  expect(rootModuleName).toMatchInlineSnapshot(`"app-test"`);
 });
