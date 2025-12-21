@@ -27,11 +27,7 @@ import {
 } from "wesl";
 import type { WeslBundleFile } from "./BundleHydrator.ts";
 import { bundleRegistry, hydrateBundleRegistry } from "./BundleHydrator.ts";
-import {
-  fetchBundleFilesFromNpm,
-  fetchBundleFilesFromUrl,
-  lygiaTgzUrl,
-} from "./BundleLoader.ts";
+import { fetchBundleFilesFromNpm } from "./BundleLoader.ts";
 import { getConfig, type WgslPlayConfig } from "./Config.ts";
 import { FetchingResolver } from "./FetchingResolver.ts";
 
@@ -161,11 +157,6 @@ async function fetchOnePackage(
 ): Promise<WeslBundleFile[]> {
   if (loaded.has(pkgId)) return [];
   loaded.add(pkgId);
-
-  // Special case for lygia - use custom tgz URL (npm package is outdated)
-  if (pkgId === "lygia") {
-    return fetchBundleFilesFromUrl(lygiaTgzUrl);
-  }
 
   for (const npmName of npmNameVariations(pkgId)) {
     try {

@@ -9,7 +9,7 @@
     "test": "playwright test --reporter=list"
   },
   "dependencies": {
-    "lygia": "1.3.2",
+    "lygia": "1.4.0",
     "wesl": "workspace:*"
   },
   "devDependencies": {
