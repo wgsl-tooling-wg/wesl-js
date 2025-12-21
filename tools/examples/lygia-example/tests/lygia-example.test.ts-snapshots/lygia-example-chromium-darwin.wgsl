@@ -25,5 +25,7 @@ fn rgb2hue(rgb: vec3f) -> f32 {
         q = vec4f(rgb.r, p.yzx);
     }
     let d = q.x - min(q.w, q.y);
-    return abs(q.z + (q.w - q.y) / (6. * d + 1e-10));
+    return abs(q.z + (q.w - q.y) / (6. * d + HUE_EPSILON));
 }
+
+const HUE_EPSILON: f32 = 1e-10;
