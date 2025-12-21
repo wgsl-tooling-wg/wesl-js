@@ -1,0 +1,15 @@
+{
+  "name": "wgsl-play-lygia-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "wgsl-play": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^7.3.0"
+  }
+}

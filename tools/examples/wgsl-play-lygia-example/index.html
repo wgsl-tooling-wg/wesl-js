@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>wgsl-play lygia</title>
+    <script type="module">import "wgsl-play";</script>
+    <style>
+      body { margin: 0; background: #1a1a1a; display: grid; place-items: center; height: 100vh; }
+      wgsl-play { width: 512px; height: 512px; }
+    </style>
+  </head>
+  <body>
+    <wgsl-play>
+      <script type="text/wesl">
+        import lygia::generative::snoise::snoise2;
+        import test::Uniforms;
+
+        @group(0) @binding(0) var<uniform> u: Uniforms;
+
+        @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+          let st = pos.xy / u.resolution * 5.0;
+          let n = snoise2(st + u.time) * 0.5 + 0.5;
+          return vec4f(vec3f(n), 1.0);
+        }
+      </script>
+    </wgsl-play>
+  </body>
+</html>
