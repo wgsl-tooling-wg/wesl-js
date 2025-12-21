@@ -3,6 +3,14 @@ import { type ParsedTarFileItem, parseTar } from "nanotar";
 import type { WeslBundle } from "wesl";
 import { loadBundlesFromFiles, type WeslBundleFile } from "./BundleHydrator.ts";
 
+/** Fetch bundle files from an npm package (without evaluating). */
+export async function fetchBundleFilesFromNpm(
+  packageName: string,
+): Promise<WeslBundleFile[]> {
+  const tgzUrl = await npmPackageToUrl(packageName);
+  return fetchBundleFilesFromUrl(tgzUrl);
+}
+
 /** Load bundles from URL or npm package name, return bundles, package name, and resolved tgz URL. */
 export async function loadBundlesWithPackageName(
   input: string,
@@ -28,7 +36,8 @@ export async function loadBundlesWithPackageName(
   return { bundles, packageName, tgzUrl };
 }
 
-/** Load WESL bundles from a tgz URL. */
+/** Load WESL bundles from a tgz URL.
+ * (handy for privately published packages) */
 export async function loadBundlesFromTgz(
   tgzUrl: string,
   packageName: string,
@@ -41,16 +50,11 @@ export async function loadBundlesFromTgz(
   return loadBundlesFromFiles(bundleFiles);
 }
 
-/** Custom tgz URL for lygia (npm package is outdated). */
-export const lygiaTgzUrl =
-  "https://raw.githubusercontent.com/mighdoll/big-files/refs/heads/main/lygia-1.3.5-rc.2.tgz";
-
 /** Resolve input to a tgz URL (converts npm package names to registry URLs). */
 async function resolvePackageInput(input: string): Promise<string> {
   if (input.startsWith("http://") || input.startsWith("https://")) {
     return input;
   }
-  if (input === "lygia") return lygiaTgzUrl;
   return npmPackageToUrl(input);
 }
 
@@ -77,7 +81,7 @@ async function fetchAndExtractTgz(
 }
 
 /** Fetch bundle files from a tgz URL (without evaluating). */
-export async function fetchBundleFilesFromUrl(
+async function fetchBundleFilesFromUrl(
   tgzUrl: string,
 ): Promise<WeslBundleFile[]> {
   const entries = await fetchAndExtractTgz(tgzUrl);
@@ -91,16 +95,8 @@ export async function fetchBundleFilesFromUrl(
   return bundleFilesWithoutPkg.map(f => ({ ...f, packageName: pkgName }));
 }
 
-/** Fetch bundle files from an npm package (without evaluating). */
-export async function fetchBundleFilesFromNpm(
-  packageName: string,
-): Promise<WeslBundleFile[]> {
-  const tgzUrl = await npmPackageToUrl(packageName);
-  return fetchBundleFilesFromUrl(tgzUrl);
-}
-
 /** Fetch npm package tarball URL from registry metadata. */
-export async function npmPackageToUrl(packageName: string): Promise<string> {
+async function npmPackageToUrl(packageName: string): Promise<string> {
   const metadataUrl = `https://registry.npmjs.org/${packageName}`;
   const response = await fetch(metadataUrl);
   if (!response.ok) {
