@@ -20,6 +20,8 @@ interface Versions {
   wesl: string;
   "wesl-plugin": string;
   "wesl-link": string;
+  "wgsl-play": string;
+  "wgsl-test": string;
   random_wgsl: string;
   [key: string]: string | undefined;
 }
@@ -63,12 +65,23 @@ async function weslVersion(): Promise<Versions> {
   const weslPlugin = await packageVersion("wesl-plugin");
   const cli = await packageVersion("wesl-link");
   const random_wgsl = await packageVersion("random_wgsl");
+  const wgslPlay = await packageVersion("wgsl-play");
+  const wgslTest = await packageVersion("wgsl-test");
   console.log(`wesl version: ${wesl}`);
   console.log(`wesl-plugin version: ${weslPlugin}`);
   console.log(`wesl-link cli version: ${cli}`);
   console.log(`random_wgsl version: ${random_wgsl}`);
+  console.log(`wgsl-play version: ${wgslPlay}`);
+  console.log(`wgsl-test version: ${wgslTest}`);
 
-  return { wesl, "wesl-plugin": weslPlugin, "wesl-link": cli, random_wgsl };
+  return {
+    wesl,
+    "wesl-plugin": weslPlugin,
+    "wesl-link": cli,
+    random_wgsl,
+    "wgsl-play": wgslPlay,
+    "wgsl-test": wgslTest,
+  };
 }
 
 /** load the version from a package.json file in the packages/ di */
@@ -106,7 +119,7 @@ async function copyDirectory(
 }
 
 /** rewrite the the example package.json dependencies to set the
- * wesl and wesl-plugin versions */
+ * versions of wesl-js packages including wesl, wesl-plugin, and wgsl-play */
 async function setExampleVersions(
   targetDir: string,
   versions: Versions,
