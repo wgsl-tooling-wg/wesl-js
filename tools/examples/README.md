@@ -57,6 +57,7 @@ the browser. Or use [degit](https://github.com/Rich-Harris/degit/tree/master) to
 <br/>
 
 **wgsl-play-lygia-example** - wgsl-play web component with inline lygia shader.
+  [Demo](https://stackblitz.com/github/wgsl-tooling-wg/examples/tree/main/wgsl-play-lygia-example)
   - `degit github:wgsl-tooling-wg/examples/wgsl-play-lygia-example`
 
 <br/>
