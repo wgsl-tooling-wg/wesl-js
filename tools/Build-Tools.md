@@ -101,3 +101,9 @@ The copy is likely a different version than the current tree
 - This causes a little complication in the wesl-plugin build
   because wesl-plugin wants to publish one of the types from wesl-tooling, and tsdown bundler wants to use d.ts files for types.
   - see wesl-plugin/tsconfig.json and wesl-plugin/tsdown.config.ts 
+
+### .vscode/settings.template.json
+- VS Code doesn't support an easy way to have project personal settings as well as shared project settings.
+  [Issue](https://github.com/microsoft/vscode/issues/40233).
+- We gitignore the vscode settings.json, and check in settings.template.json file for developers to 
+  manually create their own settings.
