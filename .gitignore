@@ -28,3 +28,6 @@ GEMINI.md
 agent-*.md
 .agent
 .playwright-mcp/
+
+# users can modify their own settings
+.vscode/settings.json
