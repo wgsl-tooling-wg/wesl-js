@@ -3,3 +3,6 @@ README.md
 
 # generated html documentation
 docs
+
+# cloned test fixtures (bevy shaders, etc.)
+fixtures

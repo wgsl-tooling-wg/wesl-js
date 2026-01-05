@@ -17,6 +17,7 @@
     "pages:deploy": "wrangler pages deploy --project-name wesl-js docs",
     "prepublishOnly": "run-s build",
     "test": "vitest --hideSkippedTests",
+    "test:cts": "./scripts/test-cts.ts",
     "test:once": "vitest run",
     "typecheck": "tsgo"
   },
