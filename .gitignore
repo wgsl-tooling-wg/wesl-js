@@ -19,15 +19,3 @@ _baseline
 # test built packages
 /temp-built-test/
 /temp-packages/
-
-# don't clutter the repo with ai
-.claude
-copilot-instructions.md
-CLAUDE.md
-GEMINI.md
-agent-*.md
-.agent
-.playwright-mcp/
-
-# users can modify their own settings
-.vscode/settings.json

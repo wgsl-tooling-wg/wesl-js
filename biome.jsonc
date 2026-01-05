@@ -112,6 +112,25 @@
           "allowTrailingCommas": true
         }
       }
+    },
+    {
+      "includes": ["**/v2/**"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveLinesPerFunction": {
+              "level": "warn",
+              "options": { "maxLines": 50 }
+            },
+            "noExcessiveCognitiveComplexity": {
+              "level": "warn",
+              "options": {
+                "maxAllowedComplexity": 15
+              }
+            }
+          }
+        }
+      }
     }
   ]
 }

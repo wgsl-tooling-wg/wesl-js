@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2024", // we can expect a modern version with WebGPU (but we want stablility, so not "esnext")
+    "target": "ES2024", // we can expect a modern version with WebGPU (but we want stability, so not "esnext")
     "lib": ["ES2024"],
 
     "noEmit": true, // we don't transpile with tsgo, we just typecheck

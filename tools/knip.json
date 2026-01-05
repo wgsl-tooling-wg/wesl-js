@@ -4,12 +4,14 @@
   "workspaces": {
     "packages/*": {
       "entry": ["src/index.ts", "src/**/*.test.ts"],
-      "project": ["**/*.ts"]
+      "project": ["**/*.ts"],
+      "vite": false
     }
   },
   "ignoreWorkspaces": [
     "packages/wesl-plugin/test/**",
     "packages/built-test/**",
+    "packages/labs/**",
     "examples/**"
   ],
   "ignore": [
