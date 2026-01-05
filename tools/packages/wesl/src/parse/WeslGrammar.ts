@@ -673,6 +673,8 @@ function _makeBinaryExpression([left, operator, right]: [
     operator,
     left,
     right,
+    start: left.start,
+    end: right.end,
   };
 }
 

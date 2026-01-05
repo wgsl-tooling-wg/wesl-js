@@ -2,16 +2,12 @@ import type { Span } from "mini-parse";
 import type { DeclIdent, RefIdent, Scope, SrcModule } from "./Scope.ts";
 
 /**
- * Structures to describe the 'interesting' parts of a WESL source file.
+ * AST structures describing 'interesting' parts of WESL source.
  *
- * The parts of the source that need to analyze further in the linker
- * are pulled out into these structures.
- *
- * The parts that are uninteresting the the linker are recorded
- * as 'TextElem' nodes, which are generally just copied to the output WGSL
- * along with their containing element.
+ * Parts needing further analysis are pulled into these structures.
+ * Uninteresting parts are 'TextElem' nodes, copied to output WGSL.
  */
-export type AbstractElem = GrammarElem | SyntheticElem;
+export type AbstractElem = GrammarElem | SyntheticElem | ExpressionElem;
 
 export type GrammarElem = ContainerElem | TerminalElem;
 
@@ -20,6 +16,7 @@ export type ContainerElem =
   | AliasElem
   | ConstAssertElem
   | ConstElem
+  | ContinuingElem
   | UnknownExpressionElem
   | SimpleMemberRef
   | FnElem
@@ -37,11 +34,30 @@ export type ContainerElem =
   | StatementElem
   | SwitchClauseElem;
 
+/** Map from element kind string to element type, for type-safe element construction. */
+export type ElemKindMap = {
+  alias: AliasElem;
+  assert: ConstAssertElem;
+  const: ConstElem;
+  continuing: ContinuingElem;
+  gvar: GlobalVarElem;
+  let: LetElem;
+  member: StructMemberElem;
+  override: OverrideElem;
+  param: FnParamElem;
+  statement: StatementElem;
+  struct: StructElem;
+  "switch-clause": SwitchClauseElem;
+  type: TypeRefElem;
+  var: VarElem;
+};
+
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
 export type ExpressionElem =
   | Literal
-  | TranslateTimeFeature
+  | TranslateTimeFeature // LATER remove once V1 parser is removed
   | RefIdentElem
+  | TypeRefElem // template_elaborated_ident is a primary_expression
   | ParenthesizedExpression
   | ComponentExpression
   | ComponentMemberExpression
@@ -65,7 +81,11 @@ export type GlobalDeclarationElem =
   | OverrideElem
   | StructElem;
 
-export type DeclarationElem = GlobalDeclarationElem | FnParamElem | VarElem;
+export type DeclarationElem =
+  | GlobalDeclarationElem
+  | FnParamElem
+  | VarElem
+  | LetElem;
 
 export type ElemWithAttributes = Extract<AbstractElem, HasAttributes>;
 
@@ -85,23 +105,13 @@ export interface HasAttributes {
 
 /* ------   Terminal Elements  (don't contain other elements)  ------   */
 
-/**
- * a raw bit of text in WESL source that's typically copied to the linked WGSL.
- * e.g. a keyword  like 'var'
- * or a phrase we needn't analyze further like '@diagnostic(off,derivative_uniformity)'
- */
+/** Raw text copied to linked WGSL (e.g., 'var' or '@diagnostic(off,derivative_uniformity)'). */
 export interface TextElem extends AbstractElemBase {
   kind: "text";
   srcModule: SrcModule;
 }
 
-/** a name that doesn't need to be an Ident
- * e.g.
- * - a struct member name
- * - a diagnostic rule name
- * - an enable-extension name
- * - an interpolation sampling name
- */
+/** A name that doesn't need to be an Ident (e.g., struct member, diagnostic rule). */
 export interface NameElem extends AbstractElemBase {
   kind: "name";
   name: string;
@@ -127,47 +137,35 @@ export interface ImportElem extends AbstractElemBase, HasAttributes {
   imports: ImportStatement;
 }
 
-/**
- * An import statement, which is tree shaped.
- * `import foo::bar::{baz, cat as neko};
- */
+/** Tree-shaped import statement: `import foo::bar::{baz, cat as neko};` */
 export interface ImportStatement {
   kind: "import-statement";
   segments: ImportSegment[];
   finalSegment: ImportCollection | ImportItem;
 }
 
-/**
- * A collection of import trees.
- * `{baz, cat as neko}`
- */
+/** A segment in an import path: `foo` in `foo::bar`. */
 export interface ImportSegment {
   kind: "import-segment";
   name: string;
 }
 
-/**
- * A primitive segment in an import statement.
- * `foo`
- */
+/** A collection of import trees: `{baz, cat as neko}`. */
 export interface ImportCollection {
   kind: "import-collection";
   subtrees: ImportStatement[];
 }
 
-/**
- * A renamed item at the end of an import statement.
- * `cat as neko`
- */
+/** A renamed item at the end of an import statement: `cat as neko`. */
 export interface ImportItem {
   kind: "import-item";
   name: string;
   as?: string;
 }
 
-/* ------   Synthetic element (for transformations, not produced by grammar) ------   */
+/* ------   Synthetic element (for transformations, not from grammar)  ------   */
 
-/** generated element, produced after parsing and binding */
+/** Generated element produced after parsing and binding. */
 export interface SyntheticElem {
   kind: "synthetic";
   text: string;
@@ -175,7 +173,7 @@ export interface SyntheticElem {
 
 /* ------   Container Elements  (contain other elements)  ------   */
 
-/** a declaration identifer with a possible type */
+/** A declaration identifier with an optional type. */
 export interface TypedDeclElem extends ElemWithContentsBase {
   kind: "typeDecl";
   decl: DeclIdentElem;
@@ -183,14 +181,14 @@ export interface TypedDeclElem extends ElemWithContentsBase {
   typeScope?: Scope;
 }
 
-/** an alias statement */
+/** An alias statement. */
 export interface AliasElem extends ElemWithContentsBase, HasAttributes {
   kind: "alias";
   name: DeclIdentElem;
   typeRef: TypeRefElem;
 }
 
-/** an attribute like '@compute' or '@binding(0)' */
+/** An attribute like '@compute' or '@binding(0)'. */
 export interface AttributeElem extends ElemWithContentsBase {
   kind: "attribute";
   attribute: Attribute;
@@ -221,10 +219,12 @@ export interface BuiltinAttribute {
   param: NameElem;
 }
 
+export type DiagnosticRule = [NameElem, NameElem | null];
+
 export interface DiagnosticAttribute {
   kind: "@diagnostic";
   severity: NameElem;
-  rule: [NameElem, NameElem | null];
+  rule: DiagnosticRule;
 }
 
 export interface IfAttribute {
@@ -241,82 +241,83 @@ export interface ElseAttribute {
   kind: "@else";
 }
 
-/** a const_assert statement */
+export type ConditionalAttribute = IfAttribute | ElifAttribute | ElseAttribute;
+
+/** A const_assert statement. */
 export interface ConstAssertElem extends ElemWithContentsBase, HasAttributes {
   kind: "assert";
 }
 
-/** a const declaration */
+/** A const declaration. */
 export interface ConstElem extends ElemWithContentsBase, HasAttributes {
   kind: "const";
   name: TypedDeclElem;
 }
 
-/** an expression w/o special handling, used inside attribute parameters */
+/** An expression without special handling, used in attribute parameters. */
 export interface UnknownExpressionElem extends ElemWithContentsBase {
   kind: "expression";
 }
 
-/** an expression that can be safely evaluated at compile time */
+/** An expression that can be safely evaluated at compile time. */
 export interface TranslateTimeExpressionElem {
   kind: "translate-time-expression";
   expression: ExpressionElem;
   span: Span;
 }
 
-/** A literal value in WESL source. A boolean or a number. */
-export interface Literal {
+/** A literal value (boolean or number) in WESL source. */
+export interface Literal extends AbstractElemBase {
   kind: "literal";
   value: string;
-  span: Span;
 }
 
-/** `words`s inside `@if` */
-export interface TranslateTimeFeature {
+/** Feature names inside `@if`. LATER remove once V1 parser is removed */
+export interface TranslateTimeFeature extends AbstractElemBase {
   kind: "translate-time-feature";
   name: string;
-  span: Span;
 }
 
 /** (expr) */
-export interface ParenthesizedExpression {
+export interface ParenthesizedExpression extends AbstractElemBase {
   kind: "parenthesized-expression";
   expression: ExpressionElem;
 }
 
 /** `foo[expr]` */
-export interface ComponentExpression {
+export interface ComponentExpression extends AbstractElemBase {
   kind: "component-expression";
   base: ExpressionElem;
   access: ExpressionElem;
 }
 
 /** `foo.member` */
-export interface ComponentMemberExpression {
+export interface ComponentMemberExpression extends AbstractElemBase {
   kind: "component-member-expression";
   base: ExpressionElem;
   access: NameElem;
 }
 
 /** `+foo` */
-export interface UnaryExpression {
+export interface UnaryExpression extends AbstractElemBase {
   kind: "unary-expression";
   operator: UnaryOperator;
   expression: ExpressionElem;
 }
 
 /** `foo + bar` */
-export interface BinaryExpression {
+export interface BinaryExpression extends AbstractElemBase {
   kind: "binary-expression";
   operator: BinaryOperator;
   left: ExpressionElem;
   right: ExpressionElem;
 }
 
-/** `foo(arg, arg)` */
-export interface FunctionCallExpression {
+/** `foo<T>(arg, arg)` */
+export interface FunctionCallExpression extends AbstractElemBase {
   kind: "call-expression";
-  function: RefIdentElem;
+  function: RefIdentElem | TypeRefElem; // template_elaborated_ident
+  templateArgs?: TypeTemplateParameter[];
   arguments: ExpressionElem[];
 }
 
@@ -359,7 +360,7 @@ export interface RequiresDirective {
   extensions: NameElem[];
 }
 
-/** a function declaration */
+/** A function declaration. */
 export interface FnElem extends ElemWithContentsBase, HasAttributes {
   // LATER doesn't need contents
   kind: "fn";
@@ -370,31 +371,30 @@ export interface FnElem extends ElemWithContentsBase, HasAttributes {
   returnType?: TypeRefElem;
 }
 
-/** a global variable declaration (at the root level) */
+/** A global variable declaration (at the root level). */
 export interface GlobalVarElem extends ElemWithContentsBase, HasAttributes {
   kind: "gvar";
   name: TypedDeclElem;
 }
 
-/** an entire file */
+/** An entire file. */
 export interface ModuleElem extends ElemWithContentsBase {
   kind: "module";
 }
 
-/** an override declaration */
+/** An override declaration. */
 export interface OverrideElem extends ElemWithContentsBase, HasAttributes {
   kind: "override";
   name: TypedDeclElem;
 }
 
-/** a parameter in a function declaration */
+/** A parameter in a function declaration. */
 export interface FnParamElem extends ElemWithContentsBase, HasAttributes {
   kind: "param";
   name: TypedDeclElem;
 }
 
-/** simple references to structures, like myStruct.bar
- * (used for transforming refs to binding structs) */
+/** Simple struct references like `myStruct.bar` (for binding struct transforms). */
 export interface SimpleMemberRef extends ElemWithContentsBase {
   kind: "memberRef";
   name: RefIdentElem;
@@ -402,7 +402,7 @@ export interface SimpleMemberRef extends ElemWithContentsBase {
   extraComponents?: StuffElem;
 }
 
-/** a struct declaration */
+/** A struct declaration. */
 export interface StructElem extends ElemWithContentsBase, HasAttributes {
   kind: "struct";
   name: DeclIdentElem;
@@ -410,18 +410,18 @@ export interface StructElem extends ElemWithContentsBase, HasAttributes {
   bindingStruct?: true; // used later during binding struct transformation
 }
 
-/** generic container of other elements */
+/** Generic container of other elements. */
 export interface StuffElem extends ElemWithContentsBase {
   kind: "stuff";
 }
 
-/** a struct declaration that's been marked as a bindingStruct */
+/** A struct declaration marked as a binding struct. */
 export interface BindingStructElem extends StructElem {
   bindingStruct: true;
   entryFn?: FnElem;
 }
 
-/** a member of a struct declaration */
+/** A member of a struct declaration. */
 export interface StructMemberElem extends ElemWithContentsBase, HasAttributes {
   kind: "member";
   name: NameElem;
@@ -429,16 +429,16 @@ export interface StructMemberElem extends ElemWithContentsBase, HasAttributes {
   mangledVarName?: string; // root name if transformed to a var (for binding struct transformation)
 }
 
-export type TypeTemplateParameter = TypeRefElem | UnknownExpressionElem;
+export type TypeTemplateParameter = ExpressionElem;
 
-/** a reference to a type, like 'f32', or 'MyStruct', or 'ptr<storage, array<f32>, read_only>'   */
+/** A type reference like 'f32', 'MyStruct', or 'ptr<storage, array<f32>, read_only>'. */
 export interface TypeRefElem extends ElemWithContentsBase {
   kind: "type";
   name: RefIdent;
   templateParams?: TypeTemplateParameter[];
 }
 
-/** a variable declaration */
+/** A variable declaration. */
 export interface VarElem extends ElemWithContentsBase, HasAttributes {
   kind: "var";
   name: TypedDeclElem;
@@ -452,6 +452,13 @@ export interface LetElem extends ElemWithContentsBase, HasAttributes {
 export interface StatementElem extends ElemWithContentsBase, HasAttributes {
   kind: "statement";
 }
+
+export interface ContinuingElem extends ElemWithContentsBase, HasAttributes {
+  kind: "continuing";
+}
+
+/** Statement or continuing - used in loop body parsing. */
+export type BlockStatement = StatementElem | ContinuingElem;
 
 export interface SwitchClauseElem extends ElemWithContentsBase, HasAttributes {
   kind: "switch-clause";

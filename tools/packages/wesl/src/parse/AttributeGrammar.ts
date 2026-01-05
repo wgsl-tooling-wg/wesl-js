@@ -173,20 +173,24 @@ function makeTranslateTimeExpressionElem(args: {
 }
 
 function makeLiteral(token: WeslToken<"keyword" | "number">): Literal {
+  const [start, end] = token.span;
   return {
     kind: "literal",
     value: token.text,
-    span: token.span,
+    start,
+    end,
   };
 }
 
 function makeTranslateTimeFeature(
   token: WeslToken<"word">,
 ): TranslateTimeFeature {
+  const [start, end] = token.span;
   return {
     kind: "translate-time-feature",
     name: token.text,
-    span: token.span,
+    start,
+    end,
   };
 }
 
@@ -196,6 +200,8 @@ function makeParenthesizedExpression(
   return {
     kind: "parenthesized-expression",
     expression,
+    start: expression.start,
+    end: expression.end,
   };
 }
 
@@ -211,7 +217,14 @@ function makeUnaryExpression([operator, expression]: [
   UnaryOperator,
   ExpressionElem,
 ]): UnaryExpression {
-  return { kind: "unary-expression", operator, expression };
+  const [opStart] = operator.span;
+  return {
+    kind: "unary-expression",
+    operator,
+    expression,
+    start: opStart,
+    end: expression.end,
+  };
 }
 
 function makeRepeatingBinaryExpression([start, repeating]: [
@@ -225,6 +238,8 @@ function makeRepeatingBinaryExpression([start, repeating]: [
       operator: op,
       left: result,
       right: left,
+      start: result.start,
+      end: left.end,
     };
     result = binaryExpression;
   }
