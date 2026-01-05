@@ -84,7 +84,6 @@ export class WeslStream implements Stream<WeslToken> {
   private stream: Stream<TypedToken<InternalTokenKind>>;
   /** New line */
   private eolPattern = /[\n\v\f\u{0085}\u{2028}\u{2029}]|\r\n?/gu;
-  /** Block comments */
   private blockCommentPattern = /\/\*|\*\//g;
   public src: string;
   constructor(src: string) {
@@ -124,6 +123,62 @@ export class WeslStream implements Stream<WeslToken> {
         return token as TypedToken<typeof kind>;
       }
     }
+  }
+
+  /** Peek at the next token without consuming it */
+  peek(): WeslToken | null {
+    const pos = this.checkpoint();
+    const token = this.nextToken();
+    this.reset(pos);
+    return token;
+  }
+
+  /** Consume token if text matches, otherwise leave position unchanged */
+  matchText(text: string): WeslToken | null {
+    const token = this.peek();
+    if (token?.text === text) {
+      this.nextToken();
+      return token;
+    }
+    return null;
+  }
+
+  /** Consume token if kind matches (and optionally text), otherwise leave position unchanged */
+  matchKind<K extends WeslTokenKind>(
+    kind: K,
+    text?: string,
+  ): WeslToken<K> | null {
+    const token = this.peek();
+    if (token?.kind === kind && (!text || token.text === text)) {
+      this.nextToken();
+      return token as WeslToken<K>;
+    }
+    return null;
+  }
+
+  /** Consume token if predicate matches, otherwise leave position unchanged */
+  nextIf(predicate: (token: WeslToken) => boolean): WeslToken | null {
+    const token = this.peek();
+    if (token && predicate(token)) {
+      this.nextToken();
+      return token;
+    }
+    return null;
+  }
+
+  /** Match a sequence of tokens by text. Resets and returns null if any fails. */
+  matchSequence(...texts: string[]): WeslToken[] | null {
+    const startPos = this.checkpoint();
+    const tokens: WeslToken[] = [];
+    for (const text of texts) {
+      const token = this.matchText(text);
+      if (!token) {
+        this.reset(startPos);
+        return null;
+      }
+      tokens.push(token);
+    }
+    return tokens;
   }
 
   private skipToEol(position: number): number {
@@ -207,7 +262,7 @@ export class WeslStream implements Stream<WeslToken> {
     }
   }
 
-  isTemplateStart(afterToken: number): boolean {
+  private isTemplateStart(afterToken: number): boolean {
     // Skip over <
     this.stream.reset(afterToken);
     // We start with a < token
@@ -254,7 +309,7 @@ export class WeslStream implements Stream<WeslToken> {
    * Call this after consuming an opening bracket.
    * Skips until a closing bracket. This also consumes the closing bracket.
    */
-  skipBracketsTo(closingBracket: string) {
+  private skipBracketsTo(closingBracket: string): void {
     while (true) {
       const nextToken = this.stream.nextToken();
       if (nextToken === null) {
