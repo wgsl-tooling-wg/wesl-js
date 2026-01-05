@@ -38,6 +38,9 @@ export interface RefIdent extends IdentBase {
   refersTo?: Ident; // import or decl ident in scope to which this ident refers. undefined before binding
   std?: true; // true if this is a standard wgsl identifier (like sin, or u32)
 
+  /** True for identifiers in @if/@elif conditions. Binding skips these (for now). */
+  conditionRef?: true;
+
   // LATER consider tracking the current ast in BindIdents so that this field is unnecessary
   ast: WeslAST; // AST from module that contains this ident (to find imports during decl binding)
 

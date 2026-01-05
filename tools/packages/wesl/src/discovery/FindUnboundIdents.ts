@@ -4,10 +4,11 @@ import {
   type EmittableElem,
   findValidRootDecls,
 } from "../BindIdents.ts";
-import type { LiveDecls } from "../LiveDeclarations.ts";
+import { type LiveDecls, makeLiveDecls } from "../LiveDeclarations.ts";
 import { minimalMangle } from "../Mangler.ts";
 import type { BatchModuleResolver } from "../ModuleResolver.ts";
 import type { DeclIdent, Scope } from "../Scope.ts";
+import { filterMap } from "../Util.ts";
 
 /**
  * Find unbound package references in library sources.
@@ -32,11 +33,19 @@ export function findUnboundIdents(resolver: BatchModuleResolver): string[][] {
     dontFollowDecls: true,
   };
 
-  for (const [_modulePath, ast] of resolver.allModules()) {
+  for (const [, ast] of resolver.allModules()) {
     const rootDecls = findValidRootDecls(ast.rootScope, {});
-    const declEntries = rootDecls.map(d => [d.originalName, d] as const);
-    const liveDecls: LiveDecls = { decls: new Map(declEntries), parent: null };
-    bindIdentsRecursive(ast.rootScope, bindContext, liveDecls, true);
+    const liveDecls: LiveDecls = {
+      decls: new Map(rootDecls.map(d => [d.originalName, d] as const)),
+      parent: null,
+    };
+    // Process dependent scopes of root decls to find unbound refs in function bodies
+    const scopes = filterMap(rootDecls, decl => decl.dependentScope);
+    scopes.forEach(s => {
+      bindIdentsRecursive(s, bindContext, makeLiveDecls(liveDecls));
+    });
+    // Also process refs at root scope level
+    bindIdentsRecursive(ast.rootScope, bindContext, liveDecls);
   }
 
   return bindContext.unbound;

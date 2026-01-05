@@ -18,6 +18,7 @@ import { isGlobal } from "./BindIdents.ts";
 import { failIdentElem } from "./ClickableError.ts";
 import { filterValidElements } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
+import { weslParserConfig } from "./ParseWESL.ts";
 import type { Conditions, DeclIdent, Ident } from "./Scope.ts";
 
 export interface EmitParams {
@@ -30,14 +31,14 @@ export interface EmitParams {
   skipConditionalFiltering?: boolean;
 }
 
-/** passed to the emitters */
+/** Passed to the emitters. */
 interface EmitContext {
   srcBuilder: SrcMapBuilder;
   conditions: Conditions;
   extracting: boolean;
 }
 
-/** traverse the AST, starting from root elements, emitting wgsl for each */
+/** Traverse the AST, starting from root elements, emitting WGSL for each. */
 export function lowerAndEmit(params: EmitParams): void {
   const { srcBuilder, rootElems, conditions } = params;
   const { extracting = true, skipConditionalFiltering = false } = params;
@@ -51,13 +52,11 @@ export function lowerAndEmit(params: EmitParams): void {
   });
 }
 
-export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
+function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
   switch (e.kind) {
-    // import statements are dropped from from emitted text
     case "import":
-      return;
+      return; // import statements are dropped from emitted text
 
-    // terminal elements copy strings to the output
     case "text":
       emitText(e, ctx);
       return;
@@ -68,7 +67,6 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
       emitSynthetic(e, ctx);
       return;
 
-    // identifiers are copied to the output, but with potentially mangled names
     case "ref":
       emitRefIdent(e, ctx);
       return;
@@ -76,30 +74,49 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
       emitDeclIdent(e, ctx);
       return;
 
-    // container elements just emit their child elements
+    case "literal":
+    case "translate-time-feature": // LATER remove once V1 parser is removed
+    case "binary-expression":
+    case "unary-expression":
+    case "call-expression":
+    case "parenthesized-expression":
+    case "component-expression":
+    case "component-member-expression":
+      emitExpression(e, ctx);
+      return;
+
     case "param":
-    case "var":
     case "typeDecl":
-    case "let":
-    case "module":
     case "member":
     case "memberRef":
     case "expression":
     case "type":
-    case "statement":
-    case "stuff":
     case "switch-clause":
       emitContents(e, ctx);
       return;
 
-    // root level container elements get some extra newlines to make the output prettier
+    // V2: "stuff" elements (compound statements) need trimming for proper formatting
+    case "stuff":
+      emitStuff(e, ctx);
+      return;
+
+    case "module":
+      emitModule(e, ctx);
+      return;
+
+    case "var":
+    case "let":
+    case "statement":
+    case "continuing":
+      emitStatement(e, ctx);
+      return;
+
     case "override":
     case "const":
     case "assert":
     case "alias":
     case "gvar":
-      emitRootElemNl(ctx);
-      emitContents(e, ctx);
+      emitRootDecl(e, ctx);
       return;
 
     case "fn":
@@ -125,24 +142,85 @@ export function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
   }
 }
 
-/** emit root elems with a blank line inbetween */
+function emitStuff(e: ContainerElem, ctx: EmitContext): void {
+  if (weslParserConfig.useV2Parser) {
+    emitContentsWithTrimming(e, ctx);
+  } else {
+    emitContents(e, ctx);
+  }
+}
+
+function emitModule(e: ContainerElem, ctx: EmitContext): void {
+  if (!weslParserConfig.useV2Parser) {
+    emitContents(e, ctx);
+    return;
+  }
+
+  // V2: Skip whitespace-only text elements at module level
+  const validElements = filterValidElements(e.contents, ctx.conditions);
+  for (const child of validElements) {
+    if (child.kind === "text") {
+      const text = child.srcModule.src.slice(child.start, child.end);
+      if (text.trim() === "") continue;
+    }
+    lowerAndEmitElem(child, ctx);
+  }
+}
+
+function emitStatement(
+  e: Extract<
+    ContainerElem,
+    { kind: "var" | "let" | "statement" | "continuing" }
+  >,
+  ctx: EmitContext,
+): void {
+  const attrsInContents =
+    e.contents.length > 0 && e.contents[0].kind === "attribute";
+  if (!attrsInContents) {
+    emitAttributes(e.attributes, ctx);
+  }
+  emitContents(e, ctx);
+}
+
+function emitRootDecl(
+  e: Extract<
+    ContainerElem,
+    { kind: "override" | "const" | "assert" | "alias" | "gvar" }
+  >,
+  ctx: EmitContext,
+): void {
+  emitRootElemNl(ctx);
+  const attrsInContents =
+    e.contents.length > 0 && e.contents[0].kind === "attribute";
+  if (!attrsInContents) {
+    emitAttributes(e.attributes, ctx);
+  }
+
+  if (weslParserConfig.useV2Parser) {
+    emitContentsWithTrimming(e, ctx);
+  } else {
+    emitContents(e, ctx);
+  }
+}
+
+/** Emit newlines between root elements (V2 needs newlines even when not extracting). */
 function emitRootElemNl(ctx: EmitContext): void {
-  if (ctx.extracting) {
+  if (ctx.extracting || weslParserConfig.useV2Parser) {
     ctx.srcBuilder.addNl();
     ctx.srcBuilder.addNl();
   }
 }
 
-export function emitText(e: TextElem, ctx: EmitContext): void {
+function emitText(e: TextElem, ctx: EmitContext): void {
   ctx.srcBuilder.addCopy(e.start, e.end);
 }
 
-export function emitName(e: NameElem, ctx: EmitContext): void {
+function emitName(e: NameElem, ctx: EmitContext): void {
   ctx.srcBuilder.add(e.name, e.start, e.end);
 }
 
-/** emit function explicitly so we can control commas between conditional parameters */
-export function emitFn(e: FnElem, ctx: EmitContext): void {
+/** Emit function explicitly to control commas between conditional parameters. */
+function emitFn(e: FnElem, ctx: EmitContext): void {
   const { attributes, name, params, returnAttributes, returnType, body } = e;
   const { conditions, srcBuilder: builder } = ctx;
 
@@ -154,6 +232,13 @@ export function emitFn(e: FnElem, ctx: EmitContext): void {
   builder.appendNext("(");
   const validParams = filterValidElements(params, conditions);
   validParams.forEach((p, i) => {
+    // V2: attributes not in contents, emit separately
+    // V1: attributes in contents as TextElems, skip separate emission
+    const attrsInContents =
+      p.contents.length > 0 && p.contents[0].kind === "attribute";
+    if (!attrsInContents) {
+      emitAttributes(p.attributes, ctx);
+    }
     emitContentsNoWs(p as ContainerElem, ctx);
     if (i < validParams.length - 1) {
       builder.appendNext(", ");
@@ -164,7 +249,7 @@ export function emitFn(e: FnElem, ctx: EmitContext): void {
   if (returnType) {
     builder.appendNext("-> ");
     emitAttributes(returnAttributes, ctx);
-    emitContents(returnType, ctx);
+    emitContentsNoWs(returnType, ctx);
     builder.appendNext(" ");
   }
 
@@ -176,14 +261,16 @@ function emitAttributes(
   ctx: EmitContext,
 ): void {
   attributes?.forEach(a => {
-    emitAttribute(a, ctx);
-    ctx.srcBuilder.add(" ", a.start, a.end);
+    const emitted = emitAttribute(a, ctx);
+    if (emitted) {
+      ctx.srcBuilder.add(" ", a.start, a.end);
+    }
   });
 }
 
-/** emit structs explicitly so we can control commas between conditional members */
-export function emitStruct(e: StructElem, ctx: EmitContext): void {
-  const { name, members, start, end } = e;
+/** Emit structs explicitly to control commas between conditional members. */
+function emitStruct(e: StructElem, ctx: EmitContext): void {
+  const { attributes, name, members, start } = e;
   const { srcBuilder, conditions } = ctx;
 
   const validMembers = filterValidElements(members, conditions);
@@ -194,24 +281,33 @@ export function emitStruct(e: StructElem, ctx: EmitContext): void {
     return;
   }
 
+  emitAttributes(attributes, ctx);
   srcBuilder.add("struct ", start, name.start);
   emitDeclIdent(name, ctx);
 
   if (validLength === 1) {
-    srcBuilder.add(" { ", name.end, members[0].start);
-    emitContentsNoWs(validMembers[0] as ContainerElem, ctx);
-    srcBuilder.add(" }\n", end - 1, end);
+    srcBuilder.appendNext(" { ");
+    // V2: trim leading whitespace from struct member
+    if (weslParserConfig.useV2Parser) {
+      emitContentsWithTrimming(validMembers[0] as ContainerElem, ctx);
+    } else {
+      emitContentsNoWs(validMembers[0] as ContainerElem, ctx);
+    }
+    srcBuilder.appendNext(" }");
+    srcBuilder.addNl();
   } else {
-    srcBuilder.add(" {\n", name.end, members[0].start);
+    srcBuilder.appendNext(" {");
+    srcBuilder.addNl();
 
     validMembers.forEach(m => {
-      srcBuilder.add("  ", m.start - 1, m.start);
+      srcBuilder.appendNext("  ");
       emitContentsNoWs(m as ContainerElem, ctx);
-      srcBuilder.add(",", m.end, m.end + 1);
+      srcBuilder.appendNext(",");
       srcBuilder.addNl();
     });
 
-    srcBuilder.add("}\n", end - 1, end);
+    srcBuilder.appendNext("}");
+    srcBuilder.addNl();
   }
 }
 
@@ -222,21 +318,45 @@ function warnEmptyStruct(e: StructElem): void {
   failIdentElem(name, message);
 }
 
-export function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
+function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
   const { text } = e;
   ctx.srcBuilder.addSynthetic(text, text, 0, text.length);
 }
 
-export function emitContents(elem: ContainerElem, ctx: EmitContext): void {
-  // elem.contents.forEach(e => console.log("orig", astToString(e)));
+function emitContents(elem: ContainerElem, ctx: EmitContext): void {
   const validElements = filterValidElements(elem.contents, ctx.conditions);
-  // validElements.forEach(e => console.log("valid", astToString(e)));
   validElements.forEach(e => {
     lowerAndEmitElem(e, ctx);
   });
 }
 
-/** emit contents w/o white space */
+/** Emit contents with leading/trailing whitespace trimming (V2 parser). */
+function emitContentsWithTrimming(elem: ContainerElem, ctx: EmitContext): void {
+  const validElements = filterValidElements(elem.contents, ctx.conditions);
+
+  // Find first/last non-conditional-attribute indices for trimming
+  const firstEmit = validElements.findIndex(e => !isConditionalAttr(e));
+  const lastEmit = validElements.findLastIndex(e => !isConditionalAttr(e));
+
+  validElements.forEach((elem, i) => {
+    if (elem.kind === "text") {
+      let text = elem.srcModule.src.slice(elem.start, elem.end);
+      if (i === firstEmit) text = text.trimStart();
+      if (i === lastEmit) text = text.trimEnd();
+      if (text) ctx.srcBuilder.add(text, elem.start, elem.end);
+    } else {
+      lowerAndEmitElem(elem, ctx);
+    }
+  });
+}
+
+function isConditionalAttr(e: AbstractElem): boolean {
+  if (e.kind !== "attribute") return false;
+  const { kind } = e.attribute;
+  return kind === "@if" || kind === "@elif" || kind === "@else";
+}
+
+/** Emit contents without whitespace. */
 function emitContentsNoWs(elem: ContainerElem, ctx: EmitContext): void {
   const validElements = filterValidElements(elem.contents, ctx.conditions);
   validElements.forEach(e => {
@@ -251,7 +371,7 @@ function emitContentsNoWs(elem: ContainerElem, ctx: EmitContext): void {
   });
 }
 
-export function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {
+function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {
   if (e.ident.std) {
     ctx.srcBuilder.add(e.ident.originalName, e.start, e.end);
   } else {
@@ -261,61 +381,144 @@ export function emitRefIdent(e: RefIdentElem, ctx: EmitContext): void {
   }
 }
 
-export function emitDeclIdent(e: DeclIdentElem, ctx: EmitContext): void {
+function emitDeclIdent(e: DeclIdentElem, ctx: EmitContext): void {
   const mangledName = displayName(e.ident);
   ctx.srcBuilder.add(mangledName!, e.start, e.end);
 }
 
-function emitAttribute(e: AttributeElem, ctx: EmitContext): void {
-  const { kind } = e.attribute;
-  // LATER emit more precise source map info by making use of all the spans
-  // Like the first case does
-  if (kind === "@attribute") {
-    const { params } = e.attribute;
-    if (!params || params.length === 0) {
-      ctx.srcBuilder.add("@" + e.attribute.name, e.start, e.end);
-    } else {
-      ctx.srcBuilder.add(
-        "@" + e.attribute.name + "(",
-        e.start,
-        params[0].start,
-      );
-      for (let i = 0; i < params.length; i++) {
-        emitContents(params[i], ctx);
-        if (i < params.length - 1) {
-          ctx.srcBuilder.add(",", params[i].end, params[i + 1].start);
-        }
-      }
-      ctx.srcBuilder.add(")", params[params.length - 1].end, e.end);
+function emitExpression(e: ExpressionElem, ctx: EmitContext): void {
+  const { kind } = e;
+
+  if (kind === "literal") {
+    ctx.srcBuilder.add(e.value, e.start, e.end);
+    return;
+  }
+
+  // LATER remove once V1 parser is removed
+  if (kind === "translate-time-feature") {
+    ctx.srcBuilder.add(e.name, e.start, e.end);
+    return;
+  }
+
+  if (kind === "ref") {
+    emitRefIdent(e, ctx);
+    return;
+  }
+
+  if (kind === "type") {
+    emitContents(e, ctx);
+    return;
+  }
+
+  if (kind === "binary-expression") {
+    emitExpression(e.left, ctx);
+    ctx.srcBuilder.add(
+      ` ${e.operator.value} `,
+      e.operator.span[0],
+      e.operator.span[1],
+    );
+    emitExpression(e.right, ctx);
+    return;
+  }
+
+  if (kind === "unary-expression") {
+    ctx.srcBuilder.add(
+      e.operator.value,
+      e.operator.span[0],
+      e.operator.span[1],
+    );
+    emitExpression(e.expression, ctx);
+    return;
+  }
+
+  if (kind === "parenthesized-expression") {
+    emitExpression(e.expression, ctx);
+    return;
+  }
+
+  if (kind === "call-expression") {
+    emitExpression(e.function, ctx);
+    if (e.templateArgs) {
+      for (const targ of e.templateArgs) lowerAndEmitElem(targ, ctx);
     }
-  } else if (kind === "@builtin") {
+    for (const arg of e.arguments) {
+      emitExpression(arg, ctx);
+    }
+    return;
+  }
+
+  if (kind === "component-expression") {
+    emitExpression(e.base, ctx);
+    emitExpression(e.access, ctx);
+    return;
+  }
+
+  if (kind === "component-member-expression") {
+    emitExpression(e.base, ctx);
+    if (e.access.kind === "name") {
+      ctx.srcBuilder.add(e.access.name, e.access.start, e.access.end);
+    }
+    return;
+  }
+
+  assertUnreachable(kind);
+}
+
+function emitAttribute(e: AttributeElem, ctx: EmitContext): boolean {
+  const { kind } = e.attribute;
+
+  if (kind === "@if" || kind === "@elif" || kind === "@else") {
+    return false; // WESL-only, dropped from WGSL
+  }
+
+  if (kind === "@attribute") {
+    emitStandardAttribute(e, ctx);
+    return true;
+  }
+
+  if (kind === "@builtin") {
     ctx.srcBuilder.add(
       "@builtin(" + e.attribute.param.name + ")",
       e.start,
       e.end,
     );
-  } else if (kind === "@diagnostic") {
-    ctx.srcBuilder.add(
-      "@diagnostic" +
-        diagnosticControlToString(e.attribute.severity, e.attribute.rule),
-      e.start,
-      e.end,
-    );
-  } else if (kind === "@if") {
-    // (@if is wesl only, dropped from wgsl)
-  } else if (kind === "@interpolate") {
-    ctx.srcBuilder.add(
-      `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`,
-      e.start,
-      e.end,
-    );
-  } else if (kind === "@elif") {
-    // @elif is wesl only, dropped from wgsl
-  } else if (kind === "@else") {
-    // @else is wesl only, dropped from wgsl
-  } else {
-    assertUnreachable(kind);
+    return true;
   }
+
+  if (kind === "@diagnostic") {
+    const diagStr =
+      "@diagnostic" +
+      diagnosticControlToString(e.attribute.severity, e.attribute.rule);
+    ctx.srcBuilder.add(diagStr, e.start, e.end);
+    return true;
+  }
+
+  if (kind === "@interpolate") {
+    const params = e.attribute.params.map(v => v.name).join(", ");
+    ctx.srcBuilder.add(`@interpolate(${params})`, e.start, e.end);
+    return true;
+  }
+
+  assertUnreachable(kind);
+}
+
+function emitStandardAttribute(e: AttributeElem, ctx: EmitContext): void {
+  if (e.attribute.kind !== "@attribute") return;
+
+  const { params } = e.attribute;
+  if (!params || params.length === 0) {
+    ctx.srcBuilder.add("@" + e.attribute.name, e.start, e.end);
+    return;
+  }
+
+  ctx.srcBuilder.add("@" + e.attribute.name + "(", e.start, params[0].start);
+  for (let i = 0; i < params.length; i++) {
+    ctx.srcBuilder.addCopy(params[i].start, params[i].end);
+    if (i < params.length - 1) {
+      ctx.srcBuilder.add(",", params[i].end, params[i + 1].start);
+    }
+  }
+  ctx.srcBuilder.add(")", params[params.length - 1].end, e.end);
 }
 
 export function diagnosticControlToString(
@@ -337,6 +540,7 @@ export function expressionToString(elem: ExpressionElem): string {
   } else if (kind === "literal") {
     return elem.value;
   } else if (kind === "translate-time-feature") {
+    // LATER remove once V1 parser is removed
     return elem.name;
   } else if (kind === "parenthesized-expression") {
     return `(${expressionToString(elem.expression)})`;
@@ -345,7 +549,13 @@ export function expressionToString(elem: ExpressionElem): string {
   } else if (kind === "component-member-expression") {
     return `${expressionToString(elem.base)}.${elem.access}`;
   } else if (kind === "call-expression") {
-    return `${elem.function.ident.originalName}(${elem.arguments.map(expressionToString).join(", ")})`;
+    const fn = elem.function;
+    const name =
+      fn.kind === "ref" ? fn.ident.originalName : fn.name.originalName;
+    const targs = elem.templateArgs ? `<...>` : "";
+    return `${name}${targs}(${elem.arguments.map(expressionToString).join(", ")})`;
+  } else if (kind === "type") {
+    return elem.name.originalName;
   } else {
     assertUnreachable(kind);
   }
@@ -355,23 +565,14 @@ function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
   const { directive } = e;
   const { kind } = directive;
   if (kind === "diagnostic") {
-    ctx.srcBuilder.add(
-      `diagnostic${diagnosticControlToString(directive.severity, directive.rule)};`,
-      e.start,
-      e.end,
-    );
+    const diagStr = `diagnostic${diagnosticControlToString(directive.severity, directive.rule)};`;
+    ctx.srcBuilder.add(diagStr, e.start, e.end);
   } else if (kind === "enable") {
-    ctx.srcBuilder.add(
-      `enable ${directive.extensions.map(v => v.name).join(", ")};`,
-      e.start,
-      e.end,
-    );
+    const exts = directive.extensions.map(v => v.name).join(", ");
+    ctx.srcBuilder.add(`enable ${exts};`, e.start, e.end);
   } else if (kind === "requires") {
-    ctx.srcBuilder.add(
-      `requires ${directive.extensions.map(v => v.name).join(", ")};`,
-      e.start,
-      e.end,
-    );
+    const exts = directive.extensions.map(v => v.name).join(", ");
+    ctx.srcBuilder.add(`requires ${exts};`, e.start, e.end);
   } else {
     assertUnreachable(kind);
   }
@@ -390,9 +591,7 @@ function displayName(declIdent: DeclIdent): string {
   return declIdent.mangledName || declIdent.originalName;
 }
 
-/** trace through refersTo links in reference Idents until we find the declaration
- * expects that bindIdents has filled in all refersTo: links
- */
+/** Trace through refersTo links until we find the declaration. */
 export function findDecl(ident: Ident): DeclIdent {
   let i: Ident | undefined = ident;
   do {

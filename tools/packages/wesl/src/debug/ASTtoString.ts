@@ -40,9 +40,18 @@ export function astToString(elem: AbstractElem, indent = 0): string {
 // LATER rewrite to be shorter and easier to read
 function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   const { kind } = elem;
+  // no-op kinds (handled elsewhere or no additional fields)
+  if (
+    kind === "assert" ||
+    kind === "module" ||
+    kind === "param" ||
+    kind === "stuff" ||
+    kind === "switch-clause"
+  ) {
+    return;
+  }
   if (kind === "text") {
-    const { srcModule, start, end } = elem;
-    str.add(` '${srcModule.src.slice(start, end)}'`);
+    str.add(` '${elem.srcModule.src.slice(elem.start, elem.end)}'`);
   } else if (
     kind === "var" ||
     kind === "let" ||
@@ -55,49 +64,38 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   } else if (kind === "struct") {
     str.add(" " + elem.name.ident.originalName);
   } else if (kind === "member") {
-    const { name, typeRef, attributes } = elem;
-    listAttributeElems(attributes, str);
-    str.add(" " + name.name);
-    str.add(": " + typeRefElemToString(typeRef));
+    listAttributeElems(elem.attributes, str);
+    str.add(` ${elem.name.name}: ${typeRefElemToString(elem.typeRef)}`);
   } else if (kind === "name") {
     str.add(" " + elem.name);
   } else if (kind === "memberRef") {
-    const { extraComponents } = elem;
-    const extraText = extraComponents
-      ? debugContentsToString(extraComponents)
+    const extra = elem.extraComponents
+      ? debugContentsToString(elem.extraComponents)
       : "";
-    str.add(` ${elem.name.ident.originalName}.${elem.member.name}${extraText}`);
+    str.add(` ${elem.name.ident.originalName}.${elem.member.name}${extra}`);
   } else if (kind === "fn") {
     addFnFields(elem, str);
   } else if (kind === "alias") {
-    const { name, typeRef } = elem;
-    const prefix = name.ident.kind === "decl" ? "%" : "";
-    str.add(" " + prefix + name.ident.originalName);
-    str.add("=" + typeRefElemToString(typeRef));
+    const prefix = elem.name.ident.kind === "decl" ? "%" : "";
+    str.add(
+      ` ${prefix}${elem.name.ident.originalName}=${typeRefElemToString(elem.typeRef)}`,
+    );
   } else if (kind === "attribute") {
     addAttributeFields(elem.attribute, str);
   } else if (kind === "expression") {
     const contents = elem.contents
-      .map(e => {
-        if (e.kind === "text") {
-          return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
-        } else {
-          return astToString(e);
-        }
-      })
+      .map(e =>
+        e.kind === "text"
+          ? `'${e.srcModule.src.slice(e.start, e.end)}'`
+          : astToString(e),
+      )
       .join(" ");
     str.add(" " + contents);
   } else if (kind === "type") {
-    const { name } = elem;
-    const nameStr = typeof name === "string" ? name : name.originalName;
-    str.add(" " + nameStr);
-
-    if (elem.templateParams !== undefined) {
-      const paramStrs = elem.templateParams
-        .map(templateParamToString)
-        .join(", ");
-      str.add("<" + paramStrs + ">");
-    }
+    const nameStr =
+      typeof elem.name === "string" ? elem.name : elem.name.originalName;
+    const params = elem.templateParams?.map(templateParamToString).join(", ");
+    str.add(params ? ` ${nameStr}<${params}>` : ` ${nameStr}`);
   } else if (kind === "synthetic") {
     str.add(` '${elem.text}'`);
   } else if (kind === "import") {
@@ -108,22 +106,28 @@ function addElemFields(elem: AbstractElem, str: LineWrapper): void {
   } else if (kind === "typeDecl") {
     addTypedDeclIdent(elem, str);
   } else if (kind === "decl") {
-    const { ident } = elem;
-    str.add(" %" + ident.originalName);
-  } else if (kind === "assert") {
-    // Nothing to do for now
-  } else if (kind === "module") {
-    // Ignore this kind of elem
-  } else if (kind === "param") {
-    // LATER This branch shouldn't exist
-  } else if (kind === "stuff") {
-    // Ignore
+    str.add(" %" + elem.ident.originalName);
   } else if (kind === "directive") {
     addDirective(elem, str);
-  } else if (kind === "statement") {
+  } else if (kind === "statement" || kind === "continuing") {
     listAttributeElems(elem.attributes, str);
-  } else if (kind === "switch-clause") {
-    // Nothing to do for now
+  } else if (kind === "literal") {
+    str.add(` literal(${elem.value})`);
+  } else if (kind === "translate-time-feature") {
+    // LATER remove once V1 parser is removed
+    str.add(` ttfeature(${elem.name})`);
+  } else if (kind === "binary-expression") {
+    str.add(` binop(${elem.operator.value})`);
+  } else if (kind === "unary-expression") {
+    str.add(` unop(${elem.operator.value})`);
+  } else if (kind === "call-expression") {
+    str.add(" call");
+  } else if (kind === "parenthesized-expression") {
+    str.add(" parens");
+  } else if (kind === "component-expression") {
+    str.add(" []");
+  } else if (kind === "component-member-expression") {
+    str.add(" .");
   } else {
     assertUnreachable(kind);
   }
@@ -133,28 +137,18 @@ function addAttributeFields(attr: Attribute, str: LineWrapper) {
   const { kind } = attr;
   if (kind === "@attribute") {
     const { name, params } = attr;
-    str.add(" @" + name);
-    if (params && params.length > 0) {
-      str.add("(");
-      str.add(params.map(unknownExpressionToString).join(", "));
-      str.add(")");
-    }
+    const paramsStr = params?.length
+      ? `(${params.map(unknownExpressionToString).join(", ")})`
+      : "";
+    str.add(` @${name}${paramsStr}`);
   } else if (kind === "@builtin") {
     str.add(` @builtin(${attr.param.name})`);
   } else if (kind === "@diagnostic") {
     str.add(
       ` @diagnostic${diagnosticControlToString(attr.severity, attr.rule)}`,
     );
-  } else if (kind === "@if") {
-    str.add(" @if");
-    str.add("(");
-    str.add(expressionToString(attr.param.expression));
-    str.add(")");
-  } else if (kind === "@elif") {
-    str.add(" @elif");
-    str.add("(");
-    str.add(expressionToString(attr.param.expression));
-    str.add(")");
+  } else if (kind === "@if" || kind === "@elif") {
+    str.add(` ${kind}(${expressionToString(attr.param.expression)})`);
   } else if (kind === "@else") {
     str.add(" @else");
   } else if (kind === "@interpolate") {
@@ -181,49 +175,27 @@ function addTypedDeclIdent(elem: TypedDeclElem, str: LineWrapper) {
 
 function addFnFields(elem: FnElem, str: LineWrapper) {
   const { name, params, returnType, attributes } = elem;
-
-  str.add(" " + name.ident.originalName);
-
-  str.add("(");
-  const paramStrs = params
-    .map(
-      (
-        p, // LATER DRY
-      ) => {
-        const { name } = p;
-        const { originalName } = name.decl.ident;
-        const typeRef = typeRefElemToString(name.typeRef!);
-        return originalName + ": " + typeRef;
-      },
-    )
-    .join(", ");
-  str.add(paramStrs);
-  str.add(")");
-
+  const paramStrs = params.map(p => {
+    const { originalName } = p.name.decl.ident;
+    return `${originalName}: ${typeRefElemToString(p.name.typeRef!)}`;
+  });
+  str.add(` ${name.ident.originalName}(${paramStrs.join(", ")})`);
   listAttributeElems(attributes, str);
-
-  if (returnType) {
-    str.add(" -> " + typeRefElemToString(returnType));
-  }
+  if (returnType) str.add(" -> " + typeRefElemToString(returnType));
 }
 
 /** show attribute names in short form to verify collection */
 function listAttributeElems(
-  attributes: AttributeElem[] | undefined,
+  attrs: AttributeElem[] | undefined,
   str: LineWrapper,
 ): void {
-  attributes?.forEach(a => {
+  attrs?.forEach(a => {
     str.add(" " + attributeName(a.attribute));
   });
 }
 
 function attributeName(attr: Attribute): string {
-  const { kind } = attr;
-  if (kind === "@attribute") {
-    return "@" + attr.name;
-  } else {
-    return kind;
-  }
+  return attr.kind === "@attribute" ? "@" + attr.name : attr.kind;
 }
 
 function addDirective(elem: DirectiveElem, str: LineWrapper) {
@@ -241,59 +213,39 @@ function addDirective(elem: DirectiveElem, str: LineWrapper) {
   listAttributeElems(attributes, str);
 }
 
+// LATER Temp hack while I clean up the expression parsing
 function unknownExpressionToString(elem: UnknownExpressionElem): string {
-  // LATER Temp hack while I clean up the expression parsing
-  if ("contents" in elem) {
-    const contents = elem.contents
-      .map(e => {
-        if (e.kind === "text") {
-          return "'" + e.srcModule.src.slice(e.start, e.end) + "'";
-        } else {
-          return astToString(e);
-        }
-      })
-      .join(" ");
-    return contents;
-  }
-  return astToString(elem);
+  if (!("contents" in elem)) return astToString(elem);
+  return elem.contents
+    .map(e => {
+      if (e.kind === "text")
+        return `'${e.srcModule.src.slice(e.start, e.end)}'`;
+      return astToString(e);
+    })
+    .join(" ");
 }
 
 function templateParamToString(p: TypeTemplateParameter): string {
-  if (typeof p === "string") {
-    return p;
-  } else if (p.kind === "type") {
-    return typeRefElemToString(p);
-  } else if (p.kind === "expression") {
-    return unknownExpressionToString(p);
-  } else {
-    console.log("unknown template parameter type", p);
-    return "??";
-  }
+  if (typeof p === "string") return p;
+  if (p.kind === "type") return typeRefElemToString(p);
+  // ExpressionElem - use astToString for expression elements
+  return astToString(p);
 }
 
 function typeRefElemToString(elem: TypeRefElem): string {
   if (!elem) return "?type?";
-  const { name } = elem;
-  const nameStr = typeof name === "string" ? name : name.originalName;
-
-  let params = "";
-  if (elem.templateParams !== undefined) {
-    const paramStrs = elem.templateParams.map(templateParamToString).join(", ");
-    params = "<" + paramStrs + ">";
-  }
-  return nameStr + params;
+  const nameStr =
+    typeof elem.name === "string" ? elem.name : elem.name.originalName;
+  const params = elem.templateParams?.map(templateParamToString).join(", ");
+  return params ? `${nameStr}<${params}>` : nameStr;
 }
 
 export function debugContentsToString(elem: StuffElem): string {
-  const parts = elem.contents.map(c => {
-    const { kind } = c;
-    if (kind === "text") {
-      return c.srcModule.src.slice(c.start, c.end);
-    } else if (kind === "ref") {
-      return c.ident.originalName; // not using the mapped to decl name, so this can be used for debug..
-    } else {
+  return elem.contents
+    .map(c => {
+      if (c.kind === "text") return c.srcModule.src.slice(c.start, c.end);
+      if (c.kind === "ref") return c.ident.originalName; // not using mapped decl name for debug
       return `?${c.kind}?`;
-    }
-  });
-  return parts.join(" ");
+    })
+    .join(" ");
 }

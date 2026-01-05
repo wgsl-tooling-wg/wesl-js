@@ -56,11 +56,8 @@ export function typeListToString(params: TypeTemplateParameter[]): string {
 
 export function typeParamToString(param?: TypeTemplateParameter): string {
   if (param === undefined) return "?";
-  if (typeof param === "string") return param;
-
-  if (param.kind === "expression") return contentsToString(param);
   if (param.kind === "type") return typeRefToString(param);
-  assertUnreachable(param);
+  return expressionToString(param);
 }
 
 export function typeRefToString(t?: TypeRefElem): string {

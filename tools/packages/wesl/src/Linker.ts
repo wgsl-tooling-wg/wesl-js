@@ -129,7 +129,7 @@ export function _linkSync(params: LinkParams): SrcMap {
   const finalResolver =
     resolvers.length === 1 ? resolvers[0] : new CompositeResolver(resolvers);
 
-  return linkRegistry({ resolver: finalResolver, ...params });
+  return linkRegistry({ ...params, resolver: finalResolver });
 }
 
 function createLibraryResolvers(

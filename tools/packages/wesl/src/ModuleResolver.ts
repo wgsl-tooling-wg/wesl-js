@@ -3,27 +3,15 @@ import { parseSrcModule, type WeslAST } from "./ParseWESL.ts";
 import { normalize, noSuffix } from "./PathUtil.ts";
 import type { WeslBundle } from "./WeslBundle.ts";
 
-/**
- * Resolves module paths to parsed ASTs.
- *
- * Implementations may cache ASTs or load them lazily.
- */
+/** Resolves module paths to parsed ASTs. Implementations may cache or load lazily. */
 export interface ModuleResolver {
-  /**
-   * Resolve a module path to its parsed AST.
-   *
-   * @param modulePath - Module path in :: format (e.g., "package::foo::bar")
-   * @returns Parsed AST or undefined if module not found
-   */
+  /** Resolve module path (e.g., "package::foo::bar") to AST, or undefined if not found. */
   resolveModule(modulePath: string): WeslAST | undefined;
 }
 
 /** Module resolver that supports batch enumeration of all modules. */
 export interface BatchModuleResolver extends ModuleResolver {
-  /**
-   * Return all modules, parsing them on-demand if needed.
-   * Implementations should ensure all sources are parsed before returning.
-   */
+  /** Return all modules, parsing them on-demand if needed. */
   allModules(): Iterable<[string, WeslAST]>;
 }
 
@@ -58,7 +46,7 @@ export class RecordResolver implements BatchModuleResolver {
     if (cached) return cached;
 
     const source = this.findSource(modulePath);
-    if (!source) return undefined;
+    if (source === undefined) return undefined;
 
     const debugFilePath = this.modulePathToDebugPath(modulePath);
     const ast = parseSrcModule({ modulePath, debugFilePath, src: source });
@@ -67,22 +55,24 @@ export class RecordResolver implements BatchModuleResolver {
   }
 
   private findSource(modulePath: string): string | undefined {
-    if (this.sources[modulePath]) return this.sources[modulePath];
+    if (this.sources[modulePath] !== undefined) return this.sources[modulePath];
 
     const filePath = this.moduleToFilePath(modulePath);
+    if (filePath === undefined) return undefined;
     return findInVariants(this.sources, filePath);
   }
 
-  private moduleToFilePath(modulePath: string): string {
-    return moduleToRelativePath(modulePath, this.packageName) ?? modulePath;
+  /** Convert module path to file path, or undefined if not local. */
+  private moduleToFilePath(modulePath: string): string | undefined {
+    return moduleToRelativePath(modulePath, this.packageName);
   }
 
   private modulePathToDebugPath(modulePath: string): string {
-    const filePath = this.moduleToFilePath(modulePath);
+    const filePath = this.moduleToFilePath(modulePath) ?? modulePath;
     return this.debugWeslRoot + filePath + ".wesl";
   }
 
-  /** Return all modules, parsing them on-demand if needed. */
+  /** Parse all modules and return entries. */
   allModules(): Iterable<[string, WeslAST]> {
     for (const filePath of Object.keys(this.sources)) {
       const treatLibAsRoot = this.packageName !== "package";
@@ -167,7 +157,7 @@ export class BundleResolver implements ModuleResolver {
   }
 }
 
-/** Convert file path to module path (e.g., "foo/bar.wesl" -> "package::foo::bar"). */
+/** Convert file path to module path (e.g., "foo/bar.wesl" to "package::foo::bar"). */
 export function fileToModulePath(
   filePath: string,
   packageName: string,
@@ -185,7 +175,7 @@ export function fileToModulePath(
   return packageName + "::" + moduleSuffix;
 }
 
-/** Try path variants with and without ./ prefix and extension suffixes. */
+/** Try path variants with/without ./ prefix and extension suffixes. */
 function findInVariants(
   sources: Record<string, string>,
   basePath: string,
@@ -195,11 +185,11 @@ function findInVariants(
 
   for (const prefix of prefixes) {
     const path = prefix + basePath;
-    if (sources[path]) return sources[path];
+    if (sources[path] !== undefined) return sources[path];
 
     for (const ext of extensions) {
       const withExt = `${path}.${ext}`;
-      if (sources[withExt]) return sources[withExt];
+      if (sources[withExt] !== undefined) return sources[withExt];
     }
   }
 
