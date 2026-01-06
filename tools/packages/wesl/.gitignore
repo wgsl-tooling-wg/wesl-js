@@ -6,3 +6,6 @@ docs
 
 # cloned test fixtures (bevy shaders, etc.)
 fixtures
+
+# nodebug build output (for testing against prod builds)
+dist-nodebug

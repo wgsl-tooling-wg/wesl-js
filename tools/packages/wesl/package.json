@@ -11,6 +11,7 @@
     "build": "tsdown",
     "build:brotli-size": "./scripts/brotli.ts dist/sized.cjs",
     "build:docs": "typedoc --plugin typedoc-theme-hierarchy --entryPoints ./src/index.ts --entryPointStrategy expand --out ./docs",
+    "build:nodebug": "vite build --config vite.nodebug.config.ts",
     "build:size": "run-s build:sizetest build:brotli-size",
     "build:sizetest": "vite build --config sizetest.vite.config.js",
     "deploy:docsite": "run-s build:docs pages:deploy",
@@ -18,6 +19,7 @@
     "prepublishOnly": "run-s build",
     "test": "vitest --hideSkippedTests",
     "test:cts": "./scripts/test-cts.ts",
+    "test:nodebug": "vitest run --config vitest.nodebug.config.ts",
     "test:once": "vitest run",
     "typecheck": "tsgo"
   },
