@@ -1,4 +1,3 @@
-import type { SrcMapBuilder } from "mini-parse";
 import type {
   AbstractElem,
   AttributeElem,
@@ -19,6 +18,7 @@ import { failIdentElem } from "./ClickableError.ts";
 import { filterValidElements } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import type { Conditions, DeclIdent, Ident } from "./Scope.ts";
+import type { SrcMapBuilder } from "./SrcMap.ts";
 
 export interface EmitParams {
   srcBuilder: SrcMapBuilder;

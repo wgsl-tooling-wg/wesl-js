@@ -1,9 +1,9 @@
-import { expectTrimmedMatch, trimSrc } from "mini-parse/vitest-util";
 import { expect, type RunnerTestSuite } from "vitest";
 import type { WgslTestSrc } from "wesl-testsuite";
 import { link } from "../Linker.ts";
 import { type ManglerFn, underscoreMangle } from "../Mangler.ts";
 import { mapValues } from "../Util.ts";
+import { expectTrimmedMatch, trimSrc } from "./TrimmedMatch.ts";
 
 /** Link wesl sources and compare linked wgsl vs expectations (ignores whitespace). */
 export async function testLink(

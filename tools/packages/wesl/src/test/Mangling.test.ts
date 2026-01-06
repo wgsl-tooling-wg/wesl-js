@@ -1,8 +1,8 @@
-import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { test } from "vitest";
 import { link } from "../Linker.ts";
 import { underscoreMangle } from "../Mangler.ts";
 import { linkTestOpts } from "./TestUtil.ts";
+import { expectTrimmedMatch } from "./TrimmedMatch.ts";
 
 test("underscoreMangle", async () => {
   const main = `

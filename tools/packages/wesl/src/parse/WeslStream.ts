@@ -1,14 +1,9 @@
-import {
-  CachingStream,
-  MatchersStream,
-  matchOneOf,
-  ParseError,
-  RegexMatchers,
-  type Stream,
-  type TypedToken,
-  withStreamAction,
-} from "mini-parse";
+import { ParseError } from "../ParseError.ts";
+import type { Stream, TypedToken } from "../Stream.ts";
 import { keywords, reservedWords } from "./Keywords.ts";
+import { CachingStream } from "./stream/CachingStream.ts";
+import { MatchersStream, RegexMatchers } from "./stream/MatchersStream.ts";
+import { matchOneOf } from "./stream/RegexHelpers.ts";
 export type WeslTokenKind = "word" | "keyword" | "number" | "symbol";
 
 export type WeslToken<Kind extends WeslTokenKind = WeslTokenKind> =
@@ -328,10 +323,3 @@ export class WeslStream implements Stream<WeslToken> {
     }
   }
 }
-
-export const templateOpen = withStreamAction(stream => {
-  return (stream as WeslStream).nextTemplateStartToken();
-});
-export const templateClose = withStreamAction(stream => {
-  return (stream as WeslStream).nextTemplateEndToken();
-});

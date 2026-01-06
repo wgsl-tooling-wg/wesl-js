@@ -1,7 +1,8 @@
 /// <reference types="wesl-plugin/suffixes" />
-import { trimSrc } from "mini-parse/vitest-util";
+
 import { beforeAll, expect, test } from "vitest";
 import { link } from "wesl";
+import { trimSrc } from "wesl/test-util";
 
 let gpu: GPU;
 

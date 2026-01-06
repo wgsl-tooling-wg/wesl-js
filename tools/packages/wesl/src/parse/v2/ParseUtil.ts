@@ -1,4 +1,3 @@
-import { ParseError, type Stream, type Token } from "mini-parse";
 import type {
   Attribute,
   AttributeElem,
@@ -9,7 +8,9 @@ import type {
   RefIdentElem,
   TypedDeclElem,
 } from "../../AbstractElems.ts";
+import { ParseError } from "../../ParseError.ts";
 import type { RefIdent } from "../../Scope.ts";
+import type { Stream, Token } from "../../Stream.ts";
 import type { WeslStream, WeslToken } from "../WeslStream.ts";
 import { parseExpression } from "./ParseExpression.ts";
 import type { ParsingContext } from "./ParsingContext.ts";

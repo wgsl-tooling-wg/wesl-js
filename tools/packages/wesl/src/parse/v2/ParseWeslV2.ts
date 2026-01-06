@@ -1,5 +1,5 @@
-import { ParseError } from "mini-parse";
 import type { ModuleElem } from "../../AbstractElems.ts";
+import { ParseError } from "../../ParseError.ts";
 import type { WeslAST, WeslParseState } from "../../ParseWESL.ts";
 import { WeslParseError } from "../../ParseWESL.ts";
 import type { SrcModule } from "../../Scope.ts";

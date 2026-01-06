@@ -1,5 +1,5 @@
-import type { SrcMap } from "mini-parse";
 import { assertThatDebug } from "./Assertions.ts";
+import type { SrcMap } from "./SrcMap.ts";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
 import type { WeslDevice } from "./WeslDevice";
 

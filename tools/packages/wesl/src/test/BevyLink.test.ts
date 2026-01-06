@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
-import { expectNoLogAsync } from "mini-parse/test-util";
 import { expect, test } from "vitest";
 import { BaseDir, fetchBulkTest } from "wesl-testsuite/fetch-bulk-tests";
 import { link } from "../Linker.ts";
 import type { Conditions } from "../Scope.ts";
+import { expectNoLogAsync } from "./LogCatcher.ts";
 
 const bevyBulkTest = {
   name: "Bevy",

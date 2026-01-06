@@ -1,6 +1,6 @@
-import { withLoggerAsync } from "mini-parse";
 import { expect, test } from "vitest";
 import { link } from "../Linker.ts";
+import { withLoggerAsync } from "../Logging.ts";
 
 const noLog = () => {};
 

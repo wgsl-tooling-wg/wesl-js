@@ -7,13 +7,23 @@ export * from "./discovery/PackageNameUtils.ts";
 export * from "./LinkedWesl.ts";
 export * from "./Linker.ts";
 export * from "./LiveDeclarations.ts";
+export {
+  enableTracing,
+  log,
+  srcLog,
+  tracing,
+  withLoggerAsync,
+} from "./Logging.ts";
 export * from "./Mangler.ts";
 export * from "./ModulePathUtil.ts";
 export * from "./ModuleResolver.ts";
+export * from "./ParseError.ts";
 export * from "./ParseWESL.ts";
 export * from "./PathUtil.ts";
 export { WeslStream } from "./parse/WeslStream.ts";
 export * from "./Scope.ts";
+export * from "./Span.ts";
+export * from "./SrcMap.ts";
 export * from "./TransformBindingStructs.ts";
 export * from "./Util.ts";
 export * from "./WeslBundle.ts";

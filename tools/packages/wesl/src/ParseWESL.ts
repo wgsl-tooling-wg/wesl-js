@@ -1,4 +1,3 @@
-import type { AppState, ParseError, Span } from "mini-parse";
 import type {
   ConstAssertElem,
   ContainerElem,
@@ -8,8 +7,10 @@ import type {
 } from "./AbstractElems.ts";
 import { filterValidElements } from "./Conditions.ts";
 import { type FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
+import type { ParseError } from "./ParseError.ts";
 import { parseWeslV2 } from "./parse/v2/ParseWeslV2.ts";
 import type { Conditions, Scope, SrcModule } from "./Scope.ts";
+import type { Span } from "./Span.ts";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
 
 /** Partial element being constructed during parsing. */
@@ -46,8 +47,7 @@ export interface BindingAST extends WeslAST {
 }
 
 /** Stable and unstable state used during parsing. */
-export interface WeslParseState
-  extends AppState<WeslParseContext, StableState> {
+export interface WeslParseState {
   context: WeslParseContext;
   stable: StableState;
 }

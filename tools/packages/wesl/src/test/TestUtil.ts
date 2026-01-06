@@ -1,9 +1,9 @@
-import { withLoggerAsync } from "mini-parse";
-import { expectNoLog, logCatch } from "mini-parse/test-util";
 import { expect } from "vitest";
 import { type BoundAndTransformed, RecordResolver, type SrcModule } from "wesl";
 import { bindAndTransform, type LinkParams, link } from "../Linker.ts";
+import { withLoggerAsync } from "../Logging.ts";
 import { parseSrcModule, type WeslAST } from "../ParseWESL.ts";
+import { expectNoLog, logCatch } from "./LogCatcher.ts";
 import { stripWesl } from "./StripWesl.ts";
 
 export type LinkTestOpts = Pick<

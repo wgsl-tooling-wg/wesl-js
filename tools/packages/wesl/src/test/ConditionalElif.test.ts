@@ -1,6 +1,6 @@
-import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { test } from "vitest";
 import { link } from "../Linker.ts";
+import { expectTrimmedMatch } from "./TrimmedMatch.ts";
 
 test("basic @elif chain", async () => {
   const src = `

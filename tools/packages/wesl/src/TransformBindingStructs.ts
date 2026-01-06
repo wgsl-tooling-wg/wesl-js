@@ -1,4 +1,3 @@
-import { tracing } from "mini-parse";
 import type {
   AbstractElem,
   AttributeElem,
@@ -13,6 +12,7 @@ import type {
 } from "./AbstractElems.ts";
 import type { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { visitAst } from "./LinkerUtil.ts";
+import { tracing } from "./Logging.ts";
 import { findDecl } from "./LowerAndEmit.ts";
 import { minimallyMangledName } from "./Mangler.ts";
 import {

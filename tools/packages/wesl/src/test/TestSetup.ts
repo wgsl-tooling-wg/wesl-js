@@ -1,5 +1,5 @@
-import { enableTracing } from "mini-parse";
 import { beforeEach } from "vitest";
+import { enableTracing } from "../Logging.ts";
 import { resetScopeIds } from "../Scope.ts";
 
 enableTracing();

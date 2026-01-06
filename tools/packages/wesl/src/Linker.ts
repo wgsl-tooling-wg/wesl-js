@@ -1,4 +1,3 @@
-import { type SrcMap, SrcMapBuilder, tracing } from "mini-parse";
 import type { AbstractElem, ModuleElem } from "./AbstractElems.ts";
 import {
   bindIdents,
@@ -6,6 +5,7 @@ import {
   type VirtualLibrarySet,
 } from "./BindIdents.ts";
 import { LinkedWesl } from "./LinkedWesl.ts";
+import { tracing } from "./Logging.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
 import type { ManglerFn } from "./Mangler.ts";
 import {
@@ -16,6 +16,7 @@ import {
 } from "./ModuleResolver.ts";
 import type { WeslAST } from "./ParseWESL.ts";
 import type { Conditions, DeclIdent, SrcModule } from "./Scope.ts";
+import { type SrcMap, SrcMapBuilder } from "./SrcMap.ts";
 import { filterMap, mapValues } from "./Util.ts";
 import type { WeslBundle } from "./WeslBundle.ts";
 

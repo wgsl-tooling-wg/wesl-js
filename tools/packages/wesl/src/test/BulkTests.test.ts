@@ -1,5 +1,4 @@
 import fs from "node:fs/promises";
-import { expectNoLogAsync } from "mini-parse/test-util";
 import { describe, expect, test } from "vitest";
 import type { BulkTest } from "wesl-testsuite";
 import { BaseDir, fetchBulkTest } from "wesl-testsuite/fetch-bulk-tests";
@@ -7,6 +6,7 @@ import bulkTests from "wesl-testsuite/test-cases-json/bulkTests" with {
   type: "json",
 };
 import { link } from "../Linker.ts";
+import { expectNoLogAsync } from "./LogCatcher.ts";
 import { stripWesl } from "./StripWesl.ts";
 
 // Make sure the bulk tests are loaded

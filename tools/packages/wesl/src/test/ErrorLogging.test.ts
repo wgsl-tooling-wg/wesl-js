@@ -1,7 +1,7 @@
-import { withLoggerAsync } from "mini-parse";
-import { logCatch } from "mini-parse/test-util";
 import { expect, test } from "vitest";
 import { link } from "../Linker.ts";
+import { withLoggerAsync } from "../Logging.ts";
+import { logCatch } from "./LogCatcher.ts";
 import { linkWithLogQuietly } from "./TestUtil.ts";
 
 test("unresolved identifier", async () => {

@@ -1,7 +1,6 @@
-import { expectNoLog } from "mini-parse/test-util";
-
 import { expect, test } from "vitest";
 import { astToString } from "../debug/ASTtoString.ts";
+import { expectNoLog } from "./LogCatcher.ts";
 import { parseWESL } from "./TestUtil.ts";
 
 test("parse fn with line comment", () => {

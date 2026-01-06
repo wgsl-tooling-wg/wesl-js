@@ -1,5 +1,5 @@
-import { srcLog, tracing } from "mini-parse";
 import type { DeclIdentElem, RefIdent, RefIdentElem } from "wesl";
+import { srcLog, tracing } from "./Logging.ts";
 import { offsetToLineNumber } from "./Util.ts";
 import { encodeVlq } from "./vlq/vlq.ts";
 

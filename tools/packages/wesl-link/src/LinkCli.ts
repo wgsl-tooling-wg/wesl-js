@@ -1,10 +1,11 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolve } from "import-meta-resolve";
-import { enableTracing, log } from "mini-parse";
 import {
   astToString,
+  enableTracing,
   link,
+  log,
   RecordResolver,
   scopeToString,
   type WeslBundle,

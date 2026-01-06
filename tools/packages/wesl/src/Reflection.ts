@@ -1,4 +1,3 @@
-import { matchOneOf } from "mini-parse";
 import type {
   BindingStructElem,
   NameElem,
@@ -11,6 +10,7 @@ import type {
 import { assertThat } from "./Assertions.ts";
 import type { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { identElemLog } from "./LinkerUtil.ts";
+import { matchOneOf } from "./parse/stream/RegexHelpers.ts";
 import type { RefIdent } from "./Scope.ts";
 import {
   multisampledTextureTypes,

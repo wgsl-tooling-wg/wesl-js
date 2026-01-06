@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "import-meta-resolve": "^4.1.0",
-    "mini-parse": "workspace:*",
     "wesl": "workspace:*",
     "wesl-tooling": "workspace:*",
     "yargs": "^18.0.0"

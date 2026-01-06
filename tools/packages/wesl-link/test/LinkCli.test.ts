@@ -1,7 +1,7 @@
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { withLogSpyAsync } from "mini-parse/test-util";
 import { expect, test } from "vitest";
+import { withLogSpyAsync } from "wesl/test-util";
 import { cli } from "../src/LinkCli.ts";
 
 /** so vitest triggers when these files change */

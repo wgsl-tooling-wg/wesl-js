@@ -1,4 +1,4 @@
-import { tracing } from "mini-parse";
+import { tracing } from "./Logging.ts";
 
 /** checks whether a condition is true, otherwise throws */
 export function assertThat(condition: any, msg?: string): asserts condition {

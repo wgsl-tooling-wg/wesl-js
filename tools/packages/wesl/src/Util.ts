@@ -1,4 +1,4 @@
-import type { Span } from "mini-parse";
+import type { Span } from "./Span.ts";
 
 export function multiKeySet<A, B, V>(
   m: Map<A, Map<B, V>>,

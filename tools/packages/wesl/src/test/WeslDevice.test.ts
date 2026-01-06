@@ -1,7 +1,7 @@
 import { setTimeout } from "node:timers";
-import { SrcMap } from "mini-parse";
 import { expect, test, vi } from "vitest";
 import { LinkedWesl } from "../LinkedWesl";
+import { SrcMap } from "../SrcMap.ts";
 import { makeWeslDevice } from "../WeslDevice";
 
 test("WeslDevice doesn't conflict with uncapturederror", async () => {

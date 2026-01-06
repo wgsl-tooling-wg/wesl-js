@@ -1,9 +1,9 @@
-import { expectNoLogAsync } from "mini-parse/test-util";
 import second from "multi_pkg/second";
 import trans from "multi_pkg/transitive";
 import rand from "random_wgsl";
 import { expect, test } from "vitest";
 import { link } from "../Linker.ts";
+import { expectNoLogAsync } from "./LogCatcher.ts";
 
 test("import rand() from a package", async () => {
   const src = `
