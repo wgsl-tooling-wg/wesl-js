@@ -1,9 +1,11 @@
 import fs from "node:fs/promises";
+import { expectNoLogAsync } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import { BaseDir, fetchBulkTest } from "wesl-testsuite/fetch-bulk-tests";
+import { fetchBulkTest } from "wesl-testsuite/fetch-bulk-tests";
 import { link } from "../Linker.ts";
 import type { Conditions } from "../Scope.ts";
-import { expectNoLogAsync } from "./LogCatcher.ts";
+
+const fixturesDir = new URL("../../fixtures/", import.meta.url);
 
 const bevyBulkTest = {
   name: "Bevy",
@@ -14,9 +16,7 @@ const bevyBulkTest = {
   },
 };
 
-await fetchBulkTest(bevyBulkTest);
-
-const fixturesDir = BaseDir;
+await fetchBulkTest(bevyBulkTest, fixturesDir);
 
 // Constants needed by various Bevy modules
 const bevyConstants = {
