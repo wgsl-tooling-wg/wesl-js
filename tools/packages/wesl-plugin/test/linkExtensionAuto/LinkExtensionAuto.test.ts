@@ -3,6 +3,7 @@ import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import util from "node:util";
 import { expect, test } from "vitest";
+import { weslParserConfig } from "wesl";
 
 const exec = util.promisify((process as any).exec); // not sure why @types/node for child_process.exec is wrong (nodeExec vs exec)
 
@@ -24,14 +25,31 @@ test("verify ?link", { timeout: 30000 }, async () => {
     cwd: testDir,
   });
 
-  expect(result.stdout).toMatchInlineSnapshot(`
-    "fn main() {
-       toDep();
-    }
+  if (weslParserConfig.useV2Parser) {
+    // V2 output
+    expect(result.stdout).toMatchInlineSnapshot(`
+      "
 
-    fn toDep() { dep(); }
+      fn main() {
+         toDep();
+      }
 
-    fn dep() { }
-    "
-  `);
+      fn toDep() { dep(); }
+
+      fn dep() { }
+      "
+    `);
+  } else {
+    // V1 output with extra blank lines
+    expect(result.stdout).toMatchInlineSnapshot(`
+      "fn main() {
+         toDep();
+      }
+
+      fn toDep() { dep(); }
+
+      fn dep() { }
+      "
+    `);
+  }
 });
