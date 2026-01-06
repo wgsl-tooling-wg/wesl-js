@@ -1,5 +1,6 @@
 import { expectTrimmedMatch } from "mini-parse/vitest-util";
-import { test } from "vitest";
+import { expect, test } from "vitest";
+import { link } from "../Linker.ts";
 import { linkTestOpts } from "./TestUtil.ts";
 
 test("simple virtual module", async () => {
@@ -34,4 +35,34 @@ test("virtual constants", async () => {
     const num_lights = 4;
   `;
   expectTrimmedMatch(result, expected);
+});
+
+// WGSL reserved words (like 'common') are allowed in module paths per WESL spec.
+test("inline reference to virtual module with reserved word name", async () => {
+  const result = await link({
+    weslSrc: { "./main.wesl": "fn main() { let x = common::value; }" },
+    rootModuleName: "main",
+    virtualLibs: { common: () => "const value = 42;" },
+  });
+  expect(result.dest).toContain("const value = 42");
+});
+
+test("inline constant in array template param", async () => {
+  const src = `
+    fn main() {
+      var data: array<f32, constants::size>;
+    }
+  `;
+  const result = await linkTestOpts({ constants: { size: 4 } }, src);
+  expect(result).toContain("const size = 4");
+});
+
+test("function call with inline ref in template param", async () => {
+  const src = `
+    fn main() {
+      var data: array<f32, u32(constants::size)>;
+    }
+  `;
+  const result = await linkTestOpts({ constants: { size: 4 } }, src);
+  expect(result).toContain("const size = 4");
 });

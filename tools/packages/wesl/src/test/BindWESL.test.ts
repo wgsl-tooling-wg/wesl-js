@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { publicDecl, RecordResolver, resetScopeIds } from "wesl";
+import { publicDecl, RecordResolver } from "wesl";
 import { bindIdents } from "../BindIdents.ts";
 import { scopeToStringLong } from "../debug/ScopeToString.ts";
 import { bindTest, parseTest } from "./TestUtil.ts";
@@ -74,14 +74,14 @@ test("collect unbound references", async () => {
     }
    `;
 
-  resetScopeIds();
   const resolver = new RecordResolver({ main });
   const rootAst = resolver.resolveModule("package::main")!;
   const bindResult = bindIdents({ resolver, rootAst, accumulateUnbound: true });
 
-  const expected = ["pkg1::bar::baz", "pkg2::foo"];
-  const expectedArrays = expected.map(s => s.split("::")).sort();
-  expect(bindResult.unbound?.sort()).deep.equal(expectedArrays);
+  const expected = ["pkg1::bar::baz", "pkg2::foo"]
+    .map(s => s.split("::"))
+    .sort();
+  expect(bindResult.unbound?.sort()).deep.equal(expected);
 });
 
 test("publicDecl finds valid conditional declaration", () => {
@@ -102,9 +102,8 @@ test("publicDecl finds valid conditional declaration", () => {
   expect(decl1).toBeDefined();
   expect(decl1!.originalName).toBe("testFn");
 
-  // Second call should use cache and return same result
   const decl2 = publicDecl(ast.rootScope, "testFn", conditions);
-  expect(decl2).toBe(decl1); // Same object reference - caching works
+  expect(decl2).toBe(decl1); // Caching works - same object reference
 
   // Should find other declarations too
   const otherDecl = publicDecl(ast.rootScope, "otherFn", conditions);

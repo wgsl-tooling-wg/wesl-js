@@ -206,3 +206,110 @@ test("@else fn", async () => {
   `;
   await testLink({ app, util }, "app", expectWgsl);
 });
+
+test("disabled @if should not bind cross-module references", async () => {
+  const app = `
+    @if(false)
+    fn unused() {
+       package::util::used();
+    }
+    fn main() {}
+  `;
+  const util = `
+    fn used() {}
+  `;
+
+  // 'used' should NOT be in the output because 'unused' is disabled.
+  const expectWgsl = `
+    fn main() {}
+  `;
+  await testLink({ app, util }, "app", expectWgsl);
+});
+
+test("@else after @if(false) decl should be valid", async () => {
+  const app = `
+    @if(false) const a = 1;
+    @else const b = 2;
+    fn main() { let x = b; }
+  `;
+
+  // b should be included because @else is valid after @if(false)
+  const expectWgsl = `
+    const b = 2;
+    fn main() { let x = b; }
+  `;
+  await testLink({ app }, "app", expectWgsl);
+});
+
+test("@if(true) fn after @if(false) const should be valid", async () => {
+  const app = `
+    @if(false) const a = 1;
+    @if(true) fn helper() {}
+    fn main() { helper(); }
+  `;
+
+  const expectWgsl = `
+    fn helper() {}
+    fn main() { helper(); }
+  `;
+  await testLink({ app }, "app", expectWgsl);
+});
+
+// Experimental feature: conditionalBlockScope
+test("conditional block declaration visible in outer scope", async () => {
+  const app = `
+    fn func() {
+      @if(true) { let x = 1; }
+      let y = x;
+    }
+  `;
+  const expectWgsl = `
+    fn func() {
+      { let x = 1; }
+      let y = x;
+    }
+  `;
+  await testLink({ app }, "app", expectWgsl);
+});
+
+// Experimental feature: conditionalBlockScope
+test("conditional block declaration visible in outer scope", async () => {
+  const app = `
+    fn func() {
+      @if(true) { let x = super::util::two(); }
+      @else { let x = super::util::oops(); }
+      let y = x;
+    }
+  `;
+  const util = `
+    fn two() -> i32 { return 2;}
+    fn three() -> i32 { return 3;}
+  `;
+  const expectWgsl = `
+    fn func() {
+      { let x = two(); }
+      let y = x;
+    }
+    fn two() -> i32 { return 2;}
+  `;
+  await testLink({ app, util }, "app", expectWgsl);
+});
+
+// Tests that @if on continuing statement works (requires element-based detection, not string parsing)
+test("conditional continuing statement in loop", async () => {
+  const app = `
+    fn func() {
+      loop {
+        @if(true) continuing { break if true; }
+      }
+    }
+  `;
+  const expectWgsl = `
+    fn func() {
+      loop {
+        continuing { break if true; }
+      }
+    }
+  `;
+  await testLink({ app }, "app", expectWgsl);
+});

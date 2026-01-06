@@ -1,11 +1,23 @@
 import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { test } from "vitest";
-import { linkTest } from "./TestUtil.ts";
+import { expectTokenMatch, linkTest, linkTestOpts } from "./TestUtil.ts";
 
 test("link global var", async () => {
   const src = `var x: i32 = 1;`;
   const result = await linkTest(src);
   expectTrimmedMatch(result, src);
+});
+
+test("global diagnostic directive", async () => {
+  const src = `diagnostic(info, derivative_uniformity);`;
+  const result = await linkTest(src);
+  expectTrimmedMatch(result, src);
+});
+
+test("@diagnostic attribute on statement", async () => {
+  const src = `fn foo() { @diagnostic(info, derivative_uniformity) if true { } }`;
+  const result = await linkTest(src);
+  expectTokenMatch(result, src);
 });
 
 test("link an alias", async () => {
@@ -122,4 +134,65 @@ test("struct member ref with extra component_or_swizzle", async () => {
  `;
   const result = await linkTest(src);
   expectTrimmedMatch(result, src);
+});
+
+test("empty string", async () => {
+  const src = "";
+  const result = await linkTest(src);
+  expectTrimmedMatch(result, src);
+});
+
+test("cross-module @location attribute const", async () => {
+  const main = `
+    import package::file1::foo;
+    fn main() { let x = foo(); }
+  `;
+  const file1 = `
+    const loc = 0;
+    fn foo() -> @location(loc) vec4f { return vec4f(); }
+  `;
+  const result = await linkTest(main, file1);
+  const expected = `
+    fn main() { let x = foo(); }
+    fn foo() -> @location(loc) vec4f { return vec4f(); }
+    const loc = 0;
+  `;
+  expectTrimmedMatch(result, expected);
+});
+
+test("link with library bundle (tests CompositeResolver)", async () => {
+  const main = `
+    import mylib::util::helper;
+    fn main() { helper(); }
+  `;
+  // Create a library bundle with the module
+  const libs = [
+    {
+      name: "mylib",
+      edition: "unstable_2025_1" as const,
+      modules: {
+        "util.wesl": `fn helper() { }`,
+      },
+    },
+  ];
+  const result = await linkTestOpts({ libs }, main);
+  const expected = `
+    fn main() { helper(); }
+    fn helper() { }
+  `;
+  expectTrimmedMatch(result, expected);
+});
+
+test("inline ref in array size from another module", async () => {
+  const main = `
+    import package::file1::SIZE;
+    fn main() { var a: array<f32, SIZE>; }
+  `;
+  const file1 = `const SIZE = 4;`;
+  const result = await linkTest(main, file1);
+  const expected = `
+    fn main() { var a: array<f32, SIZE>; }
+    const SIZE = 4;
+  `;
+  expectTrimmedMatch(result, expected);
 });

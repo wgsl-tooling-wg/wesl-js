@@ -1,7 +1,6 @@
 import { expectTrimmedMatch } from "mini-parse/vitest-util";
 import { test } from "vitest";
 import { link } from "../Linker.ts";
-import { resetScopeIds } from "../Scope.ts";
 
 test("basic @elif chain", async () => {
   const src = `
@@ -16,7 +15,6 @@ test("basic @elif chain", async () => {
     const b = a;
   `;
 
-  resetScopeIds();
   const result = await link({ weslSrc: { app: src }, rootModuleName: "app" });
   expectTrimmedMatch(result.dest, expected);
 });
@@ -34,7 +32,6 @@ test("@elif with false condition", async () => {
     const b = a;
   `;
 
-  resetScopeIds();
   const result = await link({ weslSrc: { app: src }, rootModuleName: "app" });
   expectTrimmedMatch(result.dest, expected);
 });
@@ -54,7 +51,6 @@ test("multiple @elif chain", async () => {
     const y = x;
   `;
 
-  resetScopeIds();
   const result = await link({ weslSrc: { app: src }, rootModuleName: "app" });
   expectTrimmedMatch(result.dest, expected);
 });
@@ -72,7 +68,6 @@ test("@elif without @else", async () => {
     const b = a;
   `;
 
-  resetScopeIds();
   const result = await link({ weslSrc: { app: src }, rootModuleName: "app" });
   expectTrimmedMatch(result.dest, expected);
 });
@@ -96,7 +91,6 @@ test("@elif on functions", async () => {
     }
   `;
 
-  resetScopeIds();
   const result = await link({ weslSrc: { app: src }, rootModuleName: "app" });
   expectTrimmedMatch(result.dest, expected);
 });
@@ -116,7 +110,6 @@ test("@elif with complex conditions", async () => {
   `;
 
   const conditions = { foo: true, bar: false };
-  resetScopeIds();
   const result = await link({
     weslSrc: { app: src },
     rootModuleName: "app",
@@ -143,7 +136,6 @@ test("@elif on struct members", async () => {
   `;
 
   const conditions = { use_color: false, use_uv: true };
-  resetScopeIds();
   const result = await link({
     weslSrc: { app: src },
     rootModuleName: "app",
@@ -166,7 +158,6 @@ test("@elif first condition true", async () => {
     const y = x;
   `;
 
-  resetScopeIds();
   const result = await link({ weslSrc: { app: src }, rootModuleName: "app" });
   expectTrimmedMatch(result.dest, expected);
 });
@@ -182,7 +173,6 @@ test("@elif with mixed directives", async () => {
     const_assert false == false;
   `;
 
-  resetScopeIds();
   const result = await link({ weslSrc: { app: src }, rootModuleName: "app" });
   expectTrimmedMatch(result.dest, expected);
 });
@@ -201,7 +191,6 @@ test("@elif all false falls to @else", async () => {
     const y = x;
   `;
 
-  resetScopeIds();
   const result = await link({ weslSrc: { app: src }, rootModuleName: "app" });
   expectTrimmedMatch(result.dest, expected);
 });
@@ -229,7 +218,6 @@ test("@elif chain resets after non-conditional", async () => {
     const result = a + b;
   `;
 
-  resetScopeIds();
   const result = await link({ weslSrc: { app: src }, rootModuleName: "app" });
   expectTrimmedMatch(result.dest, expected);
 });
