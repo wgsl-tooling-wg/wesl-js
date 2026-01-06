@@ -1,10 +1,3 @@
-/**
- * Helpers to populate contents arrays with text elements.
- *
- * V2 parser must explicitly push elements onto openElems stack,
- * add children via ctx.addElem(), and fill gaps with coverWithText().
- */
-
 import type {
   ContainerElem,
   ElemKindMap,
