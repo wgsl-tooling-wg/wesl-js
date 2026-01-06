@@ -12,7 +12,7 @@ import type {
 } from "./AbstractElems.ts";
 import type { TransformedAST, WeslJsPlugin } from "./Linker.ts";
 import { visitAst } from "./LinkerUtil.ts";
-import { tracing } from "./Logging.ts";
+import { debug } from "./Logging.ts";
 import { findDecl } from "./LowerAndEmit.ts";
 import { minimallyMangledName } from "./Mangler.ts";
 import {
@@ -307,7 +307,7 @@ export function transformBindingReference(
   const refName = memberRef.member.name;
   const structMember = struct.members.find(m => m.name.name === refName)!;
   if (!structMember || !structMember.mangledVarName) {
-    if (tracing) console.log(`missing mangledVarName for ${refName}`);
+    if (debug) console.log(`missing mangledVarName for ${refName}`);
     return { kind: "synthetic", text: refName };
   }
   const { extraComponents } = memberRef;

@@ -3,7 +3,6 @@ import { pathToFileURL } from "node:url";
 import { resolve } from "import-meta-resolve";
 import {
   astToString,
-  enableTracing,
   link,
   log,
   RecordResolver,
@@ -20,7 +19,6 @@ import yargs from "yargs";
 type CliArgs = Awaited<ReturnType<typeof parseArgs>>;
 
 export async function cli(rawArgs: string[]): Promise<void> {
-  enableTracing(); // so we get more debug info
   const argv = await parseArgs(rawArgs);
   await linkNormally(argv);
 }

@@ -45,8 +45,8 @@
     }
   },
   "types": "dist/index.d.ts",
-  "dependencies": {},
   "devDependencies": {
+    "@rollup/plugin-replace": "^6.0.3",
     "@types/brotli": "^1.3.4",
     "multi_pkg": "workspace:x",
     "random_wgsl": "workspace:x",

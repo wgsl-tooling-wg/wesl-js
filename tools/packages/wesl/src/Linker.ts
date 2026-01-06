@@ -5,7 +5,7 @@ import {
   type VirtualLibrarySet,
 } from "./BindIdents.ts";
 import { LinkedWesl } from "./LinkedWesl.ts";
-import { tracing } from "./Logging.ts";
+import { debug } from "./Logging.ts";
 import { lowerAndEmit } from "./LowerAndEmit.ts";
 import type { ManglerFn } from "./Mangler.ts";
 import {
@@ -247,7 +247,7 @@ function getRootModule(
 ): WeslAST {
   const rootAst = resolver.resolveModule(modulePath);
   if (!rootAst) {
-    if (tracing) {
+    if (debug) {
       console.log(
         `root module not found: ${modulePath} (from ${rootModuleName})`,
       );

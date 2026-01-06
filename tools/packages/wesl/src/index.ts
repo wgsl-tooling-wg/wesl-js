@@ -7,13 +7,7 @@ export * from "./discovery/PackageNameUtils.ts";
 export * from "./LinkedWesl.ts";
 export * from "./Linker.ts";
 export * from "./LiveDeclarations.ts";
-export {
-  enableTracing,
-  log,
-  srcLog,
-  tracing,
-  withLoggerAsync,
-} from "./Logging.ts";
+export { debug, log, srcLog, validation, withLoggerAsync } from "./Logging.ts";
 export * from "./Mangler.ts";
 export * from "./ModulePathUtil.ts";
 export * from "./ModuleResolver.ts";

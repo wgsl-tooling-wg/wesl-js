@@ -1,5 +1,5 @@
 import type { DeclIdentElem, RefIdent, RefIdentElem } from "wesl";
-import { srcLog, tracing } from "./Logging.ts";
+import { debug, srcLog } from "./Logging.ts";
 import { offsetToLineNumber } from "./Util.ts";
 import { encodeVlq } from "./vlq/vlq.ts";
 
@@ -87,7 +87,7 @@ export function throwClickableError(params: ClickableErrorParams): void {
       Error.stackTraceLimit = oldLimit;
     }
     error.message = "";
-    if (tracing) e.cause = error; // users don't want to see this, but WESL developers might
+    if (debug) e.cause = error; // users don't want to see this, but WESL developers might
     throw e;
   }
 }

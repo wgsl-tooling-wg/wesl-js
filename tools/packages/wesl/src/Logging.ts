@@ -3,13 +3,11 @@ import type { SrcMap, SrcWithPath } from "./SrcMap.ts";
 /** base logger (can be overridden to a capturing logger for tests) */
 export let log = console.log;
 
-/** true if tracing is enabled */
-export let tracing = false;
+/** enable debug assertions and verbose error messages (set false via bundler for smaller builds) */
+export const debug = true;
 
-/** enable tracing of parser activity */
-export function enableTracing(enable = true): void {
-  tracing = enable;
-}
+/** enable user-facing validation like operator binding rules (set false via bundler for smaller builds) */
+export const validation = true;
 
 /** use temporary logger for tests */
 export function withLogger<T>(logFn: typeof console.log, fn: () => T): T {

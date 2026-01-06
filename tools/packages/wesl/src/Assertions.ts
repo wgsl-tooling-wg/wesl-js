@@ -1,4 +1,4 @@
-import { tracing } from "./Logging.ts";
+import { debug } from "./Logging.ts";
 
 /** checks whether a condition is true, otherwise throws */
 export function assertThat(condition: any, msg?: string): asserts condition {
@@ -7,17 +7,17 @@ export function assertThat(condition: any, msg?: string): asserts condition {
   }
 }
 
-/** when debug testing is enabled, checks whether a condition is true, otherwise throws */
+/** when debug is enabled, checks whether a condition is true, otherwise throws */
 export function assertThatDebug(
   condition: any,
   msg?: string,
 ): asserts condition {
-  if (tracing) assertThat(condition, msg);
+  if (debug) assertThat(condition, msg);
 }
 
-/** when debug testing is enabled throw an error */
+/** when debug is enabled throw an error */
 export function failDebug(msg = "FAIL"): void {
-  if (tracing) throw new Error(msg);
+  if (debug) throw new Error(msg);
 }
 
 /**

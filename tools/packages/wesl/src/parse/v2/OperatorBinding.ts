@@ -15,6 +15,7 @@
  * - Relational with logical: `a < b || c < d`
  */
 
+import { validation } from "../../Logging.ts";
 import type { WeslStream, WeslToken } from "../WeslStream.ts";
 import { throwParseError } from "./ParseUtil.ts";
 
@@ -100,6 +101,8 @@ export function checkOpBinding(
   op: string,
   leftGroup: OpGroup,
 ): OpGroup {
+  if (!validation) return leftGroup;
+
   const opGroup = getOpGroup(op);
   if (!canBindLeft(op, leftGroup))
     throwParseError(stream, `'${op}' requires parentheses after ${leftGroup}`);
