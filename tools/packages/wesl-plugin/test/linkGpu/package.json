@@ -7,7 +7,6 @@
     "typecheck": "tsgo"
   },
   "dependencies": {
-    "mini-parse": "workspace:*",
     "webgpu": "^0.3.8",
     "wesl": "workspace:*",
     "wesl-plugin": "workspace:*"

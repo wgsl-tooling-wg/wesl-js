@@ -464,8 +464,6 @@ importers:
         specifier: workspace:x
         version: link:../../wesl-plugin
 
-  packages/mini-parse: {}
-
   packages/random_wgsl:
     devDependencies:
       vitest-image-snapshot:
@@ -511,10 +509,6 @@ importers:
   packages/vitest-util: {}
 
   packages/wesl:
-    dependencies:
-      mini-parse:
-        specifier: workspace:*
-        version: link:../mini-parse
     devDependencies:
       '@types/brotli':
         specifier: ^1.3.4
@@ -568,9 +562,6 @@ importers:
       import-meta-resolve:
         specifier: ^4.1.0
         version: 4.1.0
-      mini-parse:
-        specifier: workspace:*
-        version: link:../mini-parse
       wesl:
         specifier: workspace:*
         version: link:../wesl
@@ -666,9 +657,6 @@ importers:
 
   packages/wesl-plugin/test/linkExtension:
     dependencies:
-      mini-parse:
-        specifier: workspace:*
-        version: link:../../../mini-parse
       random_wgsl:
         specifier: workspace:*
         version: link:../../../random_wgsl
@@ -684,9 +672,6 @@ importers:
 
   packages/wesl-plugin/test/linkExtensionAuto:
     dependencies:
-      mini-parse:
-        specifier: workspace:*
-        version: link:../../../mini-parse
       multi_pkg:
         specifier: workspace:*
         version: link:../../../test_pkg/multi_pkg
@@ -705,9 +690,6 @@ importers:
 
   packages/wesl-plugin/test/linkExtensionNoToml:
     dependencies:
-      mini-parse:
-        specifier: workspace:*
-        version: link:../../../mini-parse
       random_wgsl:
         specifier: workspace:*
         version: link:../../../random_wgsl
@@ -723,9 +705,6 @@ importers:
 
   packages/wesl-plugin/test/linkGpu:
     dependencies:
-      mini-parse:
-        specifier: workspace:*
-        version: link:../../../mini-parse
       webgpu:
         specifier: ^0.3.8
         version: 0.3.8
@@ -738,9 +717,6 @@ importers:
 
   packages/wesl-plugin/test/linkSubPath:
     dependencies:
-      mini-parse:
-        specifier: workspace:*
-        version: link:../../../mini-parse
       multi_pkg:
         specifier: workspace:*
         version: link:../../../test_pkg/multi_pkg
@@ -759,9 +735,6 @@ importers:
 
   packages/wesl-plugin/test/staticExtension:
     dependencies:
-      mini-parse:
-        specifier: workspace:*
-        version: link:../../../mini-parse
       random_wgsl:
         specifier: workspace:*
         version: link:../../../random_wgsl

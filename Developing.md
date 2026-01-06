@@ -43,7 +43,6 @@ parses WESL sources and links to WGSL.
 WESL npm packages.
 
 - *bench* benchmark tests of linker performance.
-- *mini-parse* a PEG parser combinator library used by the linker.
 - *random_wgsl* a sample WESL npm package
 
 ## Test Packages

@@ -1,4 +1,3 @@
-import { assertUnreachable } from "../../../mini-parse/src/Assertions.ts";
 import type {
   AbstractElem,
   Attribute,
@@ -11,6 +10,7 @@ import type {
   TypeTemplateParameter,
   UnknownExpressionElem,
 } from "../AbstractElems.ts";
+import { assertUnreachable } from "../Assertions.ts";
 import {
   diagnosticControlToString,
   expressionToString,
