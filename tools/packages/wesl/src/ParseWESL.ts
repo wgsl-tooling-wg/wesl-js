@@ -9,12 +9,7 @@ import type {
 import { filterValidElements } from "./Conditions.ts";
 import { type FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { parseWeslV2 } from "./parse/v2/ParseWeslV2.ts";
-import {
-  type Conditions,
-  emptyScope,
-  type Scope,
-  type SrcModule,
-} from "./Scope.ts";
+import type { Conditions, Scope, SrcModule } from "./Scope.ts";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
 
 /** Partial element being constructed during parsing. */
@@ -85,25 +80,6 @@ export class WeslParseError extends Error {
 /** Parse a WESL file. */
 export function parseSrcModule(srcModule: SrcModule): WeslAST {
   return parseWeslV2(srcModule);
-}
-
-export function blankWeslParseState(srcModule: SrcModule): WeslParseState {
-  const rootScope = emptyScope(null);
-  const moduleElem = null as any; // we'll fill this in later
-  return {
-    context: { scope: rootScope, openElems: [] },
-    stable: { srcModule, imports: [], rootScope, moduleElem },
-  };
-}
-
-export function syntheticWeslParseState(): WeslParseState {
-  const srcModule: SrcModule = {
-    modulePath: "package::test",
-    debugFilePath: "./test.wesl",
-    src: "",
-  };
-
-  return blankWeslParseState(srcModule);
 }
 
 /** @return flattened form of import tree for binding idents. */

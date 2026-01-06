@@ -1,19 +1,9 @@
-import { type Parser, type Stream, withLoggerAsync } from "mini-parse";
-import {
-  expectNoLog,
-  logCatch,
-  type TestParseResult,
-  testParseWithStream,
-} from "mini-parse/test-util";
+import { withLoggerAsync } from "mini-parse";
+import { expectNoLog, logCatch } from "mini-parse/test-util";
 import { expect } from "vitest";
 import { type BoundAndTransformed, RecordResolver, type SrcModule } from "wesl";
 import { bindAndTransform, type LinkParams, link } from "../Linker.ts";
-import {
-  parseSrcModule,
-  syntheticWeslParseState,
-  type WeslAST,
-} from "../ParseWESL.ts";
-import { WeslStream, type WeslToken } from "../parse/WeslStream.ts";
+import { parseSrcModule, type WeslAST } from "../ParseWESL.ts";
 import { stripWesl } from "./StripWesl.ts";
 
 export type LinkTestOpts = Pick<
@@ -34,23 +24,11 @@ export function expectTokenMatch(actual: string, expected: string): void {
 /** Parse a single wesl file. */
 export function parseWESL(src: string): WeslAST {
   const srcModule: SrcModule = {
-    modulePath: "package::test", // TODO not used outside of tests
+    modulePath: "package::test",
     debugFilePath: "./test.wesl",
     src,
   };
   return parseSrcModule(srcModule);
-}
-
-/** Parse wesl, returning parse state and WeslAST. */ // LATER get rid of this
-export function testAppParse<T>(
-  parser: Parser<Stream<WeslToken>, T>,
-  src: string,
-): TestParseResult<T, WeslAST> {
-  return testParseWithStream(
-    parser,
-    new WeslStream(src),
-    syntheticWeslParseState(),
-  );
 }
 
 /** Link wesl for tests. First module is ./test.wesl, rest are ./file1.wesl, etc. */
