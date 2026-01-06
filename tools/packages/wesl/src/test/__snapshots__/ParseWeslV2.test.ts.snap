@@ -1,0 +1,67 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parse unicode ident 1`] = `
+"module
+  text '
+  '
+  fn Δέλτα()
+    decl %Δέλτα
+    statement
+      text '{}'
+  text ' 
+  '
+  fn réflexion()
+    decl %réflexion
+    statement
+      text '{}'
+  text ' 
+  '
+  fn Кызыл()
+    decl %Кызыл
+    statement
+      text '{}'
+  text ' 
+  '
+  fn 𐰓𐰏𐰇()
+    decl %𐰓𐰏𐰇
+    statement
+      text '{}'
+  text ' 
+  '
+  fn 朝焼け()
+    decl %朝焼け
+    statement
+      text '{}'
+  text '
+  '
+  fn سلام()
+    decl %سلام
+    statement
+      text '{}'
+  text ' 
+  '
+  fn 검정()
+    decl %검정
+    statement
+      text '{}'
+  text ' 
+  '
+  fn שָׁלוֹם()
+    decl %שָׁלוֹם
+    statement
+      text '{}'
+  text '
+  '
+  fn गुलाबी()
+    decl %गुलाबी
+    statement
+      text '{}'
+  text '
+  '
+  fn փիրուզ()
+    decl %փիրուզ
+    statement
+      text '{}'
+  text '
+  '"
+`;
