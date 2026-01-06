@@ -1,6 +1,7 @@
 import type { AppState, ParseError, Span } from "mini-parse";
 import type {
   ConstAssertElem,
+  ContainerElem,
   ImportElem,
   ImportStatement,
   ModuleElem,
@@ -15,7 +16,12 @@ import {
   type SrcModule,
 } from "./Scope.ts";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
-import type { OpenElem } from "./WESLCollect.ts";
+
+/** Partial element being constructed during parsing. */
+export type OpenElem<T extends ContainerElem = ContainerElem> = Pick<
+  T,
+  "kind" | "contents"
+>;
 
 /**
  * Result of parsing one WESL module (e.g., one .wesl file).
