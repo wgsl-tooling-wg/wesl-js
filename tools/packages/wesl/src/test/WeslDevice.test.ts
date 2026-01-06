@@ -199,7 +199,14 @@ test("Invokes error throwing", async () => {
     this.message = message;
   });
   vi.stubGlobal("GPUValidationError", GPUValidationErrorMock);
-  const GPUUncapturedErrorEventMock = vi.fn(() => {});
+  const GPUUncapturedErrorEventMock = vi.fn(function (
+    this: any,
+    type: string,
+    options: { error: GPUError },
+  ) {
+    this.type = type;
+    this.error = options.error;
+  });
   vi.stubGlobal("GPUUncapturedErrorEvent", GPUUncapturedErrorEventMock);
 
   const dispatchEventPromise = Promise.withResolvers();

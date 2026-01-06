@@ -9,7 +9,7 @@
     "wesl": "workspace:*"
   },
   "devDependencies": {
-    "vitest": "^3.2.4",
+    "vitest": "^4.0.16",
     "webgpu": "^0.3.8",
     "wgsl-test": "workspace:x"
   }

@@ -141,7 +141,7 @@ function setupWorkerHandlers(
     resolve(result);
   });
 
-  worker.on("error", error => {
+  worker.on("error", (error: Error) => {
     worker.terminate();
     reject(error);
   });

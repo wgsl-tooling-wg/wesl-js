@@ -1,4 +1,7 @@
 {
   "extends": "../../tsconfig.browser.json",
+  "compilerOptions": {
+    "types": ["@webgpu/types", "node"]
+  },
   "include": ["src"]
 }

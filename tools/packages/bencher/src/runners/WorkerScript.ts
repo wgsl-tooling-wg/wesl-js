@@ -99,7 +99,7 @@ function _logTiming(operation: string, duration?: number) {
 
 /** Send message and exit with duration log */
 function sendAndExit(message: ResultMessage | ErrorMessage, exitCode: number) {
-  process.send!(message, (err: Error | null) => {
+  const callback = (err: Error | null): void => {
     if (err) {
       const msgType = message.type === "result" ? "results" : "error message";
       console.error(`[Worker] Error sending ${msgType}:`, err);
@@ -108,7 +108,8 @@ function sendAndExit(message: ResultMessage | ErrorMessage, exitCode: number) {
     const suffix = exitCode === 0 ? "" : " (error)";
     logTiming(`Total worker duration${suffix}:`, totalTime);
     process.exit(exitCode);
-  });
+  };
+  process.send!(message, undefined, undefined, callback);
 }
 
 /** Import benchmark function from module path */

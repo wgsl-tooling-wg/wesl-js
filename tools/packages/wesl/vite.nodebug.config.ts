@@ -1,5 +1,5 @@
 import replace from "@rollup/plugin-replace";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, type Plugin, type PluginOption } from "vite";
 import { baseViteConfig } from "./base.vite.config.ts";
 
 /** Strip error context strings from parser expect functions to reduce bundle size. */
@@ -46,7 +46,7 @@ config.plugins = [
       "const debug = true": "const debug = false",
       "const validation = true": "const validation = false",
     },
-  }),
+  }) as PluginOption,
   stripExpectContext(),
 ];
 
