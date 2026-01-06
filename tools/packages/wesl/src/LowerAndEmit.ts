@@ -18,7 +18,6 @@ import { isGlobal } from "./BindIdents.ts";
 import { failIdentElem } from "./ClickableError.ts";
 import { filterValidElements } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
-import { weslParserConfig } from "./ParseWESL.ts";
 import type { Conditions, DeclIdent, Ident } from "./Scope.ts";
 
 export interface EmitParams {
@@ -143,20 +142,11 @@ function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
 }
 
 function emitStuff(e: ContainerElem, ctx: EmitContext): void {
-  if (weslParserConfig.useV2Parser) {
-    emitContentsWithTrimming(e, ctx);
-  } else {
-    emitContents(e, ctx);
-  }
+  emitContentsWithTrimming(e, ctx);
 }
 
 function emitModule(e: ContainerElem, ctx: EmitContext): void {
-  if (!weslParserConfig.useV2Parser) {
-    emitContents(e, ctx);
-    return;
-  }
-
-  // V2: Skip whitespace-only text elements at module level
+  // Skip whitespace-only text elements at module level
   const validElements = filterValidElements(e.contents, ctx.conditions);
   for (const child of validElements) {
     if (child.kind === "text") {
@@ -196,19 +186,13 @@ function emitRootDecl(
     emitAttributes(e.attributes, ctx);
   }
 
-  if (weslParserConfig.useV2Parser) {
-    emitContentsWithTrimming(e, ctx);
-  } else {
-    emitContents(e, ctx);
-  }
+  emitContentsWithTrimming(e, ctx);
 }
 
-/** Emit newlines between root elements (V2 needs newlines even when not extracting). */
+/** Emit newlines between root elements. */
 function emitRootElemNl(ctx: EmitContext): void {
-  if (ctx.extracting || weslParserConfig.useV2Parser) {
-    ctx.srcBuilder.addNl();
-    ctx.srcBuilder.addNl();
-  }
+  ctx.srcBuilder.addNl();
+  ctx.srcBuilder.addNl();
 }
 
 function emitText(e: TextElem, ctx: EmitContext): void {
@@ -287,12 +271,7 @@ function emitStruct(e: StructElem, ctx: EmitContext): void {
 
   if (validLength === 1) {
     srcBuilder.appendNext(" { ");
-    // V2: trim leading whitespace from struct member
-    if (weslParserConfig.useV2Parser) {
-      emitContentsWithTrimming(validMembers[0] as ContainerElem, ctx);
-    } else {
-      emitContentsNoWs(validMembers[0] as ContainerElem, ctx);
-    }
+    emitContentsWithTrimming(validMembers[0] as ContainerElem, ctx);
     srcBuilder.appendNext(" }");
     srcBuilder.addNl();
   } else {

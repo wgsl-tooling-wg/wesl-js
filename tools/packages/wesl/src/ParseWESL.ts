@@ -1,21 +1,13 @@
-import {
-  type AppState,
-  ParseError,
-  type ParserInit,
-  type Span,
-} from "mini-parse";
+import type { AppState, ParseError, Span } from "mini-parse";
 import type {
   ConstAssertElem,
   ImportElem,
   ImportStatement,
   ModuleElem,
 } from "./AbstractElems.ts";
-import { throwClickableError } from "./ClickableError.ts";
 import { filterValidElements } from "./Conditions.ts";
 import { type FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import { parseWeslV2 } from "./parse/v2/ParseWeslV2.ts";
-import { weslRoot } from "./parse/WeslGrammar.ts";
-import { WeslStream } from "./parse/WeslStream.ts";
 import {
   type Conditions,
   emptyScope,
@@ -24,34 +16,6 @@ import {
 } from "./Scope.ts";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
 import type { OpenElem } from "./WESLCollect.ts";
-
-/** Global configuration for WESL parser. */
-export interface WeslParserConfig {
-  /**
-   * Use V2 custom parser instead of V1 combinator parser.
-   * Default: false (use V1)
-   */
-  useV2Parser?: boolean;
-}
-
-/** Check if V1_ONLY environment variable is set (Node.js only). */
-function isV1OnlyRequested(): boolean {
-  if (typeof globalThis !== "object") return false;
-  const proc = (globalThis as Record<string, unknown>).process;
-  if (!proc || typeof proc !== "object") return false;
-  const env = (proc as Record<string, unknown>).env;
-  if (!env || typeof env !== "object") return false;
-  return (env as Record<string, unknown>).V1_ONLY === "true";
-}
-
-/**
- * Global parser configuration.
- * Can be overridden by V1_ONLY environment variable in Node.js.
- * TODO: Remove V1_ONLY check when transitioning away from V1 parser
- */
-export const weslParserConfig: WeslParserConfig = {
-  useV2Parser: !isV1OnlyRequested(), // V2 is default on feat/custom-parser branch
-};
 
 /**
  * Result of parsing one WESL module (e.g., one .wesl file).
@@ -106,51 +70,15 @@ export class WeslParseError extends Error {
     let message = `${opts.src.debugFilePath}:${lineNum}:${linePos}`;
     message += ` error: ${opts.cause.message}\n`;
     message += errorHighlight(source, opts.cause.span).join("\n");
-    super(message, {
-      cause: opts.cause,
-    });
+    super(message, { cause: opts.cause });
     this.span = opts.cause.span;
     this.src = opts.src;
   }
 }
 
-/** Parse a WESL file. Throws on error. Uses V2 parser if enabled. */
+/** Parse a WESL file. */
 export function parseSrcModule(srcModule: SrcModule): WeslAST {
-  // Check if V2 parser is enabled
-  if (weslParserConfig.useV2Parser) {
-    return parseWeslV2(srcModule);
-  }
-
-  // Use V1 parser (default)
-  const stream = new WeslStream(srcModule.src);
-  const appState = blankWeslParseState(srcModule);
-  const init: ParserInit = { stream, appState };
-  try {
-    const parseResult = weslRoot.parse(init);
-    if (parseResult === null) {
-      throw new Error("parseWESL failed");
-    }
-  } catch (e) {
-    if (e instanceof ParseError) {
-      const [lineNumber, lineColumn] = offsetToLineNumber(
-        e.span[0],
-        srcModule.src,
-      );
-      const error = new WeslParseError({ cause: e, src: srcModule });
-      throwClickableError({
-        url: srcModule.debugFilePath,
-        text: srcModule.src,
-        error,
-        lineNumber,
-        lineColumn,
-        length: e.span[1] - e.span[0],
-      });
-    } else {
-      throw e;
-    }
-  }
-
-  return appState.stable as WeslAST;
+  return parseWeslV2(srcModule);
 }
 
 export function blankWeslParseState(srcModule: SrcModule): WeslParseState {

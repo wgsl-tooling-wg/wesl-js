@@ -1,15 +1,11 @@
 /**
- * ImportCases tests running with V2 parser
+ * ImportCases integration tests
  *
- * This file tests all import scenarios using the V2 custom parser instead of V1.
- * It runs the same tests as ImportCases.test.ts but with weslParserConfig.useV2Parser = true.
- *
- * Purpose: Integration testing to validate V2 parser works end-to-end on real import scenarios
+ * Tests all import scenarios end-to-end on real import scenarios.
  */
 
-import { afterAll, beforeAll, type TestContext, test } from "vitest";
+import { afterAll, type TestContext, test } from "vitest";
 import { importCases } from "wesl-testsuite";
-import { weslParserConfig } from "../ParseWESL.ts";
 import { testFromCase, verifyCaseCoverage } from "./TestLink.ts";
 
 // wgsl example src, indexed by name
@@ -18,16 +14,6 @@ const examplesByName = new Map(importCases.map(t => [t.name, t]));
 async function caseTest(ctx: TestContext): Promise<void> {
   return testFromCase(ctx.task.name, examplesByName);
 }
-
-// Enable V2 parser for all tests in this file
-beforeAll(() => {
-  weslParserConfig.useV2Parser = true;
-});
-
-// Reset to V1 after tests complete
-afterAll(() => {
-  weslParserConfig.useV2Parser = false;
-});
 
 afterAll(verifyCaseCoverage(importCases));
 

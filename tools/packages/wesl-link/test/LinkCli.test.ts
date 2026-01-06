@@ -2,7 +2,6 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withLogSpyAsync } from "mini-parse/test-util";
 import { expect, test } from "vitest";
-import { weslParserConfig } from "wesl";
 import { cli } from "../src/LinkCli.ts";
 
 /** so vitest triggers when these files change */
@@ -14,36 +13,17 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 test("simple link", async () => {
   const logged = await cliLine(`--projectDir ${testDir}`);
 
-  if (weslParserConfig.useV2Parser) {
-    // V2 output
-    expect(logged).toMatchInlineSnapshot(`
-      "
+  expect(logged).toMatchInlineSnapshot(`
+    "
 
-      fn main() {
-        foo();
-      }
+    fn main() {
+      foo();
+    }
 
-      fn foo() {
-        // fooImpl
-      }"
-    `);
-  } else {
-    // V1 output with extra blank lines
-    expect(logged).toMatchInlineSnapshot(`
-      "
-
-      fn main() {
-        foo();
-      }
-
-
-
-
-      fn foo() {
-        // fooImpl
-      }"
-    `);
-  }
+    fn foo() {
+      // fooImpl
+    }"
+  `);
 });
 
 test("link with condition", async () => {

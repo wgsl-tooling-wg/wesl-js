@@ -3,7 +3,6 @@ import { expect, type RunnerTestSuite } from "vitest";
 import type { WgslTestSrc } from "wesl-testsuite";
 import { link } from "../Linker.ts";
 import { type ManglerFn, underscoreMangle } from "../Mangler.ts";
-import { weslParserConfig } from "../ParseWESL.ts";
 import { mapValues } from "../Util.ts";
 
 /** Link wesl sources and compare linked wgsl vs expectations (ignores whitespace). */
@@ -19,48 +18,32 @@ export async function testLink(
 
 type CaseMap = Map<string, WgslTestSrc>;
 
-/**
- * V2 parser emits `{const foo = 10; }` instead of `{ const foo = 10; }`.
- * TODO: Remove after dropping V1 parser
- */
-function adjustV2Expectations(name: string, expected: string): string {
-  if (!weslParserConfig.useV2Parser) {
-    return expected;
-  }
-
-  const knownFormattingDifferences: Record<string, string> = {
-    // V1: fn func() { { const foo = 10; } }
-    "@if on compound statement": `
-      fn func() {
-        {
-        const foo = 10; }
-      }`,
-    // V1: fn func() { if 0 < 1 { const foo = 10; } }
-    "@if on if statement": `
-      fn func() {
-        if 0 < 1 {
-        const foo = 10; }
-      }`,
-    // V1: fn func() { loop { const foo = 10; } }
-    "@if on loop statement": `
-      fn func() {
-        loop {
-        const foo = 10; }
-      }`,
-    // V1: fn func() { while true { const foo = 10; } }
-    "@if on while statement": `
-      fn func() {
-        while true {
-        const foo = 10; }
-      }`,
-    // V1: fn foo() { while true { break; } }  fn bar() { while true { } }
-    "@if on break statement": `
-      fn foo() { while true {  break; } }
-      fn bar() { while true {  } }`,
-  };
-
-  return knownFormattingDifferences[name] || expected;
-}
+/** Known formatting differences in parser output for specific test cases. */
+const knownFormattingDifferences: Record<string, string> = {
+  "@if on compound statement": `
+    fn func() {
+      {
+      const foo = 10; }
+    }`,
+  "@if on if statement": `
+    fn func() {
+      if 0 < 1 {
+      const foo = 10; }
+    }`,
+  "@if on loop statement": `
+    fn func() {
+      loop {
+      const foo = 10; }
+    }`,
+  "@if on while statement": `
+    fn func() {
+      while true {
+      const foo = 10; }
+    }`,
+  "@if on break statement": `
+    fn foo() { while true {  break; } }
+    fn bar() { while true {  } }`,
+};
 
 /** Test linking a single case from a shared test suite (ImportCases, etc.) */
 export async function testFromCase(
@@ -77,8 +60,8 @@ export async function testFromCase(
   } = testCase;
   const trimmedWesl = mapValues(weslSrc, trimSrc);
   const rootName = Object.keys(weslSrc)[0];
-  const expected = adjustV2Expectations(name, expectedWgsl);
-  const underscoreExpected = adjustV2Expectations(name, underscoreWgsl);
+  const expected = knownFormattingDifferences[name] || expectedWgsl;
+  const underscoreExpected = knownFormattingDifferences[name] || underscoreWgsl;
 
   await testLink(trimmedWesl, rootName, expected);
   await testLink(trimmedWesl, rootName, underscoreExpected, underscoreMangle);
