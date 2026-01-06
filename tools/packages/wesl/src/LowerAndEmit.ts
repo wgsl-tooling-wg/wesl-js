@@ -214,8 +214,8 @@ function emitFn(e: FnElem, ctx: EmitContext): void {
   builder.appendNext("(");
   const validParams = filterValidElements(params, conditions);
   validParams.forEach((p, i) => {
-    // V2: attributes not in contents, emit separately
-    // V1: attributes in contents as TextElems, skip separate emission
+    // Emit attributes separately only if not already in contents
+    // LATER stop including attributes in contents when we emit from ast
     const attrsInContents =
       p.contents.length > 0 && p.contents[0].kind === "attribute";
     if (!attrsInContents) {
