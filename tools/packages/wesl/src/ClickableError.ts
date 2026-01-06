@@ -26,6 +26,7 @@ export interface ClickableErrorParams {
 /** Throw an error with an embedded source map so that browser users can
  *  click on the error in the browser debug console and see the wesl source code.  */
 export function throwClickableError(params: ClickableErrorParams): void {
+  if (!debug) throw params.error; // skip source map generation in prod
   const { url, text, lineNumber, lineColumn, length, error } = params;
 
   // Based on https://stackoverflow.com/questions/65274147/sourceurl-for-css
