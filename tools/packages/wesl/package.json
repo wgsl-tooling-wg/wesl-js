@@ -49,7 +49,6 @@
   "types": "dist/index.d.ts",
   "devDependencies": {
     "@rollup/plugin-replace": "^6.0.3",
-    "@types/brotli": "^1.3.4",
     "multi_pkg": "workspace:x",
     "random_wgsl": "workspace:x",
     "terser": "^5.43.1",

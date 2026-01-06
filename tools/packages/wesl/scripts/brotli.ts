@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-import fs from "node:fs";
-import process from "node:process";
-import brotli from "brotli";
+import { readFileSync } from "node:fs";
+import { brotliCompressSync } from "node:zlib";
 
-const buffer = fs.readFileSync(process.argv[2]);
-const compressed = brotli.compress(buffer);
+const buffer = readFileSync(process.argv[2]);
+const compressed = brotliCompressSync(buffer);
 console.log(compressed.length, "bytes");
