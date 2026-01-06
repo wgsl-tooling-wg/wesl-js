@@ -18,18 +18,18 @@
   },
   "publishConfig": {
     "exports": {
-      ".": "./dist/pluginIndex.js",
+      ".": "./dist/pluginIndex.mjs",
       "./suffixes": {
         "types": "./src/defaultSuffixTypes.d.ts"
       },
-      "./astro": "./dist/plugins/astro.js",
-      "./rspack": "./dist/plugins/rspack.js",
-      "./vite": "./dist/plugins/vite.js",
-      "./webpack": "./dist/plugins/webpack.js",
-      "./rollup": "./dist/plugins/rollup.js",
-      "./esbuild": "./dist/plugins/esbuild.js",
-      "./nuxt": "./dist/plugins/nuxt.js",
-      "./farm": "./dist/plugins/farm.js",
+      "./astro": "./dist/plugins/astro.mjs",
+      "./rspack": "./dist/plugins/rspack.mjs",
+      "./vite": "./dist/plugins/vite.mjs",
+      "./webpack": "./dist/plugins/webpack.mjs",
+      "./rollup": "./dist/plugins/rollup.mjs",
+      "./esbuild": "./dist/plugins/esbuild.mjs",
+      "./nuxt": "./dist/plugins/nuxt.mjs",
+      "./farm": "./dist/plugins/farm.mjs",
       "./*": "./*"
     }
   },

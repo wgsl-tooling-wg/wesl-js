@@ -15,11 +15,11 @@
   "publishConfig": {
     "exports": {
       ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs"
       }
     },
-    "main": "./dist/index.js"
+    "main": "./dist/index.mjs"
   },
   "exports": {
     ".": {

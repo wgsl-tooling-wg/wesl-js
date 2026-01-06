@@ -9,11 +9,9 @@
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",
-    "build:brotli-size": "./scripts/brotli.ts dist/sized.cjs",
     "build:docs": "typedoc --plugin typedoc-theme-hierarchy --entryPoints ./src/index.ts --entryPointStrategy expand --out ./docs",
     "build:nodebug": "vite build --config vite.nodebug.config.ts",
-    "build:size": "run-s build:sizetest build:brotli-size",
-    "build:sizetest": "vite build --config sizetest.vite.config.js",
+    "build:size": "./scripts/size-check.ts",
     "deploy:docsite": "run-s build:docs pages:deploy",
     "pages:deploy": "wrangler pages deploy --project-name wesl-js docs",
     "prepublishOnly": "run-s build",

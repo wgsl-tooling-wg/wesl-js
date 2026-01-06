@@ -1,6 +1,39 @@
 import replace from "@rollup/plugin-replace";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import { baseViteConfig } from "./base.vite.config.ts";
+
+/** Strip error context strings from parser expect functions to reduce bundle size. */
+function stripExpectContext(): Plugin {
+  return {
+    name: "strip-expect-context",
+    transform(code, id) {
+      if (!id.endsWith(".ts")) return null;
+      let result = code;
+      // expect(stream, "text", "context") -> expect(stream, "text")
+      result = result.replace(
+        /\bexpect\(([^,]+),\s*("[^"]*"),\s*("[^"]*"|`[^`]*`)\)/g,
+        "expect($1, $2)",
+      );
+      // expectWord(stream, "msg") -> expectWord(stream, "")
+      result = result.replace(
+        /\bexpectWord\(([^,]+),\s*("[^"]*"|`[^`]*`)\)/g,
+        'expectWord($1, "")',
+      );
+      // expectExpression(ctx, "msg") -> expectExpression(ctx)
+      result = result.replace(
+        /\bexpectExpression\(([^,]+),\s*("[^"]*"|`[^`]*`)\)/g,
+        "expectExpression($1)",
+      );
+      // throwParseError(stream, "msg") -> throwParseError(stream, "")
+      result = result.replace(
+        /\bthrowParseError\(([^,]+),\s*("[^"]*"|`[^`]*`)\)/g,
+        'throwParseError($1, "")',
+      );
+      if (result !== code) return { code: result, map: null };
+      return null;
+    },
+  };
+}
 
 const config = baseViteConfig();
 config.build!.outDir = "dist-nodebug";
@@ -14,6 +47,7 @@ config.plugins = [
       "const validation = true": "const validation = false",
     },
   }),
+  stripExpectContext(),
 ];
 
 export default defineConfig(config);
