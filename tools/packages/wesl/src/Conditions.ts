@@ -75,7 +75,6 @@ function evaluateIfExpression(
   } else if (kind === "parenthesized-expression") {
     return evaluateIfExpression(expression.expression, conditions);
   } else if (kind === "ref") {
-    // V2 parser: condition identifiers are RefIdentElem with conditionRef flag
     return conditions[expression.ident.originalName] ?? false;
   } else {
     throw new Error(`unexpected @if expression ${JSON.stringify(expression)}`);

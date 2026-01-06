@@ -92,7 +92,8 @@ function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
       emitContents(e, ctx);
       return;
 
-    // V2: "stuff" elements (compound statements) need trimming for proper formatting
+    // "stuff" elements (compound statements) need trimming for proper formatting
+    // LATER get rid of "stuff" elements
     case "stuff":
       emitStuff(e, ctx);
       return;

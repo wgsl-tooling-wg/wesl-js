@@ -4,8 +4,6 @@ import { bindIdents } from "../BindIdents.ts";
 import { scopeToStringLong } from "../debug/ScopeToString.ts";
 import { bindTest, parseTest } from "./TestUtil.ts";
 
-// V2-specific test file - validates V2's scope structure
-
 test("nested scopes binding", () => {
   const src = `
     fn main() {
