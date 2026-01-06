@@ -74,7 +74,6 @@ function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
       return;
 
     case "literal":
-    case "translate-time-feature": // LATER remove once V1 parser is removed
     case "binary-expression":
     case "unary-expression":
     case "call-expression":
@@ -373,12 +372,6 @@ function emitExpression(e: ExpressionElem, ctx: EmitContext): void {
     return;
   }
 
-  // LATER remove once V1 parser is removed
-  if (kind === "translate-time-feature") {
-    ctx.srcBuilder.add(e.name, e.start, e.end);
-    return;
-  }
-
   if (kind === "ref") {
     emitRefIdent(e, ctx);
     return;
@@ -518,9 +511,6 @@ export function expressionToString(elem: ExpressionElem): string {
     return elem.ident.originalName;
   } else if (kind === "literal") {
     return elem.value;
-  } else if (kind === "translate-time-feature") {
-    // LATER remove once V1 parser is removed
-    return elem.name;
   } else if (kind === "parenthesized-expression") {
     return `(${expressionToString(elem.expression)})`;
   } else if (kind === "component-expression") {

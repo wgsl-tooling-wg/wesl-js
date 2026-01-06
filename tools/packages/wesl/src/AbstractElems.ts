@@ -55,7 +55,6 @@ export type ElemKindMap = {
 /** Inspired by https://github.com/wgsl-tooling-wg/wesl-rs/blob/3b2434eac1b2ebda9eb8bfb25f43d8600d819872/crates/wgsl-parse/src/syntax.rs#L364 */
 export type ExpressionElem =
   | Literal
-  | TranslateTimeFeature // LATER remove once V1 parser is removed
   | RefIdentElem
   | TypeRefElem // template_elaborated_ident is a primary_expression
   | ParenthesizedExpression
@@ -270,12 +269,6 @@ export interface TranslateTimeExpressionElem {
 export interface Literal extends AbstractElemBase {
   kind: "literal";
   value: string;
-}
-
-/** Feature names inside `@if`. LATER remove once V1 parser is removed */
-export interface TranslateTimeFeature extends AbstractElemBase {
-  kind: "translate-time-feature";
-  name: string;
 }
 
 /** (expr) */

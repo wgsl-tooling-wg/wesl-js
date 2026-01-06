@@ -77,9 +77,6 @@ function evaluateIfExpression(
   } else if (kind === "ref") {
     // V2 parser: condition identifiers are RefIdentElem with conditionRef flag
     return conditions[expression.ident.originalName] ?? false;
-  } else if (kind === "translate-time-feature") {
-    // LATER remove once V1 parser is removed - V1 uses TranslateTimeFeature
-    return conditions[expression.name] ?? false;
   } else {
     throw new Error(`unexpected @if expression ${JSON.stringify(expression)}`);
   }
