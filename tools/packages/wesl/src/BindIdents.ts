@@ -181,16 +181,6 @@ export function publicDecl(
   return validDecls.find(d => d.originalName === name);
 }
 
-/** @return true if this decl is at the root scope level of a module. */
-export function isGlobal(declIdent: DeclIdent): boolean {
-  // V2 parser sets isGlobal explicitly; V1 infers from declElem.kind
-  if (declIdent.isGlobal !== undefined) return declIdent.isGlobal;
-  const { declElem } = declIdent;
-  if (!declElem) return false;
-  const globalKinds = ["alias", "const", "override", "fn", "struct", "gvar"];
-  return globalKinds.includes(declElem.kind);
-}
-
 /** State used during the recursive scope tree walk to bind references to declarations. */
 interface BindContext {
   resolver: ModuleResolver;
@@ -329,7 +319,7 @@ function handleNewDecl(
   knownDecls.add(decl);
   const name = refIdent.originalName;
   setMangledName(name, decl, globalNames, decl.srcModule, mangler);
-  if (!isGlobal(decl)) return;
+  if (!decl.isGlobal) return;
 
   for (const elem of moduleAst.moduleAsserts ?? []) {
     globalStatements.set(elem, { srcModule: decl.srcModule, elem });
@@ -471,7 +461,7 @@ function setMangledName(
 
   const sep = proposedName.lastIndexOf("::");
   const name = sep === -1 ? proposedName : proposedName.slice(sep + 2);
-  const mangledName = isGlobal(decl)
+  const mangledName = decl.isGlobal
     ? mangler(decl, srcModule, name, globalNames)
     : decl.originalName;
   decl.mangledName = mangledName;

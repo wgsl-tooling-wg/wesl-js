@@ -13,7 +13,6 @@ import type {
   TextElem,
 } from "./AbstractElems.ts";
 import { assertThatDebug, assertUnreachable } from "./Assertions.ts";
-import { isGlobal } from "./BindIdents.ts";
 import { failIdentElem } from "./ClickableError.ts";
 import { filterValidElements } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
@@ -548,7 +547,7 @@ function emitDirective(e: DirectiveElem, ctx: EmitContext): void {
 }
 
 function displayName(declIdent: DeclIdent): string {
-  if (isGlobal(declIdent)) {
+  if (declIdent.isGlobal) {
     assertThatDebug(
       declIdent.mangledName,
       `ERR: mangled name not found for decl ident ${identToString(declIdent)}`,

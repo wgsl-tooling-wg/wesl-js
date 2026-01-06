@@ -1,9 +1,5 @@
 /**
- * V2 Parser Scope Tests
- *
- * These tests validate V2 parser scope structure with V2's consecutive scope ID numbering.
- * The scope structure should match V1, but V2 creates consecutive IDs (0,1,2,3...)
- * while V1 creates IDs with gaps (0,1,2,skip 3,4,5...).
+ * Parser Scope Tests
  *
  * What matters: scope structure (partial vs regular, nesting, contents)
  * What doesn't matter: exact scope ID numbers
