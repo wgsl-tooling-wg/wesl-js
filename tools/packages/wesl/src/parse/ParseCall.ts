@@ -2,12 +2,12 @@ import type {
   ExpressionElem,
   FunctionCallExpression,
   TypeTemplateParameter,
-} from "../../AbstractElems.ts";
-import type { WeslStream } from "../WeslStream.ts";
+} from "../AbstractElems.ts";
 import { makeCallExpression } from "./ExpressionUtil.ts";
 import { parseTemplateParams } from "./ParseType.ts";
 import { throwParseError } from "./ParseUtil.ts";
 import type { ParsingContext } from "./ParsingContext.ts";
+import type { WeslStream } from "./WeslStream.ts";
 
 type ExprParser = (ctx: ParsingContext) => ExpressionElem | null;
 

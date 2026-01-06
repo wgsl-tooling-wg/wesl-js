@@ -1,4 +1,4 @@
-import type { AttributeElem, LetElem, VarElem } from "../../AbstractElems.ts";
+import type { AttributeElem, LetElem, VarElem } from "../AbstractElems.ts";
 import { beginElem, finishElem } from "./ContentsHelpers.ts";
 import { skipTemplateList } from "./ParseGlobalVar.ts";
 import { getStartWithAttributes } from "./ParseStatement.ts";

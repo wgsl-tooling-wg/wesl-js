@@ -8,7 +8,7 @@ import type {
 import { filterValidElements } from "./Conditions.ts";
 import { type FlatImport, flattenTreeImport } from "./FlattenTreeImport.ts";
 import type { ParseError } from "./ParseError.ts";
-import { parseWeslV2 } from "./parse/v2/ParseWeslV2.ts";
+import { parseWesl } from "./parse/ParseWesl.ts";
 import type { Conditions, Scope, SrcModule } from "./Scope.ts";
 import type { Span } from "./Span.ts";
 import { errorHighlight, offsetToLineNumber } from "./Util.ts";
@@ -79,7 +79,7 @@ export class WeslParseError extends Error {
 
 /** Parse a WESL file. */
 export function parseSrcModule(srcModule: SrcModule): WeslAST {
-  return parseWeslV2(srcModule);
+  return parseWesl(srcModule);
 }
 
 /** @return flattened form of import tree for binding idents. */

@@ -1,4 +1,4 @@
-import type { AttributeElem, StatementElem } from "../../AbstractElems.ts";
+import type { AttributeElem, StatementElem } from "../AbstractElems.ts";
 import { beginElem, finishElem } from "./ContentsHelpers.ts";
 import { parseAttributeList } from "./ParseAttribute.ts";
 import {

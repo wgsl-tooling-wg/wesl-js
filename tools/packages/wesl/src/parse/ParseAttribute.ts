@@ -13,8 +13,8 @@ import type {
   StandardAttribute,
   TranslateTimeExpressionElem,
   UnknownExpressionElem,
-} from "../../AbstractElems.ts";
-import { ParseError } from "../../ParseError.ts";
+} from "../AbstractElems.ts";
+import { ParseError } from "../ParseError.ts";
 import { beginElem, finishContents } from "./ContentsHelpers.ts";
 import { parseExpression } from "./ParseExpression.ts";
 import {

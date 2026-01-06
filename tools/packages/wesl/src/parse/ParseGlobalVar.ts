@@ -3,7 +3,7 @@ import type {
   AttributeElem,
   ConstAssertElem,
   GlobalVarElem,
-} from "../../AbstractElems.ts";
+} from "../AbstractElems.ts";
 import { beginElem, finishElem } from "./ContentsHelpers.ts";
 import { getStartWithAttributes } from "./ParseStatement.ts";
 import { parseSimpleTypeRef } from "./ParseType.ts";

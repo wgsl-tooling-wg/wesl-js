@@ -6,12 +6,12 @@ import type {
   ImportItem,
   ImportSegment,
   ImportStatement,
-} from "../../AbstractElems.ts";
-import type { WeslStream } from "../WeslStream.ts";
+} from "../AbstractElems.ts";
 import { parseWeslConditional } from "./ParseAttribute.ts";
 import { weslKeywords } from "./ParseIdent.ts";
 import { parseMany, throwParseError } from "./ParseUtil.ts";
 import type { ParsingContext } from "./ParsingContext.ts";
+import type { WeslStream } from "./WeslStream.ts";
 
 /** WESL Grammar: translation_unit : import_statement* global_directive* global_decl* */
 export function parseWeslImports(ctx: ParsingContext): ImportElem[] {

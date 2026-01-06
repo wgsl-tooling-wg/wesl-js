@@ -1,5 +1,5 @@
-import type { AbstractElem } from "../../AbstractElems.ts";
-import type { WeslParseContext, WeslParseState } from "../../ParseWESL.ts";
+import type { AbstractElem } from "../AbstractElems.ts";
+import type { WeslParseContext, WeslParseState } from "../ParseWESL.ts";
 import {
   type DeclIdent,
   emptyScope,
@@ -8,8 +8,8 @@ import {
   type RefIdent,
   type Scope,
   type SrcModule,
-} from "../../Scope.ts";
-import type { WeslStream } from "../WeslStream.ts";
+} from "../Scope.ts";
+import type { WeslStream } from "./WeslStream.ts";
 
 /** Context for parsers to build AST and manage scopes. */
 export class ParsingContext {

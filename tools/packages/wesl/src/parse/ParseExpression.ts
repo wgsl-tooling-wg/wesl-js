@@ -5,8 +5,7 @@ import type {
   Literal,
   RefIdentElem,
   TypeRefElem,
-} from "../../AbstractElems.ts";
-import type { WeslStream, WeslToken } from "../WeslStream.ts";
+} from "../AbstractElems.ts";
 import {
   makeBinaryExpression,
   makeBinaryOperator,
@@ -33,6 +32,7 @@ import {
   throwParseError,
 } from "./ParseUtil.ts";
 import type { ParsingContext } from "./ParsingContext.ts";
+import type { WeslStream, WeslToken } from "./WeslStream.ts";
 
 export interface ExpressionOpts {
   /** If true, RefIdents get conditionRef flag (for @if/@elif). */

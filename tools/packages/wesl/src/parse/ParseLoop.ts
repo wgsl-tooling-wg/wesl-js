@@ -2,7 +2,7 @@ import type {
   AttributeElem,
   ContinuingElem,
   StatementElem,
-} from "../../AbstractElems.ts";
+} from "../AbstractElems.ts";
 import { parseExpression } from "./ParseExpression.ts";
 import { parseLocalVarDecl } from "./ParseLocalVar.ts";
 import {

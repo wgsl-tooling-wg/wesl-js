@@ -15,9 +15,9 @@
  * - Relational with logical: `a < b || c < d`
  */
 
-import { validation } from "../../Logging.ts";
-import type { WeslStream, WeslToken } from "../WeslStream.ts";
+import { validation } from "../Logging.ts";
 import { throwParseError } from "./ParseUtil.ts";
+import type { WeslStream, WeslToken } from "./WeslStream.ts";
 
 export type OpGroup =
   | "unary"

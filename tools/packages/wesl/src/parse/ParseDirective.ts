@@ -5,8 +5,7 @@ import type {
   EnableDirective,
   NameElem,
   RequiresDirective,
-} from "../../AbstractElems.ts";
-import type { WeslStream, WeslToken } from "../WeslStream.ts";
+} from "../AbstractElems.ts";
 import { parseAttributeList } from "./ParseAttribute.ts";
 import {
   attachAttributes,
@@ -16,6 +15,7 @@ import {
   parseCommaList,
 } from "./ParseUtil.ts";
 import type { ParsingContext } from "./ParsingContext.ts";
+import type { WeslStream, WeslToken } from "./WeslStream.ts";
 
 /** Grammar: global_directive : diagnostic_directive | enable_directive | requires_directive */
 export function parseDirective(ctx: ParsingContext): DirectiveElem | null {

@@ -12,8 +12,8 @@ import type {
   TypeTemplateParameter,
   UnaryExpression,
   UnaryOperator,
-} from "../../AbstractElems.ts";
-import type { WeslToken } from "../WeslStream.ts";
+} from "../AbstractElems.ts";
+import type { WeslToken } from "./WeslStream.ts";
 
 export function makeLiteral(token: WeslToken<"keyword" | "number">): Literal {
   const [start, end] = token.span;

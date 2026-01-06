@@ -1,16 +1,16 @@
-import type { ModuleElem } from "../../AbstractElems.ts";
-import { ParseError } from "../../ParseError.ts";
-import type { WeslAST, WeslParseState } from "../../ParseWESL.ts";
-import { WeslParseError } from "../../ParseWESL.ts";
-import type { SrcModule } from "../../Scope.ts";
-import { emptyScope } from "../../Scope.ts";
-import { WeslStream } from "../WeslStream.ts";
+import type { ModuleElem } from "../AbstractElems.ts";
+import { ParseError } from "../ParseError.ts";
+import type { WeslAST, WeslParseState } from "../ParseWESL.ts";
+import { WeslParseError } from "../ParseWESL.ts";
+import type { SrcModule } from "../Scope.ts";
+import { emptyScope } from "../Scope.ts";
 import { beginElem, finishContents } from "./ContentsHelpers.ts";
 import { parseModule } from "./ParseModule.ts";
 import { ParsingContext } from "./ParsingContext.ts";
+import { WeslStream } from "./WeslStream.ts";
 
 /** Parse a WESL source module into an AST. */
-export function parseWeslV2(srcModule: SrcModule): WeslAST {
+export function parseWesl(srcModule: SrcModule): WeslAST {
   const { ctx, state } = createParseState(srcModule);
   try {
     beginElem(ctx, "module");

@@ -3,8 +3,8 @@ import type {
   ElemKindMap,
   GrammarElem,
   TextElem,
-} from "../../AbstractElems.ts";
-import type { SrcModule } from "../../Scope.ts";
+} from "../AbstractElems.ts";
+import type { SrcModule } from "../Scope.ts";
 import type { ParsingContext } from "./ParsingContext.ts";
 
 /** Push partial element onto stack for content collection. */

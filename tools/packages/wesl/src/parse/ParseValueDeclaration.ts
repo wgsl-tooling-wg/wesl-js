@@ -5,8 +5,8 @@ import type {
   OverrideElem,
   TypedDeclElem,
   TypeRefElem,
-} from "../../AbstractElems.ts";
-import type { Scope } from "../../Scope.ts";
+} from "../AbstractElems.ts";
+import type { Scope } from "../Scope.ts";
 import { beginElem, finishContents } from "./ContentsHelpers.ts";
 import { getStartWithAttributes } from "./ParseStatement.ts";
 import { parseSimpleTypeRef } from "./ParseType.ts";

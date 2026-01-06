@@ -6,7 +6,7 @@ import type {
   GrammarElem,
   StatementElem,
   TypeRefElem,
-} from "../../AbstractElems.ts";
+} from "../AbstractElems.ts";
 import { beginElem, finishElem } from "./ContentsHelpers.ts";
 import { parseAttributeList } from "./ParseAttribute.ts";
 import { getStartWithAttributes, parseFunctionBody } from "./ParseStatement.ts";

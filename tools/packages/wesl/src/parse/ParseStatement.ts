@@ -6,8 +6,8 @@ import type {
   ElseAttribute,
   IfAttribute,
   StatementElem,
-} from "../../AbstractElems.ts";
-import { findMap } from "../../Util.ts";
+} from "../AbstractElems.ts";
+import { findMap } from "../Util.ts";
 import { beginElem, finishElem } from "./ContentsHelpers.ts";
 import { parseAttributeList } from "./ParseAttribute.ts";
 import { parseIfStatement, parseSwitchStatement } from "./ParseControlFlow.ts";

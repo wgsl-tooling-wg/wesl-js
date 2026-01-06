@@ -1,7 +1,7 @@
-import type { RefIdentElem } from "../../AbstractElems.ts";
-import type { WeslStream, WeslToken } from "../WeslStream.ts";
+import type { RefIdentElem } from "../AbstractElems.ts";
 import { makeRefIdentElem, throwParseError } from "./ParseUtil.ts";
 import type { ParsingContext } from "./ParsingContext.ts";
+import type { WeslStream, WeslToken } from "./WeslStream.ts";
 
 export interface ParsedModulePath {
   parts: string[];

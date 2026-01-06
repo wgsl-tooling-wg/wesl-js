@@ -1,5 +1,4 @@
-import type { AttributeElem, StatementElem } from "../../AbstractElems.ts";
-import type { WeslStream } from "../WeslStream.ts";
+import type { AttributeElem, StatementElem } from "../AbstractElems.ts";
 import { beginElem, finishContents } from "./ContentsHelpers.ts";
 import { parseExpression } from "./ParseExpression.ts";
 import {
@@ -8,6 +7,7 @@ import {
 } from "./ParseStatement.ts";
 import { expect, expectExpression, throwParseError } from "./ParseUtil.ts";
 import type { ParsingContext } from "./ParsingContext.ts";
+import type { WeslStream } from "./WeslStream.ts";
 
 const assignmentOps = new Set([
   "=",

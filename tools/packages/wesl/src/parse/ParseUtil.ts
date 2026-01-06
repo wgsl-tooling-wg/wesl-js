@@ -7,13 +7,13 @@ import type {
   NameElem,
   RefIdentElem,
   TypedDeclElem,
-} from "../../AbstractElems.ts";
-import { ParseError } from "../../ParseError.ts";
-import type { RefIdent } from "../../Scope.ts";
-import type { Stream, Token } from "../../Stream.ts";
-import type { WeslStream, WeslToken } from "../WeslStream.ts";
+} from "../AbstractElems.ts";
+import { ParseError } from "../ParseError.ts";
+import type { RefIdent } from "../Scope.ts";
+import type { Stream, Token } from "../Stream.ts";
 import { parseExpression } from "./ParseExpression.ts";
 import type { ParsingContext } from "./ParsingContext.ts";
+import type { WeslStream, WeslToken } from "./WeslStream.ts";
 
 // --- Stream/token expectations ---
 

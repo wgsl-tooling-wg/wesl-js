@@ -2,7 +2,7 @@ import type {
   AttributeElem,
   StructElem,
   StructMemberElem,
-} from "../../AbstractElems.ts";
+} from "../AbstractElems.ts";
 import { beginElem, finishElem } from "./ContentsHelpers.ts";
 import { parseAttributeList } from "./ParseAttribute.ts";
 import { getStartWithAttributes } from "./ParseStatement.ts";

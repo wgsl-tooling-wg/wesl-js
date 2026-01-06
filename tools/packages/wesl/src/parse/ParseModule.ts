@@ -4,8 +4,8 @@ import type {
   ConditionalAttribute,
   ConstAssertElem,
   GlobalDeclarationElem,
-} from "../../AbstractElems.ts";
-import { findMap } from "../../Util.ts";
+} from "../AbstractElems.ts";
+import { findMap } from "../Util.ts";
 import { parseAttributeList } from "./ParseAttribute.ts";
 import { parseDirective } from "./ParseDirective.ts";
 import { parseFnDecl } from "./ParseFn.ts";
