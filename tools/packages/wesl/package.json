@@ -1,6 +1,6 @@
 {
   "name": "wesl",
-  "version": "0.6.50",
+  "version": "0.7.0-a1",
   "type": "module",
   "files": [
     "dist",
