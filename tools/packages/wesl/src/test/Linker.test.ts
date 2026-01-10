@@ -20,6 +20,36 @@ test("@diagnostic attribute on statement", async () => {
   expectTokenMatch(result, src);
 });
 
+test("non-WGSL attribute @test stripped from output", async () => {
+  const src = `
+    @test
+    fn myTest() { }
+  `;
+  const expected = `fn myTest() { }`;
+  const result = await linkTest(src);
+  expectTokenMatch(result, expected);
+});
+
+test("non-WGSL attribute @test with params stripped", async () => {
+  const src = `
+    @test(42)
+    fn myTest() { }
+  `;
+  const expected = `fn myTest() { }`;
+  const result = await linkTest(src);
+  expectTokenMatch(result, expected);
+});
+
+test("non-WGSL attribute @custom stripped from output", async () => {
+  const src = `
+    @custom
+    fn myFn() { }
+  `;
+  const expected = `fn myFn() { }`;
+  const result = await linkTest(src);
+  expectTokenMatch(result, expected);
+});
+
 test("link an alias", async () => {
   const src = /* wgsl */ `
     alias Num = f32;

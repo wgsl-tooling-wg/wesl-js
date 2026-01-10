@@ -36,6 +36,26 @@ interface EmitContext {
   extracting: boolean;
 }
 
+/** Valid WGSL standard attributes (from spec). Non-WGSL attributes are stripped.
+ * See: https://www.w3.org/TR/WGSL/#attributes
+ * Note: @builtin, @diagnostic, @interpolate are parsed as separate attribute types. */
+const wgslStandardAttributes = new Set([
+  "align",
+  "binding",
+  "blend_src",
+  "compute",
+  "const",
+  "fragment",
+  "group",
+  "id",
+  "invariant",
+  "location",
+  "must_use",
+  "size",
+  "vertex",
+  "workgroup_size",
+]);
+
 /** Traverse the AST, starting from root elements, emitting WGSL for each. */
 export function lowerAndEmit(params: EmitParams): void {
   const { srcBuilder, rootElems, conditions } = params;
@@ -444,6 +464,9 @@ function emitAttribute(e: AttributeElem, ctx: EmitContext): boolean {
   }
 
   if (kind === "@attribute") {
+    if (!wgslStandardAttributes.has(e.attribute.name)) {
+      return false; // non-WGSL attribute, dropped from output
+    }
     emitStandardAttribute(e, ctx);
     return true;
   }
