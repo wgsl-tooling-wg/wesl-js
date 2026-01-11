@@ -1,4 +1,6 @@
-export const isDeno = !!(globalThis as any).Deno;let sharedGpu: GPU | undefined;
+export const isDeno = !!(globalThis as any).Deno;
+
+let sharedGpu: GPU | undefined;
 let sharedAdapter: GPUAdapter | undefined;
 let sharedDevice: GPUDevice | undefined;
 
