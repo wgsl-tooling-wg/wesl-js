@@ -35,20 +35,7 @@ export interface CompileErrorDetail {
 let styles: CSSStyleSheet | null = null;
 let template: HTMLTemplateElement | null = null;
 
-/**
- * <wgsl-play> - Web component for rendering WESL/WGSL fragment shaders.
- *
- * @example
- * <!-- From URL -->
- * <wgsl-play src="./shader.wesl"></wgsl-play>
- *
- * <!-- Inline source -->
- * <wgsl-play>
- *   @fragment fn fs_main() -> @location(0) vec4f {
- *     return vec4f(1.0, 0.0, 0.0, 1.0);
- *   }
- * </wgsl-play>
- */
+/** <wgsl-play> web component for rendering WESL/WGSL fragment shaders.  */
 export class WgslPlay extends HTMLElement {
   static observedAttributes = ["src", "shader-root"];
 

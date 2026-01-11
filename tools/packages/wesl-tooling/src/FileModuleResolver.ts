@@ -7,12 +7,6 @@ import { moduleToRelativePath, normalizeDebugRoot, parseSrcModule } from "wesl";
  *
  * Resolves module paths like `package::foo::bar` to filesystem paths
  * like `baseDir/foo/bar.wesl` or `baseDir/foo/bar.wgsl`.
- *
- * @example
- * ```ts
- * const resolver = new FileModuleResolver("./shaders", "my-package");
- * const ast = resolver.resolveModule("package::utils::helper");
- * ```
  */
 export class FileModuleResolver implements ModuleResolver {
   /** Cached parsed ASTs to avoid re-parsing the same module */
