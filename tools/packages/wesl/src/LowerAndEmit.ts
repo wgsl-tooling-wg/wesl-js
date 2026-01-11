@@ -65,9 +65,7 @@ export function lowerAndEmit(params: EmitParams): void {
   const validElements = skipConditionalFiltering
     ? rootElems
     : filterValidElements(rootElems, conditions);
-  validElements.forEach(e => {
-    lowerAndEmitElem(e, emitContext);
-  });
+  for (const e of validElements) lowerAndEmitElem(e, emitContext);
 }
 
 function lowerAndEmitElem(e: AbstractElem, ctx: EmitContext): void {
@@ -323,9 +321,7 @@ function emitSynthetic(e: SyntheticElem, ctx: EmitContext): void {
 
 function emitContents(elem: ContainerElem, ctx: EmitContext): void {
   const validElements = filterValidElements(elem.contents, ctx.conditions);
-  validElements.forEach(e => {
-    lowerAndEmitElem(e, ctx);
-  });
+  for (const e of validElements) lowerAndEmitElem(e, ctx);
 }
 
 /** Emit contents with leading/trailing whitespace trimming (V2 parser). */
@@ -526,30 +522,36 @@ export function diagnosticControlToString(
 
 export function expressionToString(elem: ExpressionElem): string {
   const { kind } = elem;
-  if (kind === "binary-expression") {
-    return `${expressionToString(elem.left)} ${elem.operator.value} ${expressionToString(elem.right)}`;
-  } else if (kind === "unary-expression") {
-    return `${elem.operator.value}${expressionToString(elem.expression)}`;
-  } else if (kind === "ref") {
-    return elem.ident.originalName;
-  } else if (kind === "literal") {
-    return elem.value;
-  } else if (kind === "parenthesized-expression") {
-    return `(${expressionToString(elem.expression)})`;
-  } else if (kind === "component-expression") {
-    return `${expressionToString(elem.base)}[${elem.access}]`;
-  } else if (kind === "component-member-expression") {
-    return `${expressionToString(elem.base)}.${elem.access}`;
-  } else if (kind === "call-expression") {
-    const fn = elem.function;
-    const name =
-      fn.kind === "ref" ? fn.ident.originalName : fn.name.originalName;
-    const targs = elem.templateArgs ? `<...>` : "";
-    return `${name}${targs}(${elem.arguments.map(expressionToString).join(", ")})`;
-  } else if (kind === "type") {
-    return elem.name.originalName;
-  } else {
-    assertUnreachable(kind);
+  switch (kind) {
+    case "binary-expression": {
+      const left = expressionToString(elem.left);
+      const right = expressionToString(elem.right);
+      return `${left} ${elem.operator.value} ${right}`;
+    }
+    case "unary-expression":
+      return `${elem.operator.value}${expressionToString(elem.expression)}`;
+    case "ref":
+      return elem.ident.originalName;
+    case "literal":
+      return elem.value;
+    case "parenthesized-expression":
+      return `(${expressionToString(elem.expression)})`;
+    case "component-expression":
+      return `${expressionToString(elem.base)}[${elem.access}]`;
+    case "component-member-expression":
+      return `${expressionToString(elem.base)}.${elem.access}`;
+    case "call-expression": {
+      const fn = elem.function;
+      const name =
+        fn.kind === "ref" ? fn.ident.originalName : fn.name.originalName;
+      const targs = elem.templateArgs ? `<...>` : "";
+      const args = elem.arguments.map(expressionToString).join(", ");
+      return `${name}${targs}(${args})`;
+    }
+    case "type":
+      return elem.name.originalName;
+    default:
+      assertUnreachable(kind);
   }
 }
 
