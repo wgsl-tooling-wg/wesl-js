@@ -8,6 +8,7 @@ import {
 } from "wesl-gpu";
 import { resolveShaderContext } from "./CompileShader.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
+import { importImageSnapshot, importVitest } from "./VitestImport.ts";
 
 export interface FragmentTestParams extends WeslOptions, FragmentRenderParams {
   /** WESL/WGSL source code for the fragment shader to test.
@@ -62,9 +63,9 @@ export async function expectFragmentImage(
 
   const snapshotName =
     opts.snapshotName ?? moduleNameToSnapshotName(moduleName);
-  const { imageMatcher } = await import("vitest-image-snapshot");
+  const { imageMatcher } = await importImageSnapshot();
   imageMatcher();
-  const { expect } = await import("vitest");
+  const { expect } = await importVitest();
   await expect(imageData).toMatchImage(snapshotName);
 }
 
@@ -104,6 +105,14 @@ export async function testFragmentImage(
     height: size[1],
     colorSpace: "srgb" as const,
   } as ImageData;
+}
+
+/** Convert module path to snapshot name (e.g., "package::effects::blur" → "effects-blur") */
+function moduleNameToSnapshotName(moduleName: string): string {
+  const normalized = normalizeModuleName(moduleName);
+  return normalized
+    .replace(/^package::/, "") // Strip "package::" prefix
+    .replaceAll("::", "-"); // Replace :: with -
 }
 
 async function runFragment(params: FragmentTestParams): Promise<number[]> {
@@ -156,12 +165,4 @@ function imageToUint8(
   }
 
   throw new Error(`Unsupported texture format for image export: ${format}`);
-}
-
-/** Convert module path to snapshot name (e.g., "package::effects::blur" → "effects-blur") */
-function moduleNameToSnapshotName(moduleName: string): string {
-  const normalized = normalizeModuleName(moduleName);
-  return normalized
-    .replace(/^package::/, "") // Strip "package::" prefix
-    .replaceAll("::", "-"); // Replace :: with -
 }

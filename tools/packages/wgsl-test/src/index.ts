@@ -26,7 +26,10 @@ export * from "./CompileShader.ts";
 export * from "./ExampleImages.ts";
 export * from "./ImageHelpers.ts";
 export * from "./TestComputeShader.ts";
+export * from "./TestDiscovery.ts";
 export * from "./TestFragmentShader.ts";
+export * from "./TestVirtualLib.ts";
+export * from "./TestWesl.ts";
 export * from "./WebGPUTestSetup.ts";
 
 // Re-export module augmentation from vitest-image-snapshot for packaged builds

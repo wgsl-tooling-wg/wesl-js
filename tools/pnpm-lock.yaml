@@ -834,6 +834,9 @@ importers:
       dependent_package:
         specifier: workspace:x
         version: link:../test_pkg/dependent_package
+      wesl-packager:
+        specifier: workspace:x
+        version: link:../wesl-packager
       wesl-tooling:
         specifier: workspace:x
         version: link:../wesl-tooling

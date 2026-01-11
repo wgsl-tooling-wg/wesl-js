@@ -9,7 +9,7 @@
   ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && wesl-packager",
     "dev": "tsdown --watch",
     "prepublishOnly": "run-s build",
     "test": "cross-env FORCE_COLOR=1 vitest",
@@ -21,6 +21,9 @@
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
+      },
+      "./shaders": {
+        "import": "./dist/weslBundle.js"
       }
     },
     "main": "./dist/index.js"
@@ -28,6 +31,9 @@
   "exports": {
     ".": {
       "import": "./src/index.ts"
+    },
+    "./shaders": {
+      "import": "./dist/weslBundle.js"
     }
   },
   "dependencies": {
@@ -41,6 +47,7 @@
     "@types/pngjs": "^6.0.0",
     "@webgpu/types": "^0.1.68",
     "dependent_package": "workspace:x",
+    "wesl-packager": "workspace:x",
     "wesl-tooling": "workspace:x"
   },
   "peerDependencies": {

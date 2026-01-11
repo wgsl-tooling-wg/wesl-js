@@ -2,6 +2,9 @@
 
 Complete API documentation for testing WGSL/WESL shaders.
 
+## Native WESL Testing
+- [Native WESL Testing](#native-wesl-testing) - `@test` attribute and assertion functions
+
 ## Core Functions
 - [testCompute()](#testcompute) - Run compute shaders and retrieve results
 - [testFragment()](#testfragment) - Test fragment shaders, returns single pixel color
@@ -23,6 +26,54 @@ Complete API documentation for testing WGSL/WESL shaders.
 
 ## Advanced
 - [testFragmentImage()](#advanced-testfragmentimage) - Full image data access for custom validation
+
+---
+
+## Native WESL Testing
+
+Write tests directly in WESL with the `@test` attribute. Assertions run on the GPU and report results back to TypeScript.
+
+### @test Attribute
+
+Mark functions with `@test` to create GPU unit tests:
+
+```wgsl
+import wgsl_test::expectNear;
+
+@test fn myTest() {
+  expectNear(computeValue(), 0.5);
+}
+```
+
+### Assertion Functions
+
+Import from `wgsl_test::`:
+
+| Function | Description |
+|----------|-------------|
+| `expect(bool)` | Assert condition is true |
+| `expectEq(u32, u32)` | Assert integers are equal |
+| `expectNear(f32, f32)` | Assert floats within epsilon |
+| `expectNearVec2(vec2f, vec2f)` | Assert vec2 components within epsilon |
+| `expectNearVec3(vec3f, vec3f)` | Assert vec3 components within epsilon |
+| `expectNearVec4(vec4f, vec4f)` | Assert vec4 components within epsilon |
+
+Failed assertions report actual vs expected values back to TypeScript.
+
+### Running Native Tests
+
+Use `expectWesl()` to run all `@test` functions in a module and assert they pass:
+
+```typescript
+import { expectWesl, getGPUDevice } from "wgsl-test";
+
+const device = await getGPUDevice();
+await expectWesl({ device, moduleName: "my_test" });
+```
+
+Use `runWesl()` instead if you need to inspect individual test results.
+
+---
 
 ## testCompute()
 

@@ -1,10 +1,9 @@
 # wgsl-test
 
-Write GPU shader tests as easily as regular unit tests. Test WGSL and WESL shaders with vitest or your favorite Node.js test framework.
+Test WGSL and WESL shaders with vitest or your favorite Node.js test framework.
 
-- **Test WGSL shaders** - Works with standard `.wgsl` files, no new syntax required
-- **Test WESL shaders** - Import and compose shader dependencies via WESL
-- **Visual regression testing** - Snapshot comparison catches rendering changes
+- **Native WESL** (`@test`) - Unit test shader functions, assertions run on GPU
+- **TypeScript-driven** - Integration tests, visual regression, custom validation
 
 ## Installation
 
@@ -12,17 +11,42 @@ Write GPU shader tests as easily as regular unit tests. Test WGSL and WESL shade
 npm install wgsl-test
 ```
 
-Quick start in 3 steps:
+## Native WESL Testing
 
-1. Write your shader function in WGSL or WESL as normal
-2. Use `testCompute()`, `testFragment()`, `testFragmentImage()`, or `expectFragmentImage()` to test your shader with inline source or from files
-3. Assert the results with your test framework
+Write tests directly in WESL with the `@test` attribute. No boilerplate, assertions run on the GPU:
+
+```wgsl
+// luminance_test.wesl
+import lygia::color::luminance::luminance;
+import wgsl_test::expectNear;
+
+@test fn luminanceOrange() {
+  expectNear(luminance(vec3f(1.0, 0.5, 0.0)), 0.5702);
+}
+
+@test fn luminanceWhite() {
+  expectNear(luminance(vec3f(1.0, 1.0, 1.0)), 1.0);
+}
+```
+
+Run with a minimal TypeScript wrapper:
+
+```typescript
+import { expectWesl, getGPUDevice } from "wgsl-test";
+
+test("luminance", async () => {
+  const device = await getGPUDevice();
+  await expectWesl({ device, moduleName: "luminance_test" });
+});
+```
+
+Use `runWesl()` instead if you need to inspect individual test results.
+
+**[See API.md for assertion functions →](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wgsl-test/API.md#assertion-functions)**
 
 ## Testing Compute Shaders
 
-The default choice for unit testing shader functions. Flexible and explicit.
-
-Use `testCompute()` to test compute shader logic. A `test::results` buffer is automatically provided:
+For more control, use `testCompute()` directly. A `test::results` buffer is automatically provided:
 
 ```typescript
 import { testCompute, getGPUDevice } from "wgsl-test";
@@ -47,7 +71,7 @@ const result = await testCompute({ device, src, size: 2 });
 
 ## Testing Fragment Shaders
 
-For unit testing shader functions that only run in fragment shaders. Tests a single pixel output.
+Some functions only make sense in fragment shaders. 
 
 Use `testFragment()` to test fragment shader rendering. 
 
@@ -102,10 +126,8 @@ Snapshot comparison automatically detects rendering changes. Update snapshots wi
 - **[API.md#complete-test-example](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wgsl-test/API.md#complete-test-example)** - Full vitest test setup with beforeAll/afterAll
 - **[Examples](https://github.com/wgsl-tooling-wg/wesl-js/tree/main/tools/examples)** - Tiny standalone examples
 
-## Future 
+## Future
+
 What would you like to see next in wgsl-test? 
-Test scaffolding for vertex shaders?
-Annotations to put simple tests in WESL directly?
-Something else?
 
 Please file an [issue](https://github.com/wgsl-tooling-wg/wesl-js/issues) or talk about your ideas on the tooling group [discord chat](https://discord.gg/5UhkaSu4dt).

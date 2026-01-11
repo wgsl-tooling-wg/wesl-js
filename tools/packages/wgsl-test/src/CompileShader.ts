@@ -56,6 +56,14 @@ export interface CompileShaderParams {
    * Allows dynamic generation of shader code at runtime. */
   virtualLibs?: LinkParams["virtualLibs"];
 
+  /** Additional WESL bundles to include.
+   * These are merged with auto-discovered dependencies. */
+  libs?: WeslBundle[];
+
+  /** Override the package name for module resolution.
+   * Used to ensure package:: references resolve correctly. */
+  packageName?: string;
+
   /** Use source shaders from current package instead of built bundles.
    * Default: true for faster iteration during development.
    * Set to false or use TEST_BUNDLES=true environment variable to test built bundles.
@@ -78,18 +86,21 @@ export interface CompileShaderParams {
 export async function compileShader(
   params: CompileShaderParams,
 ): Promise<GPUShaderModule> {
-  const { device, src, conditions, constants, virtualLibs } = params;
+  const { device, src, conditions, constants, virtualLibs, libs = [] } = params;
   const ctx = await resolveShaderContext({
     src,
     projectDir: params.projectDir,
     useSourceShaders: params.useSourceShaders,
   });
 
+  // Filter out undefined values that can occur when auto-discovery finds packages
+  // that aren't resolvable (e.g., wgsl_test when running tests within wgsl-test itself)
+  const allLibs = [...ctx.libs, ...libs].filter(Boolean) as WeslBundle[];
   let linkParams: Pick<LinkParams, "resolver" | "libs" | "weslSrc">;
   if (ctx.resolver) {
-    linkParams = { resolver: ctx.resolver, libs: ctx.libs };
+    linkParams = { resolver: ctx.resolver, libs: allLibs };
   } else {
-    linkParams = { weslSrc: { main: src }, libs: ctx.libs };
+    linkParams = { weslSrc: { main: src }, libs: allLibs };
   }
 
   const linked = await link({
@@ -98,7 +109,7 @@ export async function compileShader(
     virtualLibs,
     conditions,
     constants,
-    packageName: ctx.packageName,
+    packageName: params.packageName ?? ctx.packageName,
   });
   const module = linked.createShaderModule(device);
 

@@ -1,0 +1,3 @@
+include = ["shaders/**/*.wesl"]
+root = "shaders"
+dependencies = []

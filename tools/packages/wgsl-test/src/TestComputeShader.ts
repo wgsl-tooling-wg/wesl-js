@@ -2,9 +2,7 @@ import { copyBuffer, elementStride, type WgslElementType } from "thimbleberry";
 import type { LinkParams } from "wesl";
 import { withErrorScopes } from "wesl-gpu";
 import { compileShader } from "./CompileShader.ts";
-import { resolveShaderSource } from "./ShaderModuleLoader.ts";
-
-const defaultResultSize = 4; // 4 elements
+import { resolveShaderSource } from "./ShaderModuleLoader.ts"; // 4 elements
 
 export interface ComputeTestParams {
   /** WESL/WGSL source code for the compute shader to test.
@@ -48,6 +46,17 @@ export interface ComputeTestParams {
    * Can be a single number or [x, y, z] for multi-dimensional dispatch. */
   dispatchWorkgroups?: number | [number, number, number];
 }
+
+export interface RunComputeParams {
+  device: GPUDevice;
+  module: GPUShaderModule;
+  resultFormat?: WgslElementType;
+  size?: number;
+  dispatchWorkgroups?: number | [number, number, number];
+  entryPoint?: string;
+}
+
+const defaultResultSize = 4;
 
 /**
  * Compiles and runs a compute shader on the GPU for testing.
@@ -94,13 +103,13 @@ export async function testCompute(
     useSourceShaders,
   });
 
-  return await runCompute(
+  return await runCompute({
     device,
     module,
     resultFormat,
     size,
     dispatchWorkgroups,
-  );
+  });
 }
 
 /**
@@ -109,20 +118,11 @@ export async function testCompute(
  * Creates a storage buffer at @group(0) @binding(0) where the shader can
  * write output. The shader is invoked once, then the buffer is copied back
  * to the CPU for reading.
- *
- * @param module - The compiled GPUShaderModule containing the compute shader
- * @param resultFormat - Format for interpreting result buffer data (default: u32)
- * @param size - Size of result buffer in bytes (default: 16)
- * @param dispatchWorkgroups - Number of workgroups to dispatch (default: 1)
- * @returns Array containing the shader's output from the storage buffer
  */
-export async function runCompute(
-  device: GPUDevice,
-  module: GPUShaderModule,
-  resultFormat: WgslElementType = "u32",
-  size = defaultResultSize,
-  dispatchWorkgroups: number | [number, number, number] = 1,
-): Promise<number[]> {
+export async function runCompute(params: RunComputeParams): Promise<number[]> {
+  const { device, module, entryPoint } = params;
+  const { resultFormat = "u32", size = defaultResultSize } = params;
+  const { dispatchWorkgroups = 1 } = params;
   return await withErrorScopes(device, async () => {
     const bgLayout = device.createBindGroupLayout({
       entries: [
@@ -136,7 +136,7 @@ export async function runCompute(
 
     const pipeline = device.createComputePipeline({
       layout: device.createPipelineLayout({ bindGroupLayouts: [bgLayout] }),
-      compute: { module },
+      compute: { module, entryPoint },
     });
 
     const storageBuffer = createStorageBuffer(
