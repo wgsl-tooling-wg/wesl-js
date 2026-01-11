@@ -6,6 +6,7 @@ import { findTestFunctions, type TestFunctionInfo } from "./TestDiscovery.ts";
 import { testResultSize } from "./TestVirtualLib.ts";
 import { importVitest } from "./VitestImport.ts";
 
+/** Parameters for running @test functions in a WESL module. */
 export type RunWeslParams = Omit<
   ComputeTestParams,
   "resultFormat" | "size" | "dispatchWorkgroups"
@@ -14,6 +15,7 @@ export type RunWeslParams = Omit<
   testName?: string;
 };
 
+/** Result from running a single @test function on the GPU. */
 export interface TestResult {
   name: string;
   passed: boolean;
@@ -21,8 +23,10 @@ export interface TestResult {
   expected: number[];
 }
 
+/** Parameters for testWesl() which registers all @test functions with vitest. */
 export type TestWeslParams = Omit<RunWeslParams, "testName">;
 
+/** Internal params for executing one @test function as a compute shader. */
 interface RunSingleTestParams {
   testFn: TestFunctionInfo;
   shaderSrc: string;
@@ -33,6 +37,7 @@ interface RunSingleTestParams {
   useSourceShaders?: boolean;
 }
 
+/** Parsed WESL source with its AST for test discovery. */
 interface ParsedTestModule {
   shaderSrc: string;
   ast: ReturnType<typeof parseSrcModule>;
@@ -82,18 +87,6 @@ export async function expectWesl(params: RunWeslParams): Promise<void> {
 /**
  * Discovers @test functions in a WESL module and registers each as a vitest test.
  * Use top-level await in your test file to call this function.
- *
- * @example
- * ```typescript
- * import { testWesl, getGPUDevice } from "wgsl-test";
- *
- * const device = await getGPUDevice();
- * await testWesl({
- *   device,
- *   moduleName: "animation_easing_test",
- *   projectDir,
- * });
- * ```
  */
 export async function testWesl(params: TestWeslParams): Promise<void> {
   const { test } = await importVitest();
@@ -107,6 +100,7 @@ export async function testWesl(params: TestWeslParams): Promise<void> {
   }
 }
 
+/** Load and parse a WESL module to extract @test functions. */
 async function parseTestModule(params: {
   src?: string;
   moduleName?: string;
@@ -123,6 +117,7 @@ async function parseTestModule(params: {
   return { shaderSrc, ast };
 }
 
+/** Wrap a @test function in a compute shader, dispatch it, and return results. */
 async function runSingleTest(params: RunSingleTestParams): Promise<TestResult> {
   const { testFn, shaderSrc, device, ...rest } = params;
   // Generate wrapper that calls the test function
@@ -157,6 +152,8 @@ fn _weslTestEntry() {
   const testLabel = testFn.description ?? testFn.name;
   return parseTestResult(testLabel, gpuResult);
 }
+
+/** Lazy-load and cache the wgsl-test shader library bundle. */
 async function getWeslTestBundle(): Promise<WeslBundle> {
   if (cachedWeslBundle) return cachedWeslBundle;
   // Use import.meta.url to resolve the path correctly regardless of cwd
@@ -166,6 +163,7 @@ async function getWeslTestBundle(): Promise<WeslBundle> {
   return cachedWeslBundle;
 }
 
+/** Decode TestResult struct from GPU buffer (passed flag + actual/expected vec4f). */
 function parseTestResult(name: string, gpuResult: number[]): TestResult {
   // TestResult struct layout (with vec4f 16-byte alignment):
   // [0] passed (u32)
