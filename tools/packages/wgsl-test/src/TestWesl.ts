@@ -47,22 +47,19 @@ interface ParsedTestModule {
 let cachedWeslBundle: WeslBundle;
 
 /**
- * Runs all @test functions in a WESL module.
- * Each test function is wrapped in a compute shader and dispatched.
- * Returns results for all tests.
+ * Discovers @test functions in a WESL module and registers each as a vitest test.
+ * Use top-level await in your test file to call this function.
  */
-export async function runWesl(params: RunWeslParams): Promise<TestResult[]> {
-  const { testName } = params;
-  const { shaderSrc, ast } = await parseTestModule(params);
-  let testFns = findTestFunctions(ast);
-  if (testName) {
-    testFns = testFns.filter(t => t.name === testName);
+export async function testWesl(params: TestWeslParams): Promise<void> {
+  const { test } = await importVitest();
+  const { ast } = await parseTestModule(params);
+  const testFns = findTestFunctions(ast);
+  for (const fn of testFns) {
+    const testLabel = fn.description ?? fn.name;
+    test(testLabel, async () => {
+      await expectWesl({ ...params, testName: fn.name });
+    });
   }
-  const results: TestResult[] = [];
-  for (const testFn of testFns) {
-    results.push(await runSingleTest({ testFn, shaderSrc, ...params }));
-  }
-  return results;
 }
 
 /**
@@ -85,19 +82,22 @@ export async function expectWesl(params: RunWeslParams): Promise<void> {
 }
 
 /**
- * Discovers @test functions in a WESL module and registers each as a vitest test.
- * Use top-level await in your test file to call this function.
+ * Runs all @test functions in a WESL module.
+ * Each test function is wrapped in a compute shader and dispatched.
+ * Returns results for all tests.
  */
-export async function testWesl(params: TestWeslParams): Promise<void> {
-  const { test } = await importVitest();
-  const { ast } = await parseTestModule(params);
-  const testFns = findTestFunctions(ast);
-  for (const fn of testFns) {
-    const testLabel = fn.description ?? fn.name;
-    test(testLabel, async () => {
-      await expectWesl({ ...params, testName: fn.name });
-    });
+export async function runWesl(params: RunWeslParams): Promise<TestResult[]> {
+  const { testName } = params;
+  const { shaderSrc, ast } = await parseTestModule(params);
+  let testFns = findTestFunctions(ast);
+  if (testName) {
+    testFns = testFns.filter(t => t.name === testName);
   }
+  const results: TestResult[] = [];
+  for (const testFn of testFns) {
+    results.push(await runSingleTest({ testFn, shaderSrc, ...params }));
+  }
+  return results;
 }
 
 /** Load and parse a WESL module to extract @test functions. */
