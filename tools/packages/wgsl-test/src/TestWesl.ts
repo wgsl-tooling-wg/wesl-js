@@ -44,21 +44,19 @@ interface RunSingleTestParams {
   useSourceShaders?: boolean;
 }
 
+interface ParsedTestModule {
+  shaderSrc: string;
+  ast: ReturnType<typeof parseSrcModule>;
+}
+
 /**
  * Runs all @test functions in a WESL module.
  * Each test function is wrapped in a compute shader and dispatched.
  * Returns results for all tests.
  */
 export async function runWesl(params: RunWeslParams): Promise<TestResult[]> {
-  const { projectDir, src, moduleName, testName } = params;
-  const shaderSrc = await resolveShaderSource(src, moduleName, projectDir);
-  const modPath = moduleName || "test";
-  const ast = parseSrcModule({
-    modulePath: modPath,
-    debugFilePath: modPath + ".wesl",
-    src: shaderSrc,
-  });
-
+  const { testName } = params;
+  const { shaderSrc, ast } = await parseTestModule(params);
   let testFns = findTestFunctions(ast);
   if (testName) {
     testFns = testFns.filter(t => t.name === testName);
@@ -107,6 +105,21 @@ export async function expectWesl(params: RunWeslParams): Promise<void> {
  */
 export async function testWesl(params: TestWeslParams): Promise<void> {
   const { test } = await importVitest();
+  const { ast } = await parseTestModule(params);
+  const testFns = findTestFunctions(ast);
+  for (const fn of testFns) {
+    const testLabel = fn.description ?? fn.name;
+    test(testLabel, async () => {
+      await expectWesl({ ...params, testName: fn.name });
+    });
+  }
+}
+
+async function parseTestModule(params: {
+  src?: string;
+  moduleName?: string;
+  projectDir?: string;
+}): Promise<ParsedTestModule> {
   const { projectDir, src, moduleName } = params;
   const shaderSrc = await resolveShaderSource(src, moduleName, projectDir);
   const modPath = moduleName || "test";
@@ -115,14 +128,7 @@ export async function testWesl(params: TestWeslParams): Promise<void> {
     debugFilePath: modPath + ".wesl",
     src: shaderSrc,
   });
-
-  const testFns = findTestFunctions(ast);
-  for (const fn of testFns) {
-    const testLabel = fn.description ?? fn.name;
-    test(testLabel, async () => {
-      await expectWesl({ ...params, testName: fn.name });
-    });
-  }
+  return { shaderSrc, ast };
 }
 
 async function runSingleTest(params: RunSingleTestParams): Promise<TestResult> {
