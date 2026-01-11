@@ -1,4 +1,5 @@
 let sharedGpu: GPU | undefined;
+let sharedAdapter: GPUAdapter | undefined;
 let sharedDevice: GPUDevice | undefined;
 
 export const isDeno = !!(globalThis as any).Deno;
@@ -6,32 +7,39 @@ export const isDeno = !!(globalThis as any).Deno;
 /** get or create shared GPU device for testing */
 export async function getGPUDevice(): Promise<GPUDevice> {
   if (!sharedDevice) {
-    const gpu = await setupWebGPU();
-    const adapter = await gpu.requestAdapter();
-    if (!adapter) throw new Error("Failed to get GPU adapter");
+    const adapter = await getGPUAdapter();
     sharedDevice = await adapter.requestDevice();
   }
   return sharedDevice;
 }
 
-/** destroy globally shared GPU test device */
-export function destroySharedDevice(): void {
-  sharedDevice?.destroy();
-  sharedDevice = undefined;
-}
-
-/** initialize WebGPU for testing */
-async function setupWebGPU(): Promise<GPU> {
+/** get or create shared GPU object for testing */
+export async function getGPU(): Promise<GPU> {
   if (!sharedGpu) {
     if (isDeno) {
-      // Deno has native WebGPU via navigator.gpu
       sharedGpu = navigator.gpu;
     } else {
-      // Node.js needs the webgpu npm package
       const webgpu = await import("webgpu");
       Object.assign(globalThis, webgpu.globals);
       sharedGpu = webgpu.create([]);
     }
   }
   return sharedGpu;
+}
+
+/** get or create shared GPU adapter for testing */
+export async function getGPUAdapter(): Promise<GPUAdapter> {
+  if (!sharedAdapter) {
+    const gpu = await getGPU();
+    const adapter = await gpu.requestAdapter();
+    if (!adapter) throw new Error("Failed to get GPU adapter");
+    sharedAdapter = adapter;
+  }
+  return sharedAdapter;
+}
+
+/** destroy globally shared GPU test device */
+export function destroySharedDevice(): void {
+  sharedDevice?.destroy();
+  sharedDevice = undefined;
 }
