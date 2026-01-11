@@ -2,11 +2,8 @@
 
 /**
  * Convert module path segments to relative file path.
- * Handles package/packageName prefixes and super:: resolution.
+ * Resolves package:: and super:: via srcModuleParts context.
  *
- * @param parts - module path as array e.g., ["package", "utils", "helper"]
- * @param packageName - the current package's name (required)
- * @param srcModuleParts - source module path for super:: resolution (optional)
  * @returns relative file path e.g., "utils/helper", or undefined if external
  */
 export function modulePartsToRelativePath(
@@ -14,7 +11,9 @@ export function modulePartsToRelativePath(
   packageName: string,
   srcModuleParts?: string[],
 ): string | undefined {
-  const resolved = srcModuleParts ? resolveSuper(parts, srcModuleParts) : parts;
+  const resolved = srcModuleParts
+    ? resolveModulePath(parts, srcModuleParts)
+    : parts;
 
   const rootSegment = resolved[0];
   if (rootSegment === "package" || rootSegment === packageName) {
@@ -35,20 +34,23 @@ export function moduleToRelativePath(
 }
 
 /**
- * Resolve super:: elements to absolute module path.
- *
- * @param parts - module path with potential super:: elements
- * @param srcModuleParts - source module path for context
- * @returns absolute module path parts (no super:: elements)
+ * Resolve package:: and super:: to absolute module path.
+ * - package:: replaced with actual package name from source module
+ * - super:: climbs up the module path hierarchy
  */
-export function resolveSuper(
+export function resolveModulePath(
   parts: string[],
   srcModuleParts: string[],
 ): string[] {
-  const lastSuper = parts.lastIndexOf("super");
-  if (lastSuper === -1) return parts;
+  // Handle package:: - replace with actual package name from source module
+  const resolved =
+    parts[0] === "package" ? [srcModuleParts[0], ...parts.slice(1)] : parts;
+
+  // Handle super:: - climb up the module path
+  const lastSuper = resolved.lastIndexOf("super");
+  if (lastSuper === -1) return resolved;
   const base = srcModuleParts.slice(0, -(lastSuper + 1));
-  return [...base, ...parts.slice(lastSuper + 1)];
+  return [...base, ...resolved.slice(lastSuper + 1)];
 }
 
 /** Normalize debug root to end with / or be empty. */

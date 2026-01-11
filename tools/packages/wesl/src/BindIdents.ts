@@ -7,7 +7,7 @@ import type { FlatImport } from "./FlattenTreeImport.ts";
 import type { LinkRegistryParams, VirtualLibraryFn } from "./Linker.ts";
 import { type LiveDecls, makeLiveDecls } from "./LiveDeclarations.ts";
 import { type ManglerFn, minimalMangle } from "./Mangler.ts";
-import { resolveSuper } from "./ModulePathUtil.ts";
+import { resolveModulePath } from "./ModulePathUtil.ts";
 import type { ModuleResolver } from "./ModuleResolver.ts";
 import { flatImports, parseSrcModule, type WeslAST } from "./ParseWESL.ts";
 import type {
@@ -385,7 +385,7 @@ function findExport(
 ): FoundDecl | undefined {
   const { resolver, conditions, virtuals } = ctx;
   const srcParts = srcModule.modulePath.split("::");
-  const fqParts = resolveSuper(pathParts, srcParts);
+  const fqParts = resolveModulePath(pathParts, srcParts);
   const modulePath = fqParts.slice(0, -1).join("::");
 
   const moduleAst =
