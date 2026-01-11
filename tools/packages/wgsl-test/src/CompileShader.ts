@@ -30,6 +30,9 @@ export interface ResolveContextParams {
 
   /** Use source shaders instead of built bundles. Default: true. */
   useSourceShaders?: boolean;
+
+  /** Virtual lib names to exclude from dependency resolution. */
+  virtualLibNames?: string[];
 }
 
 export interface CompileShaderParams {
@@ -91,6 +94,7 @@ export async function compileShader(
     src,
     projectDir: params.projectDir,
     useSourceShaders: params.useSourceShaders,
+    virtualLibNames: virtualLibs ? Object.keys(virtualLibs) : [],
   });
 
   // Filter out undefined values that can occur when auto-discovery finds packages
@@ -122,6 +126,7 @@ export async function resolveShaderContext(
   params: ResolveContextParams,
 ): Promise<ShaderContext> {
   const { src, useSourceShaders = !process.env.TEST_BUNDLES } = params;
+  const { virtualLibNames = [] } = params;
   const projectDir = await resolveProjectDir(params.projectDir);
   const packageName = await getPackageName(projectDir);
 
@@ -130,6 +135,7 @@ export async function resolveShaderContext(
     projectDir,
     packageName,
     !useSourceShaders, // include current package when testing bundles
+    virtualLibNames,
   );
 
   const resolver = useSourceShaders

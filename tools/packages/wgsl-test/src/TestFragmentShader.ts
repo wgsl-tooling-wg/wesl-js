@@ -122,10 +122,12 @@ async function runFragment(params: FragmentTestParams): Promise<number[]> {
   const fragmentSrc = await resolveShaderSource(src, moduleName, projectDir);
 
   // Resolve context (libs, resolver, packageName) from project
+  // Note: "test" virtualLib is provided by wesl-gpu for test::Uniforms
   const ctx = await resolveShaderContext({
     src: fragmentSrc,
     projectDir,
     useSourceShaders,
+    virtualLibNames: ["test"],
   });
 
   // Use shared runFragment with resolved source and context

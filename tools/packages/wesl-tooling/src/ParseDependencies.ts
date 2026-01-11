@@ -21,11 +21,13 @@ import { npmResolveWESL } from "./NpmResolver.ts";
  *
  * @param weslSrc - Record of WESL source files by path
  * @param projectDir - Project directory for resolving package imports
+ * @param virtualLibNames - Virtual lib names to exclude (e.g., ['test', 'constants'])
  * @returns Dependency paths in npm format (e.g., 'foo/bar', 'foo')
  */
 export function parseDependencies(
   weslSrc: Record<string, string>,
   projectDir: string,
+  virtualLibNames: string[] = [],
 ): string[] {
   let resolver: RecordResolver;
   try {
@@ -41,9 +43,10 @@ export function parseDependencies(
   const unbound = findUnboundIdents(resolver);
   if (!unbound) return [];
 
-  // Filter: skip builtins (1 segment) and linker virtuals ('constants')
+  // Filter: skip builtins (1 segment), linker virtuals ('constants'), and custom virtualLibs
+  const excludeRoots = new Set(["constants", ...virtualLibNames]);
   const pkgRefs = unbound.filter(
-    modulePath => modulePath.length > 1 && modulePath[0] !== "constants",
+    modulePath => modulePath.length > 1 && !excludeRoots.has(modulePath[0]),
   );
   if (pkgRefs.length === 0) return [];
 
@@ -64,6 +67,7 @@ export function parseDependencies(
  * @param projectDir - Project directory for resolving imports
  * @param packageName - Optional current package name
  * @param includeCurrentPackage - Include current package in results (default: false)
+ * @param virtualLibNames - Virtual lib names to exclude from resolution
  * @returns Loaded WeslBundle instances
  */
 export async function dependencyBundles(
@@ -71,16 +75,18 @@ export async function dependencyBundles(
   projectDir: string,
   packageName?: string,
   includeCurrentPackage = false,
+  virtualLibNames: string[] = [],
 ): Promise<WeslBundle[]> {
-  const deps = parseDependencies(weslSrc, projectDir);
+  const deps = parseDependencies(weslSrc, projectDir, virtualLibNames);
   const filteredDeps = includeCurrentPackage
     ? deps
     : otherPackages(deps, packageName);
   const projectURL = projectDirURL(projectDir);
+
   const bundles = filteredDeps.map(async dep => {
     const url = resolve(dep, projectURL);
     const module = await import(url);
-    return module.default;
+    return module.default as WeslBundle;
   });
 
   return await Promise.all(bundles);
