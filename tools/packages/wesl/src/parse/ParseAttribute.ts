@@ -11,6 +11,7 @@ import type {
   InterpolateAttribute,
   NameElem,
   StandardAttribute,
+  TestAttribute,
   TranslateTimeExpressionElem,
   UnknownExpressionElem,
 } from "../AbstractElems.ts";
@@ -151,6 +152,7 @@ function parseStandardAttribute(ctx: ParsingContext): AttributeElem | null {
   if (name === "builtin") return parseBuiltinAttribute(ctx, startPos);
   if (name === "interpolate") return parseInterpolateAttribute(ctx, startPos);
   if (name === "diagnostic") return parseDiagnosticAttribute(ctx, startPos);
+  if (name === "test") return parseTestAttribute(ctx, startPos);
 
   let params: UnknownExpressionElem[] | undefined;
   if (stream.matchText("(")) {
@@ -204,6 +206,24 @@ function parseBuiltinAttribute(
   };
 
   return attributeElem(builtinAttr, startPos, stream.checkpoint());
+}
+
+/** Parse @test or @test(description) attribute. */
+function parseTestAttribute(
+  ctx: ParsingContext,
+  startPos: number,
+): AttributeElem {
+  const { stream } = ctx;
+  let description: NameElem | undefined;
+
+  if (stream.matchText("(")) {
+    const nameToken = expectWord(stream, "Expected identifier in @test");
+    description = makeNameElem(nameToken);
+    expect(stream, ")", "@test parameter");
+  }
+
+  const testAttr: TestAttribute = { kind: "@test", description };
+  return attributeElem(testAttr, startPos, stream.checkpoint());
 }
 
 function parseInterpolateAttribute(

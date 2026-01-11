@@ -56,3 +56,22 @@ test("handles @test with other attributes", () => {
   expect(tests).toHaveLength(1);
   expect(tests[0].name).toBe("withMustUse");
 });
+
+test("extracts description from @test(description)", () => {
+  const ast = parse(`
+    @test(pythagorean_triple) fn lengthSq3() { }
+  `);
+  const tests = findTestFunctions(ast);
+  expect(tests).toHaveLength(1);
+  expect(tests[0].name).toBe("lengthSq3");
+  expect(tests[0].description).toBe("pythagorean_triple");
+});
+
+test("description is undefined for plain @test", () => {
+  const ast = parse(`
+    @test fn simpleTest() { }
+  `);
+  const tests = findTestFunctions(ast);
+  expect(tests).toHaveLength(1);
+  expect(tests[0].description).toBeUndefined();
+});

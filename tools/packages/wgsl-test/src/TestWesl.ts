@@ -118,7 +118,8 @@ export async function testWesl(params: TestWeslParams): Promise<void> {
 
   const testFns = findTestFunctions(ast);
   for (const fn of testFns) {
-    test(fn.name, async () => {
+    const testLabel = fn.description ?? fn.name;
+    test(testLabel, async () => {
       await expectWesl({ ...params, testName: fn.name });
     });
   }
@@ -155,7 +156,8 @@ fn _weslTestEntry() {
     size: resultElems,
     entryPoint: "_weslTestEntry",
   });
-  return parseTestResult(testFn.name, gpuResult);
+  const testLabel = testFn.description ?? testFn.name;
+  return parseTestResult(testLabel, gpuResult);
 }
 
 function parseTestResult(name: string, gpuResult: number[]): TestResult {

@@ -150,6 +150,9 @@ function addAttributeFields(attr: Attribute, str: LineWrapper) {
     str.add(" @else");
   } else if (kind === "@interpolate") {
     str.add(` @interpolate(${attr.params.map(v => v.name).join(", ")})`);
+  } else if (kind === "@test") {
+    const desc = attr.description;
+    str.add(desc ? ` @test(${desc.name})` : " @test");
   } else {
     assertUnreachable(kind);
   }

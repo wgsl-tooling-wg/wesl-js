@@ -1,7 +1,8 @@
-import type { FnElem, WeslAST } from "wesl";
+import type { FnElem, TestAttribute, WeslAST } from "wesl";
 
 export interface TestFunctionInfo {
   name: string;
+  description?: string;
   fn: FnElem;
 }
 
@@ -20,11 +21,24 @@ export function findTestFunctions(ast: WeslAST): TestFunctionInfo[] {
       }
       return true;
     })
-    .map(fn => ({ name: fn.name.ident.originalName, fn }));
+    .map(fn => ({
+      name: fn.name.ident.originalName,
+      description: getTestDescription(fn),
+      fn,
+    }));
 }
 
 function hasTestAttribute(fn: FnElem): boolean {
-  return !!fn.attributes?.some(
-    e => e.attribute.kind === "@attribute" && e.attribute.name === "test",
-  );
+  return !!getTestAttribute(fn);
+}
+
+function getTestAttribute(fn: FnElem): TestAttribute | undefined {
+  const attr = fn.attributes?.find(e => e.attribute.kind === "@test");
+  return attr?.attribute as TestAttribute | undefined;
+}
+
+/** Extract description from @test(description) attribute. */
+function getTestDescription(fn: FnElem): string | undefined {
+  const testAttr = getTestAttribute(fn);
+  return testAttr?.description?.name;
 }

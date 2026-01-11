@@ -455,7 +455,12 @@ function emitExpression(e: ExpressionElem, ctx: EmitContext): void {
 function emitAttribute(e: AttributeElem, ctx: EmitContext): boolean {
   const { kind } = e.attribute;
 
-  if (kind === "@if" || kind === "@elif" || kind === "@else") {
+  if (
+    kind === "@if" ||
+    kind === "@elif" ||
+    kind === "@else" ||
+    kind === "@test"
+  ) {
     return false; // WESL-only, dropped from WGSL
   }
 

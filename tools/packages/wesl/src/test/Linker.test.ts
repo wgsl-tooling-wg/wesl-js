@@ -32,7 +32,7 @@ test("non-WGSL attribute @test stripped from output", async () => {
 
 test("non-WGSL attribute @test with params stripped", async () => {
   const src = `
-    @test(42)
+    @test(my_test_name)
     fn myTest() { }
   `;
   const expected = `fn myTest() { }`;
