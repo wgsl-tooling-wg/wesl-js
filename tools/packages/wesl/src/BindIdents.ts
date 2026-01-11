@@ -21,6 +21,24 @@ import type {
 import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
 import { last } from "./Util.ts";
 
+/** WGSL standard attributes whose params need binding (e.g., @workgroup_size). */
+const wgslStandardAttributes = new Set([
+  "align",
+  "binding",
+  "blend_src",
+  "compute",
+  "const",
+  "fragment",
+  "group",
+  "id",
+  "invariant",
+  "location",
+  "must_use",
+  "size",
+  "vertex",
+  "workgroup_size",
+]);
+
 /**
  * BindIdents pass: link reference identifiers to declarations.
  *
@@ -280,6 +298,9 @@ function handleRef(
 
   // Skip binding for condition refs - they resolve via Conditions map (for now)
   if (ident.conditionRef) return;
+
+  // Skip binding for refs in non-WGSL attribute params (e.g., @test(description))
+  if (ident.attrParam && !wgslStandardAttributes.has(ident.attrParam)) return;
 
   const foundDecl =
     findDeclInModule(ident, liveDecls) ??

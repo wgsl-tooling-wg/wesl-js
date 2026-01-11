@@ -41,6 +41,9 @@ export interface RefIdent extends IdentBase {
   /** True for identifiers in @if/@elif conditions. Binding skips these (for now). */
   conditionRef?: true;
 
+  /** Attribute name if this ref is inside an attribute param (for skip-binding check). */
+  attrParam?: string;
+
   // LATER consider tracking the current ast in BindIdents so that this field is unnecessary
   ast: WeslAST; // AST from module that contains this ident (to find imports during decl binding)
 

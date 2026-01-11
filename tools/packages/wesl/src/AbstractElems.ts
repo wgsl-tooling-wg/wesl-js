@@ -198,7 +198,6 @@ export type Attribute =
   | InterpolateAttribute
   | BuiltinAttribute
   | DiagnosticAttribute
-  | TestAttribute
   | IfAttribute
   | ElifAttribute
   | ElseAttribute;
@@ -217,11 +216,6 @@ export interface InterpolateAttribute {
 export interface BuiltinAttribute {
   kind: "@builtin";
   param: NameElem;
-}
-
-export interface TestAttribute {
-  kind: "@test";
-  description?: NameElem;
 }
 
 export type DiagnosticRule = [NameElem, NameElem | null];

@@ -1,4 +1,4 @@
-import type { FnElem, TestAttribute, WeslAST } from "wesl";
+import type { FnElem, StandardAttribute, WeslAST } from "wesl";
 
 export interface TestFunctionInfo {
   name: string;
@@ -32,13 +32,19 @@ function hasTestAttribute(fn: FnElem): boolean {
   return !!getTestAttribute(fn);
 }
 
-function getTestAttribute(fn: FnElem): TestAttribute | undefined {
-  const attr = fn.attributes?.find(e => e.attribute.kind === "@test");
-  return attr?.attribute as TestAttribute | undefined;
+function getTestAttribute(fn: FnElem): StandardAttribute | undefined {
+  for (const e of fn.attributes ?? []) {
+    const attr = e.attribute;
+    if (attr.kind === "@attribute" && attr.name === "test") return attr;
+  }
 }
 
 /** Extract description from @test(description) attribute. */
 function getTestDescription(fn: FnElem): string | undefined {
   const testAttr = getTestAttribute(fn);
-  return testAttr?.description?.name;
+  const param = testAttr?.params?.[0];
+  if (!param) return undefined;
+  // Extract the identifier text from the expression contents
+  const text = param.contents.find(c => c.kind === "ref");
+  return text?.kind === "ref" ? text.ident.originalName : undefined;
 }

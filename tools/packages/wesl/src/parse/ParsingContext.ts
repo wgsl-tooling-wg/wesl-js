@@ -65,14 +65,19 @@ export class ParsingContext {
     return scope.parent === null;
   }
 
+  /** Attribute name being parsed (for marking refs in attr params). */
+  parsingAttrParam?: string;
+
   createRefIdent(name: string): RefIdent {
-    return {
+    const ref: RefIdent = {
       kind: "ref",
       originalName: name,
       ast: this.state.stable,
       id: nextIdentId(),
       refIdentElem: null as any, // linked by caller
     };
+    if (this.parsingAttrParam) ref.attrParam = this.parsingAttrParam;
+    return ref;
   }
 
   createDeclIdent(name: string, isGlobal = false): DeclIdent {

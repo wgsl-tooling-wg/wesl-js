@@ -45,9 +45,6 @@ export function attributeToString(e: AttributeElem): string {
     return "@else";
   } else if (kind === "@interpolate") {
     return `@interpolate(${e.attribute.params.map(v => v.name).join(", ")})`;
-  } else if (kind === "@test") {
-    const desc = e.attribute.description;
-    return desc ? `@test(${desc.name})` : "@test";
   } else {
     assertUnreachable(kind);
   }
