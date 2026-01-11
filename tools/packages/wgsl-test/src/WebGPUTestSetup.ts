@@ -1,8 +1,6 @@
-let sharedGpu: GPU | undefined;
+export const isDeno = !!(globalThis as any).Deno;let sharedGpu: GPU | undefined;
 let sharedAdapter: GPUAdapter | undefined;
 let sharedDevice: GPUDevice | undefined;
-
-export const isDeno = !!(globalThis as any).Deno;
 
 /** get or create shared GPU device for testing */
 export async function getGPUDevice(): Promise<GPUDevice> {

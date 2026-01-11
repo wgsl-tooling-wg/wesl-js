@@ -6,17 +6,6 @@ import { findTestFunctions, type TestFunctionInfo } from "./TestDiscovery.ts";
 import { testResultSize } from "./TestVirtualLib.ts";
 import { importVitest } from "./VitestImport.ts";
 
-// Auto-inject the wgsl-test shader library bundle
-let cachedWeslBundle: WeslBundle;
-async function getWeslTestBundle(): Promise<WeslBundle> {
-  if (cachedWeslBundle) return cachedWeslBundle;
-  // Use import.meta.url to resolve the path correctly regardless of cwd
-  const bundlePath = new URL("../dist/weslBundle.js", import.meta.url).href;
-  const mod = await import(bundlePath);
-  cachedWeslBundle = mod.default;
-  return cachedWeslBundle;
-}
-
 export type RunWeslParams = Omit<
   ComputeTestParams,
   "resultFormat" | "size" | "dispatchWorkgroups"
@@ -48,6 +37,9 @@ interface ParsedTestModule {
   shaderSrc: string;
   ast: ReturnType<typeof parseSrcModule>;
 }
+
+// Auto-inject the wgsl-test shader library bundle
+let cachedWeslBundle: WeslBundle;
 
 /**
  * Runs all @test functions in a WESL module.
@@ -164,6 +156,14 @@ fn _weslTestEntry() {
   });
   const testLabel = testFn.description ?? testFn.name;
   return parseTestResult(testLabel, gpuResult);
+}
+async function getWeslTestBundle(): Promise<WeslBundle> {
+  if (cachedWeslBundle) return cachedWeslBundle;
+  // Use import.meta.url to resolve the path correctly regardless of cwd
+  const bundlePath = new URL("../dist/weslBundle.js", import.meta.url).href;
+  const mod = await import(bundlePath);
+  cachedWeslBundle = mod.default;
+  return cachedWeslBundle;
 }
 
 function parseTestResult(name: string, gpuResult: number[]): TestResult {

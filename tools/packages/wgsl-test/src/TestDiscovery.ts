@@ -32,13 +32,6 @@ function hasTestAttribute(fn: FnElem): boolean {
   return !!getTestAttribute(fn);
 }
 
-function getTestAttribute(fn: FnElem): StandardAttribute | undefined {
-  for (const e of fn.attributes ?? []) {
-    const attr = e.attribute;
-    if (attr.kind === "@attribute" && attr.name === "test") return attr;
-  }
-}
-
 /** Extract description from @test(description) attribute. */
 function getTestDescription(fn: FnElem): string | undefined {
   const testAttr = getTestAttribute(fn);
@@ -47,4 +40,11 @@ function getTestDescription(fn: FnElem): string | undefined {
   // Extract the identifier text from the expression contents
   const text = param.contents.find(c => c.kind === "ref");
   return text?.kind === "ref" ? text.ident.originalName : undefined;
+}
+
+function getTestAttribute(fn: FnElem): StandardAttribute | undefined {
+  for (const e of fn.attributes ?? []) {
+    const attr = e.attribute;
+    if (attr.kind === "@attribute" && attr.name === "test") return attr;
+  }
 }

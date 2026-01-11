@@ -166,16 +166,16 @@ export async function createProjectResolver(
   return new FileModuleResolver(baseDir, packageName);
 }
 
-/** Create a lazy resolver that loads local shaders on-demand from the filesystem.
- * Laziness allows testing without rebuilding the current package after edits. */
-async function lazyFileResolver(
-  projectDir: string,
-  mainSrc: string,
-  packageName: string | undefined,
-): Promise<CompositeResolver> {
-  const mainResolver = new RecordResolver({ main: mainSrc }, { packageName });
-  const fileResolver = await createProjectResolver(projectDir, packageName);
-  return new CompositeResolver([mainResolver, fileResolver]);
+/** Verify shader compilation succeeded, throw on errors. */
+async function verifyCompilation(module: GPUShaderModule): Promise<void> {
+  const info = await module.getCompilationInfo();
+  const errors = info.messages.filter(msg => msg.type === "error");
+  if (errors.length > 0) {
+    const messages = errors
+      .map(e => `${e.lineNum}:${e.linePos} ${e.message}`)
+      .join("\n");
+    throw new Error(`Shader compilation failed:\n${messages}`);
+  }
 }
 
 /** Read package name from package.json, normalized for WGSL identifiers. */
@@ -189,14 +189,14 @@ async function getPackageName(projectDir: string): Promise<string | undefined> {
   }
 }
 
-/** Verify shader compilation succeeded, throw on errors. */
-async function verifyCompilation(module: GPUShaderModule): Promise<void> {
-  const info = await module.getCompilationInfo();
-  const errors = info.messages.filter(msg => msg.type === "error");
-  if (errors.length > 0) {
-    const messages = errors
-      .map(e => `${e.lineNum}:${e.linePos} ${e.message}`)
-      .join("\n");
-    throw new Error(`Shader compilation failed:\n${messages}`);
-  }
+/** Create a lazy resolver that loads local shaders on-demand from the filesystem.
+ * Laziness allows testing without rebuilding the current package after edits. */
+async function lazyFileResolver(
+  projectDir: string,
+  mainSrc: string,
+  packageName: string | undefined,
+): Promise<CompositeResolver> {
+  const mainResolver = new RecordResolver({ main: mainSrc }, { packageName });
+  const fileResolver = await createProjectResolver(projectDir, packageName);
+  return new CompositeResolver([mainResolver, fileResolver]);
 }
