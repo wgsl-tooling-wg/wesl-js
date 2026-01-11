@@ -13,6 +13,7 @@
     "dev": "tsdown --watch",
     "prepublishOnly": "run-s build",
     "test": "cross-env FORCE_COLOR=1 vitest",
+    "test:deno": "deno run -A --unstable-webgpu npm:vitest run",
     "test:once": "vitest run",
     "typecheck": "tsgo"
   },
