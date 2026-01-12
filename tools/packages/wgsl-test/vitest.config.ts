@@ -6,9 +6,12 @@ import { defineConfig } from "vitest/config";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Skip all GPU tests on Windows CI (software renderer issues)
+const isWindowsCI = process.platform === "win32" && process.env.CI === "true";
+
 export default defineConfig({
   test: {
-    include: ["src/test/**/*.test.ts"],
+    include: isWindowsCI ? [] : ["src/test/**/*.test.ts"],
     reporters: [
       "default",
       [
