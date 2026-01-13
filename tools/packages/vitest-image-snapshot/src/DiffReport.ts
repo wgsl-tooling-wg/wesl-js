@@ -40,6 +40,9 @@ export async function generateDiffReport(
   if (failures.length === 0) return;
 
   const { autoOpen = false, reportDir, configRoot } = config;
+
+  // Clear old report before generating new one to remove stale images
+  await clearDiffReport(reportDir);
   await fs.promises.mkdir(reportDir, { recursive: true });
 
   const withCopiedImages = await copyImagesToReport(
