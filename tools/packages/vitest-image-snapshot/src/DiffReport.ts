@@ -25,15 +25,21 @@ export interface DiffReportConfig {
   configRoot: string;
 }
 
+/** Clear the diff report directory if it exists. */
+export async function clearDiffReport(reportDir: string): Promise<void> {
+  if (fs.existsSync(reportDir)) {
+    await fs.promises.rm(reportDir, { recursive: true });
+  }
+}
+
 /** Generate HTML diff report for all failed image snapshots. */
 export async function generateDiffReport(
   failures: ImageSnapshotFailure[],
   config: DiffReportConfig,
 ): Promise<void> {
-  const { autoOpen = false, reportDir, configRoot } = config;
-
   if (failures.length === 0) return;
 
+  const { autoOpen = false, reportDir, configRoot } = config;
   await fs.promises.mkdir(reportDir, { recursive: true });
 
   const withCopiedImages = await copyImagesToReport(

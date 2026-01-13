@@ -1,6 +1,15 @@
 import * as path from "node:path";
-import type { Reporter, TestCase, Vitest } from "vitest/node";
-import { generateDiffReport, type ImageSnapshotFailure } from "./DiffReport.ts";
+import type {
+  Reporter,
+  TestCase,
+  TestSpecification,
+  Vitest,
+} from "vitest/node";
+import {
+  clearDiffReport,
+  generateDiffReport,
+  type ImageSnapshotFailure,
+} from "./DiffReport.ts";
 
 /** metadata saved at failure for future report */
 interface ImageSnapshotFailureData {
@@ -19,7 +28,7 @@ export interface ImageSnapshotReporterOptions {
 
 /** Vitest reporter that generates HTML diff reports for image snapshot failures */
 export class ImageSnapshotReporter implements Reporter {
-  private failures: ImageSnapshotFailure[] = [];
+  private failuresByFile = new Map<string, ImageSnapshotFailure[]>();
   private vitest!: Vitest;
   private reportPath?: string;
   private autoOpen: boolean;
@@ -32,6 +41,13 @@ export class ImageSnapshotReporter implements Reporter {
 
   onInit(vitest: Vitest) {
     this.vitest = vitest;
+  }
+
+  onTestRunStart(specifications: ReadonlyArray<TestSpecification>) {
+    // Clear failures only for files that are about to run
+    for (const spec of specifications) {
+      this.failuresByFile.delete(spec.moduleId);
+    }
   }
 
   onTestCaseResult(testCase: TestCase) {
@@ -49,14 +65,19 @@ export class ImageSnapshotReporter implements Reporter {
       meta.imageSnapshotFailure,
       error?.message || "",
     );
-    this.failures.push(failure);
+    const moduleId = testCase.module.moduleId;
+    const existing = this.failuresByFile.get(moduleId) || [];
+    this.failuresByFile.set(moduleId, [...existing, failure]);
   }
 
   async onTestRunEnd() {
-    if (this.failures.length === 0) return;
-
     const reportDir = this.resolveReportDir();
-    await generateDiffReport(this.failures, {
+    const allFailures = [...this.failuresByFile.values()].flat();
+    if (allFailures.length === 0) {
+      await clearDiffReport(reportDir);
+      return;
+    }
+    await generateDiffReport(allFailures, {
       autoOpen: this.autoOpen,
       reportDir,
       configRoot: this.vitest.config.root,
