@@ -5,11 +5,7 @@ import type {
   TestSpecification,
   Vitest,
 } from "vitest/node";
-import {
-  clearDiffReport,
-  generateDiffReport,
-  type ImageSnapshotFailure,
-} from "./DiffReport.ts";
+import { generateDiffReport, type ImageSnapshotFailure } from "./DiffReport.ts";
 
 /** metadata saved at failure for future report */
 interface ImageSnapshotFailureData {
@@ -71,15 +67,10 @@ export class ImageSnapshotReporter implements Reporter {
   }
 
   async onTestRunEnd() {
-    const reportDir = this.resolveReportDir();
     const allFailures = [...this.failuresByFile.values()].flat();
-    if (allFailures.length === 0) {
-      await clearDiffReport(reportDir);
-      return;
-    }
     await generateDiffReport(allFailures, {
       autoOpen: this.autoOpen,
-      reportDir,
+      reportDir: this.resolveReportDir(),
       configRoot: this.vitest.config.root,
     });
   }

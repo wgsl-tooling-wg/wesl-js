@@ -32,30 +32,29 @@ export async function clearDiffReport(reportDir: string): Promise<void> {
   }
 }
 
-/** Generate HTML diff report for all failed image snapshots. */
+/** Generate HTML diff report for image snapshot results. */
 export async function generateDiffReport(
   failures: ImageSnapshotFailure[],
   config: DiffReportConfig,
 ): Promise<void> {
-  if (failures.length === 0) return;
-
   const { autoOpen = false, reportDir, configRoot } = config;
 
   // Clear old report before generating new one to remove stale images
   await clearDiffReport(reportDir);
   await fs.promises.mkdir(reportDir, { recursive: true });
 
-  const withCopiedImages = await copyImagesToReport(
-    failures,
-    reportDir,
-    configRoot,
-  );
+  const withCopiedImages =
+    failures.length > 0
+      ? await copyImagesToReport(failures, reportDir, configRoot)
+      : [];
   const html = createReportHTML(withCopiedImages);
   const outputPath = path.join(reportDir, "index.html");
 
   await fs.promises.writeFile(outputPath, html, "utf-8");
 
-  console.log(`\n📊 Image diff report: ${outputPath}`);
+  if (failures.length > 0) {
+    console.log(`\n Image diff report: ${outputPath}`);
+  }
 
   if (autoOpen) {
     const cmd =
@@ -119,6 +118,10 @@ function createReportHTML(failures: ImageSnapshotFailure[]): string {
   const timestamp = new Date().toLocaleString();
   const totalFailures = failures.length;
 
+  if (totalFailures === 0) {
+    return createSuccessHTML(timestamp);
+  }
+
   const rows = failures
     .map(failure => {
       const { testName, snapshotName, comparison, paths } = failure;
@@ -159,7 +162,7 @@ function createReportHTML(failures: ImageSnapshotFailure[]): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Snapshot Failures - ${totalFailures} failed</title>
+  <title>Image Snapshots - ${totalFailures} failed</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -317,6 +320,44 @@ function createReportHTML(failures: ImageSnapshotFailure[]): string {
     Click images to view full size •
     Diff images highlight mismatched pixels in yellow/red
   </footer>
+</body>
+</html>`;
+}
+
+function createSuccessHTML(timestamp: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Snapshots - All Passing</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h1 { color: #2e7d32; margin-bottom: 10px; }
+    .meta { color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>All Image Snapshots Passing</h1>
+    <div class="meta">Generated: ${escapeHtml(timestamp)}</div>
+  </div>
 </body>
 </html>`;
 }
