@@ -60,6 +60,12 @@ export async function generateDiffReport(
   const cssSource = path.join(templatesDir, "report.css");
   await fs.promises.copyFile(cssSource, path.join(reportDir, "report.css"));
 
+  // Copy live-reload script if enabled
+  if (liveReload) {
+    const jsSource = path.join(templatesDir, "live-reload.js");
+    await fs.promises.copyFile(jsSource, path.join(reportDir, "live-reload.js"));
+  }
+
   const withCopiedImages =
     failures.length > 0
       ? await copyImagesToReport(failures, reportDir, configRoot)
@@ -156,18 +162,6 @@ function renderTemplate(
   return result;
 }
 
-const liveReloadScript = `
-<script>
-  let lastModified;
-  setInterval(async () => {
-    try {
-      const res = await fetch(location.href, { method: 'HEAD' });
-      const modified = res.headers.get('last-modified');
-      if (lastModified && modified !== lastModified) location.reload();
-      lastModified = modified;
-    } catch {}
-  }, 500);
-</script>`;
 
 function createReportHTML(
   failures: ImageSnapshotFailure[],
@@ -175,7 +169,7 @@ function createReportHTML(
 ): string {
   const timestamp = new Date().toLocaleString();
   const totalFailures = failures.length;
-  const script = liveReload ? liveReloadScript : "";
+  const script = liveReload ? `<script src="live-reload.js"></script>` : "";
 
   if (totalFailures === 0) {
     return renderTemplate(loadTemplate("report-success.hbs"), {
