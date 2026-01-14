@@ -145,23 +145,7 @@ footer {
   font-size: 12px;
 }
 
-/* Success page styles */
-body.success {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
-
-.container {
-  background: white;
-  padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  text-align: center;
-}
-
-body.success h1 {
+/* Success header style */
+header.success h1 {
   color: #2e7d32;
-  margin-bottom: 10px;
 }

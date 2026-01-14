@@ -121,25 +121,47 @@ function loadTemplate(name: string): string {
   return fs.readFileSync(path.join(templatesDir, name), "utf-8");
 }
 
+/** Replace all {{key}} placeholders in template with values from data object. */
+function renderTemplate(
+  template: string,
+  data: Record<string, string>,
+): string {
+  let result = template;
+  for (const [key, value] of Object.entries(data)) {
+    result = result.replaceAll(`{{${key}}}`, value);
+  }
+
+  // Check for any unreplaced placeholders
+  const unreplaced = result.match(/\{\{(\w+)\}\}/g);
+  if (unreplaced) {
+    const keys = unreplaced.map(m => m.slice(2, -2)).join(", ");
+    throw new Error(`Template has unreplaced placeholders: ${keys}`);
+  }
+
+  return result;
+}
+
 function createReportHTML(failures: ImageSnapshotFailure[]): string {
   const timestamp = new Date().toLocaleString();
   const totalFailures = failures.length;
   const css = loadTemplate("report.css");
 
   if (totalFailures === 0) {
-    return loadTemplate("report-success.hbs")
-      .replace("{{css}}", css)
-      .replace("{{timestamp}}", escapeHtml(timestamp));
+    return renderTemplate(loadTemplate("report-success.hbs"), {
+      css,
+      timestamp: escapeHtml(timestamp),
+    });
   }
 
   const rows = failures.map(failure => createRowHTML(failure)).join("\n");
 
-  return loadTemplate("report-failure.hbs")
-    .replace("{{css}}", css)
-    .replace("{{totalFailures}}", String(totalFailures))
-    .replace("{{testPlural}}", totalFailures === 1 ? "test" : "tests")
-    .replace("{{timestamp}}", escapeHtml(timestamp))
-    .replace("{{rows}}", rows);
+  return renderTemplate(loadTemplate("report-failure.hbs"), {
+    css,
+    totalFailures: String(totalFailures),
+    testPlural: totalFailures === 1 ? "test" : "tests",
+    timestamp: escapeHtml(timestamp),
+    rows,
+  });
 }
 
 function createRowHTML(failure: ImageSnapshotFailure): string {
