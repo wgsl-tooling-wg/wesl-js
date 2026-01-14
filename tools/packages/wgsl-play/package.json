@@ -4,6 +4,7 @@
   "type": "module",
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
+    "build": "vite build --config vite.build.config.ts",
     "dev": "vite test-page --config vite.config.ts",
     "test": "vitest",
     "test:e2e": "playwright test",
@@ -11,7 +12,11 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./element": "./src/WgslPlay.ts"
+    "./element": "./src/WgslPlay.ts",
+    "./bundle": {
+      "types": "./src/WgslPlay.ts",
+      "default": "./dist/wgsl-play.js"
+    }
   },
   "dependencies": {
     "es-module-lexer": "^1.7.0",
