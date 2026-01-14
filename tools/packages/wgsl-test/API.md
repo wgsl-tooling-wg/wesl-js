@@ -53,10 +53,16 @@ Import from `wgsl_test::`:
 |----------|-------------|
 | `expect(bool)` | Assert condition is true |
 | `expectEq(u32, u32)` | Assert integers are equal |
-| `expectNear(f32, f32)` | Assert floats within epsilon |
-| `expectNearVec2(vec2f, vec2f)` | Assert vec2 components within epsilon |
-| `expectNearVec3(vec3f, vec3f)` | Assert vec3 components within epsilon |
-| `expectNearVec4(vec4f, vec4f)` | Assert vec4 components within epsilon |
+| `expectNear(f32, f32)` | Assert floats within combined tolerance (relTol=1e-3, absTol=1e-6) |
+| `expectNearVec2(vec2f, vec2f)` | Assert vec2 within combined tolerance |
+| `expectNearVec3(vec3f, vec3f)` | Assert vec3 within combined tolerance |
+| `expectNearVec4(vec4f, vec4f)` | Assert vec4 within combined tolerance |
+| `expectWithin(f32, f32, relTol, absTol)` | Assert floats within custom tolerance |
+| `expectWithinVec2(vec2f, vec2f, relTol, absTol)` | Assert vec2 within custom tolerance |
+| `expectWithinVec3(vec3f, vec3f, relTol, absTol)` | Assert vec3 within custom tolerance |
+| `expectWithinVec4(vec4f, vec4f, relTol, absTol)` | Assert vec4 within custom tolerance |
+
+The `expectNear*` functions use combined tolerance: `|a - b| <= max(absTol, relTol * max(|a|, |b|))`. This handles both near-zero comparisons (via absTol) and large value comparisons (via relTol).
 
 Failed assertions report actual vs expected values back to TypeScript.
 

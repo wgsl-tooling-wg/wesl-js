@@ -1,5 +1,3 @@
-const EPSILON: f32 = 0.0001;
-
 struct TestResult {
   passed: u32,
   failCount: u32,
