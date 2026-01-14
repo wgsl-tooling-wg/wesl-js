@@ -23,7 +23,7 @@ export interface ClickableErrorParams {
   error: Error;
 }
 
-const isBrowser = typeof document !== "undefined";
+const isBrowser = "document" in globalThis;
 
 /** Throw an error with an embedded source map so that browser users can
  *  click on the error in the browser debug console and see the wesl source code.  */
