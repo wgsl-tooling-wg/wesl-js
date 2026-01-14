@@ -5,7 +5,7 @@ This example shows how to test a WGSL compute shader using wgsl-test.
 ## Structure
 
 - `shaders/hash.wgsl` - Hash function for procedural generation
-- `test/hash.test.ts` - Unit test using wesl-test
+- `test/hash.test.ts` - Unit test using wgsl-test
 - `wesl.toml` - WESL configuration pointing to shader directory
 
 ## Running
