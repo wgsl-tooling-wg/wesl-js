@@ -1,7 +1,10 @@
 import { exec } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { ComparisonResult } from "./ImageComparison.ts";
+
+const templatesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "templates");
 
 /** Failed image snapshot with comparison results and file paths. */
 export interface ImageSnapshotFailure {
@@ -114,20 +117,36 @@ async function copyImage(
   return relativePath;
 }
 
+function loadTemplate(name: string): string {
+  return fs.readFileSync(path.join(templatesDir, name), "utf-8");
+}
+
 function createReportHTML(failures: ImageSnapshotFailure[]): string {
   const timestamp = new Date().toLocaleString();
   const totalFailures = failures.length;
+  const css = loadTemplate("report.css");
 
   if (totalFailures === 0) {
-    return createSuccessHTML(timestamp);
+    return loadTemplate("report-success.hbs")
+      .replace("{{css}}", css)
+      .replace("{{timestamp}}", escapeHtml(timestamp));
   }
 
-  const rows = failures
-    .map(failure => {
-      const { testName, snapshotName, comparison, paths } = failure;
-      const { mismatchedPixels, mismatchedPixelRatio } = comparison;
+  const rows = failures.map(failure => createRowHTML(failure)).join("\n");
 
-      return `
+  return loadTemplate("report-failure.hbs")
+    .replace("{{css}}", css)
+    .replace("{{totalFailures}}", String(totalFailures))
+    .replace("{{testPlural}}", totalFailures === 1 ? "test" : "tests")
+    .replace("{{timestamp}}", escapeHtml(timestamp))
+    .replace("{{rows}}", rows);
+}
+
+function createRowHTML(failure: ImageSnapshotFailure): string {
+  const { testName, snapshotName, comparison, paths } = failure;
+  const { mismatchedPixels, mismatchedPixelRatio } = comparison;
+
+  return `
       <tr>
         <td class="test-name">
           <strong>${escapeHtml(testName)}</strong><br>
@@ -152,214 +171,7 @@ function createReportHTML(failures: ImageSnapshotFailure[]): string {
           <div><strong>${mismatchedPixels}</strong> pixels</div>
           <div><strong>${(mismatchedPixelRatio * 100).toFixed(2)}%</strong></div>
         </td>
-      </tr>
-    `;
-    })
-    .join("\n");
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Snapshots - ${totalFailures} failed</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding: 20px;
-      background: #f5f5f5;
-    }
-    header {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    h1 {
-      color: #d73027;
-      margin-bottom: 10px;
-    }
-    .meta {
-      color: #666;
-      font-size: 14px;
-    }
-    .update-hint {
-      background: #fff3cd;
-      border: 1px solid #ffc107;
-      border-radius: 4px;
-      padding: 12px;
-      margin: 15px 0;
-    }
-    .update-hint code {
-      background: #f8f9fa;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: 'Monaco', 'Courier New', monospace;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    th, td {
-      padding: 15px;
-      text-align: left;
-      border-bottom: 1px solid #e0e0e0;
-    }
-    th {
-      background: #f8f9fa;
-      font-weight: 600;
-      color: #333;
-      text-align: center;
-    }
-    tr:last-child td {
-      border-bottom: none;
-    }
-    tr:hover {
-      background: #fafafa;
-    }
-    .test-name {
-      min-width: 200px;
-      vertical-align: top;
-    }
-    .test-name strong {
-      color: #333;
-    }
-    .test-name code {
-      color: #666;
-      font-size: 12px;
-      background: #f5f5f5;
-      padding: 2px 6px;
-      border-radius: 3px;
-    }
-    .image-cell {
-      text-align: center;
-      vertical-align: top;
-      width: 25%;
-    }
-    .image-cell a {
-      display: block;
-      text-decoration: none;
-    }
-    .image-cell img {
-      max-width: 100%;
-      height: auto;
-      max-height: 300px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .image-cell img:hover {
-      transform: scale(1.02);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    .label {
-      margin-top: 8px;
-      font-size: 12px;
-      color: #666;
-      font-weight: 500;
-    }
-    .no-diff {
-      color: #999;
-      font-size: 13px;
-      font-style: italic;
-      padding: 20px;
-      text-align: center;
-    }
-    .stats {
-      text-align: center;
-      color: #d73027;
-      font-size: 14px;
-      vertical-align: top;
-    }
-    .stats div {
-      margin: 5px 0;
-    }
-    footer {
-      margin-top: 20px;
-      text-align: center;
-      color: #999;
-      font-size: 12px;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>🔴 Image Snapshot Failures</h1>
-    <div class="meta">
-      <strong>${totalFailures}</strong> test${totalFailures === 1 ? "" : "s"} failed •
-      Generated: ${escapeHtml(timestamp)}
-    </div>
-    <div class="update-hint">
-      💡 <strong>To update snapshots:</strong> Run <code>pnpm test -- -u</code> or <code>vitest -u</code>
-    </div>
-  </header>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Test</th>
-        <th>Expected</th>
-        <th>Actual</th>
-        <th>Diff</th>
-        <th>Mismatch</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rows}
-    </tbody>
-  </table>
-
-  <footer>
-    Click images to view full size •
-    Diff images highlight mismatched pixels in yellow/red
-  </footer>
-</body>
-</html>`;
-}
-
-function createSuccessHTML(timestamp: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Snapshots - All Passing</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding: 20px;
-      background: #f5f5f5;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-    .container {
-      background: white;
-      padding: 40px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-    h1 { color: #2e7d32; margin-bottom: 10px; }
-    .meta { color: #666; font-size: 14px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>All Image Snapshots Passing</h1>
-    <div class="meta">Generated: ${escapeHtml(timestamp)}</div>
-  </div>
-</body>
-</html>`;
+      </tr>`;
 }
 
 function escapeHtml(text: string): string {

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Snapshots - {{totalFailures}} failed</title>
+  <style>{{css}}</style>
+</head>
+<body>
+  <header>
+    <h1>Image Snapshot Failures</h1>
+    <div class="meta">
+      <strong>{{totalFailures}}</strong> {{testPlural}} failed |
+      Generated: {{timestamp}}
+    </div>
+    <div class="update-hint">
+      <strong>To update snapshots:</strong> Run <code>pnpm test -- -u</code> or <code>vitest -u</code>
+    </div>
+  </header>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Test</th>
+        <th>Expected</th>
+        <th>Actual</th>
+        <th>Diff</th>
+        <th>Mismatch</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{rows}}
+    </tbody>
+  </table>
+
+  <footer>
+    Click images to view full size |
+    Diff images highlight mismatched pixels in yellow/red
+  </footer>
+</body>
+</html>
