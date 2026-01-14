@@ -11,6 +11,7 @@ const isWindowsCI = process.platform === "win32" && process.env.CI === "true";
 
 export default defineConfig({
   test: {
+    globalSetup: join(__dirname, "vitest.globalSetup.ts"),
     include: isWindowsCI ? [] : ["src/test/**/*.test.ts"],
     reporters: [
       "default",
