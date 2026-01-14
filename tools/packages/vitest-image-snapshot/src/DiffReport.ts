@@ -56,6 +56,10 @@ export async function generateDiffReport(
   await clearDiffReport(reportDir);
   await fs.promises.mkdir(reportDir, { recursive: true });
 
+  // Copy CSS file to report directory
+  const cssSource = path.join(templatesDir, "report.css");
+  await fs.promises.copyFile(cssSource, path.join(reportDir, "report.css"));
+
   const withCopiedImages =
     failures.length > 0
       ? await copyImagesToReport(failures, reportDir, configRoot)
@@ -171,12 +175,10 @@ function createReportHTML(
 ): string {
   const timestamp = new Date().toLocaleString();
   const totalFailures = failures.length;
-  const css = loadTemplate("report.css");
   const script = liveReload ? liveReloadScript : "";
 
   if (totalFailures === 0) {
     return renderTemplate(loadTemplate("report-success.hbs"), {
-      css,
       timestamp: escapeHtml(timestamp),
       script,
     });
@@ -185,7 +187,6 @@ function createReportHTML(
   const rows = failures.map(failure => createRowHTML(failure)).join("\n");
 
   return renderTemplate(loadTemplate("report-failure.hbs"), {
-    css,
     totalFailures: String(totalFailures),
     testPlural: totalFailures === 1 ? "test" : "tests",
     timestamp: escapeHtml(timestamp),
