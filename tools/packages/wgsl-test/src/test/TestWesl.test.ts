@@ -95,3 +95,17 @@ test("expectWesl throws on failure with details", async () => {
     "WESL tests failed",
   );
 });
+
+test("passing test with expectUlp()", async () => {
+  const src = loadFixture("passing_ulp.wesl");
+  const results = await runWesl({ device, src });
+  expect(results).toHaveLength(2);
+  expect(results.every(r => r.passed)).toBe(true);
+});
+
+test("failing test with expectUlp()", async () => {
+  const src = loadFixture("failing_ulp.wesl");
+  const results = await runWesl({ device, src });
+  expect(results).toHaveLength(1);
+  expect(results[0].passed).toBe(false);
+});
