@@ -9,7 +9,7 @@ import type {
 } from "vitest/node";
 import { generateDiffReport, type ImageSnapshotFailure } from "./DiffReport.ts";
 
-/** metadata saved at failure for future report */
+/** Metadata captured when image snapshot test fails, used to generate HTML report. */
 interface ImageSnapshotFailureData {
   actualPath: string;
   expectedPath: string;

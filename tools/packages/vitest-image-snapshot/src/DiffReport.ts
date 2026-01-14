@@ -56,14 +56,15 @@ export async function generateDiffReport(
   await clearDiffReport(reportDir);
   await fs.promises.mkdir(reportDir, { recursive: true });
 
-  // Copy CSS file to report directory
   const cssSource = path.join(templatesDir, "report.css");
   await fs.promises.copyFile(cssSource, path.join(reportDir, "report.css"));
 
-  // Copy live-reload script if enabled
   if (liveReload) {
     const jsSource = path.join(templatesDir, "live-reload.js");
-    await fs.promises.copyFile(jsSource, path.join(reportDir, "live-reload.js"));
+    await fs.promises.copyFile(
+      jsSource,
+      path.join(reportDir, "live-reload.js"),
+    );
   }
 
   const withCopiedImages =
@@ -81,12 +82,8 @@ export async function generateDiffReport(
   }
 
   if (autoOpen) {
-    const cmd =
-      process.platform === "darwin"
-        ? "open"
-        : process.platform === "win32"
-          ? "start"
-          : "xdg-open";
+    const commands: Record<string, string> = { darwin: "open", win32: "start" };
+    const cmd = commands[process.platform] ?? "xdg-open";
     exec(`${cmd} "${outputPath}"`);
   }
 }
@@ -99,26 +96,15 @@ async function copyImagesToReport(
 ): Promise<ImageSnapshotFailure[]> {
   return Promise.all(
     failures.map(async failure => {
-      const copiedPaths = await copyImageSet(
-        failure.paths,
-        reportDir,
-        configRoot,
-      );
+      const { paths } = failure;
+      const copiedPaths = {
+        reference: await copyImage(paths.reference, reportDir, configRoot),
+        actual: await copyImage(paths.actual, reportDir, configRoot),
+        diff: await copyImage(paths.diff, reportDir, configRoot),
+      };
       return { ...failure, paths: copiedPaths };
     }),
   );
-}
-
-async function copyImageSet(
-  paths: { reference: string; actual: string; diff: string },
-  reportDir: string,
-  configRoot: string,
-): Promise<{ reference: string; actual: string; diff: string }> {
-  return {
-    reference: await copyImage(paths.reference, reportDir, configRoot),
-    actual: await copyImage(paths.actual, reportDir, configRoot),
-    diff: await copyImage(paths.diff, reportDir, configRoot),
-  };
 }
 
 /** Copy single image to report dir, preserving directory structure relative to configRoot */
@@ -161,7 +147,6 @@ function renderTemplate(
 
   return result;
 }
-
 
 function createReportHTML(
   failures: ImageSnapshotFailure[],
