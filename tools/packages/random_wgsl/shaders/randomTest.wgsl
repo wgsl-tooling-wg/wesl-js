@@ -1,7 +1,6 @@
-// @toy
 @binding(0) @group(0) var<uniform> u: test::Uniforms;
 
-@fragment
+@toy @fragment
 fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let timeOffset = u32(u.time * 60.0);
   let seed = vec2u(pos.xy) + timeOffset;

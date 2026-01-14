@@ -1,4 +1,4 @@
-import type { WeslBundle } from "wesl";
+import { type FnElem, parseSrcModule, type WeslBundle } from "wesl";
 
 /** Shader metadata for @toy-annotated shaders in the viewer dropdown. */
 export interface ToyShaderInfo {
@@ -20,7 +20,7 @@ export interface ToyPackage {
   shaders: ToyShaderInfo[];
 }
 
-/** Scan bundles for @toy annotations, return shader metadata for dropdown. */
+/** Scan bundles for @toy attributes on functions, return shader metadata for dropdown. */
 export function collectToyShaders(
   tgzUrl: string,
   bundles: WeslBundle[],
@@ -30,7 +30,7 @@ export function collectToyShaders(
 
   for (const bundle of bundles) {
     for (const [filePath, source] of Object.entries(bundle.modules)) {
-      if (/@toy\b/.test(source)) {
+      if (hasToyFunction(filePath, source)) {
         const displayName = filePath
           .replace(/\.(wesl|wgsl)$/, "")
           .split("/")
@@ -41,4 +41,31 @@ export function collectToyShaders(
   }
 
   return { name: packageName, tgzUrl, shaders };
+}
+
+/** Check if source has a function with @toy attribute. */
+function hasToyFunction(filePath: string, source: string): boolean {
+  try {
+    const modulePath = filePath
+      .replace(/\.(wesl|wgsl)$/, "")
+      .replace(/\//g, "::");
+    const ast = parseSrcModule({
+      modulePath,
+      debugFilePath: filePath,
+      src: source,
+    });
+    return ast.moduleElem.contents
+      .filter((e): e is FnElem => e.kind === "fn")
+      .some(hasToyAttribute);
+  } catch {
+    return false;
+  }
+}
+
+function hasToyAttribute(fn: FnElem): boolean {
+  for (const e of fn.attributes ?? []) {
+    const attr = e.attribute;
+    if (attr.kind === "@attribute" && attr.name === "toy") return true;
+  }
+  return false;
 }
