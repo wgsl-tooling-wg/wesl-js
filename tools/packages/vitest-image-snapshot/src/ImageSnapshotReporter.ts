@@ -1,3 +1,5 @@
+import * as fs from "node:fs";
+import * as http from "node:http";
 import * as path from "node:path";
 import type {
   Reporter,
@@ -20,6 +22,8 @@ export interface ImageSnapshotReporterOptions {
   /** Report directory (relative to config.root or absolute) */
   reportPath?: string;
   autoOpen?: boolean;
+  /** Port for live-reload server. Set to 0 to disable. Default: 4343 */
+  port?: number;
 }
 
 /** Vitest reporter that generates HTML diff reports for image snapshot failures */
@@ -28,15 +32,75 @@ export class ImageSnapshotReporter implements Reporter {
   private vitest!: Vitest;
   private reportPath?: string;
   private autoOpen: boolean;
+  private port: number;
+  private serverStarted = false;
 
   constructor(options: ImageSnapshotReporterOptions = {}) {
     this.reportPath = options.reportPath;
     this.autoOpen =
       options.autoOpen ?? process.env.IMAGE_DIFF_AUTO_OPEN === "true";
+    this.port = options.port ?? 4343;
   }
 
   onInit(vitest: Vitest) {
     this.vitest = vitest;
+    if (this.port > 0) {
+      this.startServer();
+    }
+  }
+
+  private startServer() {
+    const reportDir = this.resolveReportDir();
+    const server = http.createServer((req, res) => {
+      const url = req.url === "/" ? "/index.html" : req.url || "/index.html";
+      const filePath = path.join(reportDir, url);
+
+      fs.stat(filePath, (statErr, stats) => {
+        if (statErr) {
+          res.writeHead(404);
+          res.end("Not found");
+          return;
+        }
+
+        const ext = path.extname(filePath);
+        const contentType =
+          ext === ".html"
+            ? "text/html"
+            : ext === ".css"
+              ? "text/css"
+              : ext === ".png"
+                ? "image/png"
+                : "application/octet-stream";
+        const headers = {
+          "Content-Type": contentType,
+          "Last-Modified": stats.mtime.toUTCString(),
+        };
+
+        // For HEAD requests (used by live reload), just send headers
+        if (req.method === "HEAD") {
+          res.writeHead(200, headers);
+          res.end();
+          return;
+        }
+
+        fs.readFile(filePath, (err, data) => {
+          if (err) {
+            res.writeHead(500);
+            res.end("Error reading file");
+            return;
+          }
+          res.writeHead(200, headers);
+          res.end(data);
+        });
+      });
+    });
+
+    server.listen(this.port, () => {
+      this.serverStarted = true;
+      console.log(`\n Image diff report: http://localhost:${this.port}`);
+    });
+
+    server.unref(); // Don't keep process alive just for this server
   }
 
   onTestRunStart(specifications: ReadonlyArray<TestSpecification>) {
@@ -72,6 +136,7 @@ export class ImageSnapshotReporter implements Reporter {
       autoOpen: this.autoOpen,
       reportDir: this.resolveReportDir(),
       configRoot: this.vitest.config.root,
+      liveReload: this.serverStarted,
     });
   }
 

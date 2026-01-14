@@ -4,7 +4,10 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ComparisonResult } from "./ImageComparison.ts";
 
-const templatesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "templates");
+const templatesDir = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "templates",
+);
 
 /** Failed image snapshot with comparison results and file paths. */
 export interface ImageSnapshotFailure {
@@ -26,6 +29,8 @@ export interface DiffReportConfig {
   reportDir: string;
   /** Vitest config root for calculating relative paths when copying images */
   configRoot: string;
+  /** Enable live reload script in HTML. Default: false */
+  liveReload?: boolean;
 }
 
 /** Clear the diff report directory if it exists. */
@@ -40,7 +45,12 @@ export async function generateDiffReport(
   failures: ImageSnapshotFailure[],
   config: DiffReportConfig,
 ): Promise<void> {
-  const { autoOpen = false, reportDir, configRoot } = config;
+  const {
+    autoOpen = false,
+    reportDir,
+    configRoot,
+    liveReload = false,
+  } = config;
 
   // Clear old report before generating new one to remove stale images
   await clearDiffReport(reportDir);
@@ -50,12 +60,13 @@ export async function generateDiffReport(
     failures.length > 0
       ? await copyImagesToReport(failures, reportDir, configRoot)
       : [];
-  const html = createReportHTML(withCopiedImages);
+  const html = createReportHTML(withCopiedImages, liveReload);
   const outputPath = path.join(reportDir, "index.html");
 
   await fs.promises.writeFile(outputPath, html, "utf-8");
 
-  if (failures.length > 0) {
+  // Only log file path if not using live reload server (which logs its own URL)
+  if (failures.length > 0 && !liveReload) {
     console.log(`\n Image diff report: ${outputPath}`);
   }
 
@@ -141,15 +152,33 @@ function renderTemplate(
   return result;
 }
 
-function createReportHTML(failures: ImageSnapshotFailure[]): string {
+const liveReloadScript = `
+<script>
+  let lastModified;
+  setInterval(async () => {
+    try {
+      const res = await fetch(location.href, { method: 'HEAD' });
+      const modified = res.headers.get('last-modified');
+      if (lastModified && modified !== lastModified) location.reload();
+      lastModified = modified;
+    } catch {}
+  }, 500);
+</script>`;
+
+function createReportHTML(
+  failures: ImageSnapshotFailure[],
+  liveReload: boolean,
+): string {
   const timestamp = new Date().toLocaleString();
   const totalFailures = failures.length;
   const css = loadTemplate("report.css");
+  const script = liveReload ? liveReloadScript : "";
 
   if (totalFailures === 0) {
     return renderTemplate(loadTemplate("report-success.hbs"), {
       css,
       timestamp: escapeHtml(timestamp),
+      script,
     });
   }
 
@@ -161,6 +190,7 @@ function createReportHTML(failures: ImageSnapshotFailure[]): string {
     testPlural: totalFailures === 1 ? "test" : "tests",
     timestamp: escapeHtml(timestamp),
     rows,
+    script,
   });
 }
 

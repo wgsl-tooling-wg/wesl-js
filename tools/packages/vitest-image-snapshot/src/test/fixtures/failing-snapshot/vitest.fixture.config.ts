@@ -12,6 +12,7 @@ export default defineConfig({
       "default",
       new ImageSnapshotReporter({
         reportPath: path.join(__dirname, "__image_diff_report__"),
+        port: 0, // Disable server in test fixture
       }),
     ],
   },
