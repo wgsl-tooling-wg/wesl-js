@@ -37,17 +37,11 @@ function hasDeps(): boolean {
   );
 }
 
-if (installDeps) {
+if (installDeps || !hasDeps()) {
   log("Installing CTS dependencies...");
   run("npm install", ctsDir);
   log("Installing wesl transpiler dependencies...");
   run("npm install", transpilerDir);
-} else if (!hasDeps()) {
-  console.error("CTS dependencies not installed.");
-  console.error(
-    "Run with --install-deps to install: bb test:cts --install-deps",
-  );
-  process.exit(1);
 }
 
 log("Building wesl...");
