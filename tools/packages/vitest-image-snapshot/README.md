@@ -169,6 +169,14 @@ interface MatchImageOptions {
 }
 ```
 
+### How Comparison Works
+
+Image comparison uses [pixelmatch](https://github.com/mapbox/pixelmatch), which converts RGB to **YIQ color space** for perceptually-weighted comparison. YIQ separates luminance (Y) from chrominance (I, Q), making the comparison more aligned with human perception than raw RGB byte comparison.
+
+The `threshold` option (0-1) controls sensitivity to color differences in YIQ space.
+
+**Color space note**: Images are compared as raw RGBA bytes. If using `display-p3` (supported in WebGPU via `GPUCanvasConfiguration.colorSpace`), ensure both reference and actual images use the same color space.
+
 ## Examples
 
 ### WebGPU Shaders
