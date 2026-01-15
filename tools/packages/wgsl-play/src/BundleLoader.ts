@@ -19,7 +19,7 @@ export async function loadBundlesWithPackageName(
   const entries = await fetchAndExtractTgz(tgzUrl);
 
   const bundleFilesWithoutPackage = entries
-    .filter(f => f.name.endsWith("weslBundle.js"))
+    .filter(isBundleFile)
     .map(f => ({ packagePath: f.name, content: f.text }));
 
   if (bundleFilesWithoutPackage.length === 0) {
@@ -44,7 +44,7 @@ export async function loadBundlesFromTgz(
 ): Promise<WeslBundle[]> {
   const entries = await fetchAndExtractTgz(tgzUrl);
   const bundleFiles: WeslBundleFile[] = entries
-    .filter(f => f.name.endsWith("weslBundle.js"))
+    .filter(isBundleFile)
     .map(f => ({ packagePath: f.name, content: f.text, packageName }));
 
   return loadBundlesFromFiles(bundleFiles);
@@ -86,7 +86,7 @@ async function fetchBundleFilesFromUrl(
 ): Promise<WeslBundleFile[]> {
   const entries = await fetchAndExtractTgz(tgzUrl);
   const bundleFilesWithoutPkg = entries
-    .filter(f => f.name.endsWith("weslBundle.js"))
+    .filter(isBundleFile)
     .map(f => ({ packagePath: f.name, content: f.text }));
 
   if (bundleFilesWithoutPkg.length === 0) return [];
@@ -112,4 +112,9 @@ async function npmPackageToUrl(packageName: string): Promise<string> {
     throw new Error(`No tarball URL found for ${packageName}@${latestVersion}`);
   }
   return tarballUrl;
+}
+
+/** Check if tar entry is a WESL bundle file. Bundles must be in dist/ to avoid loading source files. */
+function isBundleFile(entry: ParsedTarFileItem): boolean {
+  return entry.name.endsWith("weslBundle.js") && entry.name.includes("/dist/");
 }
