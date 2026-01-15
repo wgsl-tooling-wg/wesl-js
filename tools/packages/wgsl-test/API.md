@@ -1,31 +1,32 @@
 # wgsl-test API Reference
 
-Complete API documentation for testing WGSL/WESL shaders.
-
-## Native WESL Testing
+### Native WESL Testing
 - [Native WESL Testing](#native-wesl-testing) - `@test` attribute and assertion functions
 
-## Core Functions
+### Core Functions
 - [testCompute()](#testcompute) - Run compute shaders and retrieve results
 - [testFragment()](#testfragment) - Test fragment shaders, returns single pixel color
 - [expectFragmentImage()](#expectfragmentimage) - Visual regression testing with snapshot comparison
 
-## Fragment Shader Configuration
+### Fragment Shader Configuration
 - [Standard Uniform Buffer](#standard-uniform-buffer) - Built-in uniforms (resolution, time, mouse)
 - [Binding Convention](#binding-convention) - Texture and uniform binding layout
 
-## Helpers
+### Helpers
 - [Texture Helper Functions](#texture-helper-functions) - Generate test textures
 - [Working with Local Shader Files](#working-with-local-shader-files) - Import and organize shader code
 
-## Visual Regression Testing
+### Visual Regression Testing
 - [Visual Regression Testing](#visual-regression-testing) - Snapshot workflow and configuration
 
-## Examples
-- [Complete Test Example](#complete-test-example) - Full vitest setup with beforeAll/afterAll
-
-## Advanced
+### Advanced
 - [testFragmentImage()](#advanced-testfragmentimage) - Full image data access for custom validation
+
+## Examples
+- [Compute Shader Example](#complete-test-example) - Full example on this page
+- [wgsl-test-native](https://github.com/wgsl-tooling-wg/examples/tree/main/wgsl-test-native) - Native WESL testing with `@test` (example project)
+- [wgsl-test-basic-compute](https://github.com/wgsl-tooling-wg/examples/tree/main/wgsl-test-basic-compute) - Compute shader testing (example project)
+- [wgsl-test-fragment-image](https://github.com/wgsl-tooling-wg/examples/tree/main/wgsl-test-fragment-image) - Fragment shader & image snapshots (example project)
 
 ---
 
@@ -47,7 +48,7 @@ import wgsl_test::expectNear;
 
 ### Assertion Functions
 
-Import from `wgsl_test::`:
+Import from `wgsl_test::`
 
 | Function | Description |
 |----------|-------------|
@@ -61,23 +62,47 @@ Import from `wgsl_test::`:
 | `expectWithinVec2(vec2f, vec2f, relTol, absTol)` | Assert vec2 within custom tolerance |
 | `expectWithinVec3(vec3f, vec3f, relTol, absTol)` | Assert vec3 within custom tolerance |
 | `expectWithinVec4(vec4f, vec4f, relTol, absTol)` | Assert vec4 within custom tolerance |
+| `expectUlp(f32, f32, maxUlp)` | Assert floats within N ULPs (units in last place) |
+| `expectUlpVec2(vec2f, vec2f, maxUlp)` | Assert vec2 within N ULPs |
+| `expectUlpVec3(vec3f, vec3f, maxUlp)` | Assert vec3 within N ULPs |
+| `expectUlpVec4(vec4f, vec4f, maxUlp)` | Assert vec4 within N ULPs |
 
-The `expectNear*` functions use combined tolerance: `|a - b| <= max(absTol, relTol * max(|a|, |b|))`. This handles both near-zero comparisons (via absTol) and large value comparisons (via relTol).
+The `expectNear*` functions use combined tolerance: `|a - b| <= max(absTol, relTol * max(|a|, |b|))`. 
+This handles both near-zero comparisons (via `absTol`) and large value comparisons (via `relTol`).
 
-Failed assertions report actual vs expected values back to TypeScript.
+The `expectUlp*` functions measure how many representable floats apart two values are.
+
+_**Note:** Floating point accuracy varies across GPU implementations.
+See the [WGSL spec accuracy requirements](https://www.w3.org/TR/WGSL/#floating-point-accuracy) for details._
 
 ### Running Native Tests
 
-Use `expectWesl()` to run all `@test` functions in a module and assert they pass:
+**`testWesl()`** - Discovers `@test` functions and registers each as a vitest test. Use with top-level await:
 
 ```typescript
-import { expectWesl, getGPUDevice } from "wgsl-test";
+import { getGPUDevice, testWesl } from "wgsl-test";
 
 const device = await getGPUDevice();
-await expectWesl({ device, moduleName: "my_test" });
+await testWesl({ device, moduleName: "my_test" });
 ```
 
-Use `runWesl()` instead if you need to inspect individual test results.
+**`expectWesl()`** - Runs all `@test` functions and throws on failure. Use inside a test block:
+
+```typescript
+test("shader tests", async () => {
+  await expectWesl({ device, moduleName: "my_test" });
+});
+```
+
+**`runWesl()`** - Returns raw results for custom validation:
+
+```typescript
+const results = await runWesl({ device, moduleName: "my_test" });
+// results: [{ name: "testFn", passed: true, actual: [...], expected: [...] }, ...]
+
+// Run a single test by name:
+const single = await runWesl({ device, moduleName: "my_test", testName: "specificTest" });
+```
 
 ---
 
@@ -324,22 +349,14 @@ For advanced configuration and detailed information, see the [vitest-image-snaps
 ## Complete Test Example
 
 ```typescript
-import { afterAll, beforeAll, expect, test } from "vitest";
-import { testCompute, destroySharedDevice, getGPUDevice } from "wgsl-test";
+import { expect, test } from "vitest";
+import { testCompute, getGPUDevice } from "wgsl-test";
 
-let device: GPUDevice;
-
-beforeAll(async () => {
-  device = await getGPUDevice();
-});
-
-afterAll(() => {
-  destroySharedDevice();
-});
+const device = await getGPUDevice();
 
 test("hash function from file", async () => {
   const src = `
-    import package::hash::lowbias32;
+    import package::hash::lowbias32; // src fn to check
 
     @compute @workgroup_size(256)
     fn main(@builtin(global_invocation_id) id: vec3u) {

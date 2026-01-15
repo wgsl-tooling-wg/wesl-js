@@ -13,40 +13,57 @@ npm install wgsl-test
 
 ## Native WESL Testing
 
-Write tests directly in WESL with the `@test` attribute. No boilerplate, assertions run on the GPU:
+Write tests directly in WESL with the `@test` attribute. Minimal boilerplate, assertions run on the GPU:
 
 ```wgsl
-// luminance_test.wesl
-import lygia::color::luminance::luminance;
-import wgsl_test::expectNear;
+/// interp_test.wesl
+import package::interp::smootherstep; // source fn to test
+import wgsl_test::expectNear; // expectations from wgsl-test lib
 
-@test fn luminanceOrange() {
-  expectNear(luminance(vec3f(1.0, 0.5, 0.0)), 0.5702);
+@test  // tag each test fn
+fn smootherstepQuarter() {
+  expectNear(smootherstep(0.0, 1.0, 0.25), 0.103516);
 }
-
-@test fn luminanceWhite() {
-  expectNear(luminance(vec3f(1.0, 1.0, 1.0)), 1.0);
-}
+...
 ```
 
 Run with a minimal TypeScript wrapper:
 
 ```typescript
-import { expectWesl, getGPUDevice } from "wgsl-test";
+import { getGPUDevice, testWesl } from "wgsl-test";
 
-test("luminance", async () => {
-  const device = await getGPUDevice();
-  await expectWesl({ device, moduleName: "luminance_test" });
-});
+const device = await getGPUDevice();
+
+// runs all tests in interp_test
+await testWesl({ device, moduleName: "interp_test" }); 
 ```
-
-Use `runWesl()` instead if you need to inspect individual test results.
 
 **[See API.md for assertion functions →](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wgsl-test/API.md#assertion-functions)**
 
+## Visual Regression Testing
+
+Test complete rendered images in vitest:
+
+```typescript
+import { expectFragmentImage } from "wgsl-test";
+import { imageMatcher } from "vitest-image-snapshot";
+
+imageMatcher(); // Setup once
+
+test("blur shader matches snapshot", async () => {
+  await expectFragmentImage(device, "effects/blur.wgsl"); 
+  // Snapshot automatically compared against __image_snapshots__/effects-blur.png
+});
+```
+
+Update snapshots with `vitest -u` as needed.
+
+**[See API.md for snapshot workflow and visual regression testing →](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wgsl-test/API.md#visual-regression-testing)**
+
 ## Testing Compute Shaders
 
-For more control, use `testCompute()` directly. A `test::results` buffer is automatically provided:
+For more control, use `testCompute()`. 
+A `test::results` buffer is automatically provided:
 
 ```typescript
 import { testCompute, getGPUDevice } from "wgsl-test";
@@ -95,30 +112,6 @@ const result = await testFragment({ device, src });
 ```
 
 **[See API.md for derivatives, input textures, uniforms, and more →](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wgsl-test/API.md#testfragment)**
-
-## Visual Regression Testing
-
-Higher level testing, good for regression. Tests don't provide much numeric descriptive value but catch visual changes automatically.
-
-Test complete rendered images:
-
-```typescript
-import { expectFragmentImage, imageMatcher } from "wgsl-test";
-
-imageMatcher(); // Setup once
-
-test("blur shader matches snapshot", async () => {
-  await expectFragmentImage(device, "effects/blur.wgsl", {
-    projectDir: import.meta.url,
-    size: [256, 256],
-  });
-  // Snapshot automatically compared against __image_snapshots__/effects-blur.png
-});
-```
-
-Snapshot comparison automatically detects rendering changes. Update snapshots with `vitest -u` when changes are intentional.
-
-**[See API.md for snapshot workflow and visual regression testing →](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wgsl-test/API.md#visual-regression-testing)**
 
 ## API Documentation
 
