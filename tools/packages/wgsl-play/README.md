@@ -14,7 +14,7 @@ That's it. The component auto-fetches dependencies and starts animating.
 
 ### Shader API
 
-Write a fragment shader with entry point `fs_main`. WESL extensions are supported (imports, conditional compilation).
+Write a fragment shader with a single `@fragment` function (any name works). WESL extensions are supported (imports, conditional compilation).
 
 Standard uniforms are provided at binding 0:
 
@@ -23,7 +23,7 @@ import test::Uniforms;
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
 
-@fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+@fragment fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let uv = pos.xy / u.resolution;
   return vec4f(uv, sin(u.time) * 0.5 + 0.5, 1.0);
 }
@@ -137,7 +137,7 @@ will be fetched from the web server.
 import package::utils::noise;
 import super::common::tint;
 
-@fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+@fragment fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   return tint(noise(pos.xy));
 }
 ```
