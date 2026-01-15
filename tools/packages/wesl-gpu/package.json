@@ -1,7 +1,7 @@
 {
   "name": "wesl-gpu",
   "description": "Browser-compatible WebGPU utilities for shader testing and rendering",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "type": "module",
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
