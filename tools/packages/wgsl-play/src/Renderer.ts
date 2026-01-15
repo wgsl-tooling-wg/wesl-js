@@ -95,7 +95,7 @@ export async function createPipeline(
   let resolver: ModuleResolver | undefined;
   if (weslSrc || libs.length > 0) {
     const resolvers: ModuleResolver[] = [];
-    if (weslSrc) resolvers.push(new RecordResolver(weslSrc));
+    if (weslSrc) resolvers.push(new RecordResolver(weslSrc, { packageName }));
     for (const bundle of libs) resolvers.push(new BundleResolver(bundle));
     resolver =
       resolvers.length === 1 ? resolvers[0] : new CompositeResolver(resolvers);
