@@ -121,6 +121,4 @@ const result = await testFragment({ device, src });
 
 ## Future
 
-What would you like to see next in wgsl-test? 
-
-Please file an [issue](https://github.com/wgsl-tooling-wg/wesl-js/issues) or talk about your ideas on the tooling group [discord chat](https://discord.gg/5UhkaSu4dt).
+File an [issue](https://github.com/wgsl-tooling-wg/wesl-js/issues) or talk about your ideas on the tooling group [discord chat](https://discord.gg/5UhkaSu4dt).
