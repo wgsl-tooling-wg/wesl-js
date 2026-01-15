@@ -1,0 +1,70 @@
+{
+  "name": "wgsl-studio",
+  "description": "WGSL/WESL previews and tests",
+  "version": "0.1.0",
+  "type": "module",
+  "repository": "github:wgsl-tooling-wg/wesl-js",
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "launch": "code --extensionDevelopmentPath=$PWD",
+    "typecheck": "tsgo"
+  },
+  "main": "./dist/extension.mjs",
+  "dependencies": {
+    "wesl": "workspace:*",
+    "wesl-gpu": "workspace:*",
+    "wesl-tooling": "workspace:*",
+    "wgsl-play": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.108.1"
+  },
+  "activationEvents": [
+    "onLanguage:wgsl"
+  ],
+  "icon": "images/logo-small.png",
+  "categories": [
+    "Programming Languages",
+    "Debuggers",
+    "Visualization"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "wgsl.previewToyShader",
+        "title": "WGSL Studio: Preview Toy Shader"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "wgsl.previewToyShader",
+          "when": "editorLangId == wgsl",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "wgsl.previewToyShader",
+          "when": "resourceExtname == .wgsl || resourceExtname == .wesl",
+          "group": "navigation"
+        }
+      ]
+    },
+    "languages": [
+      {
+        "id": "wgsl",
+        "extensions": [
+          ".wgsl",
+          ".wesl"
+        ]
+      }
+    ]
+  },
+  "displayName": "WGSL Studio",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "publisher": "wesl"
+}

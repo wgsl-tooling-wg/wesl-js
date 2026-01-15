@@ -16,7 +16,7 @@ export interface BatchModuleResolver extends ModuleResolver {
 }
 
 export interface RecordResolverOptions {
-  /** Package name for module path resolution (default: "package") */
+  /** Recognize this name as alias for package:: (e.g., "lygia" makes lygia::foo resolve locally) */
   packageName?: string;
   /** Debug path prefix for error messages */
   debugWeslRoot?: string;

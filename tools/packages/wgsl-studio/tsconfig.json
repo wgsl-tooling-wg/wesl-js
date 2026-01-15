@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.node.json",
+  "compilerOptions": {
+    "types": ["node", "@webgpu/types"],
+    "skipLibCheck": true,
+    "paths": {
+      // for tsdown to bundle types for wesl-tooling
+      "wesl-tooling": ["../wesl-tooling/src/index.ts"],
+      "wesl-tooling/*": ["../wesl-tooling/src/*"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/webview/**/*"]
+}
