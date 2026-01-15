@@ -3,3 +3,8 @@ __image_diffs__/
 __image_actual__/
 __image_dev__/
 __image_diff_report__/
+
+# Check in weslBundle (needed for native tests without building)
+!dist/
+dist/*
+!dist/weslBundle.*
