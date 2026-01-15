@@ -10,6 +10,7 @@ export default defineConfig({
     "node:child_process",
     "node:fs",
     "node:fs/promises",
+    "node:http",
     "node:path",
     "node:url",
     "vitest",
