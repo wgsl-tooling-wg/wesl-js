@@ -1,0 +1,16 @@
+{
+  "name": "wgsl-test-native",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {
+    "wesl": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.16",
+    "webgpu": "^0.3.8",
+    "wgsl-test": "workspace:x"
+  }
+}

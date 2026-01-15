@@ -300,6 +300,22 @@ importers:
         specifier: workspace:x
         version: link:../../packages/wgsl-test
 
+  examples/wgsl-test-native:
+    dependencies:
+      wesl:
+        specifier: workspace:*
+        version: link:../../packages/wesl
+    devDependencies:
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.16(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.0)
+      webgpu:
+        specifier: ^0.3.8
+        version: 0.3.8
+      wgsl-test:
+        specifier: workspace:x
+        version: link:../../packages/wgsl-test
+
   packages/bench:
     dependencies:
       picocolors:
