@@ -158,7 +158,7 @@ export class WgslPlay extends HTMLElement {
       ? toModulePath(rootModuleName)
       : "package::main";
     this._fromFullProject = true;
-    this.rebuildPipeline();
+    this.discoverAndRebuild();
   }
 
   /** Whether the shader is currently playing. */
@@ -236,6 +236,7 @@ export class WgslPlay extends HTMLElement {
       this.renderState = await initWebGPU(this.canvas);
       await this.loadInitialContent();
       this.stopRenderLoop = startRenderLoop(this.renderState, this.playback);
+      this.dispatchEvent(new CustomEvent("ready"));
       return true;
     } catch (error) {
       const message = `WebGPU initialization failed: ${error}`;
