@@ -2,7 +2,7 @@
 
 Visual regression testing for images. Compare rendered outputs against reference images to catch visual bugs.
 
-- Native Vitest integration, TypeScript-first
+- Native vitest integratio
 - Accepts `ImageData` or PNG buffers - test WebGPU, Canvas, or any image processing
 - Aggregated HTML diff report for visual failures
 
