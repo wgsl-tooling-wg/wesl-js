@@ -1,5 +1,5 @@
 import * as path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { sanitizePackageName, type WeslBundle } from "wesl";
 import { loadModules } from "./LoadModules.ts";
 import { findWeslToml } from "./LoadWeslToml.ts";
@@ -48,6 +48,7 @@ export async function loadProject(
     const libs = rawLibs.filter(Boolean);
 
     const shaderRootAbs = path.resolve(projectDir, tomlInfo.resolvedRoot);
+    // path.relative returns backslashes on Windows, normalize to forward slashes
     const rootModuleName = path
       .relative(shaderRootAbs, filePath)
       .replace(/\\/g, "/");
@@ -61,7 +62,8 @@ export async function loadProject(
 /** Read package name from package.json, sanitized for WESL identifiers. */
 export async function getPackageName(projectDir: string): Promise<string> {
   try {
-    const pkg = await readPackageJson(projectDir);
+    const projectUrl = pathToFileURL(projectDir).href;
+    const pkg = await readPackageJson(projectUrl);
     return sanitizePackageName(pkg.name as string);
   } catch {
     return path.basename(projectDir);
