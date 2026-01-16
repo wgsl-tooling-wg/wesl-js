@@ -5,13 +5,19 @@
   "bin": "bin/wesl-packager",
   "files": [
     "bin",
+    "dist",
     "src"
   ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
+    "build": "tsdown",
+    "prepublishOnly": "run-s build",
     "test": "cross-env FORCE_COLOR=1 vitest",
     "test:once": "vitest run",
     "typecheck": "tsgo"
+  },
+  "publishConfig": {
+    "bin": "dist/main.mjs"
   },
   "dependencies": {
     "@biomejs/js-api": "^1.0.0",

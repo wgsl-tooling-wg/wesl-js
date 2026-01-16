@@ -5,14 +5,20 @@
   "bin": "bin/wesl-link",
   "files": [
     "bin",
+    "dist",
     "src"
   ],
   "repository": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli",
   "homepage": "https://github.com/wgsl-tooling-wg/wesl-js/tree/main/packages/cli#readme",
   "scripts": {
+    "build": "tsdown",
+    "prepublishOnly": "run-s build",
     "test": "vitest --hideSkippedTests",
     "test:once": "vitest run",
     "typecheck": "tsgo"
+  },
+  "publishConfig": {
+    "bin": "dist/main.mjs"
   },
   "dependencies": {
     "import-meta-resolve": "^4.1.0",
