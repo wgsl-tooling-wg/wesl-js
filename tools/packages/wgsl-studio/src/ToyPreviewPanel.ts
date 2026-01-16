@@ -141,7 +141,7 @@ export class ToyPreviewPanel {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1e1e1e; }
-    wgsl-play { width: 100%; height: 100%; display: block; }
+    wgsl-play { width: 512px; height: 512px; display: block; }
   </style>
 </head>
 <body>
