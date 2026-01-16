@@ -68,7 +68,7 @@
     "vscode": "^1.85.0"
   },
   "icon": "images/logo-small.png",
-  "publisher": "wesl",
+  "publisher": "mighdoll",
   "keywords": [
     "WebGPU",
     "WESL",
