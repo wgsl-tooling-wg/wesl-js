@@ -818,19 +818,6 @@ importers:
         version: link:../wesl-plugin
 
   packages/wgsl-studio:
-    dependencies:
-      wesl:
-        specifier: workspace:*
-        version: link:../wesl
-      wesl-gpu:
-        specifier: workspace:*
-        version: link:../wesl-gpu
-      wesl-tooling:
-        specifier: workspace:*
-        version: link:../wesl-tooling
-      wgsl-play:
-        specifier: workspace:*
-        version: link:../wgsl-play
     devDependencies:
       '@types/vscode':
         specifier: ^1.108.1
@@ -838,6 +825,18 @@ importers:
       '@vscode/vsce':
         specifier: ^3.7.1
         version: 3.7.1
+      wesl:
+        specifier: workspace:x
+        version: link:../wesl
+      wesl-gpu:
+        specifier: workspace:x
+        version: link:../wesl-gpu
+      wesl-tooling:
+        specifier: workspace:x
+        version: link:../wesl-tooling
+      wgsl-play:
+        specifier: workspace:x
+        version: link:../wgsl-play
 
   packages/wgsl-test:
     dependencies:
