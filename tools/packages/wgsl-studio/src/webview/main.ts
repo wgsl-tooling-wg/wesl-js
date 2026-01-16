@@ -21,6 +21,11 @@ player.addEventListener("compile-error", (e: Event) => {
   vscode.postMessage({ type: "compileError", message });
 });
 
+player.addEventListener("compile-success", () => {
+  console.log("[wesl-vscode] compile-success");
+  vscode.postMessage({ type: "compileSuccess" });
+});
+
 player.addEventListener("init-error", (e: Event) => {
   const { message } = (e as CustomEvent).detail;
   console.log("[wesl-vscode] init-error:", message);

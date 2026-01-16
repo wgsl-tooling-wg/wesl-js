@@ -2,9 +2,11 @@ import * as vscode from "vscode";
 import type { WeslBundle } from "wesl";
 import { loadProject } from "./ProjectLoader.ts";
 
+/** VS Code webview panel for live shader preview using wgsl-play. */
 export class ToyPreviewPanel {
   static currentPanel: ToyPreviewPanel | undefined;
   static readonly viewType = "weslToyPreview";
+  static diagnostics = vscode.languages.createDiagnosticCollection("wesl");
 
   private readonly panel: vscode.WebviewPanel;
   private readonly extensionUri: vscode.Uri;
@@ -36,12 +38,22 @@ export class ToyPreviewPanel {
         break;
       case "compileError":
         if (msg.message) {
-          vscode.window.showErrorMessage(`Shader error: ${msg.message}`);
+          const range = new vscode.Range(0, 0, 0, 0);
+          const diagnostic = new vscode.Diagnostic(
+            range,
+            msg.message,
+            vscode.DiagnosticSeverity.Error,
+          );
+          ToyPreviewPanel.diagnostics.set(this.currentDoc.uri, [diagnostic]);
         }
+        break;
+      case "compileSuccess":
+        ToyPreviewPanel.diagnostics.delete(this.currentDoc.uri);
         break;
     }
   }
 
+  /** Show preview panel for a document, creating it if needed. */
   static createOrShow(
     extensionUri: vscode.Uri,
     doc: vscode.TextDocument,
@@ -72,6 +84,7 @@ export class ToyPreviewPanel {
     );
   }
 
+  /** Refresh the preview if it's showing the given document. */
   static updateIfActive(doc: vscode.TextDocument): void {
     const panel = ToyPreviewPanel.currentPanel;
     if (panel && panel.currentDoc.uri.toString() === doc.uri.toString()) {
@@ -80,6 +93,7 @@ export class ToyPreviewPanel {
     }
   }
 
+  /** Send shader source to webview, loading project deps if available. */
   private async sendSource(): Promise<void> {
     const filePath = this.currentDoc.uri.fsPath;
     const project = await loadProject(filePath);
@@ -138,6 +152,7 @@ export class ToyPreviewPanel {
 
   private dispose(): void {
     ToyPreviewPanel.currentPanel = undefined;
+    ToyPreviewPanel.diagnostics.delete(this.currentDoc.uri);
     this.panel.dispose();
     for (const d of this.disposables) {
       d.dispose();
