@@ -17,4 +17,5 @@ export default defineConfig({
     "vitest/node",
   ],
   logLevel: "warn",
+  copy: "src/templates",
 });
