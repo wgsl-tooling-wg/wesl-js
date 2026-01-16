@@ -291,6 +291,7 @@ export class WgslPlay extends HTMLElement {
         libs,
         rootModuleName: this._rootModuleName,
       });
+      this.dispatchEvent(new CustomEvent("compile-success"));
     } catch (error) {
       this.handleCompileError(error);
     }
@@ -311,6 +312,7 @@ export class WgslPlay extends HTMLElement {
         libs: this._libs,
         rootModuleName: this._rootModuleName,
       });
+      this.dispatchEvent(new CustomEvent("compile-success"));
     } catch (error) {
       this.handleCompileError(error);
     }
@@ -340,6 +342,7 @@ export class WgslPlay extends HTMLElement {
         libs: this._libs,
         rootModuleName: this._rootModuleName,
       });
+      this.dispatchEvent(new CustomEvent("compile-success"));
     } catch (error) {
       this.handleCompileError(error);
     }
