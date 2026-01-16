@@ -76,5 +76,5 @@
     "vscode": "^1.108.0"
   },
   "icon": "images/logo-small.png",
-  "publisher": "mighdoll"
+  "publisher": "webgpu-tools"
 }
