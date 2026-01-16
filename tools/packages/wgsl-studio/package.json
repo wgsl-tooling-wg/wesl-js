@@ -7,20 +7,21 @@
   "scripts": {
     "build": "tsdown",
     "build:play": "pnpm --filter wgsl-play build",
+    "build:vsix:package": "vsce package",
+    "build:vsix": "run-s build:play build build:vsix:package",
     "dev": "tsdown --watch",
     "launch": "run-s build:play build launch:code",
     "launch:code": "code --extensionDevelopmentPath=$PWD",
     "typecheck": "tsgo"
   },
   "main": "./dist/extension.mjs",
-  "dependencies": {
+  "devDependencies": {
+    "@types/vscode": "^1.108.1",
+    "@vscode/vsce": "^3.7.1",
     "wesl": "workspace:*",
     "wesl-gpu": "workspace:*",
     "wesl-tooling": "workspace:*",
     "wgsl-play": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/vscode": "^1.108.1"
   },
   "activationEvents": [
     "onLanguage:wgsl"
@@ -65,9 +66,10 @@
   },
   "displayName": "WGSL Studio",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.108.0"
   },
   "icon": "images/logo-small.png",
+  "license": "MIT",
   "publisher": "mighdoll",
   "keywords": [
     "WebGPU",

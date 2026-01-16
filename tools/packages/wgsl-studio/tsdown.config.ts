@@ -7,6 +7,7 @@ export default defineConfig([
     format: ["esm"],
     target: "node22",
     external: ["vscode"],
+    noExternal: [/.*/], // bundle workspace deps for vsce
     outDir: "dist",
     logLevel: "warn",
   },
