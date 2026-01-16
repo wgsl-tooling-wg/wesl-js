@@ -1,6 +1,6 @@
 # WGSL Studio
 
-VS Code extension for live WGSL/WESL shader preview.
+Live shader preview of WGSL and WESL shaders.
 
 ## Quick Start
 
