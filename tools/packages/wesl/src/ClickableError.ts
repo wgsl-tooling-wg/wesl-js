@@ -3,6 +3,14 @@ import { debug, srcLog } from "./Logging.ts";
 import { offsetToLineNumber } from "./Util.ts";
 import { encodeVlq } from "./vlq/vlq.ts";
 
+/** Structured location info attached to WESL errors for IDE integration. */
+export interface WeslErrorLocation {
+  file: string;
+  line: number;
+  column: number;
+  length: number;
+}
+
 export interface ClickableErrorParams {
   /** url of the source file (e.g. `shaders/app.wesl`) */
   url: string;
@@ -28,8 +36,15 @@ const isBrowser = "document" in globalThis;
 /** Throw an error with an embedded source map so that browser users can
  *  click on the error in the browser debug console and see the wesl source code.  */
 export function throwClickableError(params: ClickableErrorParams): void {
-  if (!debug || !isBrowser) throw params.error;
   const { url, text, lineNumber, lineColumn, length, error } = params;
+  const weslLocation: WeslErrorLocation = {
+    file: url,
+    line: lineNumber,
+    column: lineColumn,
+    length,
+  };
+  (error as any).weslLocation = weslLocation;
+  if (!debug || !isBrowser) throw error;
 
   // Based on https://stackoverflow.com/questions/65274147/sourceurl-for-css
 
@@ -91,6 +106,7 @@ export function throwClickableError(params: ClickableErrorParams): void {
     }
     error.message = "";
     if (debug) e.cause = error; // users don't want to see this, but WESL developers might
+    e.weslLocation = weslLocation;
     throw e;
   }
 }

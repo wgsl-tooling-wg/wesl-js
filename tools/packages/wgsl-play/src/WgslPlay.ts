@@ -29,6 +29,9 @@ export type WeslProject = Pick<
 /** Compile error detail for events. */
 export interface CompileErrorDetail {
   message: string;
+  file?: string;
+  line?: number;
+  column?: number;
 }
 
 // Lazy-init for SSR/Node.js compatibility (avoid browser APIs at module load)
@@ -352,7 +355,13 @@ export class WgslPlay extends HTMLElement {
     const message = error instanceof Error ? error.message : String(error);
     this.errorOverlay.show(message);
     this.pause();
-    const detail: CompileErrorDetail = { message };
+    const loc = (error as any)?.weslLocation;
+    const detail: CompileErrorDetail = {
+      message,
+      file: loc?.file,
+      line: loc?.line,
+      column: loc?.column,
+    };
     this.dispatchEvent(new CustomEvent("compile-error", { detail }));
   }
 }

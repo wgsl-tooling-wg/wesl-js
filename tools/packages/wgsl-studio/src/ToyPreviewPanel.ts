@@ -2,6 +2,17 @@ import * as vscode from "vscode";
 import type { WeslBundle } from "wesl";
 import { loadProject } from "./ProjectLoader.ts";
 
+type WebviewMessage =
+  | { kind: "ready" }
+  | {
+      kind: "compileError";
+      message: string;
+      file?: string;
+      line?: number;
+      column?: number;
+    }
+  | { kind: "compileSuccess" };
+
 /** VS Code webview panel for live shader preview using wgsl-play. */
 export class ToyPreviewPanel {
   static currentPanel: ToyPreviewPanel | undefined;
@@ -31,22 +42,23 @@ export class ToyPreviewPanel {
     );
   }
 
-  private handleMessage(msg: { type: string; message?: string }): void {
-    switch (msg.type) {
+  private handleMessage(msg: WebviewMessage): void {
+    switch (msg.kind) {
       case "ready":
         this.sendSource();
         break;
-      case "compileError":
-        if (msg.message) {
-          const range = new vscode.Range(0, 0, 0, 0);
-          const diagnostic = new vscode.Diagnostic(
-            range,
-            msg.message,
-            vscode.DiagnosticSeverity.Error,
-          );
-          ToyPreviewPanel.diagnostics.set(this.currentDoc.uri, [diagnostic]);
-        }
+      case "compileError": {
+        const line = Math.max(0, (msg.line ?? 1) - 1); // VS Code is 0-indexed
+        const col = Math.max(0, (msg.column ?? 1) - 1);
+        const range = new vscode.Range(line, col, line, col);
+        const diagnostic = new vscode.Diagnostic(
+          range,
+          msg.message,
+          vscode.DiagnosticSeverity.Error,
+        );
+        ToyPreviewPanel.diagnostics.set(this.currentDoc.uri, [diagnostic]);
         break;
+      }
       case "compileSuccess":
         ToyPreviewPanel.diagnostics.delete(this.currentDoc.uri);
         break;
