@@ -1,5 +1,6 @@
 {
   "name": "wgsl-studio",
+  "private": true,
   "description": "WGSL/WESL previews and tests",
   "version": "0.1.2",
   "type": "module",
