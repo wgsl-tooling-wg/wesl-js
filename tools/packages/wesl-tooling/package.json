@@ -3,13 +3,25 @@
   "version": "0.6.21",
   "type": "module",
   "files": [
+    "dist",
     "src"
   ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
+    "build": "tsdown",
+    "prepublishOnly": "run-s build",
     "test": "cross-env FORCE_COLOR=1 vitest",
     "test:once": "vitest run",
     "typecheck": "tsgo"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    },
+    "main": "dist/index.js"
   },
   "exports": {
     ".": {
