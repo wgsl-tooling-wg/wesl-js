@@ -3,6 +3,10 @@
   "description": "Browser-compatible WebGPU utilities for shader testing and rendering",
   "version": "0.1.11",
   "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",
@@ -15,11 +19,11 @@
   "publishConfig": {
     "exports": {
       ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
       }
     },
-    "main": "./dist/index.mjs"
+    "main": "./dist/index.js"
   },
   "exports": {
     ".": {
