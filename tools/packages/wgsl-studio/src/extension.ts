@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { ToyPreviewPanel } from "./ToyPreviewPanel.ts";
+import { WeslTestController } from "./WeslTestController.ts";
 
 /*
  * VS Code extension entry point.
@@ -11,8 +12,11 @@ import { ToyPreviewPanel } from "./ToyPreviewPanel.ts";
  * This extension:
  *  - Registers "wgsl.previewToyShader" command to open a shader preview panel
  *  - Watches for file saves to update the preview automatically
+ *  - Provides test explorer integration for @test functions in WESL files
  */
 export function activate(context: vscode.ExtensionContext): void {
+  const testController = new WeslTestController(context);
+  context.subscriptions.push(testController);
   const previewCmd = vscode.commands.registerCommand(
     "wgsl.previewToyShader",
     () => {

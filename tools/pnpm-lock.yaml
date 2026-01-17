@@ -847,6 +847,9 @@ importers:
       wgsl-play:
         specifier: workspace:x
         version: link:../wgsl-play
+      wgsl-test:
+        specifier: workspace:x
+        version: link:../wgsl-test
 
   packages/wgsl-test:
     dependencies:

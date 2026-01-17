@@ -6,7 +6,7 @@
   "type": "module",
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && cp ../wgsl-test/dist/weslBundle.js dist/",
     "build:play": "pnpm --filter wgsl-play build",
     "build:vsix": "run-s build:play build build:vsix:package",
     "build:vsix:package": "vsce package",
@@ -16,13 +16,17 @@
     "typecheck": "tsgo"
   },
   "main": "./dist/extension.mjs",
+  "dependencies": {
+    "webgpu": "^0.3.8"
+  },
   "devDependencies": {
     "@types/vscode": "^1.108.1",
     "@vscode/vsce": "^3.7.1",
     "wesl": "workspace:x",
     "wesl-gpu": "workspace:x",
     "wesl-tooling": "workspace:x",
-    "wgsl-play": "workspace:x"
+    "wgsl-play": "workspace:x",
+    "wgsl-test": "workspace:x"
   },
   "license": "MIT",
   "keywords": [
