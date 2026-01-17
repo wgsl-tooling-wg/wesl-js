@@ -39,6 +39,11 @@ async function main() {
   buildAndPack("mini-parse", timestamp, packagesRoot, tempPackages);
   buildAndPack("wesl", timestamp, packagesRoot, tempPackages);
   buildAndPack("wesl-plugin", timestamp, packagesRoot, tempPackages);
+  buildAndPack("wesl-tooling", timestamp, packagesRoot, tempPackages);
+  buildAndPack("wesl-packager", timestamp, packagesRoot, tempPackages);
+  buildAndPack("wesl-gpu", timestamp, packagesRoot, tempPackages);
+  buildAndPack("wgsl-test", timestamp, packagesRoot, tempPackages);
+  buildAndPack("vitest-image-snapshot", timestamp, packagesRoot, tempPackages);
 
   copyProjectFiles(builtTestPackage, tempBuiltTest);
 
@@ -89,6 +94,11 @@ function updatePackageJson(tempBuiltTest: string, timestamp: string) {
     "mini-parse": `file:../temp-packages/mini-parse-${timestamp}.tgz`,
     wesl: `file:../temp-packages/wesl-${timestamp}.tgz`,
     "wesl-plugin": `file:../temp-packages/wesl-plugin-${timestamp}.tgz`,
+    "wesl-tooling": `file:../temp-packages/wesl-tooling-${timestamp}.tgz`,
+    "wesl-packager": `file:../temp-packages/wesl-packager-${timestamp}.tgz`,
+    "wesl-gpu": `file:../temp-packages/wesl-gpu-${timestamp}.tgz`,
+    "wgsl-test": `file:../temp-packages/wgsl-test-${timestamp}.tgz`,
+    "vitest-image-snapshot": `file:../temp-packages/vitest-image-snapshot-${timestamp}.tgz`,
   };
 
   writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));

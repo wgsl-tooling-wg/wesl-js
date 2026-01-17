@@ -414,6 +414,9 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
+      wgsl-test:
+        specifier: workspace:*
+        version: link:../wgsl-test
     devDependencies:
       '@types/node':
         specifier: ^25.0.3
@@ -433,6 +436,9 @@ importers:
       vitest:
         specifier: ^4.0.16
         version: 4.0.16(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.0)
+      vitest-image-snapshot:
+        specifier: workspace:x
+        version: link:../vitest-image-snapshot
       wesl-plugin:
         specifier: workspace:x
         version: link:../wesl-plugin

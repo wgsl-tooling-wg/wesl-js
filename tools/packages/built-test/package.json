@@ -11,7 +11,8 @@
     "typecheck": "tsgo"
   },
   "dependencies": {
-    "wesl": "workspace:*"
+    "wesl": "workspace:*",
+    "wgsl-test": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",
@@ -20,6 +21,7 @@
     "npm-run-all": "^4.1.5",
     "vite": "^7.3.0",
     "vitest": "^4.0.16",
+    "vitest-image-snapshot": "workspace:x",
     "wesl-plugin": "workspace:x"
   }
 }
