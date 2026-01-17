@@ -26,6 +26,7 @@ export default defineConfig({
     "vitest-image-snapshot",
     "vitest",
     "wesl",
+    "wesl-gpu",
   ],
   logLevel: "warn",
 });
