@@ -3,7 +3,7 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
   entry: ["./src/index.ts"],
   target: "node22",
-  clean: true,
+  clean: false, // preserve checked-in weslBundle files during parallel builds
   dts: true,
   sourcemap: true,
   platform: "neutral",
