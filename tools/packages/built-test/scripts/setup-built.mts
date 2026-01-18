@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execSync } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import {
   cpSync,
   mkdirSync,
@@ -12,10 +12,23 @@ import { fileURLToPath } from "node:url";
 
 /**
  * Create a test environment for verifying packed npm packages before publishing.
- * This script builds and packs mini-parse, wesl & wesl-plugin, then creates
- * a temp-built-test directory that uses the packed .tgz files instead of workspace
- * dependencies. This allows testing that the published packages will work correctly.
+ * Packs packages into .tgz files, creates temp-built-test with pnpm overrides.
+ *
+ * Usage: node setup-built.mts [--skip-build]
+ *   --skip-build  Skip building packages (use when build:all already ran)
  */
+
+const skipBuild = process.argv.includes("--skip-build");
+
+const packages = [
+  "wesl",
+  "wesl-plugin",
+  "wesl-tooling",
+  "wesl-packager",
+  "wesl-gpu",
+  "wgsl-test",
+  "vitest-image-snapshot",
+];
 
 main().catch(error => {
   console.error("Error:", error);
@@ -32,36 +45,32 @@ async function main() {
   const timestamp = getTimestamp();
 
   console.log("Setting up temp-built-test and temp-packages directories...");
-
   cleanDir(tempBuiltTest);
   cleanDir(tempPackages);
 
-  buildAndPack("mini-parse", timestamp, packagesRoot, tempPackages);
-  buildAndPack("wesl", timestamp, packagesRoot, tempPackages);
-  buildAndPack("wesl-plugin", timestamp, packagesRoot, tempPackages);
-  buildAndPack("wesl-tooling", timestamp, packagesRoot, tempPackages);
-  buildAndPack("wesl-packager", timestamp, packagesRoot, tempPackages);
-  buildAndPack("wesl-gpu", timestamp, packagesRoot, tempPackages);
-  buildAndPack("wgsl-test", timestamp, packagesRoot, tempPackages);
-  buildAndPack("vitest-image-snapshot", timestamp, packagesRoot, tempPackages);
+  if (!skipBuild) {
+    console.log("Building all packages...");
+    run("pnpm build:all", join(packagesRoot, ".."));
+  }
+
+  console.log("Packing packages in parallel...");
+  await Promise.all(
+    packages.map(pkg => pack(pkg, timestamp, packagesRoot, tempPackages)),
+  );
 
   copyProjectFiles(builtTestPackage, tempBuiltTest);
-
   updatePackageJson(tempBuiltTest, timestamp);
-
   run("pnpm install", tempBuiltTest);
 }
 
-function buildAndPack(
+async function pack(
   packageName: string,
   timestamp: string,
   packagesRoot: string,
   tempPackages: string,
-) {
-  run(`pnpm --filter ${packageName} build`, packagesRoot);
-
+): Promise<void> {
   const outputFile = join(tempPackages, `${packageName}-${timestamp}.tgz`);
-  run(
+  await runAsync(
     `pnpm --filter ${packageName} pack --out ${outputFile} 2>&1 | tail -1`,
     packagesRoot,
   );
@@ -90,16 +99,9 @@ function updatePackageJson(tempBuiltTest: string, timestamp: string) {
   if (!packageJson.pnpm) {
     packageJson.pnpm = {};
   }
-  packageJson.pnpm.overrides = {
-    "mini-parse": `file:../temp-packages/mini-parse-${timestamp}.tgz`,
-    wesl: `file:../temp-packages/wesl-${timestamp}.tgz`,
-    "wesl-plugin": `file:../temp-packages/wesl-plugin-${timestamp}.tgz`,
-    "wesl-tooling": `file:../temp-packages/wesl-tooling-${timestamp}.tgz`,
-    "wesl-packager": `file:../temp-packages/wesl-packager-${timestamp}.tgz`,
-    "wesl-gpu": `file:../temp-packages/wesl-gpu-${timestamp}.tgz`,
-    "wgsl-test": `file:../temp-packages/wgsl-test-${timestamp}.tgz`,
-    "vitest-image-snapshot": `file:../temp-packages/vitest-image-snapshot-${timestamp}.tgz`,
-  };
+  packageJson.pnpm.overrides = Object.fromEntries(
+    packages.map(pkg => [pkg, `file:../temp-packages/${pkg}-${timestamp}.tgz`]),
+  );
 
   writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
 }
@@ -121,6 +123,16 @@ function run(cmd: string, cwd?: string) {
   } catch {
     throw new Error(`Failed to run: ${cmd}`);
   }
+}
+
+function runAsync(cmd: string, cwd?: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn("sh", ["-c", cmd], { cwd, stdio: "inherit" });
+    child.on("close", code => {
+      if (code === 0) resolve();
+      else reject(new Error(`Failed to run: ${cmd}`));
+    });
+  });
 }
 
 function cleanDir(path: string) {
