@@ -19,3 +19,6 @@ __image_diff_report__/
 # Playwright test artifacts
 playwright-report/
 test-results/
+
+# Turbo cache and logs
+.turbo

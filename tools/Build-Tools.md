@@ -6,8 +6,25 @@
   Best to put interim commits on a branch that's merged to main.
 
 ### prepush script
-- the `pnpm prepush` script verifies tests, linting,
-  formatting before pushing to the main branch of the shared repository
+- `bb prepush` verifies tests, linting, formatting before pushing
+- uses Turborepo for parallel task execution with quiet output (errors only)
+- `bb prepush:sequential` runs tasks one at a time (useful for debugging)
+
+### turbo
+- Turborepo orchestrates builds, typechecks, tests across packages
+- Config in `turbo.json`, tasks defined must match scripts in package.json
+- Output is quiet by default (`--output-logs=errors-only`)
+- Logs written to `.turbo/` directories for debugging
+
+```bash
+bb turbo:validate              # quiet mode (default)
+bb turbo:validate:verbose      # full output
+bb turbo:validate --force      # bypass cache, re-run everything
+bb turbo:validate --dry-run    # show what would run
+```
+
+- Only tasks run via `turbo run <task>` need turbo.json entries
+- Undefined tasks still run but with default settings (no caching)
 
 ### version bumps and releases
 - version bumps should be done on the `tomain` branch

@@ -48,11 +48,18 @@
   "devDependencies": {
     "@rollup/plugin-replace": "^6.0.3",
     "multi_pkg": "workspace:x",
-    "random_wgsl": "workspace:x",
     "terser": "^5.43.1",
     "typedoc": "^0.28.7",
     "typedoc-theme-hierarchy": "^6.0.0",
     "wrangler": "^4.22.0"
+  },
+  "peerDependencies": {
+    "random_wgsl": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "random_wgsl": {
+      "optional": true
+    }
   },
   "license": "MIT",
   "keywords": [

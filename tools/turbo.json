@@ -1,0 +1,29 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "dangerouslyDisablePackageManagerCheck": true,
+  "tasks": {
+    "build": {
+      "outputs": ["dist/**"]
+    },
+    "typecheck": {},
+    "test": {},
+    "test:once": {},
+    "test:e2e": {},
+    "test:cts": {},
+    "test:built:fast": {},
+    "bench": {},
+    "bench:validate": {},
+
+    "//#fix:biome": {},
+    "//#fix:pkgJsonFormat": {},
+    "//#fix:syncpack": {},
+    "//#lint:biome": {},
+    "//#check:versions": {},
+    "//#check:lockfile": {},
+    "//#test:unit": {},
+    "//#typecheck:examples": {},
+    "//#typecheck:scripts": {},
+    "//#test:examples": {}
+  }
+}
