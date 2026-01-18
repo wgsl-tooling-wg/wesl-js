@@ -25,6 +25,9 @@
       },
       "./shaders": {
         "import": "./dist/weslBundle.js"
+      },
+      "./cli": {
+        "import": "./dist/runTestCli.js"
       }
     },
     "main": "./dist/index.js"
@@ -35,6 +38,9 @@
     },
     "./shaders": {
       "import": "./dist/weslBundle.js"
+    },
+    "./cli": {
+      "import": "./src/runTestCli.ts"
     }
   },
   "dependencies": {

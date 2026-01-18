@@ -1,7 +1,21 @@
+import { execFile } from "node:child_process";
 import * as path from "node:path";
+import { promisify } from "node:util";
 import * as vscode from "vscode";
 import { parseSrcModule } from "wesl";
-import { findTestFunctions, getGPUDevice, runWesl } from "wgsl-test";
+import { findTestFunctions } from "wgsl-test";
+
+const execFileAsync = promisify(execFile);
+
+const output = vscode.window.createOutputChannel("WESL Tests");
+
+function log(...args: unknown[]): void {
+  output.appendLine(
+    args
+      .map(a => (typeof a === "object" ? JSON.stringify(a) : String(a)))
+      .join(" "),
+  );
+}
 
 /** VS Code Test Controller for discovering and running @test functions in WESL files. */
 export class WeslTestController implements vscode.Disposable {
@@ -10,6 +24,7 @@ export class WeslTestController implements vscode.Disposable {
   private fileItems = new Map<string, vscode.TestItem>();
 
   constructor(_context: vscode.ExtensionContext) {
+    output.show(); // Show the output channel when extension loads
     this.controller = vscode.tests.createTestController(
       "weslTests",
       "WESL Tests",
@@ -154,25 +169,42 @@ export class WeslTestController implements vscode.Disposable {
 
   private async runSingleTest(
     item: vscode.TestItem,
-  ): Promise<{ passed: boolean; actual: number[]; expected: number[]; error?: string }> {
+  ): Promise<{
+    passed: boolean;
+    actual: number[];
+    expected: number[];
+    error?: string;
+  }> {
     const [filePath, testName] = item.id.split("::");
     try {
       const uri = vscode.Uri.file(filePath);
       const doc = await vscode.workspace.openTextDocument(uri);
-      console.log("[WESL Test] Getting GPU device...");
-      const device = await getGPUDevice();
-      console.log("[WESL Test] Running test:", testName);
-      const results = await runWesl({
-        device,
+      const params = {
         src: doc.getText(),
         projectDir: path.dirname(filePath),
         testName,
-      });
-      console.log("[WESL Test] Results:", results);
+      };
+      log("Spawning test runner for:", testName);
+
+      // Resolve path to runTestCli.ts - use import.meta.url to find sibling package
+      const thisDir = path.dirname(new URL(import.meta.url).pathname);
+      const cliPath = path.resolve(
+        thisDir,
+        "../../wgsl-test/src/runTestCli.ts",
+      );
+      const { stdout, stderr } = await execFileAsync(
+        "node",
+        ["--experimental-strip-types", cliPath, JSON.stringify(params)],
+        { timeout: 30000 },
+      );
+      if (stderr) log("stderr:", stderr);
+      log("stdout:", stdout);
+
+      const results = JSON.parse(stdout);
       return results[0] ?? { passed: false, actual: [], expected: [] };
     } catch (e) {
-      const error = e instanceof Error ? e.stack ?? e.message : String(e);
-      console.error("[WESL Test] Error:", error);
+      const error = e instanceof Error ? (e.stack ?? e.message) : String(e);
+      log("Error:", error);
       return { passed: false, actual: [], expected: [], error };
     }
   }

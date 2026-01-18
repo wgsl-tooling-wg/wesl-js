@@ -18,6 +18,8 @@ export async function getGPU(): Promise<GPU> {
   if (!sharedGpu) {
     if (isDeno) {
       sharedGpu = navigator.gpu;
+    } else if (typeof navigator !== "undefined" && navigator.gpu) {
+      sharedGpu = navigator.gpu;
     } else {
       const webgpu = await import("webgpu");
       Object.assign(globalThis, webgpu.globals);
