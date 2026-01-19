@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.node.json",
   "compilerOptions": {
-    "types": ["node", "@webgpu/types"],
+    "types": ["node", "@webgpu/types", "mocha"],
     "skipLibCheck": true,
     "paths": {
       // for tsdown to bundle types for wesl-tooling

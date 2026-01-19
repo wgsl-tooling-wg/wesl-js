@@ -13,6 +13,7 @@
     "dev": "tsdown --watch",
     "launch": "run-s build:play build launch:code",
     "launch:code": "code --extensionDevelopmentPath=$PWD",
+    "test:vscode": "pnpm build && vscode-test",
     "typecheck": "tsgo"
   },
   "main": "./dist/extension.mjs",
@@ -20,7 +21,10 @@
     "webgpu": "^0.3.8"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/vscode": "^1.108.1",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^3.7.1",
     "wesl": "workspace:x",
     "wesl-gpu": "workspace:x",

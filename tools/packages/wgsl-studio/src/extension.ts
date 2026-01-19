@@ -14,7 +14,12 @@ import { WeslTestController } from "./WeslTestController.ts";
  *  - Watches for file saves to update the preview automatically
  *  - Provides test explorer integration for @test functions in WESL files
  */
-export function activate(context: vscode.ExtensionContext): void {
+
+export interface ExtensionApi {
+  testController: WeslTestController;
+}
+
+export function activate(context: vscode.ExtensionContext): ExtensionApi {
   const testController = new WeslTestController(context);
   context.subscriptions.push(testController);
   const previewCmd = vscode.commands.registerCommand(
@@ -37,6 +42,8 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   });
   context.subscriptions.push(saveWatcher);
+
+  return { testController };
 }
 
 export function deactivate(): void {}

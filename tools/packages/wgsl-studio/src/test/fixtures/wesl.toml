@@ -1,0 +1,2 @@
+include = ["*.wesl"]
+dependencies = ["wgsl_test"]

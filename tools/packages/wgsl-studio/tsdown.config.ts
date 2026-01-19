@@ -20,4 +20,13 @@ export default defineConfig([
     logLevel: "warn",
     noExternal: [/.*/], // bundle everything for browser context
   },
+  {
+    entry: ["src/test/extension.test.ts"],
+    clean: false,
+    format: ["cjs"], // mocha requires cjs
+    target: "node22",
+    external: ["vscode", "mocha"],
+    outDir: "dist/test",
+    logLevel: "warn",
+  },
 ]);

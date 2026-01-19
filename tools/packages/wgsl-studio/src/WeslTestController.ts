@@ -17,11 +17,20 @@ function log(...args: unknown[]): void {
   );
 }
 
+export interface TestResult {
+  testId: string;
+  passed: boolean;
+  error?: string;
+}
+
 /** VS Code Test Controller for discovering and running @test functions in WESL files. */
 export class WeslTestController implements vscode.Disposable {
+  readonly items: vscode.TestItemCollection;
   private controller: vscode.TestController;
   private disposables: vscode.Disposable[] = [];
   private fileItems = new Map<string, vscode.TestItem>();
+  private resultEmitter = new vscode.EventEmitter<TestResult>();
+  readonly onTestResult = this.resultEmitter.event;
 
   constructor(_context: vscode.ExtensionContext) {
     output.show(); // Show the output channel when extension loads
@@ -29,6 +38,7 @@ export class WeslTestController implements vscode.Disposable {
       "weslTests",
       "WESL Tests",
     );
+    this.items = this.controller.items;
     this.controller.resolveHandler = this.resolveTests.bind(this);
     this.controller.createRunProfile(
       "Run",
@@ -73,6 +83,18 @@ export class WeslTestController implements vscode.Disposable {
     if (!item) {
       await this.discoverExistingTests();
     }
+  }
+
+  /** Parse a file for tests - exposed for testing. */
+  parseTests(uri: vscode.Uri, src?: string): Promise<void> {
+    return this.parseFileTests(uri, src);
+  }
+
+  /** Run all discovered tests - exposed for testing. */
+  async runAllTests(): Promise<void> {
+    const request = new vscode.TestRunRequest();
+    const token = new vscode.CancellationTokenSource().token;
+    await this.runTests(request, token);
   }
 
   private removeFileTests(uri: vscode.Uri): void {
@@ -130,16 +152,19 @@ export class WeslTestController implements vscode.Disposable {
       const result = await this.runSingleTest(item);
       if (result.passed) {
         run.passed(item);
+        this.resultEmitter.fire({ testId: item.id, passed: true });
       } else if (result.error) {
         const msg = new vscode.TestMessage(result.error);
         msg.location = new vscode.Location(item.uri!, item.range!);
         run.errored(item, msg);
+        this.resultEmitter.fire({ testId: item.id, passed: false, error: result.error });
       } else {
         const msg = new vscode.TestMessage(
           `actual: [${result.actual.join(", ")}]\nexpected: [${result.expected.join(", ")}]`,
         );
         msg.location = new vscode.Location(item.uri!, item.range!);
         run.failed(item, msg);
+        this.resultEmitter.fire({ testId: item.id, passed: false });
       }
     }
     run.end();
@@ -167,9 +192,7 @@ export class WeslTestController implements vscode.Disposable {
     return items;
   }
 
-  private async runSingleTest(
-    item: vscode.TestItem,
-  ): Promise<{
+  private async runSingleTest(item: vscode.TestItem): Promise<{
     passed: boolean;
     actual: number[];
     expected: number[];
