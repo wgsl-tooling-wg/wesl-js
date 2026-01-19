@@ -1,0 +1,11 @@
+.turbo/
+.vscode/
+src/
+dist/test/
+*.ts
+tsconfig*.json
+tsdown.config.ts
+*.md
+!readme.md
+.gitignore
+.vscode-test.mjs
