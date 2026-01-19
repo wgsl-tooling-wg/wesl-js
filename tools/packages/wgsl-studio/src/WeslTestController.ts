@@ -157,7 +157,11 @@ export class WeslTestController implements vscode.Disposable {
         const msg = new vscode.TestMessage(result.error);
         msg.location = new vscode.Location(item.uri!, item.range!);
         run.errored(item, msg);
-        this.resultEmitter.fire({ testId: item.id, passed: false, error: result.error });
+        this.resultEmitter.fire({
+          testId: item.id,
+          passed: false,
+          error: result.error,
+        });
       } else {
         const msg = new vscode.TestMessage(
           `actual: [${result.actual.join(", ")}]\nexpected: [${result.expected.join(", ")}]`,
