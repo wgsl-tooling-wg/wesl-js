@@ -12,7 +12,7 @@
     "test:e2e": {},
     "test:cts": {},
     "test:vscode": { "dependsOn": ["^build"] },
-    "test:built:fast": { "dependsOn": ["build"] },
+    "test:built:fast": { "dependsOn": ["^build"] },
     "bench": {},
     "bench:validate": {},
 
