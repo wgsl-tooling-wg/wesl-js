@@ -1,6 +1,9 @@
 # macOS
 .DS_Store
 
+# Turbo cache
+.turbo
+
 # vi temp files
 *.swp
 
