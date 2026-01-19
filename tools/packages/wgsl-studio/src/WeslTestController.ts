@@ -165,12 +165,20 @@ export class WeslTestController implements vscode.Disposable {
         const result = results.find(r => r.name === testName);
         if (!result) {
           run.errored(item, new vscode.TestMessage("Test result not found"));
-          this.resultEmitter.fire({ testId: item.id, passed: false, error: "Test result not found" });
+          this.resultEmitter.fire({
+            testId: item.id,
+            passed: false,
+            error: "Test result not found",
+          });
         } else if (result.error) {
           const msg = new vscode.TestMessage(result.error);
           msg.location = new vscode.Location(item.uri!, item.range!);
           run.errored(item, msg);
-          this.resultEmitter.fire({ testId: item.id, passed: false, error: result.error });
+          this.resultEmitter.fire({
+            testId: item.id,
+            passed: false,
+            error: result.error,
+          });
         } else if (result.passed) {
           run.passed(item);
           this.resultEmitter.fire({ testId: item.id, passed: true });
@@ -212,7 +220,15 @@ export class WeslTestController implements vscode.Disposable {
   private async runFileTests(
     filePath: string,
     items: vscode.TestItem[],
-  ): Promise<{ name: string; passed: boolean; actual: number[]; expected: number[]; error?: string }[]> {
+  ): Promise<
+    {
+      name: string;
+      passed: boolean;
+      actual: number[];
+      expected: number[];
+      error?: string;
+    }[]
+  > {
     try {
       const uri = vscode.Uri.file(filePath);
       const doc = await vscode.workspace.openTextDocument(uri);
@@ -225,7 +241,10 @@ export class WeslTestController implements vscode.Disposable {
       log("Spawning test runner for:", testNames.join(", "));
 
       const thisDir = path.dirname(new URL(import.meta.url).pathname);
-      const cliPath = path.resolve(thisDir, "../../wgsl-test/src/runTestCli.ts");
+      const cliPath = path.resolve(
+        thisDir,
+        "../../wgsl-test/src/runTestCli.ts",
+      );
       const { stdout, stderr } = await execFileAsync(
         "node",
         ["--experimental-strip-types", cliPath, JSON.stringify(params)],
