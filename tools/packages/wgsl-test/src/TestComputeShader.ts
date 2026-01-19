@@ -1,4 +1,4 @@
-import { elementStride, type WgslElementType } from "thimbleberry";
+import { copyBuffer, elementStride, type WgslElementType } from "thimbleberry";
 import type { LinkParams } from "wesl";
 import { withErrorScopes } from "wesl-gpu";
 import { compileShader } from "./CompileShader.ts";
@@ -165,38 +165,13 @@ export async function runCompute(params: RunComputeParams): Promise<number[]> {
 }
 
 function createStorageBuffer(device: GPUDevice, targetSize: number): GPUBuffer {
-  return device.createBuffer({
+  const buffer = device.createBuffer({
     label: "storage",
     size: targetSize,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+    mappedAtCreation: true,
   });
-}
-
-/** Copy GPU buffer to CPU using mapAsync (avoids mappedAtCreation which isn't supported everywhere). */
-async function copyBuffer(
-  device: GPUDevice,
-  src: GPUBuffer,
-  format: WgslElementType,
-): Promise<number[]> {
-  const size = src.size;
-  const staging = device.createBuffer({
-    label: "staging",
-    size,
-    usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
-  });
-  const commands = device.createCommandEncoder();
-  commands.copyBufferToBuffer(src, 0, staging, 0, size);
-  device.queue.submit([commands.finish()]);
-
-  await staging.mapAsync(GPUMapMode.READ);
-  const mapped = staging.getMappedRange();
-  const result = bufferToArray(mapped, format);
-  staging.unmap();
-  staging.destroy();
-  return result;
-}
-
-function bufferToArray(buffer: ArrayBuffer, format: WgslElementType): number[] {
-  const TypedArray = format.startsWith("f") ? Float32Array : Uint32Array;
-  return Array.from(new TypedArray(buffer));
+  new Float32Array(buffer.getMappedRange()).fill(-999.0); // sentinel values
+  buffer.unmap();
+  return buffer;
 }
