@@ -11,7 +11,7 @@
     "test:once": {},
     "test:e2e": {},
     "test:cts": {},
-    "test:built:fast": {},
+    "test:built:fast": { "dependsOn": ["build"] },
     "bench": {},
     "bench:validate": {},
 
