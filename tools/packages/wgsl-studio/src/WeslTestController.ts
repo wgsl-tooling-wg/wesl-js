@@ -144,31 +144,44 @@ export class WeslTestController implements vscode.Disposable {
     const run = this.controller.createTestRun(request);
     const queue = this.collectTestItems(request);
 
+    // Group tests by file for batch execution
+    const testsByFile = new Map<string, vscode.TestItem[]>();
     for (const item of queue) {
-      if (token.isCancellationRequested) break;
       if (item.children.size > 0) continue; // Skip file-level items
+      const [filePath] = item.id.split("::");
+      const items = testsByFile.get(filePath) ?? [];
+      items.push(item);
+      testsByFile.set(filePath, items);
+    }
 
-      run.started(item);
-      const result = await this.runSingleTest(item);
-      if (result.passed) {
-        run.passed(item);
-        this.resultEmitter.fire({ testId: item.id, passed: true });
-      } else if (result.error) {
-        const msg = new vscode.TestMessage(result.error);
-        msg.location = new vscode.Location(item.uri!, item.range!);
-        run.errored(item, msg);
-        this.resultEmitter.fire({
-          testId: item.id,
-          passed: false,
-          error: result.error,
-        });
-      } else {
-        const msg = new vscode.TestMessage(
-          `actual: [${result.actual.join(", ")}]\nexpected: [${result.expected.join(", ")}]`,
-        );
-        msg.location = new vscode.Location(item.uri!, item.range!);
-        run.failed(item, msg);
-        this.resultEmitter.fire({ testId: item.id, passed: false });
+    // Run each file's tests in a single process
+    for (const [filePath, items] of testsByFile) {
+      if (token.isCancellationRequested) break;
+      for (const item of items) run.started(item);
+
+      const results = await this.runFileTests(filePath, items);
+      for (const item of items) {
+        const [, testName] = item.id.split("::");
+        const result = results.find(r => r.name === testName);
+        if (!result) {
+          run.errored(item, new vscode.TestMessage("Test result not found"));
+          this.resultEmitter.fire({ testId: item.id, passed: false, error: "Test result not found" });
+        } else if (result.error) {
+          const msg = new vscode.TestMessage(result.error);
+          msg.location = new vscode.Location(item.uri!, item.range!);
+          run.errored(item, msg);
+          this.resultEmitter.fire({ testId: item.id, passed: false, error: result.error });
+        } else if (result.passed) {
+          run.passed(item);
+          this.resultEmitter.fire({ testId: item.id, passed: true });
+        } else {
+          const msg = new vscode.TestMessage(
+            `actual: [${result.actual.join(", ")}]\nexpected: [${result.expected.join(", ")}]`,
+          );
+          msg.location = new vscode.Location(item.uri!, item.range!);
+          run.failed(item, msg);
+          this.resultEmitter.fire({ testId: item.id, passed: false });
+        }
       }
     }
     run.end();
@@ -196,29 +209,23 @@ export class WeslTestController implements vscode.Disposable {
     return items;
   }
 
-  private async runSingleTest(item: vscode.TestItem): Promise<{
-    passed: boolean;
-    actual: number[];
-    expected: number[];
-    error?: string;
-  }> {
-    const [filePath, testName] = item.id.split("::");
+  private async runFileTests(
+    filePath: string,
+    items: vscode.TestItem[],
+  ): Promise<{ name: string; passed: boolean; actual: number[]; expected: number[]; error?: string }[]> {
     try {
       const uri = vscode.Uri.file(filePath);
       const doc = await vscode.workspace.openTextDocument(uri);
+      const testNames = items.map(item => item.id.split("::")[1]);
       const params = {
         src: doc.getText(),
         projectDir: path.dirname(filePath),
-        testName,
+        testNames,
       };
-      log("Spawning test runner for:", testName);
+      log("Spawning test runner for:", testNames.join(", "));
 
-      // Resolve path to runTestCli.ts - use import.meta.url to find sibling package
       const thisDir = path.dirname(new URL(import.meta.url).pathname);
-      const cliPath = path.resolve(
-        thisDir,
-        "../../wgsl-test/src/runTestCli.ts",
-      );
+      const cliPath = path.resolve(thisDir, "../../wgsl-test/src/runTestCli.ts");
       const { stdout, stderr } = await execFileAsync(
         "node",
         ["--experimental-strip-types", cliPath, JSON.stringify(params)],
@@ -227,12 +234,17 @@ export class WeslTestController implements vscode.Disposable {
       if (stderr) log("stderr:", stderr);
       log("stdout:", stdout);
 
-      const results = JSON.parse(stdout);
-      return results[0] ?? { passed: false, actual: [], expected: [] };
+      return JSON.parse(stdout);
     } catch (e) {
       const error = e instanceof Error ? (e.stack ?? e.message) : String(e);
       log("Error:", error);
-      return { passed: false, actual: [], expected: [], error };
+      return items.map(item => ({
+        name: item.id.split("::")[1],
+        passed: false,
+        actual: [],
+        expected: [],
+        error,
+      }));
     }
   }
 }

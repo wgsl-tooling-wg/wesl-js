@@ -146,8 +146,7 @@ fn _weslTestEntry() {
     size: resultElems,
     entryPoint: "_weslTestEntry",
   });
-  const testLabel = testFn.description ?? testFn.name;
-  return parseTestResult(testLabel, gpuResult);
+  return parseTestResult(testFn.name, gpuResult);
 }
 
 /** Decode TestResult struct from GPU buffer (passed flag + actual/expected vec4f). */
