@@ -5,11 +5,12 @@
   "files": [
     "dist",
     "images",
+    "lib",
     "src"
   ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "build": "tsdown && wesl-packager",
+    "build": "tsdown && wesl-packager --outDir lib",
     "dev": "tsdown --watch",
     "prepublishOnly": "run-s build",
     "test": "cross-env FORCE_COLOR=1 vitest",
@@ -24,7 +25,7 @@
         "import": "./dist/index.js"
       },
       "./shaders": {
-        "import": "./dist/weslBundle.js"
+        "import": "./lib/weslBundle.js"
       },
       "./cli": {
         "import": "./dist/runTestCli.js"
@@ -37,7 +38,7 @@
       "import": "./src/index.ts"
     },
     "./shaders": {
-      "import": "./dist/weslBundle.js"
+      "import": "./lib/weslBundle.js"
     },
     "./cli": {
       "import": "./src/runTestCli.ts"

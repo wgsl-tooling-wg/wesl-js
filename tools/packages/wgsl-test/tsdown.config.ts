@@ -3,12 +3,13 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
   entry: ["./src/index.ts", "./src/runTestCli.ts"],
   target: "node22",
-  clean: false, // preserve checked-in weslBundle files during parallel builds
+  clean: true,
   dts: true,
   sourcemap: true,
   platform: "neutral",
   noExternal: ["wesl-tooling"],
   external: [
+    "../lib/weslBundle.js",
     "fs",
     "module",
     "node:assert",

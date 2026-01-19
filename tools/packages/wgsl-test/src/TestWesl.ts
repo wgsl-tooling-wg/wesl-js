@@ -1,4 +1,5 @@
-import { type LinkParams, parseSrcModule, type WeslBundle } from "wesl";
+import { type LinkParams, parseSrcModule } from "wesl";
+import weslBundle from "../lib/weslBundle.js";
 import { compileShader } from "./CompileShader.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 import { type ComputeTestParams, runCompute } from "./TestComputeShader.ts";
@@ -42,9 +43,6 @@ interface ParsedTestModule {
   shaderSrc: string;
   ast: ReturnType<typeof parseSrcModule>;
 }
-
-// Auto-inject the wgsl-test shader library bundle
-let cachedWeslBundle: WeslBundle;
 
 /**
  * Discovers @test functions in a WESL module and registers each as a vitest test.
@@ -133,12 +131,11 @@ fn _weslTestEntry() {
   ${testFn.name}();
 }
 `;
-  const weslTestBundle = await getWeslTestBundle();
   const module = await compileShader({
     ...rest,
     device,
     src: wrapper,
-    libs: [weslTestBundle],
+    libs: [weslBundle],
   });
 
   const resultElems = testResultSize / 4; // 48 bytes / 4 bytes per u32 = 12
@@ -151,16 +148,6 @@ fn _weslTestEntry() {
   });
   const testLabel = testFn.description ?? testFn.name;
   return parseTestResult(testLabel, gpuResult);
-}
-
-/** Lazy-load and cache the wgsl-test shader library bundle. */
-async function getWeslTestBundle(): Promise<WeslBundle> {
-  if (cachedWeslBundle) return cachedWeslBundle;
-  // Use import.meta.url to resolve the path correctly regardless of cwd
-  const bundlePath = new URL("../dist/weslBundle.js", import.meta.url).href;
-  const mod = await import(bundlePath);
-  cachedWeslBundle = mod.default;
-  return cachedWeslBundle;
 }
 
 /** Decode TestResult struct from GPU buffer (passed flag + actual/expected vec4f). */

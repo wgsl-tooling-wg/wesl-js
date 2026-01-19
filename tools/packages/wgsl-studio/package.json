@@ -9,11 +9,11 @@
     "build": "tsdown",
     "build:vsix": "turbo run build:vsix:run",
     "build:vsix:run": "vsce package --no-dependencies",
-    "publish:vsix": "turbo run publish:vsix:run",
-    "publish:vsix:run": "vsce publish --no-dependencies",
     "dev": "tsdown --watch",
     "launch": "turbo run launch:code",
     "launch:code": "code --extensionDevelopmentPath=$PWD",
+    "publish:vsix": "turbo run publish:vsix:run",
+    "publish:vsix:run": "vsce publish --no-dependencies",
     "test:vscode": "turbo run test:vscode:run",
     "test:vscode:run": "vscode-test",
     "typecheck": "tsgo"
