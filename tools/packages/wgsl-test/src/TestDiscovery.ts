@@ -6,6 +6,11 @@ export interface TestFunctionInfo {
   fn: FnElem;
 }
 
+/** Format test name for display: "fnName" or "fnName - description" */
+export function testDisplayName(name: string, description?: string): string {
+  return description ? `${name} - ${description}` : name;
+}
+
 /** Find all functions marked with @test attribute in a parsed WESL module. */
 export function findTestFunctions(ast: WeslAST): TestFunctionInfo[] {
   return ast.moduleElem.contents

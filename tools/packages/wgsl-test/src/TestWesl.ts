@@ -3,7 +3,11 @@ import weslBundle from "../lib/weslBundle.js";
 import { compileShader } from "./CompileShader.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 import { type ComputeTestParams, runCompute } from "./TestComputeShader.ts";
-import { findTestFunctions, type TestFunctionInfo } from "./TestDiscovery.ts";
+import {
+  findTestFunctions,
+  type TestFunctionInfo,
+  testDisplayName,
+} from "./TestDiscovery.ts";
 import { testResultSize } from "./TestVirtualLib.ts";
 import { importVitest } from "./VitestImport.ts";
 
@@ -53,8 +57,7 @@ export async function testWesl(params: TestWeslParams): Promise<void> {
   const { ast } = await parseTestModule(params);
   const testFns = findTestFunctions(ast);
   for (const fn of testFns) {
-    const testLabel = fn.description ?? fn.name;
-    test(testLabel, async () => {
+    test(testDisplayName(fn.name, fn.description), async () => {
       await expectWesl({ ...params, testName: fn.name });
     });
   }

@@ -3,7 +3,7 @@ import * as path from "node:path";
 import { promisify } from "node:util";
 import * as vscode from "vscode";
 import { parseSrcModule } from "wesl";
-import { findTestFunctions } from "wgsl-test";
+import { findTestFunctions, testDisplayName } from "wgsl-test";
 
 const execFileAsync = promisify(execFile);
 
@@ -127,7 +127,7 @@ export class WeslTestController implements vscode.Disposable {
     for (const test of testFns) {
       const testItem = this.controller.createTestItem(
         `${filePath}::${test.name}`,
-        test.name,
+        testDisplayName(test.name, test.description),
         uri,
       );
       testItem.range = positionToRange(content, test.start);
@@ -251,6 +251,7 @@ export class WeslTestController implements vscode.Disposable {
 
 interface DiscoveredTest {
   name: string;
+  description?: string;
   start: number;
 }
 
@@ -263,6 +264,7 @@ function discoverTests(src: string, filePath: string): DiscoveredTest[] {
     });
     return findTestFunctions(ast).map(fn => ({
       name: fn.name,
+      description: fn.description,
       start: fn.fn.start,
     }));
   } catch {
