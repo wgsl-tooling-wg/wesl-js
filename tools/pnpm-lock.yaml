@@ -417,6 +417,18 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
+      wesl-gpu:
+        specifier: workspace:*
+        version: link:../wesl-gpu
+      wesl-link:
+        specifier: workspace:*
+        version: link:../wesl-link
+      wesl-packager:
+        specifier: workspace:*
+        version: link:../wesl-packager
+      wesl-tooling:
+        specifier: workspace:*
+        version: link:../wesl-tooling
       wgsl-test:
         specifier: workspace:*
         version: link:../wgsl-test

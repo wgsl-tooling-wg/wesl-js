@@ -28,7 +28,8 @@
         "import": "./dist/index.js"
       },
       "./bundle-decl": {
-        "import": "./src/weslBundleDeclUrl.ts"
+        "types": "./dist/weslBundleDeclUrl.d.ts",
+        "import": "./dist/weslBundleDeclUrl.js"
       }
     },
     "main": "dist/index.js"

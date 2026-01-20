@@ -22,10 +22,11 @@ const skipBuild = process.argv.includes("--skip-build");
 
 const packages = [
   "wesl",
+  "wesl-gpu",
+  "wesl-link",
+  "wesl-packager",
   "wesl-plugin",
   "wesl-tooling",
-  "wesl-packager",
-  "wesl-gpu",
   "wgsl-test",
   "vitest-image-snapshot",
 ];
