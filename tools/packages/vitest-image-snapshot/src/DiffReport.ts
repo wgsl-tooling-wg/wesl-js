@@ -24,7 +24,7 @@ export interface ImageSnapshotFailure {
 /** Configuration for HTML diff report generation. */
 export interface DiffReportConfig {
   /** Auto-open report in browser. Default: false */
-  autoOpen?: boolean;
+  autoOpen?: boolean | 'failures';
   /** Directory path for generated HTML report (absolute or relative). */
   reportDir: string;
   /** Vitest config root for calculating relative paths when copying images */
@@ -81,7 +81,7 @@ export async function generateDiffReport(
     console.log(`\n Image diff report: ${outputPath}`);
   }
 
-  if (autoOpen) {
+  if (autoOpen === true || (autoOpen === 'failures' && failures.length > 0)) {
     const commands: Record<string, string> = { darwin: "open", win32: "start" };
     const cmd = commands[process.platform] ?? "xdg-open";
     exec(`${cmd} "${outputPath}"`);

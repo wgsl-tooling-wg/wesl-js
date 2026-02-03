@@ -41,7 +41,7 @@ export default defineConfig({
       'default',
       ['vitest-image-snapshot/reporter', {
         reportPath: join(__dirname, '__image_diff_report__'),  // Absolute path recommended for monorepos
-        autoOpen: true,  // Auto-open report in browser on failure
+        autoOpen: 'failures',  // Auto-open report in browser on failure (or `true` to always open)
       }]
     ],
   },
@@ -50,11 +50,11 @@ export default defineConfig({
 
 **Default behavior** (no configuration):
 - Report location: `{vitest.config.root}/__image_diff_report__/index.html`
-- Auto-open: `false` (can override with `IMAGE_DIFF_AUTO_OPEN=true` env var)
+- Auto-open: `false` (can override with `IMAGE_DIFF_AUTO_OPEN=true` or `IMAGE_DIFF_AUTO_OPEN=failures` env var)
 
 **Configuration options:**
 - `reportPath`: Absolute or relative to `config.root` (default: `'__image_diff_report__'`)
-- `autoOpen`: Auto-open report in browser (default: `false`)
+- `autoOpen`: Auto-open report in browser on failures or always (default: `false`)
 
 ## Basic Usage
 
@@ -108,6 +108,9 @@ If you added `ImageSnapshotReporter` to vitest.config.ts, failed tests generate 
 
 Auto-open on failure:
 ```bash
+IMAGE_DIFF_AUTO_OPEN=failures pnpm vitest
+
+# Always auto-open
 IMAGE_DIFF_AUTO_OPEN=true pnpm vitest
 ```
 
@@ -115,7 +118,7 @@ Or enable via inline reporter config:
 ```typescript
 reporters: [
   'default',
-  ['vitest-image-snapshot/reporter', { autoOpen: true }]
+  ['vitest-image-snapshot/reporter', { autoOpen: true /* or 'failures' */ }]
 ]
 ```
 
