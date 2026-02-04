@@ -7,7 +7,12 @@ import type {
   TestSpecification,
   Vitest,
 } from "vitest/node";
-import { generateDiffReport, type ImageSnapshotFailure } from "./DiffReport.ts";
+import isCI from "is-ci";
+import {
+  generateDiffReport,
+  type ImageSnapshotFailure,
+  type DiffReportConfig,
+} from "./DiffReport.ts";
 
 /** Metadata captured when image snapshot test fails, used to generate HTML report. */
 interface ImageSnapshotFailureData {
@@ -19,10 +24,10 @@ interface ImageSnapshotFailureData {
 }
 
 export interface ImageSnapshotReporterOptions {
+  /** Auto-open report in browser. Default: "failures" or "never" in CI */
+  autoOpen?: DiffReportConfig["autoOpen"];
   /** Report directory (relative to config.root or absolute) */
   reportPath?: string;
-  /** Auto-open report in browser on failures or always */
-  autoOpen?: boolean | "failures";
   /** Port for live-reload server. Set to 0 to disable. Default: 4343 */
   port?: number;
 }
@@ -32,19 +37,56 @@ export class ImageSnapshotReporter implements Reporter {
   private failuresByFile = new Map<string, ImageSnapshotFailure[]>();
   private vitest!: Vitest;
   private reportPath?: string;
-  private autoOpen: boolean | "failures";
+  private autoOpen: DiffReportConfig["autoOpen"];
   private port: number;
   private serverStarted = false;
 
   constructor(options: ImageSnapshotReporterOptions = {}) {
     this.reportPath = options.reportPath;
-    this.autoOpen =
-      options.autoOpen ??
-      (process.env.IMAGE_DIFF_AUTO_OPEN === "true" ||
-      process.env.IMAGE_DIFF_AUTO_OPEN === "failures"
-        ? "failures"
-        : false);
-    this.port = options.port ?? 4343;
+
+    // Disable server on CI by default
+    this.port = isCI ? 0 : (options.port ?? 4343);
+
+    // Inline environment variable overrides config, default and options for autoOpen
+    if (process.env.IMAGE_DIFF_AUTO_OPEN) {
+      // Is the value valid?
+      if (
+        !["failures", "always", "never"].includes(
+          process.env.IMAGE_DIFF_AUTO_OPEN,
+        )
+      ) {
+        console.warn(
+          `Unrecognised IMAGE_DIFF_AUTO_OPEN value: ${process.env.IMAGE_DIFF_AUTO_OPEN} - Must be one of "failures", "always" or "never". Defaulting to "failures" (or "never" on CI).`,
+        );
+      } else {
+        if (isCI) {
+          console.warn(
+            `CI environment detected - ignoring IMAGE_DIFF_AUTO_OPEN and defaulting to "never" on CI.`,
+          );
+        } else {
+          this.autoOpen = process.env
+            .IMAGE_DIFF_AUTO_OPEN as DiffReportConfig["autoOpen"];
+
+          return;
+        }
+      }
+    }
+
+    // CI environment overrides to never auto-open
+    if (isCI) {
+      // If IMAGE_DIFF_AUTO_OPEN is set we've already logged a message
+      if (!process.env.IMAGE_DIFF_AUTO_OPEN) {
+        console.log(
+          "CI environment detected - disabling auto-open of image diff report.",
+        );
+      }
+
+      // CI is always "never"
+      this.autoOpen = "never";
+    } else {
+      // Finally, use option or default
+      this.autoOpen = options.autoOpen ?? "failures";
+    }
   }
 
   onInit(vitest: Vitest) {
@@ -69,13 +111,10 @@ export class ImageSnapshotReporter implements Reporter {
 
         const ext = path.extname(filePath);
         const contentType =
-          ext === ".html"
-            ? "text/html"
-            : ext === ".css"
-              ? "text/css"
-              : ext === ".png"
-                ? "image/png"
-                : "application/octet-stream";
+          ext === ".html" ? "text/html"
+          : ext === ".css" ? "text/css"
+          : ext === ".png" ? "image/png"
+          : "application/octet-stream";
         const headers = {
           "Content-Type": contentType,
           "Last-Modified": stats.mtime.toUTCString(),
@@ -150,8 +189,8 @@ export class ImageSnapshotReporter implements Reporter {
     if (!this.reportPath) {
       return path.join(configRoot, "__image_diff_report__");
     }
-    return path.isAbsolute(this.reportPath)
-      ? this.reportPath
+    return path.isAbsolute(this.reportPath) ?
+        this.reportPath
       : path.join(configRoot, this.reportPath);
   }
 }
