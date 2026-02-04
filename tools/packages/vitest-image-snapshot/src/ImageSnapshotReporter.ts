@@ -22,7 +22,7 @@ export interface ImageSnapshotReporterOptions {
   /** Report directory (relative to config.root or absolute) */
   reportPath?: string;
   /** Auto-open report in browser on failures or always */
-  autoOpen?: boolean | 'failures';
+  autoOpen?: boolean | "failures";
   /** Port for live-reload server. Set to 0 to disable. Default: 4343 */
   port?: number;
 }
@@ -32,7 +32,7 @@ export class ImageSnapshotReporter implements Reporter {
   private failuresByFile = new Map<string, ImageSnapshotFailure[]>();
   private vitest!: Vitest;
   private reportPath?: string;
-  private autoOpen: boolean | 'failures';
+  private autoOpen: boolean | "failures";
   private port: number;
   private serverStarted = false;
 
@@ -41,7 +41,9 @@ export class ImageSnapshotReporter implements Reporter {
     this.autoOpen =
       options.autoOpen ??
       (process.env.IMAGE_DIFF_AUTO_OPEN === "true" ||
-        process.env.IMAGE_DIFF_AUTO_OPEN === "failures" ? "failures" : false);
+      process.env.IMAGE_DIFF_AUTO_OPEN === "failures"
+        ? "failures"
+        : false);
     this.port = options.port ?? 4343;
   }
 
