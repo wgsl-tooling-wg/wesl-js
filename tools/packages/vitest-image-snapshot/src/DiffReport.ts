@@ -64,9 +64,9 @@ export async function generateDiffReport(
   }
 
   const withCopiedImages =
-    failures.length > 0 ?
-      await copyImagesToReport(failures, reportDir, configRoot)
-    : [];
+    failures.length > 0
+      ? await copyImagesToReport(failures, reportDir, configRoot)
+      : [];
   const html = createReportHTML(withCopiedImages, liveReload);
   const outputPath = path.join(reportDir, "index.html");
 
