@@ -23,8 +23,8 @@ export interface ImageSnapshotFailure {
 
 /** Configuration for HTML diff report generation. */
 export interface DiffReportConfig {
-  /** Auto-open report in browser. Default: false */
-  autoOpen?: boolean | "failures";
+  /** Auto-open report in browser. Default: "failures" or "never" in CI */
+  autoOpen: "always" | "failures" | "never";
   /** Directory path for generated HTML report (absolute or relative). */
   reportDir: string;
   /** Vitest config root for calculating relative paths when copying images */
@@ -45,14 +45,10 @@ export async function generateDiffReport(
   failures: ImageSnapshotFailure[],
   config: DiffReportConfig,
 ): Promise<void> {
-  const {
-    autoOpen = false,
-    reportDir,
-    configRoot,
-    liveReload = false,
-  } = config;
+  const { autoOpen, reportDir, configRoot, liveReload = false } = config;
 
   // Clear old report before generating new one to remove stale images
+  // even if autoOpen won't open a browser to avoid confusion over which report is current
   await clearDiffReport(reportDir);
   await fs.promises.mkdir(reportDir, { recursive: true });
 
@@ -68,9 +64,9 @@ export async function generateDiffReport(
   }
 
   const withCopiedImages =
-    failures.length > 0
-      ? await copyImagesToReport(failures, reportDir, configRoot)
-      : [];
+    failures.length > 0 ?
+      await copyImagesToReport(failures, reportDir, configRoot)
+    : [];
   const html = createReportHTML(withCopiedImages, liveReload);
   const outputPath = path.join(reportDir, "index.html");
 
@@ -81,10 +77,22 @@ export async function generateDiffReport(
     console.log(`\n Image diff report: ${outputPath}`);
   }
 
-  if (autoOpen === true || (autoOpen === "failures" && failures.length > 0)) {
+  // Return early if autoOpen is "never" or there are no failures and autoOpen is "failures"
+  // Leaves the report generated for manual review later or artifact uploading on CI.
+  if (
+    autoOpen === "never" ||
+    (autoOpen === "failures" && failures.length === 0)
+  ) {
+    return;
+  }
+
+  // Try to open the browser to view the report
+  try {
     const commands: Record<string, string> = { darwin: "open", win32: "start" };
     const cmd = commands[process.platform] ?? "xdg-open";
     exec(`${cmd} "${outputPath}"`);
+  } catch (error) {
+    console.warn("Failed to open image diff report in browser:", error);
   }
 }
 

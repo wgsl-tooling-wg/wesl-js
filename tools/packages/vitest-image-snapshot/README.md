@@ -41,7 +41,7 @@ export default defineConfig({
       'default',
       ['vitest-image-snapshot/reporter', {
         reportPath: join(__dirname, '__image_diff_report__'),  // Absolute path recommended for monorepos
-        autoOpen: 'failures',  // Auto-open report in browser on failure (or `true` to always open)
+        autoOpen: 'failures',  // Auto-open report in browser on failures (or 'always' to always open or 'never')
       }]
     ],
   },
@@ -50,11 +50,12 @@ export default defineConfig({
 
 **Default behavior** (no configuration):
 - Report location: `{vitest.config.root}/__image_diff_report__/index.html`
-- Auto-open: `false` (can override with `IMAGE_DIFF_AUTO_OPEN=true` or `IMAGE_DIFF_AUTO_OPEN=failures` env var)
+- Auto-open: `failures` (can override with `IMAGE_DIFF_AUTO_OPEN=always` or `IMAGE_DIFF_AUTO_OPEN=never` env var)
 
 **Configuration options:**
 - `reportPath`: Absolute or relative to `config.root` (default: `'__image_diff_report__'`)
-- `autoOpen`: Auto-open report in browser on failures or always (default: `false`)
+- `autoOpen`: Auto-open report in browser on failures, always or never (default: 'failures' or 'never' on CI)
+- `port`: Port for html report server (default: 4343)
 
 ## Basic Usage
 
@@ -111,16 +112,24 @@ Auto-open on failure:
 IMAGE_DIFF_AUTO_OPEN=failures pnpm vitest
 
 # Always auto-open
-IMAGE_DIFF_AUTO_OPEN=true pnpm vitest
+IMAGE_DIFF_AUTO_OPEN=always pnpm vitest
 ```
 
 Or enable via inline reporter config:
 ```typescript
 reporters: [
   'default',
-  ['vitest-image-snapshot/reporter', { autoOpen: true /* or 'failures' */ }]
+  ['vitest-image-snapshot/reporter', { autoOpen: 'failures' /* or 'always' or 'never' */ }]
 ]
 ```
+
+`IMAGE_DIFF_AUTO_OPEN` will override reporter config if both are set.
+
+## CI
+
+When a CI environment is detected then IMAGE_DIFF_AUTO_OPEN and config options are ignored and autoOpen is set to "never".
+
+The report is still generated and can be saved as an artifact for review or published to a static hosting service if you prefer.
 
 ## Directory Structure
 
