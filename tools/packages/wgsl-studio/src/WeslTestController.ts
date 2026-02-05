@@ -49,11 +49,7 @@ export class WeslTestController implements vscode.Disposable {
     );
 
     this.enabled = this.isEnabled();
-    if (this.enabled) {
-      output.show();
-      this.setupWatchers();
-      this.discoverExistingTests();
-    }
+    if (this.enabled) this.initialize();
 
     // Listen for setting changes
     this.disposables.push(
@@ -62,15 +58,20 @@ export class WeslTestController implements vscode.Disposable {
           const wasEnabled = this.enabled;
           this.enabled = this.isEnabled();
           if (this.enabled && !wasEnabled) {
-            output.show();
-            this.setupWatchers();
-            this.discoverExistingTests();
+            this.initialize();
           } else if (!this.enabled && wasEnabled) {
             this.clearAllTests();
           }
         }
       }),
     );
+  }
+
+  /** Set up watchers and discover existing tests. */
+  private initialize(): void {
+    output.show();
+    this.setupWatchers();
+    this.discoverExistingTests();
   }
 
   private isEnabled(): boolean {

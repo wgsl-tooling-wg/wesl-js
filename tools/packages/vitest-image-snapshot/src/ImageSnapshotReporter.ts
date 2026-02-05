@@ -38,13 +38,14 @@ export class ImageSnapshotReporter implements Reporter {
 
   constructor(options: ImageSnapshotReporterOptions = {}) {
     this.reportPath = options.reportPath;
-    this.autoOpen =
-      options.autoOpen ??
-      (process.env.IMAGE_DIFF_AUTO_OPEN === "true" ||
-      process.env.IMAGE_DIFF_AUTO_OPEN === "failures"
-        ? "failures"
-        : false);
+    this.autoOpen = options.autoOpen ?? this.getAutoOpenDefault();
     this.port = options.port ?? 4343;
+  }
+
+  private getAutoOpenDefault(): boolean | "failures" {
+    const env = process.env.IMAGE_DIFF_AUTO_OPEN;
+    if (env === "true" || env === "failures") return "failures";
+    return false;
   }
 
   onInit(vitest: Vitest) {
