@@ -33,6 +33,8 @@ export class WeslTestController implements vscode.Disposable {
   readonly onTestResult = this.resultEmitter.event;
   private enabled = true;
   private watchersSetup = false;
+  private continuousRequest?: vscode.TestRunRequest;
+  private continuousToken?: vscode.CancellationToken;
 
   constructor(_context: vscode.ExtensionContext) {
     this.controller = vscode.tests.createTestController(
@@ -46,6 +48,8 @@ export class WeslTestController implements vscode.Disposable {
       vscode.TestRunProfileKind.Run,
       this.runTests.bind(this),
       true,
+      undefined, // tag
+      true, // supportsContinuousRun
     );
 
     this.enabled = this.isEnabled();
@@ -102,6 +106,7 @@ export class WeslTestController implements vscode.Disposable {
     const docWatcher = vscode.workspace.onDidSaveTextDocument(doc => {
       if (doc.fileName.endsWith(".wesl")) {
         this.parseFileTests(doc.uri, doc.getText());
+        this.runContinuousTests(doc.uri);
       }
     });
     this.disposables.push(docWatcher);
@@ -179,6 +184,15 @@ export class WeslTestController implements vscode.Disposable {
     request: vscode.TestRunRequest,
     token: vscode.CancellationToken,
   ): Promise<void> {
+    if (request.continuous) {
+      this.continuousRequest = request;
+      this.continuousToken = token;
+      token.onCancellationRequested(() => {
+        this.continuousRequest = undefined;
+        this.continuousToken = undefined;
+      });
+    }
+
     const run = this.controller.createTestRun(request);
     const queue = this.collectTestItems(request);
 
@@ -231,6 +245,29 @@ export class WeslTestController implements vscode.Disposable {
       }
     }
     run.end();
+  }
+
+  /** Re-run tests for a file when continuous mode is active. */
+  private runContinuousTests(uri: vscode.Uri): void {
+    if (
+      !this.continuousRequest ||
+      this.continuousToken?.isCancellationRequested
+    )
+      return;
+    const fileItem = this.fileItems.get(uri.fsPath);
+    if (!fileItem || fileItem.children.size === 0) return;
+
+    const items: vscode.TestItem[] = [];
+    fileItem.children.forEach(child => {
+      items.push(child);
+    });
+    const request = new vscode.TestRunRequest(
+      items,
+      undefined,
+      undefined,
+      true,
+    );
+    this.runTests(request, this.continuousToken!);
   }
 
   private collectTestItems(request: vscode.TestRunRequest): vscode.TestItem[] {
