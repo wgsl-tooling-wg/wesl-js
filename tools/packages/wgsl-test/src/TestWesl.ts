@@ -8,7 +8,10 @@ import {
   type TestFunctionInfo,
   testDisplayName,
 } from "./TestDiscovery.ts";
-import { testResultSize } from "./TestVirtualLib.ts";
+
+/** Size of TestResult struct in bytes (u32 + u32 + padding + vec4f + vec4f = 48). */
+const testResultSize = 48;
+
 import { importVitest } from "./VitestImport.ts";
 
 /** Parameters for running @test functions in a WESL module. */
