@@ -23,6 +23,9 @@
     "typecheck": "tsgo"
   },
   "publishConfig": {
+    "bin": {
+      "wgsl-test": "./dist/wgslTestMain.js"
+    },
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
