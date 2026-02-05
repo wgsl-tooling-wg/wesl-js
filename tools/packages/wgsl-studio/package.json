@@ -80,7 +80,17 @@
           ".wesl"
         ]
       }
-    ]
+    ],
+    "configuration": {
+      "title": "WGSL Studio",
+      "properties": {
+        "wgslStudio.nativeTestRunner.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the native WESL test runner. Disable if you prefer using Vitest for WESL tests."
+        }
+      }
+    }
   },
   "displayName": "WGSL Studio",
   "engines": {

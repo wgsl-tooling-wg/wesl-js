@@ -31,9 +31,10 @@ export class WeslTestController implements vscode.Disposable {
   private fileItems = new Map<string, vscode.TestItem>();
   private resultEmitter = new vscode.EventEmitter<TestResult>();
   readonly onTestResult = this.resultEmitter.event;
+  private enabled = true;
+  private watchersSetup = false;
 
   constructor(_context: vscode.ExtensionContext) {
-    output.show(); // Show the output channel when extension loads
     this.controller = vscode.tests.createTestController(
       "weslTests",
       "WESL Tests",
@@ -47,8 +48,40 @@ export class WeslTestController implements vscode.Disposable {
       true,
     );
 
-    this.setupWatchers();
-    this.discoverExistingTests();
+    this.enabled = this.isEnabled();
+    if (this.enabled) {
+      output.show();
+      this.setupWatchers();
+      this.discoverExistingTests();
+    }
+
+    // Listen for setting changes
+    this.disposables.push(
+      vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration("wgslStudio.nativeTestRunner.enabled")) {
+          const wasEnabled = this.enabled;
+          this.enabled = this.isEnabled();
+          if (this.enabled && !wasEnabled) {
+            output.show();
+            this.setupWatchers();
+            this.discoverExistingTests();
+          } else if (!this.enabled && wasEnabled) {
+            this.clearAllTests();
+          }
+        }
+      }),
+    );
+  }
+
+  private isEnabled(): boolean {
+    return vscode.workspace
+      .getConfiguration("wgslStudio")
+      .get("nativeTestRunner.enabled", true);
+  }
+
+  private clearAllTests(): void {
+    this.controller.items.replace([]);
+    this.fileItems.clear();
   }
 
   dispose(): void {
@@ -57,6 +90,8 @@ export class WeslTestController implements vscode.Disposable {
   }
 
   private setupWatchers(): void {
+    if (this.watchersSetup) return;
+    this.watchersSetup = true;
     const watcher = vscode.workspace.createFileSystemWatcher("**/*.wesl");
     watcher.onDidCreate(uri => this.parseFileTests(uri));
     watcher.onDidChange(uri => this.parseFileTests(uri));
@@ -80,6 +115,7 @@ export class WeslTestController implements vscode.Disposable {
   }
 
   private async resolveTests(item?: vscode.TestItem): Promise<void> {
+    if (!this.enabled) return;
     if (!item) {
       await this.discoverExistingTests();
     }
@@ -106,6 +142,7 @@ export class WeslTestController implements vscode.Disposable {
   }
 
   private async parseFileTests(uri: vscode.Uri, src?: string): Promise<void> {
+    if (!this.enabled) return;
     const filePath = uri.fsPath;
     if (filePath.includes("node_modules")) return;
     const content = src ?? (await readFile(uri));
