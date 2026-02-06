@@ -42,47 +42,60 @@ export class ImageSnapshotReporter implements Reporter {
 
     // Disable server on CI by default
     this.port = options.port ?? 4343;
+    this.autoOpen = this.resolveAutoOpen(options.autoOpen);
+  }
 
-    // Inline environment variable overrides config, default and options for autoOpen
-    if (process.env.IMAGE_DIFF_AUTO_OPEN) {
-      // Is the value valid?
-      if (
-        !["failures", "always", "never"].includes(
-          process.env.IMAGE_DIFF_AUTO_OPEN,
-        )
-      ) {
-        console.warn(
-          `Unrecognised IMAGE_DIFF_AUTO_OPEN value: ${process.env.IMAGE_DIFF_AUTO_OPEN} - Must be one of "failures", "always" or "never". Defaulting to "failures" (or "never" on CI).`,
-        );
-      } else {
-        if (isCI) {
-          console.warn(
-            `CI environment detected - ignoring IMAGE_DIFF_AUTO_OPEN and defaulting to "never" on CI.`,
-          );
-        } else {
-          this.autoOpen = process.env
-            .IMAGE_DIFF_AUTO_OPEN as typeof this.autoOpen;
+  /** Resolve autoOpen setting with priority: CI override > env var > config option > default */
+  private resolveAutoOpen(
+    configValue?: "always" | "failures" | "never",
+  ): "always" | "failures" | "never" {
+    const envValue = this.parseEnvAutoOpen();
 
-          return;
-        }
-      }
-    }
-
-    // CI environment overrides to never auto-open
     if (isCI) {
-      // If IMAGE_DIFF_AUTO_OPEN is set we've already logged a message
-      if (!process.env.IMAGE_DIFF_AUTO_OPEN) {
-        console.log(
-          "CI environment detected - disabling auto-open of image diff report.",
-        );
-      }
-
-      // CI is always "never"
-      this.autoOpen = "never";
-    } else {
-      // Finally, use option or default
-      this.autoOpen = options.autoOpen ?? "failures";
+      return this.handleCIAutoOpen(envValue, configValue);
     }
+
+    // Non-CI: env var > config option > default
+    return envValue ?? configValue ?? "failures";
+  }
+
+  /** Parse and validate IMAGE_DIFF_AUTO_OPEN environment variable */
+  private parseEnvAutoOpen(): "always" | "failures" | "never" | undefined {
+    const envValue = process.env.IMAGE_DIFF_AUTO_OPEN;
+    if (!envValue) {
+      return;
+    }
+
+    const validValues = ["failures", "always", "never"] as const;
+    if (!validValues.includes(envValue as any)) {
+      console.warn(
+        `Unrecognised IMAGE_DIFF_AUTO_OPEN value: ${envValue} - Must be one of "failures", "always" or "never". Value will be ignored.`,
+      );
+
+      return;
+    }
+
+    return envValue as "always" | "failures" | "never";
+  }
+
+  /** In CI environments, always return "never" and warn if overriding a provided value */
+  private handleCIAutoOpen(
+    envValue?: "always" | "failures" | "never",
+    configValue?: "always" | "failures" | "never",
+  ): "never" {
+    const providedValue = envValue ?? configValue;
+
+    if (providedValue && providedValue !== "never") {
+      console.warn(
+        `CI environment detected - overriding autoOpen value "${providedValue}" to "never".`,
+      );
+    } else if (!providedValue) {
+      console.log(
+        "CI environment detected - disabling auto-open of image diff report.",
+      );
+    }
+
+    return "never";
   }
 
   onInit(vitest: Vitest) {
