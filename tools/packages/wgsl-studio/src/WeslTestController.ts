@@ -31,9 +31,12 @@ export class WeslTestController implements vscode.Disposable {
   private fileItems = new Map<string, vscode.TestItem>();
   private resultEmitter = new vscode.EventEmitter<TestResult>();
   readonly onTestResult = this.resultEmitter.event;
+  private enabled = true;
+  private watchersSetup = false;
+  private continuousRequest?: vscode.TestRunRequest;
+  private continuousToken?: vscode.CancellationToken;
 
   constructor(_context: vscode.ExtensionContext) {
-    output.show(); // Show the output channel when extension loads
     this.controller = vscode.tests.createTestController(
       "weslTests",
       "WESL Tests",
@@ -45,10 +48,45 @@ export class WeslTestController implements vscode.Disposable {
       vscode.TestRunProfileKind.Run,
       this.runTests.bind(this),
       true,
+      undefined, // tag
+      true, // supportsContinuousRun
     );
 
+    this.enabled = this.isEnabled();
+    if (this.enabled) this.initialize();
+
+    // Listen for setting changes
+    this.disposables.push(
+      vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration("wgslStudio.nativeTestRunner.enabled")) {
+          const wasEnabled = this.enabled;
+          this.enabled = this.isEnabled();
+          if (this.enabled && !wasEnabled) {
+            this.initialize();
+          } else if (!this.enabled && wasEnabled) {
+            this.clearAllTests();
+          }
+        }
+      }),
+    );
+  }
+
+  /** Set up watchers and discover existing tests. */
+  private initialize(): void {
+    output.show();
     this.setupWatchers();
     this.discoverExistingTests();
+  }
+
+  private isEnabled(): boolean {
+    return vscode.workspace
+      .getConfiguration("wgslStudio")
+      .get("nativeTestRunner.enabled", true);
+  }
+
+  private clearAllTests(): void {
+    this.controller.items.replace([]);
+    this.fileItems.clear();
   }
 
   dispose(): void {
@@ -57,6 +95,8 @@ export class WeslTestController implements vscode.Disposable {
   }
 
   private setupWatchers(): void {
+    if (this.watchersSetup) return;
+    this.watchersSetup = true;
     const watcher = vscode.workspace.createFileSystemWatcher("**/*.wesl");
     watcher.onDidCreate(uri => this.parseFileTests(uri));
     watcher.onDidChange(uri => this.parseFileTests(uri));
@@ -66,6 +106,7 @@ export class WeslTestController implements vscode.Disposable {
     const docWatcher = vscode.workspace.onDidSaveTextDocument(doc => {
       if (doc.fileName.endsWith(".wesl")) {
         this.parseFileTests(doc.uri, doc.getText());
+        this.runContinuousTests(doc.uri);
       }
     });
     this.disposables.push(docWatcher);
@@ -80,6 +121,7 @@ export class WeslTestController implements vscode.Disposable {
   }
 
   private async resolveTests(item?: vscode.TestItem): Promise<void> {
+    if (!this.enabled) return;
     if (!item) {
       await this.discoverExistingTests();
     }
@@ -106,6 +148,7 @@ export class WeslTestController implements vscode.Disposable {
   }
 
   private async parseFileTests(uri: vscode.Uri, src?: string): Promise<void> {
+    if (!this.enabled) return;
     const filePath = uri.fsPath;
     if (filePath.includes("node_modules")) return;
     const content = src ?? (await readFile(uri));
@@ -141,6 +184,15 @@ export class WeslTestController implements vscode.Disposable {
     request: vscode.TestRunRequest,
     token: vscode.CancellationToken,
   ): Promise<void> {
+    if (request.continuous) {
+      this.continuousRequest = request;
+      this.continuousToken = token;
+      token.onCancellationRequested(() => {
+        this.continuousRequest = undefined;
+        this.continuousToken = undefined;
+      });
+    }
+
     const run = this.controller.createTestRun(request);
     const queue = this.collectTestItems(request);
 
@@ -193,6 +245,29 @@ export class WeslTestController implements vscode.Disposable {
       }
     }
     run.end();
+  }
+
+  /** Re-run tests for a file when continuous mode is active. */
+  private runContinuousTests(uri: vscode.Uri): void {
+    if (
+      !this.continuousRequest ||
+      this.continuousToken?.isCancellationRequested
+    )
+      return;
+    const fileItem = this.fileItems.get(uri.fsPath);
+    if (!fileItem || fileItem.children.size === 0) return;
+
+    const items: vscode.TestItem[] = [];
+    fileItem.children.forEach(child => {
+      items.push(child);
+    });
+    const request = new vscode.TestRunRequest(
+      items,
+      undefined,
+      undefined,
+      true,
+    );
+    this.runTests(request, this.continuousToken!);
   }
 
   private collectTestItems(request: vscode.TestRunRequest): vscode.TestItem[] {

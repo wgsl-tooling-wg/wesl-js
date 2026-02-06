@@ -36,6 +36,23 @@ const packagesToCheck = [
   "vitest-image-snapshot",
 ];
 
+test.skipIf(!externalTest)("no TypeScript files in bin entries", () => {
+  const errors: string[] = [];
+  for (const pkg of packagesToCheck) {
+    const pkgJsonPath = `node_modules/${pkg}/package.json`;
+    const pkgJson = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
+    const bin = pkgJson.bin || {};
+    for (const [name, path] of Object.entries(bin)) {
+      if (typeof path === "string" && path.endsWith(".ts")) {
+        errors.push(`${pkg} bin "${name}" points to TypeScript: ${path}`);
+      }
+    }
+  }
+  if (errors.length > 0) {
+    throw new Error("TypeScript files in bin:\n" + errors.join("\n"));
+  }
+});
+
 test.skipIf(!externalTest)("no TypeScript files in package exports", () => {
   const errors: string[] = [];
   for (const pkg of packagesToCheck) {

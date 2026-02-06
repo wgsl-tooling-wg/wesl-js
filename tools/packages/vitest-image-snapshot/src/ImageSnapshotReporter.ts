@@ -39,8 +39,6 @@ export class ImageSnapshotReporter implements Reporter {
 
   constructor(options: ImageSnapshotReporterOptions = {}) {
     this.reportPath = options.reportPath;
-
-    // Disable server on CI by default
     this.port = options.port ?? 4343;
 
     // Inline environment variable overrides config, default and options for autoOpen
@@ -83,6 +81,12 @@ export class ImageSnapshotReporter implements Reporter {
       // Finally, use option or default
       this.autoOpen = options.autoOpen ?? "failures";
     }
+  }
+
+  private getAutoOpenDefault(): boolean | "failures" {
+    const env = process.env.IMAGE_DIFF_AUTO_OPEN;
+    if (env === "true" || env === "failures") return "failures";
+    return false;
   }
 
   onInit(vitest: Vitest) {

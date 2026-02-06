@@ -1,8 +1,12 @@
 {
   "name": "wgsl-test",
-  "version": "0.2.16",
+  "version": "0.2.18",
   "type": "module",
+  "bin": {
+    "wgsl-test": "./bin/wgsl-test"
+  },
   "files": [
+    "bin",
     "dist",
     "images",
     "lib",
@@ -19,6 +23,9 @@
     "typecheck": "tsgo"
   },
   "publishConfig": {
+    "bin": {
+      "wgsl-test": "./dist/wgslTestMain.js"
+    },
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -45,18 +52,20 @@
     }
   },
   "dependencies": {
+    "glob": "^13.0.0",
     "pngjs": "^7.0.0",
     "thimbleberry": "^0.2.10",
     "webgpu": "^0.3.8",
     "wesl": "workspace:*",
-    "wesl-gpu": "workspace:*"
+    "wesl-gpu": "workspace:*",
+    "wesl-tooling": "workspace:*",
+    "yargs": "^18.0.0"
   },
   "devDependencies": {
     "@types/pngjs": "^6.0.0",
     "@webgpu/types": "^0.1.68",
     "dependent_package": "workspace:x",
-    "wesl-packager": "workspace:x",
-    "wesl-tooling": "workspace:x"
+    "wesl-packager": "workspace:x"
   },
   "peerDependencies": {
     "vitest": "^4.0.16",

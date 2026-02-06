@@ -1,13 +1,12 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ["./src/index.ts", "./src/runTestCli.ts"],
+  entry: ["./src/index.ts", "./src/runTestCli.ts", "./src/wgslTestMain.ts"],
   target: "node22",
   clean: true,
   dts: true,
   sourcemap: true,
   platform: "neutral",
-  noExternal: ["wesl-tooling"],
   external: [
     "../lib/weslBundle.js",
     "fs",
@@ -24,10 +23,11 @@ export default defineConfig({
     "node:url",
     "node:util",
     "node:v8",
-    "vitest-image-snapshot",
     "vitest",
+    "vitest-image-snapshot",
     "wesl",
     "wesl-gpu",
+    "wesl-tooling",
   ],
   logLevel: "warn",
 });

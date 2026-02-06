@@ -1,8 +1,9 @@
 # wgsl-test
 
-Test WGSL and WESL shaders with vitest or your favorite Node.js test framework.
+Test WGSL and WESL shaders with the CLI or vitest.
 
 - **Native WESL** (`@test`) - Unit test shader functions, assertions run on GPU
+- **CLI** (`wgsl-test run`) - Run tests from the command line
 - **TypeScript-driven** - Integration tests, visual regression, custom validation
 
 ## Installation
@@ -27,7 +28,19 @@ fn smootherstepQuarter() {
 ...
 ```
 
-Run with a minimal TypeScript wrapper:
+### CLI
+
+Run tests directly from the command line:
+
+```bash
+wgsl-test run                      # discover **/*.test.wesl, run all
+wgsl-test run path/to/test.wesl    # run specific file(s)
+wgsl-test run --projectDir ./foo   # specify project root
+```
+
+### Vitest Integration
+
+Or run with a minimal TypeScript wrapper:
 
 ```typescript
 import { getGPUDevice, testWesl } from "wgsl-test";
@@ -35,7 +48,7 @@ import { getGPUDevice, testWesl } from "wgsl-test";
 const device = await getGPUDevice();
 
 // runs all tests in interp_test
-await testWesl({ device, moduleName: "interp_test" }); 
+await testWesl({ device, moduleName: "interp_test" });
 ```
 
 **[See API.md for assertion functions →](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/tools/packages/wgsl-test/API.md#assertion-functions)**

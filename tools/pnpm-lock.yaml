@@ -881,6 +881,9 @@ importers:
 
   packages/wgsl-test:
     dependencies:
+      glob:
+        specifier: ^13.0.0
+        version: 13.0.0
       pngjs:
         specifier: ^7.0.0
         version: 7.0.0
@@ -902,6 +905,12 @@ importers:
       wesl-gpu:
         specifier: workspace:*
         version: link:../wesl-gpu
+      wesl-tooling:
+        specifier: workspace:*
+        version: link:../wesl-tooling
+      yargs:
+        specifier: ^18.0.0
+        version: 18.0.0
     devDependencies:
       '@types/pngjs':
         specifier: ^6.0.0
@@ -915,9 +924,6 @@ importers:
       wesl-packager:
         specifier: workspace:x
         version: link:../wesl-packager
-      wesl-tooling:
-        specifier: workspace:x
-        version: link:../wesl-tooling
 
 packages:
 

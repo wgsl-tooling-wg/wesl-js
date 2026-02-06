@@ -28,7 +28,6 @@ export * from "./ImageHelpers.ts";
 export * from "./TestComputeShader.ts";
 export * from "./TestDiscovery.ts";
 export * from "./TestFragmentShader.ts";
-export * from "./TestVirtualLib.ts";
 export * from "./TestWesl.ts";
 export * from "./WebGPUTestSetup.ts";
 
