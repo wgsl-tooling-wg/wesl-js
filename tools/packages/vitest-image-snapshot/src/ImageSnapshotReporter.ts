@@ -41,7 +41,7 @@ export class ImageSnapshotReporter implements Reporter {
     this.reportPath = options.reportPath;
 
     // Disable server on CI by default
-    this.port = isCI ? 0 : (options.port ?? 4343);
+    this.port = options.port ?? 4343;
 
     // Inline environment variable overrides config, default and options for autoOpen
     if (process.env.IMAGE_DIFF_AUTO_OPEN) {
@@ -87,7 +87,7 @@ export class ImageSnapshotReporter implements Reporter {
 
   onInit(vitest: Vitest) {
     this.vitest = vitest;
-    if (this.port > 0) {
+    if (this.port > 0 && !isCI) {
       this.startServer();
     }
   }
