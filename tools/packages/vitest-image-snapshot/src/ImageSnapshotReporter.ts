@@ -8,11 +8,7 @@ import type {
   TestSpecification,
   Vitest,
 } from "vitest/node";
-import {
-  type DiffReportConfig,
-  generateDiffReport,
-  type ImageSnapshotFailure,
-} from "./DiffReport.ts";
+import { generateDiffReport, type ImageSnapshotFailure } from "./DiffReport.ts";
 
 /** Metadata captured when image snapshot test fails, used to generate HTML report. */
 interface ImageSnapshotFailureData {
@@ -25,7 +21,7 @@ interface ImageSnapshotFailureData {
 
 export interface ImageSnapshotReporterOptions {
   /** Auto-open report in browser. Default: "failures" or "never" in CI */
-  autoOpen?: DiffReportConfig["autoOpen"];
+  autoOpen?: "always" | "failures" | "never";
   /** Report directory (relative to config.root or absolute) */
   reportPath?: string;
   /** Port for live-reload server. Set to 0 to disable. Default: 4343 */
@@ -37,7 +33,7 @@ export class ImageSnapshotReporter implements Reporter {
   private failuresByFile = new Map<string, ImageSnapshotFailure[]>();
   private vitest!: Vitest;
   private reportPath?: string;
-  private autoOpen: DiffReportConfig["autoOpen"];
+  private autoOpen: "always" | "failures" | "never";
   private port: number;
   private serverStarted = false;
 
@@ -65,7 +61,7 @@ export class ImageSnapshotReporter implements Reporter {
           );
         } else {
           this.autoOpen = process.env
-            .IMAGE_DIFF_AUTO_OPEN as DiffReportConfig["autoOpen"];
+            .IMAGE_DIFF_AUTO_OPEN as typeof this.autoOpen;
 
           return;
         }
@@ -111,13 +107,10 @@ export class ImageSnapshotReporter implements Reporter {
 
         const ext = path.extname(filePath);
         const contentType =
-          ext === ".html"
-            ? "text/html"
-            : ext === ".css"
-              ? "text/css"
-              : ext === ".png"
-                ? "image/png"
-                : "application/octet-stream";
+          ext === ".html" ? "text/html"
+          : ext === ".css" ? "text/css"
+          : ext === ".png" ? "image/png"
+          : "application/octet-stream";
         const headers = {
           "Content-Type": contentType,
           "Last-Modified": stats.mtime.toUTCString(),
@@ -192,8 +185,8 @@ export class ImageSnapshotReporter implements Reporter {
     if (!this.reportPath) {
       return path.join(configRoot, "__image_diff_report__");
     }
-    return path.isAbsolute(this.reportPath)
-      ? this.reportPath
+    return path.isAbsolute(this.reportPath) ?
+        this.reportPath
       : path.join(configRoot, this.reportPath);
   }
 }
