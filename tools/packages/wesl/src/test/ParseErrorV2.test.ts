@@ -18,9 +18,8 @@ test("parse invalid if", () => {
   }`;
   expect(() => parseTest(src)).toThrowErrorMatchingInlineSnapshot(`
     [Error: ./test.wesl:3:13 error: Invalid token 🐈
-
       if(1<1) { 🐈‍⬛ } else {  }
-                 ^^]
+                ^^]
   `);
 });
 
