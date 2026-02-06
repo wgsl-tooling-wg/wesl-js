@@ -118,10 +118,13 @@ export class ImageSnapshotReporter implements Reporter {
 
         const ext = path.extname(filePath);
         const contentType =
-          ext === ".html" ? "text/html"
-          : ext === ".css" ? "text/css"
-          : ext === ".png" ? "image/png"
-          : "application/octet-stream";
+          ext === ".html"
+            ? "text/html"
+            : ext === ".css"
+              ? "text/css"
+              : ext === ".png"
+                ? "image/png"
+                : "application/octet-stream";
         const headers = {
           "Content-Type": contentType,
           "Last-Modified": stats.mtime.toUTCString(),
@@ -196,8 +199,8 @@ export class ImageSnapshotReporter implements Reporter {
     if (!this.reportPath) {
       return path.join(configRoot, "__image_diff_report__");
     }
-    return path.isAbsolute(this.reportPath) ?
-        this.reportPath
+    return path.isAbsolute(this.reportPath)
+      ? this.reportPath
       : path.join(configRoot, this.reportPath);
   }
 }
