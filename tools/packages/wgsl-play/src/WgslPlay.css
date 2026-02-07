@@ -1,6 +1,19 @@
 :host {
+  --error-bg: rgba(220, 102, 18, 0.8);
+  --error-color: white;
+  --controls-bg: rgba(0, 0, 0, 0.4);
+  --controls-color: rgba(255, 255, 255, 0.8);
+  --controls-hover-color: white;
+  --controls-hover-bg: rgba(255, 255, 255, 0.15);
+
   display: block;
   position: relative;
+  overflow: hidden;
+}
+
+:host(.dark) {
+  --error-bg: rgba(180, 60, 10, 0.85);
+  --controls-bg: rgba(0, 0, 0, 0.5);
 }
 
 canvas {
@@ -11,17 +24,50 @@ canvas {
   display: block;
 }
 
+.controls {
+  background: var(--controls-bg);
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  gap: 20px;
+  border-radius: 6px;
+  padding: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 1;
+}
+
+:host(:hover) .controls {
+  opacity: 1;
+}
+
+.controls button {
+  border: none;
+  background: none;
+  color: var(--controls-color);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.controls button:hover {
+  color: var(--controls-hover-color);
+  background: var(--controls-hover-bg);
+}
+
 .error-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(200, 0, 0, 0.8);
-  color: white;
+  background: var(--error-bg);
+  color: var(--error-color);
   padding: 1rem;
   font-family: monospace;
   font-size: 0.875rem;
   white-space: pre-wrap;
   overflow: auto;
-  cursor: pointer;
   display: none;
 }
 

@@ -101,7 +101,8 @@ export async function createPipeline(
       resolvers.length === 1 ? resolvers[0] : new CompositeResolver(resolvers);
   }
 
-  state.pipeline = await linkAndCreatePipeline({
+  state.device.pushErrorScope("validation");
+  const pipeline = await linkAndCreatePipeline({
     device: state.device,
     fragmentSource,
     resolver,
@@ -112,6 +113,12 @@ export async function createPipeline(
     packageName,
     rootModuleName,
   });
+  const gpuError = await state.device.popErrorScope();
+  if (gpuError) {
+    state.pipeline = undefined;
+    throw gpuError;
+  }
+  state.pipeline = pipeline;
 }
 
 /** Start the render loop. Returns a stop function. */
