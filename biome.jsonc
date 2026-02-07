@@ -13,7 +13,8 @@
       "**/biome.jsonc",
       "!**/assets",
       "!**/dist",
-      "!**/.vscode/**/*"
+      "!**/.vscode/**/*",
+      "!**/lezer-wesl/src/parser.*"
     ]
   },
   "formatter": {
