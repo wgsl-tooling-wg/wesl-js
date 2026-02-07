@@ -50,7 +50,8 @@ export class SrcMap {
         e.src.path === prev.src.path &&
         e.src.text === prev.src.text &&
         prev.destEnd === e.destStart &&
-        prev.srcEnd === e.srcStart
+        prev.srcEnd === e.srcStart &&
+        prev.srcEnd - prev.srcStart === prev.destEnd - prev.destStart
       ) {
         // combine adjacent range entries into one
         prev.destEnd = e.destEnd;
