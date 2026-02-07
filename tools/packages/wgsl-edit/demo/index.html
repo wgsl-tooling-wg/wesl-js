@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wgsl-edit test</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism.min.css" id="prism-light">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism-tomorrow.min.css" id="prism-dark" disabled>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.min.js" defer></script>
+</head>
+<body>
+  <button id="theme-toggle" aria-label="Toggle theme">
+    <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="5"/>
+      <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+      <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+    <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  </button>
+  <div class="titles">
+    <h1>wgsl-edit</h1>
+    <h1>wgsl-play</h1>
+  </div>
+  <div class="editor-player">
+    <wgsl-edit id="editor" lint-from="player">
+      <script type="text/wesl" data-name="main.wesl">
+import package::utils;
+
+@group(0) @binding(0) var<uniform> u: test::Uniforms;
+
+@fragment
+fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = pos.xy / u.resolution;
+  return vec4f(utils::gradient(uv, u.time), 1.0);
+}
+      </script>
+      <script type="text/wesl" data-name="utils.wesl">
+fn gradient(uv: vec2f, time: f32) -> vec3f {
+  return vec3f(uv, 0.5 + 0.5 * sin(time));
+}
+      </script>
+    </wgsl-edit>
+    <wgsl-play id="player" source="editor"></wgsl-play>
+  </div>
+  <section class="usage">
+    <h2>Usage</h2>
+    <pre><code class="language-html">&lt;script type="module" src="https://esm.sh/wgsl-edit"&gt;&lt;/script&gt;
+&lt;script type="module" src="https://esm.sh/wgsl-play"&gt;&lt;/script&gt;
+
+&lt;wgsl-edit id="editor" lint-from="player"&gt;&lt;/wgsl-edit&gt;
+&lt;wgsl-play id="player" source="editor"&gt;&lt;/wgsl-play&gt;</code></pre>
+
+    <div class="docs-links">
+      <h2>Docs</h2>
+      <nav>
+        <a href="https://github.com/wgsl-tooling-wg/wesl-js/tree/main/tools/packages/wgsl-edit">wgsl-edit</a>
+        <a href="https://github.com/wgsl-tooling-wg/wesl-js/tree/main/tools/packages/wgsl-play">wgsl-play</a>
+      </nav>
+    </div>
+  </section>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

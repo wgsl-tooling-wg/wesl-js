@@ -3,6 +3,7 @@ node_modules
 
 # bundled release
 dist
+site
 
 # macOS
 .DS_Store

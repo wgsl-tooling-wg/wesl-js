@@ -1,0 +1,2 @@
+#!/usr/bin/env node --experimental-strip-types
+import "../src/Cli.ts";
