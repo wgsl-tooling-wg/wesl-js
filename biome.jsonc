@@ -115,7 +115,7 @@
       }
     },
     {
-      "includes": ["**/v2/**"],
+      "includes": ["**/wgsl-edit/**", "**/wgsl-play/**", "**/lezer-wesl/**"],
       "linter": {
         "rules": {
           "complexity": {
