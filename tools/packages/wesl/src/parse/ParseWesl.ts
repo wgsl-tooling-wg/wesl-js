@@ -6,12 +6,15 @@ import type { SrcModule } from "../Scope.ts";
 import { emptyScope } from "../Scope.ts";
 import { beginElem, finishContents } from "./ContentsHelpers.ts";
 import { parseModule } from "./ParseModule.ts";
-import { ParsingContext } from "./ParsingContext.ts";
+import { type ParseOptions, ParsingContext } from "./ParsingContext.ts";
 import { WeslStream } from "./WeslStream.ts";
 
 /** Parse a WESL source module into an AST. */
-export function parseWesl(srcModule: SrcModule): WeslAST {
-  const { ctx, state } = createParseState(srcModule);
+export function parseWesl(
+  srcModule: SrcModule,
+  options?: ParseOptions,
+): WeslAST {
+  const { ctx, state } = createParseState(srcModule, options);
   try {
     beginElem(ctx, "module");
     parseModule(ctx);
@@ -30,7 +33,10 @@ export function parseWesl(srcModule: SrcModule): WeslAST {
 }
 
 /** Initialize parse state: token stream, root scope, and module element. */
-function createParseState(srcModule: SrcModule): {
+function createParseState(
+  srcModule: SrcModule,
+  options?: ParseOptions,
+): {
   ctx: ParsingContext;
   state: WeslParseState;
 } {
@@ -46,6 +52,6 @@ function createParseState(srcModule: SrcModule): {
     context: { scope: rootScope, openElems: [] },
     stable: { srcModule, moduleElem, rootScope, imports: [] },
   };
-  const ctx = new ParsingContext(stream, state);
+  const ctx = new ParsingContext(stream, state, options);
   return { ctx, state };
 }

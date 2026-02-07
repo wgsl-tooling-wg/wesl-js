@@ -57,7 +57,8 @@ function parseReturnStmt(
   const { stream } = ctx;
   if (!stream.matchText("return")) return null;
   beginElem(ctx, "statement", attributes);
-  parseExpression(ctx);
+  const expr = parseExpression(ctx);
+  if (expr && ctx.options.preserveExpressions) ctx.addElem(expr);
   expect(stream, ";", "return statement");
   return finishBlockStatement(startPos, ctx, attributes);
 }
@@ -138,6 +139,7 @@ function parseExpressionStmt(
     stream.reset(startPos);
     return null;
   }
+  if (ctx.options.preserveExpressions) ctx.addElem(expr);
 
   if (!parseIncDecOperator(stream)) parseAssignmentRhs(ctx);
   expect(stream, ";", "expression");
