@@ -79,8 +79,9 @@ test("collect unbound references", async () => {
   const bindResult = bindIdents({ resolver, rootAst, accumulateUnbound: true });
 
   const expected = ["pkg1::bar::baz", "pkg2::foo"];
-  const expectedArrays = expected.map(s => s.split("::")).sort();
-  expect(bindResult.unbound?.sort()).deep.equal(expectedArrays);
+  const expectedPaths = expected.map(s => s.split("::")).sort();
+  const unboundPaths = bindResult.unbound?.map(ref => ref.path).sort();
+  expect(unboundPaths).deep.equal(expectedPaths);
 });
 
 test("publicDecl finds valid conditional declaration", () => {

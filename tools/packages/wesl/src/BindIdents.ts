@@ -70,8 +70,20 @@ export interface BindResults {
   /** Additional global statements to emit (e.g., const_assert). */
   newStatements: EmittableElem[];
 
-  /** Unbound module paths (only if accumulateUnbound is true). */
-  unbound?: string[][];
+  /** Unbound identifiers with position info (only if accumulateUnbound is true). */
+  unbound?: UnboundRef[];
+}
+
+/** An unresolved reference with position info for error reporting. */
+export interface UnboundRef {
+  /** Module path that couldn't be resolved (e.g., ["package", "foo", "bar"]). */
+  path: string[];
+  /** Source module containing this reference. */
+  srcModule: SrcModule;
+  /** Start offset in the source. */
+  start: number;
+  /** End offset in the source. */
+  end: number;
 }
 
 /** An element that can be directly emitted into the linked result. */
@@ -223,7 +235,7 @@ interface BindContext {
   virtuals?: VirtualLibrarySet;
 
   /** Unbound identifiers if accumulateUnbound is true. */
-  unbound?: string[][];
+  unbound?: UnboundRef[];
 
   /** Don't follow references from declarations (for library dependency detection). */
   dontFollowDecls?: boolean;
@@ -370,16 +382,28 @@ function findQualifiedImport(
     matchingImport(identParts, flatImps) ?? qualifiedIdent(identParts);
 
   if (!pathParts) {
-    if (unbound && !stdWgsl(refIdent.originalName)) unbound.push(identParts);
+    if (unbound && !stdWgsl(refIdent.originalName)) {
+      pushUnbound(unbound, identParts, refIdent);
+    }
     return undefined;
   }
 
   const result = findExport(pathParts, refIdent.ast.srcModule, ctx);
   if (!result) {
-    if (unbound) unbound.push(pathParts);
+    if (unbound) pushUnbound(unbound, pathParts, refIdent);
     else failIdent(refIdent, `module not found for '${pathParts.join("::")}'`);
   }
   return result;
+}
+
+/** Add an unbound reference with position info. */
+function pushUnbound(
+  unbound: UnboundRef[],
+  path: string[],
+  refIdent: RefIdent,
+): void {
+  const { srcModule, start, end } = refIdent.refIdentElem;
+  unbound.push({ path, srcModule, start, end });
 }
 
 /** Find an import statement that matches a provided identifier. */
