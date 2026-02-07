@@ -16,10 +16,9 @@ player.addEventListener("ready", () => {
 });
 
 player.addEventListener("compile-error", (e: Event) => {
-  const detail = (e as CustomEvent<CompileErrorDetail>).detail;
-  const { message, file, line, column } = detail;
+  const { message, locations } = (e as CustomEvent<CompileErrorDetail>).detail;
   console.log("[wesl-vscode] compile-error:", message);
-  vscode.postMessage({ kind: "compileError", message, file, line, column });
+  vscode.postMessage({ kind: "compileError", message, locations });
 });
 
 player.addEventListener("compile-success", () => {

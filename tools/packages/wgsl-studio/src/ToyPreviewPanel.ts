@@ -1,16 +1,11 @@
 import * as vscode from "vscode";
 import type { WeslBundle } from "wesl";
+import type { CompileErrorLocation } from "wgsl-play/element";
 import { loadProject } from "./ProjectLoader.ts";
 
 type WebviewMessage =
   | { kind: "ready" }
-  | {
-      kind: "compileError";
-      message: string;
-      file?: string;
-      line?: number;
-      column?: number;
-    }
+  | { kind: "compileError"; message: string; locations: CompileErrorLocation[] }
   | { kind: "compileSuccess" };
 
 /** VS Code webview panel for live shader preview using wgsl-play. */
@@ -48,15 +43,23 @@ export class ToyPreviewPanel {
         this.sendSource();
         break;
       case "compileError": {
-        const line = Math.max(0, (msg.line ?? 1) - 1); // VS Code is 0-indexed
-        const col = Math.max(0, (msg.column ?? 1) - 1);
-        const range = new vscode.Range(line, col, line, col);
-        const diagnostic = new vscode.Diagnostic(
-          range,
-          msg.message,
-          vscode.DiagnosticSeverity.Error,
-        );
-        ToyPreviewPanel.diagnostics.set(this.currentDoc.uri, [diagnostic]);
+        const severityMap = {
+          error: vscode.DiagnosticSeverity.Error,
+          warning: vscode.DiagnosticSeverity.Warning,
+          info: vscode.DiagnosticSeverity.Information,
+        };
+        const diagnostics = msg.locations.map(loc => {
+          const line = Math.max(0, loc.line - 1); // VS Code is 0-indexed
+          const col = Math.max(0, loc.column);
+          const end = col + (loc.length ?? 1);
+          const range = new vscode.Range(line, col, line, end);
+          return new vscode.Diagnostic(
+            range,
+            loc.message,
+            severityMap[loc.severity],
+          );
+        });
+        ToyPreviewPanel.diagnostics.set(this.currentDoc.uri, diagnostics);
         break;
       }
       case "compileSuccess":
