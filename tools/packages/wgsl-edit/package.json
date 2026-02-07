@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsdown",
     "build:demo": "vite build --config vite.config.ts demo",
+    "deploy": "pnpm build:demo && wrangler pages deploy --project-name wgsl-edit --branch main site",
     "dev": "vite demo",
     "typecheck": "tsgo"
   },
@@ -29,6 +30,7 @@
     "open": "^10.0.0",
     "vite": "^7.3.0",
     "wgsl-play": "workspace:x",
+    "wrangler": "^4.22.0",
     "yargs": "^18.0.0"
   }
 }
