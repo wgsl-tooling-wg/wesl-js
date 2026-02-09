@@ -9,7 +9,12 @@ import {
 } from "@codemirror/state";
 import { tags as t } from "@lezer/highlight";
 import { basicSetup, EditorView } from "codemirror";
-import { type Conditions, fileToModulePath, type LinkParams, type WeslBundle } from "wesl";
+import {
+  type Conditions,
+  fileToModulePath,
+  type LinkParams,
+  type WeslBundle,
+} from "wesl";
 import { fetchPackagesByName } from "wesl-fetch";
 import { createWeslLinter, wesl } from "./Language.ts";
 import cssText from "./WgslEdit.css?inline";
@@ -483,7 +488,11 @@ export class WgslEdit extends HTMLElement {
     return createWeslLinter({
       getSources: () => this.sources,
       rootModule: () =>
-        fileToModulePath(this._activeFile, this._packageName ?? "package", false),
+        fileToModulePath(
+          this._activeFile,
+          this._packageName ?? "package",
+          false,
+        ),
       conditions: () => this._conditions,
       packageName: () => this._packageName,
       getExternalDiagnostics: () => this._externalDiagnostics,
@@ -772,6 +781,7 @@ function getStyles(): CSSStyleSheet {
 
 /** Convert a module path or file path to a tab name: "package::main" -> "main", "main.wesl" -> "main.wesl" */
 function toTabName(key: string): string {
-  if (key.includes("::")) return key.replace(/^[^:]+::/, "").replaceAll("::", "/");
+  if (key.includes("::"))
+    return key.replace(/^[^:]+::/, "").replaceAll("::", "/");
   return key.replace(/^\.\//, "");
 }
