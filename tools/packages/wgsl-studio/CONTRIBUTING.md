@@ -30,10 +30,23 @@
 ## Development
 
 ```bash
-bb build      # Build extension + webview bundles
-bb dev        # Watch mode
-bb typecheck  # Type check
+bb build        # Build extension + webview bundles
+bb dev          # Watch mode
+bb typecheck    # Type check
+bb test:vscode  # Run tests in a VS Code instance
 ```
+
+### Extension Tests
+
+Tests use the [VS Code Test CLI](https://github.com/microsoft/vscode-test-cli)
+and run inside a real VS Code instance. Build first, then run:
+
+```bash
+bb build && bb test:vscode
+```
+
+Tests live in `src/test/` and cover extension activation, command registration,
+`@test` discovery, and test execution via the VS Code test controller.
 
 ## Launching the Extension
 
