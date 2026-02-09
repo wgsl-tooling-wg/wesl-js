@@ -304,6 +304,7 @@ export class WgslPlay extends HTMLElement {
 
   /** Set up WebGPU and load initial shader. Returns true if successful. */
   private initialize(): Promise<boolean> {
+    if (this.renderState) return Promise.resolve(true);
     if (!this._initPromise) this._initPromise = this.doInitialize();
     return this._initPromise;
   }
