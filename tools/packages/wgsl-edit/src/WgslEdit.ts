@@ -9,7 +9,7 @@ import {
 } from "@codemirror/state";
 import { tags as t } from "@lezer/highlight";
 import { basicSetup, EditorView } from "codemirror";
-import type { Conditions, LinkParams, WeslBundle } from "wesl";
+import { type Conditions, fileToModulePath, type LinkParams, type WeslBundle } from "wesl";
 import { fetchPackagesByName } from "wesl-fetch";
 import { createWeslLinter, wesl } from "./Language.ts";
 import cssText from "./WgslEdit.css?inline";
@@ -191,9 +191,10 @@ export class WgslEdit extends HTMLElement {
   /** All file contents keyed by module path (e.g., "package::main"). */
   get sources(): Record<string, string> {
     this.saveCurrentFileState();
+    const pkg = this._packageName ?? "package";
     const result: Record<string, string> = {};
-    for (const [name, state] of this._files) {
-      result[fileNameToModulePath(name)] = state.doc.toString();
+    for (const [tabName, state] of this._files) {
+      result[fileToModulePath(tabName, pkg, false)] = state.doc.toString();
     }
     return result;
   }
@@ -201,12 +202,12 @@ export class WgslEdit extends HTMLElement {
   /** Set all files (replaces existing). */
   set sources(value: Record<string, string>) {
     this._files.clear();
-    for (const [path, content] of Object.entries(value)) {
-      const name = modulePathToFileName(path);
-      this._files.set(name, { doc: Text.of(content.split("\n")) });
+    for (const [key, content] of Object.entries(value)) {
+      const tabName = toTabName(key);
+      this._files.set(tabName, { doc: Text.of(content.split("\n")) });
     }
-    const firstFile = Object.keys(value)[0];
-    if (firstFile) this.switchToFile(modulePathToFileName(firstFile));
+    const firstKey = Object.keys(value)[0];
+    if (firstKey) this.switchToFile(toTabName(firstKey));
     this.renderTabs();
   }
 
@@ -219,8 +220,7 @@ export class WgslEdit extends HTMLElement {
 
     if (weslSrc) {
       this.sources = weslSrc;
-      if (rootModuleName)
-        this.activeFile = modulePathToFileName(rootModuleName);
+      if (rootModuleName) this.activeFile = toTabName(rootModuleName);
     }
     this.updateLint();
   }
@@ -482,7 +482,8 @@ export class WgslEdit extends HTMLElement {
     if (this._lint === "off") return [];
     return createWeslLinter({
       getSources: () => this.sources,
-      rootModule: () => fileNameToModulePath(this._activeFile),
+      rootModule: () =>
+        fileToModulePath(this._activeFile, this._packageName ?? "package", false),
       conditions: () => this._conditions,
       packageName: () => this._packageName,
       getExternalDiagnostics: () => this._externalDiagnostics,
@@ -551,13 +552,12 @@ export class WgslEdit extends HTMLElement {
     if (!this.editorView || detail.source === "wesl") return;
 
     const doc = this.editorView.state.doc;
-    const activeModule = fileNameToModulePath(this._activeFile);
+    const pkg = this._packageName ?? "package";
+    const activeModule = fileToModulePath(this._activeFile, pkg, false);
     this._externalDiagnostics = detail.locations
       .filter((loc: any) => {
         if (!loc.file) return true;
-        return (
-          fileNameToModulePath(loc.file.replace(/^\.\//, "")) === activeModule
-        );
+        return fileToModulePath(loc.file, pkg, false) === activeModule;
       })
       .map((loc: any) => {
         const line = doc.line(Math.max(1, Math.min(loc.line, doc.lines)));
@@ -770,14 +770,8 @@ function getStyles(): CSSStyleSheet {
   return cachedStyleSheet;
 }
 
-/** Convert file name to module path: "main.wesl" -> "package::main" */
-function fileNameToModulePath(name: string): string {
-  const base = name.replace(/\.(wesl|wgsl)$/, "");
-  return `package::${base.replace(/\//g, "::")}`;
-}
-
-/** Convert module path to file name: "package::main" -> "main.wesl" */
-function modulePathToFileName(path: string): string {
-  const base = path.replace(/^package::/, "").replace(/::/g, "/");
-  return `${base}.wesl`;
+/** Convert a module path or file path to a tab name: "package::main" -> "main", "main.wesl" -> "main.wesl" */
+function toTabName(key: string): string {
+  if (key.includes("::")) return key.replace(/^[^:]+::/, "").replaceAll("::", "/");
+  return key.replace(/^\.\//, "");
 }
