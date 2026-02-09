@@ -1,5 +1,6 @@
 .turbo/
 .vscode/
+scripts/
 src/
 dist/test/
 *.ts

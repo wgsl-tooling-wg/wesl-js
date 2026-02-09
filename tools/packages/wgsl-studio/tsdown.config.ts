@@ -21,6 +21,17 @@ export default defineConfig([
     noExternal: [/.*/], // bundle everything for browser context
   },
   {
+    // standalone CLI for running tests in a subprocess (spawned by WeslTestController)
+    entry: ["src/runTestCli.ts"],
+    clean: false,
+    format: ["esm"],
+    target: "node22",
+    external: ["webgpu"],
+    noExternal: [/.*/],
+    outDir: "dist",
+    logLevel: "warn",
+  },
+  {
     entry: ["src/test/extension.test.ts"],
     clean: false,
     format: ["cjs"], // mocha requires cjs
