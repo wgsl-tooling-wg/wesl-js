@@ -76,7 +76,7 @@ export class WgslPlay extends HTMLElement {
   private _libs?: WeslBundle[];
   private _linkOptions: LinkOptions = {};
   private _fromFullProject = false;
-  private _initialized = false;
+  private _initPromise?: Promise<boolean>;
   private _sourceEl: HTMLElement | null = null;
   private _sourceListener: ((e: Event) => void) | null = null;
   private _theme: "light" | "dark" | "auto" = "auto";
@@ -157,7 +157,7 @@ export class WgslPlay extends HTMLElement {
     }
 
     // Initial src is handled by initialize(); this handles later changes
-    if (name === "src" && newValue && this._initialized) {
+    if (name === "src" && newValue && this._initPromise) {
       this.loadFromUrl(newValue);
     }
   }
@@ -303,10 +303,12 @@ export class WgslPlay extends HTMLElement {
   }
 
   /** Set up WebGPU and load initial shader. Returns true if successful. */
-  private async initialize(): Promise<boolean> {
-    if (this._initialized) return !!this.renderState;
-    this._initialized = true;
+  private initialize(): Promise<boolean> {
+    if (!this._initPromise) this._initPromise = this.doInitialize();
+    return this._initPromise;
+  }
 
+  private async doInitialize(): Promise<boolean> {
     try {
       this.renderState = await initWebGPU(this.canvas);
       await this.loadInitialContent();
