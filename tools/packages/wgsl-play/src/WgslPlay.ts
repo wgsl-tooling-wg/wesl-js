@@ -236,6 +236,11 @@ export class WgslPlay extends HTMLElement {
     return this.getAttribute("autoplay") !== "false";
   }
 
+  set autoplay(value: boolean) {
+    if (value) this.removeAttribute("autoplay");
+    else this.setAttribute("autoplay", "false");
+  }
+
   /** Whether the shader is currently playing. */
   get isPlaying(): boolean {
     return this.playback.isPlaying;
