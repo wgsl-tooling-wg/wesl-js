@@ -236,8 +236,9 @@ export class WgslPlay extends HTMLElement {
     return this.getAttribute("autoplay") !== "false";
   }
 
-  set autoplay(value: boolean) {
-    if (value) this.removeAttribute("autoplay");
+  set autoplay(value: boolean | string) {
+    const enabled = value !== false && value !== "false";
+    if (enabled) this.removeAttribute("autoplay");
     else this.setAttribute("autoplay", "false");
   }
 
