@@ -81,6 +81,7 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 ### Attributes
 - `src` - URL to .wesl/.wgsl file
 - `shader-root` - Root path for internal imports (default: `/shaders`)
+- `autoplay` - Start animating on load (default: `true`). Set `autoplay="false"` to start paused
 
 ### Properties
 - `source: string` - Get/set shader source

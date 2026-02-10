@@ -56,6 +56,7 @@ export class WgslPlay extends HTMLElement {
     "source",
     "no-controls",
     "theme",
+    "autoplay",
   ];
 
   private canvas: HTMLCanvasElement;
@@ -126,6 +127,10 @@ export class WgslPlay extends HTMLElement {
     this._mediaQuery.addEventListener("change", () => this.updateTheme());
     this.updateTheme();
     document.addEventListener("fullscreenchange", this._onFullscreenChange);
+    if (!this.autoplay) {
+      this.playback.isPlaying = false;
+      this.controls.setPlaying(false);
+    }
     this.initialize();
   }
 
@@ -153,6 +158,11 @@ export class WgslPlay extends HTMLElement {
     if (name === "theme") {
       this._theme = (newValue as typeof this._theme) || "auto";
       this.updateTheme();
+      return;
+    }
+
+    if (name === "autoplay") {
+      newValue === "false" ? this.pause() : this.play();
       return;
     }
 
@@ -219,6 +229,11 @@ export class WgslPlay extends HTMLElement {
       : "package::main";
     this._fromFullProject = true;
     this.discoverAndRebuild();
+  }
+
+  /** Whether autoplay is enabled (default: true). Set autoplay="false" to start paused. */
+  get autoplay(): boolean {
+    return this.getAttribute("autoplay") !== "false";
   }
 
   /** Whether the shader is currently playing. */
