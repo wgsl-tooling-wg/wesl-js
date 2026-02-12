@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as http from "node:http";
 import * as path from "node:path";
+import isCI from "is-ci";
 import type {
   Reporter,
   TestCase,
@@ -19,10 +20,10 @@ interface ImageSnapshotFailureData {
 }
 
 export interface ImageSnapshotReporterOptions {
+  /** Auto-open report in browser. Default: "failures" or "never" in CI */
+  autoOpen?: "always" | "failures" | "never";
   /** Report directory (relative to config.root or absolute) */
   reportPath?: string;
-  /** Auto-open report in browser on failures or always */
-  autoOpen?: boolean | "failures";
   /** Port for live-reload server. Set to 0 to disable. Default: 4343 */
   port?: number;
 }
@@ -32,25 +33,72 @@ export class ImageSnapshotReporter implements Reporter {
   private failuresByFile = new Map<string, ImageSnapshotFailure[]>();
   private vitest!: Vitest;
   private reportPath?: string;
-  private autoOpen: boolean | "failures";
+  private autoOpen: "always" | "failures" | "never";
   private port: number;
   private serverStarted = false;
 
   constructor(options: ImageSnapshotReporterOptions = {}) {
     this.reportPath = options.reportPath;
-    this.autoOpen = options.autoOpen ?? this.getAutoOpenDefault();
     this.port = options.port ?? 4343;
+    this.autoOpen = this.resolveAutoOpen(options.autoOpen);
   }
 
-  private getAutoOpenDefault(): boolean | "failures" {
-    const env = process.env.IMAGE_DIFF_AUTO_OPEN;
-    if (env === "true" || env === "failures") return "failures";
-    return false;
+  /** Resolve autoOpen setting with priority: CI override > env var > config option > default */
+  private resolveAutoOpen(
+    configValue?: "always" | "failures" | "never",
+  ): "always" | "failures" | "never" {
+    const envValue = this.parseEnvAutoOpen();
+
+    if (isCI) {
+      return this.handleCIAutoOpen(envValue, configValue);
+    }
+
+    // Non-CI: env var > config option > default
+    return envValue ?? configValue ?? "failures";
+  }
+
+  /** Parse and validate IMAGE_DIFF_AUTO_OPEN environment variable */
+  private parseEnvAutoOpen(): "always" | "failures" | "never" | undefined {
+    const envValue = process.env.IMAGE_DIFF_AUTO_OPEN;
+    if (!envValue) {
+      return;
+    }
+
+    const validValues = ["failures", "always", "never"] as const;
+    if (!validValues.includes(envValue as any)) {
+      console.warn(
+        `Unrecognised IMAGE_DIFF_AUTO_OPEN value: ${envValue} - Must be one of "failures", "always" or "never". Value will be ignored.`,
+      );
+
+      return;
+    }
+
+    return envValue as "always" | "failures" | "never";
+  }
+
+  /** In CI environments, always return "never" and warn if overriding a provided value */
+  private handleCIAutoOpen(
+    envValue?: "always" | "failures" | "never",
+    configValue?: "always" | "failures" | "never",
+  ): "never" {
+    const providedValue = envValue ?? configValue;
+
+    if (providedValue && providedValue !== "never") {
+      console.warn(
+        `CI environment detected - overriding autoOpen value "${providedValue}" to "never".`,
+      );
+    } else if (!providedValue) {
+      console.log(
+        "CI environment detected - disabling auto-open of image diff report.",
+      );
+    }
+
+    return "never";
   }
 
   onInit(vitest: Vitest) {
     this.vitest = vitest;
-    if (this.port > 0) {
+    if (this.port > 0 && !isCI) {
       this.startServer();
     }
   }
