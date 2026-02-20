@@ -1,6 +1,25 @@
 # WGSL Studio
 
+Test runner for native WGSL / WESL tests.
+
 Live shader preview of WGSL and WESL shaders.
+
+## WESL GPU Tests
+
+WGSL Studio includes a native test runner for GPU shader tests.
+Tag functions with `@test` and use `expect` from `wgsl_test`:
+
+```wgsl
+import wgsl_test::expect;
+
+@test fn myTest() { expect(1 == 1); }
+```
+
+Tests are discovered automatically and appear in the VS Code **Test Explorer**.
+Run them from there, or use the command palette.
+
+The native test runner can be disabled in settings
+(`wgslStudio.nativeTestRunner.enabled`) if you prefer using Vitest instead.
 
 ## Quick Start
 

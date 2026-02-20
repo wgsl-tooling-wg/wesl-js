@@ -3,10 +3,9 @@ export class ErrorOverlay {
   private el: HTMLDivElement;
   private _message: string | null = null;
 
-  constructor(container: ShadowRoot, onDismiss?: () => void) {
+  constructor(container: ShadowRoot) {
     this.el = document.createElement("div");
     this.el.className = "error-overlay";
-    if (onDismiss) this.el.addEventListener("click", onDismiss);
     container.appendChild(this.el);
   }
 

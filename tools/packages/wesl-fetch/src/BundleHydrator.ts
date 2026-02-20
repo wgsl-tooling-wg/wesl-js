@@ -1,9 +1,6 @@
 import { init, parse } from "es-module-lexer";
 import type { WeslBundle } from "wesl";
 
-// Initialize es-module-lexer WASM once at module load
-const initPromise = init;
-
 /**
  * Bundle hydration for WESL packages.
  *
@@ -35,6 +32,9 @@ export interface WeslBundleFile {
   packageName: string;
 }
 
+/** Registry of parsed bundle info, keyed by import path. */
+export type BundleRegistry = Map<string, BundleInfo>;
+
 interface BundleInfo {
   /** JavaScript source containing the weslBundle object literal */
   bundleLiteral: string;
@@ -42,17 +42,24 @@ interface BundleInfo {
   imports: Array<{ varName: string; path: string }>;
 }
 
-/** Registry of parsed bundle info, keyed by import path. */
-export type BundleRegistry = Map<string, BundleInfo>;
-
 /** Fetcher callback for loading missing packages on-demand. */
 type PackageFetcher = (pkgName: string) => Promise<WeslBundleFile[]>;
+
+// Initialize es-module-lexer WASM once at module load
+const initPromise = init;
 
 // Matches: package/dist/foo/bar/weslBundle.js (captures "foo/bar")
 const nestedBundlePattern = /package\/dist\/(.+)\/weslBundle\.js$/;
 
 // Matches: package/dist/weslBundle.js
 const rootBundlePattern = /package\/dist\/weslBundle\.js$/;
+
+// Matches: export const weslBundle = { ... };
+const weslBundleExportPattern =
+  /export\s+const\s+weslBundle\s*=\s*({[\s\S]+});?\s*$/m;
+
+// Matches: import foo from "package" (captures "foo")
+const importVarPattern = /import\s+(\w+)\s+from/;
 
 /** Load WeslBundle objects from BundleFile sources. */
 export async function loadBundlesFromFiles(
@@ -90,13 +97,6 @@ export async function hydrateBundleRegistry(
   return bundles;
 }
 
-// Matches: export const weslBundle = { ... };
-const weslBundleExportPattern =
-  /export\s+const\s+weslBundle\s*=\s*({[\s\S]+});?\s*$/m;
-
-// Matches: import foo from "package" (captures "foo")
-const importVarPattern = /import\s+(\w+)\s+from/;
-
 /** Parse ES module imports from bundle code using es-module-lexer.  */
 function parseBundleImports(code: string): BundleInfo {
   const exportMatch = code.match(weslBundleExportPattern);
@@ -117,6 +117,20 @@ function parseBundleImports(code: string): BundleInfo {
   });
 
   return { bundleLiteral: exportMatch[1], imports: parsedImports };
+}
+
+/** Convert bundle file path to module path (e.g., "package/dist/math/consts/weslBundle.js" => "pkg::math::consts"). */
+function filePathToModulePath(filePath: string, packageName: string): string {
+  const multiMatch = filePath.match(nestedBundlePattern);
+  if (multiMatch) {
+    const subpath = multiMatch[1].replace(/\//g, "::");
+    return `${packageName}::${subpath}`;
+  }
+
+  const singleMatch = filePath.match(rootBundlePattern);
+  if (singleMatch) return packageName;
+
+  throw new Error(`Invalid bundle file path: ${filePath}`);
 }
 
 /**
@@ -170,18 +184,4 @@ async function hydrateBundle(
   Object.assign(placeholder, bundle);
 
   return placeholder;
-}
-
-/** Convert bundle file path to module path (e.g., "package/dist/math/consts/weslBundle.js" => "pkg::math::consts"). */
-function filePathToModulePath(filePath: string, packageName: string): string {
-  const multiMatch = filePath.match(nestedBundlePattern);
-  if (multiMatch) {
-    const subpath = multiMatch[1].replace(/\//g, "::");
-    return `${packageName}::${subpath}`;
-  }
-
-  const singleMatch = filePath.match(rootBundlePattern);
-  if (singleMatch) return packageName;
-
-  throw new Error(`Invalid bundle file path: ${filePath}`);
 }

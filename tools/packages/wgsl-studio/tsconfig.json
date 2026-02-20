@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.node.json",
   "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["node", "@webgpu/types", "mocha"],
     "skipLibCheck": true,
     "paths": {
@@ -9,6 +10,6 @@
       "wesl-tooling/*": ["../wesl-tooling/src/*"]
     }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["src/webview/**/*"]
 }

@@ -28,7 +28,6 @@ import {
 import type { WeslBundleFile } from "./BundleHydrator.ts";
 import { bundleRegistry, hydrateBundleRegistry } from "./BundleHydrator.ts";
 import { fetchBundleFilesFromNpm } from "./BundleLoader.ts";
-import { getConfig, type WgslPlayConfig } from "./Config.ts";
 import { FetchingResolver } from "./FetchingResolver.ts";
 
 /** Resolved sources ready for the linker. */
@@ -40,27 +39,35 @@ export interface ResolvedSources {
   rootModuleName?: string;
 }
 
+/** Options for fetchDependencies. */
+export interface FetchOptions {
+  /** Root path for internal imports (package::, super::). Default: "/shaders" */
+  shaderRoot?: string;
+  /** URL path of the source file (for super:: resolution). */
+  currentPath?: string;
+  /** Pre-existing sources to include. */
+  existingSources?: Record<string, string>;
+}
+
 const virtualModules = ["constants", "test"];
 
 /** Resolve dependencies: internal modules via HTTP, external packages from npm. */
 export async function fetchDependencies(
   rootModuleSource: string,
-  configOverrides?: Partial<WgslPlayConfig>,
-  currentPath?: string,
-  existingSources?: Record<string, string>,
+  options?: FetchOptions,
 ): Promise<ResolvedSources> {
-  const config = getConfig(configOverrides);
+  const shaderRoot = options?.shaderRoot ?? "/shaders";
+  const currentPath = options?.currentPath;
+  const existingSources = options?.existingSources;
+
   const rootModuleName = currentPath
-    ? urlToModulePath(currentPath, config.shaderRoot)
+    ? urlToModulePath(currentPath, shaderRoot)
     : "package::main";
   const initialSources = {
     ...existingSources,
     [rootModuleName]: rootModuleSource,
   };
-  const resolverOpts = {
-    shaderRoot: config.shaderRoot,
-    srcModulePath: currentPath,
-  };
+  const resolverOpts = { shaderRoot, srcModulePath: currentPath };
   const resolver = new FetchingResolver(initialSources, resolverOpts);
 
   const libs: WeslBundle[] = [];
@@ -87,18 +94,35 @@ export async function fetchDependencies(
 /** Load shader from URL, resolving all dependencies. */
 export async function loadShaderFromUrl(
   url: string,
-  configOverrides?: Partial<WgslPlayConfig>,
+  shaderRoot = "/shaders",
 ): Promise<ResolvedSources> {
   const source = await fetchText(url);
   const currentPath = new URL(url, window.location.href).pathname;
-  const config = getConfig(configOverrides);
-  const rootModuleName = urlToModulePath(currentPath, config.shaderRoot);
-  const { weslSrc, libs } = await fetchDependencies(
-    source,
-    configOverrides,
+  const rootModuleName = urlToModulePath(currentPath, shaderRoot);
+  const { weslSrc, libs } = await fetchDependencies(source, {
+    shaderRoot,
     currentPath,
-  );
+  });
   return { weslSrc, libs, rootModuleName };
+}
+
+/** Fetch external package names from unresolved module paths.
+ * Returns the fetched WeslBundle[]. Useful for on-demand fetching in editors. */
+export async function fetchPackagesByName(
+  packageNames: string[],
+): Promise<WeslBundle[]> {
+  const fetched = new Set<string>();
+  return fetchExternalBundles(
+    packageNames.map(n => `${n}::_`),
+    fetched,
+  );
+}
+
+/** Convert URL path to module path (e.g., "/shaders/effects/main.wesl" -> "package::effects::main"). */
+function urlToModulePath(urlPath: string, shaderRoot: string): string {
+  const cleanRoot = shaderRoot.replace(/\/$/, "");
+  const relativePath = urlPath.replace(cleanRoot, "").replace(/^\//, "");
+  return fileToModulePath(relativePath, "package", false);
 }
 
 function getNonVirtualUnresolved(
@@ -115,17 +139,6 @@ function isInternal(modulePath: string): boolean {
   return modulePath.startsWith("package::") || modulePath.startsWith("super::");
 }
 
-/** Extract all sources from resolver (including main). */
-function extractWeslSrc(resolver: FetchingResolver): Record<string, string> {
-  const weslSrc: Record<string, string> = {};
-  for (const [path] of resolver.allModules()) {
-    if (resolver.sources[path]) {
-      weslSrc[path] = resolver.sources[path];
-    }
-  }
-  return weslSrc;
-}
-
 /** Fetch external packages from npm. */
 async function fetchExternalBundles(
   modulePaths: string[],
@@ -137,6 +150,26 @@ async function fetchExternalBundles(
 
   for (const p of newPkgs) fetched.add(p);
   return fetchPackagesFromNpm(newPkgs);
+}
+
+/** Extract all sources from resolver (including main). */
+function extractWeslSrc(resolver: FetchingResolver): Record<string, string> {
+  const weslSrc: Record<string, string> = {};
+  for (const [path] of resolver.allModules()) {
+    if (resolver.sources[path]) {
+      weslSrc[path] = resolver.sources[path];
+    }
+  }
+  return weslSrc;
+}
+
+/** Fetch text content from URL. */
+async function fetchText(url: string): Promise<string> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  return response.text();
 }
 
 /** Fetch WESL bundles from npm, auto-fetching dependencies recursively. */
@@ -166,20 +199,4 @@ async function fetchOnePackage(
     }
   }
   throw new Error(`Package not found: ${pkgId}`);
-}
-
-/** Convert URL path to module path (e.g., "/shaders/effects/main.wesl" -> "package::effects::main"). */
-function urlToModulePath(urlPath: string, shaderRoot: string): string {
-  const cleanRoot = shaderRoot.replace(/\/$/, "");
-  const relativePath = urlPath.replace(cleanRoot, "").replace(/^\//, "");
-  return fileToModulePath(relativePath, "package", false);
-}
-
-/** Fetch text content from URL. */
-async function fetchText(url: string): Promise<string> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-  return response.text();
 }

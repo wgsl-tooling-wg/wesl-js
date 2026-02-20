@@ -13,7 +13,8 @@
       "**/biome.jsonc",
       "!**/assets",
       "!**/dist",
-      "!**/.vscode/**/*"
+      "!**/.vscode/**/*",
+      "!**/lezer-wesl/src/parser.*"
     ]
   },
   "formatter": {
@@ -114,7 +115,7 @@
       }
     },
     {
-      "includes": ["**/v2/**"],
+      "includes": ["**/wgsl-edit/**", "**/wgsl-play/**", "**/lezer-wesl/**"],
       "linter": {
         "rules": {
           "complexity": {

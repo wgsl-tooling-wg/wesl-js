@@ -1,6 +1,6 @@
 {
   "name": "wgsl-play",
-  "version": "0.0.18",
+  "version": "0.0.23",
   "type": "module",
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
@@ -19,15 +19,14 @@
     }
   },
   "dependencies": {
-    "es-module-lexer": "^1.7.0",
-    "fflate": "^0.8.2",
-    "nanotar": "^0.2.0",
-    "resolve.exports": "^2.0.3",
     "wesl": "workspace:*",
+    "wesl-fetch": "workspace:*",
     "wesl-gpu": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "^1.53.2",
+    "fflate": "^0.8.2",
+    "nanotar": "^0.2.0",
     "wesl-plugin": "workspace:x"
   }
 }

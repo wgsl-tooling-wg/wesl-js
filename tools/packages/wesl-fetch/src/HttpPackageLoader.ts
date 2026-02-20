@@ -4,14 +4,14 @@ import { findUnboundIdents, RecordResolver } from "wesl";
 import type { WeslBundleFile } from "./BundleHydrator.ts";
 import { bundleRegistry, hydrateBundleRegistry } from "./BundleHydrator.ts";
 
-/** Resolution mode for package loading. (Note: disconnected from main flow) */
-type PackageMode = "source" | "bundle";
-
 /** Loaded sources for source mode. */
 export interface SourcePackage {
   sources: Record<string, string>;
   packageName: string;
 }
+
+/** Resolution mode for package loading. (Note: disconnected from main flow) */
+type PackageMode = "source" | "bundle";
 
 /** Cached package.json data. */
 interface PackageJson {
@@ -51,6 +51,25 @@ async function fetchSourcePackages(
   return results;
 }
 
+/** Fetch weslBundle.js files for bundle mode. */
+async function fetchBundlePackages(
+  pkgNames: string[],
+  packageBase: string,
+): Promise<WeslBundle[]> {
+  const loaded = new Set<string>();
+  const allFiles: WeslBundleFile[] = [];
+
+  for (const pkgName of pkgNames) {
+    const files = await fetchBundlePackage(pkgName, packageBase, loaded);
+    allFiles.push(...files);
+  }
+
+  const registry = await bundleRegistry(allFiles);
+  return hydrateBundleRegistry(registry, pkgId =>
+    fetchBundlePackage(pkgId, packageBase, loaded),
+  );
+}
+
 /** Fetch a single package's source files starting from lib.wesl. */
 async function fetchSourcePackage(
   pkgName: string,
@@ -78,68 +97,6 @@ async function fetchSourcePackage(
   }
 
   return { sources, packageName: pkgName };
-}
-
-/** Find references to modules within the same package. */
-function findInternalReferences(source: string, pkgName: string): string[] {
-  const resolver = new RecordResolver(
-    { main: source },
-    { packageName: pkgName },
-  );
-  const unbound = findUnboundIdents(resolver);
-  return unbound
-    .filter(path => path[0] === pkgName && path.length > 1)
-    .map(path => path.slice(1).join("/"));
-}
-
-/** Fetch a single source file, trying various paths and extensions. */
-async function fetchSourceFile(
-  pkgName: string,
-  modulePath: string,
-  packageBase: string,
-): Promise<string | null> {
-  const basePath = modulePath === "lib" ? "lib" : modulePath;
-  const prefixes = ["", "shaders/", "src/"];
-  const extensions = ["wesl", "wgsl"];
-
-  for (const prefix of prefixes) {
-    for (const ext of extensions) {
-      const url = normalizeUrl(
-        `${packageBase}/${pkgName}/${prefix}${basePath}.${ext}`,
-      );
-      try {
-        const response = await fetch(url);
-        if (response.ok) {
-          const contentType = response.headers.get("content-type") || "";
-          // Skip HTML error pages (Vite returns 200 with HTML for missing files)
-          if (contentType.includes("text/html")) continue;
-          return response.text();
-        }
-      } catch {
-        // Try next combination
-      }
-    }
-  }
-  return null;
-}
-
-/** Fetch weslBundle.js files for bundle mode. */
-async function fetchBundlePackages(
-  pkgNames: string[],
-  packageBase: string,
-): Promise<WeslBundle[]> {
-  const loaded = new Set<string>();
-  const allFiles: WeslBundleFile[] = [];
-
-  for (const pkgName of pkgNames) {
-    const files = await fetchBundlePackage(pkgName, packageBase, loaded);
-    allFiles.push(...files);
-  }
-
-  const registry = await bundleRegistry(allFiles);
-  return hydrateBundleRegistry(registry, pkgId =>
-    fetchBundlePackage(pkgId, packageBase, loaded),
-  );
 }
 
 /** Fetch bundle files for a single package. */
@@ -174,6 +131,49 @@ async function fetchBundlePackage(
   // For multi-bundle packages, bundles are fetched on-demand by the hydrator
 
   return bundleFiles;
+}
+
+/** Fetch a single source file, trying various paths and extensions. */
+async function fetchSourceFile(
+  pkgName: string,
+  modulePath: string,
+  packageBase: string,
+): Promise<string | null> {
+  const basePath = modulePath === "lib" ? "lib" : modulePath;
+  const prefixes = ["", "shaders/", "src/"];
+  const extensions = ["wesl", "wgsl"];
+
+  for (const prefix of prefixes) {
+    for (const ext of extensions) {
+      const url = normalizeUrl(
+        `${packageBase}/${pkgName}/${prefix}${basePath}.${ext}`,
+      );
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const contentType = response.headers.get("content-type") || "";
+          // Skip HTML error pages (Vite returns 200 with HTML for missing files)
+          if (contentType.includes("text/html")) continue;
+          return response.text();
+        }
+      } catch {
+        // Try next combination
+      }
+    }
+  }
+  return null;
+}
+
+/** Find references to modules within the same package. */
+function findInternalReferences(source: string, pkgName: string): string[] {
+  const resolver = new RecordResolver(
+    { main: source },
+    { packageName: pkgName },
+  );
+  const unbound = findUnboundIdents(resolver);
+  return unbound
+    .filter(path => path[0] === pkgName && path.length > 1)
+    .map(path => path.slice(1).join("/"));
 }
 
 /** Fetch and cache package.json. */

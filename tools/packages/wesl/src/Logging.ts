@@ -88,9 +88,9 @@ function logInternalSrc(
 }
 
 function carets(linePos: number, linePos2?: number): string {
-  const indent = " ".repeat(linePos);
+  const indent = " ".repeat(Math.max(0, linePos));
   const numCarets = linePos2 ? linePos2 - linePos : 1;
-  const caretStr = "^".repeat(numCarets);
+  const caretStr = "^".repeat(Math.max(1, numCarets));
   return indent + caretStr;
 }
 

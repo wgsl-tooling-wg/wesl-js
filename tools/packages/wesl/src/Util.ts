@@ -175,9 +175,7 @@ export function offsetToLineNumber(
  */
 export function errorHighlight(source: string, span: Span): [string, string] {
   let lineStartOffset = source.lastIndexOf("\n", span[0]);
-  if (lineStartOffset === -1) {
-    lineStartOffset = 0;
-  }
+  lineStartOffset = lineStartOffset === -1 ? 0 : lineStartOffset + 1;
   let lineEndOffset = source.indexOf("\n", span[0]);
   if (lineEndOffset === -1) {
     lineEndOffset = source.length;
@@ -186,7 +184,7 @@ export function errorHighlight(source: string, span: Span): [string, string] {
   // LATER Handle multiline spans
   const errorLength = span[1] - span[0];
   const caretCount = Math.max(1, errorLength);
-  const linePos = span[0] - lineStartOffset;
+  const linePos = Math.max(0, span[0] - lineStartOffset);
   return [
     source.slice(lineStartOffset, lineEndOffset),
     " ".repeat(linePos) + "^".repeat(caretCount),

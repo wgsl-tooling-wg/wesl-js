@@ -1,0 +1,132 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      lezer-wesl:
+        specifier: workspace:*
+        version: link:../lezer-wesl
+      wesl:
+        specifier: workspace:*
+        version: link:../wesl
+    devDependencies:
+      wgsl-play:
+        specifier: workspace:x
+        version: link:../wgsl-play
+
+  ../..: {}
+
+  ../../..: {}
+
+  ../../../clank/website-wesl: {}
+
+  ../../../clank/website-wesl/presentations/symposium-2026-02-13: {}
+
+  ../../../clank/website-wesl/presentations/wgsl-test-2026-01-13: {}
+
+  ../../../cts: {}
+
+  ../../../cts/tools/eslint-plugin-gpuweb-cts: {}
+
+  ../../../cts/tools/websocket-logger: {}
+
+  ../../../cts/transpiler/wesl: {}
+
+  ../../../temp-built-test: {}
+
+  ../../../wesl-testsuite: {}
+
+  ../../../wesl-testsuite/shaders/webgpu-samples: {}
+
+  ../../examples/lygia-cli-example: {}
+
+  ../../examples/lygia-example: {}
+
+  ../../examples/lygia-static-example: {}
+
+  ../../examples/wesl-rand: {}
+
+  ../../examples/wesl-vite: {}
+
+  ../../examples/wesl-vite-minimal: {}
+
+  ../../examples/wgsl-play-lygia-example: {}
+
+  ../../examples/wgsl-test-basic-compute: {}
+
+  ../../examples/wgsl-test-fragment-image: {}
+
+  ../../examples/wgsl-test-native: {}
+
+  ../../scripts: {}
+
+  ../bench: {}
+
+  ../bench-viz: {}
+
+  ../bencher: {}
+
+  ../built-test: {}
+
+  ../labs/wesl-toy-viewer: {}
+
+  ../lezer-wesl: {}
+
+  ../random_wgsl: {}
+
+  ../test_pkg/@test-scope/my-shaders: {}
+
+  ../test_pkg/dependent_package: {}
+
+  ../test_pkg/multi_pkg: {}
+
+  ../vitest-image-snapshot: {}
+
+  ../vitest-util: {}
+
+  ../wesl: {}
+
+  ../wesl-bench: {}
+
+  ../wesl-gpu: {}
+
+  ../wesl-link: {}
+
+  ../wesl-packager: {}
+
+  ../wesl-packager/src/test/multi_package: {}
+
+  ../wesl-packager/src/test/wesl-package: {}
+
+  ../wesl-plugin: {}
+
+  ../wesl-plugin/test/linkExtension: {}
+
+  ../wesl-plugin/test/linkExtensionAuto: {}
+
+  ../wesl-plugin/test/linkExtensionNoToml: {}
+
+  ../wesl-plugin/test/linkGpu: {}
+
+  ../wesl-plugin/test/linkSubPath: {}
+
+  ../wesl-plugin/test/staticExtension: {}
+
+  ../wesl-reflect: {}
+
+  ../wesl-tooling: {}
+
+  ../wgsl-play: {}
+
+  ../wgsl-studio: {}
+
+  ../wgsl-test: {}
+
+  ../wgsl-test/src/test/fixtures/test_shader_pkg: {}
+
+  ../wgsl-test/src/test/fixtures/wesl_test_pkg: {}

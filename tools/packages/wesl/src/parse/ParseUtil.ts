@@ -54,6 +54,7 @@ export function expectExpression(
 ): ExpressionElem {
   const expr = parseExpression(ctx);
   if (!expr) throwParseError(ctx.stream, errorMsg);
+  if (ctx.options.preserveExpressions) ctx.addElem(expr);
   return expr;
 }
 

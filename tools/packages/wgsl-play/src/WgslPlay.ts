@@ -1,8 +1,9 @@
 import type { LinkParams, WeslBundle } from "wesl";
-import { fileToModulePath } from "wesl";
+import { fileToModulePath, WeslParseError } from "wesl";
+import { fetchDependencies, loadShaderFromUrl } from "wesl-fetch";
 import type { WgslPlayConfig } from "./Config.ts";
 import { ErrorOverlay } from "./ErrorOverlay.ts";
-import { fetchDependencies, loadShaderFromUrl } from "./PackageLoader.ts";
+import { PlaybackControls } from "./PlaybackControls.ts";
 import {
   createPipeline,
   initWebGPU,
@@ -26,12 +27,21 @@ export type WeslProject = Pick<
   | "packageName"
 >;
 
+/** One source location within a compile error. */
+export interface CompileErrorLocation {
+  file?: string;
+  line: number;
+  column: number; // 0-indexed
+  length?: number;
+  severity: "error" | "warning" | "info";
+  message: string;
+}
+
 /** Compile error detail for events. */
 export interface CompileErrorDetail {
   message: string;
-  file?: string;
-  line?: number;
-  column?: number;
+  source: "wesl" | "webgpu";
+  locations: CompileErrorLocation[];
 }
 
 // Lazy-init for SSR/Node.js compatibility (avoid browser APIs at module load)
@@ -40,10 +50,18 @@ let template: HTMLTemplateElement | null = null;
 
 /** <wgsl-play> web component for rendering WESL/WGSL fragment shaders.  */
 export class WgslPlay extends HTMLElement {
-  static observedAttributes = ["src", "shader-root"];
+  static observedAttributes = [
+    "src",
+    "shader-root",
+    "source",
+    "no-controls",
+    "theme",
+    "autoplay",
+  ];
 
   private canvas: HTMLCanvasElement;
   private errorOverlay: ErrorOverlay;
+  private controls: PlaybackControls;
   private resizeObserver: ResizeObserver;
   private stopRenderLoop?: () => void;
 
@@ -59,7 +77,13 @@ export class WgslPlay extends HTMLElement {
   private _libs?: WeslBundle[];
   private _linkOptions: LinkOptions = {};
   private _fromFullProject = false;
-  private _initialized = false;
+  private _initPromise?: Promise<boolean>;
+  private _sourceEl: HTMLElement | null = null;
+  private _sourceListener: ((e: Event) => void) | null = null;
+  private _theme: "light" | "dark" | "auto" = "auto";
+  private _mediaQuery: MediaQueryList | null = null;
+  private _onFullscreenChange = () =>
+    this.controls.setFullscreen(!!document.fullscreenElement);
 
   /** Get config overrides from element attributes. */
   private getConfigOverrides(): Partial<WgslPlayConfig> | undefined {
@@ -75,7 +99,14 @@ export class WgslPlay extends HTMLElement {
     shadow.appendChild(getTemplate().content.cloneNode(true));
 
     this.canvas = shadow.querySelector("canvas")!;
-    this.errorOverlay = new ErrorOverlay(shadow, () => this.pause());
+    this.errorOverlay = new ErrorOverlay(shadow);
+    this.controls = new PlaybackControls(
+      shadow,
+      () => this.play(),
+      () => this.pause(),
+      () => this.rewind(),
+      () => this.toggleFullscreen(),
+    );
 
     this.resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
@@ -90,12 +121,26 @@ export class WgslPlay extends HTMLElement {
 
   connectedCallback(): void {
     this.resizeObserver.observe(this);
+    const themeAttr = this.getAttribute("theme") as typeof this._theme | null;
+    if (themeAttr) this._theme = themeAttr;
+    this._mediaQuery = matchMedia("(prefers-color-scheme: dark)");
+    this._mediaQuery.addEventListener("change", () => this.updateTheme());
+    this.updateTheme();
+    document.addEventListener("fullscreenchange", this._onFullscreenChange);
+    if (!this.autoplay) {
+      this.playback.isPlaying = false;
+      this.controls.setPlaying(false);
+    }
     this.initialize();
   }
 
   disconnectedCallback(): void {
     this.resizeObserver.disconnect();
     this.stopRenderLoop?.();
+    document.removeEventListener("fullscreenchange", this._onFullscreenChange);
+    if (this._sourceEl && this._sourceListener) {
+      this._sourceEl.removeEventListener("change", this._sourceListener);
+    }
   }
 
   attributeChangedCallback(
@@ -105,8 +150,24 @@ export class WgslPlay extends HTMLElement {
   ): void {
     if (oldValue === newValue) return;
 
+    if (name === "no-controls") {
+      newValue !== null ? this.controls.hide() : this.controls.show();
+      return;
+    }
+
+    if (name === "theme") {
+      this._theme = (newValue as typeof this._theme) || "auto";
+      this.updateTheme();
+      return;
+    }
+
+    if (name === "autoplay") {
+      newValue === "false" ? this.pause() : this.play();
+      return;
+    }
+
     // Initial src is handled by initialize(); this handles later changes
-    if (name === "src" && newValue && this._initialized) {
+    if (name === "src" && newValue && this._initPromise) {
       this.loadFromUrl(newValue);
     }
   }
@@ -126,8 +187,14 @@ export class WgslPlay extends HTMLElement {
 
   /** Set project configuration (mirrors wesl link() API). */
   set project(value: WeslProject) {
-    const { weslSrc, rootModuleName, libs } = value;
-    const { packageName, conditions, constants } = value;
+    const {
+      weslSrc,
+      rootModuleName,
+      libs,
+      packageName,
+      conditions,
+      constants,
+    } = value;
 
     // Update link options if provided
     if (packageName || conditions || constants) {
@@ -162,6 +229,17 @@ export class WgslPlay extends HTMLElement {
       : "package::main";
     this._fromFullProject = true;
     this.discoverAndRebuild();
+  }
+
+  /** Whether autoplay is enabled (default: true). Set autoplay="false" to start paused. */
+  get autoplay(): boolean {
+    return this.getAttribute("autoplay") !== "false";
+  }
+
+  set autoplay(value: boolean | string) {
+    const enabled = value !== false && value !== "false";
+    if (enabled) this.removeAttribute("autoplay");
+    else this.setAttribute("autoplay", "false");
   }
 
   /** Whether the shader is currently playing. */
@@ -208,6 +286,7 @@ export class WgslPlay extends HTMLElement {
 
   private setPlaying(playing: boolean): void {
     this.playback.isPlaying = playing;
+    this.controls.setPlaying(playing);
     this.dispatchEvent(
       new CustomEvent("playback-change", { detail: { isPlaying: playing } }),
     );
@@ -230,11 +309,28 @@ export class WgslPlay extends HTMLElement {
     this.pause();
   }
 
-  /** Set up WebGPU and load initial shader. Returns true if successful. */
-  private async initialize(): Promise<boolean> {
-    if (this._initialized) return !!this.renderState;
-    this._initialized = true;
+  /** Toggle fullscreen on this element. */
+  toggleFullscreen(): void {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else this.requestFullscreen();
+  }
 
+  private updateTheme(): void {
+    const isDark =
+      this._theme === "dark" ||
+      (this._theme === "auto" &&
+        matchMedia("(prefers-color-scheme: dark)").matches);
+    this.classList.toggle("dark", isDark);
+  }
+
+  /** Set up WebGPU and load initial shader. Returns true if successful. */
+  private initialize(): Promise<boolean> {
+    if (this.renderState) return Promise.resolve(true);
+    if (!this._initPromise) this._initPromise = this.doInitialize();
+    return this._initPromise;
+  }
+
+  private async doInitialize(): Promise<boolean> {
     try {
       this.renderState = await initWebGPU(this.canvas);
       await this.loadInitialContent();
@@ -242,7 +338,9 @@ export class WgslPlay extends HTMLElement {
       this.dispatchEvent(new CustomEvent("ready"));
       return true;
     } catch (error) {
-      const message = `WebGPU initialization failed: ${error}`;
+      const message = !navigator.gpu
+        ? "WebGPU is not supported in this browser.\nTry Chrome 113+, Edge 113+, or Safari 18+."
+        : `WebGPU initialization failed: ${error}`;
       this.errorOverlay.show(message);
       this.pause();
       this.dispatchEvent(
@@ -252,8 +350,11 @@ export class WgslPlay extends HTMLElement {
     }
   }
 
-  /** Load from src attribute, script child, or inline textContent. */
+  /** Load from source element, src URL, script child, or inline textContent. */
   private async loadInitialContent(): Promise<void> {
+    const sourceId = this.getAttribute("source");
+    if (sourceId) return this.connectToSource(sourceId);
+
     const src = this.getAttribute("src");
     if (src) return this.loadFromUrl(src);
 
@@ -270,6 +371,35 @@ export class WgslPlay extends HTMLElement {
     await this.discoverAndRebuild();
   }
 
+  /** Connect to a source provider element (e.g., wgsl-edit). */
+  private async connectToSource(id: string): Promise<void> {
+    const el = document.getElementById(id);
+    if (!el) {
+      console.error(`wgsl-play: source element "${id}" not found`);
+      return;
+    }
+    this._sourceEl = el;
+
+    // Get sources from element - support both single-file and multi-file APIs
+    const getSources = (): Record<string, string> => {
+      const sources = (el as any).sources;
+      if (sources && Object.keys(sources).length > 0) return sources;
+      const source = (el as any).source ?? el.textContent ?? "";
+      return { [this._rootModuleName]: source };
+    };
+
+    // Load initial sources
+    this.project = { weslSrc: getSources() };
+
+    // Listen for changes - handle both single and multi-file
+    this._sourceListener = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const fallback = { [this._rootModuleName]: detail?.source ?? "" };
+      this.project = { weslSrc: detail?.sources ?? fallback };
+    };
+    el.addEventListener("change", this._sourceListener);
+  }
+
   /** Fetch shader from URL, auto-fetching any imported dependencies. */
   private async loadFromUrl(url: string): Promise<void> {
     if (!this.renderState) return;
@@ -278,7 +408,7 @@ export class WgslPlay extends HTMLElement {
       this.errorOverlay.hide();
       const { weslSrc, libs, rootModuleName } = await loadShaderFromUrl(
         url,
-        this.getConfigOverrides(),
+        this.getConfigOverrides()?.shaderRoot,
       );
       this._weslSrc = weslSrc;
       this._libs = libs;
@@ -330,12 +460,10 @@ export class WgslPlay extends HTMLElement {
 
     try {
       this.errorOverlay.hide();
-      const { weslSrc, libs } = await fetchDependencies(
-        mainSource,
-        this.getConfigOverrides(),
-        undefined,
-        this._weslSrc,
-      );
+      const { weslSrc, libs } = await fetchDependencies(mainSource, {
+        shaderRoot: this.getConfigOverrides()?.shaderRoot,
+        existingSources: this._weslSrc,
+      });
       this._weslSrc = { ...this._weslSrc, ...weslSrc };
       this._libs = [...(this._libs ?? []), ...libs];
 
@@ -352,17 +480,49 @@ export class WgslPlay extends HTMLElement {
   }
 
   private handleCompileError(error: unknown): void {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = (error as any)?.message ?? String(error);
     this.errorOverlay.show(message);
-    this.pause();
-    const loc = (error as any)?.weslLocation;
-    const detail: CompileErrorDetail = {
-      message,
-      file: loc?.file,
-      line: loc?.line,
-      column: loc?.column,
-    };
+
+    const source = error instanceof WeslParseError ? "wesl" : "webgpu";
+    const locations = this.extractLocations(error);
+    const detail: CompileErrorDetail = { message, source, locations };
     this.dispatchEvent(new CustomEvent("compile-error", { detail }));
+  }
+
+  /** Extract source locations from a WESL parse error or GPU compilation error. */
+  private extractLocations(error: unknown): CompileErrorLocation[] {
+    // WESL linker errors attach a single weslLocation
+    const loc = (error as any)?.weslLocation;
+    if (loc) {
+      return [
+        {
+          file: loc.file,
+          line: loc.line,
+          column: loc.column - 1,
+          length: loc.length,
+          severity: "error",
+          message: (error as any)?.message ?? "",
+        },
+      ];
+    }
+    // GPU compilation errors have multiple messages
+    const msgs = (error as any)?.compilationInfo?.messages;
+    if (msgs) {
+      return msgs.map((m: any) => ({
+        file: m.module?.url,
+        line: m.lineNum,
+        column: m.linePos - 1, // 1-indexed to 0-indexed
+        length: m.length,
+        severity:
+          m.type === "warning"
+            ? "warning"
+            : m.type === "info"
+              ? "info"
+              : "error",
+        message: m.message,
+      }));
+    }
+    return [];
   }
 }
 

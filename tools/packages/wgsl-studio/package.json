@@ -1,19 +1,19 @@
 {
   "name": "wgsl-studio",
   "description": "WGSL/WESL previews and tests",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "type": "module",
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",
     "build:vsix": "turbo run build:vsix:run",
-    "build:vsix:run": "vsce package --no-dependencies",
+    "build:vsix:run": "node --experimental-strip-types scripts/packageVsix.ts package",
     "dev": "tsdown --watch",
     "launch": "turbo run launch:code",
     "launch:code": "code --extensionDevelopmentPath=$PWD",
     "publish:vsix": "turbo run publish:vsix:run",
-    "publish:vsix:run": "vsce publish --no-dependencies",
+    "publish:vsix:run": "node --experimental-strip-types scripts/packageVsix.ts publish",
     "test:vscode": "turbo run test:vscode:run",
     "test:vscode:run": "vscode-test",
     "typecheck": "tsgo"

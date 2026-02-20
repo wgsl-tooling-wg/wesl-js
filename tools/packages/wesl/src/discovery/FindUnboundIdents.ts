@@ -3,6 +3,7 @@ import {
   bindIdentsRecursive,
   type EmittableElem,
   findValidRootDecls,
+  type UnboundRef,
 } from "../BindIdents.ts";
 import { type LiveDecls, makeLiveDecls } from "../LiveDeclarations.ts";
 import { minimalMangle } from "../Mangler.ts";
@@ -21,6 +22,11 @@ import { filterMap } from "../Util.ts";
  *   (e.g., [['foo', 'bar', 'baz'], ['other', 'pkg']])
  */
 export function findUnboundIdents(resolver: BatchModuleResolver): string[][] {
+  return findUnboundRefs(resolver).map(ref => ref.path);
+}
+
+/** Find unbound references with full position info. */
+export function findUnboundRefs(resolver: BatchModuleResolver): UnboundRef[] {
   const bindContext = {
     resolver,
     conditions: {},
@@ -29,7 +35,7 @@ export function findUnboundIdents(resolver: BatchModuleResolver): string[][] {
     globalNames: new Set<string>(),
     globalStatements: new Map<AbstractElem, EmittableElem>(),
     mangler: minimalMangle,
-    unbound: [] as string[][],
+    unbound: [] as UnboundRef[],
     dontFollowDecls: true,
   };
 

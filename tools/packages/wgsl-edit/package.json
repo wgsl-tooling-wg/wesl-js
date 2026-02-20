@@ -1,0 +1,37 @@
+{
+  "name": "wgsl-edit",
+  "description": "Web component for editing WGSL/WESL with CodeMirror",
+  "version": "0.0.7",
+  "type": "module",
+  "repository": "github:wgsl-tooling-wg/wesl-js",
+  "scripts": {
+    "build": "tsdown",
+    "build:demo": "vite build --config vite.config.ts demo",
+    "deploy": "pnpm build:demo && wrangler pages deploy --project-name wgsl-edit --branch main site",
+    "dev": "vite demo",
+    "typecheck": "tsgo"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./element": "./src/WgslEdit.ts",
+    "./language": "./src/Language.ts"
+  },
+  "dependencies": {
+    "@codemirror/language": "^6.11.2",
+    "@codemirror/lint": "^6.0.0",
+    "@codemirror/state": "^6.0.0",
+    "@codemirror/view": "^6.0.0",
+    "@lezer/highlight": "^1.2.1",
+    "codemirror": "^6.0.0",
+    "lezer-wesl": "workspace:*",
+    "wesl": "workspace:*",
+    "wesl-fetch": "workspace:*"
+  },
+  "devDependencies": {
+    "open": "^10.0.0",
+    "vite": "^7.3.0",
+    "wgsl-play": "workspace:x",
+    "wrangler": "^4.22.0",
+    "yargs": "^18.0.0"
+  }
+}

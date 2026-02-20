@@ -18,6 +18,7 @@ export { WeslStream } from "./parse/WeslStream.ts";
 export * from "./Scope.ts";
 export * from "./Span.ts";
 export * from "./SrcMap.ts";
+export * from "./StandardTypes.ts";
 export * from "./TransformBindingStructs.ts";
 export * from "./Util.ts";
 export * from "./WeslBundle.ts";

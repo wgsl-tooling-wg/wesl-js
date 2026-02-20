@@ -11,18 +11,30 @@ import {
 } from "../Scope.ts";
 import type { WeslStream } from "./WeslStream.ts";
 
+export interface ParseOptions {
+  /** Store expression AST nodes in statement contents (for tooling/validation). */
+  // LATER we'll always store expressions in the AST, (but this partial support is for wgsl-edit validation)
+  preserveExpressions?: boolean;
+}
+
 /** Context for parsers to build AST and manage scopes. */
 export class ParsingContext {
   src: string;
   srcModule: SrcModule;
   stream: WeslStream;
   state: WeslParseState;
+  options: ParseOptions;
 
-  constructor(stream: WeslStream, state: WeslParseState) {
+  constructor(
+    stream: WeslStream,
+    state: WeslParseState,
+    options?: ParseOptions,
+  ) {
     this.stream = stream;
     this.state = state;
     this.srcModule = state.stable.srcModule;
     this.src = this.srcModule.src;
+    this.options = options ?? {};
   }
 
   position(): number {

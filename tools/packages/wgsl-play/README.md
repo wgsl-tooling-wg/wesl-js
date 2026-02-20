@@ -14,7 +14,9 @@ That's it. The component auto-fetches dependencies and starts animating.
 
 ### Shader API
 
-Write a fragment shader with a single `@fragment` function (any name works). WESL extensions are supported (imports, conditional compilation).
+`wgsl-play` renders a fullscreen triangle using a built-in vertex shader and only
+accepts **fragment shaders**. Write a single `@fragment` function. 
+WESL extensions are supported (imports, conditional compilation).
 
 Standard uniforms are provided at binding 0:
 
@@ -79,6 +81,7 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 ### Attributes
 - `src` - URL to .wesl/.wgsl file
 - `shader-root` - Root path for internal imports (default: `/shaders`)
+- `autoplay` - Start animating on load (default: `true`). Set `autoplay="false"` to start paused
 
 ### Properties
 - `source: string` - Get/set shader source

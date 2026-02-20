@@ -106,6 +106,23 @@
       <pre id="conditions-status">Status: Ready</pre>
     </div>
 
+    <!-- autoplay test -->
+    <div class="section">
+      <h3>8. autoplay="false" (starts paused)</h3>
+      <wgsl-play id="player8" autoplay="false">
+        <script type="text/wesl">
+          import test::Uniforms;
+          @group(0) @binding(0) var<uniform> u: Uniforms;
+
+          @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+            let uv = pos.xy / u.resolution;
+            return vec4f(uv, sin(u.time * 10) * 0.5 + 0.5, 1.0);
+          }
+        </script>
+      </wgsl-play>
+      <pre id="autoplay-status">Should start paused (time frozen at 0)</pre>
+    </div>
+
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

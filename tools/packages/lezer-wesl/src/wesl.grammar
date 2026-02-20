@@ -1,0 +1,457 @@
+// Lezer grammar for WESL (WebGPU Extended Shading Language)
+// WESL is an extension of WGSL with additional features like imports and conditional compilation
+//
+// This grammar is designed for syntax highlighting. Nested template syntax (array<vec4<f32>>)
+// is handled via an external tokenizer that splits '>>' into separate '>' tokens.
+//
+// BuiltinType and BuiltinFn are produced by @external specialize on identifiers.
+// Since specialize replaces unconditionally, BuiltinFn must be accepted alongside
+// Identifier in any position where a user-defined name might match a built-in
+// function name (min, max, distance, etc.).
+
+@top Module {
+  (importStatement | globalDirective | globalDeclaration)*
+}
+
+// ============================================================================
+// WESL Extensions: Imports
+// ============================================================================
+
+importStatement {
+  Attribute* Import ImportPath ("as" Identifier)? ";"
+}
+
+ImportPath {
+  (Kw<"package"> | Kw<"super"> | Identifier) ("::" (Kw<"super"> | Identifier | importCollection))*
+}
+
+importCollection {
+  "{" commaSep<ImportItem> "}"
+}
+
+// Import items: nested paths or collections: foo, foo::bar, foo::{a, b}
+ImportItem {
+  Identifier ("::" (Identifier | importCollection))* ("as" Identifier)?
+}
+
+// ============================================================================
+// Global Directives
+// ============================================================================
+
+globalDirective {
+  Attribute* (
+    DiagnosticDirective |
+    EnableDirective |
+    RequiresDirective
+  )
+}
+
+DiagnosticDirective {
+  Kw<"diagnostic"> "(" Identifier "," Identifier ("." Identifier)? ")" ";"
+}
+
+EnableDirective {
+  Kw<"enable"> commaSep1<Identifier> ";"
+}
+
+RequiresDirective {
+  Kw<"requires"> commaSep1<Identifier> ";"
+}
+
+// ============================================================================
+// Global Declarations
+// ============================================================================
+
+globalDeclaration {
+  FunctionDeclaration |
+  StructDeclaration |
+  GlobalVariableDeclaration |
+  GlobalValueDeclaration |
+  TypeAliasDeclaration |
+  ConstAssert |
+  ";"
+}
+
+// ============================================================================
+// Structs
+// ============================================================================
+
+StructDeclaration {
+  Attribute* Kw<"struct"> (Identifier | BuiltinFn) StructBody
+}
+
+StructBody {
+  "{" commaSep1<StructMember> "}"
+}
+
+StructMember {
+  Attribute* (Identifier | BuiltinFn) ":" Type
+}
+
+// ============================================================================
+// Functions
+// ============================================================================
+
+FunctionDeclaration {
+  Attribute* Kw<"fn"> (Identifier | BuiltinFn) ParamList ("->" Attribute* Type)? Block
+}
+
+ParamList {
+  "(" commaSep<Param> ")"
+}
+
+Param {
+  Attribute* (Identifier | BuiltinFn) (":" Type)?
+}
+
+// ============================================================================
+// Variables and Values
+// ============================================================================
+
+GlobalVariableDeclaration {
+  Attribute* Kw<"var"> TemplateArgs? (Identifier | BuiltinFn) (":" Type)? ("=" Expression)? ";"
+}
+
+GlobalValueDeclaration {
+  Attribute* (Kw<"override"> | Kw<"const">) (Identifier | BuiltinFn) (":" Type)? ("=" Expression)? ";"
+}
+
+TypeAliasDeclaration {
+  Attribute* Kw<"alias"> (Identifier | BuiltinFn) "=" Type ";"
+}
+
+ConstAssert {
+  Attribute* Kw<"const_assert"> Expression ";"
+}
+
+// ============================================================================
+// Statements
+// ============================================================================
+
+Block {
+  "{" Statement* "}"
+}
+
+Statement {
+  Attribute* (
+    Block |
+    Kw<"return"> Expression? ";" |
+    IfStatement |
+    SwitchStatement |
+    LoopStatement |
+    ForStatement |
+    WhileStatement |
+    Kw<"break"> ";" |
+    Kw<"continue"> ";" |
+    Kw<"discard"> ";" |
+    VarStatement ";" |
+    ExpressionStatement |
+    ";"
+  )
+}
+
+IfStatement {
+  Kw<"if"> Expression Block (Kw<"else"> (IfStatement | Block))?
+}
+
+SwitchStatement {
+  Kw<"switch"> Expression Attribute* "{" SwitchClause+ "}"
+}
+
+SwitchClause {
+  Attribute* ((Kw<"case"> commaSep1<Expression> | Kw<"default">) ":"? Block)
+}
+
+LoopStatement {
+  Kw<"loop"> Attribute* LoopBlock
+}
+
+LoopBlock {
+  "{" Statement* (Kw<"continuing"> Attribute* Block)? "}"
+}
+
+ForStatement {
+  Kw<"for"> "(" (VarStatement | Expression)? ";" Expression? ";" UpdatingExpr? ")" Block
+}
+
+// For-loop update: expression with optional assignment or increment/decrement
+UpdatingExpr {
+  Expression (AssignOp Expression | "++" | "--")?
+}
+
+WhileStatement {
+  Kw<"while"> Expression Block
+}
+
+VarStatement {
+  (Kw<"var"> TemplateArgs? | Kw<"let"> | Kw<"const">) (Identifier | BuiltinFn) (":" Type)? ("=" Expression)?
+}
+
+ExpressionStatement {
+  Expression (AssignOp Expression | "++" | "--")? ";"
+}
+
+// ============================================================================
+// Expressions
+// ============================================================================
+
+@precedence {
+  call @left,
+  unary @right,
+  multiply @left,
+  add @left,
+  shift @left,
+  compare @left,
+  equal @left,
+  bitand @left,
+  bitxor @left,
+  bitor @left,
+  and @left,
+  or @left,
+  condNot @right,
+  condAnd @left,
+  condOr @left
+}
+
+Expression {
+  primaryExpr |
+  UnaryExpression |
+  BinaryExpression |
+  PostfixExpression
+}
+
+primaryExpr {
+  Literal |
+  CallExpression |
+  PathExpression |
+  BuiltinType |
+  BuiltinFn |
+  Identifier |
+  "(" Expression ")"
+}
+
+// Module-qualified access: utils::gradient, package::foo::bar
+// PathBase collects all segments except the last, which stays as the direct Identifier child
+PathExpression { PathBase "::" (Identifier | BuiltinFn) }
+
+PathBase { (Identifier | BuiltinFn) | PathBase "::" (Identifier | BuiltinFn) }
+
+// Type constructor / function call with template args: vec2<f32>(1.0, 2.0)
+// Uses templateCallStart (from external tokenizer) to disambiguate from comparison
+// CallTemplateArgs is required (not optional) so parser looks for templateCallStart
+CallExpression {
+  (BuiltinType | BuiltinFn | Identifier) CallTemplateArgs !call ArgList
+}
+
+// Template args for call expressions - uses extended '<' token to enable GLR
+CallTemplateArgs {
+  templateCallStart commaSep<TypeOrExpr> (templateArgsEnd | templateArgsEndFallback)
+}
+
+UnaryExpression {
+  !unary ("-" | "!" | "~" | "&" | "*") Expression
+}
+
+BinaryExpression {
+  Expression !or "||" Expression |
+  Expression !and "&&" Expression |
+  Expression !bitor "|" Expression |
+  Expression !bitxor "^" Expression |
+  Expression !bitand "&" Expression |
+  Expression !equal ("==" | "!=") Expression |
+  Expression !compare ("<" | "<=" | ">" | ">=") Expression |
+  Expression !shift ("<<" | ">>") Expression |
+  Expression !add ("+" | "-") Expression |
+  Expression !multiply ("*" | "/" | "%") Expression
+}
+
+// Postfix operations
+PostfixExpression {
+  Expression !call (
+    ArgList |                         // foo()
+    "[" Expression "]" |              // foo[i]
+    "." (Identifier | BuiltinFn)      // foo.bar
+  )
+}
+
+ArgList {
+  "(" commaSep<Expression> ")"
+}
+
+// ============================================================================
+// Types - template syntax only used at type positions
+// ============================================================================
+
+Type {
+  BuiltinType TemplateArgs? |
+  PathBase "::" (Identifier | BuiltinFn) TemplateArgs? |
+  (Identifier | BuiltinFn) TemplateArgs?
+}
+
+TemplateArgs {
+  "<" commaSep<TypeOrExpr> (templateArgsEnd | templateArgsEndFallback)
+}
+
+// For template args: address space/access mode keywords or type/expr identifiers
+TypeOrExpr {
+  templateKw |
+  (BuiltinType | Identifier | BuiltinFn) TemplateArgs? |
+  Number |
+  Boolean
+}
+
+templateKw {
+  Kw<"uniform"> | Kw<"storage"> | Kw<"private"> | Kw<"workgroup"> |
+  Kw<"function"> | Kw<"read"> | Kw<"write"> | Kw<"read_write">
+}
+
+// ============================================================================
+// Attributes
+// ============================================================================
+
+Attribute {
+  StandardAttribute | IfAttribute | ElifAttribute | ElseAttribute
+}
+
+// Attributes: @vertex, @binding(0), @group(1), etc.
+// Note: Attribute names like vertex, fragment, const are valid identifiers elsewhere
+StandardAttribute {
+  "@" Identifier AttrArgs?
+}
+
+AttrArgs {
+  !call "(" commaSep<Expression> ")"
+}
+
+// ============================================================================
+// WESL Extensions: Conditional Compilation
+// ============================================================================
+
+IfAttribute {
+  "@" attrIf "(" ConditionExpr ")"
+}
+
+ElifAttribute {
+  "@" attrElif "(" ConditionExpr ")"
+}
+
+ElseAttribute {
+  "@" attrElse
+}
+
+attrIf { @specialize<identifier, "if"> }
+attrElif { @specialize<identifier, "elif"> }
+attrElse { @specialize<identifier, "else"> }
+
+// Condition expressions for @if/@elif - subset of full expressions
+ConditionExpr {
+  conditionPrimary |
+  ConditionNot |
+  ConditionAnd |
+  ConditionOr
+}
+
+conditionPrimary {
+  Boolean |
+  Identifier |
+  "(" ConditionExpr ")"
+}
+
+ConditionNot {
+  !condNot "!" ConditionExpr
+}
+
+ConditionAnd {
+  ConditionExpr !condAnd "&&" ConditionExpr
+}
+
+ConditionOr {
+  ConditionExpr !condOr "||" ConditionExpr
+}
+
+// ============================================================================
+// Tokens
+// ============================================================================
+
+@tokens {
+  whitespace { @whitespace+ }
+
+  LineComment { "//" ![\n]* }
+  BlockComment { "/*" blockCommentContent* "*/" }
+  blockCommentContent { ![*] | "*" ![/] }
+
+  identifier { (@asciiLetter | "_") (@asciiLetter | @digit | "_")* }
+
+  Number {
+    "0" $[xX] $[0-9a-fA-F]+ $[iufh]? |
+    @digit+ "." @digit* ($[eE] $[+-]? @digit+)? $[fh]? |
+    @digit* "." @digit+ ($[eE] $[+-]? @digit+)? $[fh]? |
+    @digit+ $[eE] $[+-]? @digit+ $[fh]? |
+    @digit+ $[iufh]?
+  }
+
+  @precedence { LineComment, BlockComment, "/" }
+  @precedence { Number, "." }
+  @precedence { Number, identifier }
+  @precedence { "->", "--", "-=", "-" }
+  @precedence { "<<=", "<<", "<=", "<" }
+  @precedence { ">>=", ">>", ">=", ">" }
+  @precedence { "&&", "&=", "&" }
+  @precedence { "||", "|=", "|" }
+  @precedence { "==", "=" }
+  @precedence { "!=", "!" }
+  @precedence { "++", "+=", "+" }
+  @precedence { "*=", "*" }
+  @precedence { "/=", "/" }
+  @precedence { "%=", "%" }
+  @precedence { "^=", "^" }
+  @precedence { "::", ":" }
+
+  "->"
+  "@"
+  "[" "]"
+  "{" "}"
+  "::" ":"
+  ","
+  "==" "=" "!="
+  ">>=" ">>" ">=" ">"
+  "<<=" "<<" "<=" "<"
+  "%" "-" "--" "." "+" "++"
+  "|" "||"
+  "(" ")"
+  ";" "*" "~" "^"
+  "+=" "-=" "*=" "/=" "%=" "&=" "|=" "^="
+  "&&" "&" "/" "!"
+
+  templateArgsEnd[@name=">"] { ">" }
+}
+
+Literal {
+  Number |
+  Boolean
+}
+
+Boolean {
+  @specialize<identifier, "true" | "false">
+}
+
+AssignOp {
+  "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>="
+}
+
+Identifier { identifier }
+
+Import { @specialize<identifier, "import"> }
+
+Kw<word> { @specialize<identifier, word> }
+
+commaSep<expr> { (expr ("," expr)* ","?)? }
+commaSep1<expr> { expr ("," expr)* ","? }
+
+@skip { whitespace | LineComment | BlockComment }
+
+@external tokens fallback from "./Tokens.ts" { templateArgsEndFallback[@name=">"] }
+@external extend {"<"} templateCallExtend from "./Tokens.ts" { templateCallStart[@name="<"] }
+@external specialize {identifier} builtinSpecialize from "./Tokens.ts" { BuiltinType, BuiltinFn }
+
+@detectDelim

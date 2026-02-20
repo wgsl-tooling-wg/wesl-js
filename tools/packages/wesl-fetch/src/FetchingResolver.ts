@@ -39,7 +39,7 @@ export class FetchingResolver implements ModuleResolver {
       : undefined;
   }
 
-  // ── Sync API (for findUnboundIdents compatibility) ──
+  // -- Sync API (for findUnboundIdents compatibility) --
 
   /** Sync lookup - returns cached AST or undefined, records misses. */
   resolveModule(modulePath: string): WeslAST | undefined {
@@ -70,7 +70,7 @@ export class FetchingResolver implements ModuleResolver {
     return this.astCache.entries();
   }
 
-  // ── Async API (future BindIdents interface) ──
+  // -- Async API (future BindIdents interface) --
 
   /** Async lookup - returns cached AST or fetches, parses, and caches. */
   async resolveModuleAsync(modulePath: string): Promise<WeslAST | undefined> {
@@ -89,7 +89,7 @@ export class FetchingResolver implements ModuleResolver {
     return this.parseAndCache(modulePath, source);
   }
 
-  // ── Internal fetching ──
+  // -- Internal fetching --
 
   private async fetchInternal(modulePath: string): Promise<string | undefined> {
     const url = this.modulePathToUrl(modulePath);

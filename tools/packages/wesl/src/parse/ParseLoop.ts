@@ -33,7 +33,8 @@ export function parseForStatement(
   expect(stream, "(", "'for'");
 
   parseForInit(ctx);
-  parseExpression(ctx); // returns null if empty condition
+  const cond = parseExpression(ctx); // returns null if empty condition
+  if (cond && ctx.options.preserveExpressions) ctx.addElem(cond);
   expect(stream, ";", "for loop condition");
   parseForUpdate(ctx);
   expect(stream, ")", "for loop header");
@@ -99,7 +100,8 @@ function parseForInit(ctx: ParsingContext): void {
     ctx.addElem(varDecl);
     // parseLocalVarDecl already consumed the ';'
   } else {
-    parseExpression(ctx); // returns null for empty case
+    const expr = parseExpression(ctx); // returns null for empty case
+    if (expr && ctx.options.preserveExpressions) ctx.addElem(expr);
     expect(stream, ";", "for loop init");
   }
 }
@@ -107,6 +109,7 @@ function parseForInit(ctx: ParsingContext): void {
 /** Grammar: for_update : variable_updating_statement | func_call_statement
  *           variable_updating_statement : assignment_statement | increment_statement | decrement_statement */
 function parseForUpdate(ctx: ParsingContext): void {
-  parseExpression(ctx);
+  const expr = parseExpression(ctx);
+  if (expr && ctx.options.preserveExpressions) ctx.addElem(expr);
   parseIncDecOperator(ctx.stream) || parseAssignmentRhs(ctx);
 }

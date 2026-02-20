@@ -81,7 +81,7 @@ async function findDependencies(
 ): Promise<string[]> {
   const { toml, tomlDir: projectDir } = await getWeslToml(context, unpluginCtx);
   const weslSrc = await loadWesl(context, unpluginCtx);
-  const { dependencies = [] } = toml;
+  const { dependencies = "auto" } = toml;
   const depsArray = Array.isArray(dependencies) ? dependencies : [dependencies];
   if (!depsArray.includes("auto")) return depsArray;
 

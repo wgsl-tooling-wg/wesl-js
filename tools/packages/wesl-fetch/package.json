@@ -1,0 +1,20 @@
+{
+  "name": "wesl-fetch",
+  "description": "Browser-based HTTP fetching for WESL packages from npm",
+  "version": "0.0.3",
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsgo"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "es-module-lexer": "^1.7.0",
+    "fflate": "^0.8.2",
+    "nanotar": "^0.2.0",
+    "resolve.exports": "^2.0.3",
+    "wesl": "workspace:*"
+  }
+}

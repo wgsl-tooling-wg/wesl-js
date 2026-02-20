@@ -316,13 +316,10 @@ export class WeslTestController implements vscode.Disposable {
       log("Spawning test runner for:", testNames.join(", "));
 
       const thisDir = path.dirname(new URL(import.meta.url).pathname);
-      const cliPath = path.resolve(
-        thisDir,
-        "../../wgsl-test/src/runTestCli.ts",
-      );
+      const cliPath = path.resolve(thisDir, "runTestCli.mjs");
       const { stdout, stderr } = await execFileAsync(
         "node",
-        ["--experimental-strip-types", cliPath, JSON.stringify(params)],
+        [cliPath, JSON.stringify(params)],
         { timeout: 30000 },
       );
       if (stderr) log("stderr:", stderr);
