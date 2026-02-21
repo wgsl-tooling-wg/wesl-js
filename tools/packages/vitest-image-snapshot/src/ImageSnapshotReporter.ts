@@ -53,7 +53,6 @@ export class ImageSnapshotReporter implements Reporter {
       return this.handleCIAutoOpen(envValue, configValue);
     }
 
-    // Non-CI: env var > config option > default
     return envValue ?? configValue ?? "failures";
   }
 
