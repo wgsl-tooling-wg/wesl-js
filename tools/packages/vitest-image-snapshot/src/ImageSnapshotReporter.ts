@@ -48,14 +48,10 @@ export class ImageSnapshotReporter implements Reporter {
   }
 
   /** Resolve autoOpen setting with priority: CI override > env var > config option > default */
-  private resolveAutoOpen(
-    configValue?: AutoOpen,
-  ): AutoOpen {
+  private resolveAutoOpen(configValue?: AutoOpen): AutoOpen {
     const envValue = this.parseEnvAutoOpen();
 
-    if (isCI) {
-      return this.handleCIAutoOpen(envValue, configValue);
-    }
+    if (isCI) return "never";
 
     return envValue ?? configValue ?? "failures";
   }
@@ -63,40 +59,18 @@ export class ImageSnapshotReporter implements Reporter {
   /** Parse and validate IMAGE_DIFF_AUTO_OPEN environment variable */
   private parseEnvAutoOpen(): AutoOpen | undefined {
     const envValue = process.env.IMAGE_DIFF_AUTO_OPEN;
-    if (!envValue) {
-      return;
-    }
+    if (!envValue) return;
 
     const validValues = ["failures", "always", "never"] as const;
     if (!validValues.includes(envValue as any)) {
       console.warn(
-        `Unrecognised IMAGE_DIFF_AUTO_OPEN value: ${envValue} - Must be one of "failures", "always" or "never". Value will be ignored.`,
+        `Unrecognised IMAGE_DIFF_AUTO_OPEN value: ${envValue} - Must be one of "failures", "always" or "never"`,
       );
 
       return;
     }
 
     return envValue as AutoOpen;
-  }
-
-  /** In CI environments, always return "never" and warn if overriding a provided value */
-  private handleCIAutoOpen(
-    envValue?: AutoOpen,
-    configValue?: AutoOpen,
-  ): "never" {
-    const providedValue = envValue ?? configValue;
-
-    if (providedValue && providedValue !== "never") {
-      console.warn(
-        `CI environment detected - overriding autoOpen value "${providedValue}" to "never".`,
-      );
-    } else if (!providedValue) {
-      console.log(
-        "CI environment detected - disabling auto-open of image diff report.",
-      );
-    }
-
-    return "never";
   }
 
   onInit(vitest: Vitest) {
