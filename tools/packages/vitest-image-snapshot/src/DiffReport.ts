@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ComparisonResult } from "./ImageComparison.ts";
+import type { AutoOpen } from "./ImageSnapshotReporter.ts";
 
 const templatesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -23,8 +24,8 @@ export interface ImageSnapshotFailure {
 
 /** Configuration for HTML diff report generation. */
 export interface DiffReportConfig {
-  /** Auto-open report in browser. Default: false */
-  autoOpen?: boolean | "failures";
+  /** Auto-open report in browser. Default: "failures" or "never" in CI */
+  autoOpen: AutoOpen;
   /** Directory path for generated HTML report (absolute or relative). */
   reportDir: string;
   /** Vitest config root for calculating relative paths when copying images */
@@ -45,14 +46,10 @@ export async function generateDiffReport(
   failures: ImageSnapshotFailure[],
   config: DiffReportConfig,
 ): Promise<void> {
-  const {
-    autoOpen = false,
-    reportDir,
-    configRoot,
-    liveReload = false,
-  } = config;
+  const { autoOpen, reportDir, configRoot, liveReload = false } = config;
 
   // Clear old report before generating new one to remove stale images
+  // even if autoOpen won't open a browser to avoid confusion over which report is current
   await clearDiffReport(reportDir);
   await fs.promises.mkdir(reportDir, { recursive: true });
 
@@ -81,10 +78,20 @@ export async function generateDiffReport(
     console.log(`\n Image diff report: ${outputPath}`);
   }
 
-  if (autoOpen === true || (autoOpen === "failures" && failures.length > 0)) {
+  if (
+    autoOpen === "never" ||
+    (autoOpen === "failures" && failures.length === 0)
+  ) {
+    return;
+  }
+
+  // open the browser to view the report
+  try {
     const commands: Record<string, string> = { darwin: "open", win32: "start" };
     const cmd = commands[process.platform] ?? "xdg-open";
     exec(`${cmd} "${outputPath}"`);
+  } catch (error) {
+    console.warn("Failed to open image diff report in browser:", error);
   }
 }
 

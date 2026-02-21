@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as http from "node:http";
 import * as path from "node:path";
+import isCI from "is-ci";
 import type {
   Reporter,
   TestCase,
@@ -8,6 +9,9 @@ import type {
   Vitest,
 } from "vitest/node";
 import { generateDiffReport, type ImageSnapshotFailure } from "./DiffReport.ts";
+
+const autoOpenValues = ["always", "failures", "never"] as const;
+export type AutoOpen = (typeof autoOpenValues)[number];
 
 /** Metadata captured when image snapshot test fails, used to generate HTML report. */
 interface ImageSnapshotFailureData {
@@ -19,10 +23,12 @@ interface ImageSnapshotFailureData {
 }
 
 export interface ImageSnapshotReporterOptions {
+  /** Auto-open report in browser. Default: "failures" or "never" in CI */
+  autoOpen?: AutoOpen;
+
   /** Report directory (relative to config.root or absolute) */
   reportPath?: string;
-  /** Auto-open report in browser on failures or always */
-  autoOpen?: boolean | "failures";
+
   /** Port for live-reload server. Set to 0 to disable. Default: 4343 */
   port?: number;
 }
@@ -32,25 +38,39 @@ export class ImageSnapshotReporter implements Reporter {
   private failuresByFile = new Map<string, ImageSnapshotFailure[]>();
   private vitest!: Vitest;
   private reportPath?: string;
-  private autoOpen: boolean | "failures";
+  private autoOpen: AutoOpen;
   private port: number;
   private serverStarted = false;
 
   constructor(options: ImageSnapshotReporterOptions = {}) {
     this.reportPath = options.reportPath;
-    this.autoOpen = options.autoOpen ?? this.getAutoOpenDefault();
     this.port = options.port ?? 4343;
+    this.autoOpen = this.resolveAutoOpen(options.autoOpen);
   }
 
-  private getAutoOpenDefault(): boolean | "failures" {
-    const env = process.env.IMAGE_DIFF_AUTO_OPEN;
-    if (env === "true" || env === "failures") return "failures";
-    return false;
+  /** Resolve autoOpen setting with priority: CI override > env var > config option > default */
+  private resolveAutoOpen(configValue?: AutoOpen): AutoOpen {
+    if (isCI) return "never";
+    return this.envAutoOpen() ?? configValue ?? "failures";
+  }
+
+  /** Parse and validate IMAGE_DIFF_AUTO_OPEN environment variable */
+  private envAutoOpen(): AutoOpen | undefined {
+    const envValue = process.env.IMAGE_DIFF_AUTO_OPEN;
+    if (!envValue) return;
+
+    const valid = autoOpenValues.find(v => v === envValue);
+    if (!valid) {
+      console.warn(
+        `Unrecognised IMAGE_DIFF_AUTO_OPEN value: ${envValue} - Must be one of "failures", "always" or "never"`,
+      );
+    }
+    return valid;
   }
 
   onInit(vitest: Vitest) {
     this.vitest = vitest;
-    if (this.port > 0) {
+    if (this.port > 0 && !isCI) {
       this.startServer();
     }
   }
