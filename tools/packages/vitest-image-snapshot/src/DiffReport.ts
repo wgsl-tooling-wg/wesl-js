@@ -78,8 +78,6 @@ export async function generateDiffReport(
     console.log(`\n Image diff report: ${outputPath}`);
   }
 
-  // Return early if autoOpen is "never" or there are no failures and autoOpen is "failures"
-  // Leaves the report generated for manual review later or artifact uploading on CI.
   if (
     autoOpen === "never" ||
     (autoOpen === "failures" && failures.length === 0)
@@ -87,7 +85,7 @@ export async function generateDiffReport(
     return;
   }
 
-  // Try to open the browser to view the report
+  // open the browser to view the report
   try {
     const commands: Record<string, string> = { darwin: "open", win32: "start" };
     const cmd = commands[process.platform] ?? "xdg-open";
