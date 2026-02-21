@@ -10,7 +10,8 @@ import type {
 } from "vitest/node";
 import { generateDiffReport, type ImageSnapshotFailure } from "./DiffReport.ts";
 
-export type AutoOpen = "always" | "failures" | "never";
+const autoOpenValues = ["always", "failures", "never"] as const;
+export type AutoOpen = (typeof autoOpenValues)[number];
 
 /** Metadata captured when image snapshot test fails, used to generate HTML report. */
 interface ImageSnapshotFailureData {
@@ -58,16 +59,13 @@ export class ImageSnapshotReporter implements Reporter {
     const envValue = process.env.IMAGE_DIFF_AUTO_OPEN;
     if (!envValue) return;
 
-    const validValues = ["failures", "always", "never"] as const;
-    if (!validValues.includes(envValue as any)) {
+    const valid = autoOpenValues.find(v => v === envValue);
+    if (!valid) {
       console.warn(
         `Unrecognised IMAGE_DIFF_AUTO_OPEN value: ${envValue} - Must be one of "failures", "always" or "never"`,
       );
-
-      return;
     }
-
-    return envValue as AutoOpen;
+    return valid;
   }
 
   onInit(vitest: Vitest) {
