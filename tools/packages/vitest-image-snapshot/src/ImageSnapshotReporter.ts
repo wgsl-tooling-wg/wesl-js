@@ -10,6 +10,8 @@ import type {
 } from "vitest/node";
 import { generateDiffReport, type ImageSnapshotFailure } from "./DiffReport.ts";
 
+export type AutoOpen = "always" | "failures" | "never";
+
 /** Metadata captured when image snapshot test fails, used to generate HTML report. */
 interface ImageSnapshotFailureData {
   actualPath: string;
@@ -21,7 +23,7 @@ interface ImageSnapshotFailureData {
 
 export interface ImageSnapshotReporterOptions {
   /** Auto-open report in browser. Default: "failures" or "never" in CI */
-  autoOpen?: "always" | "failures" | "never";
+  autoOpen?: AutoOpen;
   /** Report directory (relative to config.root or absolute) */
   reportPath?: string;
   /** Port for live-reload server. Set to 0 to disable. Default: 4343 */
@@ -33,7 +35,7 @@ export class ImageSnapshotReporter implements Reporter {
   private failuresByFile = new Map<string, ImageSnapshotFailure[]>();
   private vitest!: Vitest;
   private reportPath?: string;
-  private autoOpen: "always" | "failures" | "never";
+  private autoOpen: AutoOpen;
   private port: number;
   private serverStarted = false;
 
@@ -47,8 +49,8 @@ export class ImageSnapshotReporter implements Reporter {
 
   /** Resolve autoOpen setting with priority: CI override > env var > config option > default */
   private resolveAutoOpen(
-    configValue?: "always" | "failures" | "never",
-  ): "always" | "failures" | "never" {
+    configValue?: AutoOpen,
+  ): AutoOpen {
     const envValue = this.parseEnvAutoOpen();
 
     if (isCI) {
@@ -59,7 +61,7 @@ export class ImageSnapshotReporter implements Reporter {
   }
 
   /** Parse and validate IMAGE_DIFF_AUTO_OPEN environment variable */
-  private parseEnvAutoOpen(): "always" | "failures" | "never" | undefined {
+  private parseEnvAutoOpen(): AutoOpen | undefined {
     const envValue = process.env.IMAGE_DIFF_AUTO_OPEN;
     if (!envValue) {
       return;
@@ -74,13 +76,13 @@ export class ImageSnapshotReporter implements Reporter {
       return;
     }
 
-    return envValue as "always" | "failures" | "never";
+    return envValue as AutoOpen;
   }
 
   /** In CI environments, always return "never" and warn if overriding a provided value */
   private handleCIAutoOpen(
-    envValue?: "always" | "failures" | "never",
-    configValue?: "always" | "failures" | "never",
+    envValue?: AutoOpen,
+    configValue?: AutoOpen,
   ): "never" {
     const providedValue = envValue ?? configValue;
 
