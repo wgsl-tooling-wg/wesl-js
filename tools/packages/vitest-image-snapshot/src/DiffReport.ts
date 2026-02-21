@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ComparisonResult } from "./ImageComparison.ts";
+import type { AutoOpen } from "./ImageSnapshotReporter.ts";
 
 const templatesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -24,7 +25,7 @@ export interface ImageSnapshotFailure {
 /** Configuration for HTML diff report generation. */
 export interface DiffReportConfig {
   /** Auto-open report in browser. Default: "failures" or "never" in CI */
-  autoOpen: "always" | "failures" | "never";
+  autoOpen: AutoOpen;
   /** Directory path for generated HTML report (absolute or relative). */
   reportDir: string;
   /** Vitest config root for calculating relative paths when copying images */
