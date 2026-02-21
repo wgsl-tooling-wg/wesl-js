@@ -25,8 +25,10 @@ interface ImageSnapshotFailureData {
 export interface ImageSnapshotReporterOptions {
   /** Auto-open report in browser. Default: "failures" or "never" in CI */
   autoOpen?: AutoOpen;
+
   /** Report directory (relative to config.root or absolute) */
   reportPath?: string;
+
   /** Port for live-reload server. Set to 0 to disable. Default: 4343 */
   port?: number;
 }
