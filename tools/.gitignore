@@ -23,3 +23,6 @@ test-results/
 
 # Turbo cache and logs
 .turbo
+
+# Benchmark reports
+bench-report/

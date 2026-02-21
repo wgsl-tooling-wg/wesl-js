@@ -3,7 +3,7 @@ import {
   type ReportColumnGroup,
   type ResultsMapper,
   timeMs,
-} from "bencher";
+} from "benchforge";
 
 /** Mean time statistics */
 export interface MeanTimeStats {
@@ -12,9 +12,7 @@ export interface MeanTimeStats {
 
 /** @return mean time section */
 export const meanTimeSection: ResultsMapper<MeanTimeStats> = {
-  extract: (results: MeasuredResults) => ({
-    mean: results.time?.avg,
-  }),
+  extract: (results: MeasuredResults) => ({ mean: results.time?.avg }),
   columns: (): ReportColumnGroup<MeanTimeStats>[] => [
     {
       groupTitle: "time",

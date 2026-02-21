@@ -1,202 +1,108 @@
 #!/usr/bin/env -S node --expose-gc --allow-natives-syntax
 import { join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import {
-  type BenchGroup,
-  type BenchSuite,
-  benchExports,
-  cpuSection,
+  type BenchMatrix,
+  buildGenericSections,
   defaultCliArgs,
-  gcSection,
-  generateHtmlReport,
+  exportReports,
+  getBaselineVersion,
+  getCurrentGitVersion,
+  type MatrixResults,
+  type MatrixSuite,
+  matrixToReportGroups,
   parseBenchArgs,
-  type ReportGroup,
-  reportResults,
-  runBenchmarks,
-  runsSection,
-  totalTimeSection,
-} from "bencher";
-import { adaptiveLocSection } from "../src/AdaptiveLocSection.ts";
-import { loadBaselineImports } from "../src/BaselineVariations.ts";
-import { loadExamples, type WeslSource } from "../src/LoadExamples.ts";
+  printHeapReports,
+  type ResultsMapper,
+  reportMatrixResults,
+  runMatrixSuite,
+} from "benchforge";
+import { baselineDir, hasBaselineModule } from "../src/BaselineVariations.ts";
+import { ensureBevyFixture, type WeslSource } from "../src/LoadExamples.ts";
 import { locSection } from "../src/LocSection.ts";
 import { meanTimeSection } from "../src/MeanTimeSection.ts";
-import {
-  makeVariation,
-  type ParserVariant,
-  parserVariation,
-  type WeslImports,
-} from "../src/ParserVariations.ts";
-import { reorganizeReportGroups } from "../src/ReorganizeReportGroups.ts";
-import type { BenchParams } from "../src/WorkerBenchmarks.ts";
+
+type BenchArgs = ReturnType<typeof parseArgs>;
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
-const examplesDir = join(__dirname, "..", "wesl-examples");
+const fixturesDir = join(__dirname, "..", "fixtures");
 
 main();
 
 async function main() {
   const args = parseArgs();
-  const variants = args.variant as ParserVariant[];
 
-  const baselineImports = await loadBaselineImports(args);
-  const examples = loadExamples(examplesDir);
-  const suite: BenchSuite = {
-    name: "WESL Benchmarks",
-    groups: createBenchGroups(variants, examples, baselineImports, args.worker),
+  await ensureBevyFixture(fixturesDir);
+  const hasBaseline = args.baseline && hasBaselineModule();
+
+  const matrix: BenchMatrix<WeslSource> = {
+    name: "WESL Parser",
+    variantDir: new URL("../src/variants/", import.meta.url).href,
+    casesModule: new URL("../src/Cases.ts", import.meta.url).href,
+    baselineDir: hasBaseline
+      ? new URL("../src/baseline/", import.meta.url).href
+      : undefined,
   };
 
-  // Use benchExports for automatic JSON export support
-  if (args.json) {
-    // Simple path: use benchExports which handles table + HTML + JSON
-    await benchExports(suite, args);
-    return;
+  const suite: MatrixSuite = { name: "WESL Benchmarks", matrices: [matrix] };
+  const results = await runMatrixSuite(suite, args);
+
+  const sections = buildSections(args);
+
+  for (const result of results) {
+    console.log(
+      reportMatrixResults(result, { sections, variantTitle: "name" }),
+    );
   }
 
-  // Original custom logic for when JSON is not needed
-  const results = await runBenchmarks(suite, args);
-
-  const reorganized = reorganizeReportGroups(results, variants);
-
-  const hasCpuData = results.some(({ reports }) =>
-    reports.some(({ measuredResults }) => measuredResults.cpu !== undefined),
-  );
-
-  // Use adaptive sections when --adaptive is enabled
-  let sections: any[];
-  if (args.adaptive) {
-    sections = hasGcData(results)
-      ? [adaptiveLocSection, gcSection, runsSection, totalTimeSection]
-      : [adaptiveLocSection, runsSection, totalTimeSection];
-  } else {
-    sections = hasGcData(results)
-      ? [locSection, meanTimeSection, gcSection, runsSection]
-      : [locSection, meanTimeSection, runsSection];
+  if (args["heap-sample"]) {
+    printMatrixHeapReports(results, args);
   }
 
-  // Add CPU section if CPU data is available
-  const finalSections = hasCpuData
-    ? [...sections.slice(0, -1), cpuSection, sections[sections.length - 1]]
-    : sections;
-
-  const table = reportResults(reorganized, finalSections);
-  console.log(table);
-
-  // Generate HTML report if requested
-  if (args.html || args["export-html"]) {
-    await generateHtmlReport(reorganized, {
-      openBrowser: args.html && !args["export-html"],
-      outputPath: args["export-html"],
-    });
-  }
-}
-
-/** @return true if results contain GC data */
-function hasGcData(results: ReportGroup[]): boolean {
-  return results.some(({ reports }) =>
-    reports.some(
-      ({ measuredResults }) => measuredResults.nodeGcTime !== undefined,
-    ),
-  );
+  const currentVersion = getCurrentGitVersion();
+  const baselineVersion = args.baseline ? findBaselineVersion() : undefined;
+  const reportGroups = matrixToReportGroups(results);
+  await exportReports({
+    results: reportGroups,
+    args,
+    sections,
+    currentVersion,
+    baselineVersion,
+  });
 }
 
 /** @return parsed CLI arguments */
 function parseArgs() {
   return parseBenchArgs(yargs =>
-    defaultCliArgs(yargs)
-      .option("variant", {
-        type: "array",
-        choices: ["link", "parse", "tokenize", "wgsl-reflect"] as const,
-        default: ["link"],
-        describe: "Parser variant(s) to benchmark",
-      })
-      .option("baseline", {
-        type: "boolean",
-        default: false,
-        describe: "Compare against baseline version in _baseline/ directory",
-      }),
+    defaultCliArgs(yargs).option("baseline", {
+      type: "boolean",
+      default: false,
+      describe: "Compare against baseline version in _baseline/ directory",
+    }),
   );
 }
 
-/** @return benchmark groups for requested variants */
-function createBenchGroups(
-  variants: ParserVariant[],
-  examples: Record<string, WeslSource>,
-  baselineImports?: WeslImports,
-  useWorker?: boolean,
-): BenchGroup[] {
-  const entries = Object.entries(examples);
-  const exampleList = entries.map(([name, source]) => ({ name, source }));
-
-  return variants.flatMap(variant =>
-    exampleList.map(({ name, source }) =>
-      makeBenchGroup(name, source, variant, baselineImports, useWorker),
-    ),
-  );
+/** Build report sections based on CLI options */
+function buildSections(args: BenchArgs): ResultsMapper[] {
+  const domain = [locSection, meanTimeSection];
+  return [...domain, ...buildGenericSections(args)];
 }
 
-/** @return benchmark group with lines/sec metadata */
-function makeBenchGroup(
-  name: string,
-  source: WeslSource,
-  variant: ParserVariant,
-  baselineImports?: WeslImports,
-  useWorker?: boolean,
-): BenchGroup {
-  const benchName = variant === "link" ? name : `${name} [${variant}]`;
+/** @return baseline git version, or a fallback if not found */
+function findBaselineVersion() {
+  return getBaselineVersion(baselineDir) ?? { hash: "unknown", date: "" };
+}
 
-  if (useWorker) {
-    // Worker mode: use module path and params
-    const workerModulePath = join(__dirname, "../src/WorkerBenchmarks.ts");
-    // Convert to file:// URL for cross-platform compatibility
-    const workerModuleUrl = pathToFileURL(workerModulePath).href;
-
-    const group: BenchGroup<BenchParams> = {
-      name: benchName,
-      setup: () => ({ variant, source }),
-      benchmarks: [
-        {
-          name: benchName,
-          fn: () => {}, // unused with modulePath
-          modulePath: workerModuleUrl,
-          exportName: "runBenchmark",
-        },
-      ],
-      metadata: { linesOfCode: source.lineCount ?? 0 },
-    };
-
-    if (baselineImports) {
-      const baselineModulePath = join(
-        __dirname,
-        "../src/BaselineWorkerBenchmarks.ts",
-      );
-      const baselineModuleUrl = pathToFileURL(baselineModulePath).href;
-      group.baseline = {
-        name: benchName,
-        fn: () => {}, // Placeholder - not used when modulePath is provided
-        modulePath: baselineModuleUrl,
-        exportName: "runBaselineBenchmark",
-      };
-    }
-
-    return group as BenchGroup;
-  }
-
-  // Non-worker mode: use closures
-  const benchFn = parserVariation(variant);
-  const group: BenchGroup = {
-    name: benchName,
-    benchmarks: [{ name: benchName, fn: () => benchFn(source) }],
-    metadata: { linesOfCode: source.lineCount ?? 0 },
-  };
-
-  if (baselineImports) {
-    const baselineFn = makeVariation(variant, baselineImports);
-    group.baseline = {
-      name: benchName, // table formatter adds --> prefix
-      fn: () => baselineFn(source),
-    };
-  }
-
-  return group;
+/** Print heap reports for matrix results */
+function printMatrixHeapReports(
+  results: MatrixResults[],
+  args: BenchArgs,
+): void {
+  const reportGroups = matrixToReportGroups(results);
+  printHeapReports(reportGroups, {
+    topN: args["heap-rows"],
+    stackDepth: args["heap-stack"],
+    verbose: args["heap-verbose"],
+    userOnly: args["heap-user-only"],
+  });
 }

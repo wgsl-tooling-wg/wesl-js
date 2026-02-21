@@ -17,3 +17,4 @@ minimumReleaseAgeExclude:
 - 'webgpu'
 - '@webgpu/*'
 - 'monobump'
+- 'benchforge'

@@ -3,7 +3,7 @@ import {
   type MeasuredResults,
   type ReportColumnGroup,
   type ResultsMapper,
-} from "bencher";
+} from "benchforge";
 
 /** Lines of code throughput statistics */
 export interface LocStats {
@@ -14,15 +14,10 @@ export interface LocStats {
 
 export const locSection: ResultsMapper<LocStats> = {
   extract: (results: MeasuredResults, metadata?: any) => {
-    const lines = metadata?.linesOfCode || 0;
-
-    const locSecP50 = results.time?.p50
-      ? lines / (results.time.p50 / 1000)
-      : undefined;
-    const locSecMax = results.time?.min
-      ? lines / (results.time.min / 1000)
-      : undefined; // min time gives max throughput
-
+    const lines = metadata?.linesOfCode ?? metadata?.loc ?? 0;
+    const { p50, min } = results.time ?? {};
+    const locSecP50 = p50 ? lines / (p50 / 1000) : undefined;
+    const locSecMax = min ? lines / (min / 1000) : undefined; // min time = max throughput
     return { lines, locSecP50, locSecMax };
   },
   columns: (): ReportColumnGroup<LocStats>[] => [
@@ -34,12 +29,14 @@ export const locSection: ResultsMapper<LocStats> = {
           title: "p50",
           formatter: integer,
           comparable: true,
+          higherIsBetter: true,
         },
         {
           key: "locSecMax",
           title: "max",
           formatter: integer,
           comparable: true,
+          higherIsBetter: true,
         },
         {
           key: "lines",

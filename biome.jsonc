@@ -14,7 +14,8 @@
       "!**/assets",
       "!**/dist",
       "!**/.vscode/**/*",
-      "!**/lezer-wesl/src/parser.*"
+      "!**/lezer-wesl/src/parser.*",
+      "!**/tests/fixtures/**"
     ]
   },
   "formatter": {
@@ -115,7 +116,7 @@
       }
     },
     {
-      "includes": ["**/wgsl-edit/**", "**/wgsl-play/**", "**/lezer-wesl/**"],
+      "includes": ["**/wgsl-edit/**", "**/wgsl-play/**", "**/lezer-wesl/**", "**/benchforge/**", "**/wesl-bench/**"],
       "linter": {
         "rules": {
           "complexity": {

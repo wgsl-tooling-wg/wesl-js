@@ -3,7 +3,7 @@ const config = () => ({
   tests: {
     override: (filePatterns) => {
       filePatterns.push(`!**/bench/**/*`);
-      filePatterns.push(`!**/bencher/**/*`);
+      filePatterns.push(`!**/benchforge/**/*`);
       filePatterns.push(`!**/bench-viz/**/*`);
       filePatterns.push(`!**/BulkTests.test.ts`);
       filePatterns.push(`!**/cts/**/*`);

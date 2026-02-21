@@ -1,7 +1,7 @@
 #! /usr/bin/env -S node --disable-warning=ExperimentalWarning
 
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 /**
@@ -48,6 +48,22 @@ execSync(`mv "${toolsDir}"/* "${baselineDir}/"`, { stdio: "inherit" });
 rmSync(toolsDir, { recursive: true, force: true });
 
 console.log("Running pnpm install in baseline directory...");
-execSync("pnpm install", { cwd: baselineDir, stdio: "inherit" });
+execSync("pnpm install --ignore-scripts", {
+  cwd: baselineDir,
+  stdio: "inherit",
+});
 
-console.log("Baseline copy complete.");
+// Save baseline version info
+const shortHash = execSync(`git rev-parse --short ${version}`)
+  .toString()
+  .trim();
+const commitDate = execSync(`git log -1 --format=%aI ${version}`)
+  .toString()
+  .trim();
+const versionInfo = { hash: shortHash, date: commitDate, ref: version };
+writeFileSync(
+  path.join(baselineDir, ".baseline-version"),
+  JSON.stringify(versionInfo, null, 2) + "\n",
+);
+
+console.log(`Baseline copy complete: ${shortHash} (${commitDate})`);

@@ -7,7 +7,8 @@
     "bench:baseline": "bin/choose_baseline.mts",
     "bench:bun": "bun --expose-gc --allow-natives-syntax bin/bench.ts",
     "bench:details": "sudo bin/bench.ts --cpu",
-    "bench:profile": "node --inspect-brk bin/bench.ts --profile",
+    "bench:perfetto": "node --expose-gc --trace-events-enabled --trace-event-categories=v8,v8.gc bin/bench.ts --perfetto trace.json",
+    "bench:profile": "node --expose-gc --inspect-brk bin/bench.ts --profile",
     "bench:validate": "bin/bench.ts --profile",
     "test": "vitest --hideSkippedTests",
     "test:integration": "vitest run --config vitest.integration.config.ts",
@@ -15,8 +16,11 @@
     "typecheck": "tsgo"
   },
   "dependencies": {
-    "bencher": "workspace:*",
+    "benchforge": "^0.1.9",
     "wesl": "workspace:*",
     "wgsl_reflect": "^1.2.1"
+  },
+  "devDependencies": {
+    "dexnode": "^1.2.2"
   }
 }

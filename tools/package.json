@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "bench": "pnpm --filter bench bench",
-    "bench:baseline": "pnpm --filter bench bench:baseline",
-    "bench:validate": "pnpm --filter bench bench:validate",
+    "bench": "pnpm --filter wesl-bench bench",
+    "bench:baseline": "pnpm --filter wesl-bench bench:baseline",
+    "bench:validate": "pnpm --filter wesl-bench bench:validate",
     "build:all": "pnpm --filter \"*\" --parallel build",
     "bump": "monobump",
     "check:lockfile": "pnpm install --frozen-lockfile --lockfile-only",
@@ -20,7 +20,7 @@
     "fix:syncpack": "syncpack fix-mismatches",
     "knip": "knip",
     "lint:all": "run-s lint:biome check:versions",
-    "lint:biome": "biome check",
+    "lint:biome": "biome check --error-on-warnings",
     "lint:oxlint": "oxlint",
     "preinstall": "git submodule update --init --recursive",
     "prep:examples": "tsx scripts/prep-examples.ts",
@@ -91,7 +91,6 @@
     "onlyBuiltDependencies": [
       "core-js",
       "esbuild"
-    ],
-    "overrides": {}
+    ]
   }
 }

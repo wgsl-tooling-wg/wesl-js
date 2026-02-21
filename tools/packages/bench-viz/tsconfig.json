@@ -1,8 +1,0 @@
-{
-  "extends": "../../tsconfig.browser.json",
-  "compilerOptions": {
-    "moduleResolution": "bundler",
-    "types": ["svelte"]
-  },
-  "include": ["src/**/*.ts", "src/**/*.svelte"]
-}
