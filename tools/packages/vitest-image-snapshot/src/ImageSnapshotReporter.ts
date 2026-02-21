@@ -47,7 +47,7 @@ export class ImageSnapshotReporter implements Reporter {
 
   /** Resolve autoOpen setting with priority: CI override > env var > config option > default */
   private resolveAutoOpen(configValue?: AutoOpen): AutoOpen {
-    const envValue = this.parseEnvAutoOpen();
+    const envValue = this.envAutoOpen();
 
     if (isCI) return "never";
 
@@ -55,7 +55,7 @@ export class ImageSnapshotReporter implements Reporter {
   }
 
   /** Parse and validate IMAGE_DIFF_AUTO_OPEN environment variable */
-  private parseEnvAutoOpen(): AutoOpen | undefined {
+  private envAutoOpen(): AutoOpen | undefined {
     const envValue = process.env.IMAGE_DIFF_AUTO_OPEN;
     if (!envValue) return;
 
