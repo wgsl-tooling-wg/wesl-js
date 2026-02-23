@@ -3,6 +3,7 @@
   "description": "Browser-based HTTP fetching for WESL packages from npm",
   "version": "0.0.4",
   "type": "module",
+  "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsgo"
