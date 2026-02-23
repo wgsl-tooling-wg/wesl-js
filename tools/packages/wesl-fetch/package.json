@@ -1,7 +1,7 @@
 {
   "name": "wesl-fetch",
   "description": "Browser-based HTTP fetching for WESL packages from npm",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "scripts": {
     "build": "tsdown",
