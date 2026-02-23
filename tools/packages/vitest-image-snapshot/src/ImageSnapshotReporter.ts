@@ -44,8 +44,6 @@ export class ImageSnapshotReporter implements Reporter {
 
   constructor(options: ImageSnapshotReporterOptions = {}) {
     this.reportPath = options.reportPath;
-
-    // Disable server on CI by default
     this.port = options.port ?? 4343;
     this.autoOpen = this.resolveAutoOpen(options.autoOpen);
   }
