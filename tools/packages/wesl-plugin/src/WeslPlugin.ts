@@ -11,6 +11,8 @@ import {
 } from "unplugin";
 import type { Conditions, RecordResolver } from "wesl";
 import type { WeslToml, WeslTomlInfo } from "wesl-tooling";
+import { linkBuildExtension } from "./extensions/LinkExtension.ts";
+import { staticBuildExtension } from "./extensions/StaticExtension.ts";
 import { buildApi } from "./PluginApi.ts";
 import type { PluginExtension } from "./PluginExtension.ts";
 import type { WeslPluginOptions } from "./WeslPluginOptions.ts";
@@ -62,19 +64,24 @@ type DebugLog = (msg: string, data?: Record<string, unknown>) => void;
  *  1. `import "./shaders/bar.wesl?reflect"` - produces a javascript file for binding struct reflection
  *  2. `import "./shaders/bar.wesl?link"` - produces a javascript file for preconstructed link functions
  */
+const builtinExtensions = [staticBuildExtension, linkBuildExtension];
+
 export function weslPlugin(
-  options: WeslPluginOptions,
+  options: WeslPluginOptions | undefined,
   meta: UnpluginContextMeta,
 ): UnpluginOptions {
+  const o = options ?? {};
+  const extensions = [...builtinExtensions, ...(o.extensions ?? [])];
+  const opts = { ...o, extensions };
   const cache: PluginCache = {};
-  const context: PluginContext = { cache, meta, options };
-  const log = options.debug ? debugLog : noopLog;
+  const context: PluginContext = { cache, meta, options: opts };
+  const log = opts.debug ? debugLog : noopLog;
 
-  log("init", { extensions: options.extensions?.map(e => e.extensionName) });
+  log("init", { extensions: opts.extensions.map(e => e.extensionName) });
 
   return {
     name: "wesl-plugin",
-    resolveId: buildResolver(options, context, log),
+    resolveId: buildResolver(opts, context, log),
     load: buildLoader(context, log),
     watchChange(id, _change) {
       log("watchChange", { id });
