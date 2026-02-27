@@ -504,7 +504,7 @@ function emitStandardAttribute(e: AttributeElem, ctx: EmitContext): void {
 
   ctx.srcBuilder.add("@" + e.attribute.name + "(", e.start, params[0].start);
   for (let i = 0; i < params.length; i++) {
-    ctx.srcBuilder.addCopy(params[i].start, params[i].end);
+    emitContents(params[i], ctx);
     if (i < params.length - 1) {
       ctx.srcBuilder.add(",", params[i].end, params[i + 1].start);
     }

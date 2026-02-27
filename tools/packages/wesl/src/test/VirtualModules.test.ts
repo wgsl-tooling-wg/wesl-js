@@ -57,6 +57,15 @@ test("inline constant in array template param", async () => {
   expect(result).toContain("const size = 4");
 });
 
+test("constant in @binding attribute", async () => {
+  const src = `
+    @group(0) @binding(constants::slot) var<uniform> u: f32;
+  `;
+  const result = await linkTestOpts({ constants: { slot: 0 } }, src);
+  expect(result).toContain("const slot = 0");
+  expect(result).toContain("@binding(slot)");
+});
+
 test("function call with inline ref in template param", async () => {
   const src = `
     fn main() {
