@@ -3,7 +3,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Plugin } from "vite";
 import type { ViteUserConfig } from "vitest/config";
-import { linkBuildExtension } from "wesl-plugin";
 import viteWesl from "wesl-plugin/vite";
 
 const thisPath = fileURLToPath(import.meta.url);
@@ -20,12 +19,7 @@ const config: ViteUserConfig = {
     exclude: ["**/node_modules/**", "**/dist/**", "**/temp-packages/**"],
     reporters,
   },
-  plugins: [
-    viteWesl({
-      weslToml,
-      extensions: [linkBuildExtension],
-    }) as Plugin,
-  ],
+  plugins: [viteWesl({ weslToml }) as Plugin],
 };
 
 export default config;

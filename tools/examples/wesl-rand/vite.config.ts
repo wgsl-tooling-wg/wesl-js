@@ -1,11 +1,10 @@
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
-import { linkBuildExtension } from "wesl-plugin";
 import viteWesl from "wesl-plugin/vite";
 
 export default defineConfig({
   plugins: [
-    viteWesl({ extensions: [linkBuildExtension] }) as any,
+    viteWesl() as any,
     viteStaticCopy({
       targets: [
         {
