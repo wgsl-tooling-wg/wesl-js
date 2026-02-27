@@ -9,12 +9,5 @@ export default defineConfig({
       fileName: "wgsl-play",
     },
     outDir: "dist",
-    // Bundle all dependencies for browser
-    rollupOptions: {
-      output: {
-        // Single file output
-        inlineDynamicImports: true,
-      },
-    },
   },
 });
