@@ -54,7 +54,7 @@ Want to publish your WESL library?
 
 See also [wesl-rs] for using WESL in Rust/C++ projects.
 [wesl-rs] and [wesl-js] are interoperable implementations of
-the same WESL specification.
+the WESL specification.
 
 ## Developing
 
