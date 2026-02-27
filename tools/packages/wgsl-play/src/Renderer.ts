@@ -38,6 +38,7 @@ export type LinkOptions = WeslOptions;
 /** Initialize WebGPU for a canvas element. */
 export async function initWebGPU(
   canvas: HTMLCanvasElement,
+  alphaMode: GPUCanvasAlphaMode = "opaque",
 ): Promise<RenderState> {
   const adapter = await navigator.gpu.requestAdapter();
   if (!adapter) throw new Error("WebGPU adapter not available");
@@ -50,7 +51,7 @@ export async function initWebGPU(
   context.configure({
     device,
     format: presentationFormat,
-    alphaMode: "opaque",
+    alphaMode,
   });
 
   const uniformBuffer = device.createBuffer({

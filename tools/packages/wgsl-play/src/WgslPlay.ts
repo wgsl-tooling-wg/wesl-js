@@ -57,6 +57,7 @@ export class WgslPlay extends HTMLElement {
     "no-controls",
     "theme",
     "autoplay",
+    "transparent",
   ];
 
   private canvas: HTMLCanvasElement;
@@ -344,7 +345,10 @@ export class WgslPlay extends HTMLElement {
 
   private async doInitialize(): Promise<boolean> {
     try {
-      this.renderState = await initWebGPU(this.canvas);
+      const alphaMode = this.hasAttribute("transparent")
+        ? "premultiplied"
+        : "opaque";
+      this.renderState = await initWebGPU(this.canvas, alphaMode);
       await this.loadInitialContent();
       this.stopRenderLoop = startRenderLoop(this.renderState, this.playback);
       this.dispatchEvent(new CustomEvent("ready"));
