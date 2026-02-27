@@ -1,7 +1,7 @@
 {
   "name": "wesl-fetch",
   "description": "Browser-based HTTP fetching for WESL packages from npm",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "type": "module",
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
