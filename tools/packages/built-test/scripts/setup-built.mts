@@ -21,12 +21,16 @@ import { fileURLToPath } from "node:url";
 const skipBuild = process.argv.includes("--skip-build");
 
 const packages = [
+  "lezer-wesl",
   "wesl",
+  "wesl-fetch",
   "wesl-gpu",
   "wesl-link",
   "wesl-packager",
   "wesl-plugin",
   "wesl-tooling",
+  "wgsl-edit",
+  "wgsl-play",
   "wgsl-test",
   "vitest-image-snapshot",
 ];

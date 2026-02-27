@@ -2,13 +2,35 @@
   "name": "wgsl-play",
   "version": "0.0.27",
   "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "build": "vite build --config vite.build.config.ts",
+    "build": "tsdown",
     "dev": "vite test-page --config vite.config.ts",
+    "prepublishOnly": "run-s build",
     "test": "vitest",
     "test:e2e": "playwright test",
     "typecheck": "tsgo"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./element": {
+        "types": "./dist/WgslPlay.d.ts",
+        "import": "./dist/WgslPlay.js"
+      },
+      "./bundle": {
+        "types": "./dist/WgslPlay.d.ts",
+        "import": "./dist/wgsl-play.js"
+      }
+    },
+    "main": "./dist/index.js"
   },
   "exports": {
     ".": "./src/index.ts",

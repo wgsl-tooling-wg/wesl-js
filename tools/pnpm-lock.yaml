@@ -429,6 +429,12 @@ importers:
       wesl-tooling:
         specifier: workspace:*
         version: link:../wesl-tooling
+      wgsl-edit:
+        specifier: workspace:*
+        version: link:../wgsl-edit
+      wgsl-play:
+        specifier: workspace:*
+        version: link:../wgsl-play
       wgsl-test:
         specifier: workspace:*
         version: link:../wgsl-test

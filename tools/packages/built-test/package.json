@@ -18,6 +18,8 @@
     "wesl-link": "workspace:*",
     "wesl-packager": "workspace:*",
     "wesl-tooling": "workspace:*",
+    "wgsl-edit": "workspace:*",
+    "wgsl-play": "workspace:*",
     "wgsl-test": "workspace:*"
   },
   "devDependencies": {

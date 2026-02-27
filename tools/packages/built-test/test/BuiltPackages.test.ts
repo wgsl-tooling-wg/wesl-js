@@ -32,6 +32,8 @@ const packagesToCheck = [
   "wesl-packager",
   "wesl-plugin",
   "wesl-tooling",
+  "wgsl-edit",
+  "wgsl-play",
   "wgsl-test",
   "vitest-image-snapshot",
 ];

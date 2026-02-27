@@ -3,13 +3,39 @@
   "description": "Web component for editing WGSL/WESL with CodeMirror",
   "version": "0.0.11",
   "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "build": "vite build --config vite.build.config.ts",
+    "build": "tsdown",
     "build:demo": "vite build --config vite.config.ts demo",
     "deploy": "pnpm build:demo && wrangler pages deploy --project-name wgsl-edit --branch main site",
     "dev": "vite demo",
+    "prepublishOnly": "run-s build",
     "typecheck": "tsgo"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./element": {
+        "types": "./dist/WgslEdit.d.ts",
+        "import": "./dist/WgslEdit.js"
+      },
+      "./language": {
+        "types": "./dist/Language.d.ts",
+        "import": "./dist/Language.js"
+      },
+      "./bundle": {
+        "types": "./dist/WgslEdit.d.ts",
+        "import": "./dist/wgsl-edit.js"
+      }
+    },
+    "main": "./dist/index.js"
   },
   "exports": {
     ".": "./src/index.ts",
