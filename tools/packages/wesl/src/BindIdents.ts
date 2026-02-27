@@ -118,6 +118,7 @@ export interface BindIdentsParams
 export function bindIdents(params: BindIdentsParams): BindResults {
   const { rootAst, resolver, virtuals, accumulateUnbound } = params;
   const { conditions = {}, mangler = minimalMangle } = params;
+  const packageName = rootAst.srcModule.modulePath.split("::")[0];
 
   const validRootDecls = findValidRootDecls(rootAst.rootScope, conditions);
   const { globalNames, knownDecls } = initRootDecls(validRootDecls);
@@ -128,6 +129,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     knownDecls,
     virtuals,
     mangler,
+    packageName,
     foundScopes: new Set<Scope>(),
     globalNames,
     globalStatements: new Map<AbstractElem, EmittableElem>(),
@@ -233,6 +235,9 @@ interface BindContext {
   mangler: ManglerFn;
 
   virtuals?: VirtualLibrarySet;
+
+  /** Host package name for resolving package:: in virtual modules. */
+  packageName: string;
 
   /** Unbound identifiers if accumulateUnbound is true. */
   unbound?: UnboundRef[];
@@ -428,32 +433,27 @@ function findExport(
   srcModule: SrcModule,
   ctx: BindContext,
 ): FoundDecl | undefined {
-  const { resolver, conditions, virtuals } = ctx;
   const srcParts = srcModule.modulePath.split("::");
   const fqParts = resolveModulePath(pathParts, srcParts);
   const modulePath = fqParts.slice(0, -1).join("::");
 
   const moduleAst =
-    resolver.resolveModule(modulePath) ??
-    virtualModule(pathParts[0], conditions, virtuals);
+    ctx.resolver.resolveModule(modulePath) ??
+    virtualModule(pathParts[0], ctx);
   if (!moduleAst) return undefined;
 
-  const decl = publicDecl(moduleAst.rootScope, last(pathParts)!, conditions);
+  const decl = publicDecl(moduleAst.rootScope, last(pathParts)!, ctx.conditions);
   if (decl) return { decl, moduleAst };
 }
 
 /** @return AST for a virtual module. */
-function virtualModule(
-  moduleName: string,
-  conditions: Conditions = {},
-  virtuals?: VirtualLibrarySet,
-): WeslAST | undefined {
-  const found = virtuals?.[moduleName];
+function virtualModule(moduleName: string, ctx: BindContext): WeslAST | undefined {
+  const found = ctx.virtuals?.[moduleName];
   if (!found) return undefined;
   if (found.ast) return found.ast;
 
-  const src = found.fn(conditions);
-  const modulePath = moduleName;
+  const src = found.fn(ctx.conditions);
+  const modulePath = ctx.packageName + "::" + moduleName;
   const debugFilePath = moduleName;
   found.ast = parseSrcModule({ modulePath, debugFilePath, src });
   return found.ast;

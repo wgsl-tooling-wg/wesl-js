@@ -66,6 +66,25 @@ test("constant in @binding attribute", async () => {
   expect(result).toContain("@binding(slot)");
 });
 
+test("package:: import from virtual module", async () => {
+  const src = `
+    import virt::helper;
+    fn main() { let x = helper(); }
+  `;
+  const file1 = `fn util_fn() -> u32 { return 1; }`;
+  const opts = {
+    virtualLibs: {
+      virt: () => `
+        import package::file1::util_fn;
+        fn helper() -> u32 { return util_fn(); }
+      `,
+    },
+  };
+  const result = await linkTestOpts(opts, src, file1);
+  expect(result).toContain("fn helper()");
+  expect(result).toContain("fn util_fn()");
+});
+
 test("function call with inline ref in template param", async () => {
   const src = `
     fn main() {
