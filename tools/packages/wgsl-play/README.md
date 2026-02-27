@@ -192,4 +192,7 @@ import { WgslPlay } from "wgsl-play/element";
 import { defaults } from "wgsl-play";
 
 defaults({ shaderRoot: "/custom/shaders" });
+
+// Pre-bundled, all deps included
+import "wgsl-play/bundle";
 ```
