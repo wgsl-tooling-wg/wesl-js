@@ -5,7 +5,7 @@
   "type": "module",
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "build": "tsdown",
+    "build": "vite build --config vite.build.config.ts",
     "build:demo": "vite build --config vite.config.ts demo",
     "deploy": "pnpm build:demo && wrangler pages deploy --project-name wgsl-edit --branch main site",
     "dev": "vite demo",
@@ -14,7 +14,11 @@
   "exports": {
     ".": "./src/index.ts",
     "./element": "./src/WgslEdit.ts",
-    "./language": "./src/Language.ts"
+    "./language": "./src/Language.ts",
+    "./bundle": {
+      "types": "./src/WgslEdit.ts",
+      "default": "./dist/wgsl-edit.js"
+    }
   },
   "dependencies": {
     "@codemirror/language": "^6.11.2",

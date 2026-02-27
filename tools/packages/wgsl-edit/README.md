@@ -165,4 +165,5 @@ wgsl-edit shader.wgsl --port 3000 --no-open
 import "wgsl-edit";                              // auto-registers element
 import { WgslEdit } from "wgsl-edit/element";    // class only
 import { wesl, weslLanguage } from "wgsl-edit/language"; // CodeMirror language
+import "wgsl-edit/bundle";                       // pre-bundled, all deps included
 ```
