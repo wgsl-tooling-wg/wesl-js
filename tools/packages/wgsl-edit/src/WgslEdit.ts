@@ -178,6 +178,17 @@ export class WgslEdit extends HTMLElement {
     }
   }
 
+  /** Conditions for conditional compilation (@if/@elif/@else). */
+  get conditions(): Conditions {
+    return this._conditions;
+  }
+
+  set conditions(value: Conditions) {
+    this._conditions = value;
+    this.updateLint();
+    this.dispatchChange();
+  }
+
   /** Active file content (backward compatible). */
   get source(): string {
     return this.editorView?.state.doc.toString() ?? this._pendingSource ?? "";
@@ -389,6 +400,12 @@ export class WgslEdit extends HTMLElement {
     }
   }
 
+  private dispatchChange(): void {
+    const { source, sources, conditions, _activeFile: activeFile } = this;
+    const detail = { source, sources, activeFile, conditions };
+    this.dispatchEvent(new CustomEvent("change", { detail }));
+  }
+
   private dispatchFileChange(action: string, file: string): void {
     this.dispatchEvent(
       new CustomEvent("file-change", { detail: { action, file } }),
@@ -448,9 +465,7 @@ export class WgslEdit extends HTMLElement {
         if (update.docChanged) {
           this._externalDiagnostics = [];
           this.saveCurrentFileState();
-          const { source, sources, _activeFile: activeFile } = this;
-          const detail = { source, sources, activeFile };
-          this.dispatchEvent(new CustomEvent("change", { detail }));
+          this.dispatchChange();
         }
       }),
     ];

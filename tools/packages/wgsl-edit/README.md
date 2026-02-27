@@ -82,6 +82,7 @@ editor.project = {                    // load a full project
 
 - `source: string` - Get/set active file content
 - `sources: Record<string, string>` - Get/set all files (keyed by module path)
+- `conditions: Record<string, boolean>` - Get/set conditions for conditional compilation (`@if`/`@elif`/`@else`)
 - `project: WeslProject` - Set full project (sources, conditions, packageName, etc.)
 - `activeFile: string` - Get/set active file name
 - `fileNames: string[]` - List all file names
@@ -95,7 +96,7 @@ editor.project = {                    // load a full project
 
 ### Events
 
-- `change` - `{ source, sources, activeFile }` on any edit
+- `change` - `{ source, sources, activeFile, conditions }` on edit or conditions change
 - `file-change` - `{ action, file }` on add/remove/rename
 
 ## Using with wesl-plugin

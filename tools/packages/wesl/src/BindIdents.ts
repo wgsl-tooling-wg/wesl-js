@@ -438,16 +438,22 @@ function findExport(
   const modulePath = fqParts.slice(0, -1).join("::");
 
   const moduleAst =
-    ctx.resolver.resolveModule(modulePath) ??
-    virtualModule(pathParts[0], ctx);
+    ctx.resolver.resolveModule(modulePath) ?? virtualModule(pathParts[0], ctx);
   if (!moduleAst) return undefined;
 
-  const decl = publicDecl(moduleAst.rootScope, last(pathParts)!, ctx.conditions);
+  const decl = publicDecl(
+    moduleAst.rootScope,
+    last(pathParts)!,
+    ctx.conditions,
+  );
   if (decl) return { decl, moduleAst };
 }
 
 /** @return AST for a virtual module. */
-function virtualModule(moduleName: string, ctx: BindContext): WeslAST | undefined {
+function virtualModule(
+  moduleName: string,
+  ctx: BindContext,
+): WeslAST | undefined {
   const found = ctx.virtuals?.[moduleName];
   if (!found) return undefined;
   if (found.ast) return found.ast;

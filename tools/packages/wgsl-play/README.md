@@ -85,6 +85,7 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 
 ### Properties
 - `source: string` - Get/set shader source
+- `conditions: Record<string, boolean>` - Get/set conditions for conditional compilation (`@if`/`@elif`/`@else`)
 - `project: WeslProject` - Set full project config (weslSrc, libs, conditions, constants)
 - `isPlaying: boolean` - Playback state (readonly)
 - `time: number` - Animation time in seconds (readonly)

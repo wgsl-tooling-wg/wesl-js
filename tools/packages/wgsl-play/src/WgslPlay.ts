@@ -1,4 +1,4 @@
-import type { LinkParams, WeslBundle } from "wesl";
+import type { Conditions, LinkParams, WeslBundle } from "wesl";
 import { fileToModulePath, WeslParseError } from "wesl";
 import { fetchDependencies, loadShaderFromUrl } from "wesl-fetch";
 import type { WgslPlayConfig } from "./Config.ts";
@@ -183,6 +183,18 @@ export class WgslPlay extends HTMLElement {
     this._libs = undefined;
     this._fromFullProject = false;
     this.discoverAndRebuild();
+  }
+
+  /** Conditions for conditional compilation (@if/@elif/@else). */
+  get conditions(): Conditions {
+    return this._linkOptions.conditions ?? {};
+  }
+
+  set conditions(value: Conditions) {
+    this._linkOptions = { ...this._linkOptions, conditions: value };
+    if (Object.keys(this._weslSrc).length === 0) return;
+    if (this._fromFullProject) this.rebuildPipeline();
+    else this.discoverAndRebuild();
   }
 
   /** Set project configuration (mirrors wesl link() API). */
@@ -388,14 +400,18 @@ export class WgslPlay extends HTMLElement {
       return { [this._rootModuleName]: source };
     };
 
-    // Load initial sources
-    this.project = { weslSrc: getSources() };
+    // Load initial sources and conditions
+    const conditions = (el as any).conditions;
+    this.project = { weslSrc: getSources(), conditions };
 
-    // Listen for changes - handle both single and multi-file
+    // Listen for changes - handle both single and multi-file, plus conditions
     this._sourceListener = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       const fallback = { [this._rootModuleName]: detail?.source ?? "" };
-      this.project = { weslSrc: detail?.sources ?? fallback };
+      this.project = {
+        weslSrc: detail?.sources ?? fallback,
+        conditions: detail?.conditions,
+      };
     };
     el.addEventListener("change", this._sourceListener);
   }
