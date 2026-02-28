@@ -13,6 +13,7 @@ import {
   type Conditions,
   fileToModulePath,
   type LinkParams,
+  link,
   type WeslBundle,
 } from "wesl";
 import { fetchPackagesByName } from "wesl-fetch";
@@ -243,6 +244,21 @@ export class WgslEdit extends HTMLElement {
       if (rootModuleName) this.activeFile = toTabName(rootModuleName);
     }
     this.updateLint();
+  }
+
+  /** Link/compile WESL sources into WGSL. Returns the compiled WGSL string. */
+  async link(options?: Partial<LinkParams>): Promise<string> {
+    const pkg = this._packageName ?? "package";
+    const rootModuleName = fileToModulePath(this._activeFile, pkg, false);
+    const linked = await link({
+      weslSrc: this.sources,
+      rootModuleName,
+      conditions: this._conditions,
+      libs: this._libs,
+      packageName: pkg,
+      ...options,
+    });
+    return linked.dest;
   }
 
   /** Currently active file name. */

@@ -90,6 +90,7 @@ editor.project = {                    // load a full project
 
 ### Methods
 
+- `link(options?): Promise<string>` - Compile WESL sources into WGSL, returns the linked output
 - `addFile(name, content?)` - Add a new file
 - `removeFile(name)` - Remove a file
 - `renameFile(oldName, newName)` - Rename a file
