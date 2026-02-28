@@ -145,6 +145,10 @@ export class WgslEdit extends HTMLElement {
   connectedCallback(): void {
     this.initEditor();
     this.loadInitialContent();
+    upgradeProperty(this, "conditions");
+    upgradeProperty(this, "source");
+    upgradeProperty(this, "sources");
+    upgradeProperty(this, "project");
   }
 
   disconnectedCallback(): void {
@@ -792,6 +796,16 @@ function getStyles(): CSSStyleSheet {
     cachedStyleSheet.replaceSync(cssText);
   }
   return cachedStyleSheet;
+}
+
+// LATER: extract to shared web component utils if we add more helpers
+/** Absorb instance properties set before custom element upgrade. */
+function upgradeProperty(el: HTMLElement, prop: string): void {
+  if (Object.hasOwn(el, prop)) {
+    const value = (el as any)[prop];
+    delete (el as any)[prop];
+    (el as any)[prop] = value;
+  }
 }
 
 /** Convert a module path or file path to a tab name: "package::main" -> "main", "main.wesl" -> "main.wesl" */

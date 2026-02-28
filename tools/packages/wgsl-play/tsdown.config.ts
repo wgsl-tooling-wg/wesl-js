@@ -12,7 +12,7 @@ export default defineConfig([
     logLevel: "warn",
   },
   {
-    entry: { "wgsl-play": "src/WgslPlay.ts" },
+    entry: { "wgsl-play": "src/index.ts" },
     target: "es2024",
     clean: false,
     platform: "browser",

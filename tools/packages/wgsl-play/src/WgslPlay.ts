@@ -133,6 +133,9 @@ export class WgslPlay extends HTMLElement {
       this.controls.setPlaying(false);
     }
     this.initialize();
+    upgradeProperty(this, "conditions");
+    upgradeProperty(this, "source");
+    upgradeProperty(this, "project");
   }
 
   disconnectedCallback(): void {
@@ -560,6 +563,16 @@ function getStyles(): CSSStyleSheet {
     styles.replaceSync(cssText);
   }
   return styles;
+}
+
+// LATER: extract to shared web component utils if we add more helpers
+/** Absorb instance properties set before custom element upgrade. */
+function upgradeProperty(el: HTMLElement, prop: string): void {
+  if (Object.hasOwn(el, prop)) {
+    const value = (el as any)[prop];
+    delete (el as any)[prop];
+    (el as any)[prop] = value;
+  }
 }
 
 /** Convert file path to module path (e.g., "effects/main.wesl" -> "package::effects::main"). */

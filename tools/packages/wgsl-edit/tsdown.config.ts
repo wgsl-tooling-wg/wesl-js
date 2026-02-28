@@ -12,7 +12,7 @@ export default defineConfig([
     logLevel: "warn",
   },
   {
-    entry: { "wgsl-edit": "src/WgslEdit.ts" },
+    entry: { "wgsl-edit": "src/index.ts" },
     target: "es2024",
     clean: false,
     platform: "browser",
