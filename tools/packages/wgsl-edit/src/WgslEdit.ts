@@ -194,18 +194,25 @@ export class WgslEdit extends HTMLElement {
     this.dispatchChange();
   }
 
-  /** Active file content (backward compatible). */
+  /** Active file content (single-file API). */
   get source(): string {
     return this.editorView?.state.doc.toString() ?? this._pendingSource ?? "";
   }
 
-  /** Set active file content (backward compatible). */
+  /** Set active file content (single-file API). Auto-creates a default file entry. */
   set source(value: string) {
+    if (!this._activeFile && this._files.size === 0) {
+      this._files.set("main.wesl", { doc: Text.of(value.split("\n")) });
+      this._activeFile = "main.wesl";
+      this.renderTabs();
+    }
     if (this.editorView) {
       const to = this.editorView.state.doc.length;
       this.editorView.dispatch({ changes: { from: 0, to, insert: value } });
     } else {
       this._pendingSource = value;
+      const entry = this._files.get(this._activeFile);
+      if (entry) entry.doc = Text.of(value.split("\n"));
     }
   }
 
@@ -444,7 +451,12 @@ export class WgslEdit extends HTMLElement {
       this._pendingSource ??
       (firstFile ? this._files.get(firstFile)!.doc.toString() : "");
     this._pendingSource = null;
-    if (firstFile) this._activeFile = firstFile;
+    if (firstFile) {
+      this._activeFile = firstFile;
+    } else if (initialDoc) {
+      this._files.set("main.wesl", { doc: Text.of(initialDoc.split("\n")) });
+      this._activeFile = "main.wesl";
+    }
 
     const state = EditorState.create({
       doc: initialDoc,
