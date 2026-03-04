@@ -612,9 +612,6 @@ importers:
 
   packages/wesl-fetch:
     dependencies:
-      es-module-lexer:
-        specifier: ^1.7.0
-        version: 1.7.0
       fflate:
         specifier: ^0.8.2
         version: 0.8.2

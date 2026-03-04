@@ -1,4 +1,3 @@
-import { init, parse } from "es-module-lexer";
 import type { WeslBundle } from "wesl";
 
 /**
@@ -12,7 +11,7 @@ import type { WeslBundle } from "wesl";
  *   import dependency from "other-package";
  *   export const weslBundle = { ..., dependencies: [dependency] };
  *
- * We use es-module-lexer to parse imports without executing code, reconstruct
+ * We use regex to parse imports without executing code, reconstruct
  * the dependency graph, then hydrate bundles in dependency order using
  * Function() constructor with dependency injection. Returns WeslBundle objects
  * where dependency references are resolved to actual bundle objects.
@@ -45,8 +44,9 @@ interface BundleInfo {
 /** Fetcher callback for loading missing packages on-demand. */
 type PackageFetcher = (pkgName: string) => Promise<WeslBundleFile[]>;
 
-// Initialize es-module-lexer WASM once at module load
-const initPromise = init;
+// Matches default and namespace imports (captures var name and path)
+const importPattern =
+  /import\s+(?:\*\s+as\s+)?(\w+)\s+from\s+["']([^"']+)["']/g;
 
 // Matches: package/dist/foo/bar/weslBundle.js (captures "foo/bar")
 const nestedBundlePattern = /package\/dist\/(.+)\/weslBundle\.js$/;
@@ -57,9 +57,6 @@ const rootBundlePattern = /package\/dist\/weslBundle\.js$/;
 // Matches: export const weslBundle = { ... };
 const weslBundleExportPattern =
   /export\s+const\s+weslBundle\s*=\s*({[\s\S]+});?\s*$/m;
-
-// Matches: import foo from "package" (captures "foo")
-const importVarPattern = /import\s+(\w+)\s+from/;
 
 /** Load WeslBundle objects from BundleFile sources. */
 export async function loadBundlesFromFiles(
@@ -74,7 +71,6 @@ export async function bundleRegistry(
   bundleFiles: WeslBundleFile[],
   registry: BundleRegistry = new Map(),
 ): Promise<BundleRegistry> {
-  await initPromise;
   for (const file of bundleFiles) {
     const { content, packagePath, packageName } = file;
     const bundleInfo = parseBundleImports(content);
@@ -97,24 +93,20 @@ export async function hydrateBundleRegistry(
   return bundles;
 }
 
-/** Parse ES module imports from bundle code using es-module-lexer.  */
+/** Parse ES module imports from bundle code. */
 function parseBundleImports(code: string): BundleInfo {
   const exportMatch = code.match(weslBundleExportPattern);
   if (!exportMatch) {
     throw new Error("Could not find weslBundle export in bundle");
   }
 
-  const [imports] = parse(code);
-  const parsedImports = imports.map(imp => {
-    const statement = code.slice(imp.ss, imp.se);
-    const match = statement.match(importVarPattern);
-    if (!match) {
-      throw new Error(
-        `Could not parse import variable name from: ${statement}`,
-      );
-    }
-    return { varName: match[1], path: imp.n!.replace(/\//g, "::") };
-  });
+  const parsedImports: BundleInfo["imports"] = [];
+  for (const match of code.matchAll(importPattern)) {
+    parsedImports.push({
+      varName: match[1],
+      path: match[2].replace(/\//g, "::"),
+    });
+  }
 
   return { bundleLiteral: exportMatch[1], imports: parsedImports };
 }
