@@ -484,6 +484,7 @@ export class WgslEdit extends HTMLElement {
     const baseTheme = EditorView.theme({
       ".cm-content": { padding: "0" },
       ".cm-line": { padding: "0" },
+      ".cm-panels": { position: "relative" }, // suppress firefox warning in scrollable containers
     });
     return [
       basicSetup,
