@@ -1,5 +1,21 @@
-import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
-import { type Diagnostic, forceLinting } from "@codemirror/lint";
+import {
+  autocompletion,
+  closeBrackets,
+  closeBracketsKeymap,
+  completionKeymap,
+} from "@codemirror/autocomplete";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import {
+  bracketMatching,
+  defaultHighlightStyle,
+  foldGutter,
+  foldKeymap,
+  HighlightStyle,
+  indentOnInput,
+  syntaxHighlighting,
+} from "@codemirror/language";
+import { type Diagnostic, forceLinting, lintKeymap } from "@codemirror/lint";
+import { searchKeymap } from "@codemirror/search";
 import {
   Compartment,
   type EditorSelection,
@@ -7,8 +23,20 @@ import {
   type Extension,
   Text,
 } from "@codemirror/state";
+import {
+  crosshairCursor,
+  drawSelection,
+  dropCursor,
+  EditorView,
+  gutters,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  highlightSpecialChars,
+  keymap,
+  lineNumbers,
+  rectangularSelection,
+} from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
-import { basicSetup, EditorView } from "codemirror";
 import {
   type Conditions,
   fileToModulePath,
@@ -487,7 +515,32 @@ export class WgslEdit extends HTMLElement {
       ".cm-panels": { position: "relative" }, // suppress firefox warning in scrollable containers
     });
     return [
-      basicSetup,
+      gutters({ fixed: false }),
+      lineNumbers(),
+      highlightActiveLineGutter(),
+      highlightSpecialChars(),
+      history(),
+      foldGutter(),
+      drawSelection(),
+      dropCursor(),
+      EditorState.allowMultipleSelections.of(true),
+      indentOnInput(),
+      syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+      bracketMatching(),
+      closeBrackets(),
+      autocompletion(),
+      rectangularSelection(),
+      crosshairCursor(),
+      highlightActiveLine(),
+      keymap.of([
+        ...closeBracketsKeymap,
+        ...defaultKeymap,
+        ...searchKeymap,
+        ...historyKeymap,
+        ...foldKeymap,
+        ...completionKeymap,
+        ...lintKeymap,
+      ]),
       wesl(),
       baseTheme,
       this.themeCompartment.of(this.resolveTheme()),
