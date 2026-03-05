@@ -16,6 +16,8 @@ const sharedExternal = [
   "node:url",
   "node:util",
   "node:v8",
+  "pngjs",
+  "thimbleberry",
   "vitest",
   "vitest-image-snapshot",
 ];
