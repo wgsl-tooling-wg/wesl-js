@@ -35,10 +35,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./element": "./src/WgslPlay.ts",
-    "./bundle": {
-      "types": "./src/WgslPlay.ts",
-      "default": "./dist/wgsl-play.js"
-    }
+    "./bundle": "./src/WgslPlay.ts"
   },
   "dependencies": {
     "wesl": "workspace:*",
