@@ -1,4 +1,5 @@
 import { defineConfig } from "tsdown";
+import { rawImports } from "../../config/RawImports.ts";
 
 export default defineConfig([
   {
@@ -19,6 +20,7 @@ export default defineConfig([
     outDir: "dist/webview",
     logLevel: "warn",
     noExternal: [/.*/], // bundle everything for browser context
+    plugins: [rawImports()],
   },
   {
     // standalone CLI for running tests in a subprocess (spawned by WeslTestController)
