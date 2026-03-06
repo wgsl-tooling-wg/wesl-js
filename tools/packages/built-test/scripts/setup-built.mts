@@ -28,6 +28,7 @@ const packages = [
   "wesl-link",
   "wesl-packager",
   "wesl-plugin",
+  "wesl-reflect",
   "wesl-tooling",
   "wgsl-edit",
   "wgsl-play",

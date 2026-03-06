@@ -2,8 +2,8 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { UserConfig } from "vite";
+import { simpleReflect } from "../wesl-plugin/src/extensions/ReflectExtension.ts";
 import viteWesl from "../wesl-plugin/src/plugins/vite";
-import { simpleReflect } from "./src/SimpleReflectExtension.ts";
 
 const thisPath = fileURLToPath(import.meta.url);
 const weslToml = path.join(path.dirname(thisPath), "wesl.toml");

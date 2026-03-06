@@ -1,13 +1,43 @@
 {
-  "name": "wesl-build-reflect",
-  "private": true,
+  "name": "wesl-reflect",
+  "description": "Browser-compatible reflection library for WESL/WGSL shader ASTs",
+  "version": "0.0.1",
   "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
-    "test": "nodemon --config nodemon-vitest.json",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "prepublishOnly": "run-s build",
+    "test": "cross-env FORCE_COLOR=1 vitest",
+    "test:once": "vitest run",
     "typecheck": "tsgo"
   },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    },
+    "main": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.ts"
+    }
+  },
   "dependencies": {
-    "wesl": "workspace:*",
-    "wesl-plugin": "workspace:*"
-  }
+    "wesl": "workspace:*"
+  },
+  "keywords": [
+    "reflection",
+    "shader",
+    "WebGPU",
+    "WESL",
+    "WGSL"
+  ]
 }

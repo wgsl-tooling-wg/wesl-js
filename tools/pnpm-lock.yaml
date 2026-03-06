@@ -611,6 +611,9 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
+      wesl-reflect:
+        specifier: workspace:*
+        version: link:../wesl-reflect
     devDependencies:
       '@nuxt/kit':
         specifier: ^3.17.6
@@ -741,9 +744,6 @@ importers:
       wesl:
         specifier: workspace:*
         version: link:../wesl
-      wesl-plugin:
-        specifier: workspace:*
-        version: link:../wesl-plugin
 
   packages/wesl-tooling:
     dependencies:

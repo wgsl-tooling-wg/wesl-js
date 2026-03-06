@@ -49,7 +49,8 @@
   },
   "dependencies": {
     "unplugin": "^2.3.5",
-    "wesl": "workspace:*"
+    "wesl": "workspace:*",
+    "wesl-reflect": "workspace:*"
   },
   "devDependencies": {
     "@nuxt/kit": "^3.17.6",
