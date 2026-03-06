@@ -37,10 +37,10 @@
     <div class="section">
       <h3>2. npm CDN (animated)</h3>
       <div class="controls">
-        <button id="load-npm">Load from npm</button>
-        <button id="play2">Play</button>
-        <button id="pause2">Pause</button>
-        <button id="rewind2">Rewind</button>
+        <button type="button" id="load-npm">Load from npm</button>
+        <button type="button" id="play2">Play</button>
+        <button type="button" id="pause2">Pause</button>
+        <button type="button" id="rewind2">Rewind</button>
       </div>
       <wgsl-play id="player2"></wgsl-play>
       <pre id="npm-status">Status: Ready</pre>
@@ -51,7 +51,7 @@
       <h3>3. shaderRoot (internal imports)</h3>
       <p>Tests <code>package::</code> and <code>super::</code> imports from /shaders</p>
       <div class="controls">
-        <button id="load-internal">Load from shaderRoot</button>
+        <button type="button" id="load-internal">Load from shaderRoot</button>
       </div>
       <wgsl-play id="player3" shader-root="/shaders"></wgsl-play>
       <pre id="internal-status">Status: Ready</pre>
@@ -62,7 +62,7 @@
       <h3>4. src attribute with shaderRoot</h3>
       <p>Loads shader file with <code>super::</code> and <code>package::</code> imports</p>
       <div class="controls">
-        <button id="load-src">Load from src</button>
+        <button type="button" id="load-src">Load from src</button>
       </div>
       <wgsl-play id="player4" shader-root="/shaders"></wgsl-play>
       <pre id="src-status">Status: Ready</pre>
@@ -73,7 +73,7 @@
       <h3>5. ?static import (wesl-plugin)</h3>
       <p>Tests build-time linking via <code>import wgsl from "./shader.wesl?static"</code></p>
       <div class="controls">
-        <button id="load-static">Load ?static shader</button>
+        <button type="button" id="load-static">Load ?static shader</button>
       </div>
       <wgsl-play id="player5"></wgsl-play>
       <pre id="static-status">Status: Ready</pre>
@@ -84,7 +84,7 @@
       <h3>6. ?link import (wesl-plugin)</h3>
       <p>Tests runtime linking via <code>import config from "./shader.wesl?link"</code></p>
       <div class="controls">
-        <button id="load-link">Load ?link shader</button>
+        <button type="button" id="load-link">Load ?link shader</button>
       </div>
       <wgsl-play id="player6"></wgsl-play>
       <pre id="link-status">Status: Ready</pre>
@@ -95,7 +95,7 @@
       <h3>7. Conditions (project.conditions)</h3>
       <p>Tests <code>project = { conditions: { RED: true } }</code> with inline shader</p>
       <div class="controls">
-        <button id="load-conditions">Load with RED condition</button>
+        <button type="button" id="load-conditions">Load with RED condition</button>
       </div>
       <wgsl-play id="player7">
         @fragment fn fs_main() -> @location(0) vec4f {

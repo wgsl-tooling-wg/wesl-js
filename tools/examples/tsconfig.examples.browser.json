@@ -24,6 +24,11 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "exclude": ["**/node_modules", "**/dist"],
+  "exclude": [
+    "**/node_modules",
+    "**/dist",
+    "playwright.config.ts",
+    "playwright.port.ts"
+  ],
   "include": ["src", "*.ts"]
 }

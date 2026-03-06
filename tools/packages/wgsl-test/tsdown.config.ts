@@ -42,6 +42,7 @@ export default defineConfig([
     platform: "neutral",
     external: sharedExternal,
     noExternal: [/.*/], // bundle workspace deps (wesl, wesl-gpu, wesl-tooling)
+    inlineOnly: false,
     logLevel: "warn",
   },
 ]);

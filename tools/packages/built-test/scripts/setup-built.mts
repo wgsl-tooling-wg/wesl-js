@@ -65,6 +65,7 @@ async function main() {
 
   copyProjectFiles(builtTestPackage, tempBuiltTest);
   updatePackageJson(tempBuiltTest, timestamp);
+  writeNpmrc(tempBuiltTest);
   run("pnpm install", tempBuiltTest);
 }
 
@@ -109,6 +110,27 @@ function updatePackageJson(tempBuiltTest: string, timestamp: string) {
   );
 
   writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+}
+
+/** Write .npmrc with minimumReleaseAge exclusions to match the workspace settings. */
+function writeNpmrc(dir: string) {
+  const excludes = [
+    "wesl",
+    "wesl-*",
+    "lygia",
+    "thimbleberry",
+    "berry-pretty",
+    "@typescript/*",
+    "webgpu",
+    "@webgpu/*",
+    "monobump",
+    "benchforge",
+  ];
+  const lines = [
+    "minimum-release-age=1440",
+    ...excludes.map(p => `minimum-release-age-exclude[]=${p}`),
+  ];
+  writeFileSync(join(dir, ".npmrc"), lines.join("\n") + "\n");
 }
 
 function getTimestamp() {

@@ -1,30 +1,36 @@
 import second from "multi_pkg/second";
 import trans from "multi_pkg/transitive";
-import rand from "random_wgsl";
 import { expect, test } from "vitest";
 import { link } from "../Linker.ts";
+import type { WeslBundle } from "../WeslBundle.ts";
 import { expectNoLogAsync } from "./LogCatcher.ts";
 
-test("import rand() from a package", async () => {
+// Static fixture bundle - no external package dependency needed
+const hashPkg: WeslBundle = {
+  name: "hash_pkg",
+  edition: "unstable_2025_1",
+  modules: {
+    "hash.wesl":
+      "fn hashFn(v: u32) -> u32 { return v ^ (v >> 16u); }\nfn unusedFn() { }",
+  },
+};
+
+test("import fn from a package bundle", async () => {
   const src = `
-    import random_wgsl::pcg_2u_3f; 
+    import hash_pkg::hash::hashFn;
 
-    struct Uniforms { frame: u32 }
-    @binding(0) @group(0) var<uniform> u: Uniforms;
-
-    @fragment
-    fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-        let rand = pcg_2u_3f(vec2u(pos.xy) + u.frame);
-        return vec4(rand, 1f);
-    }
+    @compute @workgroup_size(1)
+    fn main() { let x = hashFn(1u); }
   `;
-
-  const weslSrc = { "./main.wesl": src };
-  const result = await expectNoLogAsync(async () =>
-    link({ weslSrc, rootModuleName: "./main.wesl", libs: [rand] }),
+  const result = await expectNoLogAsync(() =>
+    link({
+      weslSrc: { "./main.wesl": src },
+      rootModuleName: "./main.wesl",
+      libs: [hashPkg],
+    }),
   );
-  expect(result.dest).toContain("fn pcg_2u_3f");
-  expect(result.dest).not.toContain("sinRand");
+  expect(result.dest).toContain("fn hashFn");
+  expect(result.dest).not.toContain("unusedFn");
 });
 
 test("import from multi_pkg/second", async () => {

@@ -9,6 +9,7 @@ export default defineConfig([
     target: "node22",
     external: ["vscode", "webgpu"],
     noExternal: [/.*/], // bundle workspace deps for vsce
+    inlineOnly: false,
     outDir: "dist",
     logLevel: "warn",
   },
@@ -20,6 +21,7 @@ export default defineConfig([
     outDir: "dist/webview",
     logLevel: "warn",
     noExternal: [/.*/], // bundle everything for browser context
+    inlineOnly: false,
     plugins: [rawImports()],
   },
   {
@@ -30,6 +32,7 @@ export default defineConfig([
     target: "node22",
     external: ["webgpu"],
     noExternal: [/.*/],
+    inlineOnly: false,
     outDir: "dist",
     logLevel: "warn",
   },

@@ -52,22 +52,20 @@ test("supports all benchmark variants", { timeout: 30000 }, () => {
   });
 });
 
-test(
-  "produces similar results in worker and direct modes",
-  { timeout: 20000 },
-  () => {
-    const worker = execSync(
-      benchCommand("tokenize", "0.02", true),
-      testExecOptions(),
-    );
-    const direct = execSync(
-      benchCommand("tokenize", "0.02", false),
-      testExecOptions(),
-    );
+test("produces similar results in worker and direct modes", {
+  timeout: 20000,
+}, () => {
+  const worker = execSync(
+    benchCommand("tokenize", "0.02", true),
+    testExecOptions(),
+  );
+  const direct = execSync(
+    benchCommand("tokenize", "0.02", false),
+    testExecOptions(),
+  );
 
-    [worker, direct].forEach(output => {
-      expect(output).toContain("bevy [tokenize]");
-      expect(output).toContain("lines / sec");
-    });
-  },
-);
+  [worker, direct].forEach(output => {
+    expect(output).toContain("bevy [tokenize]");
+    expect(output).toContain("lines / sec");
+  });
+});

@@ -36,7 +36,6 @@ import type {} from "vitest";
 import type { MatchImageOptions } from "vitest-image-snapshot";
 
 declare module "vitest" {
-  // biome-ignore lint/correctness/noUnusedVariables: T must match Vitest's Matchers<T> signature
   interface Matchers<T = any> {
     toMatchImage(nameOrOptions?: string | MatchImageOptions): Promise<void>;
   }

@@ -17,6 +17,7 @@ export default defineConfig([
     clean: false,
     platform: "browser",
     noExternal: [/.*/],
+    inlineOnly: false,
     plugins: [rawImports()],
     logLevel: "warn",
   },
