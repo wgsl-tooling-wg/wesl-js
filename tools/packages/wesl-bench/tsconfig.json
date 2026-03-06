@@ -1,3 +1,4 @@
 {
-  "extends": "../../tsconfig.node.json"
+  "extends": "../../tsconfig.node.json",
+  "exclude": ["src/baseline"]
 }
