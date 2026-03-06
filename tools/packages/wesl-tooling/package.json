@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "glob": "^13.0.0",
+    "glob": "^13.0.6",
     "import-meta-resolve": "^4.1.0",
     "toml": "^3.0.0"
   },

@@ -52,7 +52,7 @@
     }
   },
   "dependencies": {
-    "glob": "^13.0.0",
+    "glob": "^13.0.6",
     "pngjs": "^7.0.0",
     "thimbleberry": "^0.2.10",
     "webgpu": "^0.3.8",
@@ -63,12 +63,12 @@
   },
   "devDependencies": {
     "@types/pngjs": "^6.0.0",
-    "@webgpu/types": "^0.1.68",
+    "@webgpu/types": "^0.1.69",
     "dependent_package": "workspace:x",
     "wesl-packager": "workspace:x"
   },
   "peerDependencies": {
-    "vitest": "^4.0.16",
+    "vitest": "^4.0.18",
     "vitest-image-snapshot": "workspace:^"
   },
   "peerDependenciesMeta": {

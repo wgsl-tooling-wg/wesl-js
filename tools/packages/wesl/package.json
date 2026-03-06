@@ -54,14 +54,6 @@
     "typedoc-theme-hierarchy": "^6.0.0",
     "wrangler": "^4.22.0"
   },
-  "peerDependencies": {
-    "random_wgsl": "workspace:^"
-  },
-  "peerDependenciesMeta": {
-    "random_wgsl": {
-      "optional": true
-    }
-  },
   "license": "MIT",
   "keywords": [
     "webgpu",
