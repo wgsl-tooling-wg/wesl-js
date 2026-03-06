@@ -12,7 +12,7 @@
     "check:lockfile": "pnpm install --frozen-lockfile --lockfile-only",
     "check:versions": "syncpack list-mismatches",
     "ci:check": "run-s lint:all build:all typecheck:all test:unit bench:validate",
-    "ci:check-windows": "run-s build:all test:unit bench:validate",
+    "ci:check-windows": "run-s build:all test:unit",
     "echo:all": "pnpm --filter \"*\" exec pwd",
     "fix:all": "run-s fix:pkgJsonFormat fix:syncpack fix:biome",
     "fix:biome": "biome check --fix --unsafe",
