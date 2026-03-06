@@ -9,7 +9,7 @@
     "bench:details": "sudo bin/bench.ts --cpu",
     "bench:perfetto": "node --expose-gc --trace-events-enabled --trace-event-categories=v8,v8.gc bin/bench.ts --perfetto trace.json",
     "bench:profile": "node --expose-gc --inspect-brk bin/bench.ts --profile",
-    "bench:validate": "bin/bench.ts --profile",
+    "bench:validate": "node --expose-gc --allow-natives-syntax bin/bench.ts --profile",
     "test": "vitest --hideSkippedTests",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:once": "vitest run",
