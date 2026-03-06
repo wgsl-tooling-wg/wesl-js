@@ -35,12 +35,12 @@ export function simpleReflect(
   };
 }
 
-/** write d.ts file defining ts interfaces for these structs */
+/** Write .d.ts file with TypeScript interfaces for reflected structs. */
 async function writeTypes(
-  astStructs: StructElem[],
+  structs: StructElem[],
   typesDir: string,
 ): Promise<void> {
-  const tsdInterfaces = astStructs.map(s => {
+  const tsdInterfaces = structs.map(s => {
     const name = s.name.ident.originalName;
     const entries = s.members.map(m => {
       const tsType = wgslTypeToTs(originalTypeName(m.typeRef));

@@ -1,4 +1,9 @@
-import type { StructMemberElem } from "wesl";
+import type {
+  ExpressionElem,
+  RefIdent,
+  StructMemberElem,
+  TypeRefElem,
+} from "wesl";
 import { findAnnotation, numericParams } from "./Annotations.ts";
 import { originalTypeName } from "./WeslStructs.ts";
 
@@ -11,7 +16,11 @@ export interface FieldLayout {
 export interface StructLayout {
   fields: FieldLayout[];
   bufferSize: number;
+  alignment: number;
 }
+
+/** Resolve a type reference to struct members. Follows refersTo for cross-module support. */
+export type TypeResolver = (ident: RefIdent) => StructMemberElem[] | undefined;
 
 interface TypeInfo {
   alignment: number;
@@ -71,14 +80,17 @@ const typeTable: Record<string, TypeInfo> = {
   mat4x4h: mat(4, 4, 2),
 };
 
-/** Compute byte offsets and buffer size for a flat WGSL struct. */
-export function structLayout(members: StructMemberElem[]): StructLayout {
+/** Compute byte offsets and buffer size for a WGSL struct. */
+export function structLayout(
+  members: StructMemberElem[],
+  resolve?: TypeResolver,
+): StructLayout {
   let offset = 0;
   let structAlign = 1;
   const fields: FieldLayout[] = [];
 
   for (const m of members) {
-    let { alignment, size } = typeLayout(originalTypeName(m.typeRef));
+    let { alignment, size } = memberTypeInfo(m.typeRef, resolve);
 
     const alignAttr = findAnnotation(m, "align");
     if (alignAttr) {
@@ -98,7 +110,67 @@ export function structLayout(members: StructMemberElem[]): StructLayout {
     offset += size;
   }
 
-  return { fields, bufferSize: roundUp(structAlign, offset) };
+  const bufferSize = roundUp(structAlign, offset);
+  return { fields, bufferSize, alignment: structAlign };
+}
+
+/** Resolve alignment and size for a member's type (primitive, array, or nested struct). */
+function memberTypeInfo(
+  typeRef: TypeRefElem,
+  resolve?: TypeResolver,
+): TypeInfo {
+  const name = originalTypeName(typeRef);
+
+  // primitive type
+  const primitive = typeTable[name];
+  if (primitive) return primitive;
+
+  // array<T, N> or array<T>
+  if (name === "array") {
+    const params = typeRef.templateParams;
+    if (!params?.length)
+      throw new Error("array type missing template parameters");
+    const elem = elemTypeInfo(params[0], resolve);
+    const stride = roundUp(elem.alignment, elem.size);
+    const p = params[1];
+    const count = p && "value" in p ? Number(p.value) : 0;
+    return { alignment: elem.alignment, size: count * stride };
+  }
+
+  // nested struct
+  const nested = resolveStructInfo(typeRef.name, resolve);
+  if (nested) return nested;
+
+  throw new Error(`unsupported type for layout: '${name}'`);
+}
+
+/** Extract type info from an array template param (TypeRefElem or RefIdentElem). */
+function elemTypeInfo(param: ExpressionElem, resolve?: TypeResolver): TypeInfo {
+  if (param.kind === "type") return memberTypeInfo(param, resolve);
+  // RefIdentElem (kind "ref") - has .ident which is a RefIdent
+  const p = param as Record<string, any>;
+  const ident: RefIdent | undefined = p.ident;
+  const typeName = ident?.originalName ?? p.originalName;
+  if (!typeName) throw new Error("cannot resolve array element type");
+  const primitive = typeTable[typeName];
+  if (primitive) return primitive;
+  if (ident) {
+    const nested = resolveStructInfo(ident, resolve);
+    if (nested) return nested;
+  }
+  throw new Error(`unsupported type for layout: '${typeName}'`);
+}
+
+/** Resolve a RefIdent to a struct and return its TypeInfo. */
+function resolveStructInfo(
+  ident: RefIdent,
+  resolve?: TypeResolver,
+): TypeInfo | undefined {
+  if (!resolve) return undefined;
+  const members = resolve(ident);
+  if (!members) return undefined;
+  const inner = structLayout(members, resolve);
+  return { alignment: inner.alignment, size: inner.bufferSize };
 }
 
 /** Look up alignment and size for a host-shareable WGSL type. */

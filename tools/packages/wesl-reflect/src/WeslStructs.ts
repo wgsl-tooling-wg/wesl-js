@@ -10,7 +10,7 @@ export interface WeslMember {
 
 export type StructsRecord = Record<string, WeslStruct>;
 
-/** @return js descriptions in WeslStruct format of structs from wesl/wgsl */
+/** Convert parsed WESL/WGSL struct AST nodes to simplified WeslStruct records. */
 export function weslStructs(astStructs: StructElem[]): StructsRecord[] {
   return astStructs.map(s => {
     const name = s.name.ident.originalName;

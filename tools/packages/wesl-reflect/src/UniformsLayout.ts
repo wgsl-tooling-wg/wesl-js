@@ -1,5 +1,5 @@
 import type { StructElem, StructMemberElem } from "wesl";
-import { structLayout } from "./StructLayout.ts";
+import { structLayout, type TypeResolver } from "./StructLayout.ts";
 import {
   type AutoAnnotation,
   autoAnnotation,
@@ -53,8 +53,11 @@ type Classified =
   | { control?: undefined; field: UniformField };
 
 /** Compute layout + annotations for a @uniforms-annotated struct. */
-export function uniformsLayout(struct: StructElem): UniformsLayout {
-  const layout = structLayout(struct.members);
+export function uniformsLayout(
+  struct: StructElem,
+  resolve?: TypeResolver,
+): UniformsLayout {
+  const layout = structLayout(struct.members, resolve);
   const controls: UniformControl[] = [];
   const fields: UniformField[] = [];
 
