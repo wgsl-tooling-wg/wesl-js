@@ -145,6 +145,7 @@ export class WgslEdit extends HTMLElement {
   private _libs: WeslBundle[] = [];
   private _ignorePackages: string[] = ["constants", "test"];
   private _fetchingPkgs = new Set<string>();
+  private _fetchedPkgs = new Set<string>();
   private _snackTimer: ReturnType<typeof setTimeout> | undefined;
   private _externalDiagnostics: Diagnostic[] = [];
   private _lintFromEl: Element | null = null;
@@ -607,7 +608,9 @@ export class WgslEdit extends HTMLElement {
   private async fetchLibsOnDemand(
     packageNames: string[],
   ): Promise<WeslBundle[]> {
-    const needed = packageNames.filter(n => !this._fetchingPkgs.has(n));
+    const needed = packageNames.filter(
+      n => !this._fetchedPkgs.has(n) && !this._fetchingPkgs.has(n),
+    );
     if (needed.length === 0) return [];
 
     for (const n of needed) this._fetchingPkgs.add(n);
@@ -615,6 +618,7 @@ export class WgslEdit extends HTMLElement {
     try {
       const bundles = await fetchPackagesByName(needed);
       this._libs = [...this._libs, ...bundles];
+      for (const n of needed) this._fetchedPkgs.add(n);
       if (bundles.length > 0)
         this.showSnack(`Loaded ${needed.join(", ")}`, 3000);
       else this.hideSnack();

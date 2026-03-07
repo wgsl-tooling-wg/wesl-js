@@ -168,7 +168,8 @@ function findMissingPackages(
   // imports that don't resolve to a known module
   for (const imp of rootAst.imports) {
     const root = imp.segments[0]?.name;
-    if (!root || !isExternalRoot(root) || ignored.has(root)) continue;
+    if (!root || !isExternalRoot(root) || ignored.has(root) || loaded.has(root))
+      continue;
     const modPath = imp.segments.map(s => s.name).join("::");
     if (!resolver.resolveModule(modPath)) pkgs.push(root);
   }
