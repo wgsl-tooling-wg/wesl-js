@@ -3,6 +3,23 @@ import { parseDependencies } from "../src/ParseDependencies.ts";
 
 const thisDir = import.meta.dirname;
 
+test("parseDependencies finds ref inside @if block", () => {
+  const srcs = {
+    main: `
+      import package::foo::bar;
+      fn main() {
+        @if(feature) bar();
+      }
+    `,
+    foo: `
+      import dependent_package::dep;
+      fn bar() { dep(); }
+    `,
+  };
+  const deps = parseDependencies(srcs, thisDir);
+  expect(deps).deep.equals(["dependent_package"]);
+});
+
 test("parseDepenencies finds non-root dependency", () => {
   const srcs = {
     main: `

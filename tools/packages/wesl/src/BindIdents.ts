@@ -203,6 +203,16 @@ export function findValidRootDecls(
   return found;
 }
 
+/** Find all declarations at the root level, ignoring conditions. */
+export function findAllRootDecls(rootScope: Scope): DeclIdent[] {
+  const found: DeclIdent[] = [];
+  for (const item of rootScope.contents) {
+    if (item.kind === "decl") found.push(item);
+    else if (item.kind === "partial") collectDecls(item, found);
+  }
+  return found;
+}
+
 /** Find a public declaration with the given original name. */
 export function publicDecl(
   scope: Scope,
@@ -244,6 +254,9 @@ interface BindContext {
 
   /** Don't follow references from declarations (for library dependency detection). */
   dontFollowDecls?: boolean;
+
+  /** Visit all conditional branches (for dependency discovery). */
+  discoveryMode?: boolean;
 }
 
 /**
@@ -277,7 +290,10 @@ function processScope(
   const newGlobals: DeclIdent[] = [];
   const newFromChildren: DeclIdent[] = [];
 
-  for (const child of validItems(scope, bindContext.conditions)) {
+  const items = bindContext.discoveryMode
+    ? scope.contents
+    : validItems(scope, bindContext.conditions);
+  for (const child of items) {
     if (child.kind === "decl") {
       liveDecls.decls.set(child.originalName, child);
     } else if (child.kind === "ref") {
@@ -380,8 +396,11 @@ function findQualifiedImport(
   refIdent: RefIdent,
   ctx: BindContext,
 ): FoundDecl | undefined {
-  const { conditions, unbound } = ctx;
-  const flatImps = flatImports(refIdent.ast, conditions);
+  const { conditions, unbound, discoveryMode } = ctx;
+  const flatImps = flatImports(
+    refIdent.ast,
+    discoveryMode ? undefined : conditions,
+  );
   const identParts = refIdent.originalName.split("::");
   const pathParts =
     matchingImport(identParts, flatImps) ?? qualifiedIdent(identParts);

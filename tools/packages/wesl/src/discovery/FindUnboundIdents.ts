@@ -2,7 +2,7 @@ import type { AbstractElem } from "../AbstractElems.ts";
 import {
   bindIdentsRecursive,
   type EmittableElem,
-  findValidRootDecls,
+  findAllRootDecls,
   type UnboundRef,
 } from "../BindIdents.ts";
 import { type LiveDecls, makeLiveDecls } from "../LiveDeclarations.ts";
@@ -38,10 +38,11 @@ export function findUnboundRefs(resolver: BatchModuleResolver): UnboundRef[] {
     packageName: "package",
     unbound: [] as UnboundRef[],
     dontFollowDecls: true,
+    discoveryMode: true,
   };
 
   for (const [, ast] of resolver.allModules()) {
-    const rootDecls = findValidRootDecls(ast.rootScope, {});
+    const rootDecls = findAllRootDecls(ast.rootScope);
     const liveDecls: LiveDecls = {
       decls: new Map(rootDecls.map(d => [d.originalName, d] as const)),
       parent: null,
