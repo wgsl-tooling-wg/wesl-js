@@ -1,5 +1,6 @@
-import type { StructElem, StructMemberElem } from "wesl";
-import { structLayout, type TypeResolver } from "./StructLayout.ts";
+import type { Conditions, StructElem, StructMemberElem } from "wesl";
+import { filterValidElements } from "wesl";
+import { structLayout } from "./StructLayout.ts";
 import {
   type AutoAnnotation,
   autoAnnotation,
@@ -55,14 +56,17 @@ type Classified =
 /** Compute layout + annotations for a @uniforms-annotated struct. */
 export function uniformsLayout(
   struct: StructElem,
-  resolve?: TypeResolver,
+  conditions?: Conditions,
 ): UniformsLayout {
-  const layout = structLayout(struct.members, resolve);
+  const layout = structLayout(struct, conditions);
+  const members = conditions
+    ? filterValidElements(struct.members, conditions)
+    : struct.members;
   const controls: UniformControl[] = [];
   const fields: UniformField[] = [];
 
-  for (let i = 0; i < struct.members.length; i++) {
-    const m = struct.members[i];
+  for (let i = 0; i < members.length; i++) {
+    const m = members[i];
     const fl = layout.fields[i];
     const type = originalTypeName(m.typeRef);
     const base = { name: fl.name, offset: fl.offset, size: fl.size, type };
