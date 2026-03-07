@@ -121,6 +121,7 @@ export class WgslEdit extends HTMLElement {
     "lint",
     "lint-from",
     "line-numbers",
+    "fetch-libs",
   ];
 
   private editorView: EditorView | null = null;
@@ -140,6 +141,7 @@ export class WgslEdit extends HTMLElement {
   private _activeFile = "";
   private _tabs = true;
   private _lint: LintMode = "on";
+  private _fetchLibs = true;
   private _conditions: Conditions = {};
   private _packageName: string | undefined;
   private _libs: WeslBundle[] = [];
@@ -209,6 +211,9 @@ export class WgslEdit extends HTMLElement {
     } else if (name === "line-numbers") {
       this._lineNumbers = value === "true";
       this.updateLineNumbers();
+    } else if (name === "fetch-libs") {
+      this._fetchLibs = value !== "false";
+      this.updateLint();
     }
   }
 
@@ -343,6 +348,17 @@ export class WgslEdit extends HTMLElement {
     else this.removeAttribute("line-numbers");
   }
 
+  /** Whether to auto-fetch missing library packages from npm (default: true). */
+  get fetchLibs(): boolean {
+    return this._fetchLibs;
+  }
+
+  set fetchLibs(value: boolean) {
+    this._fetchLibs = value;
+    if (value) this.removeAttribute("fetch-libs");
+    else this.setAttribute("fetch-libs", "false");
+  }
+
   /** Whether the editor is currently loading content. */
   get loading(): boolean {
     return this.snackbar.classList.contains("visible");
@@ -358,6 +374,7 @@ export class WgslEdit extends HTMLElement {
     clearTimeout(this._snackTimer);
     this.snackbar.textContent = msg;
     this.snackbar.classList.add("visible");
+    console.log("wgsl-edit showSnack:", msg);
     if (ms) this._snackTimer = setTimeout(() => this.hideSnack(), ms);
   }
 
@@ -599,7 +616,9 @@ export class WgslEdit extends HTMLElement {
       packageName: () => this._packageName,
       getExternalDiagnostics: () => this._externalDiagnostics,
       getLibs: () => this._libs,
-      fetchLibs: pkgs => this.fetchLibsOnDemand(pkgs),
+      fetchLibs: this._fetchLibs
+        ? pkgs => this.fetchLibsOnDemand(pkgs)
+        : undefined,
       ignorePackages: () => this._ignorePackages,
     });
   }

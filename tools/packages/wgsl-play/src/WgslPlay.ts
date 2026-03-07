@@ -58,6 +58,7 @@ export class WgslPlay extends HTMLElement {
     "theme",
     "autoplay",
     "transparent",
+    "fetch-libs",
   ];
 
   private canvas: HTMLCanvasElement;
@@ -81,6 +82,7 @@ export class WgslPlay extends HTMLElement {
   private _initPromise?: Promise<boolean>;
   private _sourceEl: HTMLElement | null = null;
   private _sourceListener: ((e: Event) => void) | null = null;
+  private _fetchLibs = true;
   private _theme: "light" | "dark" | "auto" = "auto";
   private _mediaQuery: MediaQueryList | null = null;
   private _onFullscreenChange = () =>
@@ -170,6 +172,11 @@ export class WgslPlay extends HTMLElement {
       return;
     }
 
+    if (name === "fetch-libs") {
+      this._fetchLibs = newValue !== "false";
+      return;
+    }
+
     // Initial src is handled by initialize(); this handles later changes
     if (name === "src" && newValue && this._initPromise) {
       this.loadFromUrl(newValue);
@@ -245,6 +252,17 @@ export class WgslPlay extends HTMLElement {
       : "package::main";
     this._fromFullProject = true;
     this.discoverAndRebuild();
+  }
+
+  /** Whether to auto-fetch missing library packages from npm (default: true). */
+  get fetchLibs(): boolean {
+    return this._fetchLibs;
+  }
+
+  set fetchLibs(value: boolean) {
+    this._fetchLibs = value;
+    if (value) this.removeAttribute("fetch-libs");
+    else this.setAttribute("fetch-libs", "false");
   }
 
   /** Whether autoplay is enabled (default: true). Set autoplay="false" to start paused. */
@@ -486,6 +504,7 @@ export class WgslPlay extends HTMLElement {
       const { weslSrc, libs } = await fetchDependencies(mainSource, {
         shaderRoot: this.getConfigOverrides()?.shaderRoot,
         existingSources: this._weslSrc,
+        skipExternal: !this._fetchLibs,
       });
       this._weslSrc = { ...this._weslSrc, ...weslSrc };
       this._libs = [...(this._libs ?? []), ...libs];

@@ -76,6 +76,7 @@ editor.project = {                    // load a full project
 | `tabs` | boolean | `true` | Show tab bar |
 | `lint` | `on` `off` | `on` | Real-time WESL validation |
 | `line-numbers` | `true` `false` | `false` | Show line numbers |
+| `fetch-libs` | `true` `false` | `true` | Auto-fetch missing libraries from npm |
 | `shader-root` | string | - | Root path for shader imports |
 
 ### Properties
@@ -86,7 +87,7 @@ editor.project = {                    // load a full project
 - `project: WeslProject` - Set full project (sources, conditions, packageName, etc.)
 - `activeFile: string` - Get/set active file name
 - `fileNames: string[]` - List all file names
-- `theme`, `tabs`, `lint`, `lineNumbers`, `readonly`, `shaderRoot` - Mirror attributes
+- `theme`, `tabs`, `lint`, `lineNumbers`, `readonly`, `shaderRoot`, `fetchLibs` - Mirror attributes
 
 ### Methods
 
