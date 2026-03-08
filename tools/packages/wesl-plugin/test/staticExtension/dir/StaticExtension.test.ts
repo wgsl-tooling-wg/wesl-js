@@ -1,6 +1,7 @@
 /// <reference types="wesl-plugin/suffixes" />
 import { expect, expectTypeOf, test } from "vitest";
-import wgsl from "../shaders/foo/app.wesl MOBILE=true FUN SAFE=false ?static";
+// @ts-expect-error TS module declarations can't match query-param conditions
+import wgsl from "../shaders/foo/app.wesl?MOBILE=true&FUN&SAFE=false&static";
 
 test("verify ?static", async () => {
   expectTypeOf(wgsl).toExtend<string>();

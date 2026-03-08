@@ -81,6 +81,25 @@ export const stdEnumerants = `read write read_write
   the texture format names with e.g. a 'struct rbga8unorm .)
 */
 
+/** WGSL standard attributes whose params need binding (e.g., @workgroup_size).
+ * See: https://www.w3.org/TR/WGSL/#attributes */
+export const wgslStandardAttributes = new Set([
+  "align",
+  "binding",
+  "blend_src",
+  "compute",
+  "const",
+  "fragment",
+  "group",
+  "id",
+  "invariant",
+  "location",
+  "must_use",
+  "size",
+  "vertex",
+  "workgroup_size",
+]);
+
 /** return true if the name is for a built in type (not a user struct) */
 export function stdType(name: string): boolean {
   return stdTypes.includes(name);

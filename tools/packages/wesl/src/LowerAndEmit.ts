@@ -18,6 +18,7 @@ import { filterValidElements } from "./Conditions.ts";
 import { identToString } from "./debug/ScopeToString.ts";
 import type { Conditions, DeclIdent, Ident } from "./Scope.ts";
 import type { SrcMapBuilder } from "./SrcMap.ts";
+import { wgslStandardAttributes } from "./StandardTypes.ts";
 
 export interface EmitParams {
   srcBuilder: SrcMapBuilder;
@@ -35,26 +36,6 @@ interface EmitContext {
   conditions: Conditions;
   extracting: boolean;
 }
-
-/** Valid WGSL standard attributes (from spec). Non-WGSL attributes are stripped.
- * See: https://www.w3.org/TR/WGSL/#attributes
- * Note: @builtin, @diagnostic, @interpolate are parsed as separate attribute types. */
-const wgslStandardAttributes = new Set([
-  "align",
-  "binding",
-  "blend_src",
-  "compute",
-  "const",
-  "fragment",
-  "group",
-  "id",
-  "invariant",
-  "location",
-  "must_use",
-  "size",
-  "vertex",
-  "workgroup_size",
-]);
 
 /** Traverse the AST, starting from root elements, emitting WGSL for each. */
 export function lowerAndEmit(params: EmitParams): void {

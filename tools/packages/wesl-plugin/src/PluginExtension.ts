@@ -1,7 +1,7 @@
 import type { BatchModuleResolver, WeslJsPlugin } from "wesl";
 import type { WeslTomlInfo } from "wesl-tooling";
 
-/** function type required for for emit extensions */
+/** function type required for emit extensions */
 export type ExtensionEmitFn = (
   /** absolute path to the shader to which the extension is attached */
   shaderPath: string,
@@ -9,8 +9,11 @@ export type ExtensionEmitFn = (
   /** support functions available to plugin extensions */
   pluginApi: PluginExtensionApi,
 
-  /** static conditions specified on the js import */ // (currently used for ?static)
+  /** static conditions specified on the js import */
   conditions?: Record<string, boolean>,
+
+  /** plugin-level options from query params (e.g., { include: "all" }) */
+  options?: Record<string, string>,
 ) => Promise<string>;
 
 /** an extension that runs inside the wesl-js build plugin */
@@ -23,6 +26,11 @@ export interface PluginExtension extends WeslJsPlugin {
   emitFn: ExtensionEmitFn;
 }
 
+export interface ProjectSources {
+  weslSrc: Record<string, string>;
+  dependencies: string[];
+}
+
 /** api supplied to plugin extensions */
 export interface PluginExtensionApi {
   weslToml: () => Promise<WeslTomlInfo>;
@@ -30,4 +38,15 @@ export interface PluginExtensionApi {
   weslRegistry: () => Promise<BatchModuleResolver>;
   weslMain: (baseId: string) => Promise<string>;
   weslDependencies: () => Promise<string[]>;
+  /** weslRoot relative to tomlDir, with forward slashes. */
+  debugWeslRoot: () => Promise<string>;
+
+  /** Get weslSrc scoped to modules reachable from a root, plus their deps. */
+  scopedProject: (rootModuleName: string) => Promise<ProjectSources>;
+
+  /** Fetch project sources, either all or scoped to reachable modules. */
+  fetchProject: (
+    rootModuleName: string,
+    options?: Record<string, string>,
+  ) => Promise<ProjectSources>;
 }

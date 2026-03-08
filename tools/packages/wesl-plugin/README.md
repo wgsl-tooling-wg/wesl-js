@@ -96,10 +96,10 @@ export default {
 
 ### Conditions in Import Path
 
-For `?static`, you can specify conditions directly in the import:
+For `?static`, you can specify conditions as query parameters:
 
 ```ts
-import wgsl from "./app.wesl MOBILE=true DEBUG=false ?static";
+import wgsl from "./app.wesl?MOBILE=true&DEBUG=false&static";
 ```
 
 ## Configuration (wesl.toml)
@@ -124,7 +124,7 @@ import type { PluginExtension } from "wesl-plugin";
 
 const myExtension: PluginExtension = {
   extensionName: "myfeature",  // enables ?myfeature imports
-  emitFn: async (shaderPath, api, conditions) => {
+  emitFn: async (shaderPath, api, conditions, options) => {
     const sources = await api.weslSrc();
     // Return JavaScript code as a string
     return `export default ${JSON.stringify(sources)};`;

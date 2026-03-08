@@ -15,10 +15,6 @@ test("verify ?link", async () => {
 
   expect(weslSrc).toMatchInlineSnapshot(`
     {
-      "app-test.wesl": "fn test_main() {
-       let x = 1u;
-    }
-    ",
       "app.wesl": "import random_wgsl::pcg_2u_3f;
 
     main() {

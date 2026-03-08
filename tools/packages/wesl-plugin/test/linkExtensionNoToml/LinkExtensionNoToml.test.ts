@@ -1,10 +1,10 @@
-import process from "node:child_process";
+import childProcess from "node:child_process";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import util from "node:util";
 import { expect, test } from "vitest";
 
-const exec = util.promisify((process as any).exec); // not sure why @types/node for child_process.exec is wrong (nodeExec vs exec)
+const exec = util.promisify((childProcess as any).exec); // not sure why @types/node for child_process.exec is wrong (nodeExec vs exec)
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 
@@ -18,11 +18,11 @@ test("verify ?link", { timeout: 30000 }, async () => {
     cwd: testDir,
   });
 
+  // scoped: only modules reachable from app.wesl are included
   expect(result.stdout).toMatchInlineSnapshot(`
     "{
       "rootModuleName": "app",
       "weslSrc": {
-        "other.wesl": "fn other() { }",
         "app.wesl": "fn main() {\\n   package::other();\\n}"
       },
       "debugWeslRoot": "shaders",

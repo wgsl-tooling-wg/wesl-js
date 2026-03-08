@@ -23,6 +23,8 @@ export interface SrcModule {
 /** a src declaration or reference to an ident */
 export type Ident = DeclIdent | RefIdent;
 
+export type ScopeItem = Ident | Scope;
+
 /** LATER change this to a Map, so that `toString` isn't accidentally a condition */
 export type Conditions = Record<string, boolean>;
 
@@ -106,7 +108,7 @@ interface ScopeBase {
   parent: Scope | null;
 
   /* Child scopes and idents in lexical order  */
-  contents: (Ident | Scope)[];
+  contents: ScopeItem[];
 
   /** Conditional attribute (@if or @else) for this scope */
   condAttribute?: IfAttribute | ElifAttribute | ElseAttribute;

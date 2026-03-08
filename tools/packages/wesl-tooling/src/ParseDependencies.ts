@@ -43,7 +43,15 @@ export function parseDependencies(
   const unbound = findUnboundIdents(resolver);
   if (!unbound) return [];
 
-  // Filter: skip builtins (1 segment), linker virtuals ('constants'), and custom virtualLibs
+  return resolvePkgDeps(unbound, projectDir, virtualLibNames);
+}
+
+/** Resolve pre-computed unbound refs to npm dependency paths. */
+export function resolvePkgDeps(
+  unbound: string[][],
+  projectDir: string,
+  virtualLibNames: string[] = [],
+): string[] {
   const excludeRoots = new Set(["constants", ...virtualLibNames]);
   const pkgRefs = unbound.filter(
     modulePath => modulePath.length > 1 && !excludeRoots.has(modulePath[0]),
@@ -52,9 +60,7 @@ export function parseDependencies(
 
   const projectURL = projectDirURL(projectDir);
   const deps = filterMap(pkgRefs, mPath => npmResolveWESL(mPath, projectURL));
-  const uniqueDeps = [...new Set(deps)];
-
-  return uniqueDeps;
+  return [...new Set(deps)];
 }
 
 /**

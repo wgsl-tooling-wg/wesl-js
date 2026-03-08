@@ -7,64 +7,50 @@ import type {
   PluginExtensionApi,
 } from "../PluginExtension.ts";
 
-/**
- * a wesl-js ?static build extension that statically links from the root file
- * and emits a JavaScript file containing the linked wgsl string.
- *
- * use it like this:
- *   import wgsl from "./shaders/app.wesl?static";
- *
- * or with conditions, like this:
- *   import wgsl from "../shaders/foo/app.wesl MOBILE=true FUN SAFE=false ?static";
- */
+/** Build extension for ?static imports: links WESL at build time, emits WGSL string. */
 export const staticBuildExtension: PluginExtension = {
   extensionName: "static",
   emitFn: emitStaticJs,
 };
 
-/** Emit a JavaScript file containing the wgsl string */
+/** Emit a JS module exporting the statically linked WGSL string. */
 async function emitStaticJs(
   baseId: string,
   api: PluginExtensionApi,
   conditions?: Conditions,
+  _options?: Record<string, string>,
 ): Promise<string> {
   const { resolvedRoot, tomlDir } = await api.weslToml();
 
-  // resolve import module relative to the root of the shader project
-  const parentModule = url
-    .pathToFileURL(path.join(tomlDir, "wesl.toml"))
-    .toString();
+  const tomlUrl = url.pathToFileURL(path.join(tomlDir, "wesl.toml"));
+  const parentModule = tomlUrl.toString();
 
-  const dependencies = await api.weslDependencies();
-  const libFileUrls = dependencies.map(d => resolve(d, parentModule));
-
-  // load the lib modules
-  const futureLibs = libFileUrls.map(f => import(f));
-  const libModules = await Promise.all(futureLibs);
-  const libs = libModules.map(m => m.default);
-
-  // find weslSrc and rootModule
-  const weslSrc = await api.weslSrc();
   const rootModule = await api.weslMain(baseId);
   const rootModuleName = noSuffix(rootModule);
 
-  // find weslRoot
+  const [weslSrc, dependencies] = await Promise.all([
+    api.weslSrc(),
+    api.weslDependencies(),
+  ]);
+
+  const libFileUrls = dependencies.map(d => resolve(d, parentModule));
+
+  const libModules = await Promise.all(libFileUrls.map(f => import(f)));
+  const libs = libModules.map(m => m.default);
+
   const tomlRelative = path.relative(tomlDir, resolvedRoot);
   const debugWeslRoot = tomlRelative.replaceAll(path.sep, "/");
 
-  const result = await link({
+  const { dest: wgsl } = await link({
     weslSrc,
     rootModuleName,
     debugWeslRoot,
     libs,
     conditions,
   });
-  const wgsl = result.dest;
 
-  const src = `
+  return `
     export const wgsl = \`${wgsl}\`;
     export default wgsl;
   `;
-
-  return src;
 }

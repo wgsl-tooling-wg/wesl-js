@@ -14,18 +14,18 @@ export const linkBuildExtension: PluginExtension = {
 async function emitLinkJs(
   baseId: string,
   api: PluginExtensionApi,
+  _conditions?: Record<string, boolean>,
+  options?: Record<string, string>,
 ): Promise<string> {
-  const { resolvedRoot, tomlDir } = await api.weslToml();
-
-  const weslSrc = await api.weslSrc();
-
   const rootModule = await api.weslMain(baseId);
   const rootModuleName = noSuffix(rootModule);
 
-  const tomlRelative = path.relative(tomlDir, resolvedRoot);
-  const debugWeslRoot = tomlRelative.replaceAll(path.sep, "/");
+  const [{ weslSrc, dependencies: autoDeps }, debugWeslRoot] =
+    await Promise.all([
+      api.fetchProject(rootModuleName, options),
+      api.debugWeslRoot(),
+    ]);
 
-  const autoDeps = await api.weslDependencies();
   const sanitizedDeps = autoDeps.map(dep => dep.replaceAll("/", "_"));
 
   const bundleImports = autoDeps
@@ -35,25 +35,18 @@ async function emitLinkJs(
   const rootName = path.basename(rootModuleName).replace(/\W/g, "_");
   const paramsName = `link${rootName}Config`;
 
-  const linkParams: LinkParams = {
-    rootModuleName,
-    weslSrc,
-    debugWeslRoot,
-  };
-
+  const linkParams: LinkParams = { rootModuleName, weslSrc, debugWeslRoot };
   const libsStr = `libs: [${sanitizedDeps.join(", ")}]`;
   const linkParamsStr = `{
     ${serializeFields(linkParams)},
     ${libsStr},
   }`;
 
-  const src = `
+  return `
     ${bundleImports}
     export const ${paramsName} = ${linkParamsStr};
     export default ${paramsName};
     `;
-
-  return src;
 }
 
 function serializeFields(record: Record<string, any>) {

@@ -19,23 +19,17 @@ import type { WeslPluginOptions } from "./WeslPluginOptions.ts";
 
 export type { WeslToml, WeslTomlInfo };
 
-/** internal cache used by the plugin to avoid reloading files
- * The assumption is that the plugin is used for a single wesl.toml and set of shaders
- * (a plugin instance supports only one shader project)
- */
+/** Cache for a single plugin instance (one wesl.toml / shader project). */
 interface PluginCache {
   registry?: RecordResolver;
   weslToml?: WeslTomlInfo;
 }
 
-/** some types from unplugin */
 type Resolver = (
   this: UnpluginBuildContext & UnpluginContext,
   id: string,
   importer: string | undefined,
-  options: {
-    isEntry: boolean;
-  },
+  options: { isEntry: boolean },
 ) => Thenable<string | ExternalIdResult | null | undefined>;
 
 type Loader = (
@@ -43,7 +37,7 @@ type Loader = (
   id: string,
 ) => Thenable<TransformResult>;
 
-/** convenient state for local functions */
+/** Shared state threaded through plugin functions. */
 export interface PluginContext {
   cache: PluginCache;
   options: WeslPluginOptions;
@@ -54,18 +48,9 @@ export interface PluginContext {
 
 type DebugLog = (msg: string, data?: Record<string, unknown>) => void;
 
-/**
- * A bundler plugin for processing WESL files.
- *
- * The plugin works by reading the wesl.toml file and possibly package.json
- *
- * The plugin is triggered by imports to special virtual module urls
- * two urls suffixes are supported:
- *  1. `import "./shaders/bar.wesl?reflect"` - produces a javascript file for binding struct reflection
- *  2. `import "./shaders/bar.wesl?link"` - produces a javascript file for preconstructed link functions
- */
 const builtinExtensions = [staticBuildExtension, linkBuildExtension];
 
+/** Bundler plugin for WESL files, triggered by ?link or ?static import suffixes. */
 export function weslPlugin(
   options: WeslPluginOptions | undefined,
   meta: UnpluginContextMeta,
@@ -85,13 +70,9 @@ export function weslPlugin(
     load: buildLoader(context, log),
     watchChange(id, _change) {
       log("watchChange", { id });
-      if (id.endsWith("wesl.toml")) {
-        // The cache is shared for multiple imports
-        cache.weslToml = undefined;
-        cache.registry = undefined;
-      } else {
-        cache.registry = undefined;
-      }
+      // The cache is shared for multiple imports
+      if (id.endsWith("wesl.toml")) cache.weslToml = undefined;
+      cache.registry = undefined;
     },
   };
 }
@@ -107,26 +88,59 @@ function pluginsByName(
   return Object.fromEntries(entries);
 }
 
-/** wesl plugins match import statements of the form:
- *
- *   foo/bar.wesl?link
- * or
- *   foo/bar.wesl COND=false ?static
- *
- * Bundlers may add extra query params (e.g. Vite adds ?import for dynamic imports,
- * ?t=123 for cache busting), so we capture the full query and search within it.
- *
- * someday it'd be nice to support import attributes like:
- *    import "foo.bar.wesl?static" with { COND: false};
- * (but that doesn't seem supported to be supported in the the bundler plugins yet)
- */
-const pluginMatch =
-  /(^^)?(?<baseId>.*\.w[eg]sl)(?<cond>(\s*\w+(=\w+)?\s*)*)\?(?<query>.+)$/;
+/** Match .wesl/.wgsl imports with query params. Bundlers may append extra params. */
+const pluginMatch = /(^^)?(?<baseId>.*\.w[eg]sl)\?(?<query>.+)$/;
 
 const resolvedPrefix = "^^";
 
-/** build plugin entry for 'resolverId'
- * to validate our javascript virtual module imports (with e.g. ?static or ?link suffixes) */
+/** Reserved query param names (not treated as conditions). */
+const reservedParams = new Set(["include"]);
+
+interface ParsedQuery {
+  pluginName: string;
+  conditions?: Conditions;
+  options?: Record<string, string>;
+}
+
+/** Parse query string into plugin name, conditions, and options. */
+function parsePluginQuery(
+  query: string,
+  suffixes: string[],
+): ParsedQuery | null {
+  const segments = query.split("&");
+  const pluginName = suffixes.find(s => segments.includes(s));
+  if (!pluginName) return null;
+
+  const isBundlerParam = (s: string) => s === "import" || /^t=\d+/.test(s);
+  const userSegments = segments.filter(
+    s => s !== pluginName && !isBundlerParam(s),
+  );
+
+  const conditions: Record<string, boolean> = {};
+  const options: Record<string, string> = {};
+
+  for (const seg of userSegments) {
+    const eqIdx = seg.indexOf("=");
+    if (eqIdx === -1) {
+      conditions[seg] = true; // bare name like "FUN" ==> condition true
+    } else {
+      const key = seg.slice(0, eqIdx);
+      const val = seg.slice(eqIdx + 1);
+      if (reservedParams.has(key)) options[key] = val;
+      else conditions[key] = val !== "false";
+    }
+  }
+
+  const hasConds = Object.keys(conditions).length > 0;
+  const hasOpts = Object.keys(options).length > 0;
+  return {
+    pluginName,
+    conditions: hasConds ? conditions : undefined,
+    options: hasOpts ? options : undefined,
+  };
+}
+
+/** Build the resolveId hook for virtual module imports (?static, ?link, etc). */
 function buildResolver(
   options: WeslPluginOptions,
   context: PluginContext,
@@ -135,71 +149,34 @@ function buildResolver(
   const suffixes = pluginNames(options);
   return resolver;
 
-  // vite calls resolver only for odd import paths.
-  //   this doesn't call resolver: import wgsl from "../shaders/foo/app.wesl?static";
-  //   but this does call resolver: import wgsl from "../shaders/foo/app.wesl MOBILE=true FUN SAFE=false ?static";
-
-  /**
-   * For imports with conditions, vite won't resolve the module-path part of the js import
-   * so we do it here.
-   *
-   * To avoid recirculating on resolve(), we rewrite the resolution id to start with ^^
-   * The loader will drop the prefix.
-   */
+  // With pure query-param syntax, Vite resolves paths natively.
+  // The resolver is still needed for non-Vite bundlers that may not handle query params.
   function resolver(
     this: UnpluginBuildContext & UnpluginContext,
     id: string,
     importer: string | undefined,
   ): string | null {
-    if (id.startsWith(resolvedPrefix)) {
-      return id;
-    }
-    if (id === context.weslToml) {
-      return id;
-    }
-    const matched = pluginSuffixMatch(id, suffixes);
-    log("resolveId", { id, matched: !!matched, suffixes });
-    if (matched) {
-      const { importParams, baseId, pluginName } = matched;
+    if (id.startsWith(resolvedPrefix)) return id;
+    if (id === context.weslToml) return id;
 
-      // resolve the path to the shader file
-      const importerDir = path.dirname(importer!);
-      const pathToShader = path.join(importerDir, baseId);
-      const result =
-        resolvedPrefix + pathToShader + importParams + "?" + pluginName;
-      log("resolveId resolved", { result });
-      return result;
-    }
-    return matched ? id : null; // this case doesn't happen AFAIK
+    const match = id.match(pluginMatch);
+    const query = match?.groups?.query;
+    if (!query) return null;
+
+    const parsed = parsePluginQuery(query, suffixes);
+    log("resolveId", { id, matched: !!parsed, suffixes });
+    if (!parsed) return null;
+
+    const baseId = match.groups!.baseId;
+    const importerDir = path.dirname(importer!);
+    const pathToShader = path.join(importerDir, baseId);
+    const result = resolvedPrefix + pathToShader + "?" + query;
+    log("resolveId resolved", { result });
+    return result;
   }
 }
 
-interface PluginMatch {
-  baseId: string;
-  importParams?: string;
-  pluginName: string;
-}
-
-/** Find matching plugin suffix in query string (handles ?import&static, ?t=123&static, etc.) */
-function pluginSuffixMatch(id: string, suffixes: string[]): PluginMatch | null {
-  const match = id.match(pluginMatch);
-  const query = match?.groups?.query;
-  if (!query) return null;
-
-  // Query params are &-separated; find one that matches a configured suffix
-  const segments = query.split("&");
-  const pluginName = suffixes.find(s => segments.includes(s));
-  if (!pluginName) return null;
-
-  return {
-    pluginName,
-    baseId: match.groups!.baseId,
-    importParams: match.groups?.cond,
-  };
-}
-
-/** build plugin function for serving a javascript module in response to
- * an import of of our virtual import modules. */
+/** Build the load hook that emits JS for virtual module imports. */
 function buildLoader(context: PluginContext, log: DebugLog): Loader {
   const { options } = context;
   const suffixes = pluginNames(options);
@@ -210,48 +187,25 @@ function buildLoader(context: PluginContext, log: DebugLog): Loader {
     this: UnpluginBuildContext & UnpluginContext,
     id: string,
   ) {
-    const matched = pluginSuffixMatch(id, suffixes);
-    log("load", { id, matched: matched?.pluginName ?? null });
-    if (matched) {
-      const buildPluginApi = buildApi(context, this);
-      const plugin = pluginsMap[matched.pluginName];
-      const { baseId, importParams } = matched;
-      const conditions = importParamsToConditions(importParams);
-      const shaderPath = baseId.startsWith(resolvedPrefix)
-        ? baseId.slice(resolvedPrefix.length)
-        : baseId;
+    const match = id.match(pluginMatch);
+    const query = match?.groups?.query;
+    if (!query) return null;
 
-      log("load emitting", { shaderPath, conditions });
-      return await plugin.emitFn(shaderPath, buildPluginApi, conditions);
-    }
+    const parsed = parsePluginQuery(query, suffixes);
+    log("load", { id, matched: parsed?.pluginName ?? null });
+    if (!parsed) return null;
 
-    return null;
+    const buildPluginApi = buildApi(context, this);
+    const plugin = pluginsMap[parsed.pluginName];
+    const rawPath = match.groups!.baseId;
+    const shaderPath = rawPath.startsWith(resolvedPrefix)
+      ? rawPath.slice(resolvedPrefix.length)
+      : rawPath;
+
+    const { conditions, options: opts } = parsed;
+    log("load emitting", { shaderPath, conditions, options: opts });
+    return await plugin.emitFn(shaderPath, buildPluginApi, conditions, opts);
   }
-}
-
-/**
- * Convert an import parameters string to a Conditions record.
- *
- * Import parameters are key=value pairs separated by spaces.
- * Values may be "true" or "false" or missing (default to true)
- * e.g. ' MOBILE=true FUN SAFE=false '
- */
-function importParamsToConditions(
-  importParams: string | undefined,
-): Conditions | undefined {
-  if (!importParams) return undefined;
-  const params = importParams.trim().split(/\s+/);
-  const condEntries = params.map(p => {
-    const text = p.trim();
-    const [cond, value] = text.split("=");
-    if (value === undefined || value === "true") {
-      return [cond, true] as const;
-    } else {
-      return [cond, false] as const;
-    }
-  });
-  const conditions = Object.fromEntries(condEntries);
-  return conditions;
 }
 
 function fmtDebugData(data?: Record<string, unknown>): string {
@@ -264,9 +218,5 @@ function debugLog(msg: string, data?: Record<string, unknown>): void {
 
 function noopLog(): void {}
 
-export const unplugin = createUnplugin(
-  (options: WeslPluginOptions, meta: UnpluginContextMeta) => {
-    return weslPlugin(options, meta);
-  },
-);
+export const unplugin = createUnplugin(weslPlugin);
 export default unplugin;

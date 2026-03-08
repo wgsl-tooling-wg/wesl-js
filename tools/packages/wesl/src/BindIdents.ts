@@ -16,28 +16,16 @@ import type {
   LexicalScope,
   RefIdent,
   Scope,
+  ScopeItem,
   SrcModule,
 } from "./Scope.ts";
-import { stdEnumerant, stdFn, stdType } from "./StandardTypes.ts";
+import {
+  stdEnumerant,
+  stdFn,
+  stdType,
+  wgslStandardAttributes,
+} from "./StandardTypes.ts";
 import { last } from "./Util.ts";
-
-/** WGSL standard attributes whose params need binding (e.g., @workgroup_size). */
-const wgslStandardAttributes = new Set([
-  "align",
-  "binding",
-  "blend_src",
-  "compute",
-  "const",
-  "fragment",
-  "group",
-  "id",
-  "invariant",
-  "location",
-  "must_use",
-  "size",
-  "vertex",
-  "workgroup_size",
-]);
 
 /**
  * BindIdents pass: link reference identifiers to declarations.
@@ -112,16 +100,22 @@ export interface BindIdentsParams
 
   /** If true, accumulate unbound identifiers into BindResults.unbound instead of throwing. */
   accumulateUnbound?: true;
+
+  /** Visit all conditional branches (for dependency discovery). */
+  discoveryMode?: boolean;
 }
 
 /** Bind ref idents to declarations and mangle global declaration names. */
 export function bindIdents(params: BindIdentsParams): BindResults {
   const { rootAst, resolver, virtuals, accumulateUnbound } = params;
   const { conditions = {}, mangler = minimalMangle } = params;
+  const { discoveryMode } = params;
   const packageName = rootAst.srcModule.modulePath.split("::")[0];
 
-  const validRootDecls = findValidRootDecls(rootAst.rootScope, conditions);
-  const { globalNames, knownDecls } = initRootDecls(validRootDecls);
+  const rootDecls = discoveryMode
+    ? findAllRootDecls(rootAst.rootScope)
+    : findValidRootDecls(rootAst.rootScope, conditions);
+  const { globalNames, knownDecls } = initRootDecls(rootDecls);
 
   const bindContext = {
     resolver,
@@ -134,13 +128,13 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     globalNames,
     globalStatements: new Map<AbstractElem, EmittableElem>(),
     unbound: accumulateUnbound ? [] : undefined,
+    discoveryMode,
   };
 
-  const decls = new Map(validRootDecls.map(d => [d.originalName, d] as const));
+  const decls = new Map(rootDecls.map(d => [d.originalName, d] as const));
   const liveDecls: LiveDecls = { decls, parent: null };
 
-  // Process dependent scopes for all valid root decls (already filtered by conditions)
-  const fromRootDecls = validRootDecls.flatMap(decl =>
+  const fromRootDecls = rootDecls.flatMap(decl =>
     processDependentScope(decl, bindContext),
   );
 
@@ -195,22 +189,12 @@ export function findValidRootDecls(
   rootScope: Scope,
   conditions: Conditions,
 ): DeclIdent[] {
-  const found: DeclIdent[] = [];
-  for (const item of validItems(rootScope, conditions)) {
-    if (item.kind === "decl") found.push(item);
-    else if (item.kind === "partial") collectDecls(item, found);
-  }
-  return found;
+  return collectDecls(validItems(rootScope, conditions));
 }
 
 /** Find all declarations at the root level, ignoring conditions. */
 export function findAllRootDecls(rootScope: Scope): DeclIdent[] {
-  const found: DeclIdent[] = [];
-  for (const item of rootScope.contents) {
-    if (item.kind === "decl") found.push(item);
-    else if (item.kind === "partial") collectDecls(item, found);
-  }
-  return found;
+  return collectDecls(rootScope.contents);
 }
 
 /** Find a public declaration with the given original name. */
@@ -353,6 +337,7 @@ function handleRef(
     failIdent(ident, `unresolved identifier '${ident.originalName}'`);
 }
 
+/** Follow new global declarations into their dependent scopes. */
 function handleDecls(
   newGlobals: DeclIdent[],
   bindContext: BindContext,
@@ -360,7 +345,7 @@ function handleDecls(
   return newGlobals.flatMap(decl => processDependentScope(decl, bindContext));
 }
 
-/** If found declaration is new, mangle its name. Return if it's a global declaration. */
+/** If found declaration is new, mangle its name. @return the decl if it's global. */
 function handleNewDecl(
   refIdent: RefIdent,
   foundDecl: FoundDecl,
@@ -397,10 +382,8 @@ function findQualifiedImport(
   ctx: BindContext,
 ): FoundDecl | undefined {
   const { conditions, unbound, discoveryMode } = ctx;
-  const flatImps = flatImports(
-    refIdent.ast,
-    discoveryMode ? undefined : conditions,
-  );
+  const conds = discoveryMode ? undefined : conditions;
+  const flatImps = flatImports(refIdent.ast, conds);
   const identParts = refIdent.originalName.split("::");
   const pathParts =
     matchingImport(identParts, flatImps) ?? qualifiedIdent(identParts);
@@ -490,9 +473,7 @@ function getValidRootDecls(
   conditions: Conditions,
 ): DeclIdent[] {
   const lexScope = rootScope as LexicalScope;
-  if (!lexScope._validRootDecls) {
-    lexScope._validRootDecls = findValidRootDecls(rootScope, conditions);
-  }
+  lexScope._validRootDecls ??= findValidRootDecls(rootScope, conditions);
   return lexScope._validRootDecls;
 }
 
@@ -504,9 +485,7 @@ function rootLiveDecls(
   assertThatDebug(decl.isGlobal, identToString(decl));
 
   let scope = decl.containingScope;
-  while (scope.parent) {
-    scope = scope.parent;
-  }
+  while (scope.parent) scope = scope.parent;
   assertThatDebug(scope.kind === "scope");
 
   const root = scope as LexicalScope;
@@ -543,14 +522,17 @@ function stdWgsl(name: string): boolean {
   return stdType(name) || stdFn(name) || stdEnumerant(name); // TODO add tests for enumerants case (e.g. var x = read;)
 }
 
+/** @return identParts if it's a qualified path (has ::). */
 function qualifiedIdent(identParts: string[]): string[] | undefined {
   if (identParts.length > 1) return identParts;
 }
 
-/** Collect all declarations in a scope (used when scope is already validated). */
-function collectDecls(scope: Scope, found: DeclIdent[]): void {
-  for (const item of scope.contents) {
-    if (item.kind === "decl") found.push(item);
-    else if (item.kind === "partial") collectDecls(item, found);
-  }
+/** Collect all declarations from scope items, recursing into partial scopes. */
+function collectDecls(items: Iterable<ScopeItem>): DeclIdent[] {
+  return [...items].flatMap(item => {
+    const { kind } = item;
+    if (kind === "decl") return [item];
+    if (kind === "partial") return collectDecls(item.contents);
+    return [];
+  });
 }
