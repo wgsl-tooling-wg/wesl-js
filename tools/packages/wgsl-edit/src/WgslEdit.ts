@@ -306,6 +306,11 @@ export class WgslEdit extends HTMLElement {
     return linked.dest;
   }
 
+  /** Library bundles for linking (set via project). */
+  get libs(): WeslBundle[] {
+    return this._libs;
+  }
+
   /** Root module for linking (stable across tab switches). */
   get rootModuleName(): string | undefined {
     return this._rootModuleName;

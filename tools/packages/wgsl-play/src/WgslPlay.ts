@@ -425,10 +425,11 @@ export class WgslPlay extends HTMLElement {
       return { [this._rootModuleName]: source };
     };
 
-    // Load initial sources and conditions
+    // Load initial sources, conditions, and libs from source element
     const conditions = (el as any).conditions;
     const rootModuleName = (el as any).rootModuleName;
-    this.project = { weslSrc: getSources(), rootModuleName, conditions };
+    const libs = (el as any).libs;
+    this.project = { weslSrc: getSources(), rootModuleName, conditions, libs };
 
     // Listen for changes - handle both single and multi-file, plus conditions
     this._sourceListener = (e: Event) => {

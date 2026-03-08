@@ -1,10 +1,4 @@
-import type { ModuleResolver } from "wesl";
-import {
-  BundleResolver,
-  CompositeResolver,
-  RecordResolver,
-  requestWeslDevice,
-} from "wesl";
+import { requestWeslDevice } from "wesl";
 import {
   linkAndCreatePipeline,
   renderFrame,
@@ -89,30 +83,13 @@ export async function createPipeline(
   fragmentSource: string,
   options?: LinkOptions,
 ): Promise<void> {
-  const { weslSrc, libs = [], conditions, constants } = options ?? {};
-  const { packageName, rootModuleName } = options ?? {};
-
-  // Build resolver from weslSrc/libs if provided
-  let resolver: ModuleResolver | undefined;
-  if (weslSrc || libs.length > 0) {
-    const resolvers: ModuleResolver[] = [];
-    if (weslSrc) resolvers.push(new RecordResolver(weslSrc, { packageName }));
-    for (const bundle of libs) resolvers.push(new BundleResolver(bundle));
-    resolver =
-      resolvers.length === 1 ? resolvers[0] : new CompositeResolver(resolvers);
-  }
-
   state.device.pushErrorScope("validation");
   const pipeline = await linkAndCreatePipeline({
     device: state.device,
     fragmentSource,
-    resolver,
     format: state.presentationFormat,
     layout: state.pipelineLayout,
-    conditions,
-    constants,
-    packageName,
-    rootModuleName,
+    ...options,
   });
   const gpuError = await state.device.popErrorScope();
   if (gpuError) {
