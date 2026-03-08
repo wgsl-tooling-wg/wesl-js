@@ -1,6 +1,6 @@
 import type { Conditions, StructElem, StructMemberElem } from "wesl";
 import { filterValidElements } from "wesl";
-import { structLayout } from "./StructLayout.ts";
+import { type FieldLayout, type StructLayout, structLayout } from "./StructLayout.ts";
 import {
   type AutoAnnotation,
   autoAnnotation,
@@ -13,40 +13,37 @@ import {
 } from "./UniformAnnotations.ts";
 import { originalTypeName } from "./WeslStructs.ts";
 
-export interface RangeControl extends FieldBase, RangeAnnotation {
+interface AnnotatedField extends FieldLayout {
+  type: string;
+}
+
+export interface RangeControl extends AnnotatedField, RangeAnnotation {
   kind: "range";
 }
-export interface ColorControl extends FieldBase, ColorAnnotation {
+export interface ColorControl extends AnnotatedField, ColorAnnotation {
   kind: "color";
 }
-export interface ToggleControl extends FieldBase, ToggleAnnotation {
+export interface ToggleControl extends AnnotatedField, ToggleAnnotation {
   kind: "toggle";
 }
 
 export type UniformControl = RangeControl | ColorControl | ToggleControl;
 
-export interface AutoField extends FieldBase, AutoAnnotation {
+export interface AutoField extends AnnotatedField, AutoAnnotation {
   kind: "auto";
 }
-export interface PlainField extends FieldBase {
+export interface PlainField extends AnnotatedField {
   kind: "plain";
 }
 
 export type UniformField = AutoField | PlainField;
 
-/** Layout of a @uniforms struct: UI controls for annotated members, data fields for the rest. */
-export interface UniformsLayout {
+/** Struct layout enriched with parsed annotations: UI controls and data fields. */
+export interface AnnotatedLayout {
   structName: string;
-  bufferSize: number;
+  layout: StructLayout;
   controls: UniformControl[];
   fields: UniformField[];
-}
-
-interface FieldBase {
-  name: string;
-  offset: number;
-  size: number;
-  type: string;
 }
 
 type Classified =
@@ -54,10 +51,10 @@ type Classified =
   | { control?: undefined; field: UniformField };
 
 /** Compute layout + annotations for a @uniforms-annotated struct. */
-export function uniformsLayout(
+export function annotatedLayout(
   struct: StructElem,
   conditions?: Conditions,
-): UniformsLayout {
+): AnnotatedLayout {
   const layout = structLayout(struct, conditions);
   const members = conditions
     ? filterValidElements(struct.members, conditions)
@@ -76,11 +73,11 @@ export function uniformsLayout(
   }
 
   const structName = struct.name.ident.originalName;
-  return { structName, bufferSize: layout.bufferSize, controls, fields };
+  return { structName, layout, controls, fields };
 }
 
 /** Classify a struct member as a UI control or a data field based on annotations. */
-function classifyMember(m: StructMemberElem, base: FieldBase): Classified {
+function classifyMember(m: StructMemberElem, base: AnnotatedField): Classified {
   const range = rangeAnnotation(m);
   if (range) return { control: { kind: "range", ...base, ...range } };
   const color = colorAnnotation(m);
