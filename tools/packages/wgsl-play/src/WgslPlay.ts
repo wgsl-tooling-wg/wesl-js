@@ -427,7 +427,8 @@ export class WgslPlay extends HTMLElement {
 
     // Load initial sources and conditions
     const conditions = (el as any).conditions;
-    this.project = { weslSrc: getSources(), conditions };
+    const rootModuleName = (el as any).rootModuleName;
+    this.project = { weslSrc: getSources(), rootModuleName, conditions };
 
     // Listen for changes - handle both single and multi-file, plus conditions
     this._sourceListener = (e: Event) => {
@@ -435,6 +436,7 @@ export class WgslPlay extends HTMLElement {
       const fallback = { [this._rootModuleName]: detail?.source ?? "" };
       this.project = {
         weslSrc: detail?.sources ?? fallback,
+        rootModuleName: detail?.rootModuleName,
         conditions: detail?.conditions,
       };
     };
@@ -457,7 +459,13 @@ export class WgslPlay extends HTMLElement {
       if (rootModuleName) this._rootModuleName = rootModuleName;
 
       const mainSource = weslSrc[this._rootModuleName];
-      if (!mainSource) return;
+      if (!mainSource) {
+        console.warn(
+          `wgsl-play: root module "${this._rootModuleName}" not found in sources:`,
+          Object.keys(weslSrc),
+        );
+        return;
+      }
 
       await createPipeline(this.renderState, mainSource, {
         ...this._linkOptions,
@@ -476,7 +484,13 @@ export class WgslPlay extends HTMLElement {
     if (!(await this.initialize())) return;
 
     const mainSource = this._weslSrc[this._rootModuleName];
-    if (!mainSource) return;
+    if (!mainSource) {
+      console.warn(
+        `wgsl-play: root module "${this._rootModuleName}" not found in sources:`,
+        Object.keys(this._weslSrc),
+      );
+      return;
+    }
 
     try {
       this.errorOverlay.hide();
@@ -497,7 +511,13 @@ export class WgslPlay extends HTMLElement {
     if (!(await this.initialize())) return;
 
     const mainSource = this._weslSrc[this._rootModuleName];
-    if (!mainSource) return;
+    if (!mainSource) {
+      console.warn(
+        `wgsl-play: root module "${this._rootModuleName}" not found in sources:`,
+        Object.keys(this._weslSrc),
+      );
+      return;
+    }
 
     try {
       this.errorOverlay.hide();

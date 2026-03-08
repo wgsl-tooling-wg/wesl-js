@@ -139,6 +139,7 @@ export class WgslEdit extends HTMLElement {
 
   private _files: Map<string, FileState> = new Map();
   private _activeFile = "";
+  private _rootModuleName: string | undefined;
   private _tabs = true;
   private _lint: LintMode = "on";
   private _fetchLibs = true;
@@ -279,10 +280,12 @@ export class WgslEdit extends HTMLElement {
     if (conditions !== undefined) this._conditions = conditions;
     if (packageName !== undefined) this._packageName = packageName;
     if (libs !== undefined) this._libs = libs;
+    if (rootModuleName !== undefined) this._rootModuleName = rootModuleName;
 
     if (weslSrc) {
       this.sources = weslSrc;
-      if (rootModuleName) this.activeFile = toTabName(rootModuleName);
+      const tab = toTabName(rootModuleName ?? this._rootModuleName ?? "");
+      if (tab) this.activeFile = tab;
     }
     this.updateLint();
   }
@@ -290,7 +293,8 @@ export class WgslEdit extends HTMLElement {
   /** Link/compile WESL sources into WGSL. Returns the compiled WGSL string. */
   async link(options?: Partial<LinkParams>): Promise<string> {
     const pkg = this._packageName ?? "package";
-    const rootModuleName = fileToModulePath(this._activeFile, pkg, false);
+    const rootModuleName =
+      this._rootModuleName ?? fileToModulePath(this._activeFile, pkg, false);
     const linked = await link({
       weslSrc: this.sources,
       rootModuleName,
@@ -302,7 +306,17 @@ export class WgslEdit extends HTMLElement {
     return linked.dest;
   }
 
-  /** Currently active file name. */
+  /** Root module for linking (stable across tab switches). */
+  get rootModuleName(): string | undefined {
+    return this._rootModuleName;
+  }
+
+  set rootModuleName(value: string | undefined) {
+    this._rootModuleName = value;
+    this.dispatchChange();
+  }
+
+  /** Currently active file name (selected tab). */
   get activeFile(): string {
     return this._activeFile;
   }
@@ -474,8 +488,13 @@ export class WgslEdit extends HTMLElement {
   }
 
   private dispatchChange(): void {
-    const { source, sources, conditions, _activeFile: activeFile } = this;
-    const detail = { source, sources, activeFile, conditions };
+    const {
+      source,
+      sources,
+      conditions,
+      _rootModuleName: rootModuleName,
+    } = this;
+    const detail = { source, sources, rootModuleName, conditions };
     this.dispatchEvent(new CustomEvent("change", { detail }));
   }
 
