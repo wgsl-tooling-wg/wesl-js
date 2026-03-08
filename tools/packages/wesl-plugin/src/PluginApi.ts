@@ -39,11 +39,13 @@ async function getScopedProject(
   unpluginCtx: UnpluginBuildContext & UnpluginContext,
 ): Promise<ProjectSources> {
   const fullSrc = await loadWesl(context, unpluginCtx);
-  const registry = await getRegistry(context, unpluginCtx);
   const { toml, tomlDir: projectDir } = await getWeslToml(context, unpluginCtx);
 
+  // Fresh resolver each time — binding mutates ASTs, so reusing a cached
+  // registry across multiple ?link imports produces stale results.
+  const resolver = new RecordResolver(fullSrc);
   const modulePath = fileToModulePath(rootModuleName, "package", false);
-  const { weslSrc, unbound } = discoverModules(fullSrc, registry, modulePath);
+  const { weslSrc, unbound } = discoverModules(fullSrc, resolver, modulePath);
   const dependencies = resolveDepsFromUnbound(
     toml.dependencies,
     unbound,
