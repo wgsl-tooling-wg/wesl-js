@@ -61,7 +61,7 @@ const defaultResultSize = 4;
 /**
  * Compiles and runs a compute shader on the GPU for testing.
  *
- * Provides a storage buffer available at `test::results` where the shader
+ * Provides a storage buffer available at `env::results` where the shader
  * can write test output. After execution, the storage buffer is copied back
  * to the CPU and returned for validation.
  *
@@ -89,7 +89,7 @@ export async function testCompute(
 
   const arrayType = `array<${resultFormat}, ${size}>`;
   const virtualLibs = {
-    test: () =>
+    env: () =>
       `@group(0) @binding(0) var <storage, read_write> results: ${arrayType};`,
   };
 

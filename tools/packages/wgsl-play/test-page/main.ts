@@ -11,7 +11,7 @@ const player1 = document.querySelector<WgslPlay>("#player1")!;
 const player2 = document.querySelector<WgslPlay>("#player2")!;
 const npmShader = `
 import random_wgsl::pcg_2u_3f;
-import test::Uniforms;
+import env::Uniforms;
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
 
@@ -39,7 +39,7 @@ document
 const player3 = document.querySelector<WgslPlay>("#player3")!;
 const internalShader = `
 import package::utils::gradient;
-import test::Uniforms;
+import env::Uniforms;
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
 

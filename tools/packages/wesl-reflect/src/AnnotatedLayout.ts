@@ -1,6 +1,10 @@
 import type { Conditions, StructElem, StructMemberElem } from "wesl";
 import { filterValidElements } from "wesl";
-import { type FieldLayout, type StructLayout, structLayout } from "./StructLayout.ts";
+import {
+  type FieldLayout,
+  type StructLayout,
+  structLayout,
+} from "./StructLayout.ts";
 import {
   type AutoAnnotation,
   autoAnnotation,

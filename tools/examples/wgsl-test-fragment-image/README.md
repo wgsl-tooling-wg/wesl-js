@@ -19,7 +19,7 @@ pnpm test
 
 1. The shader renders a horizontal gradient from red to blue
 2. It uses `@builtin(position)` to get pixel coordinates
-3. The `test::Uniforms` provides resolution for normalized coordinates
+3. The `env::Uniforms` provides resolution for normalized coordinates
 4. `expectFragmentImage()` automatically compares the rendered output against a snapshot
 5. The snapshot is stored in `test/__image_snapshots__/gradient.png`
 

@@ -108,7 +108,7 @@ const single = await runWesl({ device, moduleName: "my_test", testName: "specifi
 
 ## testCompute()
 
-Tests WGSL functions by running a compute shader. Write a shader that calls the function under test and stores results in the `test::results` buffer. The buffer is automatically provided and accessed via `test::results[index]`. Buffer elements not written by the shader are initialized to -999.
+Tests WGSL functions by running a compute shader. Write a shader that calls the function under test and stores results in the `env::results` buffer. The buffer is automatically provided and accessed via `env::results[index]`. Buffer elements not written by the shader are initialized to -999.
 
 ### Parameters
 
@@ -127,7 +127,7 @@ const src = `
 
   @compute @workgroup_size(256)
   fn main(@builtin(global_invocation_id) id: vec3u) {
-    test::results[id.x] = lowbias32(id.x);
+    env::results[id.x] = lowbias32(id.x);
   }
 `;
 
@@ -146,7 +146,7 @@ Three functions for testing fragment shaders, ranging from simple color validati
 
 ### Standard Uniform Buffer
 
-The `test::` module is available in fragment shader tests and contains:
+The `env::` module is available in fragment shader tests and contains:
 
 ```wgsl
 struct Uniforms {
@@ -159,7 +159,7 @@ struct Uniforms {
 Access it by binding to `@group(0) @binding(0)`:
 
 ```wgsl
-@group(0) @binding(0) var<uniform> u: test::Uniforms;
+@group(0) @binding(0) var<uniform> u: env::Uniforms;
 
 @fragment
 fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -360,7 +360,7 @@ test("hash function from file", async () => {
 
     @compute @workgroup_size(256)
     fn main(@builtin(global_invocation_id) id: vec3u) {
-      test::results[id.x] = lowbias32(id.x);
+      env::results[id.x] = lowbias32(id.x);
     }
   `;
 
@@ -398,7 +398,7 @@ const src = /* wesl */`
 
   @compute @workgroup_size(1)
   fn main() {
-    test::results[0] = helper() + compute();
+    env::results[0] = helper() + compute();
   }
 `;
 

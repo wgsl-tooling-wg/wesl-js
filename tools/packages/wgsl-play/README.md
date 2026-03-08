@@ -21,7 +21,7 @@ WESL extensions are supported (imports, conditional compilation).
 Standard uniforms are provided at binding 0:
 
 ```wgsl
-import test::Uniforms;
+import env::Uniforms;
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
 
@@ -44,7 +44,7 @@ You can include shader code inline if you'd prefer. Use a `<script type="text/wg
 ```html
 <wgsl-play>
   <script type="text/wesl">
-    import test::Uniforms;
+    import env::Uniforms;
     @group(0) @binding(0) var<uniform> u: Uniforms;
 
     @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {

@@ -146,7 +146,7 @@ export class WgslEdit extends HTMLElement {
   private _conditions: Conditions = {};
   private _packageName: string | undefined;
   private _libs: WeslBundle[] = [];
-  private _ignorePackages: string[] = ["constants", "test"];
+  private _ignorePackages: string[] = ["constants", "env"];
   private _fetchingPkgs = new Set<string>();
   private _fetchedPkgs = new Set<string>();
   private _snackTimer: ReturnType<typeof setTimeout> | undefined;

@@ -17,7 +17,7 @@ test.skipIf(!inBuiltTest)("compute shader math", async () => {
     src: `
       @compute @workgroup_size(1)
       fn main() {
-        test::results[0] = 2.0 + 2.0;
+        env::results[0] = 2.0 + 2.0;
       }
     `,
     resultFormat: "f32",

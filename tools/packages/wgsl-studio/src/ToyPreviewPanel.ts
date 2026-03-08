@@ -111,7 +111,7 @@ export class ToyPreviewPanel {
   /** Send shader source to webview, loading project deps if available. */
   private async sendSource(): Promise<void> {
     const filePath = this.currentDoc.uri.fsPath;
-    const project = await loadProject(filePath, { virtualLibs: ["test"] });
+    const project = await loadProject(filePath, { virtualLibs: ["env"] });
 
     if (project) {
       // May have unsaved changes

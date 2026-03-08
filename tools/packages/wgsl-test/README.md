@@ -76,7 +76,7 @@ Update snapshots with `vitest -u` as needed.
 ## Testing Compute Shaders
 
 For more control, use `testCompute()`. 
-A `test::results` buffer is automatically provided:
+A `env::results` buffer is automatically provided:
 
 ```typescript
 import { testCompute, getGPUDevice } from "wgsl-test";
@@ -88,8 +88,8 @@ const src = `
 
   @compute @workgroup_size(1)
   fn main() {
-    test::results[0] = lowbias32(0u);
-    test::results[1] = lowbias32(42u);
+    env::results[0] = lowbias32(0u);
+    env::results[1] = lowbias32(42u);
   }
 `;
 

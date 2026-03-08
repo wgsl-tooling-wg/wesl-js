@@ -89,13 +89,13 @@ export function updateRenderUniforms(
 }
 
 /**
- * return the WGSL struct for use in shaders as test::Uniforms.
+ * return the WGSL struct for use in shaders as env::Uniforms.
  *
  * @returns virtual library object for passing to compileShader()
  */
 export function createUniformsVirtualLib(): Record<string, VirtualLibraryFn> {
   return {
-    test: () => `
+    env: () => `
       struct Uniforms {
         resolution: vec2f,  // Output viewport dimensions
         time: f32,          // Elapsed time in seconds

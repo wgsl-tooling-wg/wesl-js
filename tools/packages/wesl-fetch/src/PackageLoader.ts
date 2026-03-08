@@ -51,7 +51,7 @@ export interface FetchOptions {
   skipExternal?: boolean;
 }
 
-const virtualModules = ["constants", "test"];
+const virtualModules = ["constants", "env"];
 
 /** Resolve dependencies: internal modules via HTTP, external packages from npm. */
 export async function fetchDependencies(

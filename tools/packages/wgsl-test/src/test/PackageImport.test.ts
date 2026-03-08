@@ -27,7 +27,7 @@ test("import from current package with default useSourceShaders", async () => {
     `import package::utils::helper;
     @compute @workgroup_size(1)
     fn main() {
-      test::results[0] = helper();
+      env::results[0] = helper();
     }`,
   );
   expect(result[0]).toBe(42);
@@ -38,7 +38,7 @@ test("import from bundled package with useSourceShaders: false", async () => {
     `import test_shader_pkg::utils::helper;
     @compute @workgroup_size(1)
     fn main() {
-      test::results[0] = helper();
+      env::results[0] = helper();
     }`,
     { useSourceShaders: false },
   );
@@ -50,7 +50,7 @@ test("import using actual package name instead of 'package::'", async () => {
     `import test_shader_pkg::utils::helper;
     @compute @workgroup_size(1)
     fn main() {
-      test::results[0] = helper();
+      env::results[0] = helper();
     }`,
   );
   expect(result[0]).toBe(42);
@@ -61,7 +61,7 @@ test("import from .wgsl file when .wesl doesn't exist", async () => {
     `import package::legacy::legacyHelper;
     @compute @workgroup_size(1)
     fn main() {
-      test::results[0] = legacyHelper();
+      env::results[0] = legacyHelper();
     }`,
   );
   expect(result[0]).toBe(99);
@@ -77,7 +77,7 @@ test("import from deeply nested path", async () => {
     `import package::nested::deeper::func::deepHelper;
     @compute @workgroup_size(1)
     fn main() {
-      test::results[0] = deepHelper();
+      env::results[0] = deepHelper();
     }`,
   );
   expect(result[0]).toBe(123);
@@ -90,7 +90,7 @@ test("resolve when intermediate module exists but lacks the item", async () => {
     `import package::foo::bar::zap::zapValue;
     @compute @workgroup_size(1)
     fn main() {
-      test::results[0] = zapValue;
+      env::results[0] = zapValue;
     }`,
   );
   expect(result[0]).toBe(88);
@@ -103,7 +103,7 @@ test("item in module takes priority over submodule file", async () => {
     `import package::priority::sub;
     @compute @workgroup_size(1)
     fn main() {
-      test::results[0] = sub;
+      env::results[0] = sub;
     }`,
   );
   expect(result[0]).toBe(777);

@@ -149,8 +149,8 @@ test("path expression: base is namespace, access is fn", () => {
 });
 
 test("type path: base is namespace, last is typeName", () => {
-  const spans = checkHighlights("var x: test::Uniforms;");
-  expectStyled(spans, "test", "namespace");
+  const spans = checkHighlights("var x: env::Uniforms;");
+  expectStyled(spans, "env", "namespace");
   expectStyled(spans, "Uniforms", "typeName");
 });
 

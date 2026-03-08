@@ -21,7 +21,7 @@ import { npmResolveWESL } from "./NpmResolver.ts";
  *
  * @param weslSrc - Record of WESL source files by path
  * @param projectDir - Project directory for resolving package imports
- * @param virtualLibNames - Virtual lib names to exclude (e.g., ['test', 'constants'])
+ * @param virtualLibNames - Virtual lib names to exclude (e.g., ['env', 'constants'])
  * @returns Dependency paths in npm format (e.g., 'foo/bar', 'foo')
  */
 export function parseDependencies(

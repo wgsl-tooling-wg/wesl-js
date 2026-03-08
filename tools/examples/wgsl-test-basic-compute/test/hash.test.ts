@@ -17,7 +17,7 @@ test("hash::lowbias32 is well-distributed", async () => {
     import package::hash::lowbias32; // call your shader function
     @compute @workgroup_size(256)
     fn main( @builtin(global_invocation_id) id: vec3u) {
-      test::results[id.x] = lowbias32(id.x);
+      env::results[id.x] = lowbias32(id.x);
     }
   `;
 

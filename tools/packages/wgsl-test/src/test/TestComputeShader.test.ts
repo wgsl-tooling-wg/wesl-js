@@ -16,10 +16,10 @@ test("writes simple constant values to storage buffer", async () => {
   const src = `
     @compute @workgroup_size(1)
     fn main() {
-      test::results[0] = 42u;
-      test::results[1] = 100u;
-      test::results[2] = 255u;
-      test::results[3] = 1u;
+      env::results[0] = 42u;
+      env::results[1] = 100u;
+      env::results[2] = 255u;
+      env::results[3] = 1u;
     }
   `;
   const projectDir = import.meta.url;
@@ -37,10 +37,10 @@ test("performs computation and writes float results", async () => {
   const src = `
     @compute @workgroup_size(1)
     fn main() {
-      test::results[0] = 3.14;
-      test::results[1] = 2.5 * 4.0;
-      test::results[2] = sqrt(16.0);
-      test::results[3] = 1.0 + 2.0 + 3.0;
+      env::results[0] = 3.14;
+      env::results[1] = 2.5 * 4.0;
+      env::results[2] = sqrt(16.0);
+      env::results[3] = 1.0 + 2.0 + 3.0;
     }
   `;
   const result = await testCompute({
@@ -63,8 +63,8 @@ test("uses scalar constant from constants namespace", async () => {
 
     @compute @workgroup_size(1)
     fn main() {
-      test::results[0] = PI;
-      test::results[1] = PI * 2.0;
+      env::results[0] = PI;
+      env::results[1] = PI * 2.0;
     }
   `;
   const result = await testCompute({
@@ -86,8 +86,8 @@ test("uses vector constant from constants namespace", async () => {
     @compute @workgroup_size(1)
     fn main() {
       let c = CENTER;
-      test::results[0] = c.x;
-      test::results[1] = c.y;
+      env::results[0] = c.x;
+      env::results[1] = c.y;
     }
   `;
   const result = await testCompute({
@@ -107,9 +107,9 @@ test("uses conditions for conditional compilation", async () => {
     @compute @workgroup_size(1)
     fn main() {
       @if(USE_CUSTOM_VALUE)
-      test::results[0] = 42u;
+      env::results[0] = 42u;
       @else
-      test::results[0] = 99u;
+      env::results[0] = 99u;
     }
   `;
   const resultTrue = await testCompute({
@@ -139,9 +139,9 @@ test("uses both conditions and constants together", async () => {
     @compute @workgroup_size(1)
     fn main() {
       @if(USE_MULTIPLIER)
-      test::results[0] = MULTIPLIER * 2.0;
+      env::results[0] = MULTIPLIER * 2.0;
       @else
-      test::results[0] = 1.0;
+      env::results[0] = 1.0;
     }
   `;
   const resultWithConstant = await testCompute({
@@ -171,7 +171,7 @@ test("uses custom buffer size", async () => {
     @compute @workgroup_size(1)
     fn main() {
       for (var i = 0u; i < 8u; i++) {
-        test::results[i] = i * 10u;
+        env::results[i] = i * 10u;
       }
     }
   `;
