@@ -251,7 +251,7 @@ export class WgslPlay extends HTMLElement {
       ? toModulePath(rootModuleName)
       : "package::main";
     this._fromFullProject = true;
-    this.discoverAndRebuild();
+    this.rebuildPipeline();
   }
 
   /** Whether to auto-fetch missing library packages from npm (default: true). */
