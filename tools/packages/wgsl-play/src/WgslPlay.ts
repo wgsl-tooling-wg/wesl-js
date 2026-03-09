@@ -431,7 +431,10 @@ export class WgslPlay extends HTMLElement {
     const rootModuleName = (el as any).rootModuleName;
     const libs = (el as any).libs;
     const weslSrc = getSources();
-    const entries = Object.entries(weslSrc).map(([k, v]) => [toModulePath(k), v]);
+    const entries = Object.entries(weslSrc).map(([k, v]) => [
+      toModulePath(k),
+      v,
+    ]);
     this._weslSrc = Object.fromEntries(entries);
     this._rootModuleName = rootModuleName
       ? toModulePath(rootModuleName)
