@@ -11,7 +11,6 @@
   "ignoreWorkspaces": [
     "packages/wesl-plugin/test/**",
     "packages/built-test/**",
-    "packages/labs/**",
     "examples/**"
   ],
   "ignore": [
