@@ -425,13 +425,24 @@ export class WgslPlay extends HTMLElement {
       return { [this._rootModuleName]: source };
     };
 
-    // Load initial sources, conditions, and libs from source element
+    // Load initial sources, conditions, and libs from source element.
+    // Use discoverAndRebuild (not project setter) so external deps are fetched.
     const conditions = (el as any).conditions;
     const rootModuleName = (el as any).rootModuleName;
     const libs = (el as any).libs;
-    this.project = { weslSrc: getSources(), rootModuleName, conditions, libs };
+    const weslSrc = getSources();
+    const entries = Object.entries(weslSrc).map(([k, v]) => [toModulePath(k), v]);
+    this._weslSrc = Object.fromEntries(entries);
+    this._rootModuleName = rootModuleName
+      ? toModulePath(rootModuleName)
+      : "package::main";
+    if (conditions) this._linkOptions = { ...this._linkOptions, conditions };
+    if (libs) this._libs = libs;
+    this._fromFullProject = false;
+    await this.discoverAndRebuild();
+    this._fromFullProject = true; // fast rebuilds on subsequent edits
 
-    // Listen for changes - handle both single and multi-file, plus conditions
+    // Listen for changes - rebuild with cached libs
     this._sourceListener = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       const fallback = { [this._rootModuleName]: detail?.source ?? "" };
