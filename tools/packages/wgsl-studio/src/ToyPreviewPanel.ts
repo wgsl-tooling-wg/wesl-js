@@ -146,7 +146,7 @@ export class ToyPreviewPanel {
 
   private getHtml(): string {
     const scriptUri = this.panel.webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, "dist", "webview", "main.mjs"),
+      vscode.Uri.joinPath(this.extensionUri, "dist", "webview", "main.js"),
     );
 
     return `<!DOCTYPE html>

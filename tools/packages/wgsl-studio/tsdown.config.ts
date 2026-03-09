@@ -18,6 +18,7 @@ export default defineConfig([
     clean: false, // first build already cleaned dist/
     format: ["esm"],
     target: "esnext",
+    platform: "browser",
     outDir: "dist/webview",
     logLevel: "warn",
     noExternal: [/.*/], // bundle everything for browser context
