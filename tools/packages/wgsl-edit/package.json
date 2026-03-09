@@ -1,7 +1,7 @@
 {
   "name": "wgsl-edit",
   "description": "Web component for editing WGSL/WESL with CodeMirror",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "type": "module",
   "files": [
     "dist",
