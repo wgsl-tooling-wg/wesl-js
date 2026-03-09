@@ -1,7 +1,7 @@
 {
   "name": "wgsl-studio",
   "description": "WGSL/WESL previews and tests",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "repository": "github:wgsl-tooling-wg/wesl-js",
