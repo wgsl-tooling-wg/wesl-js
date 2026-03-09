@@ -241,15 +241,10 @@ export class WgslPlay extends HTMLElement {
     weslSrc: Record<string, string>,
     rootModuleName?: string,
   ): void {
-    // Convert file paths to module paths if needed (for ?link imports)
-    const entries = Object.entries(weslSrc).map(([k, v]) => [
-      toModulePath(k),
-      v,
-    ]);
-    this._weslSrc = Object.fromEntries(entries);
-    this._rootModuleName = rootModuleName
-      ? toModulePath(rootModuleName)
-      : "package::main";
+    const pkg = this._linkOptions.packageName || "package";
+    const root = rootModuleName ?? "main";
+    this._weslSrc = toModulePaths(weslSrc, pkg);
+    this._rootModuleName = fileToModulePath(root, pkg, false);
     this._fromFullProject = true;
     this.rebuildPipeline();
   }
@@ -427,18 +422,10 @@ export class WgslPlay extends HTMLElement {
 
     // Load initial sources, conditions, and libs from source element.
     // Use discoverAndRebuild (not project setter) so external deps are fetched.
-    const conditions = (el as any).conditions;
-    const rootModuleName = (el as any).rootModuleName;
-    const libs = (el as any).libs;
-    const weslSrc = getSources();
-    const entries = Object.entries(weslSrc).map(([k, v]) => [
-      toModulePath(k),
-      v,
-    ]);
-    this._weslSrc = Object.fromEntries(entries);
-    this._rootModuleName = rootModuleName
-      ? toModulePath(rootModuleName)
-      : "package::main";
+    const { conditions, rootModuleName, libs } = el as any;
+    const root = rootModuleName ?? "main";
+    this._weslSrc = getSources();
+    this._rootModuleName = fileToModulePath(root, "package", false);
     if (conditions) this._linkOptions = { ...this._linkOptions, conditions };
     if (libs) this._libs = libs;
     this._fromFullProject = false;
@@ -629,7 +616,13 @@ function upgradeProperty(el: HTMLElement, prop: string): void {
   }
 }
 
-/** Convert file path to module path (e.g., "effects/main.wesl" -> "package::effects::main"). */
-function toModulePath(filePath: string): string {
-  return fileToModulePath(filePath, "package", false);
+/** Normalize all keys in a weslSrc record to module paths. */
+function toModulePaths(
+  weslSrc: Record<string, string>,
+  pkg: string,
+): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(weslSrc))
+    result[fileToModulePath(key, pkg, false)] = value;
+  return result;
 }
