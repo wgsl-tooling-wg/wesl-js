@@ -88,11 +88,7 @@ export function updateRenderUniforms(
   device.queue.writeBuffer(buffer, 0, data);
 }
 
-/**
- * return the WGSL struct for use in shaders as env::Uniforms.
- *
- * @returns virtual library object for passing to compileShader()
- */
+/** @returns virtual library providing env::u and env::Uniforms for shaders */
 export function createUniformsVirtualLib(): Record<string, VirtualLibraryFn> {
   return {
     env: () => `
@@ -101,6 +97,8 @@ export function createUniformsVirtualLib(): Record<string, VirtualLibraryFn> {
         time: f32,          // Elapsed time in seconds
         mouse: vec2f,       // Mouse position [0,1] normalized coords
       }
+
+      @group(0) @binding(0) var<uniform> u: Uniforms;
     `,
   };
 }

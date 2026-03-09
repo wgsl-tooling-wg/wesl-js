@@ -11,9 +11,7 @@ const player1 = document.querySelector<WgslPlay>("#player1")!;
 const player2 = document.querySelector<WgslPlay>("#player2")!;
 const npmShader = `
 import random_wgsl::pcg_2u_3f;
-import env::Uniforms;
-
-@group(0) @binding(0) var<uniform> u: Uniforms;
+import env::u;
 
 @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let uv = pos.xy;
@@ -39,9 +37,7 @@ document
 const player3 = document.querySelector<WgslPlay>("#player3")!;
 const internalShader = `
 import package::utils::gradient;
-import env::Uniforms;
-
-@group(0) @binding(0) var<uniform> u: Uniforms;
+import env::u;
 
 @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let uv = pos.xy / u.resolution;

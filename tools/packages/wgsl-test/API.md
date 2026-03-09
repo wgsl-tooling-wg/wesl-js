@@ -146,20 +146,10 @@ Three functions for testing fragment shaders, ranging from simple color validati
 
 ### Standard Uniform Buffer
 
-The `env::` module is available in fragment shader tests and contains:
+Standard uniforms are available via `env::u`:
 
 ```wgsl
-struct Uniforms {
-  resolution: vec2f,  // Output size in pixels (default: [256, 256])
-  time: f32,          // Animation time (default: 0.0)
-  mouse: vec2f,       // Mouse position [0-1] (default: [0.0, 0.0])
-}
-```
-
-Access it by binding to `@group(0) @binding(0)`:
-
-```wgsl
-@group(0) @binding(0) var<uniform> u: env::Uniforms;
+import env::u;
 
 @fragment
 fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -168,6 +158,8 @@ fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   return vec4f(st, wave, 1.0);
 }
 ```
+
+The `env::Uniforms` struct contains:
 
 Pass custom uniform values when calling test functions:
 

@@ -1,4 +1,4 @@
-@group(0) @binding(0) var<uniform> u: env::Uniforms;
+import env::u;
 
 @fragment
 fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {

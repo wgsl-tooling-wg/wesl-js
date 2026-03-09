@@ -290,7 +290,7 @@ test("uses both conditions and constants together", async () => {
 
 test("shader with resolution uniform (auto-populated)", async () => {
   const src = `
-    @group(0) @binding(0) var<uniform> u: env::Uniforms;
+    import env::u;
 
     @fragment
     fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -317,7 +317,7 @@ test("shader with resolution uniform (auto-populated)", async () => {
 
 test("shader with time uniform", async () => {
   const src = `
-    @group(0) @binding(0) var<uniform> u: env::Uniforms;
+    import env::u;
 
     @fragment
     fn fs_main() -> @location(0) vec4f {
@@ -340,7 +340,7 @@ test("shader with time uniform", async () => {
 
 test("shader with mouse uniform", async () => {
   const src = `
-    @group(0) @binding(0) var<uniform> u: env::Uniforms;
+    import env::u;
 
     @fragment
     fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -369,7 +369,7 @@ test("shader with uniforms and texture", async () => {
   const sampler = createSampler(device);
 
   const src = `
-    @group(0) @binding(0) var<uniform> u: env::Uniforms;
+    import env::u;
     @group(0) @binding(1) var input_tex: texture_2d<f32>;
     @group(0) @binding(2) var input_samp: sampler;
 

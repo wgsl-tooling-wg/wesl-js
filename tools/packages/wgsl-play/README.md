@@ -18,12 +18,10 @@ That's it. The component auto-fetches dependencies and starts animating.
 accepts **fragment shaders**. Write a single `@fragment` function. 
 WESL extensions are supported (imports, conditional compilation).
 
-Standard uniforms are provided at binding 0:
+Standard uniforms are available via `env::u`:
 
 ```wgsl
-import env::Uniforms;
-
-@group(0) @binding(0) var<uniform> u: Uniforms;
+import env::u;
 
 @fragment fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let uv = pos.xy / u.resolution;
@@ -44,8 +42,7 @@ You can include shader code inline if you'd prefer. Use a `<script type="text/wg
 ```html
 <wgsl-play>
   <script type="text/wesl">
-    import env::Uniforms;
-    @group(0) @binding(0) var<uniform> u: Uniforms;
+    import env::u;
 
     @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       let uv = pos.xy / u.resolution;

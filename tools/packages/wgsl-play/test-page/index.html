@@ -19,11 +19,10 @@
 
     <!-- Basic test (with uniforms import) -->
     <div class="section">
-      <h3>1. Basic (env::Uniforms)</h3>
+      <h3>1. Basic (env::u)</h3>
       <wgsl-play id="player1">
         <script type="text/wesl">
-          import env::Uniforms;
-          @group(0) @binding(0) var<uniform> u: Uniforms;
+          import env::u;
 
           @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
             let uv = pos.xy / u.resolution;
@@ -111,8 +110,7 @@
       <h3>8. autoplay="false" (starts paused)</h3>
       <wgsl-play id="player8" autoplay="false">
         <script type="text/wesl">
-          import env::Uniforms;
-          @group(0) @binding(0) var<uniform> u: Uniforms;
+          import env::u;
 
           @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
             let uv = pos.xy / u.resolution;
