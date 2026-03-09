@@ -1,6 +1,7 @@
 /// <reference types="wesl-plugin/suffixes" />
-import "../src/index.ts"; // Register the custom element
-
+import "../../wgsl-edit/src/index.ts"; // Register wgsl-edit for connectToSource tests
+import "../src/index.ts"; // Register wgsl-play
+import type { WgslEdit } from "../../wgsl-edit/src/WgslEdit.ts";
 import type { WgslPlay } from "../src/index.ts";
 import linkConfig from "./shaders/effects/main.wesl?link";
 import staticWgsl from "./shaders/effects/main.wesl?static";
@@ -73,6 +74,27 @@ document.querySelector("#load-conditions")!.addEventListener("click", () => {
   player7.project = { conditions: { RED: true } };
 });
 
+// connectToSource + conditions toggle (section 10)
+const editor10 = document.querySelector<WgslEdit>("#editor10")!;
+document.querySelector("#toggle-condition10")!.addEventListener("click", () => {
+  editor10.conditions = { RED: true };
+});
+
+// editor.link() with virtualLibs (section 12)
+const editor12 = document.querySelector<WgslEdit>("#editor12")!;
+const envSrc = `
+  struct Uniforms { resolution: vec2f, time: f32, mouse: vec2f }
+  @group(0) @binding(0) var<uniform> u: Uniforms;
+`;
+document.querySelector("#link-btn12")!.addEventListener("click", async () => {
+  try {
+    const wgsl = await editor12.link({ virtualLibs: { env: () => envSrc } });
+    document.querySelector("#link-output12")!.textContent = wgsl;
+  } catch (e) {
+    document.querySelector("#link-output12")!.textContent = `Error: ${e}`;
+  }
+});
+
 // Expose for console debugging
 Object.assign(window, {
   player1,
@@ -82,6 +104,8 @@ Object.assign(window, {
   player5,
   player6,
   player7,
+  editor10,
+  editor12,
   staticWgsl,
   linkConfig,
 });

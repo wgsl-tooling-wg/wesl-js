@@ -185,6 +185,61 @@ test("project.conditions - shows green initially, red after setting RED", async 
   await expectCanvasSnapshot(page, "#player7", "conditions-after-red.png");
 });
 
+test("connectToSource - multi-file from wgsl-edit renders", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await waitForFrame(page, "#player9");
+  await expectCanvasSnapshot(page, "#player9", "connect-source-multifile.png");
+});
+
+test("connectToSource - condition toggle re-renders", async ({ page }) => {
+  await page.goto("/");
+  await waitForFrame(page, "#player10");
+
+  // Initial: green (@else branch)
+  await expectCanvasSnapshot(page, "#player10", "connect-conditions-green.png");
+
+  // Toggle RED condition via editor
+  await page.click("#toggle-condition10");
+  await waitForNewFrame(page, "#player10");
+
+  // After: red (@if branch)
+  await expectCanvasSnapshot(page, "#player10", "connect-conditions-red.png");
+});
+
+test("connectToSource - external deps are fetched", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  await waitForFrame(page, "#player11");
+
+  // If discoverAndRebuild wasn't called, this would show an error overlay
+  const hasError = await page.evaluate(
+    () => (document.querySelector("#player11") as any)?.hasError ?? true,
+  );
+  expect(hasError).toBe(false);
+  await expectCanvasSnapshot(page, "#player11", "connect-source-external.png");
+});
+
+test("editor.link() with virtualLibs resolves env:: module", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await waitForWgslPlay(page);
+
+  await page.click("#link-btn12");
+  await page.waitForFunction(
+    () =>
+      document.querySelector("#link-output12")?.textContent !==
+      "Not linked yet",
+  );
+
+  const output = await page.textContent("#link-output12");
+  expect(output).toContain("var<uniform>");
+  expect(output).toContain("fs_main");
+  expect(output).not.toContain("Error");
+});
+
 test("no critical console errors on basic load", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", msg => {
