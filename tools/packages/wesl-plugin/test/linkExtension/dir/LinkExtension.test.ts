@@ -2,6 +2,7 @@
 import { expect, expectTypeOf, test } from "vitest";
 import type { LinkParams } from "wesl";
 import linkParams from "../shaders/foo/app.wesl?link";
+import appBLinkParams from "../shaders/foo/app-b.wesl?link";
 import dashLinkParams from "../shaders/foo/app-test.wesl?link";
 
 test("verify ?link", async () => {
@@ -31,6 +32,22 @@ test("verify ?link", async () => {
       "lib.wgsl",
     ]
   `);
+});
+
+test("?link scoping isolates modules between imports", async () => {
+  const appSrc = (linkParams as LinkParams).weslSrc!;
+  const appBSrc = (appBLinkParams as LinkParams).weslSrc!;
+
+  // app.wesl doesn't import helper, so helper.wesl should NOT be in its scope
+  expect(Object.keys(appSrc)).not.toContain("helper.wesl");
+  expect(Object.keys(appSrc)).toContain("app.wesl");
+
+  // app-b.wesl imports helper, so helper.wesl SHOULD be in its scope
+  expect(Object.keys(appBSrc)).toContain("helper.wesl");
+  expect(Object.keys(appBSrc)).toContain("app-b.wesl");
+
+  // And app-b should NOT include app.wesl (they're independent)
+  expect(Object.keys(appBSrc)).not.toContain("app.wesl");
 });
 
 test("?link with dash in filename", async () => {
