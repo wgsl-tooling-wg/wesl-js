@@ -182,12 +182,12 @@ import env::u;
       <wgsl-play id="player11" source="editor11"></wgsl-play>
     </div>
 
-    <!-- editor.link() with virtualLibs -->
+    <!-- connectToSource: dynamic npm package loading -->
     <div class="section">
-      <h3>12. editor.link() with virtualLibs</h3>
-      <p>Tests <code>editor.link({ virtualLibs: { env: () => envSrc } })</code></p>
+      <h3>12. connectToSource + dynamic npm loading</h3>
+      <p>Tests dynamically adding an npm package reference to wgsl-edit</p>
       <div class="controls">
-        <button type="button" id="link-btn12">Link with virtualLibs</button>
+        <button type="button" id="inject-npm12">Inject random_wgsl</button>
       </div>
       <wgsl-edit id="editor12" style="height: 60px">
         <script type="text/wesl">
@@ -199,7 +199,27 @@ import env::u;
 }
         </script>
       </wgsl-edit>
-      <pre id="link-output12">Not linked yet</pre>
+      <wgsl-play id="player12" source="editor12"></wgsl-play>
+    </div>
+
+    <!-- editor.link() with virtualLibs -->
+    <div class="section">
+      <h3>13. editor.link() with virtualLibs</h3>
+      <p>Tests <code>editor.link({ virtualLibs: { env: () => envSrc } })</code></p>
+      <div class="controls">
+        <button type="button" id="link-btn13">Link with virtualLibs</button>
+      </div>
+      <wgsl-edit id="editor13" style="height: 60px">
+        <script type="text/wesl">
+import env::u;
+
+@fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = pos.xy / u.resolution;
+  return vec4f(uv, 0.5, 1.0);
+}
+        </script>
+      </wgsl-edit>
+      <pre id="link-output13">Not linked yet</pre>
     </div>
 
     <script type="module" src="./main.ts"></script>

@@ -221,20 +221,36 @@ test("connectToSource - external deps are fetched", async ({ page }) => {
   await expectCanvasSnapshot(page, "#player11", "connect-source-external.png");
 });
 
+test("connectToSource - dynamic npm package loading", async ({ page }) => {
+  await page.goto("/");
+  await waitForFrame(page, "#player12");
+
+  // Inject code referencing random_wgsl (not in initial content)
+  await page.click("#inject-npm12");
+  await page.waitForLoadState("networkidle");
+  await waitForFrame(page, "#player12");
+
+  const hasError = await page.evaluate(
+    () => (document.querySelector("#player12") as any)?.hasError ?? true,
+  );
+  expect(hasError).toBe(false);
+  await expectCanvasSnapshot(page, "#player12", "connect-dynamic-npm.png");
+});
+
 test("editor.link() with virtualLibs resolves env:: module", async ({
   page,
 }) => {
   await page.goto("/");
   await waitForWgslPlay(page);
 
-  await page.click("#link-btn12");
+  await page.click("#link-btn13");
   await page.waitForFunction(
     () =>
-      document.querySelector("#link-output12")?.textContent !==
+      document.querySelector("#link-output13")?.textContent !==
       "Not linked yet",
   );
 
-  const output = await page.textContent("#link-output12");
+  const output = await page.textContent("#link-output13");
   expect(output).toContain("var<uniform>");
   expect(output).toContain("fs_main");
   expect(output).not.toContain("Error");

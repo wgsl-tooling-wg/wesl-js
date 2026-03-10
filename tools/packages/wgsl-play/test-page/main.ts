@@ -80,18 +80,31 @@ document.querySelector("#toggle-condition10")!.addEventListener("click", () => {
   editor10.conditions = { RED: true };
 });
 
-// editor.link() with virtualLibs (section 12)
+// connectToSource + dynamic npm loading (section 12)
 const editor12 = document.querySelector<WgslEdit>("#editor12")!;
+document.querySelector("#inject-npm12")!.addEventListener("click", () => {
+  const newSource = `import env::u;
+
+@fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let seed = vec2u(u32(pos.x), u32(pos.y));
+  let color = random_wgsl::pcg_2u_3f(seed);
+  return vec4f(color, 1.0);
+}`;
+  editor12.source = newSource;
+});
+
+// editor.link() with virtualLibs (section 13)
+const editor13 = document.querySelector<WgslEdit>("#editor13")!;
 const envSrc = `
   struct Uniforms { resolution: vec2f, time: f32, mouse: vec2f }
   @group(0) @binding(0) var<uniform> u: Uniforms;
 `;
-document.querySelector("#link-btn12")!.addEventListener("click", async () => {
+document.querySelector("#link-btn13")!.addEventListener("click", async () => {
   try {
-    const wgsl = await editor12.link({ virtualLibs: { env: () => envSrc } });
-    document.querySelector("#link-output12")!.textContent = wgsl;
+    const wgsl = await editor13.link({ virtualLibs: { env: () => envSrc } });
+    document.querySelector("#link-output13")!.textContent = wgsl;
   } catch (e) {
-    document.querySelector("#link-output12")!.textContent = `Error: ${e}`;
+    document.querySelector("#link-output13")!.textContent = `Error: ${e}`;
   }
 });
 
@@ -106,6 +119,7 @@ Object.assign(window, {
   player7,
   editor10,
   editor12,
+  editor13,
   staticWgsl,
   linkConfig,
 });
