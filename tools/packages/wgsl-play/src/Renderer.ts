@@ -84,19 +84,25 @@ export async function createPipeline(
   options?: LinkOptions,
 ): Promise<void> {
   state.device.pushErrorScope("validation");
-  const pipeline = await linkAndCreatePipeline({
-    device: state.device,
-    fragmentSource,
-    format: state.presentationFormat,
-    layout: state.pipelineLayout,
-    ...options,
-  });
-  const gpuError = await state.device.popErrorScope();
-  if (gpuError) {
-    state.pipeline = undefined;
-    throw gpuError;
+  let gpuError: unknown;
+  let jsError: unknown;
+  try {
+    state.pipeline = await linkAndCreatePipeline({
+      device: state.device,
+      fragmentSource,
+      format: state.presentationFormat,
+      layout: state.pipelineLayout,
+      ...options,
+    });
+  } catch (e) {
+    jsError = e;
+  } finally {
+    gpuError = await state.device.popErrorScope();
   }
-  state.pipeline = pipeline;
+  if (jsError || gpuError) {
+    state.pipeline = undefined;
+    throw jsError ?? gpuError;
+  }
 }
 
 /** Start the render loop. Returns a stop function. */
