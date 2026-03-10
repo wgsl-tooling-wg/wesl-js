@@ -498,8 +498,9 @@ export class WgslEdit extends HTMLElement {
       sources,
       conditions,
       _rootModuleName: rootModuleName,
+      libs,
     } = this;
-    const detail = { source, sources, rootModuleName, conditions };
+    const detail = { source, sources, rootModuleName, conditions, libs };
     this.dispatchEvent(new CustomEvent("change", { detail }));
   }
 
@@ -662,9 +663,11 @@ export class WgslEdit extends HTMLElement {
       const bundles = await fetchPackagesByName(needed);
       this._libs = [...this._libs, ...bundles];
       for (const n of needed) this._fetchedPkgs.add(n);
-      if (bundles.length > 0)
+      if (bundles.length > 0) {
         this.showSnack(`Loaded ${needed.join(", ")}`, 3000);
-      else this.hideSnack();
+        this._externalDiagnostics = []; // stale compile errors from before libs loaded
+        this.dispatchChange();
+      } else this.hideSnack();
       return bundles;
     } catch (e) {
       console.warn("wgsl-edit: failed to fetch packages:", needed, e);
