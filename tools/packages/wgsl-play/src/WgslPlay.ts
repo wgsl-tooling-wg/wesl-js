@@ -83,6 +83,8 @@ export class WgslPlay extends HTMLElement {
   private _sourceEl: HTMLElement | null = null;
   private _sourceListener: ((e: Event) => void) | null = null;
   private _fetchLibs = true;
+  private _dirty = false;
+  private _building = false;
   private _theme: "light" | "dark" | "auto" = "auto";
   private _mediaQuery: MediaQueryList | null = null;
   private _onFullscreenChange = () =>
@@ -193,7 +195,7 @@ export class WgslPlay extends HTMLElement {
     this._weslSrc = { [this._rootModuleName]: value };
     this._libs = undefined;
     this._fromFullProject = false;
-    this.discoverAndRebuild();
+    this.requestBuild();
   }
 
   /** Conditions for conditional compilation (@if/@elif/@else). */
@@ -204,8 +206,7 @@ export class WgslPlay extends HTMLElement {
   set conditions(value: Conditions) {
     this._linkOptions = { ...this._linkOptions, conditions: value };
     if (Object.keys(this._weslSrc).length === 0) return;
-    if (this._fromFullProject) this.rebuildPipeline();
-    else this.discoverAndRebuild();
+    this.requestBuild();
   }
 
   /** Set project configuration (mirrors wesl link() API). */
@@ -230,10 +231,8 @@ export class WgslPlay extends HTMLElement {
       return;
     }
 
-    // Partial update - may need to refetch if conditions changed
     if (Object.keys(this._weslSrc).length === 0) return;
-    if (this._fromFullProject) this.rebuildPipeline();
-    else this.discoverAndRebuild();
+    this.requestBuild();
   }
 
   /** Set sources from a full project with weslSrc. */
@@ -246,7 +245,7 @@ export class WgslPlay extends HTMLElement {
     this._weslSrc = toModulePaths(weslSrc, pkg);
     this._rootModuleName = fileToModulePath(root, pkg, false);
     this._fromFullProject = true;
-    this.rebuildPipeline();
+    this.requestBuild();
   }
 
   /** Whether to auto-fetch missing library packages from npm (default: true). */
@@ -365,7 +364,7 @@ export class WgslPlay extends HTMLElement {
         ? "premultiplied"
         : "opaque";
       this.renderState = await initWebGPU(this.canvas, alphaMode);
-      await this.loadInitialContent();
+      this.loadInitialContent();
       this.stopRenderLoop = startRenderLoop(this.renderState, this.playback);
       this.dispatchEvent(new CustomEvent("ready"));
       return true;
@@ -383,12 +382,18 @@ export class WgslPlay extends HTMLElement {
   }
 
   /** Load from source element, src URL, script child, or inline textContent. */
-  private async loadInitialContent(): Promise<void> {
+  private loadInitialContent(): void {
     const sourceId = this.getAttribute("source");
-    if (sourceId) return this.connectToSource(sourceId);
+    if (sourceId) {
+      this.connectToSource(sourceId);
+      return;
+    }
 
     const src = this.getAttribute("src");
-    if (src) return this.loadFromUrl(src);
+    if (src) {
+      this.loadFromUrl(src);
+      return;
+    }
 
     // Prefer <script type="text/wgsl"> or <script type="text/wesl"> (no HTML escaping needed)
     const script = this.querySelector(
@@ -400,11 +405,11 @@ export class WgslPlay extends HTMLElement {
 
     this._weslSrc = { [this._rootModuleName]: inlineSource };
     this._fromFullProject = false;
-    await this.discoverAndRebuild();
+    this.requestBuild();
   }
 
   /** Connect to a source provider element (e.g., wgsl-edit). */
-  private async connectToSource(id: string): Promise<void> {
+  private connectToSource(id: string): void {
     const el = document.getElementById(id);
     if (!el) {
       console.error(`wgsl-play: source element "${id}" not found`);
@@ -421,7 +426,6 @@ export class WgslPlay extends HTMLElement {
     };
 
     // Load initial sources, conditions, and libs from source element.
-    // Use discoverAndRebuild (not project setter) so external deps are fetched.
     const { conditions, rootModuleName, libs } = el as any;
     const root = rootModuleName ?? "main";
     this._weslSrc = getSources();
@@ -429,8 +433,7 @@ export class WgslPlay extends HTMLElement {
     if (conditions) this._linkOptions = { ...this._linkOptions, conditions };
     if (libs) this._libs = libs;
     this._fromFullProject = false;
-    await this.discoverAndRebuild();
-    this._fromFullProject = true; // fast rebuilds on subsequent edits
+    this.requestBuild();
 
     // Listen for changes - rebuild with libs from source element
     this._sourceListener = (e: Event) => {
@@ -446,12 +449,9 @@ export class WgslPlay extends HTMLElement {
     el.addEventListener("change", this._sourceListener);
   }
 
-  /** Fetch shader from URL, auto-fetching any imported dependencies. */
+  /** Fetch shader from URL, then trigger a build. */
   private async loadFromUrl(url: string): Promise<void> {
-    if (!this.renderState) return;
-
     try {
-      this.errorOverlay.hide();
       const { weslSrc, libs, rootModuleName } = await loadShaderFromUrl(
         url,
         this.getConfigOverrides()?.shaderRoot,
@@ -460,88 +460,58 @@ export class WgslPlay extends HTMLElement {
       this._libs = libs;
       this._fromFullProject = false;
       if (rootModuleName) this._rootModuleName = rootModuleName;
+      this.requestBuild();
+    } catch (error) {
+      this.handleCompileError(error);
+    }
+  }
 
-      const mainSource = weslSrc[this._rootModuleName];
+  /** Mark build as needed. Coalesces rapid requests into a single build. */
+  private requestBuild(): void {
+    this._dirty = true;
+    if (!this._building) this.runBuild();
+  }
+
+  /** Run builds until no longer dirty. Only one instance runs at a time. */
+  private async runBuild(): Promise<void> {
+    this._building = true;
+    while (this._dirty) {
+      this._dirty = false;
+      if (!(await this.initialize())) break;
+
+      const mainSource = this._weslSrc[this._rootModuleName];
       if (!mainSource) {
         console.warn(
           `wgsl-play: root module "${this._rootModuleName}" not found in sources:`,
-          Object.keys(weslSrc),
+          Object.keys(this._weslSrc),
         );
-        return;
+        continue;
       }
 
-      await createPipeline(this.renderState, mainSource, {
-        ...this._linkOptions,
-        weslSrc,
-        libs,
-        rootModuleName: this._rootModuleName,
-      });
-      this.dispatchEvent(new CustomEvent("compile-success"));
-    } catch (error) {
-      this.handleCompileError(error);
+      try {
+        this.errorOverlay.hide();
+        if (!this._fromFullProject) {
+          const { weslSrc, libs } = await fetchDependencies(mainSource, {
+            shaderRoot: this.getConfigOverrides()?.shaderRoot,
+            existingSources: this._weslSrc,
+            skipExternal: !this._fetchLibs,
+          });
+          this._weslSrc = { ...this._weslSrc, ...weslSrc };
+          this._libs = dedupLibs(this._libs, libs);
+        }
+        await createPipeline(this.renderState!, mainSource, {
+          ...this._linkOptions,
+          weslSrc: this._weslSrc,
+          libs: this._libs,
+          rootModuleName: this._rootModuleName,
+        });
+        if (!this._dirty)
+          this.dispatchEvent(new CustomEvent("compile-success"));
+      } catch (error) {
+        if (!this._dirty) this.handleCompileError(error);
+      }
     }
-  }
-
-  /** Rebuild GPU pipeline using stored state. For full projects with all sources. */
-  private async rebuildPipeline(): Promise<void> {
-    if (!(await this.initialize())) return;
-
-    const mainSource = this._weslSrc[this._rootModuleName];
-    if (!mainSource) {
-      console.warn(
-        `wgsl-play: root module "${this._rootModuleName}" not found in sources:`,
-        Object.keys(this._weslSrc),
-      );
-      return;
-    }
-
-    try {
-      this.errorOverlay.hide();
-      await createPipeline(this.renderState!, mainSource, {
-        ...this._linkOptions,
-        weslSrc: this._weslSrc,
-        libs: this._libs,
-        rootModuleName: this._rootModuleName,
-      });
-      this.dispatchEvent(new CustomEvent("compile-success"));
-    } catch (error) {
-      this.handleCompileError(error);
-    }
-  }
-
-  /** Discover dependencies and rebuild. For HTTP/inline sources that may need fetching. */
-  private async discoverAndRebuild(): Promise<void> {
-    if (!(await this.initialize())) return;
-
-    const mainSource = this._weslSrc[this._rootModuleName];
-    if (!mainSource) {
-      console.warn(
-        `wgsl-play: root module "${this._rootModuleName}" not found in sources:`,
-        Object.keys(this._weslSrc),
-      );
-      return;
-    }
-
-    try {
-      this.errorOverlay.hide();
-      const { weslSrc, libs } = await fetchDependencies(mainSource, {
-        shaderRoot: this.getConfigOverrides()?.shaderRoot,
-        existingSources: this._weslSrc,
-        skipExternal: !this._fetchLibs,
-      });
-      this._weslSrc = { ...this._weslSrc, ...weslSrc };
-      this._libs = [...(this._libs ?? []), ...libs];
-
-      await createPipeline(this.renderState!, mainSource, {
-        ...this._linkOptions,
-        weslSrc: this._weslSrc,
-        libs: this._libs,
-        rootModuleName: this._rootModuleName,
-      });
-      this.dispatchEvent(new CustomEvent("compile-success"));
-    } catch (error) {
-      this.handleCompileError(error);
-    }
+    this._building = false;
   }
 
   private handleCompileError(error: unknown): void {
@@ -615,6 +585,17 @@ function upgradeProperty(el: HTMLElement, prop: string): void {
     delete (el as any)[prop];
     (el as any)[prop] = value;
   }
+}
+
+/** Merge new libs, deduplicating by bundle name. */
+function dedupLibs(
+  existing: WeslBundle[] | undefined,
+  newLibs: WeslBundle[],
+): WeslBundle[] {
+  if (!existing || newLibs.length === 0)
+    return [...(existing ?? []), ...newLibs];
+  const names = new Set(newLibs.map(b => b.name));
+  return [...existing.filter(b => !names.has(b.name)), ...newLibs];
 }
 
 /** Normalize all keys in a weslSrc record to module paths. */
