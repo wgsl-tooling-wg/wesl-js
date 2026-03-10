@@ -432,7 +432,7 @@ export class WgslPlay extends HTMLElement {
     await this.discoverAndRebuild();
     this._fromFullProject = true; // fast rebuilds on subsequent edits
 
-    // Listen for changes - rebuild with cached libs
+    // Listen for changes - rebuild with libs from source element
     this._sourceListener = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       const fallback = { [this._rootModuleName]: detail?.source ?? "" };
@@ -440,6 +440,7 @@ export class WgslPlay extends HTMLElement {
         weslSrc: detail?.sources ?? fallback,
         rootModuleName: detail?.rootModuleName,
         conditions: detail?.conditions,
+        libs: detail?.libs,
       };
     };
     el.addEventListener("change", this._sourceListener);
