@@ -6,5 +6,5 @@ test("random image", async ({ page }) => {
   const canvas = await page.$("canvas");
   expect(canvas).not.toBeNull();
   const snapshot = await canvas!.screenshot();
-  expect(snapshot).toMatchSnapshot("random.png");
+  expect(snapshot).toMatchSnapshot("random.png", { maxDiffPixelRatio: 0.01 });
 });

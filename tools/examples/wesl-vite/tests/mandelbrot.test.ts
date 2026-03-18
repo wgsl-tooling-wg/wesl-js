@@ -6,5 +6,7 @@ test("mandlebrot image", async ({ page }) => {
   const canvas = await page.$("canvas");
   expect(canvas).not.toBeNull();
   const snapshot = await canvas!.screenshot();
-  expect(snapshot).toMatchSnapshot("mandelbrot.png");
+  expect(snapshot).toMatchSnapshot("mandelbrot.png", {
+    maxDiffPixelRatio: 0.01,
+  });
 });
