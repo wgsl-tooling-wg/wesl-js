@@ -13,6 +13,7 @@
     "check:versions": "syncpack lint",
     "ci:check": "run-s lint:all build:all typecheck:all test:unit bench:validate",
     "ci:check-windows": "run-s build:all test:unit",
+    "clean": "git clean -fdX && pnpm install",
     "echo:all": "pnpm --filter \"*\" exec pwd",
     "fix:all": "run-s fix:pkgJsonFormat fix:syncpack fix:biome",
     "fix:biome": "biome check --fix --unsafe",
