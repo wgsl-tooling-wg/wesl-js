@@ -2,7 +2,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { glob } from "glob";
 import type { UnpluginBuildContext, UnpluginContext } from "unplugin";
-import { discoverModules, fileToModulePath, RecordResolver } from "wesl";
+import {
+  discoverModules,
+  fileToModulePath,
+  freshResolver,
+  RecordResolver,
+} from "wesl";
 import {
   findWeslToml,
   parseDependencies,
@@ -41,9 +46,8 @@ async function getScopedProject(
   const fullSrc = await loadWesl(context, unpluginCtx);
   const { toml, tomlDir: projectDir } = await getWeslToml(context, unpluginCtx);
 
-  // Fresh resolver each time — binding mutates ASTs, so reusing a cached
-  // registry across multiple ?link imports produces stale results.
-  const resolver = new RecordResolver(fullSrc);
+  const registry = await getRegistry(context, unpluginCtx);
+  const resolver = freshResolver(registry);
   const modulePath = fileToModulePath(rootModuleName, "package", false);
   const { weslSrc, unbound } = discoverModules(fullSrc, resolver, modulePath);
   const dependencies = resolveDepsFromUnbound(

@@ -157,6 +157,27 @@ export class BundleResolver implements ModuleResolver {
   }
 }
 
+/** Wrap a resolver so each resolveModule call returns a freshly parsed AST.
+ * Use this when reusing a resolver across multiple link() calls, since binding
+ * mutates ASTs in place. Each wrapper instance caches within itself, so within
+ * a single link pass the same module path returns the same AST object.
+ * Re-parsing is faster than structuredClone due to cycle-tracking overhead
+ * from Scope.parent backpointers. */
+export function freshResolver(inner: ModuleResolver): ModuleResolver {
+  const cache = new Map<string, WeslAST>();
+  return {
+    resolveModule(modulePath: string): WeslAST | undefined {
+      const cached = cache.get(modulePath);
+      if (cached) return cached;
+      const ast = inner.resolveModule(modulePath);
+      if (!ast) return undefined;
+      const fresh = parseSrcModule(ast.srcModule);
+      cache.set(modulePath, fresh);
+      return fresh;
+    },
+  };
+}
+
 /** Convert file path to module path (e.g., "foo/bar.wesl" to "package::foo::bar"). */
 export function fileToModulePath(
   filePath: string,
