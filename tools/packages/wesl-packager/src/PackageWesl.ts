@@ -139,7 +139,7 @@ async function writeJsBundle(
   const formatted = biome.formatContent(biomeKey, outString, {
     filePath: "b.js",
   });
-  await fs.writeFile(outPath, formatted.content);
+  await safeWrite(outPath, formatted.content);
 }
 
 /** Write weslBundle.d.ts containing the type definitions for a WeslBundle */
@@ -155,7 +155,20 @@ async function writeTypeScriptDts(outDir: string): Promise<void> {
   });
 
   const outPath = path.join(outDir, "weslBundle.d.ts");
-  await fs.writeFile(outPath, formatted.content);
+  await safeWrite(outPath, formatted.content);
+}
+
+/** Write without truncating the file (atomic via temp+rename).
+ * Skips the write entirely if content is unchanged.
+ * Avoids a potential race with parallel tsc readers during `--parallel` builds. */
+async function safeWrite(filePath: string, content: string): Promise<void> {
+  try {
+    const existing = await fs.readFile(filePath, "utf8");
+    if (existing === content) return;
+  } catch {}
+  const tmpPath = filePath + ".tmp";
+  await fs.writeFile(tmpPath, content);
+  await fs.rename(tmpPath, filePath);
 }
 
 /** @return the bundle plus dependencies as a JavaScript string */
