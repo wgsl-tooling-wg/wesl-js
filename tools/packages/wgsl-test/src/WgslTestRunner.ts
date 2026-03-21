@@ -89,12 +89,9 @@ async function runAllTests(args: RunArgs): Promise<Summary> {
   }
 
   const device = await getGPUDevice();
-  const fileSummaries: FileSummary[] = [];
-
-  for (const file of files) {
-    const summary = await runFileTests(file, device);
-    fileSummaries.push(summary);
-  }
+  const fileSummaries = await Promise.all(
+    files.map(file => runFileTests(file, device)),
+  );
 
   destroySharedDevice();
 

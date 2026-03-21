@@ -97,11 +97,9 @@ export async function runWesl(params: RunWeslParams): Promise<TestResult[]> {
   if (testName) {
     testFns = testFns.filter(t => t.name === testName);
   }
-  const results: TestResult[] = [];
-  for (const testFn of testFns) {
-    results.push(await runSingleTest({ testFn, shaderSrc, ...params }));
-  }
-  return results;
+  return Promise.all(
+    testFns.map(testFn => runSingleTest({ testFn, shaderSrc, ...params })),
+  );
 }
 
 /** Load and parse a WESL module to extract @test functions. */

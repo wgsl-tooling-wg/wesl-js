@@ -2,7 +2,7 @@ import { copyBuffer, elementStride, type WgslElementType } from "thimbleberry";
 import type { LinkParams } from "wesl";
 import { withErrorScopes } from "wesl-gpu";
 import { compileShader } from "./CompileShader.ts";
-import { resolveShaderSource } from "./ShaderModuleLoader.ts"; // 4 elements
+import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 
 export interface ComputeTestParams {
   /** WESL/WGSL source code for the compute shader to test.
@@ -103,13 +103,9 @@ export async function testCompute(
     useSourceShaders,
   });
 
-  return await runCompute({
-    device,
-    module,
-    resultFormat,
-    size,
-    dispatchWorkgroups,
-  });
+  return await withErrorScopes(device, () =>
+    runCompute({ device, module, resultFormat, size, dispatchWorkgroups }),
+  );
 }
 
 /**
@@ -123,45 +119,44 @@ export async function runCompute(params: RunComputeParams): Promise<number[]> {
   const { device, module, entryPoint } = params;
   const { resultFormat = "u32", size = defaultResultSize } = params;
   const { dispatchWorkgroups = 1 } = params;
-  return await withErrorScopes(device, async () => {
-    const bgLayout = device.createBindGroupLayout({
-      entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: "storage" },
-        },
-      ],
-    });
 
-    const pipeline = device.createComputePipeline({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [bgLayout] }),
-      compute: { module, entryPoint },
-    });
-
-    const storageBuffer = createStorageBuffer(
-      device,
-      size * elementStride(resultFormat),
-    );
-    const bindGroup = device.createBindGroup({
-      layout: bgLayout,
-      entries: [{ binding: 0, resource: { buffer: storageBuffer } }],
-    });
-
-    const commands = device.createCommandEncoder();
-    const pass = commands.beginComputePass();
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup);
-    if (typeof dispatchWorkgroups === "number") {
-      pass.dispatchWorkgroups(dispatchWorkgroups);
-    } else {
-      pass.dispatchWorkgroups(...dispatchWorkgroups);
-    }
-    pass.end();
-    device.queue.submit([commands.finish()]);
-
-    return await copyBuffer(device, storageBuffer, resultFormat);
+  const bgLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: { type: "storage" },
+      },
+    ],
   });
+
+  const pipeline = device.createComputePipeline({
+    layout: device.createPipelineLayout({ bindGroupLayouts: [bgLayout] }),
+    compute: { module, entryPoint },
+  });
+
+  const storageBuffer = createStorageBuffer(
+    device,
+    size * elementStride(resultFormat),
+  );
+  const bindGroup = device.createBindGroup({
+    layout: bgLayout,
+    entries: [{ binding: 0, resource: { buffer: storageBuffer } }],
+  });
+
+  const commands = device.createCommandEncoder();
+  const pass = commands.beginComputePass();
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+  if (typeof dispatchWorkgroups === "number") {
+    pass.dispatchWorkgroups(dispatchWorkgroups);
+  } else {
+    pass.dispatchWorkgroups(...dispatchWorkgroups);
+  }
+  pass.end();
+  device.queue.submit([commands.finish()]);
+
+  return await copyBuffer(device, storageBuffer, resultFormat);
 }
 
 function createStorageBuffer(device: GPUDevice, targetSize: number): GPUBuffer {
