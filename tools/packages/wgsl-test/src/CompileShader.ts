@@ -1,7 +1,7 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { LinkParams, ModuleResolver, WeslBundle } from "wesl";
-import { CompositeResolver, link, RecordResolver } from "wesl";
+import { CompositeResolver, freshResolver, link, RecordResolver } from "wesl";
 import {
   dependencyBundles,
   FileModuleResolver,
@@ -14,11 +14,12 @@ export interface ShaderContext {
   /** Dependency bundles for the shader. */
   libs: WeslBundle[];
 
-  /** Resolver for lazy loading (when useSourceShaders is true). */
-  resolver?: ModuleResolver;
-
   /** Package name for module resolution. */
   packageName?: string;
+
+  /** File resolver for lazy loading (when useSourceShaders is true).
+   * Shared across compileShader calls; wrapped with freshResolver per call. */
+  fileResolver?: ModuleResolver;
 }
 
 export interface ResolveContextParams {
@@ -74,6 +75,9 @@ export interface CompileShaderParams {
    * Precedence: explicit parameter > TEST_BUNDLES env var > default (true)
    */
   useSourceShaders?: boolean;
+
+  /** Pre-resolved shader context. Skips dependency resolution if provided. */
+  shaderContext?: ShaderContext;
 }
 
 /**
@@ -90,22 +94,20 @@ export async function compileShader(
   params: CompileShaderParams,
 ): Promise<GPUShaderModule> {
   const { device, src, conditions, constants, virtualLibs, libs = [] } = params;
-  const ctx = await resolveShaderContext({
-    src,
-    projectDir: params.projectDir,
-    useSourceShaders: params.useSourceShaders,
-    virtualLibNames: virtualLibs ? Object.keys(virtualLibs) : [],
-  });
+  const ctx =
+    params.shaderContext ??
+    (await resolveShaderContext({
+      src,
+      projectDir: params.projectDir,
+      useSourceShaders: params.useSourceShaders,
+      virtualLibNames: virtualLibs ? Object.keys(virtualLibs) : [],
+    }));
 
-  // Filter out undefined values that can occur when auto-discovery finds packages
-  // that aren't resolvable (e.g., wgsl_test when running tests within wgsl-test itself)
   const allLibs = [...ctx.libs, ...libs].filter(Boolean) as WeslBundle[];
-  let linkParams: Pick<LinkParams, "resolver" | "libs" | "weslSrc">;
-  if (ctx.resolver) {
-    linkParams = { resolver: ctx.resolver, libs: allLibs };
-  } else {
-    linkParams = { weslSrc: { main: src }, libs: allLibs };
-  }
+  const resolver = buildResolver(ctx, src);
+  const linkParams: Pick<LinkParams, "resolver" | "libs" | "weslSrc"> = resolver
+    ? { resolver, libs: allLibs }
+    : { weslSrc: { main: src }, libs: allLibs };
 
   const linked = await link({
     ...linkParams,
@@ -138,11 +140,11 @@ export async function resolveShaderContext(
     virtualLibNames,
   );
 
-  const resolver = useSourceShaders
-    ? await lazyFileResolver(projectDir, src, packageName)
+  const fileResolver = useSourceShaders
+    ? await createProjectResolver(projectDir, packageName)
     : undefined;
 
-  return { libs, resolver, packageName };
+  return { libs, packageName, fileResolver };
 }
 
 /** Create a project resolver for loading modules from the filesystem.
@@ -178,6 +180,20 @@ async function verifyCompilation(module: GPUShaderModule): Promise<void> {
   }
 }
 
+/** Build a fresh resolver from a ShaderContext and main source.
+ * Returns undefined if context has no fileResolver (bundle-only mode). */
+export function buildResolver(
+  ctx: ShaderContext,
+  src: string,
+): ModuleResolver | undefined {
+  if (!ctx.fileResolver) return undefined;
+  const mainResolver = new RecordResolver(
+    { main: src },
+    { packageName: ctx.packageName },
+  );
+  return freshResolver(new CompositeResolver([mainResolver, ctx.fileResolver]));
+}
+
 /** Read package name from package.json, normalized for WGSL identifiers. */
 async function getPackageName(projectDir: string): Promise<string | undefined> {
   try {
@@ -187,16 +203,4 @@ async function getPackageName(projectDir: string): Promise<string | undefined> {
   } catch {
     return undefined;
   }
-}
-
-/** Create a lazy resolver that loads local shaders on-demand from the filesystem.
- * Laziness allows testing without rebuilding the current package after edits. */
-async function lazyFileResolver(
-  projectDir: string,
-  mainSrc: string,
-  packageName: string | undefined,
-): Promise<CompositeResolver> {
-  const mainResolver = new RecordResolver({ main: mainSrc }, { packageName });
-  const fileResolver = await createProjectResolver(projectDir, packageName);
-  return new CompositeResolver([mainResolver, fileResolver]);
 }

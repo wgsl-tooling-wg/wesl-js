@@ -6,7 +6,7 @@ import {
   runFragment as runFragmentCore,
   type WeslOptions,
 } from "wesl-gpu";
-import { resolveShaderContext } from "./CompileShader.ts";
+import { buildResolver, resolveShaderContext } from "./CompileShader.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 import { importImageSnapshot, importVitest } from "./VitestImport.ts";
 
@@ -130,12 +130,13 @@ async function runFragment(params: FragmentTestParams): Promise<number[]> {
     virtualLibNames: ["env"],
   });
 
-  // Use shared runFragment with resolved source and context
+  const resolver = params.resolver ?? buildResolver(ctx, fragmentSrc);
+
   return runFragmentCore({
     ...params,
     src: fragmentSrc,
     libs: params.libs ?? ctx.libs,
-    resolver: params.resolver ?? ctx.resolver,
+    resolver,
     packageName: params.packageName ?? ctx.packageName,
   });
 }

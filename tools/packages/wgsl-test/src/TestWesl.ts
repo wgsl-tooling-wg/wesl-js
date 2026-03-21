@@ -1,13 +1,13 @@
 import { type LinkParams, parseSrcModule } from "wesl";
 import weslBundle from "../lib/weslBundle.js";
-import { compileShader } from "./CompileShader.ts";
+import {
+  compileShader,
+  resolveShaderContext,
+  type ShaderContext,
+} from "./CompileShader.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 import { type ComputeTestParams, runCompute } from "./TestComputeShader.ts";
-import {
-  findTestFunctions,
-  type TestFunctionInfo,
-  testDisplayName,
-} from "./TestDiscovery.ts";
+import { findTestFunctions, testDisplayName } from "./TestDiscovery.ts";
 
 /** Size of TestResult struct in bytes (u32 + u32 + padding + vec4f + vec4f = 48). */
 const testResultSize = 48;
@@ -34,15 +34,13 @@ export interface TestResult {
 /** Parameters for testWesl() which registers all @test functions with vitest. */
 export type TestWeslParams = Omit<RunWeslParams, "testName">;
 
-/** Internal params for executing one @test function as a compute shader. */
-interface RunSingleTestParams {
-  testFn: TestFunctionInfo;
+/** Shared params for all tests in a file. */
+interface TestFileParams {
   shaderSrc: string;
-  projectDir?: string;
+  shaderContext: ShaderContext;
   device: GPUDevice;
   conditions?: LinkParams["conditions"];
   constants?: LinkParams["constants"];
-  useSourceShaders?: boolean;
 }
 
 /** Parsed WESL source with its AST for test discovery. */
@@ -90,16 +88,21 @@ export async function expectWesl(params: RunWeslParams): Promise<void> {
  * Each test function is wrapped in a compute shader and dispatched.
  * Returns results for all tests.
  */
-export async function runWesl(params: RunWeslParams): Promise<TestResult[]> {
-  const { testName } = params;
-  const { shaderSrc, ast } = await parseTestModule(params);
+export async function runWesl(runParams: RunWeslParams): Promise<TestResult[]> {
+  const { testName, device, conditions, constants } = runParams;
+  const { shaderSrc, ast } = await parseTestModule(runParams);
   let testFns = findTestFunctions(ast);
   if (testName) {
     testFns = testFns.filter(t => t.name === testName);
   }
-  return Promise.all(
-    testFns.map(testFn => runSingleTest({ testFn, shaderSrc, ...params })),
-  );
+  const shaderContext = await resolveShaderContext({
+    src: shaderSrc,
+    projectDir: runParams.projectDir,
+    useSourceShaders: runParams.useSourceShaders,
+  });
+  const params = { shaderSrc, shaderContext, device, conditions, constants };
+  const results = testFns.map(testFn => runSingleTest(testFn, params));
+  return Promise.all(results);
 }
 
 /** Load and parse a WESL module to extract @test functions. */
@@ -120,10 +123,11 @@ async function parseTestModule(params: {
 }
 
 /** Wrap a @test function in a compute shader, dispatch it, and return results. */
-async function runSingleTest(params: RunSingleTestParams): Promise<TestResult> {
-  const { testFn, shaderSrc, device, ...rest } = params;
-  // Generate wrapper that calls the test function
-  // Call initTestResult() function to initialize the result buffer
+async function runSingleTest(
+  testFn: ReturnType<typeof findTestFunctions>[number],
+  params: TestFileParams,
+): Promise<TestResult> {
+  const { shaderSrc, shaderContext, device, conditions, constants } = params;
   const wrapper = `
 import wgsl_test::TestResult::initTestResult;
 
@@ -136,10 +140,12 @@ fn _weslTestEntry() {
 }
 `;
   const module = await compileShader({
-    ...rest,
     device,
     src: wrapper,
     libs: [weslBundle],
+    shaderContext,
+    conditions,
+    constants,
   });
 
   const resultElems = testResultSize / 4; // 48 bytes / 4 bytes per u32 = 12
