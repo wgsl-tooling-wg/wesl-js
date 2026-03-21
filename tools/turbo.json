@@ -16,6 +16,11 @@
     "bench": {},
     "bench:validate": {},
 
+    "wesl-rand#build": { "dependsOn": ["random_wgsl#build"] },
+    "wesl-vite#build": { "dependsOn": ["random_wgsl#build"] },
+    "wesl-vite-minimal#build": { "dependsOn": ["random_wgsl#build"] },
+    "wesl-plugin#test": { "dependsOn": ["random_wgsl#build"] },
+
     "//#fix:biome": {},
     "//#fix:pkgJsonFormat": {},
     "//#fix:syncpack": {},

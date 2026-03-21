@@ -59,6 +59,7 @@
     "chalk": "^5.4.1",
     "import-meta-resolve": "^4.1.0",
     "nodemon": "^3.1.10",
+    "random_wgsl": "workspace:x",
     "rollup": "^4.44.1",
     "toml": "^3.0.0",
     "webpack": "^5.99.9",

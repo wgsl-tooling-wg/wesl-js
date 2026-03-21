@@ -593,6 +593,9 @@ importers:
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
+      random_wgsl:
+        specifier: workspace:x
+        version: link:../random_wgsl
       rollup:
         specifier: ^4.44.1
         version: 4.44.1
