@@ -69,7 +69,8 @@ export async function testFromCase(
 
 /** For afterAll(): verify all shared test suite cases are covered. */
 export function verifyCaseCoverage(caseList: WgslTestSrc[]) {
-  return (suite: RunnerTestSuite) => {
+  // biome-ignore lint/correctness/noEmptyPattern: vitest 4 requires destructuring for 1st arg
+  return ({}: object, suite: RunnerTestSuite) => {
     const testNames = new Set(suite.tasks.map(t => t.name));
     const missing = caseList
       .map(c => c.name)
