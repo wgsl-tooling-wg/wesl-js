@@ -1,5 +1,4 @@
-import { expect } from "vitest";
-import { getCurrentTest } from "vitest/suite";
+import { expect, TestRunner } from "vitest";
 import {
   type ComparisonOptions,
   compareImages,
@@ -78,7 +77,7 @@ async function toMatchImage(
 
   // Store failure metadata for reporter
   if (!comparison.pass) {
-    const currentTest = getCurrentTest();
+    const currentTest = TestRunner.getCurrentTest();
     if (currentTest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (currentTest.meta as any).imageSnapshotFailure = {
