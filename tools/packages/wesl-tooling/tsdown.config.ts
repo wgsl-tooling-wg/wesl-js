@@ -6,15 +6,17 @@ export default defineConfig({
   clean: true,
   dts: true,
   platform: "neutral",
-  external: [
-    "wesl",
-    "glob",
-    "import-meta-resolve",
-    "toml",
-    "node:fs",
-    "node:fs/promises",
-    "node:path",
-    "node:url",
-  ],
+  deps: {
+    neverBundle: [
+      "wesl",
+      "glob",
+      "import-meta-resolve",
+      "toml",
+      "node:fs",
+      "node:fs/promises",
+      "node:path",
+      "node:url",
+    ],
+  },
   logLevel: "warn",
 });

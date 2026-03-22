@@ -5,5 +5,5 @@ export default defineConfig({
   target: "es2024",
   clean: true,
   platform: "browser",
-  external: ["wesl"],
+  deps: { neverBundle: ["wesl"] },
 });

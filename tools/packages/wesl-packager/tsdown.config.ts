@@ -8,13 +8,15 @@ export default defineConfig({
   dts: false,
   sourcemap: true,
   platform: "node",
-  external: [
-    "@biomejs/js-api",
-    "@biomejs/wasm-nodejs",
-    "wesl",
-    "wesl-tooling",
-    "yargs",
-    "yargs/helpers",
-  ],
+  deps: {
+    neverBundle: [
+      "@biomejs/js-api",
+      "@biomejs/wasm-nodejs",
+      "wesl",
+      "wesl-tooling",
+      "yargs",
+      "yargs/helpers",
+    ],
+  },
   logLevel: "warn",
 });

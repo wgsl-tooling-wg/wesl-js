@@ -6,6 +6,6 @@ export default defineConfig({
   clean: true,
   dts: true,
   platform: "browser",
-  external: ["wesl", "thimbleberry"],
+  deps: { neverBundle: ["wesl", "thimbleberry"] },
   logLevel: "warn",
 });

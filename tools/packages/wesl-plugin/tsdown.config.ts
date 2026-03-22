@@ -6,7 +6,6 @@ export default defineConfig({
   format: ["esm"],
   dts: true,
   target: "node22",
-  external: ["wesl", "unplugin"],
-  inlineOnly: false,
+  deps: { neverBundle: ["wesl", "unplugin"], onlyBundle: false },
   logLevel: "warn",
 });

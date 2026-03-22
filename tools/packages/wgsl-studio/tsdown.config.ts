@@ -7,9 +7,11 @@ export default defineConfig([
     clean: true,
     format: ["esm"],
     target: "node22",
-    external: ["vscode", "webgpu"],
-    noExternal: [/.*/], // bundle workspace deps for vsce
-    inlineOnly: false,
+    deps: {
+      neverBundle: ["vscode", "webgpu"],
+      alwaysBundle: [/.*/], // bundle workspace deps for vsce
+      onlyBundle: false,
+    },
     outDir: "dist",
     logLevel: "warn",
   },
@@ -21,8 +23,10 @@ export default defineConfig([
     platform: "browser",
     outDir: "dist/webview",
     logLevel: "warn",
-    noExternal: [/.*/], // bundle everything for browser context
-    inlineOnly: false,
+    deps: {
+      alwaysBundle: [/.*/], // bundle everything for browser context
+      onlyBundle: false,
+    },
     plugins: [rawImports()],
   },
   {
@@ -31,9 +35,11 @@ export default defineConfig([
     clean: false,
     format: ["esm"],
     target: "node22",
-    external: ["webgpu"],
-    noExternal: [/.*/],
-    inlineOnly: false,
+    deps: {
+      neverBundle: ["webgpu"],
+      alwaysBundle: [/.*/],
+      onlyBundle: false,
+    },
     outDir: "dist",
     logLevel: "warn",
   },
@@ -42,7 +48,7 @@ export default defineConfig([
     clean: false,
     format: ["cjs"], // mocha requires cjs
     target: "node22",
-    external: ["vscode", "mocha"],
+    deps: { neverBundle: ["vscode", "mocha"] },
     outDir: "dist/test",
     logLevel: "warn",
   },

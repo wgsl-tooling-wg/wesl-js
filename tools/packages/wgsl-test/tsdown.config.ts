@@ -1,6 +1,6 @@
 import { defineConfig } from "tsdown";
 
-const sharedExternal = [
+const sharedNeverBundle = [
   "../lib/weslBundle.js",
   "fs",
   "module",
@@ -30,7 +30,9 @@ export default defineConfig([
     dts: true,
     sourcemap: true,
     platform: "neutral",
-    external: [...sharedExternal, "wesl", "wesl-gpu", "wesl-tooling"],
+    deps: {
+      neverBundle: [...sharedNeverBundle, "wesl", "wesl-gpu", "wesl-tooling"],
+    },
     logLevel: "warn",
   },
   {
@@ -40,9 +42,11 @@ export default defineConfig([
     clean: false,
     sourcemap: true,
     platform: "neutral",
-    external: sharedExternal,
-    noExternal: [/.*/], // bundle workspace deps (wesl, wesl-gpu, wesl-tooling)
-    inlineOnly: false,
+    deps: {
+      neverBundle: sharedNeverBundle,
+      alwaysBundle: [/.*/], // bundle workspace deps (wesl, wesl-gpu, wesl-tooling)
+      onlyBundle: false,
+    },
     logLevel: "warn",
   },
 ]);

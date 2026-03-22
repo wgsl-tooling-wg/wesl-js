@@ -6,16 +6,18 @@ export default defineConfig({
   clean: true,
   dts: true,
   platform: "neutral",
-  external: [
-    "node:child_process",
-    "node:fs",
-    "node:fs/promises",
-    "node:http",
-    "node:path",
-    "node:url",
-    "vitest",
-    "vitest/node",
-  ],
+  deps: {
+    neverBundle: [
+      "node:child_process",
+      "node:fs",
+      "node:fs/promises",
+      "node:http",
+      "node:path",
+      "node:url",
+      "vitest",
+      "vitest/node",
+    ],
+  },
   logLevel: "warn",
   copy: "src/templates",
 });

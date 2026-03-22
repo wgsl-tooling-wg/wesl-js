@@ -8,12 +8,14 @@ export default defineConfig({
   dts: false,
   sourcemap: true,
   platform: "node",
-  external: [
-    "import-meta-resolve",
-    "wesl",
-    "wesl-tooling",
-    "yargs",
-    "yargs/helpers",
-  ],
+  deps: {
+    neverBundle: [
+      "import-meta-resolve",
+      "wesl",
+      "wesl-tooling",
+      "yargs",
+      "yargs/helpers",
+    ],
+  },
   logLevel: "warn",
 });
