@@ -3,8 +3,8 @@
   "private": true,
   "exports": {
     ".": {
-      "import": "./dist/weslBundle.js",
-      "types": "./dist/weslBundle.d.ts"
+      "types": "./dist/weslBundle.d.ts",
+      "import": "./dist/weslBundle.js"
     }
   }
 }
