@@ -32,14 +32,11 @@ jobs:
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: tools
-        
+
       - name: Run CI checks (macOS)
         if: matrix.os == 'macos-latest'
         run: pnpm ci:check
-        working-directory: tools
-        
+
       - name: Run CI checks (Windows)
         if: matrix.os == 'windows-latest'
         run: pnpm ci:check-windows
-        working-directory: tools

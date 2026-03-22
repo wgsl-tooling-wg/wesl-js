@@ -1,0 +1,35 @@
+{
+  "name": "built-test",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prep:packed": "node scripts/setup-built.mts",
+    "prep:packed:fast": "node scripts/setup-built.mts --skip-build",
+    "test": "vitest --hideSkippedTests",
+    "test:built": "run-s prep:packed test:test-packed-version",
+    "test:built:fast": "run-s prep:packed:fast test:test-packed-version",
+    "test:once": "vitest run",
+    "test:test-packed-version": "cd ../../temp-built-test && pnpm vitest run",
+    "typecheck": "tsgo"
+  },
+  "dependencies": {
+    "wesl": "workspace:*",
+    "wesl-gpu": "workspace:*",
+    "wesl-link": "workspace:*",
+    "wesl-packager": "workspace:*",
+    "wesl-tooling": "workspace:*",
+    "wgsl-edit": "workspace:*",
+    "wgsl-play": "workspace:*",
+    "wgsl-test": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@typescript/native-preview": "7.0.0-dev.20260321.1",
+    "@webgpu/types": "^0.1.69",
+    "npm-run-all": "^4.1.5",
+    "vite": "^8.0.1",
+    "vitest": "^4.1.0",
+    "vitest-image-snapshot": "workspace:x",
+    "wesl-plugin": "workspace:x"
+  }
+}

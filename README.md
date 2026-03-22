@@ -13,7 +13,7 @@
 
 Using WESL with a bundler plugin is **the recommended experience**. 
 
-[Get started with wesl-plugin](/tools/packages/wesl-plugin#wesl-plugin).
+[Get started with wesl-plugin](/packages/wesl-plugin#wesl-plugin).
 
 ```sh
 npm install wesl
@@ -24,7 +24,7 @@ npm install -D wesl-plugin
 
 To use WESL as a library, use the `link` API.
 
-[Get started with vanilla WESL](/tools/packages/wesl#wesl).
+[Get started with vanilla WESL](/packages/wesl#wesl).
 
 ```sh
 npm install wesl
@@ -41,14 +41,14 @@ npm install wesl
 
 Do you only want to link a few .wgsl files together, and do not need libraries?
 
-[Check out the CLI](/tools/packages/wesl-link/)
+[Check out the CLI](/packages/wesl-link/)
 
 
 ## Packaging your own
 
 Want to publish your WESL library?
 
-[Use our packaging tool](/tools/packages/wesl-packager/)
+[Use our packaging tool](/packages/wesl-packager/)
 
 ## wesl-rs
 

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.8/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -8,14 +8,21 @@
   "files": {
     "ignoreUnknown": false,
     "includes": [
-      "**/tools/**",
+      "packages/**",
+      "examples/**",
+      "config/**",
+      "bin/**",
+      "scripts/**",
       "**/package.json",
       "**/biome.jsonc",
+      "*.ts",
+      "*.mts",
       "!**/assets",
       "!**/dist",
+      "!**/.claude/**/*",
       "!**/.vscode/**/*",
       "!**/lezer-wesl/src/parser.*",
-      "!**/tests/fixtures/**"
+      "!**/tests/fixtures"
     ]
   },
   "formatter": {
@@ -116,7 +123,13 @@
       }
     },
     {
-      "includes": ["**/wgsl-edit/**", "**/wgsl-play/**", "**/lezer-wesl/**", "**/benchforge/**", "**/wesl-bench/**"],
+      "includes": [
+        "**/wgsl-edit/**",
+        "**/wgsl-play/**",
+        "**/lezer-wesl/**",
+        "**/benchforge/**",
+        "**/wesl-bench/**"
+      ],
       "linter": {
         "rules": {
           "complexity": {

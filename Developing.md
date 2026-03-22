@@ -8,10 +8,6 @@ included as git submodules.
 We recommend setting `git config submodule.recurse true` for this project,
 to make working with Git submodules easier.
 
-## 
-
-The main wesl tools are in the /tools directory.
-
 ### Install packages:
 
 ```sh
@@ -21,7 +17,7 @@ pnpm install
 
 ### Scripts
 
-See `wesl-js/tools/package.json` for scripts you can run. 
+See `wesl-js/package.json` for scripts you can run.
 
 This is the most common one:
 
@@ -30,8 +26,6 @@ pnpm test
 ```
 
 If it fails with a `Error [ERR_MODULE_NOT_FOUND]:`, try doing `pnpm run build:all` first.
-
-Wallaby is also available for most tests, use the configuration in `wesl-js/wallaby.js`
 
 ### wesl tool packages
 
@@ -50,9 +44,9 @@ Supporting sources for tests are available as subprojects in the
 `/wesl-testsuite` directory.
 
 ## bb script
-the script `tools/bin/bb` is convenient way to run package
-scripts from any directory within the project. 
-- soft link bb your `PATH, e.g. as `~/bin/bb` (if `~/bin` is in your PATH). 
-- Then you can run bb instead of any pnpm script. 
-And you can tools/package.json scripts from any directory.
-- `bb fix:all` (instead of `cd ../../tools; pnpm fix:all`)
+the script `bin/bb` is convenient way to run package
+scripts from any directory within the project.
+- soft link bb to your `PATH`, e.g. as `~/bin/bb` (if `~/bin` is in your PATH).
+- Then you can run bb instead of any pnpm script.
+And you can run package.json scripts from any directory.
+- `bb fix:all` (instead of `cd ../..; pnpm fix:all`)

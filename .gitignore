@@ -10,14 +10,28 @@
 # typescript build info cache files 
 *.tsbuildinfo
 
-# ignore node_modules when switching to pre-monorepo branches
+# dependency packages
 node_modules
+
+# bundled release
+dist
+site
 
 # vite temp files
 vite.config.ts.timestamp-*.mjs
 
-# previous rev of tools for benchmark comparisons
+# previous rev for benchmark comparisons
 _baseline
+
+# Image test outputs
+__image_diff_report__/
+
+# Playwright test artifacts
+playwright-report/
+test-results/
+
+# Benchmark reports
+bench-report/
 
 # test built packages
 /temp-built-test/

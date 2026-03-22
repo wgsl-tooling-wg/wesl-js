@@ -1,6 +1,0 @@
-{
-  "exec": "pnpm typecheck:all",
-  "watch": ["tsconfig.*", "tools/"],
-  "ignore": ["**/node_modules/**", "**/dist/**", "_backup/**", "**/.*/**"],
-  "ext": "ts,js,json"
-}
