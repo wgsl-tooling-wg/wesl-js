@@ -13,7 +13,9 @@
     "build:demo": "vite build --config vite.config.ts demo",
     "deploy": "pnpm build:demo && pnpx wrangler pages deploy --project-name wgsl-edit --branch main site",
     "dev": "vite demo",
+    "dev:test": "vite test-page --config vite.config.ts",
     "prepublishOnly": "run-s build",
+    "test:e2e": "playwright test",
     "typecheck": "tsgo"
   },
   "publishConfig": {
@@ -61,6 +63,7 @@
     "wesl-fetch": "workspace:*"
   },
   "devDependencies": {
+    "@playwright/test": "^1.53.2",
     "open": "^10.0.0",
     "vite": "^8.0.1",
     "wgsl-play": "workspace:x",

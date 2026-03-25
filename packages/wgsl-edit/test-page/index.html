@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wgsl-edit e2e test</title>
+  <style>
+    body { margin: 20px; background: #1a1a1a; color: #e0e0e0; font-family: sans-serif; }
+    wgsl-edit { height: 120px; display: block; margin-bottom: 20px; }
+    .section { margin-bottom: 30px; padding: 15px; background: #2a2a2a; border-radius: 8px; }
+    h3 { margin-top: 0; }
+  </style>
+</head>
+<body>
+  <h2>wgsl-edit e2e tests</h2>
+
+  <!-- 1. GPU lint: type mismatch should produce a diagnostic -->
+  <div class="section">
+    <h3>1. GPU lint (type error)</h3>
+    <wgsl-edit id="editor1">
+      <script type="text/wesl">
+@fragment
+fn main() -> @location(0) vec4f {
+  let x: f32 = 1u;
+  return vec4f(x, 0.0, 0.0, 1.0);
+}
+      </script>
+    </wgsl-edit>
+  </div>
+
+  <!-- 2. GPU lint: valid shader, no diagnostics expected -->
+  <div class="section">
+    <h3>2. GPU lint (valid)</h3>
+    <wgsl-edit id="editor2">
+      <script type="text/wesl">
+@fragment fn main() -> @location(0) vec4f {
+  return vec4f(1.0, 0.0, 0.0, 1.0);
+}
+      </script>
+    </wgsl-edit>
+  </div>
+
+  <!-- 3. WESL lint: unresolved identifier -->
+  <div class="section">
+    <h3>3. WESL lint (unresolved ident)</h3>
+    <wgsl-edit id="editor3">
+      <script type="text/wesl">
+fn main() {
+  let x = nonexistent;
+}
+      </script>
+    </wgsl-edit>
+  </div>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

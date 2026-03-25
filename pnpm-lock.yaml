@@ -759,6 +759,9 @@ importers:
         specifier: workspace:*
         version: link:../wesl-fetch
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.53.2
+        version: 1.53.2
       open:
         specifier: ^10.0.0
         version: 10.2.0
