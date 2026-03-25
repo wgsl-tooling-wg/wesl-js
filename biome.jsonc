@@ -21,6 +21,10 @@
       "!**/dist",
       "!**/.claude/**/*",
       "!**/.vscode/**/*",
+      "!**/CLAUDE.md",
+      "!**/AGENTS.md",
+      "!**/GEMINI.md",
+      "!**/clank",
       "!**/lezer-wesl/src/parser.*",
       "!**/tests/fixtures"
     ]
