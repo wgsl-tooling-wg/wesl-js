@@ -91,6 +91,17 @@ export interface LinkParams {
   mangler?: ManglerFn;
 }
 
+/** Project config for web components and tools. */
+export type WeslProject = Pick<
+  LinkParams,
+  | "weslSrc"
+  | "rootModuleName"
+  | "conditions"
+  | "constants"
+  | "libs"
+  | "packageName"
+>;
+
 /** Generate a virtual WESL module based on a set of conditions. */
 export type VirtualLibraryFn = (conditions: Conditions) => string;
 
