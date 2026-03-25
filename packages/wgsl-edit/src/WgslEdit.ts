@@ -43,20 +43,11 @@ import {
   type LinkParams,
   link,
   type WeslBundle,
+  type WeslProject,
 } from "wesl";
 import { fetchPackagesByName } from "wesl-fetch";
 import { createWeslLinter, wesl } from "./Language.ts";
 import cssText from "./WgslEdit.css?inline";
-
-export type WeslProject = Pick<
-  LinkParams,
-  | "weslSrc"
-  | "rootModuleName"
-  | "conditions"
-  | "constants"
-  | "libs"
-  | "packageName"
->;
 
 type Theme = "light" | "dark" | "auto";
 
@@ -122,6 +113,7 @@ export class WgslEdit extends HTMLElement {
     "lint-from",
     "line-numbers",
     "fetch-libs",
+    "gpu-lint",
   ];
 
   private editorView: EditorView | null = null;
@@ -142,8 +134,10 @@ export class WgslEdit extends HTMLElement {
   private _rootModuleName: string | undefined;
   private _tabs = true;
   private _lint: LintMode = "on";
+  private _gpuLint = true;
   private _fetchLibs = true;
   private _conditions: Conditions = {};
+  private _constants: Record<string, string | number> | undefined;
   private _packageName: string | undefined;
   private _libs: WeslBundle[] = [];
   private _ignorePackages: string[] = ["constants", "env"];
@@ -215,6 +209,9 @@ export class WgslEdit extends HTMLElement {
     } else if (name === "fetch-libs") {
       this._fetchLibs = value !== "false";
       this.updateLint();
+    } else if (name === "gpu-lint") {
+      this._gpuLint = value !== "off";
+      this.updateLint();
     }
   }
 
@@ -274,10 +271,22 @@ export class WgslEdit extends HTMLElement {
     this.renderTabs();
   }
 
-  /** Load a full project config (sources, conditions, packageName, etc.). */
+  get project(): WeslProject {
+    return {
+      weslSrc: this.sources,
+      rootModuleName: this._rootModuleName,
+      conditions: this._conditions,
+      constants: this._constants,
+      libs: this._libs,
+      packageName: this._packageName,
+    };
+  }
+
   set project(value: WeslProject) {
-    const { weslSrc, rootModuleName, conditions, packageName, libs } = value;
+    const { weslSrc, rootModuleName, conditions } = value;
+    const { constants, packageName, libs } = value;
     if (conditions !== undefined) this._conditions = conditions;
+    if (constants !== undefined) this._constants = constants;
     if (packageName !== undefined) this._packageName = packageName;
     if (libs !== undefined) this._libs = libs;
     if (rootModuleName !== undefined) this._rootModuleName = rootModuleName;
@@ -292,21 +301,23 @@ export class WgslEdit extends HTMLElement {
 
   /** Link/compile WESL sources into WGSL. Returns the compiled WGSL string. */
   async link(options?: Partial<LinkParams>): Promise<string> {
-    const pkg = this._packageName ?? "package";
-    const rootModuleName =
-      this._rootModuleName ?? fileToModulePath(this._activeFile, pkg, false);
-    const linked = await link({
-      weslSrc: this.sources,
-      rootModuleName,
-      conditions: this._conditions,
-      libs: this._libs,
-      packageName: pkg,
-      ...options,
-    });
+    const linked = await link({ ...this.linkParams(), ...options });
     return linked.dest;
   }
 
-  /** Library bundles for linking (set via project). */
+  private linkParams(): LinkParams {
+    const pkg = this._packageName ?? "package";
+    return {
+      weslSrc: this.sources,
+      rootModuleName:
+        this._rootModuleName ?? fileToModulePath(this._activeFile, pkg, false),
+      conditions: this._conditions,
+      constants: this._constants,
+      libs: this._libs,
+      packageName: pkg,
+    };
+  }
+
   get libs(): WeslBundle[] {
     return this._libs;
   }
@@ -321,22 +332,18 @@ export class WgslEdit extends HTMLElement {
     this.dispatchChange();
   }
 
-  /** Currently active file name (selected tab). */
   get activeFile(): string {
     return this._activeFile;
   }
 
-  /** Switch to a file by name. */
   set activeFile(name: string) {
     this.switchToFile(name);
   }
 
-  /** List of file names in order. */
   get fileNames(): string[] {
     return Array.from(this._files.keys());
   }
 
-  /** Tab bar visibility. */
   get tabs(): boolean {
     return this._tabs;
   }
@@ -367,6 +374,17 @@ export class WgslEdit extends HTMLElement {
     else this.removeAttribute("line-numbers");
   }
 
+  /** GPU validation of linked WGSL (default: true). Set to false to disable. */
+  get gpuLint(): boolean {
+    return this._gpuLint;
+  }
+
+  set gpuLint(value: boolean) {
+    this._gpuLint = value;
+    if (!value) this.setAttribute("gpu-lint", "off");
+    else this.removeAttribute("gpu-lint");
+  }
+
   /** Whether to auto-fetch missing library packages from npm (default: true). */
   get fetchLibs(): boolean {
     return this._fetchLibs;
@@ -378,7 +396,6 @@ export class WgslEdit extends HTMLElement {
     else this.setAttribute("fetch-libs", "false");
   }
 
-  /** Whether the editor is currently loading content. */
   get loading(): boolean {
     return this.snackbar.classList.contains("visible");
   }
@@ -429,7 +446,6 @@ export class WgslEdit extends HTMLElement {
     else this.removeAttribute("shader-root");
   }
 
-  /** Add a new file. */
   addFile(name: string, content = ""): void {
     if (this._files.has(name)) return;
     this._files.set(name, { doc: Text.of(content.split("\n")) });
@@ -438,7 +454,6 @@ export class WgslEdit extends HTMLElement {
     this.dispatchFileChange("add", name);
   }
 
-  /** Remove a file. */
   removeFile(name: string): void {
     if (!this._files.has(name) || this._files.size <= 1) return;
     this._files.delete(name);
@@ -450,7 +465,6 @@ export class WgslEdit extends HTMLElement {
     this.dispatchFileChange("remove", name);
   }
 
-  /** Rename a file. */
   renameFile(oldName: string, newName: string): void {
     const state = this._files.get(oldName);
     if (!state || this._files.has(newName)) return;
@@ -481,33 +495,24 @@ export class WgslEdit extends HTMLElement {
     this.renderTabs();
   }
 
-  /** Save current editor state to the active file. */
   private saveCurrentFileState(): void {
-    if (!this.editorView || !this._activeFile) return;
-    const state = this._files.get(this._activeFile);
-    if (state) {
-      state.doc = this.editorView.state.doc;
-      state.selection = this.editorView.state.selection;
-      state.scrollPos = this.editorView.scrollDOM.scrollTop;
-    }
+    const view = this.editorView;
+    const state = this._activeFile
+      ? this._files.get(this._activeFile)
+      : undefined;
+    if (!view || !state) return;
+    state.doc = view.state.doc;
+    state.selection = view.state.selection;
+    state.scrollPos = view.scrollDOM.scrollTop;
   }
 
   private dispatchChange(): void {
-    const {
-      source,
-      sources,
-      conditions,
-      _rootModuleName: rootModuleName,
-      libs,
-    } = this;
-    const detail = { source, sources, rootModuleName, conditions, libs };
-    this.dispatchEvent(new CustomEvent("change", { detail }));
+    this.dispatchEvent(new CustomEvent("change", { detail: this.project }));
   }
 
   private dispatchFileChange(action: string, file: string): void {
-    this.dispatchEvent(
-      new CustomEvent("file-change", { detail: { action, file } }),
-    );
+    const detail = { action, file };
+    this.dispatchEvent(new CustomEvent("file-change", { detail }));
   }
 
   private initEditor(): void {
@@ -529,11 +534,8 @@ export class WgslEdit extends HTMLElement {
       this._activeFile = "main.wesl";
     }
 
-    const state = EditorState.create({
-      doc: initialDoc,
-      extensions: this.buildExtensions(),
-    });
-
+    const extensions = this.buildExtensions();
+    const state = EditorState.create({ doc: initialDoc, extensions });
     this.editorView = new EditorView({ state, parent: this.editorContainer });
     this.renderTabs();
   }
@@ -619,16 +621,16 @@ export class WgslEdit extends HTMLElement {
   }
 
   private updateReadonly(): void {
+    const ext = EditorState.readOnly.of(this.readonly);
     this.editorView?.dispatch({
-      effects: this.readonlyCompartment.reconfigure(
-        EditorState.readOnly.of(this.readonly),
-      ),
+      effects: this.readonlyCompartment.reconfigure(ext),
     });
     this.renderTabs();
   }
 
   private resolveLint() {
     if (this._lint === "off") return [];
+    const useGpuLint = this._gpuLint && !this._lintFromEl;
     return createWeslLinter({
       getSources: () => this.sources,
       rootModule: () =>
@@ -645,14 +647,23 @@ export class WgslEdit extends HTMLElement {
         ? pkgs => this.fetchLibsOnDemand(pkgs)
         : undefined,
       ignorePackages: () => this._ignorePackages,
+      gpuValidate: useGpuLint ? () => this.gpuValidate() : undefined,
     });
   }
 
+  /** Link WESL->WGSL and validate via WebGPU, returning CodeMirror diagnostics. */
+  private async gpuValidate(): Promise<Diagnostic[]> {
+    const { validateWgsl } = await import("./GpuValidator.ts");
+    const params = this.linkParams();
+    const linked = await link(params);
+    const messages = await validateWgsl(linked.dest);
+    const pkg = params.packageName ?? "package";
+    return mapGpuDiagnostics(messages, linked, this._activeFile, pkg);
+  }
+
   /** Fetch missing library packages, deduplicating in-flight requests. */
-  private async fetchLibsOnDemand(
-    packageNames: string[],
-  ): Promise<WeslBundle[]> {
-    const needed = packageNames.filter(
+  private async fetchLibsOnDemand(names: string[]): Promise<WeslBundle[]> {
+    const needed = names.filter(
       n => !this._fetchedPkgs.has(n) && !this._fetchingPkgs.has(n),
     );
     if (needed.length === 0) return [];
@@ -686,6 +697,7 @@ export class WgslEdit extends HTMLElement {
 
   /** Listen for compile-error/compile-success events from a lint source element. */
   private connectLintSource(id: string | null): void {
+    const hadExternal = !!this._lintFromEl;
     if (this._lintFromEl) {
       this._lintFromEl.removeEventListener(
         "compile-error",
@@ -698,13 +710,15 @@ export class WgslEdit extends HTMLElement {
       this._lintFromEl = null;
     }
     this._externalDiagnostics = [];
-    if (!id) return;
+    const el = id ? document.getElementById(id) : null;
+    if (el) {
+      this._lintFromEl = el;
+      el.addEventListener("compile-error", this._boundCompileError);
+      el.addEventListener("compile-success", this._boundCompileSuccess);
+    }
 
-    const el = document.getElementById(id);
-    if (!el) return;
-    this._lintFromEl = el;
-    el.addEventListener("compile-error", this._boundCompileError);
-    el.addEventListener("compile-success", this._boundCompileSuccess);
+    // Reconfigure lint when external source changes (toggles internal GPU lint)
+    if (hadExternal !== !!this._lintFromEl) this.updateLint();
   }
 
   private onCompileError(e: Event): void {
@@ -748,23 +762,18 @@ export class WgslEdit extends HTMLElement {
   }
 
   private updateLineNumbers(): void {
+    const ext = this.resolveLineNumbers();
     this.editorView?.dispatch({
-      effects: this.lineNumbersCompartment.reconfigure(
-        this.resolveLineNumbers(),
-      ),
+      effects: this.lineNumbersCompartment.reconfigure(ext),
     });
   }
 
   /** Parse script tags into _files. Supports single or multi-file via data-name. */
   private parseInlineContent(): void {
-    const scripts = Array.from(
-      this.querySelectorAll(
-        'script[type="text/wgsl"], script[type="text/wesl"]',
-      ),
-    );
+    const sel = 'script[type="text/wgsl"], script[type="text/wesl"]';
+    const scripts = Array.from(this.querySelectorAll(sel));
 
     if (scripts.length === 0) {
-      // Fallback to textContent
       const content = this.textContent?.trim() ?? "";
       if (content)
         this._files.set("main.wesl", { doc: Text.of(content.split("\n")) });
@@ -778,7 +787,6 @@ export class WgslEdit extends HTMLElement {
     }
   }
 
-  /** Render tab bar based on files and visibility mode. */
   private renderTabs(): void {
     this.tabBar.style.display = this._tabs ? "flex" : "none";
     if (!this._tabs) return;
@@ -790,7 +798,6 @@ export class WgslEdit extends HTMLElement {
     if (!this.readonly) this.tabBar.appendChild(this.createAddButton());
   }
 
-  /** Create a tab button for a file. */
   private createTab(name: string): HTMLButtonElement {
     const tab = document.createElement("button");
     tab.className = "tab" + (name === this._activeFile ? " active" : "");
@@ -821,7 +828,6 @@ export class WgslEdit extends HTMLElement {
     return tab;
   }
 
-  /** Create the "+" button for adding new files. */
   private createAddButton(): HTMLButtonElement {
     const btn = document.createElement("button");
     btn.className = "tab-add";
@@ -835,7 +841,6 @@ export class WgslEdit extends HTMLElement {
     return btn;
   }
 
-  /** Start inline rename of a tab. */
   private startRenameTab(
     tab: HTMLElement,
     nameSpan: HTMLElement,
@@ -920,6 +925,45 @@ function weslColors(c: typeof light) {
       { all: { fontWeight: "normal", fontStyle: "normal" } },
     ),
   );
+}
+
+/** Map GPU validation messages back to source positions via the source map. */
+function mapGpuDiagnostics(
+  messages: {
+    offset: number;
+    length: number;
+    severity: string;
+    message: string;
+  }[],
+  linked: {
+    sourceMap: {
+      destToSrc(offset: number): { position: number; src: { path?: string } };
+    };
+  },
+  activeFile: string,
+  pkg: string,
+): Diagnostic[] {
+  const { sourceMap } = linked;
+  const active = fileToModulePath(activeFile, pkg, false);
+
+  return messages.flatMap(msg => {
+    const srcPos = sourceMap.destToSrc(msg.offset);
+    const mod = srcPos.src.path
+      ? fileToModulePath(srcPos.src.path, pkg, false)
+      : null;
+    if (mod !== active) return [];
+
+    const endPos = sourceMap.destToSrc(msg.offset + msg.length);
+    const from = srcPos.position;
+    const to = endPos.position > from ? endPos.position : from + 1;
+    return {
+      from,
+      to,
+      severity: msg.severity,
+      message: msg.message,
+      source: "WebGPU",
+    } as Diagnostic;
+  });
 }
 
 function getStyles(): CSSStyleSheet {

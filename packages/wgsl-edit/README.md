@@ -38,7 +38,7 @@ Multiple `<script>` tags create a multi-file editor with tabs.
 <wgsl-edit id="editor" theme="auto">
   <script type="text/wesl">/* shader code */</script>
 </wgsl-edit>
-<wgsl-play source="editor"></wgsl-play>
+<wgsl-play from="editor"></wgsl-play>
 ```
 
 The play component reads sources from the editor and live-previews the shader.
@@ -49,10 +49,6 @@ The play component reads sources from the editor and live-previews the shader.
 const editor = document.querySelector("wgsl-edit");
 
 editor.source = shaderCode;           // set active file content
-editor.sources = {                    // set all files
-  "package::main": mainCode,
-  "package::utils": utilsCode,
-};
 editor.addFile("helpers.wesl", code); // add a file
 editor.activeFile = "helpers.wesl";   // switch tabs
 
@@ -82,9 +78,8 @@ editor.project = {                    // load a full project
 ### Properties
 
 - `source: string` - Get/set active file content
-- `sources: Record<string, string>` - Get/set all files (keyed by module path)
 - `conditions: Record<string, boolean>` - Get/set conditions for conditional compilation (`@if`/`@elif`/`@else`)
-- `project: WeslProject` - Set full project (sources, conditions, packageName, etc.)
+- `project: WeslProject` - Get/set full project (weslSrc, conditions, constants, packageName, libs)
 - `activeFile: string` - Get/set active file name
 - `fileNames: string[]` - List all file names
 - `theme`, `tabs`, `lint`, `lineNumbers`, `readonly`, `shaderRoot`, `fetchLibs` - Mirror attributes
@@ -98,7 +93,7 @@ editor.project = {                    // load a full project
 
 ### Events
 
-- `change` - `{ source, sources, activeFile, conditions }` on edit or conditions change
+- `change` - `WeslProject` detail on edit or conditions change
 - `file-change` - `{ action, file }` on add/remove/rename
 
 ## Using with wesl-plugin
