@@ -18,7 +18,9 @@ for (const dep of nativeDeps) {
 }
 
 try {
-  execSync(`npx vsce ${action} --no-dependencies`, { stdio: "inherit" });
+  execSync(`pnpx @vscode/vsce ${action} --no-dependencies`, {
+    stdio: "inherit",
+  });
 } finally {
   rmSync("dist/node_modules", { recursive: true, force: true });
 }

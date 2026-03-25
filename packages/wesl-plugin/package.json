@@ -66,7 +66,6 @@
     "wesl-tooling": "workspace:x"
   },
   "peerDependencies": {
-    "@farmfe/core": ">=1",
     "@nuxt/kit": "^3",
     "@nuxt/schema": "^3",
     "esbuild": "*",
@@ -75,9 +74,6 @@
     "webpack": "^4 || ^5"
   },
   "peerDependenciesMeta": {
-    "@farmfe/core": {
-      "optional": true
-    },
     "@nuxt/kit": {
       "optional": true
     },
