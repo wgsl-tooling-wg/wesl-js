@@ -47,8 +47,10 @@ export interface FetchOptions {
   currentPath?: string;
   /** Pre-existing sources to include. */
   existingSources?: Record<string, string>;
-  /** Skip fetching external packages from npm (default: false). */
-  skipExternal?: boolean;
+  /** Fetch library packages from npm (default: true). */
+  fetchLibs?: boolean;
+  /** Fetch local .wesl source files via HTTP (default: true). */
+  fetchSources?: boolean;
 }
 
 const virtualModules = ["constants", "env"];
@@ -61,7 +63,8 @@ export async function fetchDependencies(
   const shaderRoot = options?.shaderRoot ?? "/shaders";
   const currentPath = options?.currentPath;
   const existingSources = options?.existingSources;
-  const skipExternal = options?.skipExternal ?? false;
+  const fetchLibs = options?.fetchLibs ?? true;
+  const fetchSources = options?.fetchSources ?? true;
 
   const rootModuleName = currentPath
     ? urlToModulePath(currentPath, shaderRoot)
@@ -84,13 +87,17 @@ export async function fetchDependencies(
     if (unresolved.length === 0) break;
 
     const [internal, external] = partition(unresolved, isInternal);
-    await Promise.all(internal.map(p => resolver.resolveModuleAsync(p)));
-
-    if (skipExternal) {
-      for (const p of external) fetched.add(p.split("::")[0]);
+    if (fetchSources) {
+      await Promise.all(internal.map(p => resolver.resolveModuleAsync(p)));
     } else {
+      for (const p of internal) fetched.add(p);
+    }
+
+    if (fetchLibs) {
       const newLibs = await fetchExternalBundles(external, fetched);
       libs.push(...newLibs);
+    } else {
+      for (const p of external) fetched.add(p.split("::")[0]);
     }
   }
 

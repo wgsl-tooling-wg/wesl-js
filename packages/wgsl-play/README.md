@@ -56,7 +56,7 @@ You can include shader code inline if you'd prefer. Use a `<script type="text/wg
 
 ```typescript
 const player = document.querySelector("wgsl-play");
-player.source = shaderCode;
+player.shader = shaderCode;
 player.pause();
 player.rewind();
 player.play();
@@ -68,7 +68,7 @@ player.play();
 import shader from './examples/noise.wesl?raw';
 
 const player = document.querySelector("wgsl-play");
-player.source = shader;
+player.shader = shader;
 ```
 
 The `?raw` suffix imports the file as a string. This keeps shaders alongside your source files with HMR support.
@@ -80,12 +80,14 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 - `shader-root` - Root path for internal imports (default: `/shaders`)
 - `autoplay` - Start animating on load (default: `true`). Set `autoplay="false"` to start paused
 - `transparent` - Use premultiplied alpha for transparent backgrounds (default: opaque)
+- `from` - Element ID of a source provider (e.g., wgsl-edit) to connect to
 - `fetch-libs` - Auto-fetch missing libraries from npm (default: `true`). Set `fetch-libs="false"` to disable
+- `fetch-sources` - Auto-fetch local .wesl source files via HTTP (default: `true`). Set `fetch-sources="false"` to disable
 
 ### Properties
-- `source: string` - Get/set shader source
+- `shader: string` - Get/set shader source (single-file convenience)
 - `conditions: Record<string, boolean>` - Get/set conditions for conditional compilation (`@if`/`@elif`/`@else`)
-- `project: WeslProject` - Set full project config (weslSrc, libs, conditions, constants)
+- `project: WeslProject` - Get/set full project config (weslSrc, libs, conditions, constants)
 - `isPlaying: boolean` - Playback state (readonly)
 - `time: number` - Animation time in seconds (readonly)
 - `hasError: boolean` - Compilation error state (readonly)

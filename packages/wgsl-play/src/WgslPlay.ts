@@ -1,4 +1,4 @@
-import type { Conditions, LinkParams, WeslBundle } from "wesl";
+import type { Conditions, WeslBundle, WeslProject } from "wesl";
 import { fileToModulePath, WeslParseError } from "wesl";
 import { fetchDependencies, loadShaderFromUrl } from "wesl-fetch";
 import type { WgslPlayConfig } from "./Config.ts";
@@ -15,17 +15,6 @@ import {
 import cssText from "./WgslPlay.css?inline";
 
 export { defaults, getConfig, resetConfig } from "./Config.ts";
-
-/** Project configuration for multi-file shaders (subset of wesl link() API). */
-export type WeslProject = Pick<
-  LinkParams,
-  | "weslSrc"
-  | "rootModuleName"
-  | "conditions"
-  | "constants"
-  | "libs"
-  | "packageName"
->;
 
 /** One source location within a compile error. */
 export interface CompileErrorLocation {
@@ -53,12 +42,13 @@ export class WgslPlay extends HTMLElement {
   static observedAttributes = [
     "src",
     "shader-root",
-    "source",
+    "from",
     "no-controls",
     "theme",
     "autoplay",
     "transparent",
     "fetch-libs",
+    "fetch-sources",
   ];
 
   private canvas: HTMLCanvasElement;
@@ -78,7 +68,7 @@ export class WgslPlay extends HTMLElement {
   private _rootModuleName = "package::main";
   private _libs?: WeslBundle[];
   private _linkOptions: LinkOptions = {};
-  private _fromFullProject = false;
+  private _fetchSources = true;
   private _initPromise?: Promise<boolean>;
   private _sourceEl: HTMLElement | null = null;
   private _sourceListener: ((e: Event) => void) | null = null;
@@ -138,7 +128,7 @@ export class WgslPlay extends HTMLElement {
     }
     this.initialize();
     upgradeProperty(this, "conditions");
-    upgradeProperty(this, "source");
+    upgradeProperty(this, "shader");
     upgradeProperty(this, "project");
   }
 
@@ -179,6 +169,11 @@ export class WgslPlay extends HTMLElement {
       return;
     }
 
+    if (name === "fetch-sources") {
+      this._fetchSources = newValue !== "false";
+      return;
+    }
+
     // Initial src is handled by initialize(); this handles later changes
     if (name === "src" && newValue && this._initPromise) {
       this.loadFromUrl(newValue);
@@ -186,15 +181,14 @@ export class WgslPlay extends HTMLElement {
   }
 
   /** Current shader source code (main module). */
-  get source(): string {
+  get shader(): string {
     return this._weslSrc[this._rootModuleName] ?? "";
   }
 
-  /** Set shader source directly. */
-  set source(value: string) {
+  /** Set shader source directly (single-file convenience). */
+  set shader(value: string) {
     this._weslSrc = { [this._rootModuleName]: value };
     this._libs = undefined;
-    this._fromFullProject = false;
     this.requestBuild();
   }
 
@@ -219,32 +213,21 @@ export class WgslPlay extends HTMLElement {
       conditions,
       constants,
     } = value;
-
-    // Update link options if provided
-    if (packageName || conditions || constants) {
-      this._linkOptions = { packageName, conditions, constants };
-    }
+    if (packageName !== undefined) this._linkOptions.packageName = packageName;
+    if (conditions !== undefined) this._linkOptions.conditions = conditions;
+    if (constants !== undefined) this._linkOptions.constants = constants;
     if (libs) this._libs = libs;
 
     if (weslSrc) {
-      this.setProjectSources(weslSrc, rootModuleName);
+      const pkg = this._linkOptions.packageName || "package";
+      const root = rootModuleName ?? "main";
+      this._weslSrc = toModulePaths(weslSrc, pkg);
+      this._rootModuleName = fileToModulePath(root, pkg, false);
+      this.requestBuild();
       return;
     }
 
     if (Object.keys(this._weslSrc).length === 0) return;
-    this.requestBuild();
-  }
-
-  /** Set sources from a full project with weslSrc. */
-  private setProjectSources(
-    weslSrc: Record<string, string>,
-    rootModuleName?: string,
-  ): void {
-    const pkg = this._linkOptions.packageName || "package";
-    const root = rootModuleName ?? "main";
-    this._weslSrc = toModulePaths(weslSrc, pkg);
-    this._rootModuleName = fileToModulePath(root, pkg, false);
-    this._fromFullProject = true;
     this.requestBuild();
   }
 
@@ -257,6 +240,17 @@ export class WgslPlay extends HTMLElement {
     this._fetchLibs = value;
     if (value) this.removeAttribute("fetch-libs");
     else this.setAttribute("fetch-libs", "false");
+  }
+
+  /** Whether to fetch local .wesl source files via HTTP (default: true). */
+  get fetchSources(): boolean {
+    return this._fetchSources;
+  }
+
+  set fetchSources(value: boolean) {
+    this._fetchSources = value;
+    if (value) this.removeAttribute("fetch-sources");
+    else this.setAttribute("fetch-sources", "false");
   }
 
   /** Whether autoplay is enabled (default: true). Set autoplay="false" to start paused. */
@@ -383,9 +377,9 @@ export class WgslPlay extends HTMLElement {
 
   /** Load from source element, src URL, script child, or inline textContent. */
   private loadInitialContent(): void {
-    const sourceId = this.getAttribute("source");
-    if (sourceId) {
-      this.connectToSource(sourceId);
+    const fromId = this.getAttribute("from");
+    if (fromId) {
+      this.connectFrom(fromId);
       return;
     }
 
@@ -404,12 +398,11 @@ export class WgslPlay extends HTMLElement {
     if (!inlineSource) return;
 
     this._weslSrc = { [this._rootModuleName]: inlineSource };
-    this._fromFullProject = false;
     this.requestBuild();
   }
 
   /** Connect to a source provider element (e.g., wgsl-edit). */
-  private connectToSource(id: string): void {
+  private connectFrom(id: string): void {
     const el = document.getElementById(id);
     if (!el) {
       console.error(`wgsl-play: source element "${id}" not found`);
@@ -417,34 +410,12 @@ export class WgslPlay extends HTMLElement {
     }
     this._sourceEl = el;
 
-    // Get sources from element - support both single-file and multi-file APIs
-    const getSources = (): Record<string, string> => {
-      const sources = (el as any).sources;
-      if (sources && Object.keys(sources).length > 0) return sources;
-      const source = (el as any).source ?? el.textContent ?? "";
-      return { [this._rootModuleName]: source };
-    };
+    const p = (el as any).project as WeslProject | undefined;
+    if (p) this.project = p;
 
-    // Load initial sources, conditions, and libs from source element.
-    const { conditions, rootModuleName, libs } = el as any;
-    const root = rootModuleName ?? "main";
-    this._weslSrc = getSources();
-    this._rootModuleName = fileToModulePath(root, "package", false);
-    if (conditions) this._linkOptions = { ...this._linkOptions, conditions };
-    if (libs) this._libs = libs;
-    this._fromFullProject = false;
-    this.requestBuild();
-
-    // Listen for changes - rebuild with libs from source element
     this._sourceListener = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      const fallback = { [this._rootModuleName]: detail?.source ?? "" };
-      this.project = {
-        weslSrc: detail?.sources ?? fallback,
-        rootModuleName: detail?.rootModuleName,
-        conditions: detail?.conditions,
-        libs: detail?.libs,
-      };
+      const detail = (e as CustomEvent).detail as WeslProject | undefined;
+      if (detail) this.project = detail;
     };
     el.addEventListener("change", this._sourceListener);
   }
@@ -458,7 +429,6 @@ export class WgslPlay extends HTMLElement {
       );
       this._weslSrc = weslSrc;
       this._libs = libs;
-      this._fromFullProject = false;
       if (rootModuleName) this._rootModuleName = rootModuleName;
       this.requestBuild();
     } catch (error) {
@@ -490,11 +460,12 @@ export class WgslPlay extends HTMLElement {
 
       try {
         this.errorOverlay.hide();
-        if (!this._fromFullProject) {
+        if (this._fetchSources || this._fetchLibs) {
           const { weslSrc, libs } = await fetchDependencies(mainSource, {
             shaderRoot: this.getConfigOverrides()?.shaderRoot,
             existingSources: this._weslSrc,
-            skipExternal: !this._fetchLibs,
+            fetchLibs: this._fetchLibs,
+            fetchSources: this._fetchSources,
           });
           this._weslSrc = { ...this._weslSrc, ...weslSrc };
           this._libs = dedupLibs(this._libs, libs);

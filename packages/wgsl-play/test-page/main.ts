@@ -22,7 +22,7 @@ import env::u;
 }
 `;
 document.querySelector("#load-npm")!.addEventListener("click", () => {
-  player2.source = npmShader;
+  player2.shader = npmShader;
 });
 document
   .querySelector("#play2")!
@@ -47,7 +47,7 @@ import env::u;
 }
 `;
 document.querySelector("#load-internal")!.addEventListener("click", () => {
-  player3.source = internalShader;
+  player3.shader = internalShader;
 });
 
 // src attribute with shaderRoot test
@@ -59,7 +59,7 @@ document.querySelector("#load-src")!.addEventListener("click", () => {
 // ?static import test (wesl-plugin build-time linking)
 const player5 = document.querySelector<WgslPlay>("#player5")!;
 document.querySelector("#load-static")!.addEventListener("click", () => {
-  player5.source = staticWgsl;
+  player5.shader = staticWgsl;
 });
 
 // ?link import test (wesl-plugin runtime linking)

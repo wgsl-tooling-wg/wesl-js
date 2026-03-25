@@ -121,10 +121,10 @@
       <pre id="autoplay-status">Should start paused (time frozen at 0)</pre>
     </div>
 
-    <!-- connectToSource: multi-file internal imports via wgsl-edit -->
+    <!-- connectFrom: multi-file internal imports via wgsl-edit -->
     <div class="section">
-      <h3>9. connectToSource (multi-file)</h3>
-      <p>Tests <code>&lt;wgsl-play source="editor9"&gt;</code> with multi-file wgsl-edit</p>
+      <h3>9. connectFrom (multi-file)</h3>
+      <p>Tests <code>&lt;wgsl-play from="editor9"&gt;</code> with multi-file wgsl-edit</p>
       <wgsl-edit id="editor9" style="height: 80px">
         <script type="text/wesl" data-name="main.wesl">
 import package::util::gradient;
@@ -142,12 +142,12 @@ fn gradient(uv: vec2f) -> vec3f {
 }
         </script>
       </wgsl-edit>
-      <wgsl-play id="player9" source="editor9"></wgsl-play>
+      <wgsl-play id="player9" from="editor9"></wgsl-play>
     </div>
 
-    <!-- connectToSource: condition toggle via editor -->
+    <!-- connectFrom: condition toggle via editor -->
     <div class="section">
-      <h3>10. connectToSource + conditions</h3>
+      <h3>10. connectFrom + conditions</h3>
       <p>Tests condition toggle via editor propagates to connected player</p>
       <div class="controls">
         <button type="button" id="toggle-condition10">Set RED condition</button>
@@ -160,13 +160,13 @@ fn gradient(uv: vec2f) -> vec3f {
 }
         </script>
       </wgsl-edit>
-      <wgsl-play id="player10" source="editor10"></wgsl-play>
+      <wgsl-play id="player10" from="editor10"></wgsl-play>
     </div>
 
-    <!-- connectToSource: external dep fetching -->
+    <!-- connectFrom: external dep fetching -->
     <div class="section">
-      <h3>11. connectToSource + external deps</h3>
-      <p>Tests that connectToSource fetches external deps (bug #1 regression)</p>
+      <h3>11. connectFrom + external deps</h3>
+      <p>Tests that connectFrom fetches external deps (bug #1 regression)</p>
       <wgsl-edit id="editor11" style="height: 60px">
         <script type="text/wesl">
 import random_wgsl::pcg_2u_3f;
@@ -179,12 +179,12 @@ import env::u;
 }
         </script>
       </wgsl-edit>
-      <wgsl-play id="player11" source="editor11"></wgsl-play>
+      <wgsl-play id="player11" from="editor11"></wgsl-play>
     </div>
 
-    <!-- connectToSource: dynamic npm package loading -->
+    <!-- connectFrom: dynamic npm package loading -->
     <div class="section">
-      <h3>12. connectToSource + dynamic npm loading</h3>
+      <h3>12. connectFrom + dynamic npm loading</h3>
       <p>Tests dynamically adding an npm package reference to wgsl-edit</p>
       <div class="controls">
         <button type="button" id="inject-npm12">Inject random_wgsl</button>
@@ -199,7 +199,7 @@ import env::u;
 }
         </script>
       </wgsl-edit>
-      <wgsl-play id="player12" source="editor12"></wgsl-play>
+      <wgsl-play id="player12" from="editor12"></wgsl-play>
     </div>
 
     <!-- editor.link() with virtualLibs -->
