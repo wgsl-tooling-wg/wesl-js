@@ -1,6 +1,20 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+const REPLACEABLE_INVALID_CHARS = /[<>:"\/\\|?*]/g;
+
+// since we always add '.png' to the end, there's no need to handle trailing
+// dots, which are only invalid at the end of the whole name.  spaces around
+// the outside of the snapshot name are handled with trim()
+const UNREPLACEABLE_INVALID_CHARS = /\p{Control}+/gu;
+
+function sanitizeName(input: string): string {
+  return input
+    .replace(REPLACEABLE_INVALID_CHARS, "_")
+    .replace(UNREPLACEABLE_INVALID_CHARS, "")
+    .trim();
+}
+
 export interface SnapshotConfig {
   snapshotDir?: string;
   diffDir?: string;
@@ -29,7 +43,7 @@ export class ImageSnapshotManager {
     return path.join(
       this.testDir,
       this.config.snapshotDir,
-      `${snapshotName}.png`,
+      `${sanitizeName(snapshotName)}.png`,
     );
   }
 
@@ -37,12 +51,16 @@ export class ImageSnapshotManager {
     return path.join(
       this.testDir,
       this.config.actualDir,
-      `${snapshotName}.png`,
+      `${sanitizeName(snapshotName)}.png`,
     );
   }
 
   diffPath(snapshotName: string): string {
-    return path.join(this.testDir, this.config.diffDir, `${snapshotName}.png`);
+    return path.join(
+      this.testDir,
+      this.config.diffDir,
+      `${sanitizeName(snapshotName)}.png`,
+    );
   }
 
   /** Update failing snapshots (only in "all" mode with vitest -u) */
