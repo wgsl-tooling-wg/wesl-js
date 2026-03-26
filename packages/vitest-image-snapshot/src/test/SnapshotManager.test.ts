@@ -17,6 +17,91 @@ test("generates correct file paths", () => {
   );
 });
 
+test("handles invalid chars in snapshot name for all path types", () => {
+  const testPath = path.join("/path/to/test.ts");
+  const manager = new ImageSnapshotManager(testPath);
+
+  expect(manager.referencePath("Category > test name")).toBe(
+    path.join("/path/to", "__image_snapshots__", "Category _ test name.png"),
+  );
+  expect(manager.actualPath("Category > test name")).toBe(
+    path.join("/path/to", "__image_actual__", "Category _ test name.png"),
+  );
+  expect(manager.diffPath("Category > test name")).toBe(
+    path.join("/path/to", "__image_diffs__", "Category _ test name.png"),
+  );
+});
+
+test("handles replaceable invalid chars in snapshot name", () => {
+  const testPath = path.join("/path/to/test.ts");
+  const manager = new ImageSnapshotManager(testPath);
+
+  // since we've shown that all path types are passed through sanitizeName, it's
+  // enough to stick to one type for these.
+
+  // handles multiple replaceable chars
+  expect(manager.referencePath("Category > test name > subtitle")).toBe(
+    path.join(
+      "/path/to",
+      "__image_snapshots__",
+      "Category _ test name _ subtitle.png",
+    ),
+  );
+
+  // handles all known replaceable chars
+  expect(manager.referencePath('Category <>:"/\\|?* test')).toBe(
+    path.join("/path/to", "__image_snapshots__", "Category _________ test.png"),
+  );
+
+  // handles invalid chars at start
+  expect(manager.referencePath("> test")).toBe(
+    path.join("/path/to", "__image_snapshots__", "_ test.png"),
+  );
+
+  // handles invalid chars at end
+  expect(manager.referencePath("test >")).toBe(
+    path.join("/path/to", "__image_snapshots__", "test _.png"),
+  );
+});
+
+test("handles unreplaceable invalid chars in snapshot name", () => {
+  const testPath = path.join("/path/to/test.ts");
+  const manager = new ImageSnapshotManager(testPath);
+
+  // since we've shown that all path types are passed through sanitizeName, it's
+  // enough to stick to one type for these.
+
+  // handles unreplaceable chars
+  expect(manager.referencePath("Category \x02 test name")).toBe(
+    path.join("/path/to", "__image_snapshots__", "Category  test name.png"),
+  );
+
+  // handles multiple unreplaceable chars
+  expect(manager.referencePath("Category \x02\x03 test name")).toBe(
+    path.join("/path/to", "__image_snapshots__", "Category  test name.png"),
+  );
+
+  // handles unreplaceables at the beginning
+  expect(manager.referencePath("\x02\x03word1 word2")).toBe(
+    path.join("/path/to", "__image_snapshots__", "word1 word2.png"),
+  );
+
+  // handles unreplaceables at the end
+  expect(manager.referencePath("word1 word2\x02\x03")).toBe(
+    path.join("/path/to", "__image_snapshots__", "word1 word2.png"),
+  );
+
+  // handles extra space on the outside
+  expect(manager.referencePath(" word1 word2 \x02 \x03 ")).toBe(
+    path.join("/path/to", "__image_snapshots__", "word1 word2.png"),
+  );
+
+  // handles mixed invalid chars
+  expect(manager.referencePath(" word1 >\x02<\x03 word2 \x02 \x03 ")).toBe(
+    path.join("/path/to", "__image_snapshots__", "word1 __ word2.png"),
+  );
+});
+
 test("supports custom directory names", () => {
   const testPath = path.join("/path/to/test.ts");
   const manager = new ImageSnapshotManager(testPath, {
