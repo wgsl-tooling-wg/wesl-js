@@ -28,13 +28,10 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: tools
 
       - name: Build packages
         run: pnpm build:all
-        working-directory: tools
 
       - name: Publish to npm
         run: pnpm publish:all --no-git-checks
-        working-directory: tools
         # npm auto-detects OIDC environment, no token needed
