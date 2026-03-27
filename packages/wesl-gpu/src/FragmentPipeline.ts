@@ -1,7 +1,7 @@
 import { CompositeResolver, link, RecordResolver } from "wesl";
 import type { WeslOptions } from "./FragmentParams.ts";
 import { fullscreenTriangleVertex } from "./FullscreenVertex.ts";
-import { createUniformsVirtualLib } from "./RenderUniforms.ts";
+import { scanUniforms } from "./UniformsVirtualLib.ts";
 
 export type LinkFragmentParams = WeslOptions & {
   device: GPUDevice;
@@ -19,13 +19,9 @@ export interface LinkAndCreateParams extends LinkFragmentParams {
 export async function linkAndCreatePipeline(
   params: LinkAndCreateParams,
 ): Promise<GPURenderPipeline> {
+  const { device, format, layout } = params;
   const module = await linkFragmentShader(params);
-  return createFragmentPipeline({
-    device: params.device,
-    module,
-    format: params.format,
-    layout: params.layout,
-  });
+  return createFragmentPipeline({ device, module, format, layout });
 }
 
 /**
@@ -44,10 +40,11 @@ export async function linkFragmentShader(
   const fullSource = `${fragmentSource}\n\n${fullscreenTriangleVertex}`;
 
   // Build resolver chain: fragmentSource first, then weslSrc, then provided resolver
-  const resolvers: RecordResolver[] = [];
-  resolvers.push(
-    new RecordResolver({ [rootModuleName]: fullSource }, { packageName }),
+  const mainResolver = new RecordResolver(
+    { [rootModuleName]: fullSource },
+    { packageName },
   );
+  const resolvers: RecordResolver[] = [mainResolver];
   if (weslSrc) resolvers.push(new RecordResolver(weslSrc, { packageName }));
 
   let finalResolver =
@@ -55,8 +52,11 @@ export async function linkFragmentShader(
   if (resolver)
     finalResolver = new CompositeResolver([finalResolver, resolver]);
 
-  // Merge user virtualLibs with default uniforms lib
-  const mergedVirtualLibs = { ...createUniformsVirtualLib(), ...virtualLibs };
+  // Scan for @uniforms struct and generate env:: virtual module accordingly
+  const pkg = packageName ?? "package";
+  const rootPath = `${pkg}::${rootModuleName}`;
+  const scan = scanUniforms(fragmentSource, rootPath);
+  const mergedVirtualLibs = { ...scan.virtualLibs, ...virtualLibs };
 
   const linked = await link({
     resolver: finalResolver,

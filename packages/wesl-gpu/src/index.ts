@@ -8,3 +8,5 @@ export * from "./FullscreenVertex.ts";
 export * from "./RenderUniforms.ts";
 export * from "./RunFragment.ts";
 export * from "./SimpleRender.ts";
+export * from "./UniformBuffer.ts";
+export * from "./UniformsVirtualLib.ts";

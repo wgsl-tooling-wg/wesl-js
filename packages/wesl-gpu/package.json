@@ -32,7 +32,8 @@
   },
   "dependencies": {
     "thimbleberry": "^0.2.10",
-    "wesl": "workspace:*"
+    "wesl": "workspace:*",
+    "wesl-reflect": "workspace:*"
   },
   "devDependencies": {
     "@webgpu/types": "^0.1.69"
