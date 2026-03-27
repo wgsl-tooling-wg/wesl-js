@@ -168,6 +168,7 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 - `no-settings` - Hide the uniform controls panel
 - `width` / `height` - Fixed canvas resolution in pixels, independent of display size. When set, the canvas is not resized by the CSS layout
 - `pixel-ratio` - Scale factor from CSS pixels to canvas pixels (default: `devicePixelRatio`). Set `pixel-ratio="1"` for 1:1 CSS pixels (no HiDPI scaling)
+- `resizable` - Show a drag handle to let users resize the element interactively
 - `fetch-libs` - Auto-fetch missing libraries from npm (default: `true`). Set `fetch-libs="false"` to disable
 - `fetch-sources` - Auto-fetch local .wesl source files via HTTP (default: `true`). Set `fetch-sources="false"` to disable
 

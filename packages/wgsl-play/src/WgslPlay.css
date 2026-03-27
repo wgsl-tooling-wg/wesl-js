@@ -11,6 +11,10 @@
   overflow: hidden;
 }
 
+:host([resizable]) {
+  resize: both;
+}
+
 :host(.dark) {
   --error-bg: rgba(180, 60, 10, 0.85);
   --controls-bg: rgba(0, 0, 0, 0.5);
