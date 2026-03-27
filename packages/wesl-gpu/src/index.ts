@@ -5,7 +5,6 @@ export * from "./FragmentParams.ts";
 export * from "./FragmentPipeline.ts";
 export * from "./FragmentRender.ts";
 export * from "./FullscreenVertex.ts";
-export * from "./RenderUniforms.ts";
 export * from "./RunFragment.ts";
 export * from "./SimpleRender.ts";
 export * from "./UniformBuffer.ts";

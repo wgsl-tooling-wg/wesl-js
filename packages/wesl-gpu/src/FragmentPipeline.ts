@@ -1,4 +1,5 @@
 import { CompositeResolver, link, RecordResolver } from "wesl";
+import type { AnnotatedLayout } from "wesl-reflect";
 import type { WeslOptions } from "./FragmentParams.ts";
 import { fullscreenTriangleVertex } from "./FullscreenVertex.ts";
 import { scanUniforms } from "./UniformsVirtualLib.ts";
@@ -10,6 +11,11 @@ export type LinkFragmentParams = WeslOptions & {
   fragmentSource: string;
 };
 
+export interface LinkResult {
+  module: GPUShaderModule;
+  layout: AnnotatedLayout | null;
+}
+
 export interface LinkAndCreateParams extends LinkFragmentParams {
   format: GPUTextureFormat;
   layout?: GPUPipelineLayout | "auto";
@@ -20,7 +26,7 @@ export async function linkAndCreatePipeline(
   params: LinkAndCreateParams,
 ): Promise<GPURenderPipeline> {
   const { device, format, layout } = params;
-  const module = await linkFragmentShader(params);
+  const { module } = await linkFragmentShader(params);
   return createFragmentPipeline({ device, module, format, layout });
 }
 
@@ -32,7 +38,7 @@ export async function linkAndCreatePipeline(
  */
 export async function linkFragmentShader(
   params: LinkFragmentParams,
-): Promise<GPUShaderModule> {
+): Promise<LinkResult> {
   const { fragmentSource, conditions, constants, packageName, config } = params;
   const { device, resolver, libs = [], rootModuleName = "main" } = params;
   const { weslSrc, virtualLibs } = params;
@@ -69,7 +75,7 @@ export async function linkFragmentShader(
     config,
   });
 
-  return linked.createShaderModule(device);
+  return { module: linked.createShaderModule(device), layout: scan.layout };
 }
 
 interface CreatePipelineParams {

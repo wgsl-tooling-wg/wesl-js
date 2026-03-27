@@ -1,7 +1,7 @@
 import type { FragmentParams } from "./FragmentParams.ts";
 import { linkFragmentShader } from "./FragmentPipeline.ts";
-import { renderUniformBuffer } from "./RenderUniforms.ts";
 import { simpleRender } from "./SimpleRender.ts";
+import { createUniformBuffer, writeUniforms } from "./UniformBuffer.ts";
 
 /**
  * Run a fragment shader and return pixel data.
@@ -16,7 +16,7 @@ export async function runFragment(params: FragmentParams): Promise<number[]> {
   const { textureFormat = "rgba32float", size = [1, 1] } = params;
   const { textures, samplers, uniforms = {} } = params;
 
-  const module = await linkFragmentShader({
+  const { module, layout } = await linkFragmentShader({
     device,
     fragmentSource: src,
     resolver: params.resolver,
@@ -30,7 +30,8 @@ export async function runFragment(params: FragmentParams): Promise<number[]> {
     config: params.config,
   });
 
-  const uniformBuffer = renderUniformBuffer(device, size, uniforms);
+  const uniformState = createUniformBuffer(device, layout);
+  writeUniforms(device, uniformState, { resolution: size, ...uniforms });
   return simpleRender({
     device,
     module,
@@ -38,6 +39,6 @@ export async function runFragment(params: FragmentParams): Promise<number[]> {
     size,
     textures,
     samplers,
-    uniformBuffer,
+    uniformBuffer: uniformState.buffer,
   });
 }

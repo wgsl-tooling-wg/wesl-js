@@ -1,5 +1,5 @@
 import type { LinkParams } from "wesl";
-import type { RenderUniforms } from "./RenderUniforms.ts";
+import type { AutoValues } from "./UniformBuffer.ts";
 
 /** WESL linker options - aligned with wesl's LinkParams */
 export type WeslOptions = Pick<
@@ -25,8 +25,8 @@ export interface FragmentRenderParams {
   /** Output texture size. Default: [1, 1] */
   size?: [width: number, height: number];
 
-  /** Uniform values (time, mouse). Resolution auto-populated from size. */
-  uniforms?: RenderUniforms;
+  /** Uniform values (resolution auto-populated from size). */
+  uniforms?: AutoValues;
 
   /** Input textures. Bindings: [1..n], samplers at [n+1..n+m]. */
   textures?: GPUTexture[];
