@@ -29,7 +29,7 @@ export function isUniformsStruct(struct: StructElem): boolean {
   return findAnnotation(struct, "uniforms") !== undefined;
 }
 
-/** Extract @range(min, max [, initial [, step]]) from a member. */
+/** Extract @range(min, max [, step [, initial]]) from a member. */
 export function rangeAnnotation(
   member: StructMemberElem,
 ): RangeAnnotation | undefined {
@@ -37,7 +37,7 @@ export function rangeAnnotation(
   if (!attr) return undefined;
   const nums = numericParams(attr);
   const [min = 0, max = 1] = nums;
-  return { min, max, initial: nums[2] ?? min, step: nums[3] };
+  return { min, max, step: nums[2], initial: nums[3] ?? min };
 }
 
 /** Extract @color(r, g, b) from a member. */

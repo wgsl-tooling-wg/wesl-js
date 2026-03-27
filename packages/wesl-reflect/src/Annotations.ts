@@ -17,10 +17,12 @@ export function annotationParams(attr: StandardAttribute): string[] {
   return attr.params.map(expr => exprToString(expr.contents));
 }
 
-/** Find the first literal or text value in expression contents. */
+/** Extract the string value from an expression's contents. */
 function exprToString(contents: AbstractElem[]): string {
   for (const child of contents) {
     if (child.kind === "literal") return child.value;
+    if (child.kind === "name") return child.name;
+    if (child.kind === "ref") return child.ident.originalName;
     if (child.kind === "text")
       return child.srcModule.src.slice(child.start, child.end);
   }
