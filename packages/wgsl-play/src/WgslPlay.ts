@@ -54,6 +54,9 @@ export class WgslPlay extends HTMLElement {
     "transparent",
     "fetch-libs",
     "fetch-sources",
+    "width",
+    "height",
+    "pixel-ratio",
   ];
 
   private canvas: HTMLCanvasElement;
@@ -115,11 +118,13 @@ export class WgslPlay extends HTMLElement {
     );
 
     this.resizeObserver = new ResizeObserver(entries => {
+      if (this.hasAttribute("width") && this.hasAttribute("height")) return;
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
-          this.canvas.width = Math.floor(width * devicePixelRatio);
-          this.canvas.height = Math.floor(height * devicePixelRatio);
+          const ratio = this.pixelRatio;
+          this.canvas.width = Math.floor(width * ratio);
+          this.canvas.height = Math.floor(height * ratio);
         }
       }
     });
@@ -182,6 +187,13 @@ export class WgslPlay extends HTMLElement {
         return;
       case "src":
         if (newValue && this._initPromise) this.loadFromUrl(newValue);
+        return;
+      case "width":
+      case "height":
+        this.updateCanvasSize();
+        return;
+      case "pixel-ratio":
+        this.updateCanvasSize();
         return;
     }
   }
@@ -262,6 +274,16 @@ export class WgslPlay extends HTMLElement {
     const enabled = value !== false && value !== "false";
     if (enabled) this.removeAttribute("autoplay");
     else this.setAttribute("autoplay", "false");
+  }
+
+  /** Scale factor from CSS pixels to canvas pixels (default: devicePixelRatio). */
+  get pixelRatio(): number {
+    const attr = this.getAttribute("pixel-ratio");
+    return attr !== null ? Number(attr) : devicePixelRatio;
+  }
+
+  set pixelRatio(value: number) {
+    this.setAttribute("pixel-ratio", String(value));
   }
 
   /** Whether the shader is currently playing. */
@@ -369,8 +391,8 @@ export class WgslPlay extends HTMLElement {
 
     const onMove = (e: PointerEvent): void => {
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) * devicePixelRatio;
-      const y = (e.clientY - rect.top) * devicePixelRatio;
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
       mouse.delta = [x - mouse.pos[0], y - mouse.pos[1]];
       mouse.pos = [x, y];
     };
@@ -392,6 +414,23 @@ export class WgslPlay extends HTMLElement {
       canvas.removeEventListener("pointerup", onUp);
       canvas.removeEventListener("pointerleave", onUp);
     };
+  }
+
+  /** Recompute canvas resolution from attributes or CSS size. */
+  private updateCanvasSize(): void {
+    const w = this.getAttribute("width");
+    const h = this.getAttribute("height");
+    if (w !== null && h !== null) {
+      this.canvas.width = Number(w);
+      this.canvas.height = Number(h);
+    } else {
+      const rect = this.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        const ratio = this.pixelRatio;
+        this.canvas.width = Math.floor(rect.width * ratio);
+        this.canvas.height = Math.floor(rect.height * ratio);
+      }
+    }
   }
 
   private updateTheme(): void {
@@ -467,6 +506,11 @@ export class WgslPlay extends HTMLElement {
       return;
     }
     this._sourceEl = el;
+
+    // Tell the editor to use this player for lint feedback (disables its own GPU lint)
+    if (this.id && !el.getAttribute("lint-from")) {
+      el.setAttribute("lint-from", this.id);
+    }
 
     const p = (el as any).project as WeslProject | undefined;
     if (p) this.project = p;

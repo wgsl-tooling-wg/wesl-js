@@ -166,6 +166,8 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 - `from` - Element ID of a source provider (e.g., wgsl-edit) to connect to
 - `no-controls` - Hide playback controls (play/pause, rewind, fullscreen)
 - `no-settings` - Hide the uniform controls panel
+- `width` / `height` - Fixed canvas resolution in pixels, independent of display size. When set, the canvas is not resized by the CSS layout
+- `pixel-ratio` - Scale factor from CSS pixels to canvas pixels (default: `devicePixelRatio`). Set `pixel-ratio="1"` for 1:1 CSS pixels (no HiDPI scaling)
 - `fetch-libs` - Auto-fetch missing libraries from npm (default: `true`). Set `fetch-libs="false"` to disable
 - `fetch-sources` - Auto-fetch local .wesl source files via HTTP (default: `true`). Set `fetch-sources="false"` to disable
 
@@ -173,6 +175,7 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 - `shader: string` - Get/set shader source (single-file convenience)
 - `conditions: Record<string, boolean>` - Get/set conditions for conditional compilation (`@if`/`@elif`/`@else`)
 - `project: WeslProject` - Get/set full project config (weslSrc, libs, conditions, constants)
+- `pixelRatio: number` - Get/set canvas-to-CSS pixel ratio (default: `devicePixelRatio`)
 - `isPlaying: boolean` - Playback state (readonly)
 - `time: number` - Animation time in seconds (readonly)
 - `hasError: boolean` - Compilation error state (readonly)
@@ -190,6 +193,21 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 - `init-error` - `{ message: string }` (WebGPU init failed)
 - `playback-change` - `{ isPlaying: boolean }`
 - `uniforms-layout` - `{ detail: AnnotatedLayout }` (fired after each compile)
+
+## Canvas Sizing
+
+By default the canvas resolution tracks CSS size at `devicePixelRatio`.
+Use `pixel-ratio` or `width`/`height` to decouple:
+
+```html
+<!-- 1:1 CSS pixels (blocky on HiDPI, great for pixel art) -->
+<wgsl-play pixel-ratio="1" style="width:512px; height:512px"></wgsl-play>
+
+<!-- Fixed 64x64 canvas, stretched to whatever CSS size -->
+<wgsl-play width="64" height="64" style="width:512px; height:512px"></wgsl-play>
+```
+
+For crisp upscaling of low-res canvases, add `image-rendering: pixelated`:
 
 ## Styling
 
