@@ -42,6 +42,7 @@ export function findUnboundRefs(resolver: BatchModuleResolver): UnboundRef[] {
     globalStatements: new Map<AbstractElem, EmittableElem>(),
     mangler: minimalMangle,
     packageName: "package",
+    rootModulePath: "package::main",
     unbound: [] as UnboundRef[],
     dontFollowDecls: true,
     discoveryMode: true,

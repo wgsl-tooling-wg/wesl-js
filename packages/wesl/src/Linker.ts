@@ -102,8 +102,15 @@ export type WeslProject = Pick<
   | "packageName"
 >;
 
-/** Generate a virtual WESL module based on a set of conditions. */
-export type VirtualLibraryFn = (conditions: Conditions) => string;
+/** Context passed to virtual library generators. */
+export interface VirtualLibContext {
+  conditions: Conditions;
+  rootModulePath: string;
+  packageName: string;
+}
+
+/** Generate a virtual WESL module. */
+export type VirtualLibraryFn = (ctx: VirtualLibContext) => string;
 
 /**
  * Link a set of WESL source modules (typically the text from .wesl files) into a single WGSL string.
@@ -193,18 +200,19 @@ export interface LinkRegistryParams
  * that share some sources.)
  */
 export function linkRegistry(params: LinkRegistryParams): SrcMap {
-  const bound = bindAndTransform(params);
-  const { transformedAst, newDecls, newStatements } = bound;
-
-  return SrcMapBuilder.build(
-    emitWgsl(
-      transformedAst.moduleElem,
-      transformedAst.srcModule,
-      newDecls,
-      newStatements,
-      params.conditions,
-    ),
+  const {
+    transformedAst: ast,
+    newDecls,
+    newStatements,
+  } = bindAndTransform(params);
+  const builders = emitWgsl(
+    ast.moduleElem,
+    ast.srcModule,
+    newDecls,
+    newStatements,
+    params.conditions,
   );
+  return SrcMapBuilder.build(builders);
 }
 
 export interface BoundAndTransformed {
@@ -225,15 +233,14 @@ export function bindAndTransform(
 
   const virtuals = setupVirtualLibs(params.virtualLibs, constants);
 
-  const bindParams = {
+  const bound = bindIdents({
     rootAst,
     resolver,
     conditions,
     virtuals,
     mangler,
-  };
-  const bindResults = bindIdents(bindParams);
-  const { globalNames, decls: newDecls, newStatements } = bindResults;
+  });
+  const { globalNames, decls: newDecls, newStatements } = bound;
 
   const transformedAst = applyTransformPlugins(rootAst, globalNames, config);
   return { transformedAst, newDecls, newStatements };
@@ -275,7 +282,7 @@ function setupVirtualLibs(
 ): VirtualLibrarySet | undefined {
   let libs = virtualLibs;
   if (constants) {
-    const constantsGen = () =>
+    const constantsGen: VirtualLibraryFn = () =>
       Object.entries(constants)
         .map(([name, value]) => `const ${name} = ${value};`)
         .join("\n");
@@ -295,14 +302,10 @@ function applyTransformPlugins(
   const startAst = { moduleElem, srcModule, globalNames, notableElems: {} };
   const plugins = config?.plugins ?? [];
   const transforms = filterMap(plugins, plugin => plugin.transform);
-  const transformedAst = transforms.reduce(
-    (ast, transform) => transform(ast),
-    startAst,
-  );
-
-  return transformedAst;
+  return transforms.reduce((ast, transform) => transform(ast), startAst);
 }
 
+/** Assemble WGSL output from prologue statements, root module, and imported declarations. */
 function emitWgsl(
   rootModuleElem: ModuleElem,
   srcModule: SrcModule,
@@ -353,7 +356,6 @@ function emitDecl(decl: DeclIdent, conditions: Conditions): SrcMapBuilder {
   return builder;
 }
 
-/* ---- Commentary on present and future features ---- */
 /*
 
 LATER

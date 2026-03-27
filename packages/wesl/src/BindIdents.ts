@@ -28,23 +28,12 @@ import {
 import { last } from "./Util.ts";
 
 /**
- * BindIdents pass: link reference identifiers to declarations.
+ * BindIdents pass: depth-first walk of the scope tree (not syntax tree),
+ * linking ref idents to declarations and mangling global names.
  *
- * Goals:
- * - Link reference idents to declaration idents
- * - Collect used declarations (to emit in link)
- * - Create mangled names for globals to avoid conflicts
- *
- * Algorithm:
- * - Recursive depth-first walk of scope tree (not syntax tree)
- * - For each ref: search current scope, then up to parent scopes
- * - If no local match: check import statements for external matches
- * - For found global decls: mangle name to be unique, collect for emission
- *
- * LiveDecls: tracks visible declarations at the current position, with parent links.
- *
- * @if/@else: respects conditional compilation by tracking @else validity state,
- * mirroring the emission phase's filterValidElements but on scopes.
+ * For each ref: search current scope upward, then check imports for external matches.
+ * LiveDecls tracks visible declarations with parent links.
+ * @if/@else: mirrors filterValidElements but on scopes.
  */
 
 /** Results returned from binding pass. */
@@ -107,9 +96,9 @@ export interface BindIdentsParams
 
 /** Bind ref idents to declarations and mangle global declaration names. */
 export function bindIdents(params: BindIdentsParams): BindResults {
-  const { rootAst, resolver, virtuals, accumulateUnbound } = params;
+  const { rootAst, resolver, virtuals, accumulateUnbound, discoveryMode } =
+    params;
   const { conditions = {}, mangler = minimalMangle } = params;
-  const { discoveryMode } = params;
   const packageName = rootAst.srcModule.modulePath.split("::")[0];
 
   const rootDecls = discoveryMode
@@ -117,6 +106,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     : findValidRootDecls(rootAst.rootScope, conditions);
   const { globalNames, knownDecls } = initRootDecls(rootDecls);
 
+  const rootModulePath = rootAst.srcModule.modulePath;
   const bindContext = {
     resolver,
     conditions,
@@ -124,6 +114,7 @@ export function bindIdents(params: BindIdentsParams): BindResults {
     virtuals,
     mangler,
     packageName,
+    rootModulePath,
     foundScopes: new Set<Scope>(),
     globalNames,
     globalStatements: new Map<AbstractElem, EmittableElem>(),
@@ -134,15 +125,11 @@ export function bindIdents(params: BindIdentsParams): BindResults {
   const decls = new Map(rootDecls.map(d => [d.originalName, d] as const));
   const liveDecls: LiveDecls = { decls, parent: null };
 
-  const fromRootDecls = rootDecls.flatMap(decl =>
-    processDependentScope(decl, bindContext),
+  const fromRootDecls = rootDecls.flatMap(d =>
+    processDependentScope(d, bindContext),
   );
-
-  const fromRefs = bindIdentsRecursive(
-    rootAst.rootScope,
-    bindContext,
-    liveDecls,
-  );
+  const { rootScope } = rootAst;
+  const fromRefs = bindIdentsRecursive(rootScope, bindContext, liveDecls);
   const newStatements = [...bindContext.globalStatements.values()];
   return {
     decls: [...fromRootDecls, ...fromRefs],
@@ -233,6 +220,9 @@ interface BindContext {
   /** Host package name for resolving package:: in virtual modules. */
   packageName: string;
 
+  /** Root module path (e.g., "package::main"). */
+  rootModulePath: string;
+
   /** Unbound identifiers if accumulateUnbound is true. */
   unbound?: UnboundRef[];
 
@@ -243,11 +233,7 @@ interface BindContext {
   discoveryMode?: boolean;
 }
 
-/**
- * Recursively bind references to declarations in this scope and child scopes.
- * Tracks @else state to ensure filtered @else blocks don't pull in unused declarations.
- * @return new declarations found
- */
+/** Recursively bind refs to decls in this scope and children. @return new declarations found */
 export function bindIdentsRecursive(
   scope: Scope,
   bindContext: BindContext,
@@ -257,8 +243,11 @@ export function bindIdentsRecursive(
   if (foundScopes.has(scope)) return [];
   foundScopes.add(scope);
 
-  const result = processScope(scope, bindContext, liveDecls);
-  const { newGlobals, newFromChildren } = result;
+  const { newGlobals, newFromChildren } = processScope(
+    scope,
+    bindContext,
+    liveDecls,
+  );
   const newFromRefs = dontFollowDecls
     ? []
     : handleDecls(newGlobals, bindContext);
@@ -301,11 +290,7 @@ function processDependentScope(decl: DeclIdent, ctx: BindContext): DeclIdent[] {
   return bindIdentsRecursive(dependentScope, ctx, makeLiveDecls(rootDecls));
 }
 
-/**
- * Trace references to their declarations.
- * Mutates to mangle declarations and mark std references.
- * @return found declaration, or undefined if already processed
- */
+/** Resolve a ref to its declaration, mangling globals and marking std refs. */
 function handleRef(
   ident: RefIdent,
   liveDecls: LiveDecls,
@@ -443,11 +428,8 @@ function findExport(
     ctx.resolver.resolveModule(modulePath) ?? virtualModule(pathParts[0], ctx);
   if (!moduleAst) return undefined;
 
-  const decl = publicDecl(
-    moduleAst.rootScope,
-    last(pathParts)!,
-    ctx.conditions,
-  );
+  const name = last(pathParts)!;
+  const decl = publicDecl(moduleAst.rootScope, name, ctx.conditions);
   if (decl) return { decl, moduleAst };
 }
 
@@ -460,10 +442,10 @@ function virtualModule(
   if (!found) return undefined;
   if (found.ast) return found.ast;
 
-  const src = found.fn(ctx.conditions);
-  const modulePath = ctx.packageName + "::" + moduleName;
-  const debugFilePath = moduleName;
-  found.ast = parseSrcModule({ modulePath, debugFilePath, src });
+  const { conditions, rootModulePath, packageName } = ctx;
+  const src = found.fn({ conditions, rootModulePath, packageName });
+  const modulePath = packageName + "::" + moduleName;
+  found.ast = parseSrcModule({ modulePath, debugFilePath: moduleName, src });
   return found.ast;
 }
 
@@ -490,10 +472,8 @@ function rootLiveDecls(
 
   const root = scope as LexicalScope;
   if (!root._scopeDecls) {
-    const rootDecls = findValidRootDecls(scope, conditions);
-    root._scopeDecls = {
-      decls: new Map(rootDecls.map(d => [d.originalName, d])),
-    };
+    const decls = findValidRootDecls(scope, conditions);
+    root._scopeDecls = { decls: new Map(decls.map(d => [d.originalName, d])) };
   }
   return root._scopeDecls;
 }
