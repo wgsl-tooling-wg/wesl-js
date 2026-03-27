@@ -1,6 +1,7 @@
 import type { Conditions, WeslBundle, WeslProject } from "wesl";
 import { fileToModulePath, WeslParseError } from "wesl";
 import { fetchDependencies, loadShaderFromUrl } from "wesl-fetch";
+import type { AnnotatedLayout } from "wesl-reflect";
 import type { WgslPlayConfig } from "./Config.ts";
 import { ErrorOverlay } from "./ErrorOverlay.ts";
 import { PlaybackControls } from "./PlaybackControls.ts";
@@ -11,6 +12,7 @@ import {
   type LinkOptions,
   type PlaybackState,
   type RenderState,
+  renderOnce,
   startRenderLoop,
 } from "./Renderer.ts";
 import { UniformControls } from "./UniformControls.ts";
@@ -293,13 +295,18 @@ export class WgslPlay extends HTMLElement {
     if (isPlaying) return;
     this.playback.startTime = performance.now() - pausedDuration;
     this.setPlaying(true);
+    if (this.renderState) {
+      this.stopRenderLoop = startRenderLoop(this.renderState, this.playback);
+    }
   }
 
   /** Pause playback. */
   pause(): void {
     if (!this.playback.isPlaying) return;
     this.playback.pausedDuration = performance.now() - this.playback.startTime;
+    this.stopRenderLoop?.();
     this.setPlaying(false);
+    if (this.renderState) renderOnce(this.renderState, this.playback);
   }
 
   private setPlaying(playing: boolean): void {
@@ -313,7 +320,9 @@ export class WgslPlay extends HTMLElement {
   rewind(): void {
     this.playback.startTime = performance.now();
     this.playback.pausedDuration = 0;
+    this.stopRenderLoop?.();
     this.setPlaying(false);
+    if (this.renderState) renderOnce(this.renderState, this.playback);
   }
 
   /** Display error message in overlay. Pass empty string to clear. */
@@ -330,6 +339,8 @@ export class WgslPlay extends HTMLElement {
   setUniform(name: string, value: number | number[]): void {
     this.pendingUniforms.set(name, value);
     this.renderState?.uniformState.controlValues.set(name, value);
+    if (this.renderState && !this.playback.isPlaying)
+      renderOnce(this.renderState, this.playback);
   }
 
   private flushPendingUniforms(): void {
@@ -405,7 +416,9 @@ export class WgslPlay extends HTMLElement {
       this.renderState = await initWebGPU(this.canvas, alphaMode);
       this.setupMouseTracking();
       this.loadInitialContent();
-      this.stopRenderLoop = startRenderLoop(this.renderState, this.playback);
+      if (this.playback.isPlaying) {
+        this.stopRenderLoop = startRenderLoop(this.renderState, this.playback);
+      }
       this.dispatchEvent(new CustomEvent("ready"));
       return true;
     } catch (error) {
@@ -506,36 +519,45 @@ export class WgslPlay extends HTMLElement {
 
       try {
         this.errorOverlay.hide();
-        if (this._fetchSources || this._fetchLibs) {
-          const { weslSrc, libs } = await fetchDependencies(mainSource, {
-            shaderRoot: this.getConfigOverrides()?.shaderRoot,
-            existingSources: this._weslSrc,
-            fetchLibs: this._fetchLibs,
-            fetchSources: this._fetchSources,
-          });
-          this._weslSrc = { ...this._weslSrc, ...weslSrc };
-          this._libs = dedupLibs(this._libs, libs);
-        }
-        const layout = await createPipeline(this.renderState!, mainSource, {
-          ...this._linkOptions,
-          weslSrc: this._weslSrc,
-          libs: this._libs,
-          rootModuleName: this._rootModuleName,
-        });
-        if (!this._dirty) {
-          this.flushPendingUniforms();
-          const controls = this.renderState!.uniformState.layout.controls;
-          this.settings.setControls(controls);
-          this.dispatchEvent(new CustomEvent("compile-success"));
-          this.dispatchEvent(
-            new CustomEvent("uniforms-layout", { detail: layout }),
-          );
-        }
+        const layout = await this.buildPipeline(mainSource);
+        if (!this._dirty) this.applyBuild(layout);
       } catch (error) {
         if (!this._dirty) this.handleCompileError(error);
       }
     }
     this._building = false;
+  }
+
+  /** Fetch deps if needed and create the render pipeline. */
+  private async buildPipeline(
+    mainSource: string,
+  ): Promise<AnnotatedLayout | null> {
+    if (this._fetchSources || this._fetchLibs) {
+      const { weslSrc, libs } = await fetchDependencies(mainSource, {
+        shaderRoot: this.getConfigOverrides()?.shaderRoot,
+        existingSources: this._weslSrc,
+        fetchLibs: this._fetchLibs,
+        fetchSources: this._fetchSources,
+      });
+      this._weslSrc = { ...this._weslSrc, ...weslSrc };
+      this._libs = dedupLibs(this._libs, libs);
+    }
+    return createPipeline(this.renderState!, mainSource, {
+      ...this._linkOptions,
+      weslSrc: this._weslSrc,
+      libs: this._libs,
+      rootModuleName: this._rootModuleName,
+    });
+  }
+
+  /** Apply a successful build: flush uniforms, update controls, render. */
+  private applyBuild(layout: AnnotatedLayout | null): void {
+    this.flushPendingUniforms();
+    const controls = this.renderState!.uniformState.layout.controls;
+    this.settings.setControls(controls);
+    if (!this.playback.isPlaying) renderOnce(this.renderState!, this.playback);
+    this.dispatchEvent(new CustomEvent("compile-success"));
+    this.dispatchEvent(new CustomEvent("uniforms-layout", { detail: layout }));
   }
 
   private handleCompileError(error: unknown): void {

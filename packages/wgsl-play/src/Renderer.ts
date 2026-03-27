@@ -129,6 +129,12 @@ export async function createPipeline(
   return scan.layout;
 }
 
+/** Render a single frame (used when paused). */
+export function renderOnce(state: RenderState, playback: PlaybackState): void {
+  if (!state.pipeline) return;
+  doRender(state, playback);
+}
+
 /** Start the render loop. Returns a stop function. */
 export function startRenderLoop(
   state: RenderState,
@@ -169,6 +175,25 @@ export function startRenderLoop(
 
   animationId = requestAnimationFrame(render);
   return () => cancelAnimationFrame(animationId);
+}
+
+/** Update uniforms and submit one GPU frame (one-shot, e.g. when paused). */
+function doRender(state: RenderState, playback: PlaybackState): void {
+  const time = calculateTime(playback);
+  const { mouse, device, canvas, context, bindGroup } = state;
+  const auto: AutoValues = {
+    resolution: [canvas.width, canvas.height],
+    time,
+    delta_time: 0,
+    frame: state.frameCount,
+    mouse_pos: mouse.pos,
+    mouse_delta: [0, 0],
+    mouse_button: mouse.button,
+  };
+  writeUniforms(device, state.uniformState, auto);
+  const targetView = context.getCurrentTexture().createView();
+  renderFrame({ device, pipeline: state.pipeline!, bindGroup, targetView });
+  state.frameCount++;
 }
 
 export function calculateTime(playback: PlaybackState): number {

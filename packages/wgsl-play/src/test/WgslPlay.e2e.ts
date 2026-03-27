@@ -120,9 +120,8 @@ test("npm CDN - external imports work", async ({ page }) => {
   await page.waitForLoadState("networkidle");
   await waitForFrame(page, "#player2");
 
-  // Rewind to time=0 for deterministic snapshot
+  // Rewind to time=0 for deterministic snapshot (rewind() renders synchronously)
   await page.click("#rewind2");
-  await waitForNewFrame(page, "#player2");
   await expectCanvasSnapshot(page, "#player2", "npm-cdn.png");
 });
 
@@ -266,10 +265,10 @@ test("@uniforms controls panel renders and responds", async ({ page }) => {
   expect(hasError).toBe(false);
 
   // Rewind so snapshot is deterministic (brightness set by page script on compile-success)
+  // rewind() synchronously renders one frame, so no need to waitForNewFrame
   await page.evaluate(() => {
     (document.querySelector("#player14") as any)?.rewind();
   });
-  await waitForNewFrame(page, "#player14");
   await expectCanvasSnapshot(page, "#player14", "uniforms-initial.png");
 
   // Hover to reveal controls toggle, click to expand
@@ -303,7 +302,7 @@ test("@uniforms controls panel renders and responds", async ({ page }) => {
       slider.dispatchEvent(new Event("input", { bubbles: true }));
     }
   });
-  await waitForNewFrame(page, "#player14");
+  // setUniform renders synchronously when paused, no need to waitForNewFrame
   await expectCanvasSnapshot(page, "#player14", "uniforms-slider-changed.png");
 });
 

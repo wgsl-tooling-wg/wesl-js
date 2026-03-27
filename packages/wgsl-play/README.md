@@ -164,7 +164,7 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 - `autoplay` - Start animating on load (default: `true`). Set `autoplay="false"` to start paused
 - `transparent` - Use premultiplied alpha for transparent backgrounds (default: opaque)
 - `from` - Element ID of a source provider (e.g., wgsl-edit) to connect to
-- `no-controls` - Hide playback controls
+- `no-controls` - Hide playback controls (play/pause, rewind, fullscreen)
 - `no-settings` - Hide the uniform controls panel
 - `fetch-libs` - Auto-fetch missing libraries from npm (default: `true`). Set `fetch-libs="false"` to disable
 - `fetch-sources` - Auto-fetch local .wesl source files via HTTP (default: `true`). Set `fetch-sources="false"` to disable
