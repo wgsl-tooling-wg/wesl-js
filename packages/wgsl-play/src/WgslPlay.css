@@ -34,7 +34,7 @@
   border-bottom: 2px solid rgba(255, 255, 255, 0.4);
 }
 
-:host([resizable]) .resize-handle {
+:host([resizable]:hover) .resize-handle {
   display: block;
 }
 
@@ -59,7 +59,8 @@ canvas {
   background: var(--controls-bg);
   position: absolute;
   bottom: 8px;
-  right: 8px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 20px;
   border-radius: 6px;
