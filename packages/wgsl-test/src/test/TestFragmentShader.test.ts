@@ -338,15 +338,14 @@ test("shader with time uniform", async () => {
   expect(result[3]).toBeCloseTo(1.0);
 });
 
-test("shader with mouse uniform", async () => {
+test("shader with resolution and time uniforms", async () => {
   const src = `
     import env::u;
 
     @fragment
     fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       let st = pos.xy / u.resolution;
-      let dist = length(st - u.mouse);
-      return vec4f(dist, 0.0, 0.0, 1.0);
+      return vec4f(st.x, st.y, u.time / 10.0, 1.0);
     }
   `;
 
@@ -355,13 +354,13 @@ test("shader with mouse uniform", async () => {
     device,
     src,
     size: [256, 256],
-    uniforms: { mouse: [0.5, 0.5] },
+    uniforms: { time: 5.0 },
   });
 
-  // Distance from (0.5/256, 0.5/256) to (0.5, 0.5)
-  const st = [0.5 / 256, 0.5 / 256];
-  const expectedDist = Math.sqrt((st[0] - 0.5) ** 2 + (st[1] - 0.5) ** 2);
-  expect(result[0]).toBeCloseTo(expectedDist, 4);
+  // pixel (0,0) is at fragment (0.5, 0.5)
+  expect(result[0]).toBeCloseTo(0.5 / 256, 4); // st.x
+  expect(result[1]).toBeCloseTo(0.5 / 256, 4); // st.y
+  expect(result[2]).toBeCloseTo(0.5, 4); // time/10
 });
 
 test("shader with uniforms and texture", async () => {
