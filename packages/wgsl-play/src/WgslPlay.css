@@ -11,8 +11,35 @@
   overflow: hidden;
 }
 
-:host([resizable]) {
-  resize: both;
+.resize-handle {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  z-index: 2;
+  touch-action: none;
+}
+
+.resize-handle::before {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid rgba(255, 255, 255, 0.4);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+:host([resizable]) .resize-handle {
+  display: block;
+}
+
+:host(:hover) .resize-handle::before {
+  border-color: rgba(255, 255, 255, 0.7);
 }
 
 :host(.dark) {

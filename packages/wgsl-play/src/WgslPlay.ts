@@ -90,6 +90,7 @@ export class WgslPlay extends HTMLElement {
   private _onFullscreenChange = () =>
     this.controls.setFullscreen(!!document.fullscreenElement);
   private _pointerCleanup?: () => void;
+  private _resizeCleanup?: () => void;
 
   /** Get config overrides from element attributes. */
   private getConfigOverrides(): Partial<WgslPlayConfig> | undefined {
@@ -128,6 +129,8 @@ export class WgslPlay extends HTMLElement {
         }
       }
     });
+
+    this.setupResizeHandle(shadow.querySelector(".resize-handle")!);
   }
 
   connectedCallback(): void {
@@ -152,6 +155,7 @@ export class WgslPlay extends HTMLElement {
     this.resizeObserver.disconnect();
     this.stopRenderLoop?.();
     this._pointerCleanup?.();
+    this._resizeCleanup?.();
     document.removeEventListener("fullscreenchange", this._onFullscreenChange);
     if (this._sourceEl && this._sourceListener) {
       this._sourceEl.removeEventListener("change", this._sourceListener);
@@ -416,6 +420,40 @@ export class WgslPlay extends HTMLElement {
     };
   }
 
+  /** Drag-to-resize via a custom handle (works on touch + mouse). */
+  private setupResizeHandle(handle: HTMLElement): void {
+    let startX = 0;
+    let startY = 0;
+    let startW = 0;
+    let startH = 0;
+
+    const onMove = (e: PointerEvent): void => {
+      this.style.width = `${startW + e.clientX - startX}px`;
+      this.style.height = `${startH + e.clientY - startY}px`;
+    };
+    const onUp = (): void => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    };
+    const onDown = (e: PointerEvent): void => {
+      e.preventDefault();
+      handle.setPointerCapture(e.pointerId);
+      const rect = this.getBoundingClientRect();
+      startX = e.clientX;
+      startY = e.clientY;
+      startW = rect.width;
+      startH = rect.height;
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+    };
+
+    handle.addEventListener("pointerdown", onDown);
+    this._resizeCleanup = () => {
+      handle.removeEventListener("pointerdown", onDown);
+      onUp();
+    };
+  }
+
   /** Recompute canvas resolution from attributes or CSS size. */
   private updateCanvasSize(): void {
     const w = this.getAttribute("width");
@@ -652,7 +690,7 @@ export class WgslPlay extends HTMLElement {
 function getTemplate(): HTMLTemplateElement {
   if (!template) {
     template = document.createElement("template");
-    template.innerHTML = `<canvas part="canvas"></canvas>`;
+    template.innerHTML = `<canvas part="canvas"></canvas><div class="resize-handle"></div>`;
   }
   return template;
 }
