@@ -1,10 +1,22 @@
 import { requestWeslDevice } from "wesl";
 import {
+  type AutoValues,
+  createUniformBuffer,
   linkAndCreatePipeline,
   renderFrame,
-  updateRenderUniforms,
+  scanUniforms,
+  type UniformBufferState,
   type WeslOptions,
+  writeUniforms,
 } from "wesl-gpu";
+import type { AnnotatedLayout } from "wesl-reflect";
+
+/** Mutable mouse state, updated by pointer event listeners. */
+export interface MouseState {
+  pos: [number, number];
+  delta: [number, number];
+  button: number; // 0=none, 1=left, 2=middle, 3=right
+}
 
 /** WebGPU state */
 export interface RenderState {
@@ -12,9 +24,11 @@ export interface RenderState {
   canvas: HTMLCanvasElement;
   context: GPUCanvasContext;
   presentationFormat: GPUTextureFormat;
-  uniformBuffer: GPUBuffer;
+  bindGroupLayout: GPUBindGroupLayout;
   pipelineLayout: GPUPipelineLayout;
+  uniformState: UniformBufferState;
   bindGroup: GPUBindGroup;
+  mouse: MouseState;
   pipeline?: GPURenderPipeline;
   frameCount: number;
 }
@@ -42,67 +56,77 @@ export async function initWebGPU(
   if (!context) throw new Error("WebGPU context not available");
 
   const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-  context.configure({
-    device,
-    format: presentationFormat,
-    alphaMode,
-  });
+  context.configure({ device, format: presentationFormat, alphaMode });
 
-  const uniformBuffer = device.createBuffer({
-    size: 32, // vec2f + f32 + padding + vec2f
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-
-  // Explicit layout for now. LATER will construct layout based on reflection
   const bindGroupLayout = device.createBindGroupLayout({
     entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: {} }],
   });
   const pipelineLayout = device.createPipelineLayout({
     bindGroupLayouts: [bindGroupLayout],
   });
-  const bindGroup = device.createBindGroup({
-    layout: bindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
-  });
+
+  // Initial buffer with default layout (will be recreated per-compile)
+  const uniformState = createUniformBuffer(device, null);
+  const bindGroup = createBindGroup(device, bindGroupLayout, uniformState);
+  const mouse: MouseState = { pos: [0, 0], delta: [0, 0], button: 0 };
 
   return {
     device,
     canvas,
     context,
     presentationFormat,
-    uniformBuffer,
+    bindGroupLayout,
     pipelineLayout,
+    uniformState,
     bindGroup,
+    mouse,
+    pipeline: undefined,
     frameCount: 0,
   };
 }
 
-/** Compile WESL fragment shader and create render pipeline. */
+/** Compile WESL fragment shader and create render pipeline.
+ *  Recreates the uniform buffer and bind group based on @uniforms metadata. */
 export async function createPipeline(
   state: RenderState,
   fragmentSource: string,
   options?: LinkOptions,
-): Promise<void> {
-  state.device.pushErrorScope("validation");
+): Promise<AnnotatedLayout | null> {
+  const pkg = options?.packageName ?? "package";
+  const root = options?.rootModuleName ?? "main";
+  const scan = scanUniforms(fragmentSource, `${pkg}::${root}`);
+
+  const { device, bindGroupLayout, presentationFormat, pipelineLayout } = state;
+  state.uniformState.buffer.destroy();
+  state.uniformState = createUniformBuffer(device, scan.layout);
+  state.bindGroup = createBindGroup(
+    device,
+    bindGroupLayout,
+    state.uniformState,
+  );
+
+  device.pushErrorScope("validation");
   let gpuError: unknown;
   let jsError: unknown;
   try {
     state.pipeline = await linkAndCreatePipeline({
-      device: state.device,
+      device,
       fragmentSource,
-      format: state.presentationFormat,
-      layout: state.pipelineLayout,
+      format: presentationFormat,
+      layout: pipelineLayout,
       ...options,
     });
   } catch (e) {
     jsError = e;
   } finally {
-    gpuError = await state.device.popErrorScope();
+    gpuError = await device.popErrorScope();
   }
   if (jsError || gpuError) {
     state.pipeline = undefined;
     throw jsError ?? gpuError;
   }
+
+  return scan.layout;
 }
 
 /** Start the render loop. Returns a stop function. */
@@ -111,6 +135,7 @@ export function startRenderLoop(
   playback: PlaybackState,
 ): () => void {
   let animationId: number;
+  let lastTime = 0;
 
   function render(): void {
     if (!state.pipeline) {
@@ -119,25 +144,25 @@ export function startRenderLoop(
     }
 
     const time = calculateTime(playback);
-    const resolution: [number, number] = [
-      state.canvas.width,
-      state.canvas.height,
-    ];
-    const mouse: [number, number] = [0.0, 0.0];
+    const delta_time = time - lastTime;
+    lastTime = time;
 
-    updateRenderUniforms(
-      state.uniformBuffer,
-      state.device,
-      resolution,
+    const { mouse, device, canvas, context, bindGroup } = state;
+    const auto: AutoValues = {
+      resolution: [canvas.width, canvas.height],
       time,
-      mouse,
-    );
-    renderFrame({
-      device: state.device,
-      pipeline: state.pipeline,
-      bindGroup: state.bindGroup,
-      targetView: state.context.getCurrentTexture().createView(),
-    });
+      delta_time,
+      frame: state.frameCount,
+      mouse_pos: mouse.pos,
+      mouse_delta: mouse.delta,
+      mouse_button: mouse.button,
+    };
+    // Reset per-frame deltas after reading
+    mouse.delta = [0, 0];
+
+    writeUniforms(device, state.uniformState, auto);
+    const targetView = context.getCurrentTexture().createView();
+    renderFrame({ device, pipeline: state.pipeline!, bindGroup, targetView });
     state.frameCount++;
     animationId = requestAnimationFrame(render);
   }
@@ -146,9 +171,20 @@ export function startRenderLoop(
   return () => cancelAnimationFrame(animationId);
 }
 
-function calculateTime(playback: PlaybackState): number {
+export function calculateTime(playback: PlaybackState): number {
   const currentTime = playback.isPlaying
     ? performance.now()
     : playback.startTime + playback.pausedDuration;
   return (currentTime - playback.startTime) / 1000;
+}
+
+function createBindGroup(
+  device: GPUDevice,
+  layout: GPUBindGroupLayout,
+  uniformState: UniformBufferState,
+): GPUBindGroup {
+  return device.createBindGroup({
+    layout,
+    entries: [{ binding: 0, resource: { buffer: uniformState.buffer } }],
+  });
 }

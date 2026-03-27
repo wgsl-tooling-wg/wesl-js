@@ -29,11 +29,94 @@ import env::u;
 }
 ```
 
-| Uniform | Type | Description |
-|---------|------|-------------|
-| `resolution` | `vec2f` | Canvas dimensions in pixels |
+When no `@uniforms` struct is declared, a default is provided with `resolution` and `time`.
+
+### Custom Uniforms
+
+Declare a struct with `@uniforms` to add your own fields with UI controls:
+
+```wgsl
+import env::u;
+
+@uniforms struct Params {
+  @auto resolution: vec2f,
+  @auto time: f32,
+  @range(1.0, 20.0, 5.0, 6.0) frequency: f32,
+  @color(0.2, 0.5, 1.0) tint: vec3f,
+  @toggle(0) invert: u32,
+}
+
+@fragment fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let wave = sin(pos.x * u.frequency + u.time);
+  var color = wave * u.tint;
+  if u.invert == 1u { color = 1.0 - color; }
+  return vec4f(color, 1.0);
+}
+```
+
+### `@auto` -- Runtime Fields
+
+The player fills these automatically each frame. The field name determines
+which value is bound (or use `@auto(name)` when the field name differs):
+
+| Name | Type | Description |
+|------|------|-------------|
+| `resolution` | `vec2f` | Canvas size in pixels |
 | `time` | `f32` | Elapsed time in seconds |
-| `mouse` | `vec2f` | Mouse position (normalized 0-1) |
+| `delta_time` | `f32` | Delta time since last frame |
+| `frame` | `u32` | Frame count |
+| `mouse_pos` | `vec2f` | Pointer position in pixels |
+| `mouse_delta` | `vec2f` | Pointer movement since last frame |
+| `mouse_button` | `i32` | Active button: 0=none, 1=left, 2=middle, 3=right |
+
+### UI Annotations
+
+These generate interactive controls in the player.
+
+#### `@range(min, max [, step [, initial]])`
+
+Slider for `f32` or `i32`. Step defaults to `0.01` for `f32`, `1` for `i32`.
+Initial defaults to `min`.
+
+```wgsl
+@range(1.0, 20.0)              frequency: f32,
+@range(1.0, 20.0, 5.0)         frequency: f32,  // step=5
+@range(1.0, 20.0, 0.5, 5.0)    frequency: f32,  // step=0.5, initial=5
+```
+
+#### `@color(r, g, b)`
+
+Color picker for `vec3f`:
+
+```wgsl
+@color(0.2, 0.5, 1.0) tint: vec3f,
+```
+
+#### `@toggle([initial])`
+
+Boolean toggle for `u32` (0 or 1). WGSL forbids `bool` in uniform buffers.
+
+```wgsl
+@toggle     invert: u32,    // default=0
+@toggle(1)  invert: u32,    // default=1
+```
+
+### Plain Fields
+
+Fields without annotations are zero-initialized and settable from JavaScript
+via `setUniform()`. This works before or after compilation.
+
+```wgsl
+@uniforms struct Params {
+  @auto resolution: vec2f,
+  brightness: f32,           // no annotation — set from JS
+}
+```
+
+```javascript
+const player = document.querySelector("wgsl-play");
+player.setUniform("brightness", 0.8);
+```
 
 ### Inline source
 
@@ -81,6 +164,8 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 - `autoplay` - Start animating on load (default: `true`). Set `autoplay="false"` to start paused
 - `transparent` - Use premultiplied alpha for transparent backgrounds (default: opaque)
 - `from` - Element ID of a source provider (e.g., wgsl-edit) to connect to
+- `no-controls` - Hide playback controls
+- `no-settings` - Hide the uniform controls panel
 - `fetch-libs` - Auto-fetch missing libraries from npm (default: `true`). Set `fetch-libs="false"` to disable
 - `fetch-sources` - Auto-fetch local .wesl source files via HTTP (default: `true`). Set `fetch-sources="false"` to disable
 
@@ -97,12 +182,14 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 - `play()` - Start/resume animation
 - `pause()` - Pause animation
 - `rewind()` - Reset to t=0
+- `setUniform(name, value)` - Set a uniform value programmatically
 - `showError(message)` - Display error (empty string clears)
 
 ### Events
 - `compile-error` - `{ message: string }`
 - `init-error` - `{ message: string }` (WebGPU init failed)
 - `playback-change` - `{ isPlaying: boolean }`
+- `uniforms-layout` - `{ detail: AnnotatedLayout }` (fired after each compile)
 
 ## Styling
 

@@ -5,6 +5,7 @@ import type { WgslEdit } from "../../wgsl-edit/src/WgslEdit.ts";
 import type { WgslPlay } from "../src/index.ts";
 import linkConfig from "./shaders/effects/main.wesl?link";
 import staticWgsl from "./shaders/effects/main.wesl?static";
+import mouseConfig from "./shaders/mouse.wesl?link";
 
 const player1 = document.querySelector<WgslPlay>("#player1")!;
 
@@ -108,6 +109,14 @@ document.querySelector("#link-btn13")!.addEventListener("click", async () => {
   }
 });
 
+// @uniforms test (section 14) — set plain field via JS
+const player14 = document.querySelector<WgslPlay>("#player14")!;
+player14.setUniform("brightness", 0.6);
+
+// mouse tracking test (?link, section 15)
+const player15 = document.querySelector<WgslPlay>("#player15")!;
+player15.project = mouseConfig;
+
 // Expose for console debugging
 Object.assign(window, {
   player1,
@@ -120,6 +129,9 @@ Object.assign(window, {
   editor10,
   editor12,
   editor13,
+  player14,
+  player15,
   staticWgsl,
   linkConfig,
+  mouseConfig,
 });

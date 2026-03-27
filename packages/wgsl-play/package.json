@@ -40,7 +40,8 @@
   "dependencies": {
     "wesl": "workspace:*",
     "wesl-fetch": "workspace:*",
-    "wesl-gpu": "workspace:*"
+    "wesl-gpu": "workspace:*",
+    "wesl-reflect": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "^1.53.2",

@@ -5,6 +5,7 @@ import type { WgslPlayConfig } from "./Config.ts";
 import { ErrorOverlay } from "./ErrorOverlay.ts";
 import { PlaybackControls } from "./PlaybackControls.ts";
 import {
+  calculateTime,
   createPipeline,
   initWebGPU,
   type LinkOptions,
@@ -12,6 +13,7 @@ import {
   type RenderState,
   startRenderLoop,
 } from "./Renderer.ts";
+import { UniformControls } from "./UniformControls.ts";
 import cssText from "./WgslPlay.css?inline";
 
 export { defaults, getConfig, resetConfig } from "./Config.ts";
@@ -44,6 +46,7 @@ export class WgslPlay extends HTMLElement {
     "shader-root",
     "from",
     "no-controls",
+    "no-settings",
     "theme",
     "autoplay",
     "transparent",
@@ -54,10 +57,12 @@ export class WgslPlay extends HTMLElement {
   private canvas: HTMLCanvasElement;
   private errorOverlay: ErrorOverlay;
   private controls: PlaybackControls;
+  private settings: UniformControls;
   private resizeObserver: ResizeObserver;
   private stopRenderLoop?: () => void;
 
   private renderState?: RenderState;
+  private pendingUniforms = new Map<string, number | number[]>();
   private playback: PlaybackState = {
     isPlaying: true,
     startTime: performance.now(),
@@ -79,6 +84,7 @@ export class WgslPlay extends HTMLElement {
   private _mediaQuery: MediaQueryList | null = null;
   private _onFullscreenChange = () =>
     this.controls.setFullscreen(!!document.fullscreenElement);
+  private _pointerCleanup?: () => void;
 
   /** Get config overrides from element attributes. */
   private getConfigOverrides(): Partial<WgslPlayConfig> | undefined {
@@ -95,6 +101,9 @@ export class WgslPlay extends HTMLElement {
 
     this.canvas = shadow.querySelector("canvas")!;
     this.errorOverlay = new ErrorOverlay(shadow);
+    this.settings = new UniformControls(shadow, (name, value) =>
+      this.setUniform(name, value),
+    );
     this.controls = new PlaybackControls(
       shadow,
       () => this.play(),
@@ -135,6 +144,7 @@ export class WgslPlay extends HTMLElement {
   disconnectedCallback(): void {
     this.resizeObserver.disconnect();
     this.stopRenderLoop?.();
+    this._pointerCleanup?.();
     document.removeEventListener("fullscreenchange", this._onFullscreenChange);
     if (this._sourceEl && this._sourceListener) {
       this._sourceEl.removeEventListener("change", this._sourceListener);
@@ -148,35 +158,29 @@ export class WgslPlay extends HTMLElement {
   ): void {
     if (oldValue === newValue) return;
 
-    if (name === "no-controls") {
-      newValue !== null ? this.controls.hide() : this.controls.show();
-      return;
-    }
-
-    if (name === "theme") {
-      this._theme = (newValue as typeof this._theme) || "auto";
-      this.updateTheme();
-      return;
-    }
-
-    if (name === "autoplay") {
-      newValue === "false" ? this.pause() : this.play();
-      return;
-    }
-
-    if (name === "fetch-libs") {
-      this._fetchLibs = newValue !== "false";
-      return;
-    }
-
-    if (name === "fetch-sources") {
-      this._fetchSources = newValue !== "false";
-      return;
-    }
-
-    // Initial src is handled by initialize(); this handles later changes
-    if (name === "src" && newValue && this._initPromise) {
-      this.loadFromUrl(newValue);
+    switch (name) {
+      case "no-controls":
+        newValue !== null ? this.controls.hide() : this.controls.show();
+        return;
+      case "no-settings":
+        newValue !== null ? this.settings.hide() : this.settings.show();
+        return;
+      case "theme":
+        this._theme = (newValue as typeof this._theme) || "auto";
+        this.updateTheme();
+        return;
+      case "autoplay":
+        newValue === "false" ? this.pause() : this.play();
+        return;
+      case "fetch-libs":
+        this._fetchLibs = newValue !== "false";
+        return;
+      case "fetch-sources":
+        this._fetchSources = newValue !== "false";
+        return;
+      case "src":
+        if (newValue && this._initPromise) this.loadFromUrl(newValue);
+        return;
     }
   }
 
@@ -205,14 +209,8 @@ export class WgslPlay extends HTMLElement {
 
   /** Set project configuration (mirrors wesl link() API). */
   set project(value: WeslProject) {
-    const {
-      weslSrc,
-      rootModuleName,
-      libs,
-      packageName,
-      conditions,
-      constants,
-    } = value;
+    const { weslSrc, rootModuleName, libs } = value;
+    const { packageName, conditions, constants } = value;
     if (packageName !== undefined) this._linkOptions.packageName = packageName;
     if (conditions !== undefined) this._linkOptions.conditions = conditions;
     if (constants !== undefined) this._linkOptions.constants = constants;
@@ -271,9 +269,7 @@ export class WgslPlay extends HTMLElement {
 
   /** Current animation time in seconds. */
   get time(): number {
-    const { isPlaying, startTime, pausedDuration } = this.playback;
-    const now = isPlaying ? performance.now() : startTime + pausedDuration;
-    return (now - startTime) / 1000;
+    return calculateTime(this.playback);
   }
 
   /** Number of frames rendered (for testing/debugging). */
@@ -309,9 +305,8 @@ export class WgslPlay extends HTMLElement {
   private setPlaying(playing: boolean): void {
     this.playback.isPlaying = playing;
     this.controls.setPlaying(playing);
-    this.dispatchEvent(
-      new CustomEvent("playback-change", { detail: { isPlaying: playing } }),
-    );
+    const detail = { isPlaying: playing };
+    this.dispatchEvent(new CustomEvent("playback-change", { detail }));
   }
 
   /** Reset animation to time 0 and pause. */
@@ -331,10 +326,61 @@ export class WgslPlay extends HTMLElement {
     this.pause();
   }
 
+  /** Set a uniform value by name. Works before or after compilation. */
+  setUniform(name: string, value: number | number[]): void {
+    this.pendingUniforms.set(name, value);
+    this.renderState?.uniformState.controlValues.set(name, value);
+  }
+
+  private flushPendingUniforms(): void {
+    const map = this.renderState?.uniformState.controlValues;
+    if (!map) return;
+    for (const [k, v] of this.pendingUniforms) map.set(k, v);
+  }
+
+  /** Current uniform control values (readable). */
+  get uniforms(): Record<string, number | number[]> {
+    const map = this.renderState?.uniformState.controlValues;
+    if (!map) return {};
+    return Object.fromEntries(map);
+  }
+
   /** Toggle fullscreen on this element. */
   toggleFullscreen(): void {
     if (document.fullscreenElement) document.exitFullscreen();
     else this.requestFullscreen();
+  }
+
+  /** Track pointer events on canvas for mouse_pos @auto fields. */
+  private setupMouseTracking(): void {
+    const mouse = this.renderState!.mouse;
+    const canvas = this.canvas;
+
+    const onMove = (e: PointerEvent): void => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * devicePixelRatio;
+      const y = (e.clientY - rect.top) * devicePixelRatio;
+      mouse.delta = [x - mouse.pos[0], y - mouse.pos[1]];
+      mouse.pos = [x, y];
+    };
+    const onDown = (e: PointerEvent): void => {
+      mouse.button = e.button + 1; // 0=none, 1=left, 2=middle, 3=right
+    };
+    const onUp = (): void => {
+      mouse.button = 0;
+    };
+
+    canvas.addEventListener("pointermove", onMove);
+    canvas.addEventListener("pointerdown", onDown);
+    canvas.addEventListener("pointerup", onUp);
+    canvas.addEventListener("pointerleave", onUp);
+
+    this._pointerCleanup = () => {
+      canvas.removeEventListener("pointermove", onMove);
+      canvas.removeEventListener("pointerdown", onDown);
+      canvas.removeEventListener("pointerup", onUp);
+      canvas.removeEventListener("pointerleave", onUp);
+    };
   }
 
   private updateTheme(): void {
@@ -354,10 +400,10 @@ export class WgslPlay extends HTMLElement {
 
   private async doInitialize(): Promise<boolean> {
     try {
-      const alphaMode = this.hasAttribute("transparent")
-        ? "premultiplied"
-        : "opaque";
+      const transparent = this.hasAttribute("transparent");
+      const alphaMode = transparent ? "premultiplied" : "opaque";
       this.renderState = await initWebGPU(this.canvas, alphaMode);
+      this.setupMouseTracking();
       this.loadInitialContent();
       this.stopRenderLoop = startRenderLoop(this.renderState, this.playback);
       this.dispatchEvent(new CustomEvent("ready"));
@@ -368,9 +414,8 @@ export class WgslPlay extends HTMLElement {
         : `WebGPU initialization failed: ${error}`;
       this.errorOverlay.show(message);
       this.pause();
-      this.dispatchEvent(
-        new CustomEvent("init-error", { detail: { message } }),
-      );
+      const detail = { message };
+      this.dispatchEvent(new CustomEvent("init-error", { detail }));
       return false;
     }
   }
@@ -423,9 +468,10 @@ export class WgslPlay extends HTMLElement {
   /** Fetch shader from URL, then trigger a build. */
   private async loadFromUrl(url: string): Promise<void> {
     try {
+      const shaderRoot = this.getConfigOverrides()?.shaderRoot;
       const { weslSrc, libs, rootModuleName } = await loadShaderFromUrl(
         url,
-        this.getConfigOverrides()?.shaderRoot,
+        shaderRoot,
       );
       this._weslSrc = weslSrc;
       this._libs = libs;
@@ -470,14 +516,21 @@ export class WgslPlay extends HTMLElement {
           this._weslSrc = { ...this._weslSrc, ...weslSrc };
           this._libs = dedupLibs(this._libs, libs);
         }
-        await createPipeline(this.renderState!, mainSource, {
+        const layout = await createPipeline(this.renderState!, mainSource, {
           ...this._linkOptions,
           weslSrc: this._weslSrc,
           libs: this._libs,
           rootModuleName: this._rootModuleName,
         });
-        if (!this._dirty)
+        if (!this._dirty) {
+          this.flushPendingUniforms();
+          const controls = this.renderState!.uniformState.layout.controls;
+          this.settings.setControls(controls);
           this.dispatchEvent(new CustomEvent("compile-success"));
+          this.dispatchEvent(
+            new CustomEvent("uniforms-layout", { detail: layout }),
+          );
+        }
       } catch (error) {
         if (!this._dirty) this.handleCompileError(error);
       }
@@ -500,31 +553,29 @@ export class WgslPlay extends HTMLElement {
     // WESL linker errors attach a single weslLocation
     const loc = (error as any)?.weslLocation;
     if (loc) {
+      const message = (error as any)?.message ?? "";
       return [
         {
           file: loc.file,
           line: loc.line,
           column: loc.column - 1,
           length: loc.length,
-          severity: "error",
-          message: (error as any)?.message ?? "",
+          severity: "error" as const,
+          message,
         },
       ];
     }
     // GPU compilation errors have multiple messages
     const msgs = (error as any)?.compilationInfo?.messages;
     if (msgs) {
+      const toSeverity = (t: string) =>
+        t === "warning" ? "warning" : t === "info" ? "info" : "error";
       return msgs.map((m: any) => ({
         file: m.module?.url,
         line: m.lineNum,
-        column: m.linePos - 1, // 1-indexed to 0-indexed
+        column: m.linePos - 1,
         length: m.length,
-        severity:
-          m.type === "warning"
-            ? "warning"
-            : m.type === "info"
-              ? "info"
-              : "error",
+        severity: toSeverity(m.type),
         message: m.message,
       }));
     }
@@ -574,8 +625,8 @@ function toModulePaths(
   weslSrc: Record<string, string>,
   pkg: string,
 ): Record<string, string> {
-  const result: Record<string, string> = {};
-  for (const [key, value] of Object.entries(weslSrc))
-    result[fileToModulePath(key, pkg, false)] = value;
-  return result;
+  const entries = Object.entries(weslSrc).map(
+    ([key, value]) => [fileToModulePath(key, pkg, false), value] as const,
+  );
+  return Object.fromEntries(entries);
 }

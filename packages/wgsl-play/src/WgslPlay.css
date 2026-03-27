@@ -58,6 +58,116 @@ canvas {
   background: var(--controls-hover-bg);
 }
 
+/* Settings panel */
+.settings {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+:host(:hover) .settings {
+  opacity: 1;
+}
+
+.settings.empty {
+  display: none;
+}
+
+.uniform-toggle {
+  border: none;
+  background: var(--controls-bg);
+  color: var(--controls-color);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+
+.uniform-toggle:hover {
+  color: var(--controls-hover-color);
+  background: var(--controls-hover-bg);
+}
+
+.uniform-toggle svg {
+  transform: rotate(-90deg);
+  transition: transform 0.25s linear;
+}
+
+.settings.expanded .uniform-toggle svg {
+  transform: rotate(0deg);
+}
+
+.uniform-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: 4px;
+  min-width: 180px;
+  transition: grid-template-rows 0.25s linear;
+}
+
+.settings.expanded .uniform-panel {
+  grid-template-rows: 1fr;
+}
+
+.uniform-panel-inner {
+  overflow: hidden;
+  background: var(--controls-bg);
+  border-radius: 6px;
+  padding: 0 10px;
+}
+
+.uniform-panel-inner > :first-child {
+  margin-top: 8px;
+}
+
+.uniform-panel-inner > :last-child {
+  margin-bottom: 8px;
+}
+
+.uniform-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  color: var(--controls-color);
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.uniform-row label {
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.uniform-row input[type="range"] {
+  flex: 1;
+  min-width: 80px;
+}
+
+.uniform-row input[type="color"] {
+  width: 28px;
+  height: 20px;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.uniform-row input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.uniform-value {
+  min-width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .error-overlay {
   position: absolute;
   inset: 0;

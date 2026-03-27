@@ -256,6 +256,57 @@ test("editor.link() with virtualLibs resolves env:: module", async ({
   expect(output).not.toContain("Error");
 });
 
+test("@uniforms controls panel renders and responds", async ({ page }) => {
+  await page.goto("/");
+  await waitForFrame(page, "#player14");
+
+  const hasError = await page.evaluate(
+    () => (document.querySelector("#player14") as any)?.hasError ?? true,
+  );
+  expect(hasError).toBe(false);
+
+  // Rewind so snapshot is deterministic (brightness set by page script on compile-success)
+  await page.evaluate(() => {
+    (document.querySelector("#player14") as any)?.rewind();
+  });
+  await waitForNewFrame(page, "#player14");
+  await expectCanvasSnapshot(page, "#player14", "uniforms-initial.png");
+
+  // Hover to reveal controls toggle, click to expand
+  await page.locator("#player14").hover({ position: { x: 16, y: 16 } });
+  await page.evaluate(() => {
+    const el = document.querySelector("#player14");
+    (el?.shadowRoot?.querySelector(".uniform-toggle") as HTMLElement)?.click();
+  });
+
+  // Verify controls panel expanded with 3 controls (brightness is plain, no UI)
+  const controlCount = await page.evaluate(() => {
+    const el = document.querySelector("#player14");
+    const panel = el?.shadowRoot?.querySelector(".uniform-panel");
+    const rows = panel?.querySelectorAll(".uniform-row");
+    return {
+      visible: panel?.checkVisibility() ?? false,
+      count: rows?.length ?? 0,
+    };
+  });
+  expect(controlCount.visible).toBe(true);
+  expect(controlCount.count).toBe(3);
+
+  // Adjust the frequency slider and verify re-render
+  await page.evaluate(() => {
+    const el = document.querySelector("#player14");
+    const slider = el?.shadowRoot?.querySelector(
+      'input[type="range"]',
+    ) as HTMLInputElement;
+    if (slider) {
+      slider.value = "16";
+      slider.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
+  await waitForNewFrame(page, "#player14");
+  await expectCanvasSnapshot(page, "#player14", "uniforms-slider-changed.png");
+});
+
 test("no critical console errors on basic load", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", msg => {
