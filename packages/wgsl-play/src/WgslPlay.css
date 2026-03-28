@@ -1,7 +1,7 @@
 :host {
   --error-bg: rgba(220, 102, 18, 0.8);
   --error-color: white;
-  --controls-bg: rgba(0, 0, 0, 0.4);
+  --controls-bg: rgba(0, 0, 0, 0.55);
   --controls-color: rgba(255, 255, 255, 0.8);
   --controls-hover-color: white;
   --controls-hover-bg: rgba(255, 255, 255, 0.15);
@@ -30,16 +30,12 @@
   right: 3px;
   width: 8px;
   height: 8px;
-  border-right: 2px solid rgba(255, 255, 255, 0.4);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+  border-right: 2px solid var(--controls-bg);
+  border-bottom: 2px solid var(--controls-bg);
 }
 
 :host([resizable]:hover) .resize-handle {
   display: block;
-}
-
-:host(:hover) .resize-handle::before {
-  border-color: rgba(255, 255, 255, 0.7);
 }
 
 :host(.dark) {
@@ -122,7 +118,7 @@ canvas {
 
 .uniform-toggle:hover {
   color: var(--controls-hover-color);
-  background: var(--controls-hover-bg);
+  background: var(--controls-bg);
 }
 
 .uniform-toggle svg {
