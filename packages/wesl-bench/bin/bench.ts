@@ -55,7 +55,7 @@ async function main() {
     );
   }
 
-  if (args["heap-sample"]) {
+  if (args.alloc || args["alloc-raw"] || args["alloc-verbose"] || args["alloc-user-only"]) {
     printMatrixHeapReports(results, args);
   }
 
@@ -100,9 +100,9 @@ function printMatrixHeapReports(
 ): void {
   const reportGroups = matrixToReportGroups(results);
   printHeapReports(reportGroups, {
-    topN: args["heap-rows"],
-    stackDepth: args["heap-stack"],
-    verbose: args["heap-verbose"],
-    userOnly: args["heap-user-only"],
+    topN: args["alloc-rows"],
+    stackDepth: args["alloc-stack"],
+    verbose: args["alloc-verbose"],
+    userOnly: args["alloc-user-only"],
   });
 }
