@@ -1,17 +1,17 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-const REPLACEABLE_INVALID_CHARS = /[<>:"/\\|?*]/g;
+const replaceableChars = /[<>:"/\\|?*]/g;
 
 // since we always add '.png' to the end, there's no need to handle trailing
 // dots, which are only invalid at the end of the whole name.  spaces around
 // the outside of the snapshot name are handled with trim()
-const UNREPLACEABLE_INVALID_CHARS = /\p{Control}+/gu;
+const unreplaceableChars = /\p{Control}+/gu;
 
 function sanitizeName(input: string): string {
   return input
-    .replace(REPLACEABLE_INVALID_CHARS, "_")
-    .replace(UNREPLACEABLE_INVALID_CHARS, "")
+    .replace(replaceableChars, "_")
+    .replace(unreplaceableChars, "")
     .trim();
 }
 
