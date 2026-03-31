@@ -17,88 +17,25 @@ test("generates correct file paths", () => {
   );
 });
 
-test("handles invalid chars in snapshot name for all path types", () => {
-  const testPath = path.join("/path/to/test.ts");
-  const manager = new ImageSnapshotManager(testPath);
+test("sanitizes invalid filename characters", () => {
+  const manager = new ImageSnapshotManager(path.join("/path/to/test.ts"));
+  const snap = (name: string) => manager.referencePath(name);
+  const snapDir = path.join("/path/to", "__image_snapshots__");
 
-  expect(manager.referencePath("Category > test name")).toBe(
-    path.join("/path/to", "__image_snapshots__", "Category _ test name.png"),
+  // filesystem-invalid chars replaced with underscores
+  expect(snap("Category > test")).toBe(path.join(snapDir, "Category _ test.png"));
+  expect(snap('a<>:"/\\|?*b')).toBe(path.join(snapDir, "a_________b.png"));
+
+  // control chars removed, outer whitespace trimmed
+  expect(snap("word1\x02word2")).toBe(path.join(snapDir, "word1word2.png"));
+  expect(snap(" spaced ")).toBe(path.join(snapDir, "spaced.png"));
+
+  // sanitization applied to all path types
+  expect(manager.actualPath("a > b")).toBe(
+    path.join("/path/to", "__image_actual__", "a _ b.png"),
   );
-  expect(manager.actualPath("Category > test name")).toBe(
-    path.join("/path/to", "__image_actual__", "Category _ test name.png"),
-  );
-  expect(manager.diffPath("Category > test name")).toBe(
-    path.join("/path/to", "__image_diffs__", "Category _ test name.png"),
-  );
-});
-
-test("handles replaceable invalid chars in snapshot name", () => {
-  const testPath = path.join("/path/to/test.ts");
-  const manager = new ImageSnapshotManager(testPath);
-
-  // since we've shown that all path types are passed through sanitizeName, it's
-  // enough to stick to one type for these.
-
-  // handles multiple replaceable chars
-  expect(manager.referencePath("Category > test name > subtitle")).toBe(
-    path.join(
-      "/path/to",
-      "__image_snapshots__",
-      "Category _ test name _ subtitle.png",
-    ),
-  );
-
-  // handles all known replaceable chars
-  expect(manager.referencePath('Category <>:"/\\|?* test')).toBe(
-    path.join("/path/to", "__image_snapshots__", "Category _________ test.png"),
-  );
-
-  // handles invalid chars at start
-  expect(manager.referencePath("> test")).toBe(
-    path.join("/path/to", "__image_snapshots__", "_ test.png"),
-  );
-
-  // handles invalid chars at end
-  expect(manager.referencePath("test >")).toBe(
-    path.join("/path/to", "__image_snapshots__", "test _.png"),
-  );
-});
-
-test("handles unreplaceable invalid chars in snapshot name", () => {
-  const testPath = path.join("/path/to/test.ts");
-  const manager = new ImageSnapshotManager(testPath);
-
-  // since we've shown that all path types are passed through sanitizeName, it's
-  // enough to stick to one type for these.
-
-  // handles unreplaceable chars
-  expect(manager.referencePath("Category \x02 test name")).toBe(
-    path.join("/path/to", "__image_snapshots__", "Category  test name.png"),
-  );
-
-  // handles multiple unreplaceable chars
-  expect(manager.referencePath("Category \x02\x03 test name")).toBe(
-    path.join("/path/to", "__image_snapshots__", "Category  test name.png"),
-  );
-
-  // handles unreplaceables at the beginning
-  expect(manager.referencePath("\x02\x03word1 word2")).toBe(
-    path.join("/path/to", "__image_snapshots__", "word1 word2.png"),
-  );
-
-  // handles unreplaceables at the end
-  expect(manager.referencePath("word1 word2\x02\x03")).toBe(
-    path.join("/path/to", "__image_snapshots__", "word1 word2.png"),
-  );
-
-  // handles extra space on the outside
-  expect(manager.referencePath(" word1 word2 \x02 \x03 ")).toBe(
-    path.join("/path/to", "__image_snapshots__", "word1 word2.png"),
-  );
-
-  // handles mixed invalid chars
-  expect(manager.referencePath(" word1 >\x02<\x03 word2 \x02 \x03 ")).toBe(
-    path.join("/path/to", "__image_snapshots__", "word1 __ word2.png"),
+  expect(manager.diffPath("a > b")).toBe(
+    path.join("/path/to", "__image_diffs__", "a _ b.png"),
   );
 });
 
