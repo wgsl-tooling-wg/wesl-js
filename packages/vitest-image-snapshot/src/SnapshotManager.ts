@@ -2,18 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 const replaceableChars = /[<>:"/\\|?*]/g;
-
-// since we always add '.png' to the end, there's no need to handle trailing
-// dots, which are only invalid at the end of the whole name.  spaces around
-// the outside of the snapshot name are handled with trim()
 const unreplaceableChars = /\p{Control}+/gu;
-
-function sanitizeName(input: string): string {
-  return input
-    .replace(replaceableChars, "_")
-    .replace(unreplaceableChars, "")
-    .trim();
-}
 
 export interface SnapshotConfig {
   snapshotDir?: string;
@@ -105,4 +94,12 @@ export class ImageSnapshotManager {
     }
     await fs.promises.writeFile(filepath, buffer);
   }
+}
+
+/** Replace chars that are invalid in Windows filenames. */
+function sanitizeName(input: string): string {
+  return input
+    .replace(replaceableChars, "_")
+    .replace(unreplaceableChars, "")
+    .trim();
 }
