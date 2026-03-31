@@ -23,7 +23,9 @@ test("sanitizes invalid filename characters", () => {
   const snapDir = path.join("/path/to", "__image_snapshots__");
 
   // filesystem-invalid chars replaced with underscores
-  expect(snap("Category > test")).toBe(path.join(snapDir, "Category _ test.png"));
+  expect(snap("Category > test")).toBe(
+    path.join(snapDir, "Category _ test.png"),
+  );
   expect(snap('a<>:"/\\|?*b')).toBe(path.join(snapDir, "a_________b.png"));
 
   // control chars removed, outer whitespace trimmed
