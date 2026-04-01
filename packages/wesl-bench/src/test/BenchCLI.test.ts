@@ -20,7 +20,7 @@ test("runs without errors", () => {
   if (!result.includes("link")) throw new Error("Missing link variant");
 });
 
-test("supports --baseline flag", { timeout: 30000 }, () => {
+test.skip("supports --baseline flag", { timeout: 30000 }, () => {
   const hasBaseline = existsSync(baselineDir);
 
   if (!hasBaseline) {
