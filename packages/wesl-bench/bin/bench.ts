@@ -34,6 +34,9 @@ async function main() {
 
   await ensureBevyFixture(fixturesDir);
   const hasBaseline = args.baseline && hasBaselineModule();
+  if (args.baseline && !hasBaseline) {
+    console.warn("--baseline: no baseline found. Run `pnpm bench:baseline <version>` first.");
+  }
 
   const matrix: BenchMatrix<WeslSource> = {
     name: "WESL Parser",

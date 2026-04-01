@@ -24,7 +24,7 @@ if (!version) {
 console.log("version:", version);
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
-process.chdir(path.resolve(__dirname, "../../../../"));
+process.chdir(path.resolve(__dirname, "../../../"));
 const baselineDir = path.resolve("_baseline");
 
 if (existsSync(baselineDir)) {
@@ -34,18 +34,13 @@ if (existsSync(baselineDir)) {
 
 mkdirSync(baselineDir, { recursive: true });
 
-console.log(`Archiving tools directory from version ${version}...`);
-const tarPath = path.join(baselineDir, "tools.tar");
-execSync(`git archive ${version} tools -o "${tarPath}"`, { stdio: "inherit" });
+console.log(`Archiving repo from version ${version}...`);
+const tarPath = path.join(baselineDir, "baseline.tar");
+execSync(`git archive ${version} -o "${tarPath}"`, { stdio: "inherit" });
 
 console.log("Extracting archive...");
-
 execSync(`tar -xf "${tarPath}" -C "${baselineDir}"`, { stdio: "inherit" });
 rmSync(tarPath);
-
-const toolsDir = path.join(baselineDir, "tools");
-execSync(`mv "${toolsDir}"/* "${baselineDir}/"`, { stdio: "inherit" });
-rmSync(toolsDir, { recursive: true, force: true });
 
 console.log("Running pnpm install in baseline directory...");
 execSync("pnpm install --ignore-scripts", {
