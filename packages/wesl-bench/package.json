@@ -13,14 +13,19 @@
     "test": "vitest --hideSkippedTests",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:once": "vitest run",
-    "typecheck": "tsgo"
+    "typecheck": "tsgo",
+    "browser:dev": "vite browser",
+    "browser:build": "vite build browser",
+    "browser:preview": "vite preview browser"
   },
   "dependencies": {
-    "benchforge": "^0.1.9",
+    "benchforge": "^0.2.5",
     "wesl": "workspace:*",
     "wgsl_reflect": "^1.2.1"
   },
   "devDependencies": {
-    "dexnode": "^1.2.2"
+    "dexnode": "^1.2.2",
+    "vite": "^6.3.1",
+    "wesl-plugin": "workspace:*"
   }
 }

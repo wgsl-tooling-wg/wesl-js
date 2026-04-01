@@ -1,49 +1,61 @@
 import {
   integer,
   type MeasuredResults,
-  type ReportColumnGroup,
-  type ResultsMapper,
+  type ReportSection,
+  timeMs,
 } from "benchforge";
 
-/** Lines of code throughput statistics */
-export interface LocStats {
-  lines?: number;
-  locSecP50?: number;
-  locSecMax?: number;
+/** @return toDisplay fn that converts timing ms to lines/sec using metadata */
+function msToLocSec(
+  ms: number,
+  metadata?: Record<string, unknown>,
+): number {
+  const lines = (metadata?.linesOfCode ?? metadata?.loc ?? 0) as number;
+  return lines / (ms / 1000);
 }
 
-export const locSection: ResultsMapper<LocStats> = {
-  extract: (results: MeasuredResults, metadata?: any) => {
-    const lines = metadata?.linesOfCode ?? metadata?.loc ?? 0;
-    const { p50, min } = results.time ?? {};
-    const locSecP50 = p50 ? lines / (p50 / 1000) : undefined;
-    const locSecMax = min ? lines / (min / 1000) : undefined; // min time = max throughput
-    return { lines, locSecP50, locSecMax };
-  },
-  columns: (): ReportColumnGroup<LocStats>[] => [
+export const locSection: ReportSection = {
+  title: "lines / sec",
+  columns: [
     {
-      groupTitle: "lines / sec",
-      columns: [
-        {
-          key: "locSecP50",
-          title: "p50",
-          formatter: integer,
-          comparable: true,
-          higherIsBetter: true,
-        },
-        {
-          key: "locSecMax",
-          title: "max",
-          formatter: integer,
-          comparable: true,
-          higherIsBetter: true,
-        },
-        {
-          key: "lines",
-          title: "lines",
-          formatter: integer,
-        },
-      ],
+      key: "locSecMean",
+      title: "mean",
+      statKind: "mean",
+      toDisplay: msToLocSec,
+      formatter: integer,
+      comparable: true,
+      higherIsBetter: true,
+    },
+    {
+      key: "locSecP50",
+      title: "p50",
+      statKind: { percentile: 0.5 },
+      toDisplay: msToLocSec,
+      formatter: integer,
+      comparable: true,
+      higherIsBetter: true,
+    },
+    {
+      key: "locSecMax",
+      title: "max",
+      statKind: "min",
+      toDisplay: msToLocSec,
+      formatter: integer,
+      higherIsBetter: true,
+    },
+    {
+      key: "meanTime",
+      title: "mean time",
+      statKind: "mean",
+      formatter: timeMs,
+      comparable: true,
+    },
+    {
+      key: "lines",
+      title: "lines",
+      formatter: integer,
+      value: (_r: MeasuredResults, meta?: Record<string, unknown>) =>
+        meta?.linesOfCode ?? meta?.loc,
     },
   ],
 };

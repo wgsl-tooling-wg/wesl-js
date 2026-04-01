@@ -3,24 +3,19 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   type BenchMatrix,
-  buildGenericSections,
   defaultCliArgs,
-  exportReports,
+  gcSections,
   getBaselineVersion,
   getCurrentGitVersion,
-  type MatrixResults,
+  matrixBenchExports,
   type MatrixSuite,
-  matrixToReportGroups,
   parseBenchArgs,
-  printHeapReports,
-  type ResultsMapper,
-  reportMatrixResults,
-  runMatrixSuite,
+  type ReportSection,
+  runsSection,
 } from "benchforge";
 import { baselineDir, hasBaselineModule } from "../src/BaselineVariations.ts";
 import { ensureBevyFixture, type WeslSource } from "../src/LoadExamples.ts";
 import { locSection } from "../src/LocSection.ts";
-import { meanTimeSection } from "../src/MeanTimeSection.ts";
 
 type BenchArgs = ReturnType<typeof parseArgs>;
 
@@ -35,7 +30,9 @@ async function main() {
   await ensureBevyFixture(fixturesDir);
   const hasBaseline = args.baseline && hasBaselineModule();
   if (args.baseline && !hasBaseline) {
-    console.warn("--baseline: no baseline found. Run `pnpm bench:baseline <version>` first.");
+    console.warn(
+      "--baseline: no baseline found. Run `pnpm bench:baseline <version>` first.",
+    );
   }
 
   const matrix: BenchMatrix<WeslSource> = {
@@ -48,30 +45,16 @@ async function main() {
   };
 
   const suite: MatrixSuite = { name: "WESL Benchmarks", matrices: [matrix] };
-  const results = await runMatrixSuite(suite, args);
-
   const sections = buildSections(args);
-
-  for (const result of results) {
-    console.log(
-      reportMatrixResults(result, { sections, variantTitle: "name" }),
-    );
-  }
-
-  if (args.alloc || args["alloc-raw"] || args["alloc-verbose"] || args["alloc-user-only"]) {
-    printMatrixHeapReports(results, args);
-  }
-
   const currentVersion = getCurrentGitVersion();
   const baselineVersion = args.baseline ? findBaselineVersion() : undefined;
-  const reportGroups = matrixToReportGroups(results);
-  await exportReports({
-    results: reportGroups,
+
+  await matrixBenchExports(
+    suite,
     args,
-    sections,
-    currentVersion,
-    baselineVersion,
-  });
+    { sections, variantTitle: "name" },
+    { sections, currentVersion, baselineVersion },
+  );
 }
 
 /** @return parsed CLI arguments */
@@ -86,26 +69,11 @@ function parseArgs() {
 }
 
 /** Build report sections based on CLI options */
-function buildSections(args: BenchArgs): ResultsMapper[] {
-  const domain = [locSection, meanTimeSection];
-  return [...domain, ...buildGenericSections(args)];
+function buildSections(args: BenchArgs): ReportSection[] {
+  return [locSection, ...gcSections(args), runsSection];
 }
 
 /** @return baseline git version, or a fallback if not found */
 function findBaselineVersion() {
   return getBaselineVersion(baselineDir) ?? { hash: "unknown", date: "" };
-}
-
-/** Print heap reports for matrix results */
-function printMatrixHeapReports(
-  results: MatrixResults[],
-  args: BenchArgs,
-): void {
-  const reportGroups = matrixToReportGroups(results);
-  printHeapReports(reportGroups, {
-    topN: args["alloc-rows"],
-    stackDepth: args["alloc-stack"],
-    verbose: args["alloc-verbose"],
-    userOnly: args["alloc-user-only"],
-  });
 }

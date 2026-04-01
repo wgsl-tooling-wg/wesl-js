@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicolo-ribaudo/nicolo-ribaudo.github.io/refs/heads/main/tachometer-schema.json",
+  "benchmarks": [
+    {
+      "name": "current",
+      "url": "http://localhost:4173/",
+      "browser": {
+        "name": "chrome",
+        "headless": true
+      }
+    },
+    {
+      "name": "baseline",
+      "url": "http://localhost:4173/",
+      "browser": {
+        "name": "chrome",
+        "headless": true
+      }
+    }
+  ]
+}
