@@ -20,4 +20,14 @@ export default defineConfig([
     plugins: [rawImports()],
     logLevel: "warn",
   },
+  {
+    entry: ["src/autosave.ts", "src/SaveMiddleware.ts", "src/SaveEndpoint.ts"],
+    target: "node22",
+    clean: false,
+    dts: true,
+    platform: "node",
+    format: ["esm"],
+    deps: { neverBundle: ["vite"], onlyBundle: false },
+    logLevel: "warn",
+  },
 ]);

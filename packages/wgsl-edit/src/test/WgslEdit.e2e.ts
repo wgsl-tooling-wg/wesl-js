@@ -1,8 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-
-async function waitForWgslEdit(page: Page) {
-  await page.waitForFunction(() => customElements.get("wgsl-edit"));
-}
+import { waitForWgslEdit } from "./E2eUtil.ts";
 
 const lintErrorSelector = ".cm-lintRange-error";
 

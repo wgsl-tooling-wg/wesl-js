@@ -703,8 +703,8 @@ function getStyles(): CSSStyleSheet {
   return styles;
 }
 
-// LATER: extract to shared web component utils if we add more helpers
-/** Absorb instance properties set before custom element upgrade. */
+/** Absorb instance properties set before custom element upgrade.
+ * Duplicated in WgslEdit.ts. Later, extract to a shared package. */
 function upgradeProperty(el: HTMLElement, prop: string): void {
   if (Object.hasOwn(el, prop)) {
     const value = (el as any)[prop];

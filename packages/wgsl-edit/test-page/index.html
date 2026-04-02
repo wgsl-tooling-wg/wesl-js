@@ -52,6 +52,24 @@ fn main() {
     </wgsl-edit>
   </div>
 
+  <!-- 4. Autosave: writes edits back to disk via /__wgsl-edit/save -->
+  <div class="section">
+    <h3>4. Autosave (shader-root via attribute)</h3>
+    <wgsl-edit id="editor4" autosave shader-root="shaders" gpu-lint="off" lint="off">
+      <script type="text/wesl" data-name="save-test.wesl">
+fn original() -> f32 {
+  return 1.0;
+}
+      </script>
+    </wgsl-edit>
+  </div>
+
+  <!-- 5. Autosave: shaderRoot set via project property instead of attribute -->
+  <div class="section">
+    <h3>5. Autosave (shader-root via project)</h3>
+    <wgsl-edit id="editor5" autosave gpu-lint="off" lint="off"></wgsl-edit>
+  </div>
+
   <script type="module" src="./main.ts"></script>
 </body>
 </html>

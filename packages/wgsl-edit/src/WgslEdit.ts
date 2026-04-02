@@ -47,6 +47,7 @@ import {
 } from "wesl";
 import { fetchPackagesByName } from "wesl-fetch";
 import { createWeslLinter, wesl } from "./Language.ts";
+import { saveEndpoint } from "./SaveEndpoint.ts";
 import cssText from "./WgslEdit.css?inline";
 
 type Theme = "light" | "dark" | "auto";
@@ -114,6 +115,7 @@ export class WgslEdit extends HTMLElement {
     "line-numbers",
     "fetch-libs",
     "gpu-lint",
+    "autosave",
   ];
 
   private editorView: EditorView | null = null;
@@ -144,6 +146,10 @@ export class WgslEdit extends HTMLElement {
   private _fetchingPkgs = new Set<string>();
   private _fetchedPkgs = new Set<string>();
   private _snackTimer: ReturnType<typeof setTimeout> | undefined;
+  private _autosave = false;
+  private _saveTimer: ReturnType<typeof setTimeout> | undefined;
+  private _dirtyFiles = new Set<string>();
+  private _switchingFile = false;
   private _externalDiagnostics: Diagnostic[] = [];
   private _lintFromEl: Element | null = null;
   /** Bound listeners for lint-from element's compile events. */
@@ -165,7 +171,7 @@ export class WgslEdit extends HTMLElement {
 
     this.snackbar = document.createElement("div");
     this.snackbar.className = "snackbar";
-    this.snackbar.textContent = "Loading\u2026"; // \u2026 = ellipsis
+    this.snackbar.textContent = "Loading\u2026";
     shadow.appendChild(this.snackbar);
   }
 
@@ -176,6 +182,7 @@ export class WgslEdit extends HTMLElement {
     upgradeProperty(this, "source");
     upgradeProperty(this, "sources");
     upgradeProperty(this, "project");
+    upgradeProperty(this, "autosave");
   }
 
   disconnectedCallback(): void {
@@ -189,29 +196,42 @@ export class WgslEdit extends HTMLElement {
     _old: string | null,
     value: string | null,
   ): void {
-    if (name === "src" && value && this.editorView) {
-      this.loadFromUrl(value);
-    } else if (name === "readonly") {
-      this.updateReadonly();
-    } else if (name === "theme") {
-      this.theme = (value as Theme) || "auto";
-    } else if (name === "tabs") {
-      this._tabs = value !== "false";
-      this.renderTabs();
-    } else if (name === "lint") {
-      this._lint = (value as LintMode) || "on";
-      this.updateLint();
-    } else if (name === "lint-from") {
-      this.connectLintSource(value);
-    } else if (name === "line-numbers") {
-      this._lineNumbers = value === "true";
-      this.updateLineNumbers();
-    } else if (name === "fetch-libs") {
-      this._fetchLibs = value !== "false";
-      this.updateLint();
-    } else if (name === "gpu-lint") {
-      this._gpuLint = value !== "off";
-      this.updateLint();
+    switch (name) {
+      case "src":
+        if (value && this.editorView) this.loadFromUrl(value);
+        break;
+      case "readonly":
+        this.updateReadonly();
+        break;
+      case "theme":
+        this.theme = (value as Theme) || "auto";
+        break;
+      case "tabs":
+        this._tabs = value !== "false";
+        this.renderTabs();
+        break;
+      case "lint":
+        this._lint = (value as LintMode) || "on";
+        this.updateLint();
+        break;
+      case "lint-from":
+        this.connectLintSource(value);
+        break;
+      case "line-numbers":
+        this._lineNumbers = value === "true";
+        this.updateLineNumbers();
+        break;
+      case "fetch-libs":
+        this._fetchLibs = value !== "false";
+        this.updateLint();
+        break;
+      case "gpu-lint":
+        this._gpuLint = value !== "off";
+        this.updateLint();
+        break;
+      case "autosave":
+        this._autosave = value !== null && value !== "false";
+        break;
     }
   }
 
@@ -279,17 +299,21 @@ export class WgslEdit extends HTMLElement {
       constants: this._constants,
       libs: this._libs,
       packageName: this._packageName,
+      shaderRoot: this.shaderRoot ?? undefined,
     };
   }
 
   set project(value: WeslProject) {
     const { weslSrc, rootModuleName, conditions } = value;
-    const { constants, packageName, libs } = value;
+    const { constants, packageName, libs, shaderRoot } = value;
     if (conditions !== undefined) this._conditions = conditions;
     if (constants !== undefined) this._constants = constants;
     if (packageName !== undefined) this._packageName = packageName;
     if (libs !== undefined) this._libs = libs;
     if (rootModuleName !== undefined) this._rootModuleName = rootModuleName;
+    if (shaderRoot !== undefined && !this.hasAttribute("shader-root")) {
+      this.shaderRoot = shaderRoot;
+    }
 
     if (weslSrc) {
       this.sources = weslSrc;
@@ -383,6 +407,18 @@ export class WgslEdit extends HTMLElement {
     this._gpuLint = value;
     if (!value) this.setAttribute("gpu-lint", "off");
     else this.removeAttribute("gpu-lint");
+  }
+
+  /** Persist edits to disk via the dev-server save endpoint.
+   * Requires `wgslEditAutosave()` to be installed in vite.config.ts. */
+  get autosave(): boolean {
+    return this._autosave;
+  }
+
+  set autosave(value: boolean) {
+    this._autosave = value;
+    if (value) this.setAttribute("autosave", "");
+    else this.removeAttribute("autosave");
   }
 
   /** Whether to auto-fetch missing library packages from npm (default: true). */
@@ -486,24 +522,26 @@ export class WgslEdit extends HTMLElement {
       const to = this.editorView.state.doc.length;
       const changes = { from: 0, to, insert: fileState.doc.toString() };
       const effects = EditorView.scrollIntoView(fileState.scrollPos ?? 0);
+      this._switchingFile = true;
       this.editorView.dispatch({
         changes,
         selection: fileState.selection,
         effects,
       });
+      this._switchingFile = false;
     }
     this.renderTabs();
   }
 
   private saveCurrentFileState(): void {
     const view = this.editorView;
-    const state = this._activeFile
+    const fileState = this._activeFile
       ? this._files.get(this._activeFile)
       : undefined;
-    if (!view || !state) return;
-    state.doc = view.state.doc;
-    state.selection = view.state.selection;
-    state.scrollPos = view.scrollDOM.scrollTop;
+    if (!view || !fileState) return;
+    fileState.doc = view.state.doc;
+    fileState.selection = view.state.selection;
+    fileState.scrollPos = view.scrollDOM.scrollTop;
   }
 
   private dispatchChange(): void {
@@ -515,6 +553,45 @@ export class WgslEdit extends HTMLElement {
     this.dispatchEvent(new CustomEvent("file-change", { detail }));
   }
 
+  private scheduleSave(): void {
+    this._dirtyFiles.add(this._activeFile);
+    clearTimeout(this._saveTimer);
+    this._saveTimer = setTimeout(() => this.saveAllDirty(), 500);
+  }
+
+  private async saveAllDirty(): Promise<void> {
+    if (!this._autosave || !this.shaderRoot) return;
+    const files = [...this._dirtyFiles];
+    this._dirtyFiles.clear();
+    await Promise.all(files.map(f => this.saveFile(f)));
+  }
+
+  private async saveFile(fileName: string): Promise<void> {
+    const root = this.shaderRoot;
+    const fileState = this._files.get(fileName);
+    if (!root || !fileState) return;
+    const content = fileState.doc.toString();
+    try {
+      const res = await fetch(saveEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ root, file: fileName, content }),
+      });
+      if (!res.ok) this.disableAutosave(`HTTP ${res.status}`);
+    } catch (e) {
+      this.disableAutosave(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  /** One-shot disable on first failure: avoids spamming the console on every keystroke. */
+  private disableAutosave(reason: string): void {
+    this._autosave = false;
+    console.error(
+      `wgsl-edit: autosave disabled (${reason}). ` +
+        `Make sure wgslEditAutosave() is installed in vite.config.ts.`,
+    );
+  }
+
   private initEditor(): void {
     this.readInitialAttributes();
     this.parseInlineContent();
@@ -523,9 +600,10 @@ export class WgslEdit extends HTMLElement {
     this._mediaQuery.addEventListener("change", () => this.updateTheme());
 
     const firstFile = this._files.keys().next().value;
-    const initialDoc =
-      this._pendingSource ??
-      (firstFile ? this._files.get(firstFile)!.doc.toString() : "");
+    const firstDoc = firstFile
+      ? this._files.get(firstFile)!.doc.toString()
+      : "";
+    const initialDoc = this._pendingSource ?? firstDoc;
     this._pendingSource = null;
     if (firstFile) {
       this._activeFile = firstFile;
@@ -597,6 +675,7 @@ export class WgslEdit extends HTMLElement {
           this._externalDiagnostics = [];
           this.saveCurrentFileState();
           this.dispatchChange();
+          if (this._autosave && !this._switchingFile) this.scheduleSave();
         }
       }),
     ];
@@ -631,14 +710,10 @@ export class WgslEdit extends HTMLElement {
   private resolveLint() {
     if (this._lint === "off") return [];
     const useGpuLint = this._gpuLint && !this._lintFromEl;
+    const pkg = this._packageName ?? "package";
     return createWeslLinter({
       getSources: () => this.sources,
-      rootModule: () =>
-        fileToModulePath(
-          this._activeFile,
-          this._packageName ?? "package",
-          false,
-        ),
+      rootModule: () => fileToModulePath(this._activeFile, pkg, false),
       conditions: () => this._conditions,
       packageName: () => this._packageName,
       getExternalDiagnostics: () => this._externalDiagnostics,
@@ -698,15 +773,10 @@ export class WgslEdit extends HTMLElement {
   /** Listen for compile-error/compile-success events from a lint source element. */
   private connectLintSource(id: string | null): void {
     const hadExternal = !!this._lintFromEl;
-    if (this._lintFromEl) {
-      this._lintFromEl.removeEventListener(
-        "compile-error",
-        this._boundCompileError,
-      );
-      this._lintFromEl.removeEventListener(
-        "compile-success",
-        this._boundCompileSuccess,
-      );
+    const prev = this._lintFromEl;
+    if (prev) {
+      prev.removeEventListener("compile-error", this._boundCompileError);
+      prev.removeEventListener("compile-success", this._boundCompileSuccess);
       this._lintFromEl = null;
     }
     this._externalDiagnostics = [];
@@ -974,8 +1044,8 @@ function getStyles(): CSSStyleSheet {
   return cachedStyleSheet;
 }
 
-// LATER: extract to shared web component utils if we add more helpers
-/** Absorb instance properties set before custom element upgrade. */
+/** Absorb instance properties set before custom element upgrade.
+ * Duplicated in WgslPlay.ts. Later, extract to a shared package. */
 function upgradeProperty(el: HTMLElement, prop: string): void {
   if (Object.hasOwn(el, prop)) {
     const value = (el as any)[prop];

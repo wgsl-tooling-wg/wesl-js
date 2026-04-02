@@ -5,6 +5,7 @@ import type {
   PluginExtensionApi,
 } from "../PluginExtension.ts";
 
+/** Extension that emits a JavaScript LinkParams object for runtime linking. */
 export const linkBuildExtension: PluginExtension = {
   extensionName: "link",
   emitFn: emitLinkJs,
@@ -12,12 +13,12 @@ export const linkBuildExtension: PluginExtension = {
 
 /** Emit a JavaScript LinkParams structure, ready for linking at runtime. */
 async function emitLinkJs(
-  baseId: string,
+  shaderPath: string,
   api: PluginExtensionApi,
   _conditions?: Record<string, boolean>,
   options?: Record<string, string>,
 ): Promise<string> {
-  const rootModule = await api.weslMain(baseId);
+  const rootModule = await api.weslMain(shaderPath);
   const rootModuleName = noSuffix(rootModule);
 
   const [{ weslSrc, dependencies: autoDeps }, debugWeslRoot] =
@@ -35,7 +36,12 @@ async function emitLinkJs(
   const rootName = path.basename(rootModuleName).replace(/\W/g, "_");
   const paramsName = `link${rootName}Config`;
 
-  const linkParams: LinkParams = { rootModuleName, weslSrc, debugWeslRoot };
+  const linkParams: LinkParams & { shaderRoot?: string } = {
+    rootModuleName,
+    weslSrc,
+    debugWeslRoot,
+    shaderRoot: debugWeslRoot,
+  };
   const libsStr = `libs: [${sanitizedDeps.join(", ")}]`;
   const linkParamsStr = `{
     ${serializeFields(linkParams)},
@@ -49,6 +55,7 @@ async function emitLinkJs(
     `;
 }
 
+/** Serialize an object's fields as `key: value` pairs for embedding in generated JS. */
 function serializeFields(record: Record<string, any>) {
   return Object.entries(record)
     .map(([k, v]) => `    ${k}: ${JSON.stringify(v, null, 2)}`)

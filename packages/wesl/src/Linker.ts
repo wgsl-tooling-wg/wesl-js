@@ -37,29 +37,17 @@ export interface LinkConfig {
 }
 
 export interface LinkParams {
-  /** Module resolver for lazy loading (NEW API - preferred)
-   * Replaces weslSrc for lazy module loading.
-   * If provided, weslSrc will be ignored. */
+  /** Module resolver for lazy loading. If provided, weslSrc is ignored. */
   resolver?: ModuleResolver;
 
-  /** record of file paths and wesl text for modules (LEGACY API - still supported).
-   *   key is module path or file path
-   *     `package::foo::bar`, or './foo/bar.wesl', or './foo/bar'
-   *   value is wesl src
-   *
-   *
-   * Only accepts unix-style, relative filesystem paths that are valid WGSL identifiers
-   * - Unix-style: Slashes as separators.
-   * - Valid WGSL identifiers: No backslashes, no `..`, or other non-identifier symbols.
-   * - Relative paths: They have to be relative to the wesl root.
-   */
+  /** Record of module sources keyed by module path (`package::foo::bar`)
+   * or relative file path (`./foo/bar.wesl`). Paths must be unix-style,
+   * relative to the wesl root, and valid WGSL identifiers. */
   weslSrc?: Record<string, string>;
 
-  /** name of root wesl module
-   *    for an app, the root module normally contains the '@compute', '@vertex' or '@fragment' entry points
-   *    for a library, the root module defines the public api fo the library
-   *  can be specified as file path (./main.wesl), a module path (package::main), or just a module name (main)
-   */
+  /** Root module name: file path (`./main.wesl`), module path (`package::main`), or bare name (`main`).
+   * For apps, the root module contains entry points (`@compute`, `@vertex`, `@fragment`).
+   * For libraries, it defines the public API. */
   rootModuleName?: string;
 
   /** For debug logging. Will be prepended to file paths. */
@@ -100,7 +88,10 @@ export type WeslProject = Pick<
   | "constants"
   | "libs"
   | "packageName"
->;
+> & {
+  /** Shader directory relative to project root (set by ?link from wesl.toml). */
+  shaderRoot?: string;
+};
 
 /** Context passed to virtual library generators. */
 export interface VirtualLibContext {
@@ -127,26 +118,20 @@ export async function link(params: LinkParams): Promise<LinkedWesl> {
 
 /** linker api for benchmarking */
 export function _linkSync(params: LinkParams): SrcMap {
-  const { weslSrc, libs = [], packageName, debugWeslRoot } = params;
-  const { resolver } = params;
+  const { weslSrc, libs = [], packageName, debugWeslRoot, resolver } = params;
 
-  const resolvers: ModuleResolver[] = [];
-
-  if (resolver) {
-    resolvers.push(resolver);
-  } else if (weslSrc) {
-    resolvers.push(new RecordResolver(weslSrc, { packageName, debugWeslRoot }));
-  } else {
+  if (!resolver && !weslSrc) {
     throw new Error("Either resolver or weslSrc must be provided");
   }
+  const primaryResolver =
+    resolver ?? new RecordResolver(weslSrc!, { packageName, debugWeslRoot });
 
-  if (libs.length > 0) {
-    const libResolvers = createLibraryResolvers(libs, debugWeslRoot);
-    resolvers.push(...libResolvers);
-  }
-
+  const libResolvers = createLibraryResolvers(libs, debugWeslRoot);
+  const allResolvers = [primaryResolver, ...libResolvers];
   const finalResolver =
-    resolvers.length === 1 ? resolvers[0] : new CompositeResolver(resolvers);
+    allResolvers.length === 1
+      ? allResolvers[0]
+      : new CompositeResolver(allResolvers);
 
   return linkRegistry({ ...params, resolver: finalResolver });
 }
@@ -200,11 +185,8 @@ export interface LinkRegistryParams
  * that share some sources.)
  */
 export function linkRegistry(params: LinkRegistryParams): SrcMap {
-  const {
-    transformedAst: ast,
-    newDecls,
-    newStatements,
-  } = bindAndTransform(params);
+  const bound = bindAndTransform(params);
+  const { transformedAst: ast, newDecls, newStatements } = bound;
   const builders = emitWgsl(
     ast.moduleElem,
     ast.srcModule,
@@ -230,7 +212,6 @@ export function bindAndTransform(
 
   const modulePath = normalizeModuleName(rootModuleName);
   const rootAst = getRootModule(resolver, modulePath, rootModuleName);
-
   const virtuals = setupVirtualLibs(params.virtualLibs, constants);
 
   const bound = bindIdents({
@@ -291,14 +272,14 @@ function setupVirtualLibs(
   return libs && mapValues(libs, fn => ({ fn }));
 }
 
+/** Run registered transform plugins over the bound AST. */
 function applyTransformPlugins(
   rootModule: WeslAST,
   globalNames: Set<string>,
   config?: LinkConfig,
 ): TransformedAST {
-  const { moduleElem, srcModule } = rootModule;
-
   // for now only transform the root module
+  const { moduleElem, srcModule } = rootModule;
   const startAst = { moduleElem, srcModule, globalNames, notableElems: {} };
   const plugins = config?.plugins ?? [];
   const transforms = filterMap(plugins, plugin => plugin.transform);
@@ -313,12 +294,11 @@ function emitWgsl(
   newStatements: EmittableElem[],
   conditions: Conditions = {},
 ): SrcMapBuilder[] {
-  const prologueBuilders = newStatements.map(s => emitStatement(s, conditions));
+  const prologueBuilders = newStatements.map(s =>
+    emitElem(s.srcModule, s.elem, conditions, { addNl: true }),
+  );
 
-  const rootBuilder = new SrcMapBuilder({
-    text: srcModule.src,
-    path: srcModule.debugFilePath,
-  });
+  const rootBuilder = builderFromModule(srcModule);
   lowerAndEmit({
     srcBuilder: rootBuilder,
     rootElems: [rootModuleElem],
@@ -326,34 +306,38 @@ function emitWgsl(
     extracting: false,
   });
 
-  const declBuilders = newDecls.map(decl => emitDecl(decl, conditions));
+  const declBuilders = newDecls.map(decl =>
+    emitElem(decl.srcModule, decl.declElem!, conditions, {
+      skipConditionalFiltering: true,
+    }),
+  );
 
   return [...prologueBuilders, rootBuilder, ...declBuilders];
 }
 
-function emitStatement(
-  s: EmittableElem,
+/** Emit a single element (prologue statement or imported declaration) into a SrcMapBuilder. */
+function emitElem(
+  srcModule: SrcModule,
+  elem: AbstractElem,
   conditions: Conditions,
+  opts: { addNl?: boolean; skipConditionalFiltering?: boolean } = {},
 ): SrcMapBuilder {
-  const { elem, srcModule } = s;
-  const { src: text, debugFilePath: path } = srcModule;
-  const builder = new SrcMapBuilder({ text, path });
-  lowerAndEmit({ srcBuilder: builder, rootElems: [elem], conditions });
-  builder.addNl();
+  const builder = builderFromModule(srcModule);
+  lowerAndEmit({
+    srcBuilder: builder,
+    rootElems: [elem],
+    conditions,
+    skipConditionalFiltering: opts.skipConditionalFiltering,
+  });
+  if (opts.addNl) builder.addNl();
   return builder;
 }
 
-/** Skip conditional filtering because findValidRootDecls already validated these declarations */
-function emitDecl(decl: DeclIdent, conditions: Conditions): SrcMapBuilder {
-  const { src: text, debugFilePath: path } = decl.srcModule;
-  const builder = new SrcMapBuilder({ text, path });
-  lowerAndEmit({
-    srcBuilder: builder,
-    rootElems: [decl.declElem!],
-    conditions,
-    skipConditionalFiltering: true,
+function builderFromModule(srcModule: SrcModule): SrcMapBuilder {
+  return new SrcMapBuilder({
+    text: srcModule.src,
+    path: srcModule.debugFilePath,
   });
-  return builder;
 }
 
 /*

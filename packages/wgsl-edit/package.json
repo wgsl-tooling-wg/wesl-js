@@ -32,6 +32,10 @@
         "types": "./dist/Language.d.ts",
         "import": "./dist/Language.js"
       },
+      "./autosave": {
+        "types": "./dist/autosave.d.ts",
+        "import": "./dist/autosave.js"
+      },
       "./bundle": {
         "types": "./dist/WgslEdit.d.ts",
         "import": "./dist/wgsl-edit.js"
@@ -43,6 +47,7 @@
     ".": "./src/index.ts",
     "./element": "./src/WgslEdit.ts",
     "./language": "./src/Language.ts",
+    "./autosave": "./src/autosave.ts",
     "./bundle": {
       "types": "./src/WgslEdit.ts",
       "default": "./dist/wgsl-edit.js"
@@ -66,7 +71,16 @@
     "@playwright/test": "^1.53.2",
     "open": "^10.0.0",
     "vite": "^8.0.1",
+    "wesl-plugin": "workspace:x",
     "wgsl-play": "workspace:x",
     "yargs": "^18.0.0"
+  },
+  "peerDependencies": {
+    "vite": "^8.0.1"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
   }
 }

@@ -20,7 +20,7 @@ async function emitStaticJs(
   conditions?: Conditions,
   _options?: Record<string, string>,
 ): Promise<string> {
-  const { resolvedRoot, tomlDir } = await api.weslToml();
+  const { tomlDir } = await api.weslToml();
 
   const tomlUrl = url.pathToFileURL(path.join(tomlDir, "wesl.toml"));
   const parentModule = tomlUrl.toString();
@@ -28,18 +28,16 @@ async function emitStaticJs(
   const rootModule = await api.weslMain(baseId);
   const rootModuleName = noSuffix(rootModule);
 
-  const [weslSrc, dependencies] = await Promise.all([
+  const [weslSrc, dependencies, debugWeslRoot] = await Promise.all([
     api.weslSrc(),
     api.weslDependencies(),
+    api.debugWeslRoot(),
   ]);
 
   const libFileUrls = dependencies.map(d => resolve(d, parentModule));
 
   const libModules = await Promise.all(libFileUrls.map(f => import(f)));
   const libs = libModules.map(m => m.default);
-
-  const tomlRelative = path.relative(tomlDir, resolvedRoot);
-  const debugWeslRoot = tomlRelative.replaceAll(path.sep, "/");
 
   const { dest: wgsl } = await link({
     weslSrc,

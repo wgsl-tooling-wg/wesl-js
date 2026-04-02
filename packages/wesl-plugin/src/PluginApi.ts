@@ -64,14 +64,9 @@ function resolveDepsFromUnbound(
   unbound: string[][],
   projectDir: string,
 ): string[] {
-  const depsArray = Array.isArray(dependencies)
-    ? dependencies
-    : [dependencies ?? "auto"];
-  if (!depsArray.includes("auto")) return depsArray;
-
-  const base = depsArray.filter(dep => dep !== "auto");
-  const discovered = resolvePkgDeps(unbound, projectDir);
-  return [...new Set([...base, ...discovered])];
+  return resolveDepsWithDiscovery(dependencies, () =>
+    resolvePkgDeps(unbound, projectDir),
+  );
 }
 
 /** Load and cache the wesl.toml configuration. */
@@ -157,14 +152,23 @@ function resolveDeps(
   weslSrc: Record<string, string>,
   projectDir: string,
 ): string[] {
+  return resolveDepsWithDiscovery(dependencies, () =>
+    parseDependencies(weslSrc, projectDir),
+  );
+}
+
+/** Normalize deps array, replace "auto" with discovered deps, deduplicate. */
+function resolveDepsWithDiscovery(
+  dependencies: string | string[] | undefined,
+  discover: () => string[],
+): string[] {
   const depsArray = Array.isArray(dependencies)
     ? dependencies
     : [dependencies ?? "auto"];
   if (!depsArray.includes("auto")) return depsArray;
 
   const base = depsArray.filter(dep => dep !== "auto");
-  const discovered = parseDependencies(weslSrc, projectDir);
-  return [...new Set([...base, ...discovered])];
+  return [...new Set([...base, ...discover()])];
 }
 
 /** @return a function that resolves a shader path to a weslRoot-relative module path. */
