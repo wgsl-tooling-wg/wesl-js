@@ -27,23 +27,7 @@
     <h1>wgsl-play</h1>
   </div>
   <div class="editor-player">
-    <wgsl-edit id="editor" lint-from="player">
-      <script type="text/wesl" data-name="main.wesl">
-import package::utils;
-import env::u;
-
-@fragment
-fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  let uv = pos.xy / u.resolution;
-  return vec4f(utils::gradient(uv, u.time), 1.0);
-}
-      </script>
-      <script type="text/wesl" data-name="utils.wesl">
-fn gradient(uv: vec2f, time: f32) -> vec3f {
-  return vec3f(uv, 0.5 + 0.5 * sin(time));
-}
-      </script>
-    </wgsl-edit>
+    <wgsl-edit id="editor" lint-from="player" autosave></wgsl-edit>
     <wgsl-play id="player" from="editor"></wgsl-play>
   </div>
   <section class="usage">

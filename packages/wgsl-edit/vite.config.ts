@@ -7,7 +7,10 @@ export default defineConfig({
     outDir: "../site",
     emptyOutDir: true,
   },
-  plugins: [viteWesl(), wgslEditAutosave()],
+  plugins: [
+    viteWesl({ weslToml: import.meta.dirname + "/demo/wesl.toml" }),
+    wgslEditAutosave(),
+  ],
   server: {
     fs: { allow: [".."] },
   },

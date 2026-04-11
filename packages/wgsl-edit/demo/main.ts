@@ -1,8 +1,11 @@
+/// <reference types="wesl-plugin/suffixes" />
 import "wgsl-edit";
 import "wgsl-play";
 import type { WgslEdit } from "wgsl-edit";
+import shaderConfig from "./shaders/main.wesl?link";
 
 const editor = document.querySelector("wgsl-edit") as WgslEdit | null;
+if (editor) editor.project = shaderConfig;
 
 const isDark = () => matchMedia("(prefers-color-scheme: dark)").matches;
 
