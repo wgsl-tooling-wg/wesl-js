@@ -1,5 +1,5 @@
 import type { Plugin } from "vite";
-import { weslSaveMiddleware } from "./SaveMiddleware.ts";
+import { pendingSaves, weslSaveMiddleware } from "./SaveMiddleware.ts";
 
 export interface WgslEditAutosaveOptions {
   /** Disable the save endpoint without removing the plugin (default: enabled). */
@@ -16,6 +16,9 @@ export default function wgslEditAutosave(
     configureServer(server) {
       if (options?.disabled) return;
       server.middlewares.use(weslSaveMiddleware(server.config.root));
+    },
+    hotUpdate({ file }) {
+      if (pendingSaves.delete(file)) return [];
     },
   };
 }

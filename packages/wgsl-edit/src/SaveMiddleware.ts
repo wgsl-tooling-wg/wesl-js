@@ -3,6 +3,9 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { saveEndpoint } from "./SaveEndpoint.ts";
 
+/** Paths recently written by autosave; consumed by hotUpdate to suppress reloads. */
+export const pendingSaves = new Set<string>();
+
 /** Connect-style middleware that handles POST <saveEndpoint> to write files to disk. */
 export function weslSaveMiddleware(
   projectRoot: string,
@@ -45,6 +48,7 @@ async function handleSave(
   try {
     await fs.mkdir(path.dirname(resolved), { recursive: true });
     await fs.writeFile(resolved, content);
+    pendingSaves.add(resolved);
     respond(res, 200, "ok");
   } catch (e: any) {
     console.error("[wgsl-edit] save failed:", e.message);
