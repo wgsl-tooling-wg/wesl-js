@@ -26,6 +26,12 @@ export interface SimpleRenderParams {
 
   /** pass these uniforms to the shader in group 0 binding 0 */
   uniformBuffer?: GPUBuffer;
+
+  /** Pre-built bind group (skips internal createBindGroup) */
+  bindGroup?: GPUBindGroup;
+
+  /** Layout for pre-built bind group */
+  bindGroupLayout?: GPUBindGroupLayout;
 }
 
 /**
@@ -47,10 +53,13 @@ export async function simpleRender(
       format: outputFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
-    const bindings =
-      uniformBuffer || textures.length > 0
-        ? createBindGroup(device, uniformBuffer, textures, samplers)
-        : undefined;
+    const bindings = resolveBindings(
+      params,
+      device,
+      uniformBuffer,
+      textures,
+      samplers,
+    );
     const pipelineLayout = bindings
       ? device.createPipelineLayout({ bindGroupLayouts: [bindings.layout] })
       : "auto";
@@ -86,7 +95,6 @@ export function createBindGroup(
   textures: GPUTexture[] = [],
   samplers: GPUSampler[] = [],
 ): { layout: GPUBindGroupLayout; bindGroup: GPUBindGroup } {
-  // Validate sampler count
   if (textures.length > 0 && samplers.length > 0) {
     if (samplers.length !== 1 && samplers.length !== textures.length) {
       throw new Error(
@@ -95,45 +103,63 @@ export function createBindGroup(
     }
   }
 
-  const entries: GPUBindGroupLayoutEntry[] = [];
-  const bindGroupEntries: GPUBindGroupEntry[] = [];
+  const vis = GPUShaderStage.FRAGMENT;
+  const layoutEntries: GPUBindGroupLayoutEntry[] = [];
+  const bgEntries: GPUBindGroupEntry[] = [];
 
   if (uniformBuffer) {
-    entries.push({
+    layoutEntries.push({
       binding: 0,
-      visibility: GPUShaderStage.FRAGMENT,
+      visibility: vis,
       buffer: { type: "uniform" },
     });
-    bindGroupEntries.push({ binding: 0, resource: { buffer: uniformBuffer } });
+    bgEntries.push({ binding: 0, resource: { buffer: uniformBuffer } });
   }
 
   textures.forEach((texture, i) => {
     const binding = i + 1;
-    entries.push({
+    layoutEntries.push({
       binding,
-      visibility: GPUShaderStage.FRAGMENT,
+      visibility: vis,
       texture: { sampleType: "float" },
     });
-    bindGroupEntries.push({ binding, resource: texture.createView() });
+    bgEntries.push({ binding, resource: texture.createView() });
   });
 
-  // If only one sampler provided, reuse it for all textures
   const singleSampler = samplers.length === 1 ? samplers[0] : undefined;
   for (let i = 0; i < textures.length; i++) {
     const binding = textures.length + i + 1;
     const sampler = singleSampler ?? samplers[i];
-    entries.push({
+    layoutEntries.push({
       binding,
-      visibility: GPUShaderStage.FRAGMENT,
+      visibility: vis,
       sampler: { type: "filtering" },
     });
-    bindGroupEntries.push({ binding, resource: sampler });
+    bgEntries.push({ binding, resource: sampler });
   }
 
-  const layout = device.createBindGroupLayout({ entries });
-  const bindGroup = device.createBindGroup({
-    layout,
-    entries: bindGroupEntries,
-  });
+  const layout = device.createBindGroupLayout({ entries: layoutEntries });
+  const bindGroup = device.createBindGroup({ layout, entries: bgEntries });
   return { layout, bindGroup };
+}
+
+type BindGroupAndLayout = {
+  bindGroup: GPUBindGroup;
+  layout: GPUBindGroupLayout;
+};
+
+/** Resolve bind group from pre-built params or by creating one from resources. */
+function resolveBindings(
+  params: SimpleRenderParams,
+  device: GPUDevice,
+  uniformBuffer: GPUBuffer | undefined,
+  textures: GPUTexture[],
+  samplers: GPUSampler[],
+): BindGroupAndLayout | undefined {
+  if (params.bindGroup) {
+    return { bindGroup: params.bindGroup, layout: params.bindGroupLayout! };
+  }
+  if (uniformBuffer || textures.length > 0) {
+    return createBindGroup(device, uniformBuffer, textures, samplers);
+  }
 }
