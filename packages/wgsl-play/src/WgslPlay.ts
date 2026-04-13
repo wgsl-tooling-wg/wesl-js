@@ -2,6 +2,7 @@ import type { Conditions, WeslBundle, WeslProject } from "wesl";
 import { fileToModulePath, WeslParseError } from "wesl";
 import { fetchDependencies, loadShaderFromUrl } from "wesl-fetch";
 import type { AnnotatedLayout } from "wesl-reflect";
+import { clampCanvas, entrySize } from "./CanvasSize.ts";
 import type { WgslPlayConfig } from "./Config.ts";
 import { ErrorOverlay } from "./ErrorOverlay.ts";
 import { PlaybackControls } from "./PlaybackControls.ts";
@@ -119,14 +120,18 @@ export class WgslPlay extends HTMLElement {
     );
 
     this.resizeObserver = new ResizeObserver(entries => {
+      if (!this.renderState) return;
       if (this.hasAttribute("width") && this.hasAttribute("height")) return;
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          const ratio = this.pixelRatio;
-          this.canvas.width = Math.floor(width * ratio);
-          this.canvas.height = Math.floor(height * ratio);
-        }
+      const entry = entries.at(-1);
+      if (!entry) return;
+      const [width, height] = entrySize(
+        entry,
+        this.getAttribute("pixel-ratio"),
+      );
+      if (width > 0 && height > 0) {
+        const maxDim = this.renderState.device.limits.maxTextureDimension2D;
+        this.canvas.width = clampCanvas(width, maxDim);
+        this.canvas.height = clampCanvas(height, maxDim);
       }
     });
 
@@ -134,7 +139,6 @@ export class WgslPlay extends HTMLElement {
   }
 
   connectedCallback(): void {
-    this.resizeObserver.observe(this);
     const themeAttr = this.getAttribute("theme") as typeof this._theme | null;
     if (themeAttr) this._theme = themeAttr;
     this._mediaQuery = matchMedia("(prefers-color-scheme: dark)");
@@ -149,6 +153,16 @@ export class WgslPlay extends HTMLElement {
     upgradeProperty(this, "conditions");
     upgradeProperty(this, "shader");
     upgradeProperty(this, "project");
+  }
+
+  /** Start watching element size. Deferred until after `initWebGPU` so the
+   *  observer has a real `maxTextureDimension2D` to clamp against */
+  private observeCanvasSize(): void {
+    try {
+      this.resizeObserver.observe(this, { box: "device-pixel-content-box" });
+    } catch {
+      this.resizeObserver.observe(this);
+    }
   }
 
   disconnectedCallback(): void {
@@ -458,15 +472,16 @@ export class WgslPlay extends HTMLElement {
   private updateCanvasSize(): void {
     const w = this.getAttribute("width");
     const h = this.getAttribute("height");
+    const maxDim = this.renderState?.device.limits.maxTextureDimension2D;
     if (w !== null && h !== null) {
-      this.canvas.width = Number(w);
-      this.canvas.height = Number(h);
+      this.canvas.width = clampCanvas(Number(w), maxDim);
+      this.canvas.height = clampCanvas(Number(h), maxDim);
     } else {
       const rect = this.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
         const ratio = this.pixelRatio;
-        this.canvas.width = Math.floor(rect.width * ratio);
-        this.canvas.height = Math.floor(rect.height * ratio);
+        this.canvas.width = clampCanvas(rect.width * ratio, maxDim);
+        this.canvas.height = clampCanvas(rect.height * ratio, maxDim);
       }
     }
   }
@@ -491,6 +506,7 @@ export class WgslPlay extends HTMLElement {
       const transparent = this.hasAttribute("transparent");
       const alphaMode = transparent ? "premultiplied" : "opaque";
       this.renderState = await initWebGPU(this.canvas, alphaMode);
+      this.observeCanvasSize();
       this.setupMouseTracking();
       this.loadInitialContent();
       if (this.playback.isPlaying) {
