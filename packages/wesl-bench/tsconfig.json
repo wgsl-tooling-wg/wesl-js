@@ -1,4 +1,4 @@
 {
   "extends": "../../tsconfig.node.json",
-  "exclude": ["src/baseline"]
+  "exclude": ["src/baseline", "browser"]
 }

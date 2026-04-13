@@ -1,7 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vite";
 import type { Plugin } from "vite";
+import { defineConfig } from "vite";
 import viteWesl from "wesl-plugin/vite";
 
 const thisPath = fileURLToPath(import.meta.url);

@@ -10,13 +10,13 @@
     "bench:perfetto": "node --expose-gc --trace-events-enabled --trace-event-categories=v8,v8.gc bin/bench.ts --perfetto trace.json",
     "bench:profile": "node --expose-gc --inspect-brk bin/bench.ts --profile",
     "bench:validate": "node --expose-gc --allow-natives-syntax bin/bench.ts --profile",
+    "browser:build": "vite build browser",
+    "browser:dev": "vite browser",
+    "browser:preview": "vite preview browser",
     "test": "vitest --hideSkippedTests",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:once": "vitest run",
-    "typecheck": "tsgo",
-    "browser:dev": "vite browser",
-    "browser:build": "vite build browser",
-    "browser:preview": "vite preview browser"
+    "typecheck": "tsgo"
   },
   "dependencies": {
     "benchforge": "^0.2.5",
@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "dexnode": "^1.2.2",
-    "vite": "^6.3.1",
-    "wesl-plugin": "workspace:*"
+    "vite": "^8.0.1",
+    "wesl-plugin": "workspace:x"
   }
 }

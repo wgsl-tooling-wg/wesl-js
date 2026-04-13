@@ -6,10 +6,7 @@ import {
 } from "benchforge";
 
 /** @return toDisplay fn that converts timing ms to lines/sec using metadata */
-function msToLocSec(
-  ms: number,
-  metadata?: Record<string, unknown>,
-): number {
+function msToLocSec(ms: number, metadata?: Record<string, unknown>): number {
   const lines = (metadata?.linesOfCode ?? metadata?.loc ?? 0) as number;
   return lines / (ms / 1000);
 }
