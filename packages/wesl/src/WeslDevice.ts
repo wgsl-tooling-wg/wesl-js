@@ -89,6 +89,7 @@ export function makeWeslDevice(device: GPUDevice): WeslDevice {
                   lineNumber: message.lineNum,
                   lineColumn: message.linePos,
                   length: message.length,
+                  offset: message.offset,
                   error: new Error(message.type + ": " + message.message),
                 });
               }

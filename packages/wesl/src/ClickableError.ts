@@ -9,6 +9,8 @@ export interface WeslErrorLocation {
   line: number;
   column: number;
   length: number;
+  /** byte offset into the source file */
+  offset: number;
 }
 
 export interface ClickableErrorParams {
@@ -27,6 +29,9 @@ export interface ClickableErrorParams {
   /** number of characters in the error section */
   length: number;
 
+  /** byte offset of the error section within the source text */
+  offset: number;
+
   /** the original error */
   error: Error;
 }
@@ -36,12 +41,13 @@ const isBrowser = "document" in globalThis;
 /** Throw an error with an embedded source map so that browser users can
  *  click on the error in the browser debug console and see the wesl source code.  */
 export function throwClickableError(params: ClickableErrorParams): void {
-  const { url, text, lineNumber, lineColumn, length, error } = params;
+  const { url, text, lineNumber, lineColumn, length, offset, error } = params;
   const weslLocation: WeslErrorLocation = {
     file: url,
     line: lineNumber,
     column: lineColumn,
     length,
+    offset,
   };
   (error as any).weslLocation = weslLocation;
   if (!debug || !isBrowser) throw error;
@@ -142,6 +148,7 @@ export function failIdentElem(
     lineNumber,
     lineColumn,
     length,
+    offset: start,
     error: new Error(detailedMessage),
   });
 }

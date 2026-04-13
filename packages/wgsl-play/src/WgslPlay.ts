@@ -27,6 +27,8 @@ export interface CompileErrorLocation {
   line: number;
   column: number; // 0-indexed
   length?: number;
+  /** byte offset into the source file */
+  offset: number;
   severity: "error" | "warning" | "info";
   message: string;
 }
@@ -680,6 +682,7 @@ export class WgslPlay extends HTMLElement {
           line: loc.line,
           column: loc.column - 1,
           length: loc.length,
+          offset: loc.offset,
           severity: "error" as const,
           message,
         },
@@ -695,6 +698,7 @@ export class WgslPlay extends HTMLElement {
         line: m.lineNum,
         column: m.linePos - 1,
         length: m.length,
+        offset: m.offset,
         severity: toSeverity(m.type),
         message: m.message,
       }));
