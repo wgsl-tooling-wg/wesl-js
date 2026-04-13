@@ -22,6 +22,7 @@ import {
   EditorState,
   type Extension,
   Text,
+  Transaction,
 } from "@codemirror/state";
 import {
   crosshairCursor,
@@ -56,6 +57,8 @@ type LintMode = "on" | "off";
 
 interface FileState {
   doc: Text;
+  /** Authoritative once the file has been active; carries the per-file undo history. */
+  state?: EditorState;
   scrollPos?: number;
   selection?: EditorSelection;
 }
@@ -259,8 +262,13 @@ export class WgslEdit extends HTMLElement {
       this.renderTabs();
     }
     if (this.editorView) {
+      // Replace content via a non-history transaction so autosave/change
+      // listeners fire but initial-load content doesn't land on the undo stack.
       const to = this.editorView.state.doc.length;
-      this.editorView.dispatch({ changes: { from: 0, to, insert: value } });
+      this.editorView.dispatch({
+        changes: { from: 0, to, insert: value },
+        annotations: Transaction.addToHistory.of(false),
+      });
     } else {
       this._pendingSource = value;
       const entry = this._files.get(this._activeFile);
@@ -518,19 +526,21 @@ export class WgslEdit extends HTMLElement {
     this._activeFile = name;
 
     const fileState = this._files.get(name)!;
-    if (this.editorView) {
-      const to = this.editorView.state.doc.length;
-      const changes = { from: 0, to, insert: fileState.doc.toString() };
-      const effects = EditorView.scrollIntoView(fileState.scrollPos ?? 0);
-      this._switchingFile = true;
-      this.editorView.dispatch({
-        changes,
-        selection: fileState.selection,
-        effects,
-      });
-      this._switchingFile = false;
+    const view = this.editorView;
+    if (view) {
+      const state = fileState.state ?? this.createFileState(fileState.doc);
+      fileState.state = state;
+      view.setState(state);
+      if (fileState.scrollPos != null) {
+        view.scrollDOM.scrollTop = fileState.scrollPos;
+      }
     }
     this.renderTabs();
+  }
+
+  /** Build a fresh EditorState seeded with `doc` and the current extension set. */
+  private createFileState(doc: Text | string): EditorState {
+    return EditorState.create({ doc, extensions: this.buildExtensions() });
   }
 
   private saveCurrentFileState(): void {
@@ -539,6 +549,7 @@ export class WgslEdit extends HTMLElement {
       ? this._files.get(this._activeFile)
       : undefined;
     if (!view || !fileState) return;
+    fileState.state = view.state;
     fileState.doc = view.state.doc;
     fileState.selection = view.state.selection;
     fileState.scrollPos = view.scrollDOM.scrollTop;
@@ -612,8 +623,12 @@ export class WgslEdit extends HTMLElement {
       this._activeFile = "main.wesl";
     }
 
-    const extensions = this.buildExtensions();
-    const state = EditorState.create({ doc: initialDoc, extensions });
+    const state = this.createFileState(initialDoc);
+    const active = this._activeFile ? this._files.get(this._activeFile) : null;
+    if (active) {
+      active.state = state;
+      active.doc = state.doc;
+    }
     this.editorView = new EditorView({ state, parent: this.editorContainer });
     this.renderTabs();
   }
