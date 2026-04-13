@@ -8,10 +8,12 @@ import type {
   TestSpecification,
   Vitest,
 } from "vitest/node";
-import { generateDiffReport, type ImageSnapshotFailure } from "./DiffReport.ts";
-
-const autoOpenValues = ["always", "failures", "never"] as const;
-export type AutoOpen = (typeof autoOpenValues)[number];
+import {
+  type AutoOpen,
+  autoOpenValues,
+  generateDiffReport,
+  type ImageSnapshotFailure,
+} from "./DiffReport.ts";
 
 /** Metadata captured when image snapshot test fails, used to generate HTML report. */
 interface ImageSnapshotFailureData {
@@ -78,7 +80,7 @@ export class ImageSnapshotReporter implements Reporter {
   private startServer() {
     const reportDir = this.resolveReportDir();
     const server = http.createServer((req, res) => {
-      const url = req.url === "/" ? "/index.html" : req.url || "/index.html";
+      const url = !req.url || req.url === "/" ? "/index.html" : req.url;
       const filePath = path.join(reportDir, url);
 
       fs.stat(filePath, (statErr, stats) => {
@@ -89,14 +91,13 @@ export class ImageSnapshotReporter implements Reporter {
         }
 
         const ext = path.extname(filePath);
-        const contentType =
-          ext === ".html"
-            ? "text/html"
-            : ext === ".css"
-              ? "text/css"
-              : ext === ".png"
-                ? "image/png"
-                : "application/octet-stream";
+        const mimeTypes: Record<string, string> = {
+          ".html": "text/html",
+          ".css": "text/css",
+          ".png": "image/png",
+          ".js": "text/javascript",
+        };
+        const contentType = mimeTypes[ext] ?? "application/octet-stream";
         const headers = {
           "Content-Type": contentType,
           "Last-Modified": stats.mtime.toUTCString(),
@@ -140,18 +141,13 @@ export class ImageSnapshotReporter implements Reporter {
     const result = testCase.result();
     if (result?.state !== "failed") return;
 
-    const meta = testCase.meta() as {
-      imageSnapshotFailure?: ImageSnapshotFailureData;
-    };
-    if (!meta.imageSnapshotFailure) return;
+    type Meta = { imageSnapshotFailure?: ImageSnapshotFailureData };
+    const { imageSnapshotFailure } = testCase.meta() as Meta;
+    if (!imageSnapshotFailure) return;
 
-    const error = result.errors?.[0];
-    const failure = captureFailure(
-      testCase,
-      meta.imageSnapshotFailure,
-      error?.message || "",
-    );
-    const moduleId = testCase.module.moduleId;
+    const message = result.errors?.[0]?.message || "";
+    const failure = captureFailure(testCase, imageSnapshotFailure, message);
+    const { moduleId } = testCase.module;
     const existing = this.failuresByFile.get(moduleId) || [];
     this.failuresByFile.set(moduleId, [...existing, failure]);
   }
@@ -177,21 +173,22 @@ export class ImageSnapshotReporter implements Reporter {
   }
 }
 
+/** Build a failure record from test metadata for the diff report. */
 function captureFailure(
   testCase: TestCase,
   data: ImageSnapshotFailureData,
   message: string,
 ): ImageSnapshotFailure {
   const snapshotName = data.actualPath.match(/([^/]+)\.png$/)?.[1] || "unknown";
-
+  const { mismatchedPixels, mismatchedPixelRatio } = data;
   return {
     testName: testCase.fullName || testCase.name,
     snapshotName,
     comparison: {
       pass: false,
       message,
-      mismatchedPixels: data.mismatchedPixels,
-      mismatchedPixelRatio: data.mismatchedPixelRatio,
+      mismatchedPixels,
+      mismatchedPixelRatio,
     },
     paths: {
       reference: data.expectedPath,

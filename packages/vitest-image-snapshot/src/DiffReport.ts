@@ -3,12 +3,12 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ComparisonResult } from "./ImageComparison.ts";
-import type { AutoOpen } from "./ImageSnapshotReporter.ts";
 
-const templatesDir = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "templates",
-);
+export const autoOpenValues = ["always", "failures", "never"] as const;
+export type AutoOpen = (typeof autoOpenValues)[number];
+
+const thisDir = path.dirname(fileURLToPath(import.meta.url));
+const templatesDir = path.join(thisDir, "templates");
 
 /** Failed image snapshot with comparison results and file paths. */
 export interface ImageSnapshotFailure {
@@ -64,11 +64,11 @@ export async function generateDiffReport(
     );
   }
 
-  const withCopiedImages =
+  const copied =
     failures.length > 0
       ? await copyImagesToReport(failures, reportDir, configRoot)
       : [];
-  const html = createReportHTML(withCopiedImages, liveReload);
+  const html = createReportHTML(copied, liveReload);
   const outputPath = path.join(reportDir, "index.html");
 
   await fs.promises.writeFile(outputPath, html, "utf-8");
@@ -78,14 +78,10 @@ export async function generateDiffReport(
     console.log(`\n Image diff report: ${outputPath}`);
   }
 
-  if (
-    autoOpen === "never" ||
-    (autoOpen === "failures" && failures.length === 0)
-  ) {
-    return;
-  }
+  const shouldOpen =
+    autoOpen === "always" || (autoOpen === "failures" && failures.length > 0);
+  if (!shouldOpen) return;
 
-  // open the browser to view the report
   try {
     const commands: Record<string, string> = { darwin: "open", win32: "start" };
     const cmd = commands[process.platform] ?? "xdg-open";
@@ -145,7 +141,6 @@ function renderTemplate(
     result = result.replaceAll(`{{${key}}}`, value);
   }
 
-  // Check for any unreplaced placeholders
   const unreplaced = result.match(/\{\{(\w+)\}\}/g);
   if (unreplaced) {
     const keys = unreplaced.map(m => m.slice(2, -2)).join(", ");
@@ -170,7 +165,7 @@ function createReportHTML(
     });
   }
 
-  const rows = failures.map(failure => createRowHTML(failure)).join("\n");
+  const rows = failures.map(createRowHTML).join("\n");
 
   return renderTemplate(loadTemplate("report-failure.hbs"), {
     totalFailures: String(totalFailures),
