@@ -1,8 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { gunzipSync } from "fflate";
-import { parseTar } from "nanotar";
+import { parseTarGzip } from "nanotar";
 import { expect, test } from "vitest";
 import type { WeslBundleFile } from "wesl-fetch";
 import { loadBundlesFromFiles } from "wesl-fetch";
@@ -11,10 +10,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const testPkgDir = join(__dirname, "../../../test_pkg");
 
-function loadBundlesFromTgz(tgzPath: string, packageName: string) {
+async function loadBundlesFromTgz(tgzPath: string, packageName: string) {
   const gzipData = readFileSync(tgzPath);
-  const tarData = gunzipSync(new Uint8Array(gzipData));
-  const entries = parseTar(tarData);
+  const entries = await parseTarGzip(new Uint8Array(gzipData));
   const bundleFiles: WeslBundleFile[] = entries
     .filter(f => f.name.endsWith("weslBundle.js"))
     .map(f => ({ packagePath: f.name, content: f.text, packageName }));
@@ -39,8 +37,8 @@ test("load bundles with dependencies from tgz", async () => {
   const multiTgz = join(testPkgDir, "multi_pkg-0.0.1.tgz");
   const depTgz = join(testPkgDir, "dependent_package-0.0.1.tgz");
 
-  const multiFiles = extractBundleFiles(multiTgz, "multi_pkg");
-  const depFiles = extractBundleFiles(depTgz, "dependent_package");
+  const multiFiles = await extractBundleFiles(multiTgz, "multi_pkg");
+  const depFiles = await extractBundleFiles(depTgz, "dependent_package");
 
   // Load all bundles together - each file knows its package name
   const allFiles = [...depFiles, ...multiFiles];
@@ -109,13 +107,12 @@ test("circular dependencies", async () => {
   expect(b.dependencies?.[0]).toBe(a);
 });
 
-function extractBundleFiles(
+async function extractBundleFiles(
   tgzPath: string,
   packageName: string,
-): WeslBundleFile[] {
+): Promise<WeslBundleFile[]> {
   const gzipData = readFileSync(tgzPath);
-  const tarData = gunzipSync(new Uint8Array(gzipData));
-  const entries = parseTar(tarData);
+  const entries = await parseTarGzip(new Uint8Array(gzipData));
   return entries
     .filter(f => f.name.endsWith("weslBundle.js"))
     .map(f => ({ packagePath: f.name, content: f.text, packageName }));

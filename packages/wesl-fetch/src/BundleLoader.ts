@@ -1,5 +1,4 @@
-import { gunzipSync } from "fflate";
-import { type ParsedTarFileItem, parseTar } from "nanotar";
+import { type ParsedTarFileItem, parseTarGzip } from "nanotar";
 import type { WeslBundle } from "wesl";
 import { loadBundlesFromFiles, type WeslBundleFile } from "./BundleHydrator.ts";
 
@@ -77,9 +76,7 @@ async function fetchAndExtractTgzRaw(
   if (!response.ok) {
     throw new Error(`Failed to fetch package: HTTP ${response.status}`);
   }
-  const gzipData = new Uint8Array(await response.arrayBuffer());
-  const tarData = gunzipSync(gzipData);
-  return parseTar(tarData);
+  return parseTarGzip(new Uint8Array(await response.arrayBuffer()));
 }
 
 async function npmPackageToUrlRaw(packageName: string): Promise<string> {

@@ -45,7 +45,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.53.2",
-    "fflate": "^0.8.2",
     "nanotar": "^0.2.0",
     "wesl-plugin": "workspace:x"
   }

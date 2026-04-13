@@ -6,13 +6,13 @@
   "repository": "github:wgsl-tooling-wg/wesl-js",
   "scripts": {
     "build": "tsdown",
+    "test": "vitest",
     "typecheck": "tsgo"
   },
   "exports": {
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "fflate": "^0.8.2",
     "nanotar": "^0.2.0",
     "resolve.exports": "^2.0.3",
     "wesl": "workspace:*"

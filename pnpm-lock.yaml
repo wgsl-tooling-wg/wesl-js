@@ -475,9 +475,6 @@ importers:
 
   packages/wesl-fetch:
     dependencies:
-      fflate:
-        specifier: ^0.8.2
-        version: 0.8.2
       nanotar:
         specifier: ^0.2.0
         version: 0.2.0
@@ -799,9 +796,6 @@ importers:
       '@playwright/test':
         specifier: ^1.53.2
         version: 1.53.2
-      fflate:
-        specifier: ^0.8.2
-        version: 0.8.2
       nanotar:
         specifier: ^0.2.0
         version: 0.2.0
