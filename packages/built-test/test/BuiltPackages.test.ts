@@ -20,9 +20,17 @@ test("verify link() function works with built packages", async () => {
 
 const externalTest = process.cwd().endsWith("temp-built-test");
 
-test.skipIf(!externalTest)("typecheck this test file", () => {
-  execSync(`pnpm tsgo`, { stdio: "inherit" });
-});
+// prep:packed:fast re-extracts the @typescript/native-preview tgz every run,
+// so this is always the first launch of a fresh native binary. macOS's initial
+// verification pass (~4-5s, almost all idle wait) blows the 5s default timeout.
+// Subsequent launches run in ~70ms.
+test.skipIf(!externalTest)(
+  "typecheck this test file",
+  () => {
+    execSync(`pnpm tsgo`, { stdio: "inherit" });
+  },
+  30_000,
+);
 
 // All published packages - check for TypeScript exports (Node.js can't run .ts in node_modules)
 const packagesToCheck = [
