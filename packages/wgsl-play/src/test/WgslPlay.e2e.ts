@@ -112,7 +112,9 @@ test("basic shader renders", async ({ page }) => {
   await expectCanvasSnapshot(page, "#player1", "basic-shader.png");
 });
 
-test("npm CDN - external imports work", async ({ page }) => {
+test("npm CDN - external imports work", { tag: "@network" }, async ({
+  page,
+}) => {
   await page.goto("/");
   await waitForWgslPlay(page);
 
@@ -207,7 +209,9 @@ test("connectToSource - condition toggle re-renders", async ({ page }) => {
   await expectCanvasSnapshot(page, "#player10", "connect-conditions-red.png");
 });
 
-test("connectToSource - external deps are fetched", async ({ page }) => {
+test("connectToSource - external deps are fetched", {
+  tag: "@network",
+}, async ({ page }) => {
   await page.goto("/");
   await page.waitForLoadState("networkidle");
   await waitForFrame(page, "#player11");
@@ -220,7 +224,9 @@ test("connectToSource - external deps are fetched", async ({ page }) => {
   await expectCanvasSnapshot(page, "#player11", "connect-source-external.png");
 });
 
-test("connectToSource - dynamic npm package loading", async ({ page }) => {
+test("connectToSource - dynamic npm package loading", {
+  tag: "@network",
+}, async ({ page }) => {
   await page.goto("/");
   await waitForFrame(page, "#player12");
 

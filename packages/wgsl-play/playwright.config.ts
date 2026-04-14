@@ -14,6 +14,8 @@ export default defineConfig({
 
   testDir: "./src/test",
   testMatch: "**/*.e2e.ts",
+  // Skip @network-tagged tests when OFFLINE=1 (set by prepush:local).
+  grepInvert: process.env.OFFLINE ? /@network/ : undefined,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

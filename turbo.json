@@ -9,7 +9,7 @@
     "typecheck": {},
     "test": {},
     "test:once": {},
-    "test:e2e": {},
+    "test:e2e": { "env": ["OFFLINE"] },
     "test:cts": {},
     "test:vscode": { "dependsOn": ["^build"] },
     "test:built:fast": { "dependsOn": ["^build"] },

@@ -28,6 +28,7 @@
     "prepublishOnly:all": "pnpm --filter \"./packages/**\" prepublishOnly",
     "prepush": "run-s fix:all turbo:validate",
     "prepush:nocache": "run-s fix:all turbo:validate:nocache",
+    "prepush:local": "cross-env OFFLINE=1 run-s fix:all turbo:validate:sequential",
     "prepush:sequential": "run-s fix:all turbo:validate:sequential",
     "publish:all": "pnpm --filter \"./packages/**\" publish",
     "test": "cross-env FORCE_COLOR=1 NODE_OPTIONS=--expose-gc vitest",
