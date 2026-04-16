@@ -201,7 +201,9 @@ export async function runWesl(runParams: RunWeslParams): Promise<TestResult[]> {
       snapshotFns,
     };
     const snapshotParams = await buildSnapshotParams(snapArgs);
-    const testFilePath = runParams.testFilePath ?? process.cwd();
+    const { expect } = await importVitest();
+    const testFilePath =
+      runParams.testFilePath ?? expect.getState().testPath ?? process.cwd();
     for (const snap of snapshotFns) {
       const snapResult = await runSnapshotTest(
         snap,
