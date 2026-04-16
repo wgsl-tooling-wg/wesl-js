@@ -22,7 +22,7 @@ export interface StructLayout {
   alignment: number;
 }
 
-interface TypeInfo {
+export interface TypeInfo {
   alignment: number;
   size: number;
 }
@@ -92,42 +92,8 @@ export function structLayout(
   return membersLayout(members, conditions);
 }
 
-/** Compute layout from a flat member list (used internally and for nested resolution). */
-function membersLayout(
-  members: StructMemberElem[],
-  conditions?: Conditions,
-): StructLayout {
-  let offset = 0;
-  let structAlign = 1;
-  const fields: FieldLayout[] = [];
-
-  for (const m of members) {
-    let { alignment, size } = memberTypeInfo(m.typeRef, conditions);
-
-    const alignAttr = findAnnotation(m, "align");
-    if (alignAttr) {
-      const [n] = numericParams(alignAttr);
-      if (n) alignment = Math.max(n, alignment);
-    }
-
-    const sizeAttr = findAnnotation(m, "size");
-    if (sizeAttr) {
-      const [n] = numericParams(sizeAttr);
-      if (n) size = n;
-    }
-
-    structAlign = Math.max(structAlign, alignment);
-    offset = roundUp(alignment, offset);
-    fields.push({ name: m.name.name, offset, size });
-    offset += size;
-  }
-
-  const bufferSize = roundUp(structAlign, offset);
-  return { fields, bufferSize, alignment: structAlign };
-}
-
-/** Resolve alignment and size for a member's type (primitive, array, or nested struct). */
-function memberTypeInfo(
+/** Resolve alignment and size for any host-shareable typeRef (primitive, array, or nested struct). */
+export function typeRefLayout(
   typeRef: TypeRefElem,
   conditions?: Conditions,
 ): TypeInfo {
@@ -156,12 +122,70 @@ function memberTypeInfo(
   throw new Error(`unsupported type for layout: '${name}'`);
 }
 
+/** Look up alignment and size for a host-shareable WGSL type. */
+export function typeLayout(typeName: string): TypeInfo {
+  const info = typeTable[typeName];
+  if (info) return info;
+  throw new Error(`unsupported type for layout: '${typeName}'`);
+}
+
+function scalar(size: number): TypeInfo {
+  return { alignment: size, size };
+}
+
+// vec2: align=2*S, size=2*S; vec3: align=4*S, size=3*S; vec4: align=4*S, size=4*S
+function vec(n: number, scalarSize: number): TypeInfo {
+  const alignN = n === 3 ? 4 : n;
+  return { alignment: alignN * scalarSize, size: n * scalarSize };
+}
+
+// matCxR<T>: C columns of vecR<T>, column stride = roundUp(colAlign, colSize)
+function mat(cols: number, rows: number, scalarSize: number): TypeInfo {
+  const col = vec(rows, scalarSize);
+  const colStride = roundUp(col.alignment, col.size);
+  return { alignment: col.alignment, size: cols * colStride };
+}
+
+/** Compute layout from a flat member list (used internally and for nested resolution). */
+function membersLayout(
+  members: StructMemberElem[],
+  conditions?: Conditions,
+): StructLayout {
+  let offset = 0;
+  let structAlign = 1;
+  const fields: FieldLayout[] = [];
+
+  for (const m of members) {
+    let { alignment, size } = typeRefLayout(m.typeRef, conditions);
+
+    const alignAttr = findAnnotation(m, "align");
+    if (alignAttr) {
+      const [n] = numericParams(alignAttr);
+      if (n) alignment = Math.max(n, alignment);
+    }
+
+    const sizeAttr = findAnnotation(m, "size");
+    if (sizeAttr) {
+      const [n] = numericParams(sizeAttr);
+      if (n) size = n;
+    }
+
+    structAlign = Math.max(structAlign, alignment);
+    offset = roundUp(alignment, offset);
+    fields.push({ name: m.name.name, offset, size });
+    offset += size;
+  }
+
+  const bufferSize = roundUp(structAlign, offset);
+  return { fields, bufferSize, alignment: structAlign };
+}
+
 /** Extract type info from an array template param (TypeRefElem or RefIdentElem). */
 function elemTypeInfo(
   param: ExpressionElem,
   conditions?: Conditions,
 ): TypeInfo {
-  if (param.kind === "type") return memberTypeInfo(param, conditions);
+  if (param.kind === "type") return typeRefLayout(param, conditions);
   // RefIdentElem (kind "ref") - has .ident which is a RefIdent
   const p = param as Record<string, any>;
   const ident: RefIdent | undefined = p.ident;
@@ -187,28 +211,4 @@ function resolveStructInfo(
   if (elem?.kind !== "struct") return undefined;
   const inner = structLayout(elem, conditions);
   return { alignment: inner.alignment, size: inner.bufferSize };
-}
-
-/** Look up alignment and size for a host-shareable WGSL type. */
-export function typeLayout(typeName: string): TypeInfo {
-  const info = typeTable[typeName];
-  if (info) return info;
-  throw new Error(`unsupported type for layout: '${typeName}'`);
-}
-
-function scalar(size: number): TypeInfo {
-  return { alignment: size, size };
-}
-
-// vec2: align=2*S, size=2*S; vec3: align=4*S, size=3*S; vec4: align=4*S, size=4*S
-function vec(n: number, scalarSize: number): TypeInfo {
-  const alignN = n === 3 ? 4 : n;
-  return { alignment: alignN * scalarSize, size: n * scalarSize };
-}
-
-// matCxR<T>: C columns of vecR<T>, column stride = roundUp(colAlign, colSize)
-function mat(cols: number, rows: number, scalarSize: number): TypeInfo {
-  const col = vec(rows, scalarSize);
-  const colStride = roundUp(col.alignment, col.size);
-  return { alignment: col.alignment, size: cols * colStride };
 }

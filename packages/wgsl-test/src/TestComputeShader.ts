@@ -54,6 +54,10 @@ export interface RunComputeParams {
   size?: number;
   dispatchWorkgroups?: number | [number, number, number];
   entryPoint?: string;
+  /** Extra bind group entries for annotated resources (binding 1, 2, ...). */
+  extraEntries?: GPUBindGroupEntry[];
+  /** Extra layout entries for annotated resources. */
+  extraLayoutEntries?: GPUBindGroupLayoutEntry[];
 }
 
 const defaultResultSize = 4;
@@ -84,7 +88,6 @@ export async function testCompute(
   } = params;
   const { resultFormat = "u32", size = defaultResultSize } = params;
 
-  // Resolve shader source from either src or moduleName
   const shaderSrc = await resolveShaderSource(src, moduleName, projectDir);
 
   const arrayType = `array<${resultFormat}, ${size}>`;
@@ -116,9 +119,9 @@ export async function testCompute(
  * to the CPU for reading.
  */
 export async function runCompute(params: RunComputeParams): Promise<number[]> {
-  const { device, module, entryPoint } = params;
+  const { device, module, entryPoint, dispatchWorkgroups = 1 } = params;
   const { resultFormat = "u32", size = defaultResultSize } = params;
-  const { dispatchWorkgroups = 1 } = params;
+  const { extraEntries = [], extraLayoutEntries = [] } = params;
 
   const bgLayout = device.createBindGroupLayout({
     entries: [
@@ -127,6 +130,7 @@ export async function runCompute(params: RunComputeParams): Promise<number[]> {
         visibility: GPUShaderStage.COMPUTE,
         buffer: { type: "storage" },
       },
+      ...extraLayoutEntries,
     ],
   });
 
@@ -141,11 +145,14 @@ export async function runCompute(params: RunComputeParams): Promise<number[]> {
   );
   const bindGroup = device.createBindGroup({
     layout: bgLayout,
-    entries: [{ binding: 0, resource: { buffer: storageBuffer } }],
+    entries: [
+      { binding: 0, resource: { buffer: storageBuffer } },
+      ...extraEntries,
+    ],
   });
 
-  const commands = device.createCommandEncoder();
-  const pass = commands.beginComputePass();
+  const encoder = device.createCommandEncoder();
+  const pass = encoder.beginComputePass();
   pass.setPipeline(pipeline);
   pass.setBindGroup(0, bindGroup);
   if (typeof dispatchWorkgroups === "number") {
@@ -154,11 +161,12 @@ export async function runCompute(params: RunComputeParams): Promise<number[]> {
     pass.dispatchWorkgroups(...dispatchWorkgroups);
   }
   pass.end();
-  device.queue.submit([commands.finish()]);
+  device.queue.submit([encoder.finish()]);
 
   return await copyBuffer(device, storageBuffer, resultFormat);
 }
 
+/** Create a storage buffer pre-filled with sentinel values for result detection. */
 function createStorageBuffer(device: GPUDevice, targetSize: number): GPUBuffer {
   const buffer = device.createBuffer({
     label: "storage",
@@ -166,7 +174,8 @@ function createStorageBuffer(device: GPUDevice, targetSize: number): GPUBuffer {
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
     mappedAtCreation: true,
   });
-  new Float32Array(buffer.getMappedRange()).fill(-999.0); // sentinel values
+  // sentinel values detect unwritten shader results
+  new Float32Array(buffer.getMappedRange()).fill(-999.0);
   buffer.unmap();
   return buffer;
 }

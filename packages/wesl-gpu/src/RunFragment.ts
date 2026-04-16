@@ -40,5 +40,7 @@ export async function runFragment(params: FragmentParams): Promise<number[]> {
     textures,
     samplers,
     uniformBuffer: uniformState.buffer,
+    extraEntries: params.extraEntries,
+    extraLayoutEntries: params.extraLayoutEntries,
   });
 }

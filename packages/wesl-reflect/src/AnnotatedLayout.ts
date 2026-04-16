@@ -17,10 +17,6 @@ import {
 } from "./UniformAnnotations.ts";
 import { originalTypeName } from "./WeslStructs.ts";
 
-interface AnnotatedField extends FieldLayout {
-  type: string;
-}
-
 export interface RangeControl extends AnnotatedField, RangeAnnotation {
   kind: "range";
 }
@@ -48,6 +44,10 @@ export interface AnnotatedLayout {
   layout: StructLayout;
   controls: UniformControl[];
   fields: UniformField[];
+}
+
+interface AnnotatedField extends FieldLayout {
+  type: string;
 }
 
 type Classified =

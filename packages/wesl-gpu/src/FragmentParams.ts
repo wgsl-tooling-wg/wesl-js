@@ -33,6 +33,12 @@ export interface FragmentRenderParams {
 
   /** Samplers. Length 1 (reused) or match textures.length. */
   samplers?: GPUSampler[];
+
+  /** Extra bind-group entries to merge with standard uniform/texture/sampler layout. */
+  extraEntries?: GPUBindGroupEntry[];
+
+  /** Matching extra layout entries for {@link extraEntries}. */
+  extraLayoutEntries?: GPUBindGroupLayoutEntry[];
 }
 
 /** Combined params for fragment shader execution */

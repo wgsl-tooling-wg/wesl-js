@@ -1,6 +1,11 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { LinkParams, ModuleResolver, WeslBundle } from "wesl";
+import type {
+  LinkParams,
+  ModuleResolver,
+  WeslBundle,
+  WeslJsPlugin,
+} from "wesl";
 import { CompositeResolver, freshResolver, link, RecordResolver } from "wesl";
 import {
   dependencyBundles,
@@ -78,6 +83,9 @@ export interface CompileShaderParams {
 
   /** Pre-resolved shader context. Skips dependency resolution if provided. */
   shaderContext?: ShaderContext;
+
+  /** WESL linker plugins (e.g. annotatedResourcesPlugin). */
+  plugins?: WeslJsPlugin[];
 }
 
 /**
@@ -116,6 +124,7 @@ export async function compileShader(
     conditions,
     constants,
     packageName: params.packageName ?? ctx.packageName,
+    config: params.plugins ? { plugins: params.plugins } : undefined,
   });
   const module = linked.createShaderModule(device);
 

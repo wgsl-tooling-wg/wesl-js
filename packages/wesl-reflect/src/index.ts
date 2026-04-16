@@ -1,4 +1,5 @@
 export * from "./AnnotatedLayout.ts";
+export * from "./AnnotatedResources.ts";
 export * from "./Annotations.ts";
 export * from "./StructLayout.ts";
 export * from "./UniformAnnotations.ts";

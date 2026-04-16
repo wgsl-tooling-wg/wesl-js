@@ -1,12 +1,14 @@
 import { componentByteSize, numComponents, texelLoadType } from "thimbleberry";
 import type { ImageData } from "vitest-image-snapshot";
-import { normalizeModuleName } from "wesl";
+import { normalizeModuleName, parseSrcModule } from "wesl";
 import {
   type FragmentRenderParams,
   runFragment as runFragmentCore,
   type WeslOptions,
 } from "wesl-gpu";
+import { annotatedResourcesPlugin, findAnnotatedResources } from "wesl-reflect";
 import { buildResolver, resolveShaderContext } from "./CompileShader.ts";
+import { createTestResources } from "./ResourceCreation.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 import { importImageSnapshot, importVitest } from "./VitestImport.ts";
 
@@ -116,7 +118,7 @@ function moduleNameToSnapshotName(moduleName: string): string {
 }
 
 async function runFragment(params: FragmentTestParams): Promise<number[]> {
-  const { projectDir, src, moduleName, useSourceShaders } = params;
+  const { projectDir, src, moduleName, useSourceShaders, device } = params;
 
   // Resolve shader source from either src or moduleName
   const fragmentSrc = await resolveShaderSource(src, moduleName, projectDir);
@@ -132,12 +134,35 @@ async function runFragment(params: FragmentTestParams): Promise<number[]> {
 
   const resolver = params.resolver ?? buildResolver(ctx, fragmentSrc);
 
+  // Fragment binding layout: 0=uniforms, [1..n]=textures, [n+1..n+m]=samplers,
+  // annotated resources go after that.
+  const textureCount = params.textures?.length ?? 0;
+  const startBinding = 1 + textureCount * 2;
+  const resources = findAnnotatedResources(
+    parseSrcModule({
+      modulePath: "package::main",
+      debugFilePath: "./main.wesl",
+      src: fragmentSrc,
+    }),
+  );
+  const testResources =
+    resources.length > 0
+      ? await createTestResources(device, resources, startBinding)
+      : undefined;
+  const plugins =
+    resources.length > 0
+      ? [annotatedResourcesPlugin(resources, startBinding)]
+      : undefined;
+
   return runFragmentCore({
     ...params,
     src: fragmentSrc,
     libs: params.libs ?? ctx.libs,
     resolver,
     packageName: params.packageName ?? ctx.packageName,
+    config: plugins ? { plugins } : params.config,
+    extraEntries: testResources?.entries,
+    extraLayoutEntries: testResources?.layoutEntries,
   });
 }
 

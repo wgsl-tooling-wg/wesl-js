@@ -32,6 +32,18 @@ export interface SimpleRenderParams {
 
   /** Layout for pre-built bind group */
   bindGroupLayout?: GPUBindGroupLayout;
+
+  /** Extra bind-group entries to merge with the standard uniform/texture/sampler layout. */
+  extraEntries?: GPUBindGroupEntry[];
+
+  /** Matching extra layout entries for {@link extraEntries}. */
+  extraLayoutEntries?: GPUBindGroupLayoutEntry[];
+
+  /** Fragment entry point name. Required when the module has more than one @fragment. */
+  fragmentEntryPoint?: string;
+
+  /** Vertex entry point name. Required when the module has more than one @vertex. */
+  vertexEntryPoint?: string;
 }
 
 /**
@@ -65,8 +77,12 @@ export async function simpleRender(
       : "auto";
     const pipeline = device.createRenderPipeline({
       layout: pipelineLayout,
-      vertex: { module },
-      fragment: { module, targets: [{ format: outputFormat }] },
+      vertex: { module, entryPoint: params.vertexEntryPoint },
+      fragment: {
+        module,
+        entryPoint: params.fragmentEntryPoint,
+        targets: [{ format: outputFormat }],
+      },
       primitive: { topology: "triangle-list" },
     });
     renderFrame({
@@ -94,6 +110,10 @@ export function createBindGroup(
   uniformBuffer: GPUBuffer | undefined,
   textures: GPUTexture[] = [],
   samplers: GPUSampler[] = [],
+  extra?: {
+    entries?: GPUBindGroupEntry[];
+    layoutEntries?: GPUBindGroupLayoutEntry[];
+  },
 ): { layout: GPUBindGroupLayout; bindGroup: GPUBindGroup } {
   if (textures.length > 0 && samplers.length > 0) {
     if (samplers.length !== 1 && samplers.length !== textures.length) {
@@ -138,6 +158,9 @@ export function createBindGroup(
     bgEntries.push({ binding, resource: sampler });
   }
 
+  if (extra?.layoutEntries) layoutEntries.push(...extra.layoutEntries);
+  if (extra?.entries) bgEntries.push(...extra.entries);
+
   const layout = device.createBindGroupLayout({ entries: layoutEntries });
   const bindGroup = device.createBindGroup({ layout, entries: bgEntries });
   return { layout, bindGroup };
@@ -159,7 +182,12 @@ function resolveBindings(
   if (params.bindGroup) {
     return { bindGroup: params.bindGroup, layout: params.bindGroupLayout! };
   }
-  if (uniformBuffer || textures.length > 0) {
-    return createBindGroup(device, uniformBuffer, textures, samplers);
+  const hasExtras =
+    !!params.extraEntries?.length || !!params.extraLayoutEntries?.length;
+  if (uniformBuffer || textures.length > 0 || hasExtras) {
+    return createBindGroup(device, uniformBuffer, textures, samplers, {
+      entries: params.extraEntries,
+      layoutEntries: params.extraLayoutEntries,
+    });
   }
 }
