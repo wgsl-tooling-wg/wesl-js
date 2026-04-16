@@ -55,9 +55,11 @@
     "glob": "^13.0.6",
     "pngjs": "^7.0.0",
     "thimbleberry": "^0.2.10",
+    "vitest-image-snapshot": "workspace:*",
     "webgpu": "^0.3.8",
     "wesl": "workspace:*",
     "wesl-gpu": "workspace:*",
+    "wesl-reflect": "workspace:*",
     "wesl-tooling": "workspace:*",
     "yargs": "^18.0.0"
   },
@@ -68,14 +70,10 @@
     "wesl-packager": "workspace:x"
   },
   "peerDependencies": {
-    "vitest": "^4.1.0",
-    "vitest-image-snapshot": "workspace:^"
+    "vitest": "^4.1.0"
   },
   "peerDependenciesMeta": {
     "vitest": {
-      "optional": true
-    },
-    "vitest-image-snapshot": {
       "optional": true
     }
   },

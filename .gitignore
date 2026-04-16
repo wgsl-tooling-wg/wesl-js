@@ -25,6 +25,8 @@ _baseline
 
 # Image test outputs
 __image_diff_report__/
+__image_actual__/
+__image_diffs__/
 
 # Playwright test artifacts
 playwright-report/

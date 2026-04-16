@@ -4,7 +4,8 @@ Test WGSL and WESL shaders with the CLI or vitest.
 
 - **Native WESL** (`@test`) - Unit test shader functions, assertions run on GPU
 - **CLI** (`wgsl-test run`) - Run tests from the command line
-- **TypeScript-driven** - Integration tests, visual regression, custom validation
+- **TypeScript-driven** - Integration tests, visual regression, custom
+  validation
 
 ## Installation
 
@@ -14,7 +15,8 @@ npm install wgsl-test
 
 ## Native WESL Testing
 
-Write tests directly in WESL with the `@test` attribute. Minimal boilerplate, assertions run on the GPU:
+Write tests directly in WESL with the `@test` attribute. Minimal boilerplate,
+assertions run on the GPU:
 
 ```wgsl
 /// interp_test.wesl
@@ -53,6 +55,39 @@ await testWesl({ device, moduleName: "interp_test" });
 
 **[See API.md for assertion functions →](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/packages/wgsl-test/API.md#assertion-functions)**
 
+## Annotated Resources
+
+Declare GPU resources for a test inline with `@buffer`, `@test_texture`, and
+`@sampler`. wgsl-test assigns bindings and builds the bind group automatically:
+
+```wgsl
+import wgsl_test::expectNear;
+
+@buffer var<storage, read_write> data: array<f32, 4>;
+
+@test fn write_and_read() {
+  data[0] = 42.0;
+  expectNear(data[0], 42.0);
+}
+```
+
+Fragment snapshots can combine textures and samplers the same way:
+
+```wgsl
+@test_texture(checkerboard, 256, 256, 16) var tex: texture_2d<f32>;
+@sampler(nearest)                         var samp: sampler;
+
+@fragment @extent(256, 256) @snapshot
+fn test_checker(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = pos.xy / 256.0;
+  return textureSampleLevel(tex, samp, uv, 0.0);
+}
+```
+
+Built-in texture sources: `checkerboard`, `gradient`, `radial_gradient`,
+`color_bars`, `edge_pattern`, `noise`, `solid`, `lemur`. Sampler filter options:
+`linear`, `nearest`.
+
 ## Visual Regression Testing
 
 Test complete rendered images in vitest:
@@ -75,8 +110,8 @@ Update snapshots with `vitest -u` as needed.
 
 ## Testing Compute Shaders
 
-For more control, use `testCompute()`. 
-A `env::results` buffer is automatically provided:
+For more control, use `testCompute()`. A `env::results` buffer is automatically
+provided:
 
 ```typescript
 import { testCompute, getGPUDevice } from "wgsl-test";
@@ -101,9 +136,9 @@ const result = await testCompute({ device, src, size: 2 });
 
 ## Testing Fragment Shaders
 
-Some functions only make sense in fragment shaders. 
+Some functions only make sense in fragment shaders.
 
-Use `testFragment()` to test fragment shader rendering. 
+Use `testFragment()` to test fragment shader rendering.
 
 ```rs
 /// shaders/foo.wesl
@@ -128,10 +163,16 @@ const result = await testFragment({ device, src });
 
 ## API Documentation
 
-- **[API.md](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/packages/wgsl-test/API.md)** - Complete API reference with detailed examples
-- **[API.md#complete-test-example](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/packages/wgsl-test/API.md#complete-test-example)** - Full vitest test setup with beforeAll/afterAll
-- **[Examples](https://github.com/wgsl-tooling-wg/wesl-js/tree/main/examples)** - Tiny standalone examples
+-
+  **[API.md](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/packages/wgsl-test/API.md)**
+  - Complete API reference with detailed examples
+-
+  **[API.md#complete-test-example](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/packages/wgsl-test/API.md#complete-test-example)**
+  - Full vitest test setup with beforeAll/afterAll
+- **[Examples](https://github.com/wgsl-tooling-wg/wesl-js/tree/main/examples)**
+  - Tiny standalone examples
 
 ## Future
 
-File an [issue](https://github.com/wgsl-tooling-wg/wesl-js/issues) or talk about your ideas on the tooling group [discord chat](https://discord.gg/5UhkaSu4dt).
+File an [issue](https://github.com/wgsl-tooling-wg/wesl-js/issues) or talk about
+your ideas on the tooling group [discord chat](https://discord.gg/5UhkaSu4dt).

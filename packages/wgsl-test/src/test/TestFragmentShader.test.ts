@@ -394,3 +394,24 @@ test("shader with uniforms and texture", async () => {
   // 0.5 (texture) + 1.0 (time * 0.1 where time=10) = 1.5
   expect(result[0]).toBeCloseTo(1.5, 2);
 });
+
+test("fragment with @test_texture and @sampler annotations", async () => {
+  const src = `
+    @test_texture(solid, 1, 0, 0, 1) var tex: texture_2d<f32>;
+    @sampler(linear) var samp: sampler;
+
+    @fragment
+    fn fs_main() -> @location(0) vec4f {
+      return textureSampleLevel(tex, samp, vec2f(0.5), 0.0);
+    }
+  `;
+  const result = await testFragment({
+    projectDir: import.meta.url,
+    device,
+    src,
+  });
+  expect(result[0]).toBeCloseTo(1.0);
+  expect(result[1]).toBeCloseTo(0.0);
+  expect(result[2]).toBeCloseTo(0.0);
+  expect(result[3]).toBeCloseTo(1.0);
+});

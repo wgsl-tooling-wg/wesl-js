@@ -1,17 +1,9 @@
-import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { expectWesl, runWesl } from "../TestWesl.ts";
 import { destroySharedDevice, getGPUDevice } from "../WebGPUTestSetup.ts";
+import { loadFixture } from "./TestSupport.ts";
 
 let device: GPUDevice;
-const fixturesDir = new URL(
-  "./fixtures/wesl_test_pkg/shaders/",
-  import.meta.url,
-);
-
-function loadFixture(name: string): string {
-  return readFileSync(new URL(name, fixturesDir), "utf-8");
-}
 
 beforeAll(async () => {
   device = await getGPUDevice();
