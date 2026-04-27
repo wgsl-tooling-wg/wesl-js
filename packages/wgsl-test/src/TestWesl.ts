@@ -10,11 +10,6 @@ import {
   resolveShaderContext,
   type ShaderContext,
 } from "./CompileShader.ts";
-import {
-  createTestResources,
-  reZeroBuffers,
-  type TestResources,
-} from "./ResourceCreation.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
 import { type ComputeTestParams, runCompute } from "./TestComputeShader.ts";
 import {
@@ -24,6 +19,11 @@ import {
   type TestFunctionInfo,
   testDisplayName,
 } from "./TestDiscovery.ts";
+import {
+  createTestResources,
+  reZeroBuffers,
+  type TestResources,
+} from "./TestResourceSetup.ts";
 import {
   renderSnapshotImage,
   runSnapshotTest,

@@ -8,8 +8,8 @@ import {
 } from "wesl-gpu";
 import { annotatedResourcesPlugin, findAnnotatedResources } from "wesl-reflect";
 import { buildResolver, resolveShaderContext } from "./CompileShader.ts";
-import { createTestResources } from "./ResourceCreation.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
+import { createTestResources } from "./TestResourceSetup.ts";
 import { importImageSnapshot, importVitest } from "./VitestImport.ts";
 
 export interface FragmentTestParams extends WeslOptions, FragmentRenderParams {

@@ -2,8 +2,8 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 import { imageMatcher } from "vitest-image-snapshot";
 import { findAnnotatedResources } from "wesl-reflect";
 import { resolveShaderContext } from "../CompileShader.ts";
-import { createTestResources } from "../ResourceCreation.ts";
 import { findSnapshotFunctions, findTestFunctions } from "../TestDiscovery.ts";
+import { createTestResources } from "../TestResourceSetup.ts";
 import {
   renderSnapshotImage,
   type SnapshotTestParams,

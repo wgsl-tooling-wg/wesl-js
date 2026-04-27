@@ -7,11 +7,11 @@ import {
 } from "wesl-reflect";
 import weslBundle from "../lib/weslBundle.js";
 import { compileShader, type ShaderContext } from "./CompileShader.ts";
-import type { TestResources } from "./ResourceCreation.ts";
 import type {
   SnapshotFunctionInfo,
   TestFunctionInfo,
 } from "./TestDiscovery.ts";
+import type { TestResources } from "./TestResourceSetup.ts";
 
 export interface SnapshotResult {
   passed: boolean;

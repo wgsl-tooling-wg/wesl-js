@@ -123,6 +123,40 @@ fn main() {
   expect(out).not.toContain("@sampler");
 });
 
+test("discovers @texture(name) var with typeName", () => {
+  const ast = parse(`
+@texture(nebula) var photo: texture_2d<f32>;
+`);
+  const r = findAnnotatedResources(ast)[0];
+  expect(r.kind).toBe("texture");
+  if (r.kind === "texture") {
+    expect(r.varName).toBe("photo");
+    expect(r.source).toBe("nebula");
+    expect(r.typeName).toBe("texture_2d");
+  }
+});
+
+test("@texture plugin emits @group/@binding", async () => {
+  const src = `
+@texture(nebula) var photo: texture_2d<f32>;
+@sampler(linear) var samp: sampler;
+
+@fragment fn fs() -> @location(0) vec4f {
+  return textureSample(photo, samp, vec2f(0.0));
+}
+`;
+  const resources = findAnnotatedResources(parse(src));
+  const linked = await link({
+    weslSrc: { main: src },
+    rootModuleName: "main",
+    config: { plugins: [annotatedResourcesPlugin(resources, 1)] },
+  });
+  expect(linked.dest).toMatch(
+    /@group\(0\)\s*@binding\(1\)\s+var photo: texture_2d<f32>/,
+  );
+  expect(linked.dest).not.toContain("@texture");
+});
+
 test("plugin errors on @buffer with user @group/@binding", async () => {
   const src = `
 @buffer @group(0) @binding(5) var<storage, read_write> data: array<f32, 4>;

@@ -7,6 +7,7 @@ import type {
 } from "wesl";
 import { findAnnotation } from "./Annotations.ts";
 import { typeRefLayout } from "./StructLayout.ts";
+import { originalTypeName } from "./WeslStructs.ts";
 
 /** Discovered buffer resource from @buffer annotation. */
 export interface DiscoveredBuffer {
@@ -22,6 +23,17 @@ export interface DiscoveredTexture {
   varName: string;
   source: string;
   params: number[];
+  /** WGSL type name of the declared var, e.g. "texture_2d". */
+  typeName: string;
+}
+
+/** Discovered texture resource from @texture(name) annotation (user-supplied image). */
+export interface DiscoveredUserTexture {
+  kind: "texture";
+  varName: string;
+  source: string;
+  /** WGSL type name of the declared var, e.g. "texture_2d". */
+  typeName: string;
 }
 
 /** Discovered sampler resource from @sampler annotation. */
@@ -34,6 +46,7 @@ export interface DiscoveredSampler {
 export type DiscoveredResource =
   | DiscoveredBuffer
   | DiscoveredTexture
+  | DiscoveredUserTexture
   | DiscoveredSampler;
 
 /** Find all @buffer, @test_texture, @sampler annotated global vars in a parsed WESL module. */
@@ -84,6 +97,9 @@ function discoverResource(
   const textureAttr = findAnnotation(gvar, "test_texture");
   if (textureAttr) return [discoverTexture(gvar, textureAttr, src)];
 
+  const userTextureAttr = findAnnotation(gvar, "texture");
+  if (userTextureAttr) return [discoverUserTexture(gvar, userTextureAttr)];
+
   const samplerAttr = findAnnotation(gvar, "sampler");
   if (samplerAttr) return [discoverSampler(gvar, samplerAttr)];
 
@@ -96,16 +112,16 @@ function assertNoUserBinding(gvar: GlobalVarElem, varName: string): void {
   const binding = findAnnotation(gvar, "binding");
   if (group || binding) {
     throw new Error(
-      `@buffer/@test_texture/@sampler on var '${varName}' cannot be combined with ` +
-        `user-supplied @group/@binding — wgsl-test owns the binding for annotated resources.`,
+      `@buffer/@test_texture/@texture/@sampler on var '${varName}' cannot be combined with ` +
+        `user-supplied @group/@binding — the runtime owns the binding for annotated resources.`,
     );
   }
 }
 
 /** Pick a source position to anchor synthetic attributes on, preferring the
- *  wgsl-test annotation so error maps point to something meaningful. */
+ *  runtime annotation so error maps point to something meaningful. */
 function annotationAnchor(gvar: GlobalVarElem): { start: number; end: number } {
-  for (const name of ["buffer", "test_texture", "sampler"]) {
+  for (const name of ["buffer", "test_texture", "texture", "sampler"]) {
     const attr = gvar.attributes?.find(
       a => a.attribute.kind === "@attribute" && a.attribute.name === name,
     );
@@ -164,7 +180,19 @@ function discoverTexture(
     .slice(1)
     .map(p => Number.parseInt(src.slice(p.start, p.end).trim(), 10) || 0);
 
-  return { kind: "test_texture", varName, source, params: numParams };
+  const typeName = gvar.name.typeRef ? originalTypeName(gvar.name.typeRef) : "";
+  return { kind: "test_texture", varName, source, params: numParams, typeName };
+}
+
+function discoverUserTexture(
+  gvar: GlobalVarElem,
+  attr: StandardAttribute,
+): DiscoveredUserTexture {
+  const varName = gvar.name.decl.ident.originalName;
+  const sourceRef = attr.params?.[0]?.contents.find(c => c.kind === "ref");
+  const source = sourceRef?.kind === "ref" ? sourceRef.ident.originalName : "";
+  const typeName = gvar.name.typeRef ? originalTypeName(gvar.name.typeRef) : "";
+  return { kind: "texture", varName, source, typeName };
 }
 
 function discoverSampler(
