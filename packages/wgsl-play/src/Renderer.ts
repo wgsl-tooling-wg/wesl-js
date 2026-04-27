@@ -1,15 +1,22 @@
-import { requestWeslDevice } from "wesl";
+import { parseSrcModule, requestWeslDevice } from "wesl";
 import {
   type AutoValues,
+  createPlayResources,
   createUniformBuffer,
   linkAndCreatePipeline,
+  type PlayResources,
+  type ResolveUserTexture,
   renderFrame,
   scanUniforms,
   type UniformBufferState,
   type WeslOptions,
   writeUniforms,
 } from "wesl-gpu";
-import type { AnnotatedLayout } from "wesl-reflect";
+import {
+  type AnnotatedLayout,
+  annotatedResourcesPlugin,
+  findAnnotatedResources,
+} from "wesl-reflect";
 
 /** Mutable mouse state, updated by pointer event listeners. */
 export interface MouseState {
@@ -24,13 +31,15 @@ export interface RenderState {
   canvas: HTMLCanvasElement;
   context: GPUCanvasContext;
   presentationFormat: GPUTextureFormat;
-  bindGroupLayout: GPUBindGroupLayout;
-  pipelineLayout: GPUPipelineLayout;
   uniformState: UniformBufferState;
   bindGroup: GPUBindGroup;
   mouse: MouseState;
   pipeline?: GPURenderPipeline;
   frameCount: number;
+  /** Textures owned by the last successful compile, disposed on next compile. */
+  resourceTextures: GPUTexture[];
+  /** Storage buffers owned by the last successful compile, disposed on next compile. */
+  resourceBuffers: GPUBuffer[];
 }
 
 /** Animation state */
@@ -58,16 +67,13 @@ export async function initWebGPU(
   const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
   context.configure({ device, format: presentationFormat, alphaMode });
 
-  const bindGroupLayout = device.createBindGroupLayout({
-    entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: {} }],
-  });
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [bindGroupLayout],
-  });
-
-  // Initial buffer with default layout (will be recreated per-compile)
   const uniformState = createUniformBuffer(device, null);
-  const bindGroup = createBindGroup(device, bindGroupLayout, uniformState);
+  const bindGroupLayout = uniformOnlyLayout(device);
+  const bindGroup = createUniformBindGroup(
+    device,
+    bindGroupLayout,
+    uniformState,
+  );
   const mouse: MouseState = { pos: [0, 0], delta: [0, 0], button: 0 };
 
   return {
@@ -75,58 +81,134 @@ export async function initWebGPU(
     canvas,
     context,
     presentationFormat,
-    bindGroupLayout,
-    pipelineLayout,
     uniformState,
     bindGroup,
     mouse,
     pipeline: undefined,
     frameCount: 0,
+    resourceTextures: [],
+    resourceBuffers: [],
   };
 }
 
 /** Compile WESL fragment shader and create render pipeline.
- *  Recreates the uniform buffer and bind group based on @uniforms metadata. */
+ *  Recreates uniform buffer, discovers annotated resources, builds a dynamic
+ *  bind group layout, and disposes prior resources. */
 export async function createPipeline(
   state: RenderState,
   fragmentSource: string,
+  resolveTexture: ResolveUserTexture,
   options?: LinkOptions,
 ): Promise<AnnotatedLayout | null> {
   const pkg = options?.packageName ?? "package";
   const root = options?.rootModuleName ?? "main";
   const scan = scanUniforms(fragmentSource, `${pkg}::${root}`);
+  const resources = findAnnotatedResources(
+    parseSrcModule({
+      modulePath: `${pkg}::${root}`,
+      debugFilePath: `./${root}.wesl`,
+      src: fragmentSource,
+    }),
+  );
 
-  const { device, bindGroupLayout, presentationFormat, pipelineLayout } = state;
+  const { device, presentationFormat } = state;
+  const playResources = await createPlayResources({
+    device,
+    resources,
+    startBinding: 1,
+    visibility: GPUShaderStage.FRAGMENT,
+    resolveTexture,
+  });
+
   state.uniformState.buffer.destroy();
   state.uniformState = createUniformBuffer(device, scan.layout);
-  state.bindGroup = createBindGroup(
+
+  const bindGroupLayout = buildBindGroupLayout(device, playResources);
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [bindGroupLayout],
+  });
+  const bindGroup = buildBindGroup(
     device,
     bindGroupLayout,
     state.uniformState,
+    playResources,
   );
 
-  device.pushErrorScope("validation");
-  let gpuError: unknown;
+  const newPipeline = await buildPipeline({
+    device,
+    fragmentSource,
+    presentationFormat,
+    pipelineLayout,
+    resources,
+    options,
+  }).catch(err => {
+    destroyPlayResources(playResources);
+    state.pipeline = undefined;
+    throw err;
+  });
+
+  disposeResources(state);
+  state.pipeline = newPipeline;
+  state.bindGroup = bindGroup;
+  state.resourceTextures = playResources.textures;
+  state.resourceBuffers = playResources.buffers;
+  return scan.layout;
+}
+
+interface BuildPipelineParams {
+  device: GPUDevice;
+  fragmentSource: string;
+  presentationFormat: GPUTextureFormat;
+  pipelineLayout: GPUPipelineLayout;
+  resources: ReturnType<typeof findAnnotatedResources>;
+  options?: LinkOptions;
+}
+
+/** Link the shader and create the render pipeline, surfacing both JS and GPU
+ *  validation errors as a thrown rejection. */
+async function buildPipeline(
+  p: BuildPipelineParams,
+): Promise<GPURenderPipeline> {
+  const plugins =
+    p.resources.length > 0
+      ? [annotatedResourcesPlugin(p.resources, 1)]
+      : undefined;
+  const userConfig = p.options?.config;
+  const config = plugins
+    ? { ...userConfig, plugins: [...(userConfig?.plugins ?? []), ...plugins] }
+    : userConfig;
+
+  p.device.pushErrorScope("validation");
+  let pipeline: GPURenderPipeline | undefined;
   let jsError: unknown;
   try {
-    state.pipeline = await linkAndCreatePipeline({
-      device,
-      fragmentSource,
-      format: presentationFormat,
-      layout: pipelineLayout,
-      ...options,
+    pipeline = await linkAndCreatePipeline({
+      device: p.device,
+      fragmentSource: p.fragmentSource,
+      format: p.presentationFormat,
+      layout: p.pipelineLayout,
+      ...p.options,
+      config,
     });
   } catch (e) {
     jsError = e;
-  } finally {
-    gpuError = await device.popErrorScope();
   }
-  if (jsError || gpuError) {
-    state.pipeline = undefined;
-    throw jsError ?? gpuError;
-  }
+  const gpuError = await p.device.popErrorScope();
+  if (jsError || gpuError || !pipeline) throw jsError ?? gpuError;
+  return pipeline;
+}
 
-  return scan.layout;
+function destroyPlayResources(r: PlayResources): void {
+  for (const t of r.textures) t.destroy();
+  for (const b of r.buffers) b.destroy();
+}
+
+/** Dispose GPU resources owned by the current compile (textures + storage buffers). */
+export function disposeResources(state: RenderState): void {
+  for (const t of state.resourceTextures) t.destroy();
+  for (const b of state.resourceBuffers) b.destroy();
+  state.resourceTextures = [];
+  state.resourceBuffers = [];
 }
 
 /** Render a single frame (used when paused). */
@@ -203,7 +285,40 @@ export function calculateTime(playback: PlaybackState): number {
   return (currentTime - playback.startTime) / 1000;
 }
 
-function createBindGroup(
+function uniformOnlyLayout(device: GPUDevice): GPUBindGroupLayout {
+  return device.createBindGroupLayout({
+    entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: {} }],
+  });
+}
+
+function buildBindGroupLayout(
+  device: GPUDevice,
+  resources: PlayResources,
+): GPUBindGroupLayout {
+  return device.createBindGroupLayout({
+    entries: [
+      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: {} },
+      ...resources.layoutEntries,
+    ],
+  });
+}
+
+function buildBindGroup(
+  device: GPUDevice,
+  layout: GPUBindGroupLayout,
+  uniformState: UniformBufferState,
+  resources: PlayResources,
+): GPUBindGroup {
+  return device.createBindGroup({
+    layout,
+    entries: [
+      { binding: 0, resource: { buffer: uniformState.buffer } },
+      ...resources.entries,
+    ],
+  });
+}
+
+function createUniformBindGroup(
   device: GPUDevice,
   layout: GPUBindGroupLayout,
   uniformState: UniformBufferState,

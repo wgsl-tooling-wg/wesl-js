@@ -118,6 +118,62 @@ const player = document.querySelector("wgsl-play");
 player.setUniform("brightness", 0.8);
 ```
 
+### Resource Annotations
+
+Bind GPU resources by annotating shader globals. The component owns
+`@group(0)` — `@binding(0)` is the uniform buffer, and annotated resources
+take `@binding(1)` and onward in declaration order.
+
+#### `@texture(name)` — host-provided image
+
+Resolves to a child `<img>` or `<canvas>` of the `<wgsl-play>` element.
+Lookup matches `[data-texture="name"]` first, then falls back to `#name`.
+The image is decoded and uploaded as `rgba8unorm`.
+
+```html
+<wgsl-play>
+  <script type="text/wesl">
+    import env::u;
+    @texture(nebula) var photo: texture_2d<f32>;
+    @sampler(linear) var samp: sampler;
+
+    @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+      return textureSample(photo, samp, pos.xy / u.resolution);
+    }
+  </script>
+  <img data-texture="nebula" src="/images/nebula.jpg" hidden>
+</wgsl-play>
+```
+
+Only `texture_2d<f32>` is supported. `texture_cube`, `texture_2d_array`,
+and storage textures are rejected with a clear error. `<img>` decoding
+uses `imageOrientation: "from-image"`, `premultiplyAlpha: "none"`, and
+`colorSpaceConversion: "none"` for deterministic uploads.
+
+Changing an `<img>` `src`, swapping `data-texture`, or adding/removing
+texture children rebuilds the pipeline automatically.
+
+#### `@sampler(filter)`
+
+Creates a sampler with `clamp-to-edge` addressing. Filter is `linear` or
+`nearest`.
+
+```wgsl
+@sampler(nearest) var samp: sampler;
+```
+
+#### `@buffer`
+
+Zero-initialized storage buffer; size inferred from the WGSL type.
+`read` and `read_write` are both allowed.
+
+```wgsl
+@buffer var<storage, read> palette: array<vec4f, 8>;
+```
+
+`@test_texture` (the wgsl-test fixture annotation) is rejected at
+runtime — use `@texture(name)` with a host element instead.
+
 ### Inline source
 
 You can include shader code inline if you'd prefer. Use a `<script type="text/wgsl">` (or `<script type="text/wesl">`) tag.
@@ -190,7 +246,7 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 - `showError(message)` - Display error (empty string clears)
 
 ### Events
-- `compile-error` - `{ message: string }`
+- `compile-error` - `{ message, source: "wesl"|"webgpu", kind: "shader"|"resource", resourceSource?, locations }`. `kind: "resource"` covers missing `@texture` host elements, unsupported texture dims, and `@test_texture` rejection; `resourceSource` names the offending var/source
 - `init-error` - `{ message: string }` (WebGPU init failed)
 - `playback-change` - `{ isPlaying: boolean }`
 - `uniforms-layout` - `{ detail: AnnotatedLayout }` (fired after each compile)

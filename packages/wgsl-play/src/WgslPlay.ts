@@ -1,6 +1,7 @@
 import type { Conditions, WeslBundle, WeslProject } from "wesl";
 import { fileToModulePath, WeslParseError } from "wesl";
 import { fetchDependencies, loadShaderFromUrl } from "wesl-fetch";
+import { type ResolveUserTexture, ResourceLoadError } from "wesl-gpu";
 import type { AnnotatedLayout } from "wesl-reflect";
 import { clampCanvas, entrySize } from "./CanvasSize.ts";
 import type { WgslPlayConfig } from "./Config.ts";
@@ -9,6 +10,7 @@ import { PlaybackControls } from "./PlaybackControls.ts";
 import {
   calculateTime,
   createPipeline,
+  disposeResources,
   initWebGPU,
   type LinkOptions,
   type PlaybackState,
@@ -37,8 +39,14 @@ export interface CompileErrorLocation {
 export interface CompileErrorDetail {
   message: string;
   source: "wesl" | "webgpu";
+  /** What kind of failure: a shader compile/link problem or a host-side resource problem. */
+  kind: "shader" | "resource";
+  /** For resource errors, the `@texture(name)` or buffer var referenced. */
+  resourceSource?: string;
   locations: CompileErrorLocation[];
 }
+
+export { ResourceLoadError } from "wesl-gpu";
 
 // Lazy-init for SSR/Node.js compatibility (avoid browser APIs at module load)
 let styles: CSSStyleSheet | null = null;
@@ -94,6 +102,7 @@ export class WgslPlay extends HTMLElement {
     this.controls.setFullscreen(!!document.fullscreenElement);
   private _pointerCleanup?: () => void;
   private _resizeCleanup?: () => void;
+  private _childObserver?: MutationObserver;
 
   /** Get config overrides from element attributes. */
   private getConfigOverrides(): Partial<WgslPlayConfig> | undefined {
@@ -152,6 +161,7 @@ export class WgslPlay extends HTMLElement {
       this.controls.setPlaying(false);
     }
     this.initialize();
+    this.observeLightDomChildren();
     upgradeProperty(this, "conditions");
     upgradeProperty(this, "shader");
     upgradeProperty(this, "project");
@@ -169,6 +179,8 @@ export class WgslPlay extends HTMLElement {
 
   disconnectedCallback(): void {
     this.resizeObserver.disconnect();
+    this._childObserver?.disconnect();
+    this._childObserver = undefined;
     this.stopRenderLoop?.();
     this._pointerCleanup?.();
     this._resizeCleanup?.();
@@ -176,6 +188,7 @@ export class WgslPlay extends HTMLElement {
     if (this._sourceEl && this._sourceListener) {
       this._sourceEl.removeEventListener("change", this._sourceListener);
     }
+    if (this.renderState) disposeResources(this.renderState);
   }
 
   attributeChangedCallback(
@@ -642,11 +655,55 @@ export class WgslPlay extends HTMLElement {
       this._weslSrc = { ...this._weslSrc, ...weslSrc };
       this._libs = dedupLibs(this._libs, libs);
     }
-    return createPipeline(this.renderState!, mainSource, {
-      ...this._linkOptions,
-      weslSrc: this._weslSrc,
-      libs: this._libs,
-      rootModuleName: this._rootModuleName,
+    return createPipeline(
+      this.renderState!,
+      mainSource,
+      source => this.resolveHostTexture(source),
+      {
+        ...this._linkOptions,
+        weslSrc: this._weslSrc,
+        libs: this._libs,
+        rootModuleName: this._rootModuleName,
+      },
+    );
+  }
+
+  /** Resolve a @texture(name) to a decoded image from light-DOM children.
+   *  Prefers [data-texture="name"], falls back to #id. */
+  private resolveHostTexture: ResolveUserTexture = async source => {
+    const selector = `[data-texture="${cssEscape(source)}"], #${cssEscape(source)}`;
+    const el = this.querySelector<HTMLElement>(selector);
+    if (!el) return null;
+    if (el instanceof HTMLImageElement) return decodeImage(el, source);
+    if (el instanceof HTMLCanvasElement) return el;
+    throw new ResourceLoadError(
+      `@texture(${source}): matched element is a <${el.tagName.toLowerCase()}>; expected <img> or <canvas>`,
+      source,
+    );
+  };
+
+  /** Watch light-DOM for <img> add/remove/src changes and trigger a rebuild. */
+  private observeLightDomChildren(): void {
+    if (this._childObserver) return;
+    this._childObserver = new MutationObserver(records => {
+      for (const r of records) {
+        if (r.type === "attributes") {
+          this.requestBuild();
+          return;
+        }
+        for (const node of [...r.addedNodes, ...r.removedNodes]) {
+          if (node instanceof HTMLImageElement) {
+            this.requestBuild();
+            return;
+          }
+        }
+      }
+    });
+    this._childObserver.observe(this, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["src", "id", "data-texture"],
     });
   }
 
@@ -665,8 +722,17 @@ export class WgslPlay extends HTMLElement {
     this.errorOverlay.show(message);
 
     const source = error instanceof WeslParseError ? "wesl" : "webgpu";
+    const kind = error instanceof ResourceLoadError ? "resource" : "shader";
     const locations = this.extractLocations(error);
-    const detail: CompileErrorDetail = { message, source, locations };
+    const detail: CompileErrorDetail = {
+      message,
+      source,
+      kind,
+      locations,
+      ...(error instanceof ResourceLoadError
+        ? { resourceSource: error.resourceSource }
+        : {}),
+    };
     this.dispatchEvent(new CustomEvent("compile-error", { detail }));
   }
 
@@ -742,6 +808,49 @@ function dedupLibs(
     return [...(existing ?? []), ...newLibs];
   const names = new Set(newLibs.map(b => b.name));
   return [...existing.filter(b => !names.has(b.name)), ...newLibs];
+}
+
+/** Decode an <img> to an ImageBitmap with deterministic upload flags. */
+async function decodeImage(
+  el: HTMLImageElement,
+  source: string,
+): Promise<ImageBitmap> {
+  try {
+    if (!el.complete) await waitForImageLoad(el);
+    if (el.decode) await el.decode();
+    return await createImageBitmap(el, {
+      imageOrientation: "from-image",
+      premultiplyAlpha: "none",
+      colorSpaceConversion: "none",
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new ResourceLoadError(
+      `@texture(${source}): failed to decode <img src="${el.src}"> — ${detail}`,
+      source,
+    );
+  }
+}
+
+function waitForImageLoad(el: HTMLImageElement): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onLoad = () => {
+      el.removeEventListener("error", onError);
+      resolve();
+    };
+    const onError = () => {
+      el.removeEventListener("load", onLoad);
+      reject(new Error("image load failed"));
+    };
+    el.addEventListener("load", onLoad, { once: true });
+    el.addEventListener("error", onError, { once: true });
+  });
+}
+
+/** Escape a value for safe use as an attribute-selector literal or id selector. */
+function cssEscape(value: string): string {
+  if (typeof CSS !== "undefined" && CSS.escape) return CSS.escape(value);
+  return value.replace(/[^a-zA-Z0-9_-]/g, ch => `\\${ch}`);
 }
 
 /** Normalize all keys in a weslSrc record to module paths. */

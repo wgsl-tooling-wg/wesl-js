@@ -117,6 +117,68 @@ player14.setUniform("brightness", 0.6);
 const player15 = document.querySelector<WgslPlay>("#player15")!;
 player15.project = mouseConfig;
 
+// @texture single (section 16)
+const player16 = document.querySelector<WgslPlay>("#player16")!;
+paintGridCanvas(
+  player16.querySelector<HTMLCanvasElement>('[data-texture="grid"]')!,
+);
+
+// @texture multi (section 17)
+const player17 = document.querySelector<WgslPlay>("#player17")!;
+paintSolidCanvas(
+  player17.querySelector<HTMLCanvasElement>('[data-texture="red_panel"]')!,
+  [220, 60, 60],
+);
+paintSolidCanvas(
+  player17.querySelector<HTMLCanvasElement>('[data-texture="blue_panel"]')!,
+  [60, 80, 220],
+);
+
+// @buffer palette (section 18) — no JS wiring; shader reads zero-init buffer directly.
+
+// @texture from <img> with src swap (section 20)
+const player20 = document.querySelector<WgslPlay>("#player20")!;
+const img20 = document.querySelector<HTMLImageElement>("#img20")!;
+const greenSwatch =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAEklEQVR42mOw2RLwHx9mGBkKAOevj8Eo05M5AAAAAElFTkSuQmCC";
+document.querySelector("#swap-img20")!.addEventListener("click", () => {
+  img20.src = greenSwatch;
+});
+
+// @test_texture rejection (section 19) — record last compile-error for the e2e assertion.
+const player19 = document.querySelector<WgslPlay>("#player19")!;
+const reject19Status =
+  document.querySelector<HTMLPreElement>("#reject19-status")!;
+player19.addEventListener("compile-error", e => {
+  const detail = (e as CustomEvent).detail as { message: string; kind: string };
+  reject19Status.textContent = `Status: rejected (${detail.kind}) — ${detail.message}`;
+  reject19Status.dataset.rejected = "true";
+});
+
+/** Paint a 2-color grid onto the canvas; deterministic pixel bytes for snapshots. */
+function paintGridCanvas(canvas: HTMLCanvasElement): void {
+  const ctx = canvas.getContext("2d")!;
+  const { width, height } = canvas;
+  const cell = 8;
+  for (let y = 0; y < height; y += cell) {
+    for (let x = 0; x < width; x += cell) {
+      const on = ((x / cell) ^ (y / cell)) & 1;
+      ctx.fillStyle = on ? "#f0c060" : "#204060";
+      ctx.fillRect(x, y, cell, cell);
+    }
+  }
+}
+
+/** Paint a solid color over the canvas. */
+function paintSolidCanvas(
+  canvas: HTMLCanvasElement,
+  rgb: [number, number, number],
+): void {
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = `rgb(${rgb.join(", ")})`;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
 // Expose for console debugging
 Object.assign(window, {
   player1,
@@ -131,6 +193,10 @@ Object.assign(window, {
   editor13,
   player14,
   player15,
+  player16,
+  player17,
+  player19,
+  player20,
   staticWgsl,
   linkConfig,
   mouseConfig,
