@@ -1,0 +1,46 @@
+body {
+  margin: 20px;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  font-family: sans-serif;
+}
+wgsl-play {
+  width: 128px;
+  height: 128px;
+  display: block;
+  margin-bottom: 20px;
+}
+wgsl-edit {
+  display: block;
+  height: 200px;
+  margin-bottom: 12px;
+}
+.controls {
+  margin-bottom: 10px;
+}
+button {
+  padding: 6px 12px;
+  margin-right: 8px;
+}
+.section {
+  margin-bottom: 30px;
+  padding: 15px;
+  background: #2a2a2a;
+  border-radius: 8px;
+}
+h3 {
+  margin-top: 0;
+}
+pre {
+  background: #333;
+  padding: 10px;
+  overflow-x: auto;
+  font-size: 12px;
+}
+nav.test-nav {
+  margin-bottom: 30px;
+}
+nav.test-nav a {
+  color: #8af;
+  margin-right: 16px;
+}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>wgsl-play test - loading</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <h2>wgsl-play Test Page - Loading</h2>
+    <nav class="test-nav"><a href="./">&larr; index</a></nav>
+
+    <!-- npm CDN test (external imports) -->
+    <div class="section">
+      <h3>npm CDN (animated)</h3>
+      <div class="controls">
+        <button type="button" id="load-npm-shader">Load from npm</button>
+        <button type="button" id="npm-play">Play</button>
+        <button type="button" id="npm-pause">Pause</button>
+        <button type="button" id="npm-rewind">Rewind</button>
+      </div>
+      <wgsl-play id="npmPlayer"></wgsl-play>
+      <pre id="npm-status">Status: Ready</pre>
+    </div>
+
+    <!-- shaderRoot test (internal imports) -->
+    <div class="section">
+      <h3>shaderRoot (internal imports)</h3>
+      <p>Tests <code>package::</code> and <code>super::</code> imports from /shaders</p>
+      <div class="controls">
+        <button type="button" id="load-internal-shader">Load from shaderRoot</button>
+      </div>
+      <wgsl-play id="internalImportPlayer" shader-root="/shaders"></wgsl-play>
+      <pre id="internal-status">Status: Ready</pre>
+    </div>
+
+    <!-- src attribute with shaderRoot -->
+    <div class="section">
+      <h3>src attribute with shaderRoot</h3>
+      <p>Loads shader file with <code>super::</code> and <code>package::</code> imports</p>
+      <div class="controls">
+        <button type="button" id="load-src-shader">Load from src</button>
+      </div>
+      <wgsl-play id="srcAttrPlayer" shader-root="/shaders"></wgsl-play>
+      <pre id="src-status">Status: Ready</pre>
+    </div>
+
+    <!-- ?static import test (wesl-plugin) -->
+    <div class="section">
+      <h3>?static import (wesl-plugin)</h3>
+      <p>Tests build-time linking via <code>import wgsl from "./shader.wesl?static"</code></p>
+      <div class="controls">
+        <button type="button" id="load-static-shader">Load ?static shader</button>
+      </div>
+      <wgsl-play id="staticImportPlayer"></wgsl-play>
+      <pre id="static-status">Status: Ready</pre>
+    </div>
+
+    <!-- ?link import test (wesl-plugin) -->
+    <div class="section">
+      <h3>?link import (wesl-plugin)</h3>
+      <p>Tests runtime linking via <code>import config from "./shader.wesl?link"</code></p>
+      <div class="controls">
+        <button type="button" id="load-link-shader">Load ?link shader</button>
+      </div>
+      <wgsl-play id="linkImportPlayer"></wgsl-play>
+      <pre id="link-status">Status: Ready</pre>
+    </div>
+
+    <script type="module" src="./Loading.ts"></script>
+  </body>
+</html>

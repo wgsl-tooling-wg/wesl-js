@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>wgsl-play test - uniforms</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <h2>wgsl-play Test Page - Uniforms</h2>
+    <nav class="test-nav"><a href="./">&larr; index</a></nav>
+
+    <!-- @uniforms controls panel test -->
+    <div class="section">
+      <h3>@uniforms controls</h3>
+      <p>Tests slider, color picker, and toggle from <code>@uniforms</code> annotations. Hover top-left for controls.</p>
+      <wgsl-play id="uniformsPlayer" resizable style="width: 256px; height: 256px">
+        <script type="text/wesl">
+import env::u;
+
+@uniforms struct Params {
+  @auto resolution: vec2f,
+  @auto time: f32,
+  @range(1.0, 20.0, 5.0, 5.0) frequency: f32,
+  @color(0.2, 0.5, 1.0) tint: vec3f,
+  @toggle(0) invert: u32,
+  brightness: f32,
+}
+
+@fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = pos.xy / u.resolution;
+  let wave = sin(uv.x * u.frequency + u.time) * 0.5 + 0.5;
+  var color = wave * u.tint * u.brightness;
+  if u.invert == 1u { color = 1.0 - color; }
+  return vec4f(color, 1.0);
+}
+        </script>
+      </wgsl-play>
+    </div>
+
+    <!-- mouse tracking test (?link) -->
+    <div class="section">
+      <h3>Mouse tracking (?link)</h3>
+      <p>Hover and click. Uses <code>@auto(mouse_pos)</code> and <code>@auto(mouse_button)</code>.</p>
+      <wgsl-play id="mousePlayer" pixel-ratio="0.01" style="width: 512px; height: 512px"></wgsl-play>
+    </div>
+
+    <script type="module" src="./Uniforms.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>wgsl-play test - resources</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <h2>wgsl-play Test Page - Resources</h2>
+    <nav class="test-nav"><a href="./">&larr; index</a></nav>
+
+    <!-- @texture: single user texture from <canvas data-texture> -->
+    <div class="section">
+      <h3>@texture (single)</h3>
+      <p>Samples a host-provided <code>&lt;canvas data-texture="grid"&gt;</code>.</p>
+      <wgsl-play id="singleTexturePlayer" autoplay="false">
+        <script type="text/wesl">
+          import env::u;
+          @texture(grid) var photo: texture_2d<f32>;
+          @sampler(linear) var samp: sampler;
+
+          @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+            let uv = pos.xy / u.resolution;
+            return textureSample(photo, samp, uv);
+          }
+        </script>
+        <canvas data-texture="grid" width="64" height="64" hidden></canvas>
+      </wgsl-play>
+    </div>
+
+    <!-- @texture: multi-texture blend -->
+    <div class="section">
+      <h3>@texture (multi)</h3>
+      <p>Two textures via <code>data-texture</code>, mixed 50/50.</p>
+      <wgsl-play id="multiTexturePlayer" autoplay="false">
+        <script type="text/wesl">
+          import env::u;
+          @texture(red_panel) var a_tex: texture_2d<f32>;
+          @texture(blue_panel) var b_tex: texture_2d<f32>;
+          @sampler(linear) var samp: sampler;
+
+          @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+            let uv = pos.xy / u.resolution;
+            let a = textureSample(a_tex, samp, uv);
+            let b = textureSample(b_tex, samp, uv);
+            return mix(a, b, 0.5);
+          }
+        </script>
+        <canvas data-texture="red_panel" width="64" height="64" hidden></canvas>
+        <canvas data-texture="blue_panel" width="64" height="64" hidden></canvas>
+      </wgsl-play>
+    </div>
+
+    <!-- @buffer: zero-initialized storage buffer -->
+    <div class="section">
+      <h3>@buffer (zero-init)</h3>
+      <p>Storage buffer read by fragment shader; zero-initialized, so the tint term dominates.</p>
+      <wgsl-play id="bufferPlayer" autoplay="false">
+        <script type="text/wesl">
+          import env::u;
+          @buffer var<storage, read> palette: array<vec4f, 8>;
+
+          @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+            let uv = pos.xy / u.resolution;
+            let idx = u32(uv.x * 8.0);
+            let p = palette[idx].rgb;
+            return vec4f(p + vec3f(uv.x, uv.y, 0.25), 1.0);
+          }
+        </script>
+      </wgsl-play>
+    </div>
+
+    <!-- @texture: <img> decode path; src swap triggers rebuild -->
+    <div class="section">
+      <h3>@texture from &lt;img&gt; (src swap)</h3>
+      <p>Exercises <code>createImageBitmap</code> on an <code>&lt;img&gt;</code>; clicking swaps <code>src</code> and rebuilds.</p>
+      <div class="controls">
+        <button type="button" id="swap-img-texture">Swap to green</button>
+      </div>
+      <wgsl-play id="imgTexturePlayer" autoplay="false">
+        <script type="text/wesl">
+          import env::u;
+          @texture(swatch) var photo: texture_2d<f32>;
+          @sampler(nearest) var samp: sampler;
+
+          @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+            return textureSample(photo, samp, pos.xy / u.resolution);
+          }
+        </script>
+        <img
+          id="imgTextureSwatch"
+          data-texture="swatch"
+          alt=""
+          hidden
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAE0lEQVR42mM4YbPlPz7MMDIUAAB5n63BfhMYbQAAAABJRU5ErkJggg==">
+      </wgsl-play>
+    </div>
+
+    <!-- @test_texture: must reject with clear error -->
+    <div class="section">
+      <h3>@test_texture rejected</h3>
+      <p>Verifies <code>@test_texture</code> surfaces as a <code>compile-error</code>.</p>
+      <wgsl-play id="rejectedTexturePlayer" autoplay="false">
+        <script type="text/wesl">
+          import env::u;
+          @test_texture(lemur, 512) var photo: texture_2d<f32>;
+          @sampler(linear) var samp: sampler;
+
+          @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+            let uv = pos.xy / u.resolution;
+            return textureSample(photo, samp, uv);
+          }
+        </script>
+      </wgsl-play>
+      <pre id="rejected-texture-status">Status: waiting</pre>
+    </div>
+
+    <script type="module" src="./Resources.ts"></script>
+  </body>
+</html>
