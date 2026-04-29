@@ -5,6 +5,7 @@ import type {
   StructElem,
   StructMemberElem,
   TypeRefElem,
+  WeslAST,
 } from "wesl";
 import { filterValidElements } from "wesl";
 import { findAnnotation, numericParams } from "./Annotations.ts";
@@ -27,8 +28,9 @@ export interface TypeInfo {
   size: number;
 }
 
-const roundUp = (align: number, n: number): number =>
-  Math.ceil(n / align) * align;
+/** Optional registry of top-level structs by name, used when a parsed AST has
+ *  not been bound (refersTo unresolved). */
+export type StructRegistry = ReadonlyMap<string, StructElem>;
 
 const typeTable: Record<string, TypeInfo> = {
   // scalars
@@ -85,17 +87,28 @@ const typeTable: Record<string, TypeInfo> = {
 export function structLayout(
   struct: StructElem,
   conditions?: Conditions,
+  structs?: StructRegistry,
 ): StructLayout {
   const members = conditions
     ? filterValidElements(struct.members, conditions)
     : struct.members;
-  return membersLayout(members, conditions);
+  return membersLayout(members, conditions, structs);
+}
+
+/** Build a StructRegistry from all top-level struct declarations in `ast`. */
+export function buildStructRegistry(ast: WeslAST): StructRegistry {
+  const reg = new Map<string, StructElem>();
+  for (const e of ast.moduleElem.contents) {
+    if (e.kind === "struct") reg.set(e.name.ident.originalName, e);
+  }
+  return reg;
 }
 
 /** Resolve alignment and size for any host-shareable typeRef (primitive, array, or nested struct). */
 export function typeRefLayout(
   typeRef: TypeRefElem,
   conditions?: Conditions,
+  structs?: StructRegistry,
 ): TypeInfo {
   const name = originalTypeName(typeRef);
 
@@ -108,15 +121,15 @@ export function typeRefLayout(
     const params = typeRef.templateParams;
     if (!params?.length)
       throw new Error("array type missing template parameters");
-    const elem = elemTypeInfo(params[0], conditions);
+    const elem = elemTypeInfo(params[0], conditions, structs);
     const stride = roundUp(elem.alignment, elem.size);
     const p = params[1];
     const count = p && "value" in p ? Number(p.value) : 0;
     return { alignment: elem.alignment, size: count * stride };
   }
 
-  // nested struct via refersTo
-  const nested = resolveStructInfo(typeRef.name, conditions);
+  // nested struct via refersTo (post-binding) or registry (pre-binding)
+  const nested = resolveStructInfo(typeRef.name, conditions, structs, name);
   if (nested) return nested;
 
   throw new Error(`unsupported type for layout: '${name}'`);
@@ -129,17 +142,22 @@ export function typeLayout(typeName: string): TypeInfo {
   throw new Error(`unsupported type for layout: '${typeName}'`);
 }
 
+/** Round `n` up to the next multiple of `align`. */
+export function roundUp(align: number, n: number): number {
+  return Math.ceil(n / align) * align;
+}
+
 function scalar(size: number): TypeInfo {
   return { alignment: size, size };
 }
 
-// vec2: align=2*S, size=2*S; vec3: align=4*S, size=3*S; vec4: align=4*S, size=4*S
+/** vec2: align=2*S, size=2*S; vec3: align=4*S, size=3*S; vec4: align=4*S, size=4*S */
 function vec(n: number, scalarSize: number): TypeInfo {
   const alignN = n === 3 ? 4 : n;
   return { alignment: alignN * scalarSize, size: n * scalarSize };
 }
 
-// matCxR<T>: C columns of vecR<T>, column stride = roundUp(colAlign, colSize)
+/** matCxR<T>: C columns of vecR<T>, column stride = roundUp(colAlign, colSize) */
 function mat(cols: number, rows: number, scalarSize: number): TypeInfo {
   const col = vec(rows, scalarSize);
   const colStride = roundUp(col.alignment, col.size);
@@ -150,13 +168,14 @@ function mat(cols: number, rows: number, scalarSize: number): TypeInfo {
 function membersLayout(
   members: StructMemberElem[],
   conditions?: Conditions,
+  structs?: StructRegistry,
 ): StructLayout {
   let offset = 0;
   let structAlign = 1;
   const fields: FieldLayout[] = [];
 
   for (const m of members) {
-    let { alignment, size } = typeRefLayout(m.typeRef, conditions);
+    let { alignment, size } = typeRefLayout(m.typeRef, conditions, structs);
 
     const alignAttr = findAnnotation(m, "align");
     if (alignAttr) {
@@ -184,31 +203,40 @@ function membersLayout(
 function elemTypeInfo(
   param: ExpressionElem,
   conditions?: Conditions,
+  structs?: StructRegistry,
 ): TypeInfo {
-  if (param.kind === "type") return typeRefLayout(param, conditions);
-  // RefIdentElem (kind "ref") - has .ident which is a RefIdent
-  const p = param as Record<string, any>;
-  const ident: RefIdent | undefined = p.ident;
-  const typeName = ident?.originalName ?? p.originalName;
+  if (param.kind === "type") return typeRefLayout(param, conditions, structs);
+  const ident = param.kind === "ref" ? param.ident : undefined;
+  const typeName = ident?.originalName;
   if (!typeName) throw new Error("cannot resolve array element type");
   const primitive = typeTable[typeName];
   if (primitive) return primitive;
-  if (ident) {
-    const nested = resolveStructInfo(ident, conditions);
-    if (nested) return nested;
-  }
+  const nested = resolveStructInfo(ident, conditions, structs, typeName);
+  if (nested) return nested;
   throw new Error(`unsupported type for layout: '${typeName}'`);
 }
 
-/** Follow refersTo links to resolve a RefIdent to a struct and compute its layout. */
+/** Resolve a struct typeRef via refersTo (bound) or struct registry (unbound). */
 function resolveStructInfo(
-  ident: RefIdent,
-  conditions?: Conditions,
+  ident: RefIdent | undefined,
+  conditions: Conditions | undefined,
+  structs: StructRegistry | undefined,
+  fallbackName?: string,
 ): TypeInfo | undefined {
+  const fromRefersTo = ident && structFromRefersTo(ident);
+  const name = ident?.originalName ?? fallbackName;
+  const fromRegistry = name ? structs?.get(name) : undefined;
+  const elem = fromRefersTo ?? fromRegistry;
+  if (!elem) return undefined;
+  const inner = structLayout(elem, conditions, structs);
+  return { alignment: inner.alignment, size: inner.bufferSize };
+}
+
+/** Walk a bound RefIdent's refersTo chain to find its StructElem, if any. */
+function structFromRefersTo(ident: RefIdent): StructElem | undefined {
   const decl = ident.refersTo;
   if (decl?.kind !== "decl") return undefined;
   const elem = decl.declElem;
   if (elem?.kind !== "struct") return undefined;
-  const inner = structLayout(elem, conditions);
-  return { alignment: inner.alignment, size: inner.bufferSize };
+  return elem;
 }

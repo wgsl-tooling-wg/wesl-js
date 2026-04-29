@@ -2,11 +2,13 @@ import type {
   AttributeElem,
   GlobalVarElem,
   StandardAttribute,
+  UnknownExpressionElem,
   WeslAST,
   WeslJsPlugin,
 } from "wesl";
 import { findAnnotation } from "./Annotations.ts";
-import { typeRefLayout } from "./StructLayout.ts";
+import { buildStructRegistry, type StructRegistry } from "./StructLayout.ts";
+import { typeShape } from "./TypeShape.ts";
 import { originalTypeName } from "./WeslStructs.ts";
 
 /** Discovered buffer resource from @buffer annotation. */
@@ -52,15 +54,16 @@ export type DiscoveredResource =
 /** Find all @buffer, @test_texture, @sampler annotated global vars in a parsed WESL module. */
 export function findAnnotatedResources(ast: WeslAST): DiscoveredResource[] {
   const src = ast.srcModule.src;
+  const structs = buildStructRegistry(ast);
   return ast.moduleElem.contents
     .filter((e): e is GlobalVarElem => e.kind === "gvar")
-    .flatMap(gvar => discoverResource(gvar, src));
+    .flatMap(gvar => discoverResource(gvar, src, structs));
 }
 
 /** Linker plugin that decorates @buffer/@test_texture/@sampler globals with
  *  @group(0) @binding(N) so they emit as bindable WGSL vars.
  *  The wgsl-test annotations themselves drop at emit (non-WGSL attributes).
- *  Errors if a target var already carries user-supplied @group/@binding. */
+ *  Throws if a target var already carries user-supplied @group/@binding. */
 export function annotatedResourcesPlugin(
   resources: DiscoveredResource[],
   startBinding = 1,
@@ -80,7 +83,7 @@ export function annotatedResourcesPlugin(
         const groupAttr = makeStandardAttr("group", 0, anchor);
         const bindingAttr = makeStandardAttr("binding", binding, anchor);
         elem.attributes = [...(elem.attributes ?? []), groupAttr, bindingAttr];
-        // Emission reads attributes from contents when present; prepend there too.
+        // Emission reads attributes from contents when present, so prepend there too.
         elem.contents = [groupAttr, bindingAttr, ...elem.contents];
       }
       return ast;
@@ -88,11 +91,14 @@ export function annotatedResourcesPlugin(
   };
 }
 
+/** Dispatch on which runtime annotation the gvar carries; returns [] if none. */
 function discoverResource(
   gvar: GlobalVarElem,
   src: string,
+  structs: StructRegistry,
 ): DiscoveredResource[] {
-  if (findAnnotation(gvar, "buffer")) return [discoverBuffer(gvar, src)];
+  if (findAnnotation(gvar, "buffer"))
+    return [discoverBuffer(gvar, src, structs)];
 
   const textureAttr = findAnnotation(gvar, "test_texture");
   if (textureAttr) return [discoverTexture(gvar, textureAttr, src)];
@@ -108,9 +114,7 @@ function discoverResource(
 
 /** Throw if the user has already put @group or @binding on an annotated var. */
 function assertNoUserBinding(gvar: GlobalVarElem, varName: string): void {
-  const group = findAnnotation(gvar, "group");
-  const binding = findAnnotation(gvar, "binding");
-  if (group || binding) {
+  if (findAnnotation(gvar, "group") || findAnnotation(gvar, "binding")) {
     throw new Error(
       `@buffer/@test_texture/@texture/@sampler on var '${varName}' cannot be combined with ` +
         `user-supplied @group/@binding — the runtime owns the binding for annotated resources.`,
@@ -130,6 +134,7 @@ function annotationAnchor(gvar: GlobalVarElem): { start: number; end: number } {
   return { start: gvar.start, end: gvar.start };
 }
 
+/** Build a synthetic `@name(value)` standard attribute anchored at the given source span. */
 function makeStandardAttr(
   name: string,
   value: number,
@@ -156,12 +161,16 @@ function makeStandardAttr(
   };
 }
 
-function discoverBuffer(gvar: GlobalVarElem, src: string): DiscoveredBuffer {
+function discoverBuffer(
+  gvar: GlobalVarElem,
+  src: string,
+  structs: StructRegistry,
+): DiscoveredBuffer {
   const varName = gvar.name.decl.ident.originalName;
   const declText = src.slice(gvar.start, gvar.end);
   const access = declText.includes("read_write") ? "read_write" : "read";
   const { typeRef } = gvar.name;
-  const byteSize = typeRef ? typeRefLayout(typeRef).size : 0;
+  const byteSize = typeRef ? typeShape(typeRef, structs, varName).size : 0;
   return { kind: "buffer", varName, access, byteSize };
 }
 
@@ -172,14 +181,10 @@ function discoverTexture(
 ): DiscoveredTexture {
   const varName = gvar.name.decl.ident.originalName;
   const params = attr.params ?? [];
-
-  const sourceRef = params[0]?.contents.find(c => c.kind === "ref");
-  const source = sourceRef?.kind === "ref" ? sourceRef.ident.originalName : "";
-
+  const source = firstRefName(params[0]) ?? "";
   const numParams = params
     .slice(1)
     .map(p => Number.parseInt(src.slice(p.start, p.end).trim(), 10) || 0);
-
   const typeName = gvar.name.typeRef ? originalTypeName(gvar.name.typeRef) : "";
   return { kind: "test_texture", varName, source, params: numParams, typeName };
 }
@@ -189,8 +194,7 @@ function discoverUserTexture(
   attr: StandardAttribute,
 ): DiscoveredUserTexture {
   const varName = gvar.name.decl.ident.originalName;
-  const sourceRef = attr.params?.[0]?.contents.find(c => c.kind === "ref");
-  const source = sourceRef?.kind === "ref" ? sourceRef.ident.originalName : "";
+  const source = firstRefName(attr.params?.[0]) ?? "";
   const typeName = gvar.name.typeRef ? originalTypeName(gvar.name.typeRef) : "";
   return { kind: "texture", varName, source, typeName };
 }
@@ -200,9 +204,15 @@ function discoverSampler(
   attr: StandardAttribute,
 ): DiscoveredSampler {
   const varName = gvar.name.decl.ident.originalName;
-  const filterRef = attr.params?.[0]?.contents.find(c => c.kind === "ref");
-  const filterName =
-    filterRef?.kind === "ref" ? filterRef.ident.originalName : "linear";
+  const filterName = firstRefName(attr.params?.[0]) ?? "linear";
   const filter = filterName === "nearest" ? "nearest" : "linear";
   return { kind: "sampler", varName, filter };
+}
+
+/** Extract the originalName of the first `ref` expression in an attribute parameter. */
+function firstRefName(
+  param: UnknownExpressionElem | undefined,
+): string | undefined {
+  const ref = param?.contents.find(c => c.kind === "ref");
+  return ref?.kind === "ref" ? ref.ident.originalName : undefined;
 }
