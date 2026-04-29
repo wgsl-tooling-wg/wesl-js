@@ -32,8 +32,9 @@ export interface PlayResourcesParams {
   /** First binding index; uniform typically occupies binding 0. */
   startBinding?: number;
 
-  /** Bind-group visibility for every entry (FRAGMENT in wgsl-play). */
-  visibility: GPUShaderStageFlags;
+  /** Bind-group visibility for every entry. Defaults to COMPUTE | FRAGMENT so
+   *  the same bind group works in either mode without a recompile. */
+  visibility?: GPUShaderStageFlags;
 
   /** Looks up the host image for a @texture(name) annotation. */
   resolveTexture: ResolveUserTexture;
@@ -43,8 +44,10 @@ export interface PlayResourcesParams {
 export async function createPlayResources(
   params: PlayResourcesParams,
 ): Promise<PlayResources> {
-  const { resolveTexture, ...mainParams } = params;
-  return createBindResources({ textureHandler, ...mainParams });
+  const { resolveTexture, ...rest } = params;
+  const visibility =
+    rest.visibility ?? GPUShaderStage.COMPUTE | GPUShaderStage.FRAGMENT;
+  return createBindResources({ ...rest, visibility, textureHandler });
 
   function textureHandler(dev: GPUDevice, r: DiscoveredResource) {
     return loadUserTexture(dev, r, resolveTexture);

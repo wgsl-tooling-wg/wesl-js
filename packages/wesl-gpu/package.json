@@ -36,7 +36,8 @@
     "wesl-reflect": "workspace:*"
   },
   "devDependencies": {
-    "@webgpu/types": "^0.1.69"
+    "@webgpu/types": "^0.1.69",
+    "webgpu": "^0.3.8"
   },
   "keywords": [
     "rendering",

@@ -1,6 +1,7 @@
 /**
  * Runs a function with WebGPU error scopes, automatically handling push/pop/check.
- * Throws if any validation, out-of-memory, or internal errors occur.
+ * JS errors from `fn` propagate unchanged. GPU errors (validation, OOM, internal)
+ * are rethrown as `Error` with the original `GPUError` preserved as `.cause`.
  */
 export async function withErrorScopes<T>(
   device: GPUDevice,
@@ -10,21 +11,33 @@ export async function withErrorScopes<T>(
   device.pushErrorScope("out-of-memory");
   device.pushErrorScope("validation");
 
-  const result = await fn();
+  let result: T | undefined;
+  let jsError: unknown;
+  try {
+    result = await fn();
+  } catch (e) {
+    jsError = e;
+  }
 
   const validationError = await device.popErrorScope();
   const oomError = await device.popErrorScope();
   const internalError = await device.popErrorScope();
 
+  if (jsError) throw jsError;
   if (validationError) {
-    throw new Error(`WebGPU validation error: ${validationError.message}`);
+    throw new Error(`WebGPU validation error: ${validationError.message}`, {
+      cause: validationError,
+    });
   }
   if (oomError) {
-    throw new Error(`WebGPU out-of-memory error: ${oomError.message}`);
+    throw new Error(`WebGPU out-of-memory error: ${oomError.message}`, {
+      cause: oomError,
+    });
   }
   if (internalError) {
-    throw new Error(`WebGPU internal error: ${internalError.message}`);
+    throw new Error(`WebGPU internal error: ${internalError.message}`, {
+      cause: internalError,
+    });
   }
-
-  return result;
+  return result as T;
 }

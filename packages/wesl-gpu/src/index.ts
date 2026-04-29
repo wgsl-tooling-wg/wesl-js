@@ -1,3 +1,4 @@
+export * from "./ComputePipeline.ts";
 export * from "./DeviceCache.ts";
 export * from "./ErrorScopes.ts";
 export * from "./ExampleTextures.ts";

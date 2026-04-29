@@ -1,5 +1,6 @@
 import {
   checkerboardTexture,
+  clearBuffers,
   colorBarsTexture,
   createBindResources,
   edgePatternTexture,
@@ -41,10 +42,7 @@ export async function createTestResources(
 
 /** Zero all read_write storage buffers for test isolation. */
 export function reZeroBuffers(device: GPUDevice, buffers: GPUBuffer[]): void {
-  if (buffers.length === 0) return;
-  const encoder = device.createCommandEncoder({ label: "reZeroBuffers" });
-  for (const buffer of buffers) encoder.clearBuffer(buffer);
-  device.queue.submit([encoder.finish()]);
+  clearBuffers(device, buffers);
 }
 
 type TextureGenerator = (
