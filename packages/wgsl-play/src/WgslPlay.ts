@@ -3,22 +3,24 @@ import { fileToModulePath, WeslParseError } from "wesl";
 import { fetchDependencies, loadShaderFromUrl } from "wesl-fetch";
 import { type ResolveUserTexture, ResourceLoadError } from "wesl-gpu";
 import { clampCanvas, entrySize } from "./CanvasSize.ts";
+import { rerunCompute } from "./ComputeBuild.ts";
 import type { WgslPlayConfig } from "./Config.ts";
 import { ErrorOverlay } from "./ErrorOverlay.ts";
+import {
+  calculateTime,
+  type PlaybackState,
+  renderOnce,
+  startRenderLoop,
+} from "./FragmentRender.ts";
 import { PlaybackControls } from "./PlaybackControls.ts";
 import {
   type BuildResult,
-  calculateTime,
   createPipeline,
-  disposeResources,
   initWebGPU,
   type LinkOptions,
-  type PlaybackState,
   type RenderState,
-  renderOnce,
-  rerunCompute,
-  startRenderLoop,
 } from "./Renderer.ts";
+import { disposeResources } from "./RenderResources.ts";
 import { renderResultsPanel } from "./ResultsPanel.ts";
 import { UniformControls } from "./UniformControls.ts";
 import cssText from "./WgslPlay.css?inline";
