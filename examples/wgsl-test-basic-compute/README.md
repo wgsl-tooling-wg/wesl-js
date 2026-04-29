@@ -19,7 +19,7 @@ pnpm test
 
 1. The test imports the hash function via WESL: `import package::hash::lowbias32`
 2. A compute shader invokes the function 256 times using `@workgroup_size(256)`
-3. `testCompute()` automatically provides a `env::results` buffer for output
+3. The shader declares a `@buffer var<storage, read_write> results: array<u32, 256>;` for output; `testCompute()` returns it keyed by name
 4. A helper function `validateRandom()` checks statistical properties:
    - Mean within 7.5% of expected value (2^31)
    - No duplicate values in 256 samples

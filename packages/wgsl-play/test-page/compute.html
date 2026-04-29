@@ -118,17 +118,20 @@
       <pre id="rejectedMixedPlayer-status">Status: waiting</pre>
     </div>
 
-    <!-- Rejection: runtime-sized array -->
+    <!-- Runtime-sized array: host picks a default size -->
     <div class="section">
-      <h3>rejected: runtime-sized array</h3>
-      <wgsl-play id="rejectedRuntimeArrayPlayer">
+      <h3>runtime-sized array (host-sized default)</h3>
+      <p>
+        <code>array&lt;f32&gt;</code> with no element count: the playground
+        allocates a 1024-byte default (256 f32s) and renders all rows.
+      </p>
+      <wgsl-play id="runtimeArrayPlayer">
         <script type="text/wesl">
           @buffer var<storage, read_write> result: array<f32>;
 
           @compute @workgroup_size(1) fn main() { result[0] = 1.0; }
         </script>
       </wgsl-play>
-      <pre id="rejectedRuntimeArrayPlayer-status">Status: waiting</pre>
     </div>
 
     <!-- Rejection: matrix in @buffer -->

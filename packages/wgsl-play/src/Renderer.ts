@@ -32,7 +32,8 @@ import type { BufferEntry } from "./ResultsPanel.ts";
 export interface MouseState {
   pos: [number, number];
   delta: [number, number];
-  button: number; // 0=none, 1=left, 2=middle, 3=right
+  /** 0=none, 1=left, 2=middle, 3=right */
+  button: number;
 }
 
 export type RendererMode = "fragment" | "compute";
@@ -49,7 +50,7 @@ export interface ComputeState {
   reflections: Map<string, VarReflection>;
 }
 
-/** WebGPU state */
+/** WebGPU state retained across frames. */
 export interface RenderState {
   device: GPUDevice;
   canvas: HTMLCanvasElement;
@@ -68,14 +69,14 @@ export interface RenderState {
   compute?: ComputeState;
 }
 
-/** Animation state */
+/** Animation playback state. */
 export interface PlaybackState {
   isPlaying: boolean;
   startTime: number;
   pausedDuration: number;
 }
 
-/** Options for linking shaders - re-exports wesl-gpu's WeslOptions */
+/** Options for linking shaders (re-exported from wesl-gpu). */
 export type LinkOptions = WeslOptions;
 
 /** Result of a successful build, returned to the WgslPlay element. */
@@ -133,6 +134,11 @@ interface BuildRenderPipelineParams {
   resources: DiscoveredResource[];
   options?: LinkOptions;
 }
+
+/** Default allocation size (bytes) for runtime-sized `@buffer` arrays. The
+ *  WGSL gives no element count, so the playground picks one. 1024 bytes covers
+ *  256 f32s or 64 vec4f, enough for casual playground use. */
+const defaultRuntimeArrayBytes = 1024;
 
 /** Initialize WebGPU for a canvas element. */
 export async function initWebGPU(
@@ -211,8 +217,8 @@ export async function createPipeline(
   return buildFragment(branch);
 }
 
-/** Public re-run entry point: re-dispatches the compute pipeline against the
- *  current uniform state and returns fresh BufferEntry[] for the panel. */
+/** Re-dispatch the compute pipeline against the current uniform state and
+ *  return fresh BufferEntry[] for the panel. */
 export async function rerunCompute(state: RenderState): Promise<BufferEntry[]> {
   return dispatchComputeAndReadback(state);
 }
@@ -346,6 +352,7 @@ async function prepareResources(
     resources,
     startBinding: 1,
     resolveTexture,
+    minBufferBytes: defaultRuntimeArrayBytes,
   });
   state.uniformState.buffer.destroy();
   state.uniformState = createUniformBuffer(device, scan.layout);
@@ -426,8 +433,7 @@ async function dispatchComputeAndReadback(
 ): Promise<BufferEntry[]> {
   const compute = state.compute;
   if (!compute) return [];
-  // Write uniform initial/control values before dispatch. Auto fields
-  // (time/frame/delta_time) stay zero in compute mode by design.
+  // Auto fields (time/frame/delta_time) stay zero in compute mode by design.
   writeUniforms(state.device, state.uniformState, computeAutoValues(state));
   clearBuffers(state.device, compute.readBuffers.values());
   const { readbacks } = await runCompute({
@@ -438,7 +444,7 @@ async function dispatchComputeAndReadback(
     pipelineLayout: compute.pipelineLayout,
     readBuffers: compute.readBuffers,
   });
-  return Array.from(readbacks).map(([varName, data]) => ({
+  return [...readbacks].map(([varName, data]) => ({
     reflection: compute.reflections.get(varName)!,
     data,
   }));

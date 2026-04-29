@@ -1,18 +1,15 @@
 import { expect, test } from "vitest";
-import { parseSrcModule, type WeslAST } from "wesl";
+import { parseSrcModule } from "wesl";
 import { TypeShapeError, varReflection } from "wesl-reflect";
 import { type BufferEntry, tableData } from "../ResultsPanel.ts";
 
-function parse(src: string): WeslAST {
-  return parseSrcModule({
+function entry(src: string, varName: string, data: ArrayBuffer): BufferEntry {
+  const ast = parseSrcModule({
     modulePath: "test",
     debugFilePath: "test.wesl",
     src,
   });
-}
-
-function entry(src: string, varName: string, data: ArrayBuffer): BufferEntry {
-  return { reflection: varReflection(parse(src), varName), data };
+  return { reflection: varReflection(ast, varName), data };
 }
 
 function f32Buffer(values: number[]): ArrayBuffer {
@@ -150,14 +147,18 @@ test("matrix element rejected as not table-renderable", () => {
   ).toThrow(TypeShapeError);
 });
 
-test("runtime-sized array rejected at render time", () => {
-  expect(() =>
-    tableData(
-      entry(
-        `@buffer var<storage, read_write> r: array<f32>;`,
-        "r",
-        f32Buffer([1, 2, 3]),
-      ),
+test("runtime-sized array derives rowCount from buffer byteLength", () => {
+  const td = tableData(
+    entry(
+      `@buffer var<storage, read_write> r: array<f32>;`,
+      "r",
+      f32Buffer([1, 2, 3]),
     ),
-  ).toThrow(/runtime-sized arrays/);
+  );
+  expect(td.caption).toBe("r: array<f32>");
+  expect(td.rows).toEqual([
+    ["0", "1.0"],
+    ["1", "2.0"],
+    ["2", "3.0"],
+  ]);
 });

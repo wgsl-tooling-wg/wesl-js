@@ -3,116 +3,113 @@ import { testCompute } from "../TestComputeShader.ts";
 import { destroySharedDevice, getGPUDevice } from "../WebGPUTestSetup.ts";
 
 let device: GPUDevice;
-
-beforeAll(async () => {
-  device = await getGPUDevice();
-});
-
-afterAll(() => {
-  destroySharedDevice();
-});
+const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url).href;
 
 test("writes simple constant values to storage buffer", async () => {
   const src = `
+    @buffer var<storage, read_write> results: array<u32, 4>;
     @compute @workgroup_size(1)
     fn main() {
-      env::results[0] = 42u;
-      env::results[1] = 100u;
-      env::results[2] = 255u;
-      env::results[3] = 1u;
+      results[0] = 42u;
+      results[1] = 100u;
+      results[2] = 255u;
+      results[3] = 1u;
     }
   `;
-  const projectDir = import.meta.url;
-  const resultFormat = "u32";
-  const r = await testCompute({ projectDir, device, src, resultFormat });
+  const { results } = await testCompute({
+    projectDir: import.meta.url,
+    device,
+    src,
+  });
 
-  expect(r).toHaveLength(4);
-  expect(r[0]).toBe(42);
-  expect(r[1]).toBe(100);
-  expect(r[2]).toBe(255);
-  expect(r[3]).toBe(1);
+  expect(results).toHaveLength(4);
+  expect(results[0]).toBe(42);
+  expect(results[1]).toBe(100);
+  expect(results[2]).toBe(255);
+  expect(results[3]).toBe(1);
 });
 
 test("performs computation and writes float results", async () => {
   const src = `
+    @buffer var<storage, read_write> results: array<f32, 4>;
     @compute @workgroup_size(1)
     fn main() {
-      env::results[0] = 3.14;
-      env::results[1] = 2.5 * 4.0;
-      env::results[2] = sqrt(16.0);
-      env::results[3] = 1.0 + 2.0 + 3.0;
+      results[0] = 3.14;
+      results[1] = 2.5 * 4.0;
+      results[2] = sqrt(16.0);
+      results[3] = 1.0 + 2.0 + 3.0;
     }
   `;
-  const result = await testCompute({
+  const { results } = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
-    resultFormat: "f32",
   });
 
-  expect(result).toHaveLength(4);
-  expect(result[0]).toBeCloseTo(3.14);
-  expect(result[1]).toBeCloseTo(10.0);
-  expect(result[2]).toBeCloseTo(4.0);
-  expect(result[3]).toBeCloseTo(6.0);
+  expect(results).toHaveLength(4);
+  expect(results[0]).toBeCloseTo(3.14);
+  expect(results[1]).toBeCloseTo(10.0);
+  expect(results[2]).toBeCloseTo(4.0);
+  expect(results[3]).toBeCloseTo(6.0);
 });
 
 test("uses scalar constant from constants namespace", async () => {
   const src = `
     import constants::PI;
 
+    @buffer var<storage, read_write> results: array<f32, 2>;
     @compute @workgroup_size(1)
     fn main() {
-      env::results[0] = PI;
-      env::results[1] = PI * 2.0;
+      results[0] = PI;
+      results[1] = PI * 2.0;
     }
   `;
-  const result = await testCompute({
+  const { results } = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
-    resultFormat: "f32",
     constants: { PI: Math.PI },
   });
 
-  expect(result[0]).toBeCloseTo(Math.PI);
-  expect(result[1]).toBeCloseTo(6.28318);
+  expect(results[0]).toBeCloseTo(Math.PI);
+  expect(results[1]).toBeCloseTo(6.28318);
 });
 
 test("uses vector constant from constants namespace", async () => {
   const src = `
     import constants::CENTER;
 
+    @buffer var<storage, read_write> results: array<f32, 2>;
     @compute @workgroup_size(1)
     fn main() {
       let c = CENTER;
-      env::results[0] = c.x;
-      env::results[1] = c.y;
+      results[0] = c.x;
+      results[1] = c.y;
     }
   `;
-  const result = await testCompute({
+  const { results } = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
-    resultFormat: "f32",
     constants: { CENTER: "vec2f(0.5, 0.75)" },
   });
 
-  expect(result[0]).toBeCloseTo(0.5);
-  expect(result[1]).toBeCloseTo(0.75);
+  expect(results[0]).toBeCloseTo(0.5);
+  expect(results[1]).toBeCloseTo(0.75);
 });
 
 test("uses conditions for conditional compilation", async () => {
   const src = `
+    @buffer var<storage, read_write> results: array<u32, 1>;
     @compute @workgroup_size(1)
     fn main() {
       @if(USE_CUSTOM_VALUE)
-      env::results[0] = 42u;
+      results[0] = 42u;
       @else
-      env::results[0] = 99u;
+      results[0] = 99u;
     }
   `;
-  const resultTrue = await testCompute({
+  const { results: resultTrue } = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
@@ -121,7 +118,7 @@ test("uses conditions for conditional compilation", async () => {
 
   expect(resultTrue[0]).toBe(42);
 
-  const resultFalse = await testCompute({
+  const { results: resultFalse } = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
@@ -136,96 +133,132 @@ test("uses both conditions and constants together", async () => {
     @if(USE_MULTIPLIER)
     import constants::MULTIPLIER;
 
+    @buffer var<storage, read_write> results: array<f32, 1>;
     @compute @workgroup_size(1)
     fn main() {
       @if(USE_MULTIPLIER)
-      env::results[0] = MULTIPLIER * 2.0;
+      results[0] = MULTIPLIER * 2.0;
       @else
-      env::results[0] = 1.0;
+      results[0] = 1.0;
     }
   `;
-  const resultWithConstant = await testCompute({
+  const { results: withConstant } = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
-    resultFormat: "f32",
     conditions: { USE_MULTIPLIER: true },
     constants: { MULTIPLIER: 21.0 },
   });
 
-  expect(resultWithConstant[0]).toBeCloseTo(42.0);
+  expect(withConstant[0]).toBeCloseTo(42.0);
 
-  const resultWithoutConstant = await testCompute({
+  const { results: withoutConstant } = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
-    resultFormat: "f32",
     conditions: { USE_MULTIPLIER: false },
   });
 
-  expect(resultWithoutConstant[0]).toBeCloseTo(1.0);
+  expect(withoutConstant[0]).toBeCloseTo(1.0);
 });
 
 test("uses custom buffer size", async () => {
   const src = `
+    @buffer var<storage, read_write> results: array<u32, 8>;
     @compute @workgroup_size(1)
     fn main() {
       for (var i = 0u; i < 8u; i++) {
-        env::results[i] = i * 10u;
+        results[i] = i * 10u;
       }
     }
   `;
-  const result = await testCompute({
+  const { results } = await testCompute({
     projectDir: import.meta.url,
     device,
     src,
-    resultFormat: "u32",
-    size: 8,
   });
 
-  expect(result).toHaveLength(8);
-  expect(result[0]).toBe(0);
-  expect(result[1]).toBe(10);
-  expect(result[2]).toBe(20);
-  expect(result[3]).toBe(30);
-  expect(result[4]).toBe(40);
-  expect(result[5]).toBe(50);
-  expect(result[6]).toBe(60);
-  expect(result[7]).toBe(70);
+  expect(results).toHaveLength(8);
+  expect(results[0]).toBe(0);
+  expect(results[1]).toBe(10);
+  expect(results[2]).toBe(20);
+  expect(results[3]).toBe(30);
+  expect(results[4]).toBe(40);
+  expect(results[5]).toBe(50);
+  expect(results[6]).toBe(60);
+  expect(results[7]).toBe(70);
+});
+
+test("multiple @buffer declarations returned by name", async () => {
+  const src = `
+    @buffer var<storage, read_write> sums: array<u32, 2>;
+    @buffer var<storage, read_write> products: array<u32, 2>;
+    @compute @workgroup_size(1)
+    fn main() {
+      sums[0] = 1u + 2u;
+      sums[1] = 10u + 20u;
+      products[0] = 3u * 4u;
+      products[1] = 5u * 6u;
+    }
+  `;
+  const r = await testCompute({ projectDir: import.meta.url, device, src });
+  expect(r.sums).toEqual([3, 30]);
+  expect(r.products).toEqual([12, 30]);
+});
+
+test("unwritten slots show -999 sentinel", async () => {
+  const src = `
+    @buffer var<storage, read_write> results: array<f32, 4>;
+    @compute @workgroup_size(1) fn main() {
+      results[0] = 1.0;
+      results[2] = 3.0;
+    }
+  `;
+  const { results } = await testCompute({
+    projectDir: import.meta.url,
+    device,
+    src,
+  });
+  expect(results[0]).toBeCloseTo(1.0);
+  expect(results[1]).toBeCloseTo(-999.0);
+  expect(results[2]).toBeCloseTo(3.0);
+  expect(results[3]).toBeCloseTo(-999.0);
 });
 
 test("testCompute with moduleName - bare name", async () => {
-  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
-    .href;
-  const result = await testCompute({
+  const { results } = await testCompute({
     projectDir: testPkgDir,
     device,
     moduleName: "compute_sum.wgsl",
   });
-  expect(result[0]).toBe(3);
-  expect(result[1]).toBe(30);
+  expect(results[0]).toBe(3);
+  expect(results[1]).toBe(30);
 });
 
 test("testCompute with moduleName - relative path", async () => {
-  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
-    .href;
-  const result = await testCompute({
+  const { results } = await testCompute({
     projectDir: testPkgDir,
     device,
     moduleName: "algorithms/compute_multiply.wgsl",
   });
-  expect(result[0]).toBe(12);
-  expect(result[1]).toBe(30);
+  expect(results[0]).toBe(12);
+  expect(results[1]).toBe(30);
 });
 
 test("testCompute with moduleName - module path", async () => {
-  const testPkgDir = new URL("./fixtures/test_shader_pkg/", import.meta.url)
-    .href;
-  const result = await testCompute({
+  const { results } = await testCompute({
     projectDir: testPkgDir,
     device,
     moduleName: "package::compute_sum",
   });
-  expect(result[0]).toBe(3);
-  expect(result[1]).toBe(30);
+  expect(results[0]).toBe(3);
+  expect(results[1]).toBe(30);
+});
+
+beforeAll(async () => {
+  device = await getGPUDevice();
+});
+
+afterAll(() => {
+  destroySharedDevice();
 });

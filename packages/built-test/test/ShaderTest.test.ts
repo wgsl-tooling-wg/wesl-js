@@ -3,7 +3,6 @@ import { expect, test } from "vitest";
 // These tests only run in temp-built-test where wgsl-test is available as a packed dep
 const inBuiltTest = process.cwd().endsWith("temp-built-test");
 
-// Register the toMatchImage matcher when in built-test mode
 if (inBuiltTest) {
   const { imageMatcher } = await import("vitest-image-snapshot");
   imageMatcher();
@@ -12,17 +11,17 @@ if (inBuiltTest) {
 test.skipIf(!inBuiltTest)("compute shader math", async () => {
   const { getGPUDevice, testCompute } = await import("wgsl-test");
   const device = await getGPUDevice();
-  const result = await testCompute({
+  const { results } = await testCompute({
     device,
     src: `
+      @buffer var<storage, read_write> results: array<f32, 1>;
       @compute @workgroup_size(1)
       fn main() {
-        env::results[0] = 2.0 + 2.0;
+        results[0] = 2.0 + 2.0;
       }
     `,
-    resultFormat: "f32",
   });
-  expect(result[0]).toBe(4);
+  expect(results[0]).toBe(4);
 });
 
 test.skipIf(!inBuiltTest)("fragment shader renders gradient", async () => {

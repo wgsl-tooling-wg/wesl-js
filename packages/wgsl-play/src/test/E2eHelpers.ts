@@ -53,7 +53,7 @@ export async function getCanvasBox(page: Page, playerId: string) {
 
 /** Read the structured table data from a player's compute results panel. */
 export async function readResultsPanel(page: Page, playerId: string) {
-  return page.evaluate(id => {
+  const data = await page.evaluate(id => {
     const el = document.querySelector(id) as HTMLElement | null;
     const panel = el?.shadowRoot?.querySelector(".results-panel");
     if (!panel) return null;
@@ -67,6 +67,8 @@ export async function readResultsPanel(page: Page, playerId: string) {
       ),
     }));
   }, playerId);
+  if (!data) throw new Error(`no results panel found for ${playerId}`);
+  return data;
 }
 
 /** Wait for at least one results-panel table to be populated. */

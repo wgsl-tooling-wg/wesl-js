@@ -108,15 +108,16 @@ const single = await runWesl({ device, moduleName: "my_test", testName: "specifi
 
 ## testCompute()
 
-Tests WGSL functions by running a compute shader. Write a shader that calls the function under test and stores results in the `env::results` buffer. The buffer is automatically provided and accessed via `env::results[index]`. Buffer elements not written by the shader are initialized to -999.
+Tests WGSL functions by running a compute shader. Write a shader that declares each
+output buffer with `@buffer`, then writes to it. Returns a record keyed by `@buffer`
+var name; element type and size are taken from the WGSL declaration. Unwritten
+slots show as -999 (f32 sentinel pre-fill).
 
 ### Parameters
 
 - `device: GPUDevice` - WebGPU device
 - `src: string` - Shader source code (WGSL or WESL)
 - `projectDir?: string` - Import path base (usually `import.meta.url`). Optional, but helpful in monorepos where tests may run from different directories.
-- `resultFormat?: string` - Result buffer format: "u32" (default), "f32", "i32"
-- `size?: number` - Result buffer size in elements (default: 4)
 - `dispatchWorkgroups?: number | [number, number, number]` - Number of workgroups to dispatch (default: 1)
 
 ### Example
@@ -125,19 +126,30 @@ Tests WGSL functions by running a compute shader. Write a shader that calls the 
 const src = `
   import package::hash::lowbias32;
 
+  @buffer var<storage, read_write> results: array<u32, 1024>;
+
   @compute @workgroup_size(256)
   fn main(@builtin(global_invocation_id) id: vec3u) {
-    env::results[id.x] = lowbias32(id.x);
+    results[id.x] = lowbias32(id.x);
   }
 `;
 
-const result = await testCompute({
+const { results } = await testCompute({
   device,
   src,
-  resultFormat: "u32",
-  size: 1024,
-  dispatchWorkgroups: 4 // 4 workgroups × 256 threads
+  dispatchWorkgroups: 4, // 4 workgroups × 256 threads
 });
+```
+
+Multiple `@buffer` declarations are returned together:
+
+```typescript
+const r = await testCompute({ device, src: `
+  @buffer var<storage, read_write> sums:     array<u32, 2>;
+  @buffer var<storage, read_write> products: array<u32, 2>;
+  @compute @workgroup_size(1) fn main() { /* ... */ }
+`});
+// r.sums, r.products
 ```
 
 ## Fragment Shader Testing
@@ -350,16 +362,18 @@ test("hash function from file", async () => {
   const src = `
     import package::hash::lowbias32; // src fn to check
 
+    @buffer var<storage, read_write> results: array<u32, 256>;
+
     @compute @workgroup_size(256)
     fn main(@builtin(global_invocation_id) id: vec3u) {
-      env::results[id.x] = lowbias32(id.x);
+      results[id.x] = lowbias32(id.x);
     }
   `;
 
-  const result = await testCompute({ device, src, size: 256 });
+  const { results } = await testCompute({ device, src });
 
   // Validate hash distribution
-  const mean = result.reduce((a, b) => a + b, 0) / result.length;
+  const mean = results.reduce((a, b) => a + b, 0) / results.length;
   const expectedMean = 2 ** 32 / 2;
   expect(mean).toBeGreaterThan(expectedMean * 0.4);
   expect(mean).toBeLessThan(expectedMean * 0.6);
@@ -388,13 +402,15 @@ You can write the WESL snippet as a TypeScript string.
 const src = /* wesl */`
   import package::utils::{helper, compute};
 
+  @buffer var<storage, read_write> results: array<u32, 1>;
+
   @compute @workgroup_size(1)
   fn main() {
-    env::results[0] = helper() + compute();
+    results[0] = helper() + compute();
   }
 `;
 
-const result = await testCompute({ device, src });
+const { results } = await testCompute({ device, src });
 ```
 
 #### Loading Shaders by Module Name

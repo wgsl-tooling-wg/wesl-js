@@ -1,6 +1,5 @@
 import {
   checkerboardTexture,
-  clearBuffers,
   colorBarsTexture,
   createBindResources,
   edgePatternTexture,
@@ -23,26 +22,9 @@ export interface TestResources {
   buffers: GPUBuffer[];
 }
 
-/** Create GPU resources from discovered annotated vars for testing. */
-export async function createTestResources(
-  device: GPUDevice,
-  resources: DiscoveredResource[],
-  startBinding = 1,
-): Promise<TestResources> {
-  const out = await createBindResources({
-    device,
-    resources,
-    startBinding,
-    visibility: GPUShaderStage.COMPUTE | GPUShaderStage.FRAGMENT,
-    textureHandler: testTextureHandler,
-  });
-  const buffers = collectReadWriteBuffers(resources, out.buffers);
-  return { entries: out.entries, layoutEntries: out.layoutEntries, buffers };
-}
-
-/** Zero all read_write storage buffers for test isolation. */
-export function reZeroBuffers(device: GPUDevice, buffers: GPUBuffer[]): void {
-  clearBuffers(device, buffers);
+export interface CreateTestResourcesOptions {
+  /** f32 sentinel to pre-fill storage buffers, so unwritten slots are visible in failing tests. */
+  prefill?: number;
 }
 
 type TextureGenerator = (
@@ -62,6 +44,25 @@ const textureGenerators: Record<string, TextureGenerator> = {
     solidTexture(dev, [p[0] ?? 1, p[1] ?? 1, p[2] ?? 1, p[3] ?? 1], 1, 1),
   lemur: (dev, p) => lemurTexture(dev, (p[0] === 256 ? 256 : 512) as 256 | 512),
 };
+
+/** Create GPU resources from discovered annotated vars for testing. */
+export async function createTestResources(
+  device: GPUDevice,
+  resources: DiscoveredResource[],
+  startBinding = 1,
+  opts: CreateTestResourcesOptions = {},
+): Promise<TestResources> {
+  const out = await createBindResources({
+    device,
+    resources,
+    startBinding,
+    visibility: GPUShaderStage.COMPUTE | GPUShaderStage.FRAGMENT,
+    textureHandler: testTextureHandler,
+    prefill: opts.prefill,
+  });
+  const buffers = collectReadWriteBuffers(resources, out.buffers);
+  return { entries: out.entries, layoutEntries: out.layoutEntries, buffers };
+}
 
 /** Generate a test texture from the named source. */
 async function testTextureHandler(
@@ -86,13 +87,7 @@ function collectReadWriteBuffers(
   resources: DiscoveredResource[],
   allBuffers: GPUBuffer[],
 ): GPUBuffer[] {
-  const rwBuffers: GPUBuffer[] = [];
-  let bufIdx = 0;
-  for (const r of resources) {
-    if (r.kind === "buffer") {
-      if (r.access === "read_write") rwBuffers.push(allBuffers[bufIdx]);
-      bufIdx++;
-    }
-  }
-  return rwBuffers;
+  return resources
+    .filter(r => r.kind === "buffer")
+    .flatMap((r, i) => (r.access === "read_write" ? [allBuffers[i]] : []));
 }

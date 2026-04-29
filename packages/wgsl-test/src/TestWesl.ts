@@ -1,4 +1,5 @@
 import { type LinkParams, parseSrcModule } from "wesl";
+import { clearBuffers, runCompute } from "wesl-gpu";
 import {
   annotatedResourcesPlugin,
   type DiscoveredResource,
@@ -11,7 +12,7 @@ import {
   type ShaderContext,
 } from "./CompileShader.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
-import { type ComputeTestParams, runCompute } from "./TestComputeShader.ts";
+import type { ComputeTestParams } from "./TestComputeShader.ts";
 import {
   findSnapshotFunctions,
   findTestFunctions,
@@ -21,7 +22,6 @@ import {
 } from "./TestDiscovery.ts";
 import {
   createTestResources,
-  reZeroBuffers,
   type TestResources,
 } from "./TestResourceSetup.ts";
 import {
@@ -31,9 +31,6 @@ import {
   type SnapshotTestParams,
 } from "./TestSnapshotShader.ts";
 import { importImageSnapshot, importVitest } from "./VitestImport.ts";
-
-/** Size of TestResult struct in bytes (u32 + u32 + padding + vec4f + vec4f = 48). */
-const testResultSize = 48;
 
 /** Parameters for running @test functions in a WESL module. */
 export type RunWeslParams = Omit<
@@ -77,6 +74,24 @@ interface ParsedTestModule {
   ast: ReturnType<typeof parseSrcModule>;
 }
 
+/** Build shared params for snapshot tests. */
+type SnapshotRunParams = Pick<
+  RunWeslParams,
+  "device" | "projectDir" | "useSourceShaders" | "conditions" | "constants"
+>;
+
+interface BuildSnapshotArgs {
+  runParams: SnapshotRunParams;
+  shaderSrc: string;
+  resources: DiscoveredResource[];
+  shaderContext?: ShaderContext;
+  testFns: TestFunctionInfo[];
+  snapshotFns: SnapshotFunctionInfo[];
+}
+
+/** Size of TestResult struct in bytes (u32 + u32 + padding + vec4f + vec4f = 48). */
+const testResultSize = 48;
+
 /**
  * Discovers @test and @snapshot functions in a WESL module and registers each
  * as a vitest test. Use top-level await in your test file to call this function.
@@ -97,14 +112,13 @@ export async function testWesl(params: TestWeslParams): Promise<void> {
   // Register @fragment @snapshot tests
   if (snapshotFns.length > 0) {
     const resources = findAnnotatedResources(ast);
-    const snapshotArgs = {
+    const snapshotParams = await buildSnapshotParams({
       runParams: params,
       shaderSrc,
       resources,
       testFns,
       snapshotFns,
-    };
-    const snapshotParams = await buildSnapshotParams(snapshotArgs);
+    });
     const { imageMatcher } = await importImageSnapshot();
     const { expect: vitestExpect } = await importVitest();
     imageMatcher();
@@ -124,20 +138,17 @@ export async function testWesl(params: TestWeslParams): Promise<void> {
 export async function expectWesl(params: RunWeslParams): Promise<void> {
   const results = await runWesl(params);
   const failures = results.filter(r => !r.passed);
+  if (failures.length === 0) return;
 
-  if (failures.length > 0) {
-    const messages = failures.map(f => {
-      if (f.snapshot) {
-        return `  ${f.name}: FAILED\n    ${f.snapshot.message}`;
-      }
-      return [
-        `  ${f.name}: FAILED`,
-        `    actual:   [${f.actual.join(", ")}]`,
-        `    expected: [${f.expected.join(", ")}]`,
-      ].join("\n");
-    });
-    throw new Error(`WESL tests failed:\n${messages.join("\n")}`);
-  }
+  const messages = failures.map(f => {
+    if (f.snapshot) return `  ${f.name}: FAILED\n    ${f.snapshot.message}`;
+    return [
+      `  ${f.name}: FAILED`,
+      `    actual:   [${f.actual.join(", ")}]`,
+      `    expected: [${f.expected.join(", ")}]`,
+    ].join("\n");
+  });
+  throw new Error(`WESL tests failed:\n${messages.join("\n")}`);
 }
 
 /**
@@ -184,23 +195,22 @@ export async function runWesl(runParams: RunWeslParams): Promise<TestResult[]> {
 
   // Run compute tests sequentially; rezero read_write buffers between tests.
   // WebGPU zero-inits buffers on creation, so the first test doesn't need it.
-  for (let i = 0; i < testFns.length; i++) {
+  for (const [i, fn] of testFns.entries()) {
     if (i > 0 && computeResources)
-      reZeroBuffers(device, computeResources.buffers);
-    results.push(await runSingleComputeTest(testFns[i], computeParams));
+      clearBuffers(device, computeResources.buffers);
+    results.push(await runSingleComputeTest(fn, computeParams));
   }
 
   // Run fragment snapshot tests
   if (snapshotFns.length > 0) {
-    const snapArgs = {
+    const snapshotParams = await buildSnapshotParams({
       runParams,
       shaderSrc,
       resources,
       shaderContext,
       testFns,
       snapshotFns,
-    };
-    const snapshotParams = await buildSnapshotParams(snapArgs);
+    });
     const { expect } = await importVitest();
     const testFilePath =
       runParams.testFilePath ?? expect.getState().testPath ?? process.cwd();
@@ -239,21 +249,6 @@ async function parseTestModule(params: {
     src: shaderSrc,
   });
   return { shaderSrc, ast };
-}
-
-/** Build shared params for snapshot tests. */
-type SnapshotRunParams = Pick<
-  RunWeslParams,
-  "device" | "projectDir" | "useSourceShaders" | "conditions" | "constants"
->;
-
-interface BuildSnapshotArgs {
-  runParams: SnapshotRunParams;
-  shaderSrc: string;
-  resources: DiscoveredResource[];
-  shaderContext?: ShaderContext;
-  testFns: TestFunctionInfo[];
-  snapshotFns: SnapshotFunctionInfo[];
 }
 
 /** Build snapshot test params, resolving shader context if not already available. */
@@ -320,34 +315,67 @@ fn _weslTestEntry() {
     plugins,
   });
 
-  const resultElems = testResultSize / 4; // 48 bytes / 4 bytes per u32 = 12
-  const gpuResult = await runCompute({
+  const resultBuffer = createTestResultBuffer(device);
+  const extraLayout = testResources?.layoutEntries ?? [];
+  const extraEntries = testResources?.entries ?? [];
+  const bgLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: { type: "storage" },
+      },
+      ...extraLayout,
+    ],
+  });
+  const bindGroup = device.createBindGroup({
+    layout: bgLayout,
+    entries: [
+      { binding: 0, resource: { buffer: resultBuffer } },
+      ...extraEntries,
+    ],
+  });
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [bgLayout],
+  });
+
+  const { readbacks } = await runCompute({
     device,
     module,
-    resultFormat: "u32",
-    size: resultElems,
     entryPoint: "_weslTestEntry",
-    extraEntries: testResources?.entries,
-    extraLayoutEntries: testResources?.layoutEntries,
+    bindGroup,
+    pipelineLayout,
+    readBuffers: new Map([["result", resultBuffer]]),
   });
-  return parseTestResult(testFn.name, gpuResult);
+  return parseTestResult(testFn.name, readbacks.get("result")!);
+}
+
+/** Allocate a TestResult-struct storage buffer pre-filled with -999.0 sentinels
+ *  so unwritten slots are visible in failing tests. */
+function createTestResultBuffer(device: GPUDevice): GPUBuffer {
+  const buffer = device.createBuffer({
+    label: "wgsl-test-result",
+    size: testResultSize,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+    mappedAtCreation: true,
+  });
+  new Float32Array(buffer.getMappedRange()).fill(-999.0);
+  buffer.unmap();
+  return buffer;
 }
 
 /** Decode TestResult struct from GPU buffer (passed flag + actual/expected vec4f). */
-function parseTestResult(name: string, gpuResult: number[]): TestResult {
+function parseTestResult(name: string, data: ArrayBuffer): TestResult {
   // TestResult struct layout (with vec4f 16-byte alignment):
   // [0] passed (u32)
   // [1] failCount (u32)
   // [2-3] padding (8 bytes to align vec4f)
   // [4-7] actual (vec4f)
   // [8-11] expected (vec4f)
-  const passed = gpuResult[0] === 1;
-
-  // reinterpret u32 bits as f32 for actual/expected vec4f values
-  const u32Array = new Uint32Array(gpuResult.slice(4, 12));
-  const f32Array = new Float32Array(u32Array.buffer);
-  const actual = Array.from(f32Array.slice(0, 4));
-  const expected = Array.from(f32Array.slice(4, 8));
-
+  const u32 = new Uint32Array(data);
+  const f32 = new Float32Array(data);
+  const passed = u32[0] === 1;
+  const actual = Array.from(f32.slice(4, 8));
+  const expected = Array.from(f32.slice(8, 12));
   return { name, passed, actual, expected };
 }

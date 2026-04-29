@@ -1,8 +1,7 @@
-import { CompositeResolver, link, RecordResolver } from "wesl";
 import type { AnnotatedLayout } from "wesl-reflect";
 import type { WeslOptions } from "./FragmentParams.ts";
 import { fullscreenTriangleVertex } from "./FullscreenVertex.ts";
-import { scanUniforms } from "./UniformsVirtualLib.ts";
+import { linkWeslModule } from "./LinkWeslModule.ts";
 
 export type LinkFragmentParams = WeslOptions & {
   device: GPUDevice;
@@ -17,6 +16,13 @@ export interface LinkResult {
 }
 
 export interface LinkAndCreateParams extends LinkFragmentParams {
+  format: GPUTextureFormat;
+  layout?: GPUPipelineLayout | "auto";
+}
+
+interface CreatePipelineParams {
+  device: GPUDevice;
+  module: GPUShaderModule;
   format: GPUTextureFormat;
   layout?: GPUPipelineLayout | "auto";
 }
@@ -39,50 +45,12 @@ export async function linkAndCreatePipeline(
 export async function linkFragmentShader(
   params: LinkFragmentParams,
 ): Promise<LinkResult> {
-  const { fragmentSource, conditions, constants, packageName, config } = params;
-  const { device, resolver, libs = [], rootModuleName = "main" } = params;
-  const { weslSrc, virtualLibs } = params;
-
-  const fullSource = `${fragmentSource}\n\n${fullscreenTriangleVertex}`;
-
-  // Build resolver chain: fragmentSource first, then weslSrc, then provided resolver
-  const mainResolver = new RecordResolver(
-    { [rootModuleName]: fullSource },
-    { packageName },
-  );
-  const resolvers: RecordResolver[] = [mainResolver];
-  if (weslSrc) resolvers.push(new RecordResolver(weslSrc, { packageName }));
-
-  let finalResolver =
-    resolvers.length === 1 ? resolvers[0] : new CompositeResolver(resolvers);
-  if (resolver)
-    finalResolver = new CompositeResolver([finalResolver, resolver]);
-
-  // Scan for @uniforms struct and generate env:: virtual module accordingly
-  const pkg = packageName ?? "package";
-  const rootPath = `${pkg}::${rootModuleName}`;
-  const scan = scanUniforms(fragmentSource, rootPath);
-  const mergedVirtualLibs = { ...scan.virtualLibs, ...virtualLibs };
-
-  const linked = await link({
-    resolver: finalResolver,
-    rootModuleName,
-    packageName,
-    libs,
-    virtualLibs: mergedVirtualLibs,
-    conditions,
-    constants,
-    config,
+  const { fragmentSource } = params;
+  return linkWeslModule({
+    ...params,
+    rootSource: `${fragmentSource}\n\n${fullscreenTriangleVertex}`,
+    scanSource: fragmentSource,
   });
-
-  return { module: linked.createShaderModule(device), layout: scan.layout };
-}
-
-interface CreatePipelineParams {
-  device: GPUDevice;
-  module: GPUShaderModule;
-  format: GPUTextureFormat;
-  layout?: GPUPipelineLayout | "auto";
 }
 
 /** Create fullscreen fragment render pipeline from a shader module. */

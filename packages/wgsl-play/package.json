@@ -13,7 +13,7 @@
     "prepublishOnly": "run-s build",
     "test": "vitest",
     "test:e2e": "playwright test",
-    "typecheck": "tsgo"
+    "typecheck": "tsgo && tsgo -p tsconfig.e2e.json"
   },
   "publishConfig": {
     "exports": {

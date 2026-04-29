@@ -15,18 +15,18 @@ afterAll(() => {
 test("hash::lowbias32 is well-distributed", async () => {
   const src = `
     import package::hash::lowbias32; // call your shader function
+    @buffer var<storage, read_write> results: array<u32, 256>;
     @compute @workgroup_size(256)
     fn main( @builtin(global_invocation_id) id: vec3u) {
-      env::results[id.x] = lowbias32(id.x);
+      results[id.x] = lowbias32(id.x);
     }
   `;
 
-  const params = { projectDir, device, src, size: 256 };
-  const result = await testCompute(params); // run test
+  const { results } = await testCompute({ projectDir, device, src });
 
-  const { meanDiff, uniqueValues } = distStats(result, 2 ** 32 / 2);
+  const { meanDiff, uniqueValues } = distStats(results, 2 ** 32 / 2);
   expect(meanDiff).toBeLessThan(0.05); // validate within 5% of expected mean
-  expect(uniqueValues).toBe(result.length); // validate no collisions
+  expect(uniqueValues).toBe(results.length); // validate no collisions
 });
 
 function distStats(values: number[], targetMean: number) {

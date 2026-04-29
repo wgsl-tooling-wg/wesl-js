@@ -110,8 +110,8 @@ Update snapshots with `vitest -u` as needed.
 
 ## Testing Compute Shaders
 
-For more control, use `testCompute()`. A `env::results` buffer is automatically
-provided:
+For more control, use `testCompute()`. Declare each output as a `@buffer`; the
+contents come back keyed by var name:
 
 ```typescript
 import { testCompute, getGPUDevice } from "wgsl-test";
@@ -121,15 +121,17 @@ const device = await getGPUDevice();
 const src = `
   import package::hash::lowbias32;
 
+  @buffer var<storage, read_write> results: array<u32, 2>;
+
   @compute @workgroup_size(1)
   fn main() {
-    env::results[0] = lowbias32(0u);
-    env::results[1] = lowbias32(42u);
+    results[0] = lowbias32(0u);
+    results[1] = lowbias32(42u);
   }
 `;
 
-const result = await testCompute({ device, src, size: 2 });
-// result = [0, 388445122]
+const { results } = await testCompute({ device, src });
+// results = [0, 388445122]
 ```
 
 **[See API.md for complete API documentation →](https://github.com/wgsl-tooling-wg/wesl-js/blob/main/packages/wgsl-test/API.md#testcompute)**

@@ -1,8 +1,17 @@
-import { copyBuffer, elementStride, type WgslElementType } from "thimbleberry";
-import type { LinkParams } from "wesl";
-import { withErrorScopes } from "wesl-gpu";
+import { type LinkParams, parseSrcModule, type WeslAST } from "wesl";
+import { runCompute } from "wesl-gpu";
+import {
+  annotatedResourcesPlugin,
+  type DiscoveredBuffer,
+  type DiscoveredResource,
+  findAnnotatedResources,
+  type ScalarKind,
+  type TypeShape,
+  varReflection,
+} from "wesl-reflect";
 import { compileShader } from "./CompileShader.ts";
 import { resolveShaderSource } from "./ShaderModuleLoader.ts";
+import { createTestResources } from "./TestResourceSetup.ts";
 
 export interface ComputeTestParams {
   /** WESL/WGSL source code for the compute shader to test.
@@ -20,22 +29,13 @@ export interface ComputeTestParams {
    * Typically use `import.meta.url`. */
   projectDir?: string;
 
-  /** GPU device for running the tests.
-   * Typically use `getGPUDevice()` from wgsl-test. */
+  /** GPU device for running the tests. */
   device: GPUDevice;
 
-  /** Format of the result buffer. Default: "u32" */
-  resultFormat?: WgslElementType;
-
-  /** Size of result buffer in elements. Default: 4 */
-  size?: number;
-
-  /** Flags for conditional compilation to test shader specialization.
-   * Useful for testing `@if` statements in the shader. */
+  /** Flags for conditional compilation to test shader specialization. */
   conditions?: LinkParams["conditions"];
 
-  /** Constants for shader compilation.
-   * Injects host-provided values via the `constants::` namespace. */
+  /** Constants for shader compilation, injected via the `constants::` namespace. */
   constants?: LinkParams["constants"];
 
   /** Use source shaders from current package instead of built bundles.
@@ -47,135 +47,162 @@ export interface ComputeTestParams {
   dispatchWorkgroups?: number | [number, number, number];
 }
 
-export interface RunComputeParams {
-  device: GPUDevice;
-  module: GPUShaderModule;
-  resultFormat?: WgslElementType;
-  size?: number;
-  dispatchWorkgroups?: number | [number, number, number];
-  entryPoint?: string;
-  /** Extra bind group entries for annotated resources (binding 1, 2, ...). */
-  extraEntries?: GPUBindGroupEntry[];
-  /** Extra layout entries for annotated resources. */
-  extraLayoutEntries?: GPUBindGroupLayoutEntry[];
-}
-
-const defaultResultSize = 4;
+/** Sentinel pre-fill for storage buffers; unwritten slots remain visible. */
+const sentinel = -999.0;
 
 /**
- * Compiles and runs a compute shader on the GPU for testing.
+ * Compile and run a compute shader on the GPU for testing.
  *
- * Provides a storage buffer available at `env::results` where the shader
- * can write test output. After execution, the storage buffer is copied back
- * to the CPU and returned for validation.
+ * Each `@buffer` declared in the shader becomes a bound storage buffer; values
+ * written to read_write buffers are returned in the result, keyed by var name.
+ * Unwritten slots show as -999 (f32 sentinel pre-fill).
  *
- * Shader libraries mentioned in the source are automatically resolved from node_modules.
+ * Shader libraries mentioned in the source are auto-resolved from node_modules.
  *
- * @returns Array of numbers from the storage buffer (typically 4 elements for u32/f32 format)
+ * Example:
+ * ```ts
+ * const { results } = await testCompute({ device, src: `
+ *   @buffer var<storage, read_write> results: array<u32, 2>;
+ *   @compute @workgroup_size(1) fn main() { results[0] = 42u; results[1] = 7u; }
+ * `});
+ * ```
+ *
+ * @returns Record keyed by `@buffer` var name; values are decoded as the
+ *   buffer's leaf scalar type (f32/i32/u32).
  */
 export async function testCompute(
   params: ComputeTestParams,
-): Promise<number[]> {
-  const {
-    projectDir,
-    device,
-    src,
-    moduleName,
-    conditions = {},
-    constants,
-    useSourceShaders,
-    dispatchWorkgroups = 1,
-  } = params;
-  const { resultFormat = "u32", size = defaultResultSize } = params;
+): Promise<Record<string, number[]>> {
+  const { device, src, moduleName, projectDir } = params;
+  const { conditions, constants, useSourceShaders } = params;
+  const dispatchWorkgroups = params.dispatchWorkgroups ?? 1;
 
   const shaderSrc = await resolveShaderSource(src, moduleName, projectDir);
+  const { ast, resources, bufferVars } = parseAndValidate(shaderSrc);
 
-  const arrayType = `array<${resultFormat}, ${size}>`;
-  const virtualLibs = {
-    env: () =>
-      `@group(0) @binding(0) var <storage, read_write> results: ${arrayType};`,
-  };
-
+  const startBinding = 0;
   const module = await compileShader({
     projectDir,
     device,
     src: shaderSrc,
     conditions,
     constants,
-    virtualLibs,
     useSourceShaders,
+    plugins: [annotatedResourcesPlugin(resources, startBinding)],
   });
 
-  return await withErrorScopes(device, () =>
-    runCompute({ device, module, resultFormat, size, dispatchWorkgroups }),
+  const { bindGroup, pipelineLayout, buffers } = await setupBindings(
+    device,
+    resources,
+    startBinding,
   );
+
+  const readBuffers = mapReadWriteBuffers(bufferVars, buffers);
+  const { readbacks } = await runCompute({
+    device,
+    module,
+    entryPoint: "main",
+    bindGroup,
+    pipelineLayout,
+    readBuffers,
+    dispatchWorkgroups,
+  });
+
+  return decodeReadbacks(ast, readbacks);
 }
 
-/**
- * Runs a compiled compute shader and returns the result buffer.
- *
- * Creates a storage buffer at @group(0) @binding(0) where the shader can
- * write output. The shader is invoked once, then the buffer is copied back
- * to the CPU for reading.
- */
-export async function runCompute(params: RunComputeParams): Promise<number[]> {
-  const { device, module, entryPoint, dispatchWorkgroups = 1 } = params;
-  const { resultFormat = "u32", size = defaultResultSize } = params;
-  const { extraEntries = [], extraLayoutEntries = [] } = params;
-
-  const bgLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.COMPUTE,
-        buffer: { type: "storage" },
-      },
-      ...extraLayoutEntries,
-    ],
+/** Parse the shader and extract @buffer vars; throws if none are declared. */
+function parseAndValidate(shaderSrc: string): {
+  ast: WeslAST;
+  resources: DiscoveredResource[];
+  bufferVars: DiscoveredBuffer[];
+} {
+  const ast = parseSrcModule({
+    modulePath: "main",
+    debugFilePath: "./main.wesl",
+    src: shaderSrc,
   });
-
-  const pipeline = device.createComputePipeline({
-    layout: device.createPipelineLayout({ bindGroupLayouts: [bgLayout] }),
-    compute: { module, entryPoint },
-  });
-
-  const storageBuffer = createStorageBuffer(
-    device,
-    size * elementStride(resultFormat),
+  const resources = findAnnotatedResources(ast);
+  const bufferVars = resources.filter(
+    (r): r is DiscoveredBuffer => r.kind === "buffer",
   );
+  if (bufferVars.length === 0) {
+    throw new Error(
+      "testCompute: shader has no @buffer declarations. Add e.g. " +
+        "`@buffer var<storage, read_write> results: array<u32, 4>;` to capture results.",
+    );
+  }
+  return { ast, resources, bufferVars };
+}
+
+/** Allocate test buffers and build the bind group + pipeline layout. */
+async function setupBindings(
+  device: GPUDevice,
+  resources: DiscoveredResource[],
+  startBinding: number,
+): Promise<{
+  bindGroup: GPUBindGroup;
+  pipelineLayout: GPUPipelineLayout;
+  buffers: GPUBuffer[];
+}> {
+  const test = await createTestResources(device, resources, startBinding, {
+    prefill: sentinel,
+  });
+  const bgLayout = device.createBindGroupLayout({
+    entries: test.layoutEntries,
+  });
   const bindGroup = device.createBindGroup({
     layout: bgLayout,
-    entries: [
-      { binding: 0, resource: { buffer: storageBuffer } },
-      ...extraEntries,
-    ],
+    entries: test.entries,
   });
-
-  const encoder = device.createCommandEncoder();
-  const pass = encoder.beginComputePass();
-  pass.setPipeline(pipeline);
-  pass.setBindGroup(0, bindGroup);
-  if (typeof dispatchWorkgroups === "number") {
-    pass.dispatchWorkgroups(dispatchWorkgroups);
-  } else {
-    pass.dispatchWorkgroups(...dispatchWorkgroups);
-  }
-  pass.end();
-  device.queue.submit([encoder.finish()]);
-
-  return await copyBuffer(device, storageBuffer, resultFormat);
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [bgLayout],
+  });
+  return { bindGroup, pipelineLayout, buffers: test.buffers };
 }
 
-/** Create a storage buffer pre-filled with sentinel values for result detection. */
-function createStorageBuffer(device: GPUDevice, targetSize: number): GPUBuffer {
-  const buffer = device.createBuffer({
-    label: "storage",
-    size: targetSize,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    mappedAtCreation: true,
-  });
-  // sentinel values detect unwritten shader results
-  new Float32Array(buffer.getMappedRange()).fill(-999.0);
-  buffer.unmap();
-  return buffer;
+/** Decode each readback buffer using the var's reflected type. */
+function decodeReadbacks(
+  ast: WeslAST,
+  readbacks: Map<string, ArrayBuffer>,
+): Record<string, number[]> {
+  const result: Record<string, number[]> = {};
+  for (const [name, data] of readbacks) {
+    result[name] = decodeBuffer(data, varReflection(ast, name).type);
+  }
+  return result;
+}
+
+/** Map read_write @buffer var name to its GPU buffer (matched by declaration order). */
+function mapReadWriteBuffers(
+  bufferVars: DiscoveredBuffer[],
+  rwBuffers: GPUBuffer[],
+): Map<string, GPUBuffer> {
+  const rw = bufferVars.filter(b => b.access === "read_write");
+  return new Map(rw.map((b, i) => [b.varName, rwBuffers[i]]));
+}
+
+/** Decode an ArrayBuffer as a flat number[] using the type's leaf scalar kind. */
+function decodeBuffer(data: ArrayBuffer, type: TypeShape): number[] {
+  const kind = leafScalar(type);
+  switch (kind) {
+    case "f32":
+      return Array.from(new Float32Array(data));
+    case "i32":
+      return Array.from(new Int32Array(data));
+    case "u32":
+      return Array.from(new Uint32Array(data));
+    default:
+      throw new Error(`testCompute: cannot decode buffer of kind '${kind}'`);
+  }
+}
+
+/** Walk into arrays/vecs/mats/atomics to find the underlying scalar element kind. */
+function leafScalar(t: TypeShape): ScalarKind {
+  if (t.kind === "scalar") return t.type;
+  if (t.kind === "vec") return t.component;
+  if (t.kind === "mat") return t.component;
+  if (t.kind === "atomic") return t.component;
+  if (t.kind === "array") return leafScalar(t.elem);
+  throw new Error(`testCompute: cannot decode buffer of kind '${t.kind}'`);
 }

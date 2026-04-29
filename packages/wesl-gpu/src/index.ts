@@ -6,6 +6,7 @@ export * from "./FragmentParams.ts";
 export * from "./FragmentPipeline.ts";
 export * from "./FragmentRender.ts";
 export * from "./FullscreenVertex.ts";
+export * from "./LinkWeslModule.ts";
 export * from "./PlayResourceSetup.ts";
 export * from "./ResourceSetup.ts";
 export * from "./RunFragment.ts";

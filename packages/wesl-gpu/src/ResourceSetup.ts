@@ -5,18 +5,6 @@ import type {
 } from "wesl-reflect";
 import { createSampler } from "./ExampleTextures.ts";
 
-/** Host-side resource failure (missing texture source, unsupported texture dim,
- *  test-only annotation in a non-test runtime). Distinguishes asset/configuration
- *  problems from shader compile/link errors. */
-export class ResourceLoadError extends Error {
-  readonly resourceSource: string;
-  constructor(message: string, resourceSource: string) {
-    super(message);
-    this.name = "ResourceLoadError";
-    this.resourceSource = resourceSource;
-  }
-}
-
 /** GPU resources created from annotated shader vars. */
 export interface BindResources {
   entries: GPUBindGroupEntry[];
@@ -45,6 +33,25 @@ export interface CreateBindResourcesParams {
   startBinding?: number;
   visibility: GPUShaderStageFlags;
   textureHandler: TextureHandler;
+  /** Floor for storage buffer allocation (bytes). Used when a `@buffer` var's
+   *  static size is smaller, e.g. runtime-sized arrays (`array<T>`) where the
+   *  WGSL gives no element count. Defaults to 4. */
+  minBufferBytes?: number;
+  /** Pre-fill each storage buffer with this f32 sentinel at allocation time.
+   *  Useful in tests to make unwritten slots visible. Default: no pre-fill. */
+  prefill?: number;
+}
+
+/** Host-side resource failure (missing texture source, unsupported texture dim,
+ *  test-only annotation in a non-test runtime). Distinguishes asset/configuration
+ *  problems from shader compile/link errors. */
+export class ResourceLoadError extends Error {
+  readonly resourceSource: string;
+  constructor(message: string, resourceSource: string) {
+    super(message);
+    this.name = "ResourceLoadError";
+    this.resourceSource = resourceSource;
+  }
 }
 
 /** Create GPU resources for @buffer/@sampler/@texture vars. */
@@ -52,6 +59,7 @@ export async function createBindResources(
   p: CreateBindResourcesParams,
 ): Promise<BindResources> {
   const { device, resources, visibility, textureHandler, startBinding = 1 } = p;
+  const { minBufferBytes = 4, prefill } = p;
   const entries: GPUBindGroupEntry[] = [];
   const layoutEntries: GPUBindGroupLayoutEntry[] = [];
   const buffers: GPUBuffer[] = [];
@@ -60,7 +68,10 @@ export async function createBindResources(
   for (const [i, resource] of resources.entries()) {
     const binding = startBinding + i;
     if (resource.kind === "buffer") {
-      const made = bufferEntry(device, resource, binding, visibility);
+      const made = bufferEntry(device, resource, binding, visibility, {
+        minBufferBytes,
+        prefill,
+      });
       buffers.push(made.buffer);
       entries.push(made.entry);
       layoutEntries.push(made.layout);
@@ -86,13 +97,21 @@ function bufferEntry(
   r: DiscoveredBuffer,
   binding: number,
   visibility: GPUShaderStageFlags,
+  opts: { minBufferBytes: number; prefill?: number },
 ) {
   const { STORAGE, COPY_SRC, COPY_DST } = GPUBufferUsage;
+  const { minBufferBytes, prefill } = opts;
+  const size = Math.max(r.byteSize, minBufferBytes);
   const buffer = device.createBuffer({
     label: `annotated-buffer-${r.varName}`,
-    size: Math.max(r.byteSize, 4),
+    size,
     usage: STORAGE | COPY_SRC | COPY_DST,
+    mappedAtCreation: prefill !== undefined,
   });
+  if (prefill !== undefined) {
+    new Float32Array(buffer.getMappedRange()).fill(prefill);
+    buffer.unmap();
+  }
   const entry = { binding, resource: { buffer } };
   const type = r.access === "read_write" ? "storage" : "read-only-storage";
   const layout: GPUBindGroupLayoutEntry = {

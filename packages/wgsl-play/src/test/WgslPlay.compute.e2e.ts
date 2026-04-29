@@ -32,7 +32,7 @@ test("squares: single @buffer dispatched once", async ({ page }) => {
   ]);
 });
 
-test("two-buffers (input + output) — both zero-initialized", async ({
+test("two-buffers (input + output), both zero-initialized", async ({
   page,
 }) => {
   await waitForResults(page, "#prefixSumPlayer");
@@ -69,8 +69,7 @@ test("struct array renders one column per field", async ({ page }) => {
 test("slider drives re-dispatch", async ({ page }) => {
   await waitForResults(page, "#sliderPlayer");
 
-  // Default `k` slider value puts each result at id * default_k. We just
-  // assert that re-dispatch lands the right values after we move the slider.
+  // Move the slider; assert that re-dispatch lands the right values.
   await page.evaluate(() => {
     const player = document.querySelector("#sliderPlayer") as HTMLElement;
     const input = player.shadowRoot?.querySelector(
@@ -109,6 +108,18 @@ test("slider drives re-dispatch", async ({ page }) => {
   ]);
 });
 
+test("runtime-sized array: host-sized default renders 256 f32 rows", async ({
+  page,
+}) => {
+  await waitForResults(page, "#runtimeArrayPlayer");
+  const data = await readResultsPanel(page, "#runtimeArrayPlayer");
+  expect(data).toHaveLength(1);
+  expect(data[0].caption).toBe("result: array<f32>");
+  // 1024-byte default / 4 bytes per f32 = 256 rows; shader writes only row 0.
+  expect(data[0].rows[0]).toEqual(["0", "1.0"]);
+  expect(data[0].rows[1]).toEqual(["1", "0.0"]);
+});
+
 const rejections: { id: string; pattern: RegExp }[] = [
   {
     id: "#rejectedTwoComputePlayer",
@@ -117,10 +128,6 @@ const rejections: { id: string; pattern: RegExp }[] = [
   {
     id: "#rejectedMixedPlayer",
     pattern: /mixed compute and fragment entry points/,
-  },
-  {
-    id: "#rejectedRuntimeArrayPlayer",
-    pattern: /runtime-sized arrays are not supported/,
   },
   {
     id: "#rejectedMatrixPlayer",

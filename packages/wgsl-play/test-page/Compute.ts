@@ -12,8 +12,8 @@ const rejectedTwoComputePlayer = document.querySelector<WgslPlay>(
 const rejectedMixedPlayer = document.querySelector<WgslPlay>(
   "#rejectedMixedPlayer",
 )!;
-const rejectedRuntimeArrayPlayer = document.querySelector<WgslPlay>(
-  "#rejectedRuntimeArrayPlayer",
+const runtimeArrayPlayer = document.querySelector<WgslPlay>(
+  "#runtimeArrayPlayer",
 )!;
 const rejectedMatrixPlayer = document.querySelector<WgslPlay>(
   "#rejectedMatrixPlayer",
@@ -22,7 +22,6 @@ const rejectedMatrixPlayer = document.querySelector<WgslPlay>(
 for (const [el, label] of [
   [rejectedTwoComputePlayer, "two-compute"],
   [rejectedMixedPlayer, "mixed"],
-  [rejectedRuntimeArrayPlayer, "runtime-array"],
   [rejectedMatrixPlayer, "matrix"],
 ] as const) {
   const status = document.querySelector<HTMLPreElement>(`#${el.id}-status`)!;
@@ -40,6 +39,6 @@ expose({
   sliderPlayer,
   rejectedTwoComputePlayer,
   rejectedMixedPlayer,
-  rejectedRuntimeArrayPlayer,
+  runtimeArrayPlayer,
   rejectedMatrixPlayer,
 });

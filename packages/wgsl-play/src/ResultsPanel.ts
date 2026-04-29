@@ -41,7 +41,7 @@ export function renderResultsPanel(p: RenderPanelParams): void {
 /** Build the structured table data for a single @buffer entry. Pure (no DOM). */
 export function tableData(entry: BufferEntry): TableData {
   const { reflection, data } = entry;
-  const { row, rowCount, stride } = rowShape(reflection);
+  const { row, rowCount, stride } = rowShape(reflection, data.byteLength);
   const visibleRows = Math.min(rowCount, truncationLimit);
   const view = new DataView(data);
 
@@ -72,19 +72,16 @@ function renderTable(entry: BufferEntry): HTMLElement {
   return section;
 }
 
-/** Resolve the per-row shape and stride for tabular display.
- *  Throws TypeShapeError if the buffer's type isn't supported as a table cell. */
-function rowShape(reflection: VarReflection): RowShape {
+/** Resolve the per-row shape and stride for tabular display. Runtime-sized
+ *  arrays derive rowCount from the readback's byteLength. Throws
+ *  TypeShapeError if the element type isn't supported as a table cell. */
+function rowShape(reflection: VarReflection, byteLength: number): RowShape {
   const t = reflection.type;
   if (t.kind === "array") {
-    if (t.length === "runtime") {
-      throw new TypeShapeError(
-        `runtime-sized arrays are not supported in the compute results table`,
-        reflection.varName,
-      );
-    }
     assertRenderable(t.elem, reflection.varName);
-    return { row: t.elem, rowCount: t.length, stride: t.stride };
+    const rowCount =
+      t.length === "runtime" ? Math.floor(byteLength / t.stride) : t.length;
+    return { row: t.elem, rowCount, stride: t.stride };
   }
   assertRenderable(t, reflection.varName);
   return { row: t, rowCount: 1, stride: t.size };
@@ -151,7 +148,7 @@ function makeShowAllFooter(
   const tfoot = document.createElement("tfoot");
   const tr = document.createElement("tr");
   const td = document.createElement("td");
-  const { row, stride } = rowShape(entry.reflection);
+  const { row, stride } = rowShape(entry.reflection, entry.data.byteLength);
   td.colSpan = row.kind === "struct" ? row.fields.length + 1 : 2;
   const button = document.createElement("button");
   button.textContent = `Show all ${totalRows} rows`;

@@ -1,8 +1,7 @@
-import { CompositeResolver, link, RecordResolver } from "wesl";
 import type { AnnotatedLayout } from "wesl-reflect";
 import { withErrorScopes } from "./ErrorScopes.ts";
 import type { WeslOptions } from "./FragmentParams.ts";
-import { scanUniforms } from "./UniformsVirtualLib.ts";
+import { linkWeslModule } from "./LinkWeslModule.ts";
 
 export type LinkComputeParams = WeslOptions & {
   device: GPUDevice;
@@ -15,43 +14,6 @@ export interface LinkComputeResult {
   layout: AnnotatedLayout | null;
 }
 
-/** Link a WESL/WGSL compute shader into a GPU shader module.
- *  Mirrors `linkFragmentShader` minus the synthetic vertex prelude. */
-export async function linkComputeShader(
-  params: LinkComputeParams,
-): Promise<LinkComputeResult> {
-  const { computeSource, conditions, constants, packageName, config } = params;
-  const { device, resolver, libs = [], rootModuleName = "main" } = params;
-  const { weslSrc, virtualLibs } = params;
-
-  const resolvers: RecordResolver[] = [
-    new RecordResolver({ [rootModuleName]: computeSource }, { packageName }),
-  ];
-  if (weslSrc) resolvers.push(new RecordResolver(weslSrc, { packageName }));
-
-  let finalResolver =
-    resolvers.length === 1 ? resolvers[0] : new CompositeResolver(resolvers);
-  if (resolver)
-    finalResolver = new CompositeResolver([finalResolver, resolver]);
-
-  const pkg = packageName ?? "package";
-  const scan = scanUniforms(computeSource, `${pkg}::${rootModuleName}`);
-  const mergedVirtualLibs = { ...scan.virtualLibs, ...virtualLibs };
-
-  const linked = await link({
-    resolver: finalResolver,
-    rootModuleName,
-    packageName,
-    libs,
-    virtualLibs: mergedVirtualLibs,
-    conditions,
-    constants,
-    config,
-  });
-
-  return { module: linked.createShaderModule(device), layout: scan.layout };
-}
-
 export interface RunComputeParams {
   device: GPUDevice;
   module: GPUShaderModule;
@@ -60,6 +22,8 @@ export interface RunComputeParams {
   pipelineLayout: GPUPipelineLayout;
   /** `@buffer` storage buffers to read back, keyed by var name. */
   readBuffers: Map<string, GPUBuffer>;
+  /** Workgroup dispatch count. Single number for X only, or [x, y, z]. Default 1. */
+  dispatchWorkgroups?: number | [number, number, number];
 }
 
 export interface ComputeRunResult {
@@ -67,19 +31,46 @@ export interface ComputeRunResult {
   readbacks: Map<string, ArrayBuffer>;
 }
 
-/** Dispatch a compute shader once (1,1,1) and read back named storage buffers. */
+/** Link a WESL/WGSL compute shader into a GPU shader module.
+ *  Mirrors `linkFragmentShader` without the synthetic vertex prelude. */
+export async function linkComputeShader(
+  params: LinkComputeParams,
+): Promise<LinkComputeResult> {
+  const { computeSource } = params;
+  return linkWeslModule({
+    ...params,
+    rootSource: computeSource,
+    scanSource: computeSource,
+  });
+}
+
+/** Dispatch a compute shader and read back named storage buffers.
+ *  Defaults to a (1,1,1) dispatch; override via `dispatchWorkgroups`. */
 export async function runCompute(
   p: RunComputeParams,
 ): Promise<ComputeRunResult> {
   return withErrorScopes(p.device, () => dispatchAndReadback(p));
 }
 
-/** Build the pipeline, dispatch once (1,1,1), copy each readBuffer to a
- *  MAP_READ staging buffer, and return the mapped contents. */
+/** Clear each buffer to zeros so re-runs / re-tests see deterministic initial state. */
+export function clearBuffers(
+  device: GPUDevice,
+  buffers: Iterable<GPUBuffer>,
+): void {
+  const list = [...buffers];
+  if (list.length === 0) return;
+  const encoder = device.createCommandEncoder({ label: "clearBuffers" });
+  for (const buffer of list) encoder.clearBuffer(buffer);
+  device.queue.submit([encoder.finish()]);
+}
+
+/** Build the pipeline, dispatch, copy each readBuffer to a MAP_READ staging
+ *  buffer, and return the mapped contents. */
 async function dispatchAndReadback(
   p: RunComputeParams,
 ): Promise<ComputeRunResult> {
   const { device, module, entryPoint, bindGroup, pipelineLayout } = p;
+  const dispatch = p.dispatchWorkgroups ?? 1;
   const pipeline = device.createComputePipeline({
     layout: pipelineLayout,
     compute: { module, entryPoint },
@@ -94,7 +85,8 @@ async function dispatchAndReadback(
   const pass = encoder.beginComputePass();
   pass.setPipeline(pipeline);
   pass.setBindGroup(0, bindGroup);
-  pass.dispatchWorkgroups(1, 1, 1);
+  if (typeof dispatch === "number") pass.dispatchWorkgroups(dispatch);
+  else pass.dispatchWorkgroups(...dispatch);
   pass.end();
   for (const [name, src] of p.readBuffers) {
     const dst = stagingBuffers.get(name)!;
@@ -123,18 +115,4 @@ function createStagingBuffer(
     size,
     usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
   });
-}
-
-/** Clear each buffer to zeros so re-runs / re-tests see deterministic initial state. */
-export function clearBuffers(
-  device: GPUDevice,
-  buffers: Iterable<GPUBuffer>,
-): void {
-  const encoder = device.createCommandEncoder({ label: "clearBuffers" });
-  let any = false;
-  for (const buffer of buffers) {
-    encoder.clearBuffer(buffer);
-    any = true;
-  }
-  if (any) device.queue.submit([encoder.finish()]);
 }

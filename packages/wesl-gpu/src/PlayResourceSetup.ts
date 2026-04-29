@@ -9,8 +9,8 @@ import {
 /** GPU resources created for annotated runtime vars (play/fragment contexts). */
 export type PlayResources = BindResources;
 
-/** Image-like value accepted by `copyExternalImageToTexture`. Structural to
- *  avoid pinning consumers to DOM lib types; at runtime pass an ImageBitmap,
+/** Image-like value accepted by `copyExternalImageToTexture`. Kept structural
+ *  to avoid pinning consumers to DOM lib types; at runtime pass an ImageBitmap,
  *  HTMLImageElement, HTMLCanvasElement, OffscreenCanvas, or similar. */
 export interface UploadableImage {
   readonly width: number;
@@ -38,6 +38,11 @@ export interface PlayResourcesParams {
 
   /** Looks up the host image for a @texture(name) annotation. */
   resolveTexture: ResolveUserTexture;
+
+  /** Floor for storage buffer allocation (bytes). Lets the playground pick a
+   *  default size for runtime-sized `@buffer` arrays without changing the
+   *  shared `wesl-gpu` minimum. */
+  minBufferBytes?: number;
 }
 
 /** Create GPU resources for @buffer/@sampler/@texture vars in a play context. */
