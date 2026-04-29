@@ -86,6 +86,54 @@ canvas {
   background: var(--controls-hover-bg);
 }
 
+.controls button[hidden] {
+  display: none;
+}
+
+/* Compute-mode results panel */
+.results-panel {
+  font-family: var(--code-font, monospace);
+  font-size: 0.85rem;
+  padding: 8px;
+  box-sizing: border-box;
+  color: var(--results-fg, currentColor);
+  background: var(--results-bg, transparent);
+}
+
+.results-panel[hidden] {
+  display: none;
+}
+
+.results-panel .result {
+  margin-bottom: 24px;
+}
+
+.results-panel .result-caption {
+  font-weight: bold;
+  padding-bottom: 8px;
+}
+
+.results-panel table {
+  border-collapse: collapse;
+}
+
+.results-panel th,
+.results-panel td {
+  padding: 2px 8px;
+  border: 1px solid var(--results-border, rgba(128, 128, 128, 0.3));
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.results-panel tfoot td {
+  text-align: left;
+}
+
+.results-panel tfoot button {
+  margin-left: 6px;
+  cursor: pointer;
+}
+
 /* Settings panel */
 .settings {
   position: absolute;

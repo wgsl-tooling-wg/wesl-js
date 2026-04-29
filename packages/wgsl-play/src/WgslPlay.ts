@@ -2,12 +2,12 @@ import type { Conditions, WeslBundle, WeslProject } from "wesl";
 import { fileToModulePath, WeslParseError } from "wesl";
 import { fetchDependencies, loadShaderFromUrl } from "wesl-fetch";
 import { type ResolveUserTexture, ResourceLoadError } from "wesl-gpu";
-import type { AnnotatedLayout } from "wesl-reflect";
 import { clampCanvas, entrySize } from "./CanvasSize.ts";
 import type { WgslPlayConfig } from "./Config.ts";
 import { ErrorOverlay } from "./ErrorOverlay.ts";
 import { PlaybackControls } from "./PlaybackControls.ts";
 import {
+  type BuildResult,
   calculateTime,
   createPipeline,
   disposeResources,
@@ -16,8 +16,10 @@ import {
   type PlaybackState,
   type RenderState,
   renderOnce,
+  rerunCompute,
   startRenderLoop,
 } from "./Renderer.ts";
+import { renderResultsPanel } from "./ResultsPanel.ts";
 import { UniformControls } from "./UniformControls.ts";
 import cssText from "./WgslPlay.css?inline";
 
@@ -71,11 +73,14 @@ export class WgslPlay extends HTMLElement {
   ];
 
   private canvas: HTMLCanvasElement;
+  private resultsPanel: HTMLElement;
   private errorOverlay: ErrorOverlay;
   private controls: PlaybackControls;
   private settings: UniformControls;
   private resizeObserver: ResizeObserver;
   private stopRenderLoop?: () => void;
+  private _currentMode: "fragment" | "compute" = "fragment";
+  private _rerunPending = false;
 
   private renderState?: RenderState;
   private pendingUniforms = new Map<string, number | number[]>();
@@ -118,16 +123,19 @@ export class WgslPlay extends HTMLElement {
     shadow.appendChild(getTemplate().content.cloneNode(true));
 
     this.canvas = shadow.querySelector("canvas")!;
+    this.resultsPanel = shadow.querySelector(".results-panel") as HTMLElement;
     this.errorOverlay = new ErrorOverlay(shadow);
-    this.settings = new UniformControls(shadow, (name, value) =>
-      this.setUniform(name, value),
-    );
+    this.settings = new UniformControls(shadow, (name, value) => {
+      this.setUniform(name, value);
+      if (this._currentMode === "compute") this.scheduleComputeRerun();
+    });
     this.controls = new PlaybackControls(
       shadow,
       () => this.play(),
       () => this.pause(),
       () => this.rewind(),
       () => this.toggleFullscreen(),
+      () => this.scheduleComputeRerun(),
     );
 
     this.resizeObserver = new ResizeObserver(entries => {
@@ -632,8 +640,8 @@ export class WgslPlay extends HTMLElement {
 
       try {
         this.errorOverlay.hide();
-        const layout = await this.buildPipeline(mainSource);
-        if (!this._dirty) this.applyBuild(layout);
+        const result = await this.buildPipeline(mainSource);
+        if (!this._dirty) this.applyBuild(result);
       } catch (error) {
         if (!this._dirty) this.handleCompileError(error);
       }
@@ -642,9 +650,7 @@ export class WgslPlay extends HTMLElement {
   }
 
   /** Fetch deps if needed and create the render pipeline. */
-  private async buildPipeline(
-    mainSource: string,
-  ): Promise<AnnotatedLayout | null> {
+  private async buildPipeline(mainSource: string): Promise<BuildResult> {
     if (this._fetchSources || this._fetchLibs) {
       const { weslSrc, libs } = await fetchDependencies(mainSource, {
         shaderRoot: this.getConfigOverrides()?.shaderRoot,
@@ -708,13 +714,51 @@ export class WgslPlay extends HTMLElement {
   }
 
   /** Apply a successful build: flush uniforms, update controls, render. */
-  private applyBuild(layout: AnnotatedLayout | null): void {
+  private applyBuild(result: BuildResult): void {
     this.flushPendingUniforms();
     const controls = this.renderState!.uniformState.layout.controls;
     this.settings.setControls(controls);
-    if (!this.playback.isPlaying) renderOnce(this.renderState!, this.playback);
+    this.applyMode(result);
     this.dispatchEvent(new CustomEvent("compile-success"));
-    this.dispatchEvent(new CustomEvent("uniforms-layout", { detail: layout }));
+    this.dispatchEvent(
+      new CustomEvent("uniforms-layout", { detail: result.layout }),
+    );
+  }
+
+  /** Show canvas vs results panel and (re-)render based on build mode. */
+  private applyMode(result: BuildResult): void {
+    this._currentMode = result.mode;
+    if (result.mode === "compute") {
+      this.canvas.hidden = true;
+      this.resultsPanel.hidden = false;
+      this.controls.setMode("compute");
+      renderResultsPanel({
+        panel: this.resultsPanel,
+        entries: result.computeReadback ?? [],
+      });
+      return;
+    }
+    this.canvas.hidden = false;
+    this.resultsPanel.hidden = true;
+    this.controls.setMode("render");
+    if (!this.playback.isPlaying) renderOnce(this.renderState!, this.playback);
+  }
+
+  /** Coalesce rapid uniform/refresh events into a single re-dispatch. */
+  private scheduleComputeRerun(): void {
+    if (this._rerunPending) return;
+    this._rerunPending = true;
+    queueMicrotask(async () => {
+      this._rerunPending = false;
+      if (this._currentMode !== "compute" || !this.renderState) return;
+      try {
+        this.flushPendingUniforms();
+        const entries = await rerunCompute(this.renderState);
+        renderResultsPanel({ panel: this.resultsPanel, entries });
+      } catch (error) {
+        this.handleCompileError(error);
+      }
+    });
   }
 
   private handleCompileError(error: unknown): void {
@@ -742,16 +786,10 @@ export class WgslPlay extends HTMLElement {
     const loc = (error as any)?.weslLocation;
     if (loc) {
       const message = (error as any)?.message ?? "";
+      const { file, line, column, length, offset } = loc;
+      const severity = "error" as const;
       return [
-        {
-          file: loc.file,
-          line: loc.line,
-          column: loc.column - 1,
-          length: loc.length,
-          offset: loc.offset,
-          severity: "error" as const,
-          message,
-        },
+        { file, line, column: column - 1, length, offset, severity, message },
       ];
     }
     // GPU compilation errors have multiple messages
@@ -776,7 +814,7 @@ export class WgslPlay extends HTMLElement {
 function getTemplate(): HTMLTemplateElement {
   if (!template) {
     template = document.createElement("template");
-    template.innerHTML = `<canvas part="canvas"></canvas><div class="resize-handle"></div>`;
+    template.innerHTML = `<canvas part="canvas"></canvas><div class="results-panel" part="results-panel" hidden></div><div class="resize-handle"></div>`;
   }
   return template;
 }

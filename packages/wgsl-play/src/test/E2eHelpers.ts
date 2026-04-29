@@ -51,6 +51,47 @@ export async function getCanvasBox(page: Page, playerId: string) {
   }, playerId);
 }
 
+/** Read the structured table data from a player's compute results panel. */
+export async function readResultsPanel(page: Page, playerId: string) {
+  return page.evaluate(id => {
+    const el = document.querySelector(id) as HTMLElement | null;
+    const panel = el?.shadowRoot?.querySelector(".results-panel");
+    if (!panel) return null;
+    return Array.from(panel.querySelectorAll("section.result")).map(s => ({
+      caption: s.querySelector(".result-caption")?.textContent,
+      headers: Array.from(s.querySelectorAll("thead th")).map(
+        c => c.textContent,
+      ),
+      rows: Array.from(s.querySelectorAll("tbody tr")).map(r =>
+        Array.from(r.querySelectorAll("td")).map(c => c.textContent),
+      ),
+    }));
+  }, playerId);
+}
+
+/** Wait for at least one results-panel table to be populated. */
+export async function waitForResults(page: Page, playerId: string) {
+  await page.waitForFunction(id => {
+    const el = document.querySelector(id) as HTMLElement | null;
+    const panel = el?.shadowRoot?.querySelector(".results-panel");
+    return (
+      !!panel &&
+      !panel.hasAttribute("hidden") &&
+      panel.querySelector("tbody tr") !== null
+    );
+  }, playerId);
+}
+
+/** Snapshot the structured DOM-text data from a results panel. */
+export async function expectResultsPanelSnapshot(
+  page: Page,
+  playerId: string,
+  name: string,
+) {
+  const data = await readResultsPanel(page, playerId);
+  expect(data).toMatchSnapshot(name);
+}
+
 /** Scroll player into view and snapshot its shadow DOM canvas. */
 export async function expectCanvasSnapshot(
   page: Page,

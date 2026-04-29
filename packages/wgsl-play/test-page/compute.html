@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>wgsl-play test - compute</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      wgsl-play { width: 420px; height: auto; min-height: 128px; }
+    </style>
+  </head>
+  <body>
+    <h2>wgsl-play Test Page - Compute</h2>
+    <nav class="test-nav"><a href="./">&larr; index</a></nav>
+
+    <!-- Example 1: canonical squares -->
+    <div class="section">
+      <h3>squares (canonical)</h3>
+      <p>Single <code>@buffer</code>, written by an 8-thread workgroup.</p>
+      <wgsl-play id="squaresPlayer">
+        <script type="text/wesl">
+          @buffer var<storage, read_write> result: array<f32, 8>;
+
+          @compute @workgroup_size(8)
+          fn main(@builtin(global_invocation_id) id: vec3u) {
+            result[id.x] = f32(id.x * id.x);
+          }
+        </script>
+      </wgsl-play>
+    </div>
+
+    <!-- Example 2: input + output buffers -->
+    <div class="section">
+      <h3>two buffers (input + output)</h3>
+      <p>Both buffers zero-initialized; demonstrates layout, not interesting math.</p>
+      <wgsl-play id="prefixSumPlayer">
+        <script type="text/wesl">
+          @buffer var<storage, read>       input:  array<f32, 4>;
+          @buffer var<storage, read_write> output: array<f32, 4>;
+
+          @compute @workgroup_size(4)
+          fn prefix_sum(@builtin(global_invocation_id) id: vec3u) {
+            var sum = 0.0;
+            for (var i = 0u; i <= id.x; i = i + 1u) { sum = sum + input[i]; }
+            output[id.x] = sum;
+          }
+        </script>
+      </wgsl-play>
+    </div>
+
+    <!-- Example 3: struct array -->
+    <div class="section">
+      <h3>struct array</h3>
+      <p>Renders one column per struct field.</p>
+      <wgsl-play id="particlesPlayer">
+        <script type="text/wesl">
+          struct Particle { pos: vec2f, vel: vec2f }
+          @buffer var<storage, read_write> particles: array<Particle, 4>;
+
+          @compute @workgroup_size(4)
+          fn init(@builtin(global_invocation_id) id: vec3u) {
+            let f = f32(id.x);
+            particles[id.x].pos = vec2f(f, f * 2.0);
+            particles[id.x].vel = vec2f(0.1 * f, 0.0);
+          }
+        </script>
+      </wgsl-play>
+    </div>
+
+    <!-- Example 4: slider drives re-run -->
+    <div class="section">
+      <h3>slider drives re-run</h3>
+      <p>Move the <code>k</code> slider; the table re-dispatches on every change.</p>
+      <wgsl-play id="sliderPlayer">
+        <script type="text/wesl">
+          import env::u;
+
+          @uniforms struct Tweak {
+            @range(1.0, 8.0) k: f32,
+          }
+
+          @buffer var<storage, read_write> result: array<f32, 8>;
+
+          @compute @workgroup_size(8)
+          fn main(@builtin(global_invocation_id) id: vec3u) {
+            result[id.x] = f32(id.x) * u.k;
+          }
+        </script>
+      </wgsl-play>
+    </div>
+
+    <!-- Rejection: two @compute fns -->
+    <div class="section">
+      <h3>rejected: two @compute fns</h3>
+      <wgsl-play id="rejectedTwoComputePlayer">
+        <script type="text/wesl">
+          @buffer var<storage, read_write> result: array<f32, 4>;
+
+          @compute @workgroup_size(1) fn a() { result[0] = 1.0; }
+          @compute @workgroup_size(1) fn b() { result[1] = 2.0; }
+        </script>
+      </wgsl-play>
+      <pre id="rejectedTwoComputePlayer-status">Status: waiting</pre>
+    </div>
+
+    <!-- Rejection: @compute + @fragment -->
+    <div class="section">
+      <h3>rejected: mixed @compute + @fragment</h3>
+      <wgsl-play id="rejectedMixedPlayer">
+        <script type="text/wesl">
+          import env::u;
+          @buffer var<storage, read_write> result: array<f32, 4>;
+
+          @compute @workgroup_size(1) fn c() { result[0] = 1.0; }
+          @fragment fn fs() -> @location(0) vec4f { return vec4f(0.0); }
+        </script>
+      </wgsl-play>
+      <pre id="rejectedMixedPlayer-status">Status: waiting</pre>
+    </div>
+
+    <!-- Rejection: runtime-sized array -->
+    <div class="section">
+      <h3>rejected: runtime-sized array</h3>
+      <wgsl-play id="rejectedRuntimeArrayPlayer">
+        <script type="text/wesl">
+          @buffer var<storage, read_write> result: array<f32>;
+
+          @compute @workgroup_size(1) fn main() { result[0] = 1.0; }
+        </script>
+      </wgsl-play>
+      <pre id="rejectedRuntimeArrayPlayer-status">Status: waiting</pre>
+    </div>
+
+    <!-- Rejection: matrix in @buffer -->
+    <div class="section">
+      <h3>rejected: matrix in @buffer</h3>
+      <wgsl-play id="rejectedMatrixPlayer">
+        <script type="text/wesl">
+          @buffer var<storage, read_write> result: array<mat4x4f, 2>;
+
+          @compute @workgroup_size(1)
+          fn main() { result[0] = mat4x4f(); }
+        </script>
+      </wgsl-play>
+      <pre id="rejectedMatrixPlayer-status">Status: waiting</pre>
+    </div>
+
+    <script type="module" src="./Compute.ts"></script>
+  </body>
+</html>
