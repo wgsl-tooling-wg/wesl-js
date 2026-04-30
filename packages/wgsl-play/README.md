@@ -242,6 +242,7 @@ The `?raw` suffix imports the file as a string. This keeps shaders alongside you
 - `play()` - Start/resume animation
 - `pause()` - Pause animation
 - `rewind()` - Reset to t=0
+- `renderFrame()` - Wait for any in-flight build, render one frame, and resolve once it has been presented (for snapshotting the canvas)
 - `setUniform(name, value)` - Set a uniform value programmatically
 - `showError(message)` - Display error (empty string clears)
 

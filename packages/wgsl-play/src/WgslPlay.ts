@@ -381,6 +381,32 @@ export class WgslPlay extends HTMLElement {
     this.dispatchEvent(new CustomEvent("playback-change", { detail }));
   }
 
+  /** Wait for any in-flight build, render one frame to the canvas, and
+   *  resolve once that frame has been presented. The caller can then read
+   *  the canvas via `element.shadowRoot.querySelector('canvas')`. */
+  async renderFrame(): Promise<void> {
+    await this.awaitIdleBuild();
+    if (!this.renderState) throw new Error("renderFrame: not initialized");
+    if (this.errorOverlay.visible) {
+      throw new Error("renderFrame: shader has compile error");
+    }
+    if (this._currentMode === "compute") {
+      throw new Error("renderFrame: compute mode has no canvas output");
+    }
+    renderOnce(this.renderState, this.playback);
+    await new Promise<void>(r => requestAnimationFrame(() => r()));
+  }
+
+  /** Resolve once initialization and any pending build have settled.
+   *  Yields via setTimeout so async build steps (network fetch, GPU
+   *  validation) get a chance to advance between polls. */
+  private async awaitIdleBuild(): Promise<void> {
+    await this._initPromise;
+    while (this._building || this._dirty) {
+      await new Promise<void>(r => setTimeout(r, 0));
+    }
+  }
+
   /** Reset animation to time 0 and pause. */
   rewind(): void {
     this.playback.startTime = performance.now();
