@@ -1,0 +1,67 @@
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --fg: #1d1d1f;
+  --muted: #f5f5f7;
+  --border: #e2e2e6;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1e1e1e;
+  --fg: #e0e0e0;
+  --muted: #2a2a2a;
+  --border: #3a3a3a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #1e1e1e;
+    --fg: #e0e0e0;
+    --muted: #2a2a2a;
+    --border: #3a3a3a;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+h1 {
+  margin: 0;
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", Menlo, monospace;
+}
+
+appearance-picker {
+  --appearance-picker-size: 20px;
+  --appearance-picker-active-bg: var(--muted);
+}
+
+section {
+  max-width: 640px;
+  line-height: 1.5;
+}
+
+.status pre {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 6px;
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", Menlo, monospace;
+}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>appearance-picker demo</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>&lt;appearance-picker&gt;</h1>
+      <appearance-picker></appearance-picker>
+    </header>
+
+    <section>
+      <p>
+        Tri-state appearance switcher: <em>system</em> (neither button active),
+        <em>light</em>, or <em>dark</em>. Clicking the active button reverts to
+        system. State persists in <code>localStorage["appearance"]</code>.
+      </p>
+      <p>
+        The component sets <code>data-theme</code> on <code>&lt;html&gt;</code>
+        when in light/dark mode and removes it in system mode. CSS on this page
+        falls back to <code>prefers-color-scheme</code> when no
+        <code>data-theme</code> is present.
+      </p>
+    </section>
+
+    <section class="status">
+      <h2>Last event</h2>
+      <pre id="event-log">(none yet)</pre>
+    </section>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

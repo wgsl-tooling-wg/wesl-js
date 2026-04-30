@@ -1,0 +1,51 @@
+{
+  "name": "appearance-picker",
+  "description": "<appearance-picker> custom element for tri-state (system/light/dark) appearance switching",
+  "version": "0.0.1",
+  "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "repository": "github:wgsl-tooling-wg/wesl-js",
+  "scripts": {
+    "build": "tsdown",
+    "build:demo": "vite build --config vite.config.ts demo",
+    "dev": "vite demo --config vite.config.ts",
+    "prepublishOnly": "run-s build",
+    "typecheck": "tsgo"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./element": {
+        "types": "./dist/AppearancePicker.d.ts",
+        "import": "./dist/AppearancePicker.js"
+      }
+    },
+    "main": "./dist/index.js"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./element": "./src/AppearancePicker.ts"
+  },
+  "devDependencies": {
+    "vite": "^8.0.1"
+  },
+  "keywords": [
+    "color-scheme",
+    "custom-element",
+    "dark-mode",
+    "theme",
+    "theme-switcher",
+    "theme-toggle",
+    "web-component"
+  ],
+  "sideEffects": [
+    "./src/index.ts",
+    "./dist/index.js"
+  ]
+}

@@ -318,6 +318,12 @@ importers:
         specifier: workspace:x
         version: link:../../packages/wgsl-test
 
+  packages/appearance-picker:
+    devDependencies:
+      vite:
+        specifier: ^8.0.1
+        version: 8.0.8(@types/node@25.5.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.2)
+
   packages/built-test:
     dependencies:
       wesl:

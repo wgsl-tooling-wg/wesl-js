@@ -1,0 +1,43 @@
+:host {
+  display: inline-flex;
+  gap: var(--appearance-picker-gap, 2px);
+  align-items: center;
+}
+
+.btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  color: var(--appearance-picker-color, currentColor);
+  opacity: 0.6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity 0.15s,
+    background 0.15s,
+    color 0.15s;
+}
+
+.btn:hover {
+  opacity: 1;
+}
+
+.btn.active {
+  opacity: 1;
+  color: var(--appearance-picker-active-color, currentColor);
+  background: var(--appearance-picker-active-bg, transparent);
+}
+
+.btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.btn svg {
+  width: var(--appearance-picker-size, 16px);
+  height: var(--appearance-picker-size, 16px);
+  display: block;
+}
