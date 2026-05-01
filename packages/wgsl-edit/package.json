@@ -39,6 +39,10 @@
       "./bundle": {
         "types": "./dist/WgslEdit.d.ts",
         "import": "./dist/wgsl-edit.js"
+      },
+      "./jsx-preact": {
+        "types": "./dist/jsx-preact.d.ts",
+        "import": "./dist/jsx-preact.js"
       }
     },
     "main": "./dist/index.js"
@@ -48,6 +52,7 @@
     "./element": "./src/WgslEdit.ts",
     "./language": "./src/Language.ts",
     "./autosave": "./src/autosave.ts",
+    "./jsx-preact": "./src/jsx-preact.ts",
     "./bundle": {
       "types": "./src/WgslEdit.ts",
       "default": "./dist/wgsl-edit.js"
@@ -70,6 +75,7 @@
   "devDependencies": {
     "@playwright/test": "^1.53.2",
     "open": "^10.0.0",
+    "preact": "^10.27.2",
     "vite": "^8.0.1",
     "wesl-plugin": "workspace:x",
     "wgsl-play": "workspace:x",

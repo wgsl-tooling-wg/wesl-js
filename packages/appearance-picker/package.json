@@ -24,15 +24,21 @@
       "./element": {
         "types": "./dist/AppearancePicker.d.ts",
         "import": "./dist/AppearancePicker.js"
+      },
+      "./jsx-preact": {
+        "types": "./dist/jsx-preact.d.ts",
+        "import": "./dist/jsx-preact.js"
       }
     },
     "main": "./dist/index.js"
   },
   "exports": {
     ".": "./src/index.ts",
-    "./element": "./src/AppearancePicker.ts"
+    "./element": "./src/AppearancePicker.ts",
+    "./jsx-preact": "./src/jsx-preact.ts"
   },
   "devDependencies": {
+    "preact": "^10.27.2",
     "vite": "^8.0.1"
   },
   "keywords": [

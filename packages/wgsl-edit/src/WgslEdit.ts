@@ -69,6 +69,15 @@ export interface AutosaveDetail {
   dirty: string[];
 }
 
+/** Attributes accepted by `<wgsl-edit>` beyond standard HTML.
+ *  Source of truth for framework-specific JSX augmentations (see `./jsx-preact.ts`). */
+export interface WgslEditAttrs {
+  /** Color theme; `"auto"` follows `prefers-color-scheme`. */
+  theme?: "light" | "dark" | "auto";
+  /** ID of an element (e.g. `<wgsl-play>`) to source compile diagnostics from. */
+  "lint-from"?: string;
+}
+
 type GpuMessage = {
   offset: number;
   length: number;

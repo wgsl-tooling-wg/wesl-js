@@ -11,6 +11,15 @@ export interface AppearanceChangeDetail {
   resolved: Resolved;
 }
 
+/** Attributes accepted by `<appearance-picker>` beyond standard HTML.
+ *  Source of truth for framework-specific JSX augmentations (see `./jsx-preact.ts`). */
+export interface AppearancePickerAttrs {
+  /** Initial preference. Defaults to `"system"` (or stored value if present). */
+  appearance?: Appearance;
+  /** Where to persist the preference. */
+  storage?: StorageMode;
+}
+
 const storageKey = "appearance";
 
 // Lazy-init so non-DOM imports (SSR, type-only consumers) don't fail at module

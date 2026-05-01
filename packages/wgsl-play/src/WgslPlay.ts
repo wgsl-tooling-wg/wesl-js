@@ -25,6 +25,7 @@ import { renderResultsPanel } from "./ResultsPanel.ts";
 import { UniformControls } from "./UniformControls.ts";
 import cssText from "./WgslPlay.css?inline";
 
+export { ResourceLoadError } from "wesl-gpu";
 export { defaults, getConfig, resetConfig } from "./Config.ts";
 
 /** One source location within a compile error. */
@@ -50,13 +51,22 @@ export interface CompileErrorDetail {
   locations: CompileErrorLocation[];
 }
 
-export { ResourceLoadError } from "wesl-gpu";
+/** Attributes accepted by `<wgsl-play>` beyond standard HTML.
+ *  Source of truth for framework-specific JSX augmentations (see `./jsx-preact.ts`). */
+export interface WgslPlayAttrs {
+  /** ID of a `<wgsl-edit>` (or compatible) element to source shader content from. */
+  from?: string;
+  /** Color theme; `"auto"` follows `prefers-color-scheme`. */
+  theme?: "light" | "dark" | "auto";
+  /** Allow drag-resize of the player via the corner handle. */
+  resizable?: boolean;
+}
 
-// Lazy-init for SSR/Node.js compatibility (avoid browser APIs at module load)
+// Lazy-init for SSR/Node.js compatibility (avoid browser APIs at module load).
 let styles: CSSStyleSheet | null = null;
 let template: HTMLTemplateElement | null = null;
 
-/** <wgsl-play> web component for rendering WESL/WGSL fragment shaders.  */
+/** <wgsl-play> web component for rendering WESL/WGSL fragment shaders. */
 export class WgslPlay extends HTMLElement {
   static observedAttributes = [
     "src",
@@ -145,10 +155,8 @@ export class WgslPlay extends HTMLElement {
       if (this.hasAttribute("width") && this.hasAttribute("height")) return;
       const entry = entries.at(-1);
       if (!entry) return;
-      const [width, height] = entrySize(
-        entry,
-        this.getAttribute("pixel-ratio"),
-      );
+      const ratio = this.getAttribute("pixel-ratio");
+      const [width, height] = entrySize(entry, ratio);
       if (width > 0 && height > 0) {
         const maxDim = this.renderState.device.limits.maxTextureDimension2D;
         this.canvas.width = clampCanvas(width, maxDim);
@@ -178,7 +186,7 @@ export class WgslPlay extends HTMLElement {
   }
 
   /** Start watching element size. Deferred until after `initWebGPU` so the
-   *  observer has a real `maxTextureDimension2D` to clamp against */
+   *  observer has a real `maxTextureDimension2D` to clamp against. */
   private observeCanvasSize(): void {
     try {
       this.resizeObserver.observe(this, { box: "device-pixel-content-box" });
@@ -210,17 +218,20 @@ export class WgslPlay extends HTMLElement {
 
     switch (name) {
       case "no-controls":
-        newValue !== null ? this.controls.hide() : this.controls.show();
+        if (newValue !== null) this.controls.hide();
+        else this.controls.show();
         return;
       case "no-settings":
-        newValue !== null ? this.settings.hide() : this.settings.show();
+        if (newValue !== null) this.settings.hide();
+        else this.settings.show();
         return;
       case "theme":
         this._theme = (newValue as typeof this._theme) || "auto";
         this.updateTheme();
         return;
       case "autoplay":
-        newValue === "false" ? this.pause() : this.play();
+        if (newValue === "false") this.pause();
+        else this.play();
         return;
       case "fetch-libs":
         this._fetchLibs = newValue !== "false";
@@ -233,8 +244,6 @@ export class WgslPlay extends HTMLElement {
         return;
       case "width":
       case "height":
-        this.updateCanvasSize();
-        return;
       case "pixel-ratio":
         this.updateCanvasSize();
         return;
@@ -293,8 +302,7 @@ export class WgslPlay extends HTMLElement {
 
   set fetchLibs(value: boolean) {
     this._fetchLibs = value;
-    if (value) this.removeAttribute("fetch-libs");
-    else this.setAttribute("fetch-libs", "false");
+    this.setBoolAttr("fetch-libs", value);
   }
 
   /** Whether to fetch local .wesl source files via HTTP (default: true). */
@@ -304,8 +312,7 @@ export class WgslPlay extends HTMLElement {
 
   set fetchSources(value: boolean) {
     this._fetchSources = value;
-    if (value) this.removeAttribute("fetch-sources");
-    else this.setAttribute("fetch-sources", "false");
+    this.setBoolAttr("fetch-sources", value);
   }
 
   /** Whether autoplay is enabled (default: true). Set autoplay="false" to start paused. */
@@ -315,8 +322,7 @@ export class WgslPlay extends HTMLElement {
 
   set autoplay(value: boolean | string) {
     const enabled = value !== false && value !== "false";
-    if (enabled) this.removeAttribute("autoplay");
-    else this.setAttribute("autoplay", "false");
+    this.setBoolAttr("autoplay", enabled);
   }
 
   /** Scale factor from CSS pixels to canvas pixels (default: devicePixelRatio). */
@@ -369,9 +375,7 @@ export class WgslPlay extends HTMLElement {
   pause(): void {
     if (!this.playback.isPlaying) return;
     this.playback.pausedDuration = performance.now() - this.playback.startTime;
-    this.stopRenderLoop?.();
-    this.setPlaying(false);
-    if (this.renderState) renderOnce(this.renderState, this.playback);
+    this.stopAndPresent();
   }
 
   private setPlaying(playing: boolean): void {
@@ -381,9 +385,15 @@ export class WgslPlay extends HTMLElement {
     this.dispatchEvent(new CustomEvent("playback-change", { detail }));
   }
 
-  /** Wait for any in-flight build, render one frame to the canvas, and
-   *  resolve once that frame has been presented. The caller can then read
-   *  the canvas via `element.shadowRoot.querySelector('canvas')`. */
+  /** Mirror a default-true setter onto its attribute: absent = on, "false" = off. */
+  private setBoolAttr(name: string, on: boolean): void {
+    if (on) this.removeAttribute(name);
+    else this.setAttribute(name, "false");
+  }
+
+  /** Wait for any in-flight build and render one frame to the canvas, resolving
+   *  once it has been presented. Read the canvas via
+   *  `element.shadowRoot.querySelector('canvas')`. */
   async renderFrame(): Promise<void> {
     await this.awaitIdleBuild();
     if (!this.renderState) throw new Error("renderFrame: not initialized");
@@ -397,9 +407,9 @@ export class WgslPlay extends HTMLElement {
     await new Promise<void>(r => requestAnimationFrame(() => r()));
   }
 
-  /** Resolve once initialization and any pending build have settled.
-   *  Yields via setTimeout so async build steps (network fetch, GPU
-   *  validation) get a chance to advance between polls. */
+  /** Resolve once initialization and any pending build have settled. Yields via
+   *  setTimeout so async build steps (network fetch, GPU validation) get a
+   *  chance to advance between polls. */
   private async awaitIdleBuild(): Promise<void> {
     await this._initPromise;
     while (this._building || this._dirty) {
@@ -411,6 +421,11 @@ export class WgslPlay extends HTMLElement {
   rewind(): void {
     this.playback.startTime = performance.now();
     this.playback.pausedDuration = 0;
+    this.stopAndPresent();
+  }
+
+  /** Stop the RAF loop, mark paused, and re-present the current frame. */
+  private stopAndPresent(): void {
     this.stopRenderLoop?.();
     this.setPlaying(false);
     if (this.renderState) renderOnce(this.renderState, this.playback);
@@ -434,17 +449,20 @@ export class WgslPlay extends HTMLElement {
       renderOnce(this.renderState, this.playback);
   }
 
+  /** Apply uniforms set before the pipeline existed. */
   private flushPendingUniforms(): void {
-    const map = this.renderState?.uniformState.controlValues;
-    if (!map) return;
-    for (const [k, v] of this.pendingUniforms) map.set(k, v);
+    const controlValues = this.renderState?.uniformState.controlValues;
+    if (!controlValues) return;
+    for (const [name, value] of this.pendingUniforms) {
+      controlValues.set(name, value);
+    }
   }
 
   /** Current uniform control values (readable). */
   get uniforms(): Record<string, number | number[]> {
-    const map = this.renderState?.uniformState.controlValues;
-    if (!map) return {};
-    return Object.fromEntries(map);
+    const controlValues = this.renderState?.uniformState.controlValues;
+    if (!controlValues) return {};
+    return Object.fromEntries(controlValues);
   }
 
   /** Toggle fullscreen on this element. */
@@ -491,10 +509,22 @@ export class WgslPlay extends HTMLElement {
     let startY = 0;
     let startW = 0;
     let startH = 0;
+    /** Numeric aspect ratio (w/h) sampled at drag start, or null if `auto`. */
+    let ratio: number | null = null;
 
     const onMove = (e: PointerEvent): void => {
-      this.style.width = `${startW + e.clientX - startX}px`;
-      this.style.height = `${startH + e.clientY - startY}px`;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      let w = startW + dx;
+      let h = startH + dy;
+      if (ratio !== null) {
+        // Honor consumer's CSS aspect-ratio: drive the size from whichever
+        // axis the user moved more, derive the other from the ratio.
+        if (Math.abs(dx) >= Math.abs(dy)) h = w / ratio;
+        else w = h * ratio;
+      }
+      this.style.width = `${w}px`;
+      this.style.height = `${h}px`;
     };
     const onUp = (): void => {
       document.removeEventListener("pointermove", onMove);
@@ -508,6 +538,7 @@ export class WgslPlay extends HTMLElement {
       startY = e.clientY;
       startW = rect.width;
       startH = rect.height;
+      ratio = parseAspectRatio(getComputedStyle(this).aspectRatio);
       document.addEventListener("pointermove", onMove);
       document.addEventListener("pointerup", onUp);
     };
@@ -527,16 +558,16 @@ export class WgslPlay extends HTMLElement {
     if (w !== null && h !== null) {
       this.canvas.width = clampCanvas(Number(w), maxDim);
       this.canvas.height = clampCanvas(Number(h), maxDim);
-    } else {
-      const rect = this.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        const ratio = this.pixelRatio;
-        this.canvas.width = clampCanvas(rect.width * ratio, maxDim);
-        this.canvas.height = clampCanvas(rect.height * ratio, maxDim);
-      }
+      return;
     }
+    const rect = this.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const ratio = this.pixelRatio;
+    this.canvas.width = clampCanvas(rect.width * ratio, maxDim);
+    this.canvas.height = clampCanvas(rect.height * ratio, maxDim);
   }
 
+  /** Toggle the `dark` class to match `theme` attr or system preference. */
   private updateTheme(): void {
     const isDark =
       this._theme === "dark" ||
@@ -552,6 +583,7 @@ export class WgslPlay extends HTMLElement {
     return this._initPromise;
   }
 
+  /** Init WebGPU, wire observers/listeners, and dispatch ready/init-error. */
   private async doInitialize(): Promise<boolean> {
     try {
       const transparent = this.hasAttribute("transparent");
@@ -631,10 +663,8 @@ export class WgslPlay extends HTMLElement {
   private async loadFromUrl(url: string): Promise<void> {
     try {
       const shaderRoot = this.getConfigOverrides()?.shaderRoot;
-      const { weslSrc, libs, rootModuleName } = await loadShaderFromUrl(
-        url,
-        shaderRoot,
-      );
+      const result = await loadShaderFromUrl(url, shaderRoot);
+      const { weslSrc, libs, rootModuleName } = result;
       this._weslSrc = weslSrc;
       this._libs = libs;
       if (rootModuleName) this._rootModuleName = rootModuleName;
@@ -655,7 +685,8 @@ export class WgslPlay extends HTMLElement {
     this._building = true;
     while (this._dirty) {
       this._dirty = false;
-      if (!(await this.initialize())) break;
+      const initialized = await this.initialize();
+      if (!initialized) break;
 
       const mainSource = this._weslSrc[this._rootModuleName];
       if (!mainSource) {
@@ -748,9 +779,8 @@ export class WgslPlay extends HTMLElement {
     this.settings.setControls(controls);
     this.applyMode(result);
     this.dispatchEvent(new CustomEvent("compile-success"));
-    this.dispatchEvent(
-      new CustomEvent("uniforms-layout", { detail: result.layout }),
-    );
+    const detail = result.layout;
+    this.dispatchEvent(new CustomEvent("uniforms-layout", { detail }));
   }
 
   /** Show canvas vs results panel and (re-)render based on build mode. */
@@ -760,10 +790,8 @@ export class WgslPlay extends HTMLElement {
       this.canvas.hidden = true;
       this.resultsPanel.hidden = false;
       this.controls.setMode("compute");
-      renderResultsPanel({
-        panel: this.resultsPanel,
-        entries: result.computeReadback ?? [],
-      });
+      const entries = result.computeReadback ?? [];
+      renderResultsPanel({ panel: this.resultsPanel, entries });
       return;
     }
     this.canvas.hidden = false;
@@ -789,6 +817,7 @@ export class WgslPlay extends HTMLElement {
     });
   }
 
+  /** Show the error overlay and dispatch a `compile-error` event. */
   private handleCompileError(error: unknown): void {
     const message = (error as any)?.message ?? String(error);
     this.errorOverlay.show(message);
@@ -796,15 +825,10 @@ export class WgslPlay extends HTMLElement {
     const source = error instanceof WeslParseError ? "wesl" : "webgpu";
     const kind = error instanceof ResourceLoadError ? "resource" : "shader";
     const locations = this.extractLocations(error);
-    const detail: CompileErrorDetail = {
-      message,
-      source,
-      kind,
-      locations,
-      ...(error instanceof ResourceLoadError
-        ? { resourceSource: error.resourceSource }
-        : {}),
-    };
+    const detail: CompileErrorDetail = { message, source, kind, locations };
+    if (error instanceof ResourceLoadError) {
+      detail.resourceSource = error.resourceSource;
+    }
     this.dispatchEvent(new CustomEvent("compile-error", { detail }));
   }
 
@@ -823,8 +847,6 @@ export class WgslPlay extends HTMLElement {
     // GPU compilation errors have multiple messages
     const msgs = (error as any)?.compilationInfo?.messages;
     if (msgs) {
-      const toSeverity = (t: string) =>
-        t === "warning" ? "warning" : t === "info" ? "info" : "error";
       return msgs.map((m: any) => ({
         file: m.module?.url,
         line: m.lineNum,
@@ -839,14 +861,6 @@ export class WgslPlay extends HTMLElement {
   }
 }
 
-function getTemplate(): HTMLTemplateElement {
-  if (!template) {
-    template = document.createElement("template");
-    template.innerHTML = `<canvas part="canvas"></canvas><div class="results-panel" part="results-panel" hidden></div><div class="resize-handle"></div>`;
-  }
-  return template;
-}
-
 function getStyles(): CSSStyleSheet {
   if (!styles) {
     styles = new CSSStyleSheet();
@@ -855,14 +869,43 @@ function getStyles(): CSSStyleSheet {
   return styles;
 }
 
+function getTemplate(): HTMLTemplateElement {
+  if (!template) {
+    template = document.createElement("template");
+    template.innerHTML = `<canvas part="canvas"></canvas><div class="results-panel" part="results-panel" hidden></div><div class="resize-handle"></div>`;
+  }
+  return template;
+}
+
 /** Absorb instance properties set before custom element upgrade.
- * Duplicated in WgslEdit.ts. Later, extract to a shared package. */
+ *  Duplicated in WgslEdit.ts; extract to a shared package later. */
 function upgradeProperty(el: HTMLElement, prop: string): void {
   if (Object.hasOwn(el, prop)) {
     const value = (el as any)[prop];
     delete (el as any)[prop];
     (el as any)[prop] = value;
   }
+}
+
+/** Normalize all keys in a weslSrc record to module paths. */
+function toModulePaths(
+  weslSrc: Record<string, string>,
+  pkg: string,
+): Record<string, string> {
+  const entries = Object.entries(weslSrc).map(
+    ([key, value]) => [fileToModulePath(key, pkg, false), value] as const,
+  );
+  return Object.fromEntries(entries);
+}
+
+/** Parse `getComputedStyle().aspectRatio` (`"auto"`, `"1"`, `"16 / 9"`) to w/h. */
+function parseAspectRatio(value: string): number | null {
+  if (!value || value === "auto") return null;
+  const [w, h = "1"] = value.split("/").map(s => s.trim());
+  const wNum = Number(w);
+  const hNum = Number(h);
+  if (!wNum || !hNum) return null;
+  return wNum / hNum;
 }
 
 /** Merge new libs, deduplicating by bundle name. */
@@ -874,6 +917,12 @@ function dedupLibs(
     return [...(existing ?? []), ...newLibs];
   const names = new Set(newLibs.map(b => b.name));
   return [...existing.filter(b => !names.has(b.name)), ...newLibs];
+}
+
+/** Escape a value for safe use as an attribute-selector literal or id selector. */
+function cssEscape(value: string): string {
+  if (typeof CSS !== "undefined" && CSS.escape) return CSS.escape(value);
+  return value.replace(/[^a-zA-Z0-9_-]/g, ch => `\\${ch}`);
 }
 
 /** Decode an <img> to an ImageBitmap with deterministic upload flags. */
@@ -898,6 +947,13 @@ async function decodeImage(
   }
 }
 
+/** Map a GPU compilation message `type` field to our severity enum. */
+function toSeverity(type: string): "error" | "warning" | "info" {
+  if (type === "warning") return "warning";
+  if (type === "info") return "info";
+  return "error";
+}
+
 function waitForImageLoad(el: HTMLImageElement): Promise<void> {
   return new Promise((resolve, reject) => {
     const onLoad = () => {
@@ -911,21 +967,4 @@ function waitForImageLoad(el: HTMLImageElement): Promise<void> {
     el.addEventListener("load", onLoad, { once: true });
     el.addEventListener("error", onError, { once: true });
   });
-}
-
-/** Escape a value for safe use as an attribute-selector literal or id selector. */
-function cssEscape(value: string): string {
-  if (typeof CSS !== "undefined" && CSS.escape) return CSS.escape(value);
-  return value.replace(/[^a-zA-Z0-9_-]/g, ch => `\\${ch}`);
-}
-
-/** Normalize all keys in a weslSrc record to module paths. */
-function toModulePaths(
-  weslSrc: Record<string, string>,
-  pkg: string,
-): Record<string, string> {
-  const entries = Object.entries(weslSrc).map(
-    ([key, value]) => [fileToModulePath(key, pkg, false), value] as const,
-  );
-  return Object.fromEntries(entries);
 }

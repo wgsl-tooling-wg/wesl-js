@@ -28,6 +28,10 @@
       "./bundle": {
         "types": "./dist/WgslPlay.d.ts",
         "import": "./dist/wgsl-play.js"
+      },
+      "./jsx-preact": {
+        "types": "./dist/jsx-preact.d.ts",
+        "import": "./dist/jsx-preact.js"
       }
     },
     "main": "./dist/index.js"
@@ -35,6 +39,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./element": "./src/WgslPlay.ts",
+    "./jsx-preact": "./src/jsx-preact.ts",
     "./bundle": "./src/WgslPlay.ts"
   },
   "dependencies": {
@@ -46,6 +51,7 @@
   "devDependencies": {
     "@playwright/test": "^1.53.2",
     "nanotar": "^0.2.0",
+    "preact": "^10.27.2",
     "wesl-plugin": "workspace:x"
   }
 }
