@@ -1,0 +1,28 @@
+{
+  "name": "play-dev",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "test": "vitest --run",
+    "test:e2e": "playwright test",
+    "typecheck": "tsgo"
+  },
+  "dependencies": {
+    "appearance-picker": "workspace:*",
+    "lz-string": "^1.5.0",
+    "preact": "^10.27.2",
+    "wesl": "workspace:*",
+    "wgsl-edit": "workspace:*",
+    "wgsl-play": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.2",
+    "@preact/preset-vite": "^2.10.2",
+    "vite": "^8.0.1",
+    "wesl-plugin": "workspace:x"
+  }
+}

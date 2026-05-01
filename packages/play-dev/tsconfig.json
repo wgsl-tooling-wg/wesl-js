@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.browser.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
+  },
+  "include": ["src", "vite.config.ts", "playwright.config.ts"],
+  "exclude": ["**/node_modules", "**/dist", "src/test/*.e2e.ts"]
+}
