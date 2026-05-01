@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "deploy:site": "run-s build pages:deploy",
     "dev": "vite",
+    "pages:deploy": "wrangler pages deploy --project-name wgsl-play --branch main dist",
     "preview": "vite preview",
     "test": "vitest --run",
     "test:e2e": "playwright test",
@@ -22,7 +24,9 @@
   "devDependencies": {
     "@playwright/test": "^1.53.2",
     "@preact/preset-vite": "^2.10.2",
+    "npm-run-all": "^4.1.5",
     "vite": "^8.0.1",
-    "wesl-plugin": "workspace:x"
+    "wesl-plugin": "workspace:x",
+    "wrangler": "^4.77.0"
   }
 }
