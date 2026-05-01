@@ -14,28 +14,52 @@
 .resize-handle {
   display: none;
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 16px;
-  height: 16px;
-  cursor: nwse-resize;
+  width: 22px;
+  height: 22px;
   z-index: 2;
   touch-action: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+:host([resizable]) .resize-handle {
+  display: block;
+}
+
+.resize-handle.br {
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
+}
+
+.resize-handle.bl {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
+}
+
+.resize-handle:hover,
+.resize-handle.dragging {
+  opacity: 1;
 }
 
 .resize-handle::before {
   content: "";
   position: absolute;
   bottom: 3px;
-  right: 3px;
   width: 8px;
   height: 8px;
-  border-right: 2px solid var(--controls-bg);
   border-bottom: 2px solid var(--controls-bg);
 }
 
-:host([resizable]:hover) .resize-handle {
-  display: block;
+.resize-handle.br::before {
+  right: 3px;
+  border-right: 2px solid var(--controls-bg);
+}
+
+.resize-handle.bl::before {
+  left: 3px;
+  border-left: 2px solid var(--controls-bg);
 }
 
 :host(.dark) {

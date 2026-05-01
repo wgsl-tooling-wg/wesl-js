@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>wgsl-play test - resize</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .splitter {
+        display: flex;
+        width: 600px;
+        height: 200px;
+        gap: 0;
+      }
+      .splitter > .edit {
+        flex: 1;
+        background: #333;
+        padding: 8px;
+      }
+      .splitter > wgsl-play {
+        margin: 0;
+        width: 200px;
+        height: 200px;
+      }
+      #blockPlayer {
+        width: 200px;
+        height: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>wgsl-play Test Page - Resize</h2>
+    <nav class="test-nav"><a href="./">&larr; index</a></nav>
+
+    <div class="section">
+      <h3>Block flow (resizable, two corners)</h3>
+      <p>Drag BR or BL corner. In block flow, BL grows the right edge (cursor outpaces handle).</p>
+      <wgsl-play id="blockPlayer" resizable>
+        <script type="text/wesl">
+          import env::u;
+          @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+            let uv = pos.xy / u.resolution;
+            return vec4f(uv, 0.5, 1.0);
+          }
+        </script>
+      </wgsl-play>
+    </div>
+
+    <div class="section">
+      <h3>Flex splitter (drag BL leftward grows play, shrinks edit)</h3>
+      <p>edit on left (flex: 1), play on right (fixed width). Drag BL to splitter.</p>
+      <div class="splitter">
+        <div class="edit">edit (flex: 1)</div>
+        <wgsl-play id="flexPlayer" resizable>
+          <script type="text/wesl">
+            import env::u;
+            @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+              let uv = pos.xy / u.resolution;
+              return vec4f(0.5, uv.x, uv.y, 1.0);
+            }
+          </script>
+        </wgsl-play>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Non-resizable (no handles visible)</h3>
+      <wgsl-play id="plainPlayer">
+        <script type="text/wesl">
+          import env::u;
+          @fragment fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+            let uv = pos.xy / u.resolution;
+            return vec4f(uv.y, 0.2, uv.x, 1.0);
+          }
+        </script>
+      </wgsl-play>
+    </div>
+
+    <script type="module" src="./Resize.ts"></script>
+  </body>
+</html>

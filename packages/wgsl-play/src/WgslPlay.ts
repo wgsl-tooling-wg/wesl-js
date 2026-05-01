@@ -118,7 +118,7 @@ export class WgslPlay extends HTMLElement {
   private _onFullscreenChange = () =>
     this.controls.setFullscreen(!!document.fullscreenElement);
   private _pointerCleanup?: () => void;
-  private _resizeCleanup?: () => void;
+  private _resizeCleanups: Array<() => void> = [];
   private _childObserver?: MutationObserver;
 
   /** Get config overrides from element attributes. */
@@ -164,7 +164,10 @@ export class WgslPlay extends HTMLElement {
       }
     });
 
-    this.setupResizeHandle(shadow.querySelector(".resize-handle")!);
+    const handles = shadow.querySelectorAll<HTMLElement>(".resize-handle");
+    for (const h of handles) {
+      this.setupResizeHandle(h, h.classList.contains("bl") ? "bl" : "br");
+    }
   }
 
   connectedCallback(): void {
@@ -201,7 +204,8 @@ export class WgslPlay extends HTMLElement {
     this._childObserver = undefined;
     this.stopRenderLoop?.();
     this._pointerCleanup?.();
-    this._resizeCleanup?.();
+    for (const c of this._resizeCleanups) c();
+    this._resizeCleanups = [];
     document.removeEventListener("fullscreenchange", this._onFullscreenChange);
     if (this._sourceEl && this._sourceListener) {
       this._sourceEl.removeEventListener("change", this._sourceListener);
@@ -504,7 +508,10 @@ export class WgslPlay extends HTMLElement {
   }
 
   /** Drag-to-resize via a custom handle (works on touch + mouse). */
-  private setupResizeHandle(handle: HTMLElement): void {
+  private setupResizeHandle(handle: HTMLElement, corner: "br" | "bl"): void {
+    // Negate horizontal delta for the left handle so `w = startW + dx` and
+    // the aspect-ratio comparison both work unchanged for either corner.
+    const xSign = corner === "bl" ? -1 : 1;
     let startX = 0;
     let startY = 0;
     let startW = 0;
@@ -513,7 +520,7 @@ export class WgslPlay extends HTMLElement {
     let ratio: number | null = null;
 
     const onMove = (e: PointerEvent): void => {
-      const dx = e.clientX - startX;
+      const dx = (e.clientX - startX) * xSign;
       const dy = e.clientY - startY;
       let w = startW + dx;
       let h = startH + dy;
@@ -523,16 +530,18 @@ export class WgslPlay extends HTMLElement {
         if (Math.abs(dx) >= Math.abs(dy)) h = w / ratio;
         else w = h * ratio;
       }
-      this.style.width = `${w}px`;
-      this.style.height = `${h}px`;
+      this.style.width = `${Math.max(16, w)}px`;
+      this.style.height = `${Math.max(16, h)}px`;
     };
     const onUp = (): void => {
+      handle.classList.remove("dragging");
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
     };
     const onDown = (e: PointerEvent): void => {
       e.preventDefault();
       handle.setPointerCapture(e.pointerId);
+      handle.classList.add("dragging");
       const rect = this.getBoundingClientRect();
       startX = e.clientX;
       startY = e.clientY;
@@ -544,10 +553,10 @@ export class WgslPlay extends HTMLElement {
     };
 
     handle.addEventListener("pointerdown", onDown);
-    this._resizeCleanup = () => {
+    this._resizeCleanups.push(() => {
       handle.removeEventListener("pointerdown", onDown);
       onUp();
-    };
+    });
   }
 
   /** Recompute canvas resolution from attributes or CSS size. */
@@ -872,7 +881,7 @@ function getStyles(): CSSStyleSheet {
 function getTemplate(): HTMLTemplateElement {
   if (!template) {
     template = document.createElement("template");
-    template.innerHTML = `<canvas part="canvas"></canvas><div class="results-panel" part="results-panel" hidden></div><div class="resize-handle"></div>`;
+    template.innerHTML = `<canvas part="canvas"></canvas><div class="results-panel" part="results-panel" hidden></div><div class="resize-handle br"></div><div class="resize-handle bl"></div>`;
   }
   return template;
 }
