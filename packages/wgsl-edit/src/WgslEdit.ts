@@ -63,6 +63,24 @@ interface FileState {
   selection?: EditorSelection;
 }
 
+/** `autosave` CustomEvent detail: full project snapshot + dirty file names. */
+export interface AutosaveDetail {
+  project: WeslProject;
+  dirty: string[];
+}
+
+type GpuMessage = {
+  offset: number;
+  length: number;
+  severity: string;
+  message: string;
+};
+type LinkedSourceMap = {
+  sourceMap: {
+    destToSrc(offset: number): { position: number; src: { path?: string } };
+  };
+};
+
 /*  WESL syntax colors
  *
  *  | Name       | Elements                             |
@@ -149,7 +167,7 @@ export class WgslEdit extends HTMLElement {
   private _fetchingPkgs = new Set<string>();
   private _fetchedPkgs = new Set<string>();
   private _snackTimer: ReturnType<typeof setTimeout> | undefined;
-  private _autosave = false;
+  private _devSaveListener: ((e: Event) => void) | null = null;
   private _saveTimer: ReturnType<typeof setTimeout> | undefined;
   private _dirtyFiles = new Set<string>();
   private _switchingFile = false;
@@ -181,11 +199,8 @@ export class WgslEdit extends HTMLElement {
   connectedCallback(): void {
     this.initEditor();
     this.loadInitialContent();
-    upgradeProperty(this, "conditions");
-    upgradeProperty(this, "source");
-    upgradeProperty(this, "sources");
-    upgradeProperty(this, "project");
-    upgradeProperty(this, "autosave");
+    const props = ["conditions", "source", "sources", "project", "autosave"];
+    for (const p of props) upgradeProperty(this, p);
   }
 
   disconnectedCallback(): void {
@@ -233,7 +248,8 @@ export class WgslEdit extends HTMLElement {
         this.updateLint();
         break;
       case "autosave":
-        this._autosave = value !== null && value !== "false";
+        if (value !== null && value !== "false") this.enableDevSave();
+        else this.disableDevSave();
         break;
     }
   }
@@ -249,6 +265,11 @@ export class WgslEdit extends HTMLElement {
     this.dispatchChange();
   }
 
+  /** Reconfigure a compartment via the active editor view (no-op if unmounted). */
+  private reconfigure(comp: Compartment, ext: Extension): void {
+    this.editorView?.dispatch({ effects: comp.reconfigure(ext) });
+  }
+
   /** Active file content (single-file API). */
   get source(): string {
     return this.editorView?.state.doc.toString() ?? this._pendingSource ?? "";
@@ -257,29 +278,29 @@ export class WgslEdit extends HTMLElement {
   /** Set active file content (single-file API). Auto-creates a default file entry. */
   set source(value: string) {
     if (!this._activeFile && this._files.size === 0) {
-      this._files.set("main.wesl", { doc: Text.of(value.split("\n")) });
+      this._files.set("main.wesl", { doc: toDoc(value) });
       this._activeFile = "main.wesl";
       this.renderTabs();
     }
     if (this.editorView) {
       // Replace content via a non-history transaction so autosave/change
       // listeners fire but initial-load content doesn't land on the undo stack.
-      const to = this.editorView.state.doc.length;
+      const docLength = this.editorView.state.doc.length;
       this.editorView.dispatch({
-        changes: { from: 0, to, insert: value },
+        changes: { from: 0, to: docLength, insert: value },
         annotations: Transaction.addToHistory.of(false),
       });
     } else {
       this._pendingSource = value;
       const entry = this._files.get(this._activeFile);
-      if (entry) entry.doc = Text.of(value.split("\n"));
+      if (entry) entry.doc = toDoc(value);
     }
   }
 
   /** All file contents keyed by module path (e.g., "package::main"). */
   get sources(): Record<string, string> {
     this.saveCurrentFileState();
-    const pkg = this._packageName ?? "package";
+    const pkg = this.pkgName();
     const result: Record<string, string> = {};
     for (const [tabName, state] of this._files) {
       result[fileToModulePath(tabName, pkg, false)] = state.doc.toString();
@@ -292,13 +313,14 @@ export class WgslEdit extends HTMLElement {
     this._files.clear();
     for (const [key, content] of Object.entries(value)) {
       const tabName = toTabName(key);
-      this._files.set(tabName, { doc: Text.of(content.split("\n")) });
+      this._files.set(tabName, { doc: toDoc(content) });
     }
     const firstKey = Object.keys(value)[0];
     if (firstKey) this.switchToFile(toTabName(firstKey));
     this.renderTabs();
   }
 
+  /** Snapshot of all editor state needed to link: sources, conditions, libs, root module. */
   get project(): WeslProject {
     return {
       weslSrc: this.sources,
@@ -325,7 +347,7 @@ export class WgslEdit extends HTMLElement {
 
     if (weslSrc) {
       this.sources = weslSrc;
-      const tab = toTabName(rootModuleName ?? this._rootModuleName ?? "");
+      const tab = toTabName(this._rootModuleName ?? "");
       if (tab) this.activeFile = tab;
     }
     this.updateLint();
@@ -338,15 +360,13 @@ export class WgslEdit extends HTMLElement {
   }
 
   private linkParams(): LinkParams {
-    const pkg = this._packageName ?? "package";
     return {
       weslSrc: this.sources,
-      rootModuleName:
-        this._rootModuleName ?? fileToModulePath(this._activeFile, pkg, false),
+      rootModuleName: this._rootModuleName ?? this.activeModulePath(),
       conditions: this._conditions,
       constants: this._constants,
       libs: this._libs,
-      packageName: pkg,
+      packageName: this.pkgName(),
     };
   }
 
@@ -418,15 +438,19 @@ export class WgslEdit extends HTMLElement {
   }
 
   /** Persist edits to disk via the dev-server save endpoint.
-   * Requires `wgslEditAutosave()` to be installed in vite.config.ts. */
+   *  Requires `wgslEditAutosave()` to be installed in vite.config.ts. */
   get autosave(): boolean {
-    return this._autosave;
+    return this._devSaveListener !== null;
   }
 
   set autosave(value: boolean) {
-    this._autosave = value;
-    if (value) this.setAttribute("autosave", "");
-    else this.removeAttribute("autosave");
+    if (value) {
+      this.enableDevSave();
+      this.setAttribute("autosave", "");
+    } else {
+      this.disableDevSave();
+      this.removeAttribute("autosave");
+    }
   }
 
   /** Whether to auto-fetch missing library packages from npm (default: true). */
@@ -490,14 +514,16 @@ export class WgslEdit extends HTMLElement {
     else this.removeAttribute("shader-root");
   }
 
+  /** Add a new file and switch to it. No-op if `name` already exists. */
   addFile(name: string, content = ""): void {
     if (this._files.has(name)) return;
-    this._files.set(name, { doc: Text.of(content.split("\n")) });
+    this._files.set(name, { doc: toDoc(content) });
     this.switchToFile(name);
     this.renderTabs();
     this.dispatchFileChange("add", name);
   }
 
+  /** Remove a file. No-op if it is missing or is the last remaining file. */
   removeFile(name: string): void {
     if (!this._files.has(name) || this._files.size <= 1) return;
     this._files.delete(name);
@@ -509,6 +535,7 @@ export class WgslEdit extends HTMLElement {
     this.dispatchFileChange("remove", name);
   }
 
+  /** Rename a file, preserving its document and editor state. No-op on collision. */
   renameFile(oldName: string, newName: string): void {
     const state = this._files.get(oldName);
     if (!state || this._files.has(newName)) return;
@@ -555,6 +582,14 @@ export class WgslEdit extends HTMLElement {
     fileState.scrollPos = view.scrollDOM.scrollTop;
   }
 
+  private pkgName(): string {
+    return this._packageName ?? "package";
+  }
+
+  private activeModulePath(): string {
+    return fileToModulePath(this._activeFile, this.pkgName(), false);
+  }
+
   private dispatchChange(): void {
     this.dispatchEvent(new CustomEvent("change", { detail: this.project }));
   }
@@ -564,45 +599,68 @@ export class WgslEdit extends HTMLElement {
     this.dispatchEvent(new CustomEvent("file-change", { detail }));
   }
 
-  private scheduleSave(): void {
+  private scheduleAutosave(): void {
     this._dirtyFiles.add(this._activeFile);
     clearTimeout(this._saveTimer);
-    this._saveTimer = setTimeout(() => this.saveAllDirty(), 500);
+    this._saveTimer = setTimeout(() => this.fireAutosave(), 500);
   }
 
-  private async saveAllDirty(): Promise<void> {
-    if (!this._autosave || !this.shaderRoot) return;
-    const files = [...this._dirtyFiles];
+  /** Dispatch an `autosave` event with a fresh project snapshot and the dirty-file list. */
+  private fireAutosave(): void {
+    const dirty = [...this._dirtyFiles];
     this._dirtyFiles.clear();
-    await Promise.all(files.map(f => this.saveFile(f)));
+    const detail: AutosaveDetail = { project: this.project, dirty };
+    this.dispatchEvent(new CustomEvent("autosave", { detail }));
   }
 
-  private async saveFile(fileName: string): Promise<void> {
+  private enableDevSave(): void {
+    if (this._devSaveListener) return;
+    this._devSaveListener = e => this.devSave(e as CustomEvent<AutosaveDetail>);
+    this.addEventListener("autosave", this._devSaveListener);
+  }
+
+  private disableDevSave(): void {
+    if (!this._devSaveListener) return;
+    this.removeEventListener("autosave", this._devSaveListener);
+    this._devSaveListener = null;
+  }
+
+  /** Built-in `autosave` listener: POST each dirty file to the dev-server save endpoint. */
+  private async devSave(e: CustomEvent<AutosaveDetail>): Promise<void> {
     const root = this.shaderRoot;
-    const fileState = this._files.get(fileName);
-    if (!root || !fileState) return;
-    const content = fileState.doc.toString();
-    try {
-      const res = await fetch(saveEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ root, file: fileName, content }),
-      });
-      if (!res.ok) this.disableAutosave(`HTTP ${res.status}`);
-    } catch (e) {
-      this.disableAutosave(e instanceof Error ? e.message : String(e));
+    if (!root) return;
+    const { project, dirty } = e.detail;
+    const weslSrc = project.weslSrc;
+    if (!weslSrc) return;
+    const pkg = this.pkgName();
+    for (const file of dirty) {
+      const content = weslSrc[fileToModulePath(file, pkg, false)];
+      if (content === undefined) continue;
+      try {
+        const res = await fetch(saveEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ root, file, content }),
+        });
+        if (!res.ok) return this.devSaveFailed(`HTTP ${res.status}`);
+      } catch (err) {
+        return this.devSaveFailed(
+          err instanceof Error ? err.message : String(err),
+        );
+      }
     }
   }
 
   /** One-shot disable on first failure: avoids spamming the console on every keystroke. */
-  private disableAutosave(reason: string): void {
-    this._autosave = false;
+  private devSaveFailed(reason: string): void {
+    this.disableDevSave();
     console.error(
       `wgsl-edit: autosave disabled (${reason}). ` +
         `Make sure wgslEditAutosave() is installed in vite.config.ts.`,
     );
   }
 
+  /** First-time setup: read attributes, parse inline content, mount the EditorView. */
   private initEditor(): void {
     this.readInitialAttributes();
     this.parseInlineContent();
@@ -611,15 +669,13 @@ export class WgslEdit extends HTMLElement {
     this._mediaQuery.addEventListener("change", () => this.updateTheme());
 
     const firstFile = this._files.keys().next().value;
-    const firstDoc = firstFile
-      ? this._files.get(firstFile)!.doc.toString()
-      : "";
-    const initialDoc = this._pendingSource ?? firstDoc;
+    const firstDoc = firstFile && this._files.get(firstFile)!.doc.toString();
+    const initialDoc = this._pendingSource ?? firstDoc ?? "";
     this._pendingSource = null;
     if (firstFile) {
       this._activeFile = firstFile;
     } else if (initialDoc) {
-      this._files.set("main.wesl", { doc: Text.of(initialDoc.split("\n")) });
+      this._files.set("main.wesl", { doc: toDoc(initialDoc) });
       this._activeFile = "main.wesl";
     }
 
@@ -646,6 +702,7 @@ export class WgslEdit extends HTMLElement {
     if (lintFromAttr) this.connectLintSource(lintFromAttr);
   }
 
+  /** Assemble the full CodeMirror extension set for a fresh EditorState. */
   private buildExtensions(): Extension[] {
     const baseTheme = EditorView.theme({
       ".cm-content": { padding: "0" },
@@ -690,7 +747,7 @@ export class WgslEdit extends HTMLElement {
           this._externalDiagnostics = [];
           this.saveCurrentFileState();
           this.dispatchChange();
-          if (this._autosave && !this._switchingFile) this.scheduleSave();
+          if (!this._switchingFile) this.scheduleAutosave();
         }
       }),
     ];
@@ -709,26 +766,21 @@ export class WgslEdit extends HTMLElement {
   }
 
   private updateTheme(): void {
-    this.editorView?.dispatch({
-      effects: this.themeCompartment.reconfigure(this.resolveTheme()),
-    });
+    this.reconfigure(this.themeCompartment, this.resolveTheme());
   }
 
   private updateReadonly(): void {
     const ext = EditorState.readOnly.of(this.readonly);
-    this.editorView?.dispatch({
-      effects: this.readonlyCompartment.reconfigure(ext),
-    });
+    this.reconfigure(this.readonlyCompartment, ext);
     this.renderTabs();
   }
 
   private resolveLint() {
     if (this._lint === "off") return [];
     const useGpuLint = this._gpuLint && !this._lintFromEl;
-    const pkg = this._packageName ?? "package";
     return createWeslLinter({
       getSources: () => this.sources,
-      rootModule: () => fileToModulePath(this._activeFile, pkg, false),
+      rootModule: () => this.activeModulePath(),
       conditions: () => this._conditions,
       packageName: () => this._packageName,
       getExternalDiagnostics: () => this._externalDiagnostics,
@@ -744,11 +796,14 @@ export class WgslEdit extends HTMLElement {
   /** Link WESL->WGSL and validate via WebGPU, returning CodeMirror diagnostics. */
   private async gpuValidate(): Promise<Diagnostic[]> {
     const { validateWgsl } = await import("./GpuValidator.ts");
-    const params = this.linkParams();
-    const linked = await link(params);
+    const linked = await link(this.linkParams());
     const messages = await validateWgsl(linked.dest);
-    const pkg = params.packageName ?? "package";
-    return mapGpuDiagnostics(messages, linked, this._activeFile, pkg);
+    return mapGpuDiagnostics(
+      messages,
+      linked,
+      this._activeFile,
+      this.pkgName(),
+    );
   }
 
   /** Fetch missing library packages, deduplicating in-flight requests. */
@@ -780,9 +835,7 @@ export class WgslEdit extends HTMLElement {
   }
 
   private updateLint(): void {
-    this.editorView?.dispatch({
-      effects: this.lintCompartment.reconfigure(this.resolveLint()),
-    });
+    this.reconfigure(this.lintCompartment, this.resolveLint());
   }
 
   /** Listen for compile-error/compile-success events from a lint source element. */
@@ -806,29 +859,24 @@ export class WgslEdit extends HTMLElement {
     if (hadExternal !== !!this._lintFromEl) this.updateLint();
   }
 
+  /** Convert external compile-error locations into CodeMirror diagnostics for the active file. */
   private onCompileError(e: Event): void {
     const detail = (e as CustomEvent).detail;
     if (!this.editorView || detail.source === "wesl") return;
 
     const doc = this.editorView.state.doc;
-    const pkg = this._packageName ?? "package";
-    const activeModule = fileToModulePath(this._activeFile, pkg, false);
+    const pkg = this.pkgName();
+    const activeModule = this.activeModulePath();
+    const inActiveFile = (loc: any) =>
+      !loc.file || fileToModulePath(loc.file, pkg, false) === activeModule;
     this._externalDiagnostics = detail.locations
-      .filter((loc: any) => {
-        if (!loc.file) return true;
-        return fileToModulePath(loc.file, pkg, false) === activeModule;
-      })
+      .filter(inActiveFile)
       .map((loc: any) => {
         const line = doc.line(Math.max(1, Math.min(loc.line, doc.lines)));
         const from = Math.min(line.from + (loc.column ?? 0), doc.length);
         const to = Math.min(from + (loc.length ?? 1), doc.length);
-        return {
-          from,
-          to,
-          severity: loc.severity,
-          message: loc.message,
-          source: "WebGPU",
-        } as Diagnostic;
+        const { severity, message } = loc;
+        return { from, to, severity, message, source: "WebGPU" } as Diagnostic;
       });
     if (this._externalDiagnostics.length) forceLinting(this.editorView);
   }
@@ -840,17 +888,14 @@ export class WgslEdit extends HTMLElement {
   }
 
   private resolveLineNumbers(): Extension {
-    // basicSetup includes lineNumbers, so we hide via CSS when disabled
+    // lineNumbers() is always in the extension list, so hide gutters via CSS when disabled
     return this._lineNumbers
       ? []
       : EditorView.theme({ ".cm-gutters": { display: "none" } });
   }
 
   private updateLineNumbers(): void {
-    const ext = this.resolveLineNumbers();
-    this.editorView?.dispatch({
-      effects: this.lineNumbersCompartment.reconfigure(ext),
-    });
+    this.reconfigure(this.lineNumbersCompartment, this.resolveLineNumbers());
   }
 
   /** Parse script tags into _files. Supports single or multi-file via data-name. */
@@ -860,15 +905,14 @@ export class WgslEdit extends HTMLElement {
 
     if (scripts.length === 0) {
       const content = this.textContent?.trim() ?? "";
-      if (content)
-        this._files.set("main.wesl", { doc: Text.of(content.split("\n")) });
+      if (content) this._files.set("main.wesl", { doc: toDoc(content) });
       return;
     }
 
     for (const script of scripts) {
       const name = script.getAttribute("data-name") || "main.wesl";
       const content = script.textContent?.trim() ?? "";
-      this._files.set(name, { doc: Text.of(content.split("\n")) });
+      this._files.set(name, { doc: toDoc(content) });
     }
   }
 
@@ -926,6 +970,7 @@ export class WgslEdit extends HTMLElement {
     return btn;
   }
 
+  /** Replace the tab name span with an editable input; commit on Enter/blur, cancel on Escape. */
   private startRenameTab(
     tab: HTMLElement,
     nameSpan: HTMLElement,
@@ -936,13 +981,16 @@ export class WgslEdit extends HTMLElement {
     input.value = oldName;
     input.size = Math.max(oldName.length, 8);
 
+    const cancelRename = () => {
+      nameSpan.style.display = "";
+      input.remove();
+    };
     const finishRename = () => {
       const newName = input.value.trim() || oldName;
       if (newName !== oldName && !this._files.has(newName)) {
         this.renameFile(oldName, newName);
       } else {
-        nameSpan.style.display = "";
-        input.remove();
+        cancelRename();
       }
     };
 
@@ -951,10 +999,7 @@ export class WgslEdit extends HTMLElement {
         e.preventDefault();
         finishRename();
       }
-      if (e.key === "Escape") {
-        nameSpan.style.display = "";
-        input.remove();
-      }
+      if (e.key === "Escape") cancelRename();
     });
     input.addEventListener("blur", finishRename);
     input.addEventListener("input", () => {
@@ -987,6 +1032,7 @@ export class WgslEdit extends HTMLElement {
   }
 }
 
+/** Build a CodeMirror highlight style from a WESL color palette. */
 function weslColors(c: typeof light) {
   return syntaxHighlighting(
     HighlightStyle.define(
@@ -1012,45 +1058,7 @@ function weslColors(c: typeof light) {
   );
 }
 
-/** Map GPU validation messages back to source positions via the source map. */
-function mapGpuDiagnostics(
-  messages: {
-    offset: number;
-    length: number;
-    severity: string;
-    message: string;
-  }[],
-  linked: {
-    sourceMap: {
-      destToSrc(offset: number): { position: number; src: { path?: string } };
-    };
-  },
-  activeFile: string,
-  pkg: string,
-): Diagnostic[] {
-  const { sourceMap } = linked;
-  const active = fileToModulePath(activeFile, pkg, false);
-
-  return messages.flatMap(msg => {
-    const srcPos = sourceMap.destToSrc(msg.offset);
-    const mod = srcPos.src.path
-      ? fileToModulePath(srcPos.src.path, pkg, false)
-      : null;
-    if (mod !== active) return [];
-
-    const endPos = sourceMap.destToSrc(msg.offset + msg.length);
-    const from = srcPos.position;
-    const to = endPos.position > from ? endPos.position : from + 1;
-    return {
-      from,
-      to,
-      severity: msg.severity,
-      message: msg.message,
-      source: "WebGPU",
-    } as Diagnostic;
-  });
-}
-
+/** Lazily build and cache the shared component stylesheet. */
 function getStyles(): CSSStyleSheet {
   if (!cachedStyleSheet) {
     cachedStyleSheet = new CSSStyleSheet();
@@ -1069,9 +1077,38 @@ function upgradeProperty(el: HTMLElement, prop: string): void {
   }
 }
 
+/** Build a CodeMirror Text doc from a string. */
+function toDoc(s: string): Text {
+  return Text.of(s.split("\n"));
+}
+
 /** Convert a module path or file path to a tab name: "package::main" -> "main", "main.wesl" -> "main.wesl" */
 function toTabName(key: string): string {
   if (key.includes("::"))
     return key.replace(/^[^:]+::/, "").replaceAll("::", "/");
   return key.replace(/^\.\//, "");
+}
+
+/** Map GPU validation messages back to source positions via the source map. */
+function mapGpuDiagnostics(
+  messages: GpuMessage[],
+  linked: LinkedSourceMap,
+  activeFile: string,
+  pkg: string,
+): Diagnostic[] {
+  const { sourceMap } = linked;
+  const active = fileToModulePath(activeFile, pkg, false);
+
+  return messages.flatMap(msg => {
+    const srcPos = sourceMap.destToSrc(msg.offset);
+    const path = srcPos.src.path;
+    const mod = path ? fileToModulePath(path, pkg, false) : null;
+    if (mod !== active) return [];
+
+    const endPos = sourceMap.destToSrc(msg.offset + msg.length);
+    const from = srcPos.position;
+    const to = endPos.position > from ? endPos.position : from + 1;
+    const { severity, message } = msg;
+    return { from, to, severity, message, source: "WebGPU" } as Diagnostic;
+  });
 }
